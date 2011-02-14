@@ -160,7 +160,7 @@ nsresult nsAuthSambaNTLM::SpawnNTLMAuthHelper() {
   const char* username = PR_GetEnv("USER");
   if (!username) return NS_ERROR_FAILURE;
 
-  const char* const args[] = {"ntlm_auth",
+  const char* const args[] = {"/usr/bin/ntlm_auth",
                               "--helper-protocol",
                               "ntlmssp-client-1",
                               "--use-cached-creds",
