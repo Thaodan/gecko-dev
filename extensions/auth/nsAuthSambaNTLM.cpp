@@ -150,7 +150,7 @@ nsresult nsAuthSambaNTLM::SpawnNTLMAuthHelper() {
     options.fds_to_remap.push_back(
         std::pair{fromChildPipeWrite.get(), STDOUT_FILENO});
 
-    std::vector<std::string> argvVec{"ntlm_auth",        "--helper-protocol",
+    std::vector<std::string> argvVec{"/usr/bin/ntlm_auth",        "--helper-protocol",
                                      "ntlmssp-client-1", "--use-cached-creds",
                                      "--username",       username};
 
