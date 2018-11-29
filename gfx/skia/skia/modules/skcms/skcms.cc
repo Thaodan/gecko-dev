@@ -30,6 +30,8 @@
         #include <avx512fintrin.h>
         #include <avx512dqintrin.h>
     #endif
+#else
+    #define SKCMS_PORTABLE
 #endif
 
 static bool runtime_cpu_detection = true;
@@ -324,20 +326,28 @@ enum {
 static uint16_t read_big_u16(const uint8_t* ptr) {
     uint16_t be;
     memcpy(&be, ptr, sizeof(be));
-#if defined(_MSC_VER)
-    return _byteswap_ushort(be);
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+    return be;
 #else
+    #if defined(_MSC_VER)
+    return _byteswap_ushort(be);
+    #else
     return __builtin_bswap16(be);
+    #endif
 #endif
 }
 
 static uint32_t read_big_u32(const uint8_t* ptr) {
     uint32_t be;
     memcpy(&be, ptr, sizeof(be));
-#if defined(_MSC_VER)
-    return _byteswap_ulong(be);
+#if __BYTE_ORDER == __ORDER_BIG_ENDIAN__
+    return be;
 #else
+    #if defined(_MSC_VER)
+    return _byteswap_ulong(be);
+    #else
     return __builtin_bswap32(be);
+    #endif
 #endif
 }
 

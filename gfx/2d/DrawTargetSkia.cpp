@@ -155,8 +155,7 @@ static IntRect CalculateSurfaceBounds(const IntSize& aSize, const Rect* aBounds,
   return surfaceBounds.Intersect(bounds);
 }
 
-static const int kARGBAlphaOffset =
-    SurfaceFormat::A8R8G8B8_UINT32 == SurfaceFormat::B8G8R8A8 ? 3 : 0;
+static const int kARGBAlphaOffset = 0;  // Skia is always BGRA SurfaceFormat::A8R8G8B8_UINT32 == SurfaceFormat::B8G8R8A8 ? 3 : 0;
 
 static bool VerifyRGBXFormat(uint8_t* aData, const IntSize& aSize,
                              const int32_t aStride, SurfaceFormat aFormat) {
