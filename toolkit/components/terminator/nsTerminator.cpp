@@ -404,6 +404,13 @@ void nsTerminator::StartWatchdog() {
   }
 #endif
 
+  // Disable watchdog for PGO train builds - writting profile information at
+  // exit may take time and it is better to make build hang rather than
+  // silently produce poorly performing binary.
+#ifdef MOZ_PROFILE_INSTRUMENTATION
+  crashAfterMS = INT32_MAX;
+#endif
+
   // Guarantee that gCrashAfterTicks is non-zero
   gCrashAfterTicks = std::max(1, crashAfterMS / HEARTBEAT_INTERVAL_MS);
 
