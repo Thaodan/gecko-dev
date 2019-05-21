@@ -1209,7 +1209,13 @@ nsresult nsIOService::NewChannelFromURIWithProxyFlagsInternal(
     }
   }
 
+#if defined(__aarch64__)
+  if (result) {
+    channel.forget(result);
+  }
+#else
   channel.forget(result);
+#endif
   return NS_OK;
 }
 
