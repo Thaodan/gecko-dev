@@ -64,7 +64,7 @@ static inline GrColor GrColorPackRGBA(unsigned r, unsigned g, unsigned b, unsign
  *  Since premultiplied means that alpha >= color, we construct a color with
  *  each component==255 and alpha == 0 to be "illegal"
  */
-#define GrColor_ILLEGAL     (~(0xFF << GrColor_SHIFT_A))
+#define GrColor_ILLEGAL     ((uint32_t)(~(0xFF << GrColor_SHIFT_A)))
 
 /** Normalizes and coverts an uint8_t to a float. [0, 255] -> [0.0, 1.0] */
 static inline float GrNormalizeByteToFloat(uint8_t value) {
