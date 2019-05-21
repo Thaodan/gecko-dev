@@ -52,10 +52,14 @@ nsUnixSystemProxySettings::GetMainThreadOnly(bool* aMainThreadOnly) {
 }
 
 void nsUnixSystemProxySettings::Init() {
-  mGSettings = do_GetService(NS_GSETTINGSSERVICE_CONTRACTID);
-  if (mGSettings) {
-    mGSettings->GetCollectionForSchema("org.gnome.system.proxy"_ns,
-                                       getter_AddRefs(mProxySettings));
+  const char* sessionType = PR_GetEnv("DESKTOP_SESSION");
+  if (sessionType && !strcmp(sessionType, "gnome")) {
+    mGSettings = do_GetService(NS_GSETTINGSSERVICE_CONTRACTID);
+    if (mGSettings) {
+      mGSettings->GetCollectionForSchema(
+          "org.gnome.system.proxy"_ns,
+          getter_AddRefs(mProxySettings));
+    }
   }
 }
 
