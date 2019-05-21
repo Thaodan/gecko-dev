@@ -174,6 +174,10 @@ using mozilla::DebugOnly;
 #      define FP_sig(p) ((p)->uc_mcontext.gregs[REG_FPRS])
 #      define SP_sig(p) ((p)->uc_mcontext.gregs[REG_SP])
 #    endif
+#  if defined(__linux__) && defined(__s390x__)
+#    define GR_sig(p,x) ((p)->uc_mcontext.gregs[x])
+#    define PSWa_sig(p) ((p)->uc_mcontext.psw.addr)
+#  endif
 #  elif defined(__NetBSD__)
 #    define EIP_sig(p) ((p)->uc_mcontext.__gregs[_REG_EIP])
 #    define EBP_sig(p) ((p)->uc_mcontext.__gregs[_REG_EBP])
@@ -421,6 +425,10 @@ struct macos_aarch64_context {
 #    define FP_sig(p) RFP_sig(p)
 #    define SP_sig(p) R02_sig(p)
 #    define LR_sig(p) RRA_sig(p)
+#  elif defined(__s390x__)
+#    define PC_sig(p) PSWa_sig(p)
+#    define SP_sig(p) GR_sig(p, 15)
+#    define FP_sig(p) GR_sig(p, 11)
 #  endif
 
 static void SetContextPC(CONTEXT* context, uint8_t* pc) {
