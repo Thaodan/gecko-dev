@@ -1244,7 +1244,14 @@ nsresult nsIOService::NewChannelFromURIWithProxyFlagsInternal(
   if (loadInfo->GetLoadingSandboxed()) {
     channel->SetOwner(nullptr);
   }
+
+#if defined(__aarch64__)
+  if (result) {
+    channel.forget(result);
+  }
+#else
   channel.forget(result);
+#endif
   return NS_OK;
 }
 
