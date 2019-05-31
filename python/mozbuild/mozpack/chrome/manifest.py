@@ -42,6 +42,7 @@ class ManifestEntry(object):
         "process",
         "contentaccessible",
         "backgroundtask",
+        "desktop",
     ]
 
     def __init__(self, base, *flags):
