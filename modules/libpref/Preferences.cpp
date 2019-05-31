@@ -95,6 +95,7 @@
 #ifdef MOZ_BACKGROUNDTASKS
 #  include "mozilla/BackgroundTasks.h"
 #endif
+#include "nsKDEUtils.h"
 
 #ifdef DEBUG
 #  include <map>
@@ -4911,6 +4912,17 @@ nsresult Preferences::InitInitialObjects(bool aIsStartup) {
 #endif
   };
 
+  if(nsKDEUtils::kdeSession()) { // TODO what if some setup actually requires the helper?
+    for(int i = 0;
+        i < MOZ_ARRAY_LENGTH(specialFiles);
+        ++i ) {
+      if( *specialFiles[ i ] == '\0' ) {
+        specialFiles[ i ] = "kde.js";
+        break;
+      }
+    }
+  }
+
   rv = pref_LoadPrefsInDir(defaultPrefDir, specialFiles,
                            ArrayLength(specialFiles));
   if (NS_FAILED(rv)) {
@@ -4985,7 +4997,7 @@ nsresult Preferences::InitInitialObjects(bool aIsStartup) {
       }
 
       // Do we care if a file provided by this process fails to load?
-      pref_LoadPrefsInDir(path, nullptr, 0);
+      pref_LoadPrefsInDir(path, specialFiles, ArrayLength(specialFiles));
     }
   }
 

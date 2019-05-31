@@ -10,7 +10,7 @@
 #include "nsOSHelperAppService.h"
 #include "nsMIMEInfoUnix.h"
 #ifdef MOZ_WIDGET_GTK
-#  include "nsGNOMERegistry.h"
+#  include "nsCommonRegistry.h"
 #  ifdef MOZ_BUILD_APP_IS_BROWSER
 #    include "nsIToolkitShellService.h"
 #    include "nsIGNOMEShellService.h"
@@ -1106,7 +1106,7 @@ nsresult nsOSHelperAppService::OSProtocolHandlerExists(
   if (!XRE_IsContentProcess()) {
 #ifdef MOZ_WIDGET_GTK
     // Check the GNOME registry for a protocol handler
-    *aHandlerExists = nsGNOMERegistry::HandlerExists(aProtocolScheme);
+    *aHandlerExists = nsCommonRegistry::HandlerExists(aProtocolScheme);
 #else
     *aHandlerExists = false;
 #endif
@@ -1126,7 +1126,7 @@ nsresult nsOSHelperAppService::OSProtocolHandlerExists(
 NS_IMETHODIMP nsOSHelperAppService::GetApplicationDescription(
     const nsACString& aScheme, nsAString& _retval) {
 #ifdef MOZ_WIDGET_GTK
-  nsGNOMERegistry::GetAppDescForScheme(aScheme, _retval);
+  nsCommonRegistry::GetAppDescForScheme(aScheme, _retval);
   return _retval.IsEmpty() ? NS_ERROR_NOT_AVAILABLE : NS_OK;
 #else
   return NS_ERROR_NOT_AVAILABLE;
@@ -1231,7 +1231,7 @@ already_AddRefed<nsMIMEInfoBase> nsOSHelperAppService::GetFromExtension(
 #ifdef MOZ_WIDGET_GTK
     LOG("Looking in GNOME registry\n");
     RefPtr<nsMIMEInfoBase> gnomeInfo =
-        nsGNOMERegistry::GetFromExtension(aFileExt);
+        nsCommonRegistry::GetFromExtension(aFileExt);
     if (gnomeInfo) {
       LOG("Got MIMEInfo from GNOME registry\n");
       return gnomeInfo.forget();
@@ -1344,7 +1344,7 @@ already_AddRefed<nsMIMEInfoBase> nsOSHelperAppService::GetFromType(
 
 #ifdef MOZ_WIDGET_GTK
   if (handler.IsEmpty()) {
-    RefPtr<nsMIMEInfoBase> gnomeInfo = nsGNOMERegistry::GetFromType(aMIMEType);
+    RefPtr<nsMIMEInfoBase> gnomeInfo = nsCommonRegistry::GetFromType(aMIMEType);
     if (gnomeInfo) {
       LOG("Got MIMEInfo from GNOME registry without extensions; setting them "
           "to %s\n",

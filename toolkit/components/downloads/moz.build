@@ -51,5 +51,9 @@ if CONFIG["MOZ_PLACES"]:
 
 FINAL_LIBRARY = "xul"
 
+LOCAL_INCLUDES += [
+    '/toolkit/xre'
+]
+
 with Files("**"):
     BUG_COMPONENT = ("Toolkit", "Downloads API")
