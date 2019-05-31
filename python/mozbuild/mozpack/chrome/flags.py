@@ -233,6 +233,7 @@ class Flags(OrderedDict):
         "tablet": Flag,
         "process": StringFlag,
         "backgroundtask": StringFlag,
+        "desktop": StringFlag,
     }
     RE = re.compile(r"([!<>=]+)")
 
