@@ -210,6 +210,8 @@ namespace SK_OPTS_NS {
             //   ~~~>
             // a = 1*aa + d(1-1*aa) = aa + d(1-aa)
             // c = 0*aa + d(1-1*aa) =      d(1-aa)
+            // TODO: Check this for endian-issues!
+            //       Do we need to switch 255 to the front for all of those tuples?
             return (aa & Sk4px(skvx::byte16{0,0,0,255, 0,0,0,255, 0,0,0,255, 0,0,0,255}))
                  + d.approxMulDiv255(aa.inv());
         };
