@@ -13,10 +13,17 @@
 namespace mozilla {
 namespace gfx {
 
+#if MOZ_BIG_ENDIAN()
+const ptrdiff_t B8G8R8A8_COMPONENT_BYTEOFFSET_B = 3;
+const ptrdiff_t B8G8R8A8_COMPONENT_BYTEOFFSET_G = 2;
+const ptrdiff_t B8G8R8A8_COMPONENT_BYTEOFFSET_R = 1;
+const ptrdiff_t B8G8R8A8_COMPONENT_BYTEOFFSET_A = 0;
+#else
 const ptrdiff_t B8G8R8A8_COMPONENT_BYTEOFFSET_B = 0;
 const ptrdiff_t B8G8R8A8_COMPONENT_BYTEOFFSET_G = 1;
 const ptrdiff_t B8G8R8A8_COMPONENT_BYTEOFFSET_R = 2;
 const ptrdiff_t B8G8R8A8_COMPONENT_BYTEOFFSET_A = 3;
+#endif
 
 class FilterProcessing {
  public:
