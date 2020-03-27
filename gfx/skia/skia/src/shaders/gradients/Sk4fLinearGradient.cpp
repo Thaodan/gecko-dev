@@ -7,7 +7,7 @@
 
 #include "include/core/SkPaint.h"
 #include "src/shaders/gradients/Sk4fLinearGradient.h"
-
+#include "src/core/SkEndian.h"
 #include <cmath>
 #include <utility>
 
@@ -28,6 +28,9 @@ void ramp(const Sk4f& c, const Sk4f& dc, SkPMColor dst[], int n,
 
     while (n >= 4) {
         DstTraits<premul>::store4x(c0, c1, c2, c3, dst, bias0, bias1);
+#ifdef SK_CPU_BENDIAN
+        SkEndianSwap32s(dst, 4);
+#endif
         dst += 4;
 
         c0 = c0 + dc4;
@@ -37,12 +40,23 @@ void ramp(const Sk4f& c, const Sk4f& dc, SkPMColor dst[], int n,
         n -= 4;
     }
     if (n & 2) {
-        DstTraits<premul>::store(c0, dst++, bias0);
-        DstTraits<premul>::store(c1, dst++, bias1);
+        DstTraits<premul>::store(c0, dst, bias0);
+#ifdef SK_CPU_BENDIAN
+        *dst = SkEndianSwap32(*dst);
+#endif
+        ++dst;
+        DstTraits<premul>::store(c1, dst, bias1);
+#ifdef SK_CPU_BENDIAN
+        *dst = SkEndianSwap32(*dst);
+#endif
+        ++dst;
         c0 = c0 + dc2;
     }
     if (n & 1) {
         DstTraits<premul>::store(c0, dst, bias0);
+#ifdef SK_CPU_BENDIAN
+        *dst = SkEndianSwap32(*dst);
+#endif
     }
 }
 
