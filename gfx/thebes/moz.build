@@ -297,6 +297,7 @@ LOCAL_INCLUDES += CONFIG["SKIA_INCLUDES"]
 
 DEFINES["GRAPHITE2_STATIC"] = True
 
-COMPILE_FLAGS["WARNINGS_CXXFLAGS"] += ["-Werror=switch"]
+if CONFIG["MOZ_SYSTEM_HARFBUZZ"]:
+    CXXFLAGS += CONFIG["MOZ_HARFBUZZ_CFLAGS"]
 
-include("/tools/fuzzing/libfuzzer-config.mozbuild")
+COMPILE_FLAGS["WARNINGS_CXXFLAGS"] += ["-Werror=switch"]
