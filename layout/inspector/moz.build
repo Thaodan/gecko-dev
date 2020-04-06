@@ -6,6 +6,10 @@ if CONFIG["ENABLE_TESTS"]:
     MOCHITEST_CHROME_MANIFESTS += ["tests/chrome/chrome.toml"]
     MOCHITEST_MANIFESTS += ["tests/mochitest.toml"]
 
+if CONFIG["MOZ_SYSTEM_GRAPHITE2"]:
+     CXXFLAGS += CONFIG["MOZ_HARFBUZZ_CFLAGS"]
+     DEFINES["HB_EXTERN"] = 'extern __attribute__((visibility("default")))'
+
 XPIDL_SOURCES += [
     "inIDeepTreeWalker.idl",
 ]

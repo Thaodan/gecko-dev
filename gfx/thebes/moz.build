@@ -276,6 +276,10 @@ DEFINES["GRAPHITE2_STATIC"] = True
 
 COMPILE_FLAGS["WARNINGS_CXXFLAGS"] += ["-Werror=switch"]
 
+if CONFIG["MOZ_SYSTEM_HARFBUZZ"]:
+    CXXFLAGS += CONFIG["MOZ_HARFBUZZ_CFLAGS"]
+    DEFINES["HB_EXTERN"] = 'extern __attribute__((visibility("default")))'
+
 include("/tools/fuzzing/libfuzzer-config.mozbuild")
 
 LICENSES += ["icu"]

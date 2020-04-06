@@ -14,6 +14,9 @@ with Files("skia/**"):
 with Files("angle/**"):
     BUG_COMPONENT = ("Core", "Graphics: ANGLE")
 
+if not CONFIG["MOZ_SYSTEM_HARFBUZZ"]:
+    DIRS += ["harfbuzz/src"]
+
 DIRS += [
     "cairo",
     "2d",
@@ -24,7 +27,6 @@ DIRS += [
     "gl",
     "layers",
     "graphite2/src",
-    "harfbuzz/src",
     "ots/src",
     "thebes",
     "ipc",

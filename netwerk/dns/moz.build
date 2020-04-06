@@ -114,6 +114,10 @@ LOCAL_INCLUDES += [
     "/netwerk/protocol/http",
 ]
 
+if CONFIG["MOZ_SYSTEM_HARFBUZZ"]:
+    CXXFLAGS += CONFIG["MOZ_HARFBUZZ_CFLAGS"]
+    DEFINES["HB_EXTERN"] = 'extern __attribute__((visibility("default")))'
+
 USE_LIBS += ["icu"]
 
 LICENSES += ["jpnic"]

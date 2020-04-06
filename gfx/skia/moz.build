@@ -646,9 +646,9 @@ if CONFIG['CC_TYPE'] in ('clang', 'clang-cl'):
         '-Wno-unused-private-field',
     ]
 
-LOCAL_INCLUDES += [
-    "/gfx/harfbuzz/src",
-]
+if CONFIG['MOZ_SYSTEM_HARFBUZZ']:
+    CXXFLAGS += CONFIG['MOZ_HARFBUZZ_CFLAGS']
+    DEFINES['HB_EXTERN'] = 'extern __attribute__((visibility("default")))'
 
 if CONFIG['MOZ_WIDGET_TOOLKIT'] in ('gtk', 'android'):
     LOCAL_INCLUDES += [

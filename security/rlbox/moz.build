@@ -45,6 +45,9 @@ if CONFIG["MOZ_WASM_SANDBOXING_GRAPHITE"]:
     for k, v in graphite_defines:
         WASM_DEFINES[k] = v
     LOCAL_INCLUDES += ["/gfx/graphite2/src"]
+    if CONFIG["MOZ_SYSTEM_GRAPHITE2"]:
+        OS_LIBS += CONFIG["MOZ_GRAPHITE2_LIBS"]
+        WASM_CXXFLAGS += CONFIG["MOZ_GRAPHITE2_CFLAGS"]
 
 if CONFIG["MOZ_WASM_SANDBOXING_OGG"]:
     include("/media/libogg/sources.mozbuild")
