@@ -1270,6 +1270,13 @@ if CONFIG["MOZ_SYSTEM_PIPEWIRE"]:
         "pipewire/pipewire.h",
     ]
 
+if CONFIG["MOZ_SYSTEM_HARFBUZZ"]:
+    system_headers += [
+        "harfbuzz/hb-glib.h",
+        "harfbuzz/hb-ot.h",
+        "harfbuzz/hb.h",
+    ]
+
 if CONFIG["MOZ_JACK"]:
     system_headers += [
         "jack/jack.h",
