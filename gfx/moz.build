@@ -10,6 +10,11 @@ with Files("**"):
 with Files("wr/**"):
     BUG_COMPONENT = ("Core", "Graphics: WebRender")
 
+if CONFIG["MOZ_SYSTEM_GRAPHITE2"]:
+    DIRS += ["graphite2/geckoextra"]
+else:
+    DIRS += ["graphite2/src"]
+
 if not CONFIG["MOZ_SYSTEM_HARFBUZZ"]:
     DIRS += ["harfbuzz/src"]
 
@@ -22,7 +27,6 @@ DIRS += [
     "qcms",
     "gl",
     "layers",
-    "graphite2/src",
     "ots/src",
     "thebes",
     "ipc",
