@@ -1,4 +1,5 @@
 # libaom symbols
+#ifndef MOZ_SYSTEM_AV1
 aom_codec_av1_cx
 aom_codec_av1_dx
 aom_codec_build_config
@@ -24,6 +25,7 @@ aom_img_free
 aom_img_plane_height
 aom_img_plane_width
 aom_img_wrap
+#endif
 #if defined(X86_WIN64)
 aom_winx64_fstcw
 #endif
