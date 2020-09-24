@@ -12,6 +12,9 @@ static const FFCodec * const codec_list[] = {
 #if CONFIG_MP3_DECODER
     &ff_mp3_decoder,
 #endif
+#ifdef CONFIG_LIBFDK_AAC
+    &ff_libfdk_aac_decoder,
+#endif
 #if CONFIG_LIBDAV1D
     &ff_libdav1d_decoder,
 #endif

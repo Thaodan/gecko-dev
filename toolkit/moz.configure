@@ -2609,6 +2609,15 @@ with only_when(compile_environment):
 
     set_config("MOZ_SYSTEM_PNG", True, when="--with-system-png")
 
+# FDK AAC support
+# ==============================================================
+option('--with-system-fdk-aac',
+       help='Use system libfdk-aac (located with pkgconfig)')
+
+system_fdk_aac = pkg_check_modules('MOZ_FDK_AAC', 'fdk-aac',
+                                   when='--with-system-fdk-aac')
+
+set_config('MOZ_FDK_AAC', depends(when=system_fdk_aac)(lambda: True))
 
 # FFmpeg's ffvpx configuration
 # ==============================================================

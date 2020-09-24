@@ -195,6 +195,12 @@ else:
   CXXFLAGS += CONFIG["MOZ_LIBVPX_CFLAGS"]
   OS_LIBS += CONFIG["MOZ_LIBVPX_LIBS"]
 
+if CONFIG['MOZ_FDK_AAC']:
+    SOURCES += [
+        'libfdk-aacdec.c',
+    ]
+    OS_LIBS += CONFIG['MOZ_FDK_AAC_LIBS']
+
 SYMBOLS_FILE = 'avcodec.symbols'
 NoVisibilityFlags()
 
