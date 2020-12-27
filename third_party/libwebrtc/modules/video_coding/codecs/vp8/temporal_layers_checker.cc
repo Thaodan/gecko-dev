@@ -30,6 +30,7 @@ TemporalLayersChecker::CreateTemporalLayersChecker(Vp8TemporalLayersType type,
       return std::make_unique<TemporalLayersChecker>(num_temporal_layers);
   }
   RTC_CHECK_NOTREACHED();
+  return nullptr;
 }
 
 TemporalLayersChecker::TemporalLayersChecker(int num_temporal_layers)

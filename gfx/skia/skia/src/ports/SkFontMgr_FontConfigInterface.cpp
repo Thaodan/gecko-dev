@@ -162,18 +162,22 @@ public:
 protected:
     int onCountFamilies() const override {
         SK_ABORT("Not implemented.");
+	SkUNREACHABLE;
     }
 
     void onGetFamilyName(int index, SkString* familyName) const override {
         SK_ABORT("Not implemented.");
+	SkUNREACHABLE;
     }
 
     SkFontStyleSet* onCreateStyleSet(int index) const override {
         SK_ABORT("Not implemented.");
+	SkUNREACHABLE;
     }
 
     SkFontStyleSet* onMatchFamily(const char familyName[]) const override {
         SK_ABORT("Not implemented.");
+	SkUNREACHABLE;
     }
 
     SkTypeface* onMatchFamilyStyle(const char requestedFamilyName[],
