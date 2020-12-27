@@ -69,6 +69,7 @@ bool BitrateProber::ReadyToSetActiveState(DataSize packet_size) const {
       return packet_size >=
              std::min(RecommendedMinProbeSize(), config_.min_packet_size.Get());
   }
+  RTC_CHECK_NOTREACHED();
 }
 
 void BitrateProber::OnIncomingPacket(DataSize packet_size) {

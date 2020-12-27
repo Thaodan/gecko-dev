@@ -204,6 +204,7 @@ void SkTextBlob::operator delete(void* p) {
 
 void* SkTextBlob::operator new(size_t) {
     SK_ABORT("All blobs are created by placement new.");
+    SkUNREACHABLE;
 }
 
 void* SkTextBlob::operator new(size_t, void* p) {
