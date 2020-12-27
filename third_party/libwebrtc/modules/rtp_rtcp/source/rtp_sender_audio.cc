@@ -45,6 +45,7 @@ namespace {
       return "audio_cn";
   }
   RTC_CHECK_NOTREACHED();
+  return "";
 }
 
 constexpr char kIncludeCaptureClockOffset[] =
