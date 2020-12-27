@@ -405,7 +405,7 @@ absl::optional<FrameDependencyStructure> RtpPayloadParams::GenericStructure(
     case VideoCodecType::kVideoCodecMultiplex:
       return absl::nullopt;
   }
-  RTC_DCHECK_NOTREACHED() << "Unsupported codec.";
+  RTC_CHECK_NOTREACHED();
 }
 
 void RtpPayloadParams::GenericToGeneric(int64_t shared_frame_id,
