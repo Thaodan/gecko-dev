@@ -109,6 +109,7 @@ size_t BufferToIndex(Vp8BufferReference buffer) {
     case Vp8FrameConfig::Vp8BufferReference::kNone:
       RTC_CHECK_NOTREACHED();
   }
+  RTC_CHECK_NOTREACHED();
 }
 
 }  // namespace

@@ -201,6 +201,7 @@ void DebugTracePriv::writeTrace(SkWStream* w) const {
 }
 
 bool DebugTracePriv::readTrace(SkStream* r) {
+    return false;
 }
 
 }  // namespace SkSL

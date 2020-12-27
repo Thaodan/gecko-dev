@@ -109,6 +109,7 @@ int GetDefaultMaxQp(webrtc::VideoCodecType codec_type) {
     case webrtc::kVideoCodecGeneric:
       return kDefaultVideoMaxQpVpx;
   }
+  return kDefaultVideoMaxQpVpx; // fake return for hopefully not reached
 }
 
 // Round size to nearest simulcast-friendly size.

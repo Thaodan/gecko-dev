@@ -33,6 +33,7 @@ std::string NoiseSuppressionLevelToString(
       return "VeryHigh";
   }
   RTC_CHECK_NOTREACHED();
+  return "";
 }
 
 std::string GainController1ModeToString(const Agc1Config::Mode& mode) {
@@ -45,6 +46,7 @@ std::string GainController1ModeToString(const Agc1Config::Mode& mode) {
       return "FixedDigital";
   }
   RTC_CHECK_NOTREACHED();
+  return "";
 }
 
 }  // namespace

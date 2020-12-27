@@ -301,6 +301,7 @@ static inline bool GrTextureTypeHasRestrictedSampling(GrTextureType type) {
         default:
             SK_ABORT("Unexpected texture type");
     }
+    SkUNREACHABLE;
 }
 
 //////////////////////////////////////////////////////////////////////////////

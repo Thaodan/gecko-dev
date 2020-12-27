@@ -378,7 +378,7 @@ std::unique_ptr<ClippingPredictor> CreateClippingPredictor(
           config.reference_window_delay, config.clipping_threshold,
           /*adaptive_step_estimation=*/false);
   }
-  RTC_DCHECK_NOTREACHED();
+  RTC_CHECK_NOTREACHED();
 }
 
 }  // namespace webrtc

@@ -427,7 +427,7 @@ std::optional<FrameDependencyStructure> RtpPayloadParams::GenericStructure(
     case VideoCodecType::kVideoCodecH265:
       return std::nullopt;
   }
-  RTC_DCHECK_NOTREACHED() << "Unsupported codec.";
+  RTC_CHECK_NOTREACHED();
 }
 
 void RtpPayloadParams::GenericToGeneric(int64_t frame_id,

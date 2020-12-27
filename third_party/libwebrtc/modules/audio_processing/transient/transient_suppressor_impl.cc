@@ -53,6 +53,7 @@ std::string GetVadModeLabel(TransientSuppressor::VadMode vad_mode) {
     case TransientSuppressor::VadMode::kNoVad:
       return "no VAD";
   }
+  RTC_CHECK_NOTREACHED();
 }
 
 }  // namespace

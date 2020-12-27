@@ -64,6 +64,7 @@ std::string ToString(VideoAdaptationReason reason) {
       return "cpu";
   }
   RTC_CHECK_NOTREACHED();
+  return "";
 }
 
 std::vector<bool> GetActiveLayersFlags(const VideoCodec& codec) {
