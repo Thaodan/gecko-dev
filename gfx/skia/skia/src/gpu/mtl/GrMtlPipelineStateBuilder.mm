@@ -155,6 +155,7 @@ static inline MTLVertexFormat attribute_type_to_mtlformat(GrVertexAttribType typ
             return MTLVertexFormatUShort4Normalized;
     }
     SK_ABORT("Unknown vertex attribute type");
+    SkUNREACHABLE;
 }
 
 static MTLVertexDescriptor* create_vertex_descriptor(const GrPrimitiveProcessor& primProc) {
@@ -276,6 +277,7 @@ static MTLBlendFactor blend_coeff_to_mtl_blend(GrBlendCoeff coeff) {
     }
 
     SK_ABORT("Unknown blend coefficient");
+    SkUNREACHABLE;
 }
 
 static MTLBlendOperation blend_equation_to_mtl_blend_op(GrBlendEquation equation) {

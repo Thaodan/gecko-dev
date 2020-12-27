@@ -80,6 +80,7 @@ static inline VkFormat attrib_type_to_vkformat(GrVertexAttribType type) {
             return VK_FORMAT_R16G16B16A16_UNORM;
     }
     SK_ABORT("Unknown vertex attrib type");
+    SkUNREACHABLE;
 }
 
 static void setup_vertex_input_state(const GrPrimitiveProcessor& primProc,
@@ -162,8 +163,10 @@ static VkPrimitiveTopology gr_primitive_type_to_vk_topology(GrPrimitiveType prim
             return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
         case GrPrimitiveType::kPath:
             SK_ABORT("Unsupported primitive type");
+	    SkUNREACHABLE;
     }
     SK_ABORT("invalid GrPrimitiveType");
+    SkUNREACHABLE;
 }
 
 static void setup_input_assembly_state(GrPrimitiveType primitiveType,

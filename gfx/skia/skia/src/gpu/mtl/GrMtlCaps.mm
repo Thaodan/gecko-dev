@@ -506,6 +506,7 @@ size_t GrMtlCaps::GetFormatIndex(MTLPixelFormat pixelFormat) {
         }
     }
     SK_ABORT("Invalid MTLPixelFormat");
+    SkUNREACHABLE;
 }
 
 void GrMtlCaps::initFormatTable() {
@@ -1011,6 +1012,7 @@ GrBackendFormat GrMtlCaps::getBackendFormatFromCompressionType(
 #endif
     }
     SK_ABORT("Invalid compression type");
+    SkUNREACHABLE;
 }
 
 GrSwizzle GrMtlCaps::getTextureSwizzle(const GrBackendFormat& format, GrColorType colorType) const {

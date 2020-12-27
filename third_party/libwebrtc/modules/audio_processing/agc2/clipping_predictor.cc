@@ -378,6 +378,7 @@ std::unique_ptr<ClippingPredictor> CreateClippingPredictor(
           /*adaptive_step_estimation=*/false);
   }
   RTC_DCHECK_NOTREACHED();
+  return nullptr;
 }
 
 }  // namespace webrtc

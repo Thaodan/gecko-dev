@@ -39,7 +39,9 @@ static dawn::LoadOp to_dawn_load_op(GrLoadOp loadOp) {
             return dawn::LoadOp::Clear;
         default:
             SK_ABORT("Invalid LoadOp");
+	    SkUNREACHABLE;
     }
+    SkUNREACHABLE;
 }
 
 GrDawnOpsRenderPass::GrDawnOpsRenderPass(GrDawnGpu* gpu, GrRenderTarget* rt, GrSurfaceOrigin origin,

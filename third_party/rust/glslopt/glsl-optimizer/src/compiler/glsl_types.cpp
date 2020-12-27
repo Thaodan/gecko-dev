@@ -460,6 +460,7 @@ const glsl_type *glsl_type::get_bare_type() const
    }
 
    unreachable("Invalid base type");
+   return nullptr;
 }
 
 const glsl_type *glsl_type::get_float16_type() const
@@ -2016,6 +2017,7 @@ glsl_type::get_explicit_std140_type(bool row_major) const
       return type;
    } else {
       unreachable("Invalid type for UBO or SSBO");
+      return nullptr;
    }
 }
 
@@ -2374,6 +2376,7 @@ glsl_type::get_explicit_std430_type(bool row_major) const
       return type;
    } else {
       unreachable("Invalid type for SSBO");
+      return nullptr;
    }
 }
 
@@ -2448,6 +2451,7 @@ glsl_type::get_explicit_type_for_size_align(glsl_type_size_align_func type_info,
                                      this->matrix_columns, stride, false);
    } else {
       unreachable("Unhandled type.");
+      return nullptr;
    }
 }
 
@@ -2948,6 +2952,7 @@ glsl_get_sampler_dim_coordinate_components(enum glsl_sampler_dim dim)
       return 3;
    default:
       unreachable("Unknown sampler dim");
+      return -1;
    }
 }
 

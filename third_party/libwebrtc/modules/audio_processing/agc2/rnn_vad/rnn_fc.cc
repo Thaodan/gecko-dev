@@ -59,6 +59,8 @@ rtc::FunctionView<float(float)> GetActivationFunction(
     case ActivationFunction::kSigmoidApproximated:
       return ::rnnoise::SigmoidApproximated;
   }
+  // supposed to be never reached apparently therefore returning bogus
+  return ::rnnoise::TansigApproximated;
 }
 
 }  // namespace

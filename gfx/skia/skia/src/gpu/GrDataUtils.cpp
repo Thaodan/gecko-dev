@@ -128,6 +128,7 @@ size_t GrCompressedDataSize(SkImage::CompressionType type, int width, int height
             return numBlocks * sizeof(ETC1Block);
     }
     SK_ABORT("Unexpected compression type");
+    SkUNREACHABLE;
 }
 
 size_t GrCompressedRowBytes(SkImage::CompressionType type, int width) {
@@ -137,6 +138,7 @@ size_t GrCompressedRowBytes(SkImage::CompressionType type, int width) {
             return numBlocksWidth * sizeof(ETC1Block);
     }
     SK_ABORT("Unexpected compression type");
+    SkUNREACHABLE;
 }
 
 // Fill in 'dest' with ETC1 blocks derived from 'colorf'

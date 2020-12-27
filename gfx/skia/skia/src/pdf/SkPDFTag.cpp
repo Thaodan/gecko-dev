@@ -64,6 +64,7 @@ static const char* tag_name_from_type(SkPDF::DocumentStructureType type) {
         #undef M
     }
     SK_ABORT("bad tag");
+    SkUNREACHABLE;
 }
 
 struct SkPDFTagNode {

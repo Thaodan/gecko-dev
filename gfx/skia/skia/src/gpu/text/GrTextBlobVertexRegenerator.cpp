@@ -284,4 +284,5 @@ bool GrTextBlob::VertexRegenerator::regenerate(GrTextBlob::VertexRegenerator::Re
         return true;
     }
     SK_ABORT("Should not get here");
+    SkUNREACHABLE;
 }

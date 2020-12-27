@@ -63,6 +63,7 @@ public:
 
             default:
                 SK_ABORT("Unknown path transform type");
+		SkUNREACHABLE;
         }
     }
 

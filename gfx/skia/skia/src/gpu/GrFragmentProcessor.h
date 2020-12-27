@@ -375,6 +375,7 @@ protected:
 private:
     virtual SkPMColor4f constantOutputForConstantInput(const SkPMColor4f& /* inputColor */) const {
         SK_ABORT("Subclass must override this if advertising this optimization.");
+	SkUNREACHABLE;
     }
 
     /** Returns a new instance of the appropriate *GL* implementation class
