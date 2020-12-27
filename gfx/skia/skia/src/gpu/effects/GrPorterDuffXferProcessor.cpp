@@ -753,6 +753,7 @@ const GrXPFactory* GrPorterDuffXPFactory::Get(SkBlendMode blendMode) {
             return &gScreenPDXPF;
         default:
             SK_ABORT("Unexpected blend mode.");
+	    SkUNREACHABLE;
     }
 }
 

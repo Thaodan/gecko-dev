@@ -624,6 +624,7 @@ ir_expression::get_num_operands(ir_expression_operation op)
       return 4;
 
    unreachable("Could not calculate number of operands");
+   return -1;
 }
 
 #include "ir_expression_operation_strings.h"

@@ -239,6 +239,7 @@ incremented_before_terminator(ir_loop *loop, ir_variable *var,
    }
 
    unreachable("Unable to find induction variable");
+   return false;
 }
 
 /**

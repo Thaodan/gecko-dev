@@ -112,6 +112,7 @@ bool GrPixelConfigToMTLFormat(GrPixelConfig config, MTLPixelFormat* format) {
             return true;
     }
     SK_ABORT("Unexpected config");
+    SkUNREACHABLE;
 }
 
 MTLTextureDescriptor* GrGetMTLTextureDescriptor(id<MTLTexture> mtlTexture) {

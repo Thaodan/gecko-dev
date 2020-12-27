@@ -58,6 +58,7 @@ void main() {
                 return color * input;
         }
         SK_ABORT("Unexpected mode");
+	SkUNREACHABLE;
     }
 }
 

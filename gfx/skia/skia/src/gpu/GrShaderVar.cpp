@@ -18,6 +18,7 @@ static const char* type_modifier_string(GrShaderVar::TypeModifier t) {
         case GrShaderVar::kUniform_TypeModifier: return "uniform";
     }
     SK_ABORT("Unknown shader variable type modifier.");
+    SkUNREACHABLE;
 }
 
 void GrShaderVar::setIOType(GrIOType ioType) {
@@ -32,6 +33,7 @@ void GrShaderVar::setIOType(GrIOType ioType) {
             return;
     }
     SK_ABORT("Unknown io type.");
+    SkUNREACHABLE;
 }
 
 void GrShaderVar::appendDecl(const GrShaderCaps* shaderCaps, SkString* out) const {

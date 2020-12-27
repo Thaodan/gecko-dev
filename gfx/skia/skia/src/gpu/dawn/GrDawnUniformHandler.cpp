@@ -95,6 +95,7 @@ uint32_t grsltype_to_alignment_mask(GrSLType type) {
             break;
     }
     SK_ABORT("Unexpected type");
+    SkUNREACHABLE;
 }
 
 static inline uint32_t grsltype_to_size(GrSLType type) {
@@ -173,6 +174,7 @@ static inline uint32_t grsltype_to_size(GrSLType type) {
             break;
     }
     SK_ABORT("Unexpected type");
+    SkUNREACHABLE;
 }
 
 uint32_t get_ubo_offset(uint32_t* currentOffset,

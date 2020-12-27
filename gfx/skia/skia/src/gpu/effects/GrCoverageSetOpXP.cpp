@@ -204,6 +204,7 @@ const GrXPFactory* GrCoverageSetOpXPFactory::Get(SkRegion::Op regionOp, bool inv
     }
 #undef _CONSTEXPR_
     SK_ABORT("Unknown region op.");
+    SkUNREACHABLE;
 }
 
 sk_sp<const GrXferProcessor> GrCoverageSetOpXPFactory::makeXferProcessor(

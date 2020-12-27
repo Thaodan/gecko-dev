@@ -108,6 +108,7 @@ static FormatCompatibilityClass format_compatibility_class(VkFormat format) {
 
         default:
             SK_ABORT("Unsupported VkFormat");
+	    SkUNREACHABLE;
     }
 }
 
@@ -1656,6 +1657,7 @@ GrBackendFormat GrVkCaps::getBackendFormatFromCompressionType(
             return GrBackendFormat::MakeVk(VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK);
     }
     SK_ABORT("Invalid compression type");
+    SkUNREACHABLE;
 }
 
 GrSwizzle GrVkCaps::getTextureSwizzle(const GrBackendFormat& format, GrColorType colorType) const {

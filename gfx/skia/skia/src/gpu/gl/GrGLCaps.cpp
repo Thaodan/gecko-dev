@@ -4159,6 +4159,7 @@ GrBackendFormat GrGLCaps::getBackendFormatFromCompressionType(
             return GrBackendFormat::MakeGL(GR_GL_COMPRESSED_ETC1_RGB8, GR_GL_TEXTURE_2D);
     }
     SK_ABORT("Invalid compression type");
+    SkUNREACHABLE;
 }
 
 GrSwizzle GrGLCaps::getTextureSwizzle(const GrBackendFormat& format, GrColorType colorType) const {

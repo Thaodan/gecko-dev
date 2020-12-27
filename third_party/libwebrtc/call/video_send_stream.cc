@@ -30,6 +30,7 @@ const char* StreamTypeToString(VideoSendStream::StreamStats::StreamType type) {
       return "flexfec";
   }
   RTC_CHECK_NOTREACHED();
+  return "";
 }
 
 }  // namespace

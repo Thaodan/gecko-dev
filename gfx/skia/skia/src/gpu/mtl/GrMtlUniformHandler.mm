@@ -90,6 +90,7 @@ static uint32_t grsltype_to_alignment_mask(GrSLType type) {
             break;
     }
     SK_ABORT("Unexpected type");
+    SkUNREACHABLE;
 }
 
 /** Returns the size in bytes taken up in Metal buffers for GrSLTypes. */
@@ -172,6 +173,7 @@ static inline uint32_t grsltype_to_mtl_size(GrSLType type) {
             break;
     }
     SK_ABORT("Unexpected type");
+    SkUNREACHABLE;
 }
 
 // Given the current offset into the ubo, calculate the offset for the uniform we're trying to add

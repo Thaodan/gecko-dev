@@ -38,6 +38,7 @@ static inline MTLSamplerAddressMode wrap_mode_to_mtl_sampler_address(
             }
     }
     SK_ABORT("Unknown wrap mode.");
+    SkUNREACHABLE;
 }
 
 GrMtlSampler* GrMtlSampler::Create(const GrMtlGpu* gpu, const GrSamplerState& samplerState) {

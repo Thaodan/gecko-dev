@@ -162,6 +162,7 @@ packed_simd = { package = "packed_simd_2", git = "https://github.com/hsivonen/pa
 midir = { git = "https://github.com/mozilla/midir.git", rev = "519e651241e867af3391db08f9ae6400bc023e18" }
 # warp 0.3.3 + https://github.com/seanmonstar/warp/pull/1007
 warp = { git = "https://github.com/glandium/warp", rev = "4af45fae95bc98b0eba1ef0db17e1dac471bb23d" }
+glslopt = { path = "third_party/rust/glslopt/" }
 
 cssparser = { git = "https://github.com/servo/rust-cssparser", rev = "45bc47e2bcb846f1efb5aea156be5fe7d18624bf" }
 
