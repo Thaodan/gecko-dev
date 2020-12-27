@@ -41,6 +41,7 @@ std::unique_ptr<VideoRtpDepacketizer> CreateVideoRtpDepacketizer(
       return std::make_unique<VideoRtpDepacketizerGeneric>();
   }
   RTC_CHECK_NOTREACHED();
+  return nullptr;
 }
 
 }  // namespace webrtc
