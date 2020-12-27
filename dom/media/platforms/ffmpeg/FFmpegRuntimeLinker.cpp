@@ -41,6 +41,8 @@ static const char* sLibs[] = {
 #else
   "libavcodec.so.60",
   "libavcodec.so.59",
+  "libavcodec.so.58.134",
+  "libavcodec.so.58.91",
   "libavcodec.so.58",
   "libavcodec-ffmpeg.so.58",
   "libavcodec-ffmpeg.so.57",
