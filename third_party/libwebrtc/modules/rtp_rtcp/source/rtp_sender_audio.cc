@@ -46,6 +46,7 @@ namespace {
       return "audio_cn";
   }
   RTC_CHECK_NOTREACHED();
+  return "";
 }
 
 }  // namespace
