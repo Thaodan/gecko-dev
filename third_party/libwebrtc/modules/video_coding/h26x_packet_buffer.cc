@@ -71,6 +71,7 @@ bool BeginningOfIdr(const H26xPacketBuffer::Packet& packet) {
       return contains_idr_nalu && IsFirstPacketOfFragment(h264_header);
     }
   }
+  return false;
 }
 
 bool HasSps(const H26xPacketBuffer::Packet& packet) {

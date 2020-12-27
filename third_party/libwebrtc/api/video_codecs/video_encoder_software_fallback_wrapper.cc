@@ -191,6 +191,7 @@ class VideoEncoderSoftwareFallbackWrapper final : public VideoEncoder {
         return fallback_encoder_.get();
     }
     RTC_CHECK_NOTREACHED();
+    return nullptr;
   }
 
   // Updates encoder with last observed parameters, such as callbacks, rates,
@@ -386,6 +387,7 @@ int32_t VideoEncoderSoftwareFallbackWrapper::Encode(
       return fallback_encoder_->Encode(frame, frame_types);
   }
   RTC_CHECK_NOTREACHED();
+  return WEBRTC_VIDEO_CODEC_ERROR;
 }
 
 int32_t VideoEncoderSoftwareFallbackWrapper::EncodeWithMainEncoder(

@@ -799,6 +799,7 @@ sk_sp<SkSpecialImage> cpu_blur(const skif::Context& ctx,
             return maker;
         }
         SK_ABORT("Sigma is out of range.");
+        SkUNREACHABLE;
     };
 
     PassMaker* makerX = makeMaker(sigma.width());
