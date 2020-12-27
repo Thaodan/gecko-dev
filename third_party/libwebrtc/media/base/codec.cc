@@ -200,6 +200,7 @@ bool Codec::Matches(const Codec& codec,
       case Type::kVideo:
         return IsSameCodecSpecific(name, params, codec.name, codec.params);
     }
+    return false; // unreached
   };
 
   return matches_id && matches_type_specific();

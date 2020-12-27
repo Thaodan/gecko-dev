@@ -277,6 +277,7 @@ std::unique_ptr<Expression> Compiler::convertIdentifier(Position pos, std::strin
         }
         default:
             SK_ABORT("unsupported symbol type %d\n", (int) result->kind());
+            SkUNREACHABLE;
     }
 }
 

@@ -815,6 +815,7 @@ sk_sp<SkSpecialImage> cpu_blur(
             return maker;
         }
         SK_ABORT("Sigma is out of range.");
+        SkUNREACHABLE;
     };
 
     PassMaker* makerX = makeMaker(sigma.x());
