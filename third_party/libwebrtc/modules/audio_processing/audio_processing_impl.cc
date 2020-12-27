@@ -99,6 +99,7 @@ GainControl::Mode Agc1ConfigModeToInterfaceMode(
       return GainControl::kFixedDigital;
   }
   RTC_CHECK_NOTREACHED();
+  return GainControl::kAdaptiveAnalog;
 }
 
 bool MinimizeProcessingForUnusedOutput() {
@@ -166,7 +167,7 @@ int AudioFormatValidityToErrorCode(AudioFormatValidity validity) {
     case AudioFormatValidity::kInvalidChannelCount:
       return AudioProcessing::kBadNumberChannelsError;
   }
-  RTC_DCHECK(false);
+  RTC_CHECK_NOTREACHED();
 }
 
 // Returns an AudioProcessing::Error together with the best possible option for
@@ -2421,6 +2422,7 @@ void AudioProcessingImpl::InitializeNoiseSuppressor() {
               return NsConfig::SuppressionLevel::k21dB;
           }
           RTC_CHECK_NOTREACHED();
+	  return NsConfig::SuppressionLevel::k6dB;
         };
 
     NsConfig cfg;
