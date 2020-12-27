@@ -159,6 +159,7 @@ static inline GrPrimitiveType SkVertexModeToGrPrimitiveType(SkVertices::VertexMo
             break;
     }
     SK_ABORT("Invalid mode");
+    SkUNREACHABLE;
 }
 
 //////////////////////////////////////////////////////////////////////////////

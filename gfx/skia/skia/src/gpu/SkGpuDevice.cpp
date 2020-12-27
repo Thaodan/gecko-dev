@@ -283,6 +283,7 @@ static inline GrPrimitiveType point_mode_to_primitive_type(SkCanvas::PointMode m
             return GrPrimitiveType::kLineStrip;
     }
     SK_ABORT("Unexpected mode");
+    SkUNREACHABLE;
 }
 
 void SkGpuDevice::drawPoints(SkCanvas::PointMode mode,

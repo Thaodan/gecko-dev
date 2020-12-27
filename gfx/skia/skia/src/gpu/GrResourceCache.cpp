@@ -40,6 +40,7 @@ GrScratchKey::ResourceType GrScratchKey::GenerateResourceType() {
     int32_t type = nextType++;
     if (type > SkTo<int32_t>(UINT16_MAX)) {
         SK_ABORT("Too many Resource Types");
+	SkUNREACHABLE;
     }
 
     return static_cast<ResourceType>(type);
@@ -51,6 +52,7 @@ GrUniqueKey::Domain GrUniqueKey::GenerateDomain() {
     int32_t domain = nextDomain++;
     if (domain > SkTo<int32_t>(UINT16_MAX)) {
         SK_ABORT("Too many GrUniqueKey Domains");
+	SkUNREACHABLE;
     }
 
     return static_cast<Domain>(domain);

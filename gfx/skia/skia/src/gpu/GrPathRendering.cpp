@@ -19,6 +19,7 @@ const GrUserStencilSettings& GrPathRendering::GetStencilPassSettings(FillType fi
     switch (fill) {
         default:
             SK_ABORT("Unexpected path fill.");
+	    SkUNREACHABLE;
         case GrPathRendering::kWinding_FillType: {
             constexpr static GrUserStencilSettings kWindingStencilPass(
                 GrUserStencilSettings::StaticInit<

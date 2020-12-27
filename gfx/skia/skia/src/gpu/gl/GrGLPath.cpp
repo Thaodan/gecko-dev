@@ -197,6 +197,7 @@ static GrPathRendering::FillType convert_skpath_filltype(SkPath::FillType fill) 
     switch (fill) {
         default:
             SK_ABORT("Incomplete Switch\n");
+	    SkUNREACHABLE;
         case SkPath::kWinding_FillType:
         case SkPath::kInverseWinding_FillType:
             return GrPathRendering::kWinding_FillType;

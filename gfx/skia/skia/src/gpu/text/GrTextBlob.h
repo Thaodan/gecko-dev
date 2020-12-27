@@ -125,6 +125,7 @@ public:
 
     void* operator new(size_t) {
         SK_ABORT("All blobs are created by placement new.");
+	SkUNREACHABLE;
     }
 
     void* operator new(size_t, void* p) { return p; }

@@ -540,6 +540,7 @@ static inline GrSLType GrSLCombinedSamplerTypeForTextureType(GrTextureType type)
         default:
             SK_ABORT("Unexpected texture type");
     }
+    SkUNREACHABLE;
 }
 
 /** Rectangle and external textures only support the clamp wrap mode and do not support
@@ -556,6 +557,7 @@ static inline bool GrTextureTypeHasRestrictedSampling(GrTextureType type) {
         default:
             SK_ABORT("Unexpected texture type");
     }
+    SkUNREACHABLE;
 }
 
 static constexpr bool GrSLTypeIsCombinedSamplerType(GrSLType type) {
@@ -858,6 +860,7 @@ static inline size_t GrCompressedFormatDataSize(SkImage::CompressionType compres
     }
 
     SK_ABORT("Invalid pixel config");
+    SkUNREACHABLE;
 }
 
 /**

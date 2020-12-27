@@ -74,6 +74,7 @@ static inline int grsltype_to_location_size(GrSLType type) {
              return 1;
     }
     SK_ABORT("Unexpected type");
+    SkUNREACHABLE;
 }
 
 static void finalize_helper(GrVkVaryingHandler::VarArray& vars) {

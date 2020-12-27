@@ -160,6 +160,7 @@ midir = { git = "https://github.com/mozilla/midir.git", rev = "519e651241e867af3
 minidump-writer = { git = "https://github.com/rust-minidump/minidump-writer.git", rev = "7d76616d27b9dc87fe3a94639b8b4f947d52a6aa" }
 # warp 0.3.3 + https://github.com/seanmonstar/warp/pull/1007
 warp = { git = "https://github.com/glandium/warp", rev = "4af45fae95bc98b0eba1ef0db17e1dac471bb23d" }
+glslopt = { path = "third_party/rust/glslopt/" }
 
 # application-services overrides to make updating them all simpler.
 interrupt-support = { git = "https://github.com/mozilla/application-services", rev = "51b984ecb21ba00694c3eee33364123a064a7cbb" }

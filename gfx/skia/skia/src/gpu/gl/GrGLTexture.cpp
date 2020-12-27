@@ -25,6 +25,7 @@ GrTextureType GrGLTexture::TextureTypeFromTarget(GrGLenum target) {
             return GrTextureType::kExternal;
     }
     SK_ABORT("Unexpected texture target");
+    SkUNREACHABLE;
 }
 
 static inline GrGLenum target_from_texture_type(GrTextureType type) {
@@ -37,8 +38,10 @@ static inline GrGLenum target_from_texture_type(GrTextureType type) {
             return GR_GL_TEXTURE_EXTERNAL;
         default:
             SK_ABORT("Unexpected texture target");
+	    SkUNREACHABLE;
     }
     SK_ABORT("Unexpected texture type");
+    SkUNREACHABLE;
 }
 
 // Because this class is virtually derived from GrSurface we must explicitly call its constructor.
