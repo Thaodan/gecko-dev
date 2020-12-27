@@ -185,6 +185,7 @@ _mesa_shader_stage_from_subroutine_uniform(GLenum subuniform)
       return MESA_SHADER_TESS_EVAL;
    }
    unreachable("not reached");
+   return MESA_SHADER_NONE;
 }
 
 static inline gl_shader_stage
@@ -205,6 +206,7 @@ _mesa_shader_stage_from_subroutine(GLenum subroutine)
       return MESA_SHADER_TESS_EVAL;
    }
    unreachable("not reached");
+   return MESA_SHADER_NONE;
 }
 
 static inline GLenum
@@ -230,6 +232,7 @@ _mesa_shader_stage_to_subroutine(gl_shader_stage stage)
       break;
    }
    unreachable("not reached");
+   return GL_VERTEX_PROGRAM_ARB;
 }
 
 static inline GLenum
@@ -253,6 +256,7 @@ _mesa_shader_stage_to_subroutine_uniform(gl_shader_stage stage)
       break;
    }
    unreachable("not reached");
+   return GL_VERTEX_PROGRAM_ARB;
 }
 
 extern bool

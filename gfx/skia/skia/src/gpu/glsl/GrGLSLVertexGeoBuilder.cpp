@@ -51,6 +51,7 @@ static const char* input_type_name(GrGLSLGeometryBuilder::InputType in) {
         case InputType::kTriangles: return "triangles";
     }
     SK_ABORT("invalid input type");
+    SkUNREACHABLE;
 }
 
 static const char* output_type_name(GrGLSLGeometryBuilder::OutputType out) {
@@ -61,6 +62,7 @@ static const char* output_type_name(GrGLSLGeometryBuilder::OutputType out) {
         case OutputType::kTriangleStrip: return "triangle_strip";
     }
     SK_ABORT("invalid output type");
+    SkUNREACHABLE;
 }
 
 void GrGLSLGeometryBuilder::configure(InputType inputType, OutputType outputType, int maxVertices,

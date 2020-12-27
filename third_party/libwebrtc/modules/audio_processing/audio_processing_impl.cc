@@ -120,6 +120,7 @@ GainControl::Mode Agc1ConfigModeToInterfaceMode(
       return GainControl::kFixedDigital;
   }
   RTC_CHECK_NOTREACHED();
+  return GainControl::kAdaptiveAnalog;
 }
 
 bool MinimizeProcessingForUnusedOutput() {
@@ -1985,6 +1986,7 @@ void AudioProcessingImpl::InitializeNoiseSuppressor() {
               return NsConfig::SuppressionLevel::k21dB;
           }
           RTC_CHECK_NOTREACHED();
+	  return NsConfig::SuppressionLevel::k6dB;
         };
 
     NsConfig cfg;

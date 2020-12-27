@@ -196,6 +196,7 @@ static int gl_target_to_binding_index(GrGLenum target) {
             return 2;
     }
     SK_ABORT("Unexpected GL texture target.");
+    SkUNREACHABLE;
 }
 
 GrGpuResource::UniqueID GrGLGpu::TextureUnitBindings::boundID(GrGLenum target) const {
@@ -234,6 +235,7 @@ static GrGLenum filter_to_gl_mag_filter(GrSamplerState::Filter filter) {
         case GrSamplerState::Filter::kMipMap:  return GR_GL_LINEAR;
     }
     SK_ABORT("Unknown filter");
+    SkUNREACHABLE;
 }
 
 static GrGLenum filter_to_gl_min_filter(GrSamplerState::Filter filter) {
@@ -243,6 +245,7 @@ static GrGLenum filter_to_gl_min_filter(GrSamplerState::Filter filter) {
         case GrSamplerState::Filter::kMipMap:  return GR_GL_LINEAR_MIPMAP_LINEAR;
     }
     SK_ABORT("Unknown filter");
+    SkUNREACHABLE;
 }
 
 static inline GrGLenum wrap_mode_to_gl_wrap(GrSamplerState::WrapMode wrapMode,
@@ -257,6 +260,7 @@ static inline GrGLenum wrap_mode_to_gl_wrap(GrSamplerState::WrapMode wrapMode,
             return GR_GL_CLAMP_TO_BORDER;
     }
     SK_ABORT("Unknown wrap mode");
+    SkUNREACHABLE;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1107,7 +1111,7 @@ static bool renderbuffer_storage_msaa(const GrGLContext& ctx,
             break;
         case GrGLCaps::kNone_MSFBOType:
             SK_ABORT("Shouldn't be here if we don't support multisampled renderbuffers.");
-            break;
+	    SkUNREACHABLE;
     }
     return (GR_GL_NO_ERROR == CHECK_ALLOC_ERROR(ctx.interface()));
 }
@@ -2275,9 +2279,10 @@ static GrGLenum gr_primitive_type_to_gl_mode(GrPrimitiveType primitiveType) {
             return GR_GL_LINE_STRIP;
         case GrPrimitiveType::kPath:
             SK_ABORT("non-mesh-based GrPrimitiveType");
-            return 0;
+            SkUNREACHABLE;
     }
     SK_ABORT("invalid GrPrimitiveType");
+    SkUNREACHABLE;
 }
 
 void GrGLGpu::sendMeshToGpu(GrPrimitiveType primitiveType, const GrBuffer* vertexBuffer,
@@ -4006,7 +4011,8 @@ int GrGLGpu::TextureToCopyProgramIdx(GrTexture* texture) {
         case kTextureExternalSampler_GrSLType:
             return 2;
         default:
-            SK_ABORT("Unexpected samper type");
+            SK_ABORT("Unexpected sampler type");
+	    SkUNREACHABLE;
     }
 }
 

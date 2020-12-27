@@ -89,6 +89,7 @@ static uint32_t grsltype_to_alignment_mask(GrSLType type) {
             break;
     }
     SK_ABORT("Unexpected type");
+    SkUNREACHABLE;
 }
 
 /** Returns the size in bytes taken up in vulkanbuffers for GrSLTypes. */
@@ -172,6 +173,7 @@ static inline uint32_t grsltype_to_vk_size(GrSLType type) {
             break;
     }
     SK_ABORT("Unexpected type");
+    SkUNREACHABLE;
 }
 
 

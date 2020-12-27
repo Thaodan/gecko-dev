@@ -23,6 +23,7 @@ static inline VkSamplerAddressMode wrap_mode_to_vk_sampler_address(
             return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
     }
     SK_ABORT("Unknown wrap mode.");
+    SkUNREACHABLE;
 }
 
 GrVkSampler* GrVkSampler::Create(GrVkGpu* gpu, const GrSamplerState& samplerState,

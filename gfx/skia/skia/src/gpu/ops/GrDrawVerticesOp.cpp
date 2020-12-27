@@ -610,6 +610,7 @@ static uint32_t seed_vertices(GrPrimitiveType type) {
             return 0;
     }
     SK_ABORT("Incomplete switch\n");
+    SkUNREACHABLE;
 }
 
 static uint32_t primitive_vertices(GrPrimitiveType type) {
@@ -627,6 +628,7 @@ static uint32_t primitive_vertices(GrPrimitiveType type) {
             return 0;
     }
     SK_ABORT("Incomplete switch\n");
+    SkUNREACHABLE;
 }
 
 static SkPoint random_point(SkRandom* random, SkScalar min, SkScalar max) {

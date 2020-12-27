@@ -41,6 +41,7 @@ public:
                 return color * input;
         }
         SK_ABORT("Unexpected mode");
+	SkUNREACHABLE;
     }
     static std::unique_ptr<GrFragmentProcessor> Make(SkPMColor4f color, InputMode mode) {
         return std::unique_ptr<GrFragmentProcessor>(new GrConstColorProcessor(color, mode));

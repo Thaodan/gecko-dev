@@ -1701,6 +1701,7 @@ static SkImageFilterLight* create_random_light(SkRandom* random) {
         }
         default:
             SK_ABORT("Unexpected value.");
+	    SkUNREACHABLE;
     }
 }
 

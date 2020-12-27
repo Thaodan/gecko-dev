@@ -144,6 +144,7 @@ static GrTextureDomain::Mode to_texture_domain_mode(SkTileMode tileMode) {
             return GrTextureDomain::kRepeat_Mode;
         default:
             SK_ABORT("Unsupported tile mode.");
+	    SkUNREACHABLE;
     }
 }
 #endif

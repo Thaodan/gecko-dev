@@ -183,6 +183,7 @@ static GrSamplerState::WrapMode tile_mode_to_wrap_mode(const SkTileMode tileMode
             return GrSamplerState::WrapMode::kClampToBorder;
     }
     SK_ABORT("Unknown tile mode.");
+    SkUNREACHABLE;
 }
 
 std::unique_ptr<GrFragmentProcessor> SkImageShader::asFragmentProcessor(

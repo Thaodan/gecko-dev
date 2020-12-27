@@ -149,6 +149,7 @@ struct SpotVerticesFactory {
                 return false;
         }
         SK_ABORT("Uninitialized occluder type?");
+	SkUNREACHABLE;
     }
 
     sk_sp<SkVertices> makeVertices(const SkPath& path, const SkMatrix& ctm,
