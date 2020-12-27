@@ -131,6 +131,7 @@ const char* CodecTypeToPayloadString(VideoCodecType type) {
       return kPayloadNameH265;
   }
   RTC_CHECK_NOTREACHED();
+  return "";
 }
 
 VideoCodecType PayloadStringToCodecType(const std::string& name) {
