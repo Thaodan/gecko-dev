@@ -30,9 +30,14 @@
  * Adapted from https://github.com/freebsd/freebsd-src/search?q=__double_t
  */
 
+#ifdef __i386__
+typedef long double __double_t;
+typedef long double __float_t;
+#else
 typedef double      __double_t;
-typedef __double_t  double_t;
 typedef float       __float_t;
+#endif
+typedef __double_t  double_t;
 
 /*
  * The original fdlibm code used statements like:
