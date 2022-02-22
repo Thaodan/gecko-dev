@@ -7,6 +7,7 @@
 #include "RenderCompositorSWGL.h"
 
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/gfx/Swizzle.h"
 #include "mozilla/widget/CompositorWidget.h"
 
 #ifdef MOZ_WIDGET_GTK
@@ -241,6 +242,13 @@ void RenderCompositorSWGL::CommitMappedBuffer(bool aDirty) {
     mDT->ReleaseBits(mMappedData);
   }
   mDT->Flush();
+
+#if MOZ_BIG_ENDIAN()
+  // One swizzle to rule them all.
+  gfx::SwizzleData(mMappedData, mMappedStride, gfx::SurfaceFormat::B8G8R8A8,
+                   mMappedData, mMappedStride, gfx::SurfaceFormat::A8R8G8B8,
+                   mDT->GetSize());
+#endif
 
   // Done with the DT. Hand it back to the widget and clear out any trace of it.
   mWidget->EndRemoteDrawingInRegion(mDT, mDirtyRegion);
