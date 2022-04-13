@@ -138,6 +138,7 @@ Patch77:    0077-sailfishos-qt-Use-minimal-QPA-in-media-decoder-proc.patch
 Patch78:    0078-sailfishos-history-Use-Android-BFCache-sizing-on-Qt.patch
 Patch80:    0080-Keep-camera-frame-alive-while-wrapping-planar-buffer.patch
 Patch81:    0081-Restore-native-colour-scheme-fallback-for-ambience-m.patch
+Patch99:    0001-Allow-Eme-for-arm-and-Aarch64.patch
 
 BuildRequires:  rust >= 1.90.0
 BuildRequires:  rust-std-static >= 1.90.0
@@ -496,6 +497,8 @@ echo "%{milestone}" > "$PWD/config/milestone.txt"
 %if %{system_libwebp}
   echo "ac_add_options --with-system-webp" >> "${MOZCONFIG}"
 %endif
+
+echo "ac_add_options --enable-eme=widevine" >> "${MOZCONFIG}"
 
 %ifarch %ix86
 echo "ac_add_options --disable-startupcache" >> "$MOZCONFIG"
