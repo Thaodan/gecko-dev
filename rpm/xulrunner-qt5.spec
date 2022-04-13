@@ -112,7 +112,7 @@ Patch54:    0054-sailfishos-gecko-Make-fullscreen-enabling-work-as-us.patch
 Patch55:    0055-sailfishos-gecko-Embedlite-doesn-t-have-prompter-imp.patch
 Patch56:    0056-sailfishos-gecko-Use-libcontentaction-for-custom-sch.patch
 Patch57:    0057-sailfishos-gecko-Handle-temporary-directory-similarl.patch
-Patch58:    0058-sailfishos-gecko-Disable-loading-heavier-extensions.patch
+#Patch58:    0058-sailfishos-gecko-Disable-loading-heavier-extensions.patch
 Patch59:    0059-sailfishos-gecko-Delete-startupCache-if-it-s-stale.patch
 Patch60:    0060-sailfishos-gecko-Skip-invalid-WatchId-in-geolocation.patch
 Patch61:    0061-sailfishos-locale-Get-12-24h-timeformat-setting-from.patch
@@ -153,6 +153,7 @@ Patch95:    0095-Bug-1750760-Open-libavcodec.so.59-library-and-bind-f.patch
 Patch96:    0096-Bug-1750760-Update-audio-and-video-decoders-to-ffmpe.patch
 Patch97:    0097-Bug-1761471-FFmpeg-5.0-Get-frame-color-range-and-col.patch
 Patch98:    0098-Bug-1758948-FFmpeg-Use-AVFrame-pts-instead-of-AVFram.patch
+Patch99:    0001-Allow-Eme-for-arm-and-Aarch64.patch
 
 #Patch20:    0020-sailfishos-loginmanager-Adapt-LoginManager-to-EmbedL.patch
 #Patch51:    0051-sailfishos-gecko-Remove-android-define-from-logging.patch
@@ -437,6 +438,8 @@ echo "%{milestone}" > "$PWD/config/milestone.txt"
 %if %{system_libwebp}
   echo "ac_add_options --with-system-webp" >> "${MOZCONFIG}"
 %endif
+
+echo "ac_add_options --enable-eme=widevine" >> "${MOZCONFIG}"
 
 %ifarch %ix86
 echo "ac_add_options --disable-startupcache" >> "$MOZCONFIG"
