@@ -845,7 +845,7 @@ def eme_choices(target):
     if (
         target.kernel in ("WINNT", "Linux")
         and target.os != "Android"
-        and target.cpu in ("x86", "x86_64")
+        and target.cpu in ("x86", "x86_64", "arm", "aarch64")
     ):
         return ("widevine",)
     if target.kernel == "WINNT" and target.cpu == "aarch64":
