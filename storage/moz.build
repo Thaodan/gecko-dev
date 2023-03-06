@@ -103,8 +103,13 @@ if not CONFIG["MOZ_AVOID_DISK_REMNANT_ON_CLOSE"]:
 
 LOCAL_INCLUDES += [
     "/dom/base",
-    "/third_party/sqlite3/src",
 ]
+
+if not CONFIG["MOZ_SYSTEM_SQLITE"]:
+    LOCAL_INCLUDES += ["/third_party/sqlite3/src"]
+else:
+    CXXFLAGS += CONFIG["MOZ_SYSTEM_SQLITE_FCLAGS"]
+    OS_LIBS += CONFIG["MOZ_SYSTEM_SQLITE_LIBS"]
 
 if CONFIG["MOZ_FOLD_LIBS"]:
     DEFINES["MOZ_FOLD_LIBS"] = True

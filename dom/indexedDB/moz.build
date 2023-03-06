@@ -120,9 +120,15 @@ LOCAL_INCLUDES += [
     "/dom/base",
     "/dom/storage",
     "/ipc/glue",
-    "/third_party/sqlite3/src",
     "/xpcom/build",
 ]
+
+if not CONFIG["MOZ_SYSTEM_SQLITE"]:
+    LOCAL_INCLUDES += ["/third_party/sqlite3/src"]
+else:
+    CXXFLAGS += CONFIG["MOZ_SYSTEM_SQLITE_FCLAGS"]
+    OS_LIBS += CONFIG["MOZ_SYSTEM_SQLITE_LIBS"]
+
 
 XPIDL_SOURCES += [
     "nsIIDBPermissionsRequest.idl",
