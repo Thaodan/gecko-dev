@@ -380,6 +380,20 @@ sndio = pkg_check_modules("MOZ_SNDIO", "sndio", when="--enable-sndio")
 
 set_config("MOZ_SNDIO", depends_if(sndio)(lambda _: True))
 
+# SQLite
+# ==============================================================
+option('--with-system-sqlite', help="Use system sqlite (located with pkgconfig")
+
+@depends('--with-system-sqlite')
+def check_for_sqlite(value):
+    return bool(value)
+
+system_sqlite = pkg_check_modules('SQLITE', 'sqlite3',
+                                     when=check_for_sqlite)
+
+set_config('MOZ_SYSTEM_SQLITE', depends_if(system_sqlite)(lambda _: True))
+set_define('MOZ_SYSTEM_SQLITE', depends_if(system_sqlite)(lambda _: True))
+
 # Javascript engine
 # ==============================================================
 include("../js/moz.configure")
