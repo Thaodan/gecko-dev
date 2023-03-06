@@ -95,6 +95,7 @@ DEFINES['SQLITE_OMIT_BUILTIN_TEST'] = True
 # Connection::initializeInternal in storage/mozStorageConnection.cpp assumes
 # these values when deciding whether encrypted databases need to set
 # PRAGMA temp_store themselves; keep the two in sync.
+# System Sqlite is managed through a PRAGMA instead.
 if CONFIG['OS_TARGET'] == 'Android':
     # On Android there's no tmp partition, so always use a MEMORY temp store.
     DEFINES['SQLITE_TEMP_STORE'] = 3
@@ -104,6 +105,7 @@ elif CONFIG['HAVE_64BIT_BUILD']:
 
 # Change the default temp files prefix, to easily distinguish files we created
 # vs files created by other Sqlite instances in the system.
+# This has obviously no effect in case of System Sqlite.
 DEFINES['SQLITE_TEMP_FILE_PREFIX'] = '"mz_etilqs_"'
 
 # Enabling sqlite math functions

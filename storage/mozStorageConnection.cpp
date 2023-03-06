@@ -1431,6 +1431,10 @@ nsresult Connection::initializeInternal() {
       return convertResultCode(srv);
     }
   }
+
+#if defined(MOZ_MEMORY_TEMP_STORE_PRAGMA)
+  (void)ExecuteSimpleSQL("PRAGMA temp_store = 2;"_ns);
+#endif
 #endif
 
   // Register our built-in SQL functions.
