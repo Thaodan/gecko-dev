@@ -58,7 +58,7 @@ __m256i CmpEq256(__m256i a, __m256i b) {
   return _mm256_cmpeq_epi64(a, b);
 }
 
-#  if defined(__GNUC__) && !defined(__clang__)
+#  if 0
 
 // See the comment in SIMD.cpp over Load32BitsIntoXMM. This is just adapted
 // from that workaround. Testing this, it also yields the correct instructions
