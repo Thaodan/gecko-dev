@@ -1046,6 +1046,10 @@ nsresult Connection::initializeInternal() {
     return convertResultCode(srv);
   }
 
+#if defined(MOZ_MEMORY_TEMP_STORE_PRAGMA)
+  (void)ExecuteSimpleSQL("PRAGMA temp_store = 2;"_ns);
+#endif
+
   // Register our built-in SQL functions.
   srv = registerFunctions(mDBConn);
   if (srv != SQLITE_OK) {
