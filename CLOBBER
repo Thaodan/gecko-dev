@@ -24,3 +24,5 @@
 
 
 Merge day clobber 2023-06-26
+
+Modified build files in third_party/libwebrtc - Bug 1830461 - Allow to build webrtc on Linux/riscv64. r=#webrtc-reviewers
