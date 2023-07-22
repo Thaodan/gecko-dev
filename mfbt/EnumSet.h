@@ -326,7 +326,7 @@ class EnumSet {
     }
   }
 
-  static constexpr size_t kMaxBits = MaxBits();
+  static constexpr size_t kMaxBits = EnumSet().MaxBits();
 
   Serialized mBitField;
 
