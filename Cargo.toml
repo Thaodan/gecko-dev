@@ -224,3 +224,8 @@ uniffi_bindgen = "=0.24.3"
 uniffi_build = "=0.24.3"
 uniffi_macros = "=0.24.3"
 weedle2 = "=4.0.0"
+
+# Package code v0.1.4 uses code "that will be rejected by a future version of Rust"
+# Shut up such messages for now to make the build succeed
+[future-incompat-report]
+frequency = "never"
