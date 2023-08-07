@@ -87,7 +87,7 @@ def pgo_flags(compiler, profdata, target_is_windows):
         return namespace(
             gen_cflags=["-fprofile-generate"],
             gen_ldflags=["-fprofile-generate"],
-            use_cflags=[profile_use, "-fprofile-correction", "-Wcoverage-mismatch"],
+            use_cflags=[profile_use, "-fprofile-correction", "-Wno-coverage-mismatch"],
             use_ldflags=[profile_use],
         )
 
