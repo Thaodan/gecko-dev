@@ -16,6 +16,8 @@
 #include "nsISupportsPrimitives.h"
 #include "nsIGSettingsService.h"
 #include "nsReadableUtils.h"
+#include "nsPrintfCString.h"
+#include "nsKDEUtils.h"
 
 using namespace mozilla;
 
@@ -39,6 +41,8 @@ class nsUnixSystemProxySettings final : public nsISystemProxySettings {
                                  nsACString& aResult);
   nsresult SetProxyResultFromGSettings(const char* aKeyBase, const char* aType,
                                        nsACString& aResult);
+  nsresult GetProxyFromKDE(const nsACString& aScheme, const nsACString& aHost,
+                           PRInt32 aPort, nsACString& aResult);
 };
 
 NS_IMPL_ISUPPORTS(nsUnixSystemProxySettings, nsISystemProxySettings)
@@ -397,12 +401,37 @@ nsresult nsUnixSystemProxySettings::GetProxyForURI(const nsACString& aSpec,
                                                    const nsACString& aHost,
                                                    const int32_t aPort,
                                                    nsACString& aResult) {
+  if (nsKDEUtils::kdeSupport())
+    return GetProxyFromKDE(aScheme, aHost, aPort, aResult);
+
   if (mProxySettings) {
     nsresult rv = GetProxyFromGSettings(aScheme, aHost, aPort, aResult);
     if (NS_SUCCEEDED(rv)) return rv;
   }
 
   return GetProxyFromEnvironment(aScheme, aHost, aPort, aResult);
+}
+
+nsresult nsUnixSystemProxySettings::GetProxyFromKDE(const nsACString& aScheme,
+                                                    const nsACString& aHost,
+                                                    PRInt32 aPort,
+                                                    nsACString& aResult) {
+  nsAutoCString url;
+  url = aScheme;
+  url += "://";
+  url += aHost;
+  if (aPort >= 0) {
+    url += ":";
+    url += nsPrintfCString("%d", aPort);
+  }
+  nsTArray<nsCString> command;
+  command.AppendElement("GETPROXY"_ns);
+  command.AppendElement(url);
+  nsTArray<nsCString> result;
+  if (!nsKDEUtils::command(command, &result) || result.Length() != 1)
+    return NS_ERROR_FAILURE;
+  aResult = result[0];
+  return NS_OK;
 }
 
 NS_IMPL_COMPONENT_FACTORY(nsUnixSystemProxySettings) {

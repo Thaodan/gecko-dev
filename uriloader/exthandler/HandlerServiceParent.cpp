@@ -18,7 +18,7 @@
 #include "nsComponentManagerUtils.h"
 #include "nsServiceManagerUtils.h"
 #ifdef MOZ_WIDGET_GTK
-#  include "unix/nsGNOMERegistry.h"
+#  include "unix/nsCommonRegistry.h"
 #endif
 
 using mozilla::dom::ContentHandlerService;
@@ -310,8 +310,8 @@ mozilla::ipc::IPCResult HandlerServiceParent::RecvExistsForProtocolOS(
   }
 #ifdef MOZ_WIDGET_GTK
   // Check the GNOME registry for a protocol handler
-  *aHandlerExists =
-      nsGNOMERegistry::HandlerExists(PromiseFlatCString(aProtocolScheme).get());
+  *aHandlerExists = nsCommonRegistry::HandlerExists(
+      PromiseFlatCString(aProtocolScheme).get());
 #else
   *aHandlerExists = false;
 #endif
