@@ -297,6 +297,13 @@ var gMainPane = {
       }, backoffTimes[this._backoffIndex]);
     }
 
+    var env = Components.classes["@mozilla.org/process/environment;1"]
+      .getService(Components.interfaces.nsIEnvironment);
+    var kde_session = 0;
+    if (env.get('KDE_FULL_SESSION') == "true") {
+      kde_session = 1;
+    }
+
     this.initBrowserContainers();
     this.buildContentProcessCountMenuList();
 
@@ -1750,6 +1757,17 @@ var gMainPane = {
       }
       try {
         shellSvc.setDefaultBrowser(false);
+        if (kde_session == 1) {
+          var shellObj = Components.classes["@mozilla.org/file/local;1"]
+            .createInstance(Components.interfaces.nsILocalFile);
+          shellObj.initWithPath("/usr/bin/kwriteconfig");
+          var process = Components.classes["@mozilla.org/process/util;1"]
+            .createInstance(Components.interfaces.nsIProcess);
+          process.init(shellObj);
+          var args = ["--file", "kdeglobals", "--group", "General", "--key",
+              "BrowserApplication", "firefox"];
+          process.run(false, args, args.length);
+        }
       } catch (ex) {
         console.error(ex);
         return;
