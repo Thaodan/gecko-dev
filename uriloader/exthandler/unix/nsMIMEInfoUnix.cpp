@@ -5,16 +5,19 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsMIMEInfoUnix.h"
-#include "nsGNOMERegistry.h"
+#include "nsCommonRegistry.h"
 #include "nsIGIOService.h"
 #include "nsNetCID.h"
 #include "nsIIOService.h"
 #ifdef MOZ_ENABLE_DBUS
 #  include "nsDBusHandlerApp.h"
 #endif
+#if defined(XP_UNIX) && !defined(XP_MACOSX)
+#  include "nsKDEUtils.h"
+#endif
 
 nsresult nsMIMEInfoUnix::LoadUriInternal(nsIURI* aURI) {
-  return nsGNOMERegistry::LoadURL(aURI);
+  return nsCommonRegistry::LoadURL(aURI);
 }
 
 NS_IMETHODIMP
@@ -29,15 +32,15 @@ nsMIMEInfoUnix::GetHasDefaultHandler(bool* _retval) {
   *_retval = false;
 
   if (mClass == eProtocolInfo) {
-    *_retval = nsGNOMERegistry::HandlerExists(mSchemeOrType.get());
+    *_retval = nsCommonRegistry::HandlerExists(mSchemeOrType.get());
   } else {
     RefPtr<nsMIMEInfoBase> mimeInfo =
-        nsGNOMERegistry::GetFromType(mSchemeOrType);
+        nsCommonRegistry::GetFromType(mSchemeOrType);
     if (!mimeInfo) {
       nsAutoCString ext;
       nsresult rv = GetPrimaryExtension(ext);
       if (NS_SUCCEEDED(rv)) {
-        mimeInfo = nsGNOMERegistry::GetFromExtension(ext);
+        mimeInfo = nsCommonRegistry::GetFromExtension(ext);
       }
     }
     if (mimeInfo) *_retval = true;
@@ -58,6 +61,21 @@ nsresult nsMIMEInfoUnix::LaunchDefaultWithFile(nsIFile* aFile) {
 
   nsAutoCString nativePath;
   aFile->GetNativePath(nativePath);
+
+  if (nsKDEUtils::kdeSupport()) {
+    bool supports;
+    if (NS_SUCCEEDED(GetHasDefaultHandler(&supports)) && supports) {
+      nsTArray<nsCString> command;
+      command.AppendElement("OPEN"_ns);
+      command.AppendElement(nativePath);
+      command.AppendElement("MIMETYPE"_ns);
+      command.AppendElement(mSchemeOrType);
+      if (nsKDEUtils::command(command)) return NS_OK;
+    }
+    if (!GetDefaultApplication()) return NS_ERROR_FILE_NOT_FOUND;
+
+    return LaunchWithIProcess(GetDefaultApplication(), nativePath);
+  }
 
   nsCOMPtr<nsIGIOService> giovfs = do_GetService(NS_GIOSERVICE_CONTRACTID);
   if (!giovfs) {

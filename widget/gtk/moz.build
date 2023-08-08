@@ -161,6 +161,7 @@ LOCAL_INCLUDES += [
     "/layout/xul",
     "/other-licenses/atk-1.0",
     "/third_party/cups/include",
+    "/toolkit/xre",
     "/widget",
     "/widget/headless",
     "/widget/x11",
