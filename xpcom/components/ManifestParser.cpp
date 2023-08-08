@@ -43,6 +43,7 @@
 #include "nsIScriptError.h"
 #include "nsIXULAppInfo.h"
 #include "nsIXULRuntime.h"
+#include "nsKDEUtils.h"
 
 using namespace mozilla;
 
@@ -394,6 +395,7 @@ void ParseManifest(NSLocationType aType, FileLocation& aFile, char* aBuf,
   constexpr auto kOs = u"os"_ns;
   constexpr auto kOsVersion = u"osversion"_ns;
   constexpr auto kABI = u"abi"_ns;
+  constexpr auto kDesktop = u"desktop"_ns;
   constexpr auto kProcess = u"process"_ns;
 #if defined(MOZ_WIDGET_ANDROID)
   constexpr auto kTablet = u"tablet"_ns;
@@ -453,6 +455,7 @@ void ParseManifest(NSLocationType aType, FileLocation& aFile, char* aBuf,
   }
 
   nsAutoString osVersion;
+  nsAutoString desktop;
 #if defined(XP_WIN)
 #  pragma warning(push)
 #  pragma warning(disable : 4996)  // VC12+ deprecates GetVersionEx
@@ -461,14 +464,17 @@ void ParseManifest(NSLocationType aType, FileLocation& aFile, char* aBuf,
     nsTextFormatter::ssprintf(osVersion, u"%ld.%ld", info.dwMajorVersion,
                               info.dwMinorVersion);
   }
+  desktop = u"win"_ns;
 #  pragma warning(pop)
 #elif defined(MOZ_WIDGET_COCOA)
   SInt32 majorVersion = nsCocoaFeatures::macOSVersionMajor();
   SInt32 minorVersion = nsCocoaFeatures::macOSVersionMinor();
   nsTextFormatter::ssprintf(osVersion, u"%ld.%ld", majorVersion, minorVersion);
+  desktop = u"macosx"_ns);
 #elif defined(MOZ_WIDGET_GTK)
   nsTextFormatter::ssprintf(osVersion, u"%ld.%ld", gtk_major_version,
                             gtk_minor_version);
+  desktop = nsKDEUtils::kdeSession() ? u"kde"_ns : u"gnome"_ns;
 #elif defined(MOZ_WIDGET_ANDROID)
   bool isTablet = false;
   if (jni::IsAvailable()) {
@@ -476,6 +482,7 @@ void ParseManifest(NSLocationType aType, FileLocation& aFile, char* aBuf,
     osVersion.Assign(release->ToString());
     isTablet = java::GeckoAppShell::IsTablet();
   }
+  desktop = u"android"_ns;
 #endif
 
   if (XRE_IsContentProcess()) {
@@ -576,6 +583,7 @@ void ParseManifest(NSLocationType aType, FileLocation& aFile, char* aBuf,
                                     : eUnspecified;
 #endif
     int flags = 0;
+    TriState stDesktop = eUnspecified;
 
     while ((token = nsCRT::strtok(whitespace, kWhitespace, &whitespace)) &&
            ok) {
@@ -585,6 +593,7 @@ void ParseManifest(NSLocationType aType, FileLocation& aFile, char* aBuf,
       if (CheckStringFlag(kApplication, wtoken, appID, stApp) ||
           CheckOsFlag(kOs, wtoken, osTarget, stOs) ||
           CheckStringFlag(kABI, wtoken, abi, stABI) ||
+          CheckStringFlag(kDesktop, wtoken, desktop, stDesktop) ||
           CheckStringFlag(kProcess, wtoken, process, stProcess) ||
           CheckVersionFlag(kOsVersion, wtoken, osVersion, stOsVersion) ||
           CheckVersionFlag(kAppVersion, wtoken, appVersion, stAppVersion) ||
@@ -644,6 +653,7 @@ void ParseManifest(NSLocationType aType, FileLocation& aFile, char* aBuf,
 
     if (!ok || stApp == eBad || stAppVersion == eBad ||
         stGeckoVersion == eBad || stOs == eBad || stOsVersion == eBad ||
+        stDesktop == eBad ||
 #ifdef MOZ_WIDGET_ANDROID
         stTablet == eBad ||
 #endif
