@@ -97,6 +97,7 @@
 #ifdef MOZ_BACKGROUNDTASKS
 #  include "mozilla/BackgroundTasks.h"
 #endif
+#include "nsKDEUtils.h"
 
 #ifdef DEBUG
 #  include <map>
