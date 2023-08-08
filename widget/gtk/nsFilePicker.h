@@ -76,6 +76,12 @@ class nsFilePicker : public nsBaseFilePicker {
  private:
   static nsIFile* mPrevDisplayDirectory;
 
+  bool kdeRunning();
+  bool getKdeRunning();
+  NS_IMETHODIMP kdeFileDialog(nsIFilePicker::ResultCode* aReturn);
+  NS_IMETHODIMP kdeAppsDialog(nsIFilePicker::ResultCode* aReturn);
+  nsCString kdeMakeFilter(int index);
+
   void* GtkFileChooserNew(const gchar* title, GtkWindow* parent,
                           GtkFileChooserAction action,
                           const gchar* accept_label);

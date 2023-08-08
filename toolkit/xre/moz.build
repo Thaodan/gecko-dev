@@ -96,7 +96,9 @@ elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "uikit":
         "UIKitDirProvider.mm",
     ]
 elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
+    EXPORTS += ['nsKDEUtils.h']
     UNIFIED_SOURCES += [
+        "nsKDEUtils.cpp",
         "nsNativeAppSupportUnix.cpp",
     ]
     CXXFLAGS += CONFIG["MOZ_X11_SM_CFLAGS"]

@@ -72,6 +72,7 @@ LOCAL_INCLUDES += [
     "/js/xpconnect/src",
     "/layout/build",
     "/modules/libjar",
+    "/toolkit/xre",
 ]
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":

@@ -51,6 +51,7 @@
 
 #ifdef MOZ_WIDGET_GTK
 #  include "nsIGIOService.h"
+#  include "nsKDEUtils.h"
 #endif
 
 #ifdef MOZ_WIDGET_COCOA
@@ -2210,10 +2211,18 @@ nsLocalFile::Reveal() {
   }
 
 #ifdef MOZ_WIDGET_GTK
+  nsAutoCString url;
   nsCOMPtr<nsIGIOService> giovfs = do_GetService(NS_GIOSERVICE_CONTRACTID);
-  if (!giovfs) {
-    return NS_ERROR_FAILURE;
+  url = mPath;
+  if (nsKDEUtils::kdeSupport()) {
+    nsTArray<nsCString> command;
+    command.AppendElement("REVEAL"_ns);
+    command.AppendElement(mPath);
+    return nsKDEUtils::command(command) ? NS_OK : NS_ERROR_FAILURE;
   }
+
+  if (!giovfs) return NS_ERROR_FAILURE;
+
   return giovfs->RevealFile(this);
 #elif defined(MOZ_WIDGET_COCOA)
   CFURLRef url;
@@ -2235,6 +2244,13 @@ nsLocalFile::Launch() {
   }
 
 #ifdef MOZ_WIDGET_GTK
+  if (nsKDEUtils::kdeSupport()) {
+    nsTArray<nsCString> command;
+    command.AppendElement("OPEN"_ns);
+    command.AppendElement(mPath);
+    return nsKDEUtils::command(command) ? NS_OK : NS_ERROR_FAILURE;
+  }
+
   nsCOMPtr<nsIGIOService> giovfs = do_GetService(NS_GIOSERVICE_CONTRACTID);
   if (!giovfs) {
     return NS_ERROR_FAILURE;
