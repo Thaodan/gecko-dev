@@ -36,6 +36,8 @@ elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
 
     SOURCES += [
         "nsGNOMEShellService.cpp",
+        "nsKDEShellService.cpp",
+        "nsUnixShellService.cpp",
     ]
     if CONFIG["MOZ_ENABLE_DBUS"]:
         SOURCES += [
