@@ -5,6 +5,7 @@
 
 #include <dlfcn.h>
 #include <gtk/gtk.h>
+#include <gdk/gdkx.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -30,6 +31,8 @@
 #include "WidgetUtilsGtk.h"
 
 #include "nsFilePicker.h"
+#include "nsKDEUtils.h"
+#include "nsURLHelper.h"
 
 #undef LOG
 #ifdef MOZ_LOGGING
@@ -310,7 +313,8 @@ NS_IMETHODIMP
 nsFilePicker::AppendFilter(const nsAString& aTitle, const nsAString& aFilter) {
   if (aFilter.EqualsLiteral("..apps")) {
     // No platform specific thing we can do here, really....
-    return NS_OK;
+    // Unless it's KDE.
+    if (mMode != modeOpen || !nsKDEUtils::kdeSupport()) return NS_OK;
   }
 
   nsAutoCString filter, name;
@@ -419,6 +423,31 @@ NS_IMETHODIMP
 nsFilePicker::Open(nsIFilePickerShownCallback* aCallback) {
   // Can't show two dialogs concurrently with the same filepicker
   if (mRunning) return NS_ERROR_NOT_AVAILABLE;
+
+  // KDE file picker is not handled via callback
+  if (nsKDEUtils::kdeSupport()) {
+    mCallback = aCallback;
+    mRunning = true;
+    NS_ADDREF_THIS();
+    g_idle_add(
+        [](gpointer data) -> gboolean {
+          nsFilePicker* queuedPicker = (nsFilePicker*)data;
+          nsIFilePicker::ResultCode result;
+          queuedPicker->kdeFileDialog(&result);
+          if (queuedPicker->mCallback) {
+            queuedPicker->mCallback->Done(result);
+            queuedPicker->mCallback = nullptr;
+          } else {
+            queuedPicker->mResult = result;
+          }
+          queuedPicker->mRunning = false;
+          NS_RELEASE(queuedPicker);
+          return G_SOURCE_REMOVE;
+        },
+        this);
+
+    return NS_OK;
+  }
 
   NS_ConvertUTF16toUTF8 title(mTitle);
 
@@ -699,6 +728,205 @@ void nsFilePicker::Done(void* file_chooser, gint response) {
     mResult = result;
   }
   NS_RELEASE_THIS();
+}
+
+nsCString nsFilePicker::kdeMakeFilter(int index) {
+  nsCString buf = mFilters[index];
+  for (PRUint32 i = 0; i < buf.Length(); ++i)
+    if (buf[i] == ';')  // KDE separates just using spaces
+      buf.SetCharAt(' ', i);
+  if (!mFilterNames[index].IsEmpty()) {
+    buf += "|";
+    buf += mFilterNames[index].get();
+  }
+  return buf;
+}
+
+static PRInt32 windowToXid(nsIWidget* widget) {
+  GtkWindow* parent_widget =
+      GTK_WINDOW(widget->GetNativeData(NS_NATIVE_SHELLWIDGET));
+  GdkWindow* gdk_window =
+      gtk_widget_get_window(gtk_widget_get_toplevel(GTK_WIDGET(parent_widget)));
+  return GDK_WINDOW_XID(gdk_window);
+}
+
+NS_IMETHODIMP nsFilePicker::kdeFileDialog(nsIFilePicker::ResultCode* aReturn) {
+  NS_ENSURE_ARG_POINTER(aReturn);
+
+  if (mMode == modeOpen && mFilters.Length() == 1 &&
+      mFilters[0].EqualsLiteral("..apps"))
+    return kdeAppsDialog(aReturn);
+
+  nsCString title;
+  title.Adopt(ToNewUTF8String(mTitle));
+
+  const char* arg = NULL;
+  if (mAllowURLs) {
+    switch (mMode) {
+      case nsIFilePicker::modeOpen:
+      case nsIFilePicker::modeOpenMultiple:
+        arg = "GETOPENURL";
+        break;
+      case nsIFilePicker::modeSave:
+        arg = "GETSAVEURL";
+        break;
+      case nsIFilePicker::modeGetFolder:
+        arg = "GETDIRECTORYURL";
+        break;
+    }
+  } else {
+    switch (mMode) {
+      case nsIFilePicker::modeOpen:
+      case nsIFilePicker::modeOpenMultiple:
+        arg = "GETOPENFILENAME";
+        break;
+      case nsIFilePicker::modeSave:
+        arg = "GETSAVEFILENAME";
+        break;
+      case nsIFilePicker::modeGetFolder:
+        arg = "GETDIRECTORYFILENAME";
+        break;
+    }
+  }
+
+  nsAutoCString directory;
+  if (mDisplayDirectory) {
+    mDisplayDirectory->GetNativePath(directory);
+  } else if (mPrevDisplayDirectory) {
+    mPrevDisplayDirectory->GetNativePath(directory);
+  }
+
+  nsAutoCString startdir;
+  if (!directory.IsEmpty()) {
+    startdir = directory;
+  }
+  if (mMode == nsIFilePicker::modeSave) {
+    if (!startdir.IsEmpty()) {
+      startdir += "/";
+      startdir += ToNewUTF8String(mDefault);
+    } else
+      startdir = ToNewUTF8String(mDefault);
+  }
+
+  nsAutoCString filters;
+  PRInt32 count = mFilters.Length();
+  if (count == 0)  // just in case
+    filters = "*";
+  else {
+    filters = kdeMakeFilter(0);
+    for (PRInt32 i = 1; i < count; ++i) {
+      filters += "\n";
+      filters += kdeMakeFilter(i);
+    }
+  }
+
+  nsTArray<nsCString> command;
+  command.AppendElement(nsAutoCString(arg));
+  command.AppendElement(startdir);
+  if (mMode != nsIFilePicker::modeGetFolder) {
+    command.AppendElement(filters);
+    nsAutoCString selected;
+    selected.AppendInt(mSelectedType);
+    command.AppendElement(selected);
+  }
+  command.AppendElement(title);
+  if (mMode == nsIFilePicker::modeOpenMultiple)
+    command.AppendElement("MULTIPLE"_ns);
+  if (PRInt32 xid = windowToXid(mParentWidget)) {
+    command.AppendElement("PARENT"_ns);
+    nsAutoCString parent;
+    parent.AppendInt(xid);
+    command.AppendElement(parent);
+  }
+
+  nsTArray<nsCString> output;
+  if (nsKDEUtils::commandBlockUi(
+          command,
+          GTK_WINDOW(mParentWidget->GetNativeData(NS_NATIVE_SHELLWIDGET)),
+          &output)) {
+    *aReturn = nsIFilePicker::returnOK;
+    mFiles.Clear();
+    if (mMode != nsIFilePicker::modeGetFolder) {
+      mSelectedType = atoi(output[0].get());
+      output.RemoveElementAt(0);
+    }
+    if (mMode == nsIFilePicker::modeOpenMultiple) {
+      mFileURL.Truncate();
+      PRUint32 count = output.Length();
+      for (PRUint32 i = 0; i < count; ++i) {
+        nsCOMPtr<nsIFile> localfile;
+        nsresult rv = NS_NewNativeLocalFile(output[i], PR_FALSE,
+                                            getter_AddRefs(localfile));
+        if (NS_SUCCEEDED(rv)) mFiles.AppendObject(localfile);
+      }
+    } else {
+      if (output.Length() == 0)
+        mFileURL = nsCString();
+      else if (mAllowURLs)
+        mFileURL = output[0];
+      else  // GetFile() actually requires it to be url even for local files :-/
+      {
+        nsCOMPtr<nsIFile> localfile;
+        nsresult rv = NS_NewNativeLocalFile(output[0], PR_FALSE,
+                                            getter_AddRefs(localfile));
+        if (NS_SUCCEEDED(rv))
+          rv = net_GetURLSpecFromActualFile(localfile, mFileURL);
+      }
+    }
+    // Remember last used directory.
+    nsCOMPtr<nsIFile> file;
+    GetFile(getter_AddRefs(file));
+    if (file) {
+      nsCOMPtr<nsIFile> dir;
+      file->GetParent(getter_AddRefs(dir));
+      nsCOMPtr<nsIFile> localDir(dir);
+      if (localDir) {
+        localDir.swap(mPrevDisplayDirectory);
+      }
+    }
+    if (mMode == nsIFilePicker::modeSave) {
+      nsCOMPtr<nsIFile> file;
+      GetFile(getter_AddRefs(file));
+      if (file) {
+        bool exists = false;
+        file->Exists(&exists);
+        if (exists)  // TODO do overwrite check in the helper app
+          *aReturn = nsIFilePicker::returnReplace;
+      }
+    }
+  } else {
+    *aReturn = nsIFilePicker::returnCancel;
+  }
+  return NS_OK;
+}
+
+NS_IMETHODIMP nsFilePicker::kdeAppsDialog(nsIFilePicker::ResultCode* aReturn) {
+  NS_ENSURE_ARG_POINTER(aReturn);
+
+  nsCString title;
+  title.Adopt(ToNewUTF8String(mTitle));
+
+  nsTArray<nsCString> command;
+  command.AppendElement("APPSDIALOG"_ns);
+  command.AppendElement(title);
+  if (PRInt32 xid = windowToXid(mParentWidget)) {
+    command.AppendElement("PARENT"_ns);
+    nsAutoCString parent;
+    parent.AppendInt(xid);
+    command.AppendElement(parent);
+  }
+
+  nsTArray<nsCString> output;
+  if (nsKDEUtils::commandBlockUi(
+          command,
+          GTK_WINDOW(mParentWidget->GetNativeData(NS_NATIVE_SHELLWIDGET)),
+          &output)) {
+    *aReturn = nsIFilePicker::returnOK;
+    mFileURL = output.Length() > 0 ? output[0] : nsCString();
+  } else {
+    *aReturn = nsIFilePicker::returnCancel;
+  }
+  return NS_OK;
 }
 
 // All below functions available as of GTK 3.20+
