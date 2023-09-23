@@ -221,11 +221,13 @@ export class DownloadLastDir {
 
   /**
    * Pre-processor to extract a domain name to be used with the content-prefs
-   * service. This specially handles data and file URIs so that the download
-   * dirs are recalled in a more consistent way:
+   * service. This specially handles data, file and blob URIs so that the
+   * download dirs are recalled in a more consistent way:
    *  - all file:/// URIs share the same folder
    *  - data: URIs share a folder per mime-type. If a mime-type is not
    *    specified text/plain is assumed.
+   *  - blob: blob URIs are tested for http/https and the blob protocol
+   *    is stripped.
    * In any other case the original URL is returned as a string and ContentPrefs
    * will do its usual parsing.
    *
@@ -234,12 +236,23 @@ export class DownloadLastDir {
    */
   #cpsGroupFromURL(url) {
     if (typeof url == "string") {
+      if (url.startsWith("blob:http://") || url.startsWith("blob:https://")) {
+        url = url.replace("blob:", "");
+      }
       url = new URL(url);
     } else if (url instanceof Ci.nsIURI) {
       url = URL.fromURI(url);
     }
     if (!URL.isInstance(url)) {
       return url;
+    }
+    if (url.protocol == "blob:") {
+      if (
+        url.href.startsWith("blob:http://") ||
+        url.href.startsWith("blob:https://")
+      ) {
+        return url.href.replace("blob:", "");
+      }
     }
     if (url.protocol == "data:") {
       return url.href.match(/^data:[^;,]*/i)[0].replace(/:$/, ":text/plain");
