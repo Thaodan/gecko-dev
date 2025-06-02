@@ -54,6 +54,7 @@ ScreenCastPortal::CaptureSourceType ScreenCastPortal::ToCaptureSourceType(
     case CaptureType::kAnyScreenContent:
       return ScreenCastPortal::CaptureSourceType::kAnyScreenContent;
   }
+  RTC_CHECK_NOTREACHED();
 }
 
 ScreenCastPortal::ScreenCastPortal(CaptureType type, PortalNotifier* notifier)

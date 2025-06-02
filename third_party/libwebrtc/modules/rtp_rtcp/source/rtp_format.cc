@@ -73,6 +73,10 @@ std::unique_ptr<RtpPacketizer> RtpPacketizer::Create(
                                                     rtp_video_header);
     }
   }
+  // The following serves only to shut up the compiler about
+  //    "control reaches end of non-void function":
+  return std::make_unique<RtpPacketizerGeneric>(payload, limits,
+					        rtp_video_header);
 }
 
 std::vector<int> RtpPacketizer::SplitAboutEqually(

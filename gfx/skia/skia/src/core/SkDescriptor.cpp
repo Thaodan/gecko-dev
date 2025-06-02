@@ -26,6 +26,7 @@ std::unique_ptr<SkDescriptor> SkDescriptor::Alloc(size_t length) {
 void SkDescriptor::operator delete(void* p) { ::operator delete(p); }
 void* SkDescriptor::operator new(size_t) {
     SK_ABORT("Descriptors are created with placement new.");
+    SkUNREACHABLE;
 }
 
 void SkDescriptor::flatten(SkWriteBuffer& buffer) const {

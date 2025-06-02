@@ -2799,6 +2799,7 @@ bool MayContainStrings(ClassSetOperandType type, RegExpTree* operand) {
       if (operand->IsClassRanges()) return false;
       return operand->AsClassSetExpression()->may_contain_strings();
   }
+  UNREACHABLE();
 }
 
 }  // namespace

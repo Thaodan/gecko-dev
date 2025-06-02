@@ -113,6 +113,7 @@ uint16_t To2BitEcn(EcnMarking ecn_marking) {
     case EcnMarking::kCe:
       return kEcnCe << 13;
   }
+  return 0; // should not be reached
 }
 
 EcnMarking ToEcnMarking(uint16_t receive_info) {
