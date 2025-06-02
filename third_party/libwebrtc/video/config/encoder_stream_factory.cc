@@ -124,6 +124,7 @@ int GetDefaultMaxQp(VideoCodecType codec_type) {
     case kVideoCodecAV1:
       return kDefaultVideoMaxQpAv1;
   }
+  return kDefaultVideoMaxQpAv1; // fake return for hopefully not reached
 }
 
 Resolution NormalizeResolution(const Resolution& resolution,

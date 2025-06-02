@@ -45,6 +45,7 @@ std::string AdapterTypeToString(AdapterType type) {
       RTC_DCHECK_NOTREACHED() << "Invalid type " << type;
       return std::string();
   }
+  return "NOTREACHED";
 }
 
 absl::string_view NetworkSliceToString(NetworkSlice network_slice) {
@@ -54,6 +55,7 @@ absl::string_view NetworkSliceToString(NetworkSlice network_slice) {
     case NetworkSlice::UNIFIED_COMMUNICATIONS:
       return "UNIFIED_COMMUNICATIONS";
   }
+  return "NEUTRAL"; //unreached
 }
 
 }  // namespace webrtc
