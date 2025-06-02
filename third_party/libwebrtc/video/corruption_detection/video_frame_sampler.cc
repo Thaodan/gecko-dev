@@ -43,6 +43,7 @@ class I420FrameSampler : public VideoFrameSampler {
         RTC_DCHECK_LT(row, height(ChannelType::V));
         return buffer_->DataV()[row * buffer_->StrideV() + col];
     }
+    return 0;
   }
 
   int width(ChannelType channel) const override {
@@ -53,6 +54,7 @@ class I420FrameSampler : public VideoFrameSampler {
       case ChannelType::V:
         return buffer_->ChromaWidth();
     }
+    return 0;
   }
 
   int height(ChannelType channel) const override {
@@ -63,6 +65,7 @@ class I420FrameSampler : public VideoFrameSampler {
       case ChannelType::V:
         return buffer_->ChromaHeight();
     }
+    return 0;
   }
 
  private:
@@ -91,6 +94,7 @@ class NV12FrameSampler : public VideoFrameSampler {
         RTC_DCHECK_LT(row, height(ChannelType::V));
         return buffer_->DataUV()[row * buffer_->StrideUV() + (col * 2) + 1];
     }
+    return 0;
   }
 
   int width(ChannelType channel) const override {
@@ -101,6 +105,7 @@ class NV12FrameSampler : public VideoFrameSampler {
       case ChannelType::V:
         return buffer_->ChromaWidth();
     }
+    return 0;
   }
 
   int height(ChannelType channel) const override {
@@ -111,6 +116,7 @@ class NV12FrameSampler : public VideoFrameSampler {
       case ChannelType::V:
         return buffer_->ChromaHeight();
     }
+    return 0;
   }
 
  private:

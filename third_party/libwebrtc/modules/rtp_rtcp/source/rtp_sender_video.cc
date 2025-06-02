@@ -179,6 +179,7 @@ PacketizationFormat GetPacketizationFormat(const VideoCodecType codec_type,
     case kVideoCodecGeneric:
       return PacketizationFormat::kGeneric;
   }
+  return (PacketizationFormat) 0;
 }
 
 }  // namespace

@@ -51,6 +51,7 @@ TimeDelta GetBackoffDuration(const TimerOptions& options,
       return TimeDelta(std::min(duration, Timer::kMaxTimerDuration));
     }
   }
+  return base_duration; // fake nonreached
 }
 }  // namespace
 

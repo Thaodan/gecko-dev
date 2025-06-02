@@ -51,7 +51,7 @@ OperatorPrecedence Operator::getBinaryPrecedence() const {
         case Kind::BITWISEXOREQ: // fall through
         case Kind::BITWISEOREQ:  return OperatorPrecedence::kAssignment;
         case Kind::COMMA:        return OperatorPrecedence::kSequence;
-        default: SK_ABORT("unsupported binary operator");
+        default: SkUNREACHABLE;
     }
 }
 

@@ -128,6 +128,8 @@ const char* VideoFrameBufferTypeToString(VideoFrameBuffer::Type type) {
     default:
       RTC_DCHECK_NOTREACHED();
   }
+  RTC_DCHECK_NOTREACHED();
+  return nullptr;
 }
 
 int I420BufferInterface::ChromaWidth() const {

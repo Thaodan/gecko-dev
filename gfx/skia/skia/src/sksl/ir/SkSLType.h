@@ -474,6 +474,7 @@ public:
 
     virtual SkSpan<const Field> fields() const {
         SK_ABORT("Internal error: not a struct");
+        SkUNREACHABLE;
     }
 
     /**

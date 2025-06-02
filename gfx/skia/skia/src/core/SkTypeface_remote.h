@@ -108,12 +108,14 @@ public:
     bool isLogging() const {return fIsLogging;}
 
 protected:
-    int onGetUPEM() const override { SK_ABORT("Should never be called."); }
+    int onGetUPEM() const override { SK_ABORT("Should never be called."); SkUNREACHABLE; }
     std::unique_ptr<SkStreamAsset> onOpenStream(int* ttcIndex) const override {
         SK_ABORT("Should never be called.");
+        SkUNREACHABLE;
     }
     sk_sp<SkTypeface> onMakeClone(const SkFontArguments& args) const override {
         SK_ABORT("Should never be called.");
+        SkUNREACHABLE;
     }
     bool onGlyphMaskNeedsCurrentColor() const override {
         return fGlyphMaskNeedsCurrentColor;
@@ -121,9 +123,11 @@ protected:
     int onGetVariationDesignPosition(
                          SkSpan<SkFontArguments::VariationPosition::Coordinate>) const override {
         SK_ABORT("Should never be called.");
+        SkUNREACHABLE;
     }
     int onGetVariationDesignParameters(SkSpan<SkFontParameters::Variation::Axis>) const override {
         SK_ABORT("Should never be called.");
+        SkUNREACHABLE;
     }
     void onGetFamilyName(SkString* familyName) const override {
         // Used by SkStrikeCache::DumpMemoryStatistics.
@@ -131,15 +135,19 @@ protected:
     }
     bool onGetPostScriptName(SkString*) const override {
         SK_ABORT("Should never be called.");
+        SkUNREACHABLE;
     }
     SkTypeface::LocalizedStrings* onCreateFamilyNameIterator() const override {
         SK_ABORT("Should never be called.");
+        SkUNREACHABLE;
     }
     int onGetTableTags(SkSpan<SkFontTableTag>) const override {
         SK_ABORT("Should never be called.");
+        SkUNREACHABLE;
     }
     size_t onGetTableData(SkFontTableTag, size_t offset, size_t length, void* data) const override {
         SK_ABORT("Should never be called.");
+        SkUNREACHABLE;
     }
     std::unique_ptr<SkScalerContext> onCreateScalerContext(
         const SkScalerContextEffects& effects, const SkDescriptor* desc) const override
@@ -153,20 +161,25 @@ protected:
     }
     void onGetFontDescriptor(SkFontDescriptor*, bool*) const override {
         SK_ABORT("Should never be called.");
+        SkUNREACHABLE;
     }
     void getGlyphToUnicodeMap(SkSpan<SkUnichar>) const override {
         SK_ABORT("Should never be called.");
+        SkUNREACHABLE;
     }
 
     void getPostScriptGlyphNames(SkString*) const override {
         SK_ABORT("Should never be called.");
+        SkUNREACHABLE;
     }
 
     std::unique_ptr<SkAdvancedTypefaceMetrics> onGetAdvancedMetrics() const override {
         SK_ABORT("Should never be called.");
+        SkUNREACHABLE;
     }
     void onCharsToGlyphs(SkSpan<const SkUnichar>, SkSpan<SkGlyphID>) const override {
         SK_ABORT("Should never be called.");
+        SkUNREACHABLE;
     }
     int onCountGlyphs() const override {
         return this->glyphCount();
@@ -174,6 +187,7 @@ protected:
 
     void* onGetCTFontRef() const override {
         SK_ABORT("Should never be called.");
+        SkUNREACHABLE;
     }
 
 private:

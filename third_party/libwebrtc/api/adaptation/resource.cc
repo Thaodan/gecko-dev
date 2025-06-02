@@ -22,6 +22,7 @@ const char* ResourceUsageStateToString(ResourceUsageState usage_state) {
       return "kUnderuse";
   }
   RTC_CHECK_NOTREACHED();
+  return nullptr;
 }
 
 ResourceListener::~ResourceListener() {}

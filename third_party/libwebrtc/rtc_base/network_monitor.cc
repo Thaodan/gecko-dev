@@ -21,6 +21,7 @@ absl::string_view NetworkPreferenceToString(NetworkPreference preference) {
     case NetworkPreference::NOT_PREFERRED:
       return "NOT_PREFERRED";
   }
+  return "NEUTRAL"; //unreached
 }
 
 NetworkMonitorInterface::NetworkMonitorInterface() {}

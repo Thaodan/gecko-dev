@@ -88,6 +88,7 @@ const char* ToString(VideoAdaptationReason reason) {
     case VideoAdaptationReason::kCpu:
       return "cpu";
   }
+  return "shut-up-the-compiler";
 }
 
 }  // namespace
