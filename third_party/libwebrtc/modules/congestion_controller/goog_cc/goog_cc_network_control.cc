@@ -82,6 +82,8 @@ BandwidthLimitedCause GetBandwidthLimitedCause(LossBasedState loss_based_state,
     case LossBasedState::kDelayBasedEstimate:
       return BandwidthLimitedCause::kDelayBasedLimited;
   }
+  // just return something by default
+  return BandwidthLimitedCause::kLossLimitedBwe;
 }
 
 }  // namespace

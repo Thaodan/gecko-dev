@@ -75,6 +75,7 @@ class GoogCcScreamNetworkController : public NetworkControllerInterface {
       case Mode::kScreamAfterCe:
         return true;
     }
+    return false;
   }
   // Returns "ScreamV2" or "GoogCC" depending on currently used network
   // controller.

@@ -323,6 +323,7 @@ bool MatchesWithCodecRules(const Codec& left_codec, const Codec& right_codec) {
         return IsSameCodecSpecific(left_codec.name, left_codec.params,
                                    right_codec.name, right_codec.params);
     }
+    return false;
   };
 
   return matches_id && matches_type_specific();
