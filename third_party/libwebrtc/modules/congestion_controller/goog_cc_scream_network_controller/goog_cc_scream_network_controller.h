@@ -63,6 +63,7 @@ class GoogCcScreamNetworkController : public NetworkControllerInterface {
       case Mode::kScreamAfterCe:
         return true;
     }
+    return false;
   }
 
  private:
