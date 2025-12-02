@@ -416,6 +416,8 @@ rust-1.81.0:
 
 rust-nightly:
     description: Rust nightly source code
+    attributes:
+        cached_task: false
     fetch:
         type: git
         include-dot-git: true
