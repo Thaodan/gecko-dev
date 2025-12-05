@@ -422,7 +422,7 @@ rust-nightly:
         type: git
         include-dot-git: true
         repo: https://github.com/rust-lang/rust/
-        branch: master
+        branch: main
 
 wasi-sdk-11:
     description: wasi-sdk-11 source code
