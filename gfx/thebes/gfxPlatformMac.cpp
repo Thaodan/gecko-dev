@@ -755,7 +755,10 @@ class OSXVsyncSource final : public VsyncSource {
 
   virtual ~OSXVsyncSource() {
     MOZ_ASSERT(NS_IsMainThread());
-    Shutdown();
+    CGDisplayRemoveReconfigurationCallback(DisplayReconfigurationCallback,
+                                           this);
+    DisableVsync();
+    DestroyDisplayLink();
   }
 
   static void RetryCreateDisplayLinkAndEnableVsync(nsITimer* aTimer,
@@ -764,18 +767,8 @@ class OSXVsyncSource final : public VsyncSource {
     OSXVsyncSource* osxVsyncSource =
         static_cast<OSXVsyncSource*>(aOsxVsyncSource);
     MOZ_ASSERT(osxVsyncSource);
-
-    osxVsyncSource->DisableVsync();
-    osxVsyncSource->DestroyDisplayLink();
     osxVsyncSource->CreateDisplayLink();
     osxVsyncSource->EnableVsync();
-
-    if (!osxVsyncSource->IsVsyncEnabled()) {
-      gfxWarning() << "Display reconfiguration vsync has failed; giving up.";
-      osxVsyncSource->Shutdown();
-      gfxPlatform::ResetHardwareVsyncSource();
-      gfxPlatform::ReInitFrameRate(nullptr, nullptr);
-    }
   }
 
   void CreateDisplayLink() {
@@ -893,12 +886,8 @@ class OSXVsyncSource final : public VsyncSource {
 
   void Shutdown() override {
     MOZ_ASSERT(NS_IsMainThread());
-    if (mTimer) {
-      mTimer->Cancel();
-      mTimer = nullptr;
-    }
-    CGDisplayRemoveReconfigurationCallback(DisplayReconfigurationCallback,
-                                           this);
+    mTimer->Cancel();
+    mTimer = nullptr;
     DisableVsync();
     DestroyDisplayLink();
   }
