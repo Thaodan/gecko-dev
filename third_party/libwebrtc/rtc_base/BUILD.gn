@@ -1087,6 +1087,7 @@ rtc_library("socket") {
   ]
   deps = [
     ":buffer",
+    ":callback_list",
     ":checks",
     ":ip_address",
     ":net_helpers",
