@@ -51,6 +51,7 @@
 #include "api/units/timestamp.h"
 #include "audio/audio_level.h"
 #include "audio/channel_receive_frame_transformer_delegate.h"
+#include "audio/nack_tracker.h"
 #include "audio/utility/audio_frame_operations.h"
 #include "call/syncable.h"
 #include "logging/rtc_event_log/events/rtc_event_audio_playout.h"
@@ -219,7 +220,6 @@ class ChannelReceive : public ChannelReceiveInterface,
                      size_t packet_length,
                      const RTPHeader& header,
                      Timestamp receive_time) RTC_RUN_ON(worker_thread_checker_);
-  int ResendPackets(const uint16_t* sequence_numbers, int length);
   void UpdatePlayoutTimestamp(bool rtcp, Timestamp now)
       RTC_RUN_ON(worker_thread_checker_);
 
@@ -334,6 +334,9 @@ class ChannelReceive : public ChannelReceiveInterface,
       RTC_GUARDED_BY(worker_thread_checker_);
 
   std::map<int, SdpAudioFormat> payload_type_map_;
+
+  std::unique_ptr<NackTracker> nack_tracker_
+      RTC_GUARDED_BY(worker_thread_checker_);
 };
 
 void ChannelReceive::OnReceivedPayloadData(ArrayView<const uint8_t> payload,
@@ -359,10 +362,7 @@ void ChannelReceive::OnReceivedPayloadData(ArrayView<const uint8_t> payload,
   }
 
   // Push the incoming payload (parsed and ready for decoding) into NetEq.
-  if (payload.empty()) {
-    MutexLock lock(&neteq_mutex_);
-    neteq_->InsertEmptyPacket(rtpHeader);
-  } else {
+  if (!payload.empty()) {
     MutexLock lock(&neteq_mutex_);
     if (neteq_->InsertPacket(rtpHeader, payload,
                              RtpPacketInfo(rtpHeader, receive_time)) !=
@@ -374,17 +374,16 @@ void ChannelReceive::OnReceivedPayloadData(ArrayView<const uint8_t> payload,
     }
   }
 
-  TimeDelta round_trip_time = rtp_rtcp_->LastRtt().value_or(TimeDelta::Zero());
-
-  std::vector<uint16_t> nack_list;
-  {
-    MutexLock lock(&neteq_mutex_);
-    nack_list = neteq_->GetNackList(round_trip_time.ms());
-  }
-  if (!nack_list.empty()) {
-    // Can't use nack_list.data() since it's not supported by all
-    // compilers.
-    ResendPackets(&(nack_list[0]), static_cast<int>(nack_list.size()));
+  if (nack_tracker_) {
+    TimeDelta round_trip_time =
+        rtp_rtcp_->LastRtt().value_or(TimeDelta::Zero());
+    nack_tracker_->UpdateLastReceivedPacket(rtpHeader.sequenceNumber,
+                                            rtpHeader.timestamp);
+    std::vector<uint16_t> nack_list =
+        nack_tracker_->GetNackList(round_trip_time.ms());
+    if (!nack_list.empty()) {
+      rtp_rtcp_->SendNACK(nack_list.data(), nack_list.size());
+    }
   }
 }
 
@@ -520,6 +519,10 @@ AudioMixer::Source::AudioFrameInfo ChannelReceive::GetAudioFrameWithInfo(
         SafeTask(worker_safety_.flag(), [this, infos_copy, delivery_time]() {
           RTC_DCHECK_RUN_ON(&worker_thread_checker_);
           source_tracker_.OnFrameDelivered(infos_copy, delivery_time);
+          if (nack_tracker_) {
+            nack_tracker_->UpdateLastDecodedPacket(
+                infos_copy.back().rtp_timestamp());
+          }
         }));
   }
 
@@ -650,6 +653,9 @@ void ChannelReceive::StopPlayout() {
   output_audio_level_.ResetLevelFullRange();
   MutexLock lock(&neteq_mutex_);
   neteq_->FlushBuffers();
+  if (nack_tracker_) {
+    nack_tracker_->Reset();
+  }
 }
 
 std::optional<std::pair<int, SdpAudioFormat>> ChannelReceive::GetReceiveCodec()
@@ -693,6 +699,9 @@ void ChannelReceive::OnRtpPacket(const RtpPacketReceived& packet) {
   // is parsed.
   RtpPacketReceived packet_copy(packet);
   packet_copy.set_payload_type_frequency(it->second);
+  if (nack_tracker_) {
+    nack_tracker_->UpdateSampleRate(it->second);
+  }
 
   rtp_receive_statistics_->OnRtpPacket(packet_copy);
 
@@ -911,13 +920,12 @@ void ChannelReceive::SetNACKStatus(bool enable, int max_packets) {
   if (enable) {
     rtp_receive_statistics_->SetMaxReorderingThreshold(remote_ssrc_,
                                                        max_packets);
-    MutexLock lock(&neteq_mutex_);
-    neteq_->EnableNack(max_packets);
+    nack_tracker_ = std::make_unique<NackTracker>(env_.field_trials());
+    nack_tracker_->SetMaxNackListSize(max_packets);
   } else {
     rtp_receive_statistics_->SetMaxReorderingThreshold(
         remote_ssrc_, kDefaultMaxReorderingThreshold);
-    MutexLock lock(&neteq_mutex_);
-    neteq_->DisableNack();
+    nack_tracker_.reset();
   }
 }
 
@@ -929,12 +937,6 @@ void ChannelReceive::SetRtcpMode(RtcpMode mode) {
 void ChannelReceive::SetNonSenderRttMeasurement(bool enabled) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   rtp_rtcp_->SetNonSenderRttMeasurement(enabled);
-}
-
-// Called when we are missing one or more packets.
-int ChannelReceive::ResendPackets(const uint16_t* sequence_numbers,
-                                  int length) {
-  return rtp_rtcp_->SendNACK(sequence_numbers, length);
 }
 
 void ChannelReceive::RtcpPacketTypesCounterUpdated(
