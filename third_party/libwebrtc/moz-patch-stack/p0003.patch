@@ -41,10 +41,10 @@ Cr-Branched-From: 1dfd30cf31a029cd127674a11e65c54c07afaf5d-refs/heads/main@{#460
  2 files changed, 4 insertions(+), 5 deletions(-)
 
 diff --git a/pc/rtp_transceiver.cc b/pc/rtp_transceiver.cc
-index b0383671cd..72e6ee21df 100644
+index 06b0079398..9975174899 100644
 --- a/pc/rtp_transceiver.cc
 +++ b/pc/rtp_transceiver.cc
-@@ -869,19 +869,19 @@ void RtpTransceiver::OnNegotiationUpdate(
+@@ -879,19 +879,19 @@ void RtpTransceiver::OnNegotiationUpdate(
    RTC_DCHECK(content);
    if (sdp_type == SdpType::kAnswer || sdp_type == SdpType::kPrAnswer) {
      negotiated_header_extensions_ = content->rtp_header_extensions();
