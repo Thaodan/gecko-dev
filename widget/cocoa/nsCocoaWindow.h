@@ -513,11 +513,7 @@ class nsCocoaWindow final : public nsBaseWidget {
   void UpdateFullscreenState(bool aFullScreen, bool aNativeMode);
   nsresult DoMakeFullScreen(bool aFullScreen, bool aUseSystemTransition);
 
-  already_AddRefed<nsIWidget> AllocateChildPopupWidget() override {
-    return nsIWidget::CreateTopLevelWindow();
-  }
-
-  BaseWindow* mWindow;                // our cocoa window [STRONG]
+  BaseWindow* mWindow;  // our cocoa window [STRONG]
   // window upon closing it, held through our destructor. This is useful
   // to ensure that macOS run loops which reference the window will still
   // have something to point to even if they don't use proper retain and
