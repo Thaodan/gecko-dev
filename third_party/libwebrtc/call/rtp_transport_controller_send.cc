@@ -722,19 +722,18 @@ void RtpTransportControllerSend::ComputeStatsFromCongestionControlFeedback(
 
     if (packet_info.IsReceived()) {
       switch (packet_info.ecn) {
-        using enum EcnMarking;
-        case kEct1:
+        case EcnMarking::kEct1:
           ++stats->num_packets_received_with_ect1;
           break;
-        case kCe:
+        case EcnMarking::kCe:
           ++stats->num_packets_received_with_ce;
           break;
-        case kNotEct:
+        case EcnMarking::kNotEct:
           if (packet_info.sent_with_ect1) {
             ++stats->num_packets_with_bleached_ect1_marking;
           }
           break;
-        case kEct0:
+        case EcnMarking::kEct0:
           break;
       }
     }
