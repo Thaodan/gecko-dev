@@ -326,7 +326,7 @@ index 589142b014..2ee80ded55 100644
      }
    }
 diff --git a/examples/BUILD.gn b/examples/BUILD.gn
-index 1878046cc2..79ce9f1e54 100644
+index 02f2592521..fc26505866 100644
 --- a/examples/BUILD.gn
 +++ b/examples/BUILD.gn
 @@ -9,15 +9,15 @@
@@ -350,7 +350,7 @@ index 1878046cc2..79ce9f1e54 100644
  }
  
  group("examples") {
-@@ -630,7 +630,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
+@@ -632,7 +632,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
            "../sdk:mediaconstraints_objc",
            "../sdk:peerconnectionfactory_base_objc",
            "../sdk:videocapture_objc",
@@ -359,7 +359,7 @@ index 1878046cc2..79ce9f1e54 100644
            "//third_party/ocmock",
          ]
        }
-@@ -736,7 +736,7 @@ if (is_linux || is_chromeos || is_win) {
+@@ -738,7 +738,7 @@ if (is_linux || is_chromeos || is_win) {
          "peerconnection/client/main_wnd.cc",
          "peerconnection/client/main_wnd.h",
        ]
@@ -702,7 +702,7 @@ index fd98be799b..fe30e9ece9 100644
      output_extension = "so"
    }
 diff --git a/sdk/BUILD.gn b/sdk/BUILD.gn
-index 51f5b42b58..66de35d581 100644
+index 754b38f796..fc9e3e2fd5 100644
 --- a/sdk/BUILD.gn
 +++ b/sdk/BUILD.gn
 @@ -9,12 +9,12 @@
