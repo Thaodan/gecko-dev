@@ -42,7 +42,7 @@ index 009e1408b9..a737f9bdb3 100644
  uint32_t DeviceInfoPipeWire::NumberOfDevices() {
    RTC_CHECK(pipewire_session_);
 diff --git a/modules/video_capture/linux/pipewire_session.cc b/modules/video_capture/linux/pipewire_session.cc
-index 1582f85577..957590c92b 100644
+index 63f0c8c99d..036739b74a 100644
 --- a/modules/video_capture/linux/pipewire_session.cc
 +++ b/modules/video_capture/linux/pipewire_session.cc
 @@ -35,6 +35,7 @@
@@ -103,7 +103,7 @@ index 1582f85577..957590c92b 100644
 +
  RTC_NO_SANITIZE("cfi-icall")
  bool PipeWireSession::StartPipeWire(int fd) {
-   pw_init(/*argc=*/nullptr, /*argv=*/nullptr);
+   pw_initializer_ = std::make_unique<PipeWireInitializer>();
 @@ -376,6 +403,21 @@ void PipeWireSession::PipeWireSync() {
    sync_seq_ = pw_core_sync(pw_core_, PW_ID_CORE, sync_seq_);
  }
@@ -153,7 +153,7 @@ index 1582f85577..957590c92b 100644
    webrtc::MutexLock lock(&callback_lock_);
  
 diff --git a/modules/video_capture/linux/pipewire_session.h b/modules/video_capture/linux/pipewire_session.h
-index 84848d76ef..a9e162a2ff 100644
+index e5463ad6a5..c6bc394c88 100644
 --- a/modules/video_capture/linux/pipewire_session.h
 +++ b/modules/video_capture/linux/pipewire_session.h
 @@ -34,6 +34,7 @@
@@ -208,5 +208,5 @@ index 84848d76ef..a9e162a2ff 100644
 +  VideoCaptureOptions::Status status_
 +      RTC_GUARDED_BY(device_info_lock_);
  
+   std::unique_ptr<PipeWireInitializer> pw_initializer_;
    struct pw_thread_loop* pw_main_loop_ = nullptr;
-   struct pw_context* pw_context_ = nullptr;
