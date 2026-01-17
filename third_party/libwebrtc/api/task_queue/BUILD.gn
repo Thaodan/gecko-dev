@@ -61,6 +61,7 @@ rtc_library("task_queue_test") {
       "../../../webrtc_overrides:webrtc_component",
       "../../test:test_support",
       "//third_party/abseil-cpp/absl/cleanup",
+      "//third_party/abseil-cpp/absl/functional:any_invocable",
       "//third_party/abseil-cpp/absl/strings",
     ]
   } else {
@@ -76,6 +77,7 @@ rtc_library("task_queue_test") {
       "../../rtc_base:timeutils",
       "../../test:test_support",
       "//third_party/abseil-cpp/absl/cleanup",
+      "//third_party/abseil-cpp/absl/functional:any_invocable",
       "//third_party/abseil-cpp/absl/strings",
     ]
   }
