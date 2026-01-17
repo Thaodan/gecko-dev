@@ -41,7 +41,7 @@ Cr-Branched-From: 1dfd30cf31a029cd127674a11e65c54c07afaf5d-refs/heads/main@{#460
  2 files changed, 4 insertions(+), 5 deletions(-)
 
 diff --git a/pc/rtp_transceiver.cc b/pc/rtp_transceiver.cc
-index ccc4fcd586..8f733e00ec 100644
+index 70d8deb9f5..a2910284e8 100644
 --- a/pc/rtp_transceiver.cc
 +++ b/pc/rtp_transceiver.cc
 @@ -911,19 +911,19 @@ void RtpTransceiver::OnNegotiationUpdate(
