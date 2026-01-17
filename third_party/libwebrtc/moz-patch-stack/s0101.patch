@@ -601,7 +601,7 @@ index d6a69eb1dc..8f7dc6da50 100644
  import("../../webrtc.gni")
  
 diff --git a/pc/BUILD.gn b/pc/BUILD.gn
-index a5fbf9f379..3dff2d7969 100644
+index 28860aff90..89b90ba599 100644
 --- a/pc/BUILD.gn
 +++ b/pc/BUILD.gn
 @@ -30,8 +30,8 @@
@@ -616,7 +616,7 @@ index a5fbf9f379..3dff2d7969 100644
  
  if (rtc_build_libsrtp) {
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index 035160cb24..56c6da4b1b 100644
+index cac0cb23ed..676f51af17 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
 @@ -9,8 +9,8 @@
@@ -630,7 +630,7 @@ index 035160cb24..56c6da4b1b 100644
  }
  
  rtc_source_set("protobuf_utils") {
-@@ -1977,8 +1977,8 @@ if (!rtc_rusty_base64) {
+@@ -1978,8 +1978,8 @@ if (!rtc_rusty_base64) {
      ]
    }
  } else {
@@ -642,7 +642,7 @@ index 035160cb24..56c6da4b1b 100644
    rust_static_library("base64_rust_bridge") {
      allow_unsafe = true  # Needed for FFI with cxx crate.
 diff --git a/rtc_base/memory/BUILD.gn b/rtc_base/memory/BUILD.gn
-index 6256372e5c..26d9491cff 100644
+index 8162e3a665..ec8d4d3aae 100644
 --- a/rtc_base/memory/BUILD.gn
 +++ b/rtc_base/memory/BUILD.gn
 @@ -8,8 +8,8 @@
