@@ -1,55 +1,83 @@
-From: Michael Froman <mfroman@mozilla.com>
-Date: Sat, 17 Jan 2026 14:01:06 -0600
-Subject: (tmp-cherry-pick) Revert "Make SignalTrampoline immovable"
- (54170ce987)
+From: Harald Alvestrand <hta@webrtc.org>
+Date: Thu, 11 Dec 2025 02:04:04 -0800
+Subject: (cherry-pick-branch-heads/7499) Revert "Default enable
+ WebRTC-HeaderExtensionNegotiateMemory"
 
-This reverts commit d50faaa9c53d6be93ec8340adfd51c9ac754866f.
+This reverts commit 4ecf297a4c0af68ff8af8c3a8e6b0832bddd14d5.
 
-Reason for revert: Chromium wasn't ready for it.
+Reason for revert: Impacted unexpected application usages
 
 Original change's description:
-> Make SignalTrampoline immovable
+> Default enable WebRTC-HeaderExtensionNegotiateMemory
 >
-> This safeguards further deployments of SignalTrampoline, so that
-> errors are not introduced.
+> Spec change: https://github.com/w3c/webrtc-extensions/pull/238
 >
-> Bug: webrtc:42222066
-> Change-Id: I34c2170a48305729def2da6b59f8c6674601f1d8
-> No-IWYU: bot broken
-> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/423900
-> Reviewed-by: Tomas Gunnarsson <tommi@webrtc.org>
+> Chromestatus entry for change: https://chromestatus.com/feature/5135528638939136
+>
+> Bug: webrtc:439514253
+> Change-Id: I296f2f06dd69b4e30be419b44c926acfd2722e2d
+> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/407821
 > Commit-Queue: Harald Alvestrand <hta@webrtc.org>
-> Cr-Commit-Position: refs/heads/main@{#46157}
+> Reviewed-by: Guido Urdaneta <guidou@webrtc.org>
+> Cr-Commit-Position: refs/heads/main@{#45993}
 
-No-IWYU: Bot broken
-Bug: webrtc:42222066
-Change-Id: Ibf235b38509e732f0e84c8d6f3107f3e63ef5bd6
-Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/424940
-Auto-Submit: Harald Alvestrand <hta@webrtc.org>
+(cherry picked from commit 74d988fd57f8f1b6722d8ac6f49c686b9f2bc196)
+
+Bug: webrtc:439514253, chromium:467164231
+Change-Id: I95dbc8cbaf1b769ffaea291801684bc26e4b9ccb
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/433102
+Reviewed-by: Guido Urdaneta <guidou@webrtc.org>
 Commit-Queue: Harald Alvestrand <hta@webrtc.org>
-Reviewed-by: Danil Chapovalov <danilchap@webrtc.org>
-Bot-Commit: Rubber Stamper <rubber-stamper@appspot.gserviceaccount.com>
-Commit-Queue: Rubber Stamper <rubber-stamper@appspot.gserviceaccount.com>
-Reviewed-by: Tomas Gunnarsson <tommi@webrtc.org>
-Cr-Commit-Position: refs/heads/main@{#46168}
+Cr-Original-Commit-Position: refs/heads/main@{#46456}
+No-Try: True
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/433485
+Commit-Queue: Guido Urdaneta <guidou@webrtc.org>
+Reviewed-by: Harald Alvestrand <hta@webrtc.org>
+Cr-Commit-Position: refs/branch-heads/7499@{#3}
+Cr-Branched-From: 1dfd30cf31a029cd127674a11e65c54c07afaf5d-refs/heads/main@{#46046}
 ---
- rtc_base/sigslot_trampoline.h | 6 ------
- 1 file changed, 6 deletions(-)
+ pc/rtp_transceiver.cc          | 6 +++---
+ pc/rtp_transmission_manager.cc | 3 +--
+ 2 files changed, 4 insertions(+), 5 deletions(-)
 
-diff --git a/rtc_base/sigslot_trampoline.h b/rtc_base/sigslot_trampoline.h
-index f99e14c602..ccd0fca882 100644
---- a/rtc_base/sigslot_trampoline.h
-+++ b/rtc_base/sigslot_trampoline.h
-@@ -134,12 +134,6 @@ class SignalTrampoline
-   using Base = internal::SignalTrampolineMemberBase<T, member_signal>;
- 
-  public:
--  // Because a SignalTrampoline is initialized with a pointer to its
--  // container, it's not possible to move or copy it.
--  SignalTrampoline(const SignalTrampoline&) = delete;
--  SignalTrampoline& operator=(const SignalTrampoline&) = delete;
--  SignalTrampoline(SignalTrampoline&&) = delete;
--  SignalTrampoline& operator=(SignalTrampoline&&) = delete;
-   explicit SignalTrampoline(T* that) {
-     (that->*member_signal).connect(static_cast<Base*>(this), &Base::Notify);
-   }
+diff --git a/pc/rtp_transceiver.cc b/pc/rtp_transceiver.cc
+index 06b0079398..9975174899 100644
+--- a/pc/rtp_transceiver.cc
++++ b/pc/rtp_transceiver.cc
+@@ -879,19 +879,19 @@ void RtpTransceiver::OnNegotiationUpdate(
+   RTC_DCHECK(content);
+   if (sdp_type == SdpType::kAnswer || sdp_type == SdpType::kPrAnswer) {
+     negotiated_header_extensions_ = content->rtp_header_extensions();
+-    if (!env_.field_trials().IsDisabled(
++    if (env_.field_trials().IsEnabled(
+             "WebRTC-HeaderExtensionNegotiateMemory")) {
+       header_extensions_to_negotiate_ = GetNegotiatedHeaderExtensions();
+     }
+   } else if (sdp_type == SdpType::kOffer) {
+-    if (!env_.field_trials().IsDisabled(
++    if (env_.field_trials().IsEnabled(
+             "WebRTC-HeaderExtensionNegotiateMemory")) {
+       header_extensions_for_rollback_ = header_extensions_to_negotiate_;
+       header_extensions_to_negotiate_ =
+           GetOfferedAndImplementedHeaderExtensions(content);
+     }
+   } else if (sdp_type == SdpType::kRollback) {
+-    if (!env_.field_trials().IsDisabled(
++    if (env_.field_trials().IsEnabled(
+             "WebRTC-HeaderExtensionNegotiateMemory")) {
+       RTC_CHECK(!header_extensions_for_rollback_.empty());
+       header_extensions_to_negotiate_ = header_extensions_for_rollback_;
+diff --git a/pc/rtp_transmission_manager.cc b/pc/rtp_transmission_manager.cc
+index 3ca54aa166..31f9a76054 100644
+--- a/pc/rtp_transmission_manager.cc
++++ b/pc/rtp_transmission_manager.cc
+@@ -323,8 +323,7 @@ RtpTransmissionManager::CreateAndAddTransceiver(
+   // could be invalid, but should not cause a crash).
+   RTC_DCHECK(!FindSenderById(sender->id()));
+   std::vector<RtpHeaderExtensionCapability> header_extensions;
+-  if (!env_.field_trials().IsDisabled(
+-          "WebRTC-HeaderExtensionNegotiateMemory")) {
++  if (env_.field_trials().IsEnabled("WebRTC-HeaderExtensionNegotiateMemory")) {
+     // If we have already negotiated header extensions for this type,
+     // reuse the negotiated state for new transceivers of the same type.
+     for (const auto& transceiver : transceivers()->List()) {
