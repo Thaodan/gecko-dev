@@ -7,12 +7,12 @@ Differential Revision: https://phabricator.services.mozilla.com/D258499
 Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/19164e58323d59c1f66f7fcf671b8d0b6366f708
 ---
  call/call.cc                     | 13 -------------
- call/call.h                      | 14 ++------------
+ call/call.h                      | 16 ++--------------
  modules/desktop_capture/BUILD.gn |  5 +++++
- 3 files changed, 7 insertions(+), 25 deletions(-)
+ 3 files changed, 7 insertions(+), 27 deletions(-)
 
 diff --git a/call/call.cc b/call/call.cc
-index 716da8b65a..39c7cb79af 100644
+index c0fccca6e2..75944141d8 100644
 --- a/call/call.cc
 +++ b/call/call.cc
 @@ -513,19 +513,6 @@ class Call final : public webrtc::Call,
@@ -36,7 +36,7 @@ index 716da8b65a..39c7cb79af 100644
    auto transport_send = std::make_unique<RtpTransportControllerSend>(
        config.ExtractTransportConfig());
 diff --git a/call/call.h b/call/call.h
-index d626f5c8b2..fb92bc49fa 100644
+index 4a4f3978d3..fb92bc49fa 100644
 --- a/call/call.h
 +++ b/call/call.h
 @@ -26,6 +26,7 @@
@@ -47,7 +47,7 @@ index d626f5c8b2..fb92bc49fa 100644
  #include "call/call_config.h"
  #include "call/flexfec_receive_stream.h"
  #include "call/packet_receiver.h"
-@@ -53,18 +54,7 @@ namespace webrtc {
+@@ -53,20 +54,7 @@ namespace webrtc {
  
  class Call {
   public:
@@ -62,6 +62,8 @@ index d626f5c8b2..fb92bc49fa 100644
 -    std::optional<int64_t> ccfb_messages_received = std::nullopt;
 -    flat_map<uint32_t, SentCongestionControllerFeedbackStats>
 -        sent_ccfb_stats_per_ssrc;
+-    flat_map<uint32_t, ReceivedCongestionControlFeedbackStats>
+-        received_ccfb_stats_per_ssrc;
 -  };
 +  using Stats = CallBasicStats;
  
