@@ -68,7 +68,7 @@ index ccc4fcd586..8f733e00ec 100644
        RTC_CHECK(!header_extensions_for_rollback_.empty());
        header_extensions_to_negotiate_ = header_extensions_for_rollback_;
 diff --git a/pc/rtp_transmission_manager.cc b/pc/rtp_transmission_manager.cc
-index 3ca54aa166..31f9a76054 100644
+index 7368cb4bf6..f226ec1455 100644
 --- a/pc/rtp_transmission_manager.cc
 +++ b/pc/rtp_transmission_manager.cc
 @@ -323,8 +323,7 @@ RtpTransmissionManager::CreateAndAddTransceiver(
