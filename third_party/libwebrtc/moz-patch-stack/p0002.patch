@@ -47,10 +47,10 @@ Cr-Commit-Position: refs/heads/main@{#46266}
  5 files changed, 10 insertions(+), 42 deletions(-)
 
 diff --git a/p2p/BUILD.gn b/p2p/BUILD.gn
-index 95a97a2583..57507e6d2e 100644
+index c435a2fc78..91e7ba7361 100644
 --- a/p2p/BUILD.gn
 +++ b/p2p/BUILD.gn
-@@ -1078,9 +1078,7 @@ if (rtc_include_tests) {
+@@ -1075,9 +1075,7 @@ if (rtc_include_tests) {
        "../rtc_base:network",
        "../rtc_base:socket_factory",
        "../rtc_base:task_queue_for_test",
