@@ -172,10 +172,10 @@ index ac862c65a8..e66ed2796e 100644
    } else {
      sources += [ "spl_sqrt_floor.c" ]
 diff --git a/modules/audio_processing/aec3/BUILD.gn b/modules/audio_processing/aec3/BUILD.gn
-index e64cf48c0b..6ee6ade6dc 100644
+index e5c2bb9714..fd394efb8f 100644
 --- a/modules/audio_processing/aec3/BUILD.gn
 +++ b/modules/audio_processing/aec3/BUILD.gn
-@@ -126,7 +126,7 @@ rtc_library("aec3") {
+@@ -125,7 +125,7 @@ rtc_library("aec3") {
    ]
  
    defines = []
@@ -193,7 +193,7 @@ index e64cf48c0b..6ee6ade6dc 100644
      deps += [ ":aec3_avx2" ]
    }
  }
-@@ -256,7 +256,7 @@ rtc_source_set("fft_data") {
+@@ -264,7 +264,7 @@ rtc_source_set("fft_data") {
    ]
  }
  

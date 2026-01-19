@@ -821,10 +821,10 @@ index bad43a5c91..6091e49b7b 100644
      testonly = true
  
 diff --git a/modules/audio_processing/aec3/BUILD.gn b/modules/audio_processing/aec3/BUILD.gn
-index 9d17d51194..e64cf48c0b 100644
+index 1f5a2717c9..e5c2bb9714 100644
 --- a/modules/audio_processing/aec3/BUILD.gn
 +++ b/modules/audio_processing/aec3/BUILD.gn
-@@ -267,14 +267,11 @@ if (current_cpu == "x86" || current_cpu == "x64") {
+@@ -275,14 +275,11 @@ if (current_cpu == "x86" || current_cpu == "x64") {
        "vector_math_avx2.cc",
      ]
  
