@@ -126,7 +126,7 @@ index 3bfa335935..dfaa6444c1 100644
              "Generated during 'gn gen' by //BUILD.gn.",
              "",
 diff --git a/api/BUILD.gn b/api/BUILD.gn
-index ef6693265e..91f7c73d46 100644
+index 7c202a8495..3c44b49355 100644
 --- a/api/BUILD.gn
 +++ b/api/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -326,7 +326,7 @@ index 589142b014..2ee80ded55 100644
      }
    }
 diff --git a/examples/BUILD.gn b/examples/BUILD.gn
-index 915d8c2fd5..621fa52cc5 100644
+index b3f35626b9..ad690a9653 100644
 --- a/examples/BUILD.gn
 +++ b/examples/BUILD.gn
 @@ -9,15 +9,15 @@
@@ -359,7 +359,7 @@ index 915d8c2fd5..621fa52cc5 100644
            "//third_party/ocmock",
          ]
        }
-@@ -737,7 +737,7 @@ if (is_linux || is_chromeos || is_win) {
+@@ -740,7 +740,7 @@ if (is_linux || is_chromeos || is_win) {
          "peerconnection/client/main_wnd.cc",
          "peerconnection/client/main_wnd.h",
        ]
@@ -382,7 +382,7 @@ index b671239bae..e545b2cde3 100644
    android_java_prebuilt("autobanh_java") {
      jar_path = "lib/autobanh.jar"
 diff --git a/examples/androidnativeapi/BUILD.gn b/examples/androidnativeapi/BUILD.gn
-index 8620a0073b..65a793b8b9 100644
+index adc9a332a0..5df90dd972 100644
 --- a/examples/androidnativeapi/BUILD.gn
 +++ b/examples/androidnativeapi/BUILD.gn
 @@ -41,8 +41,8 @@ if (is_android) {
@@ -427,7 +427,7 @@ index c5148630cb..81a5e86619 100644
  
  group("logging") {
 diff --git a/media/BUILD.gn b/media/BUILD.gn
-index 16292a551b..645dcf7024 100644
+index 30a3b3f881..3c48d416c7 100644
 --- a/media/BUILD.gn
 +++ b/media/BUILD.gn
 @@ -6,7 +6,7 @@
@@ -601,7 +601,7 @@ index d6a69eb1dc..8f7dc6da50 100644
  import("../../webrtc.gni")
  
 diff --git a/pc/BUILD.gn b/pc/BUILD.gn
-index 14a175d38c..efac50880a 100644
+index d032de20fe..45799d5e89 100644
 --- a/pc/BUILD.gn
 +++ b/pc/BUILD.gn
 @@ -30,8 +30,8 @@
@@ -702,7 +702,7 @@ index fd98be799b..fe30e9ece9 100644
      output_extension = "so"
    }
 diff --git a/sdk/BUILD.gn b/sdk/BUILD.gn
-index 754b38f796..fc9e3e2fd5 100644
+index 8c556b7618..85a6371b72 100644
 --- a/sdk/BUILD.gn
 +++ b/sdk/BUILD.gn
 @@ -9,12 +9,12 @@
@@ -722,7 +722,7 @@ index 754b38f796..fc9e3e2fd5 100644
  }
  
  group("sdk") {
-@@ -67,7 +67,7 @@ if (is_ios || is_mac) {
+@@ -69,7 +69,7 @@ if (is_ios || is_mac) {
      ]
  
      if (use_clang_coverage) {
@@ -731,7 +731,7 @@ index 754b38f796..fc9e3e2fd5 100644
      }
    }
  
-@@ -1283,7 +1283,7 @@ if (is_ios || is_mac) {
+@@ -1290,7 +1290,7 @@ if (is_ios || is_mac) {
            }
  
            public_deps = [
@@ -782,7 +782,7 @@ index 9f5dc982ba..1a59ac0bf1 100644
      deps = [ ":google_test_runner_delegate" ]
    }
 diff --git a/test/fuzzers/BUILD.gn b/test/fuzzers/BUILD.gn
-index 6d9ebd1b94..66943b6c29 100644
+index f05995da70..46ddb4f25e 100644
 --- a/test/fuzzers/BUILD.gn
 +++ b/test/fuzzers/BUILD.gn
 @@ -6,7 +6,7 @@
