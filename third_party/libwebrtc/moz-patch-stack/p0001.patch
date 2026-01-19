@@ -1,80 +1,83 @@
-From: Michael Froman <mfroman@mozilla.com>
-Date: Mon, 19 Jan 2026 15:14:56 -0600
-Subject: (tmp-cherry-pick) Revert "Fix Loss Based BWE V2 blocked by missing RR
- RTCP feedback" (baa2059a2a)
+From: Harald Alvestrand <hta@webrtc.org>
+Date: Thu, 11 Dec 2025 02:04:04 -0800
+Subject: (cherry-pick-branch-heads/7499) Revert "Default enable
+ WebRTC-HeaderExtensionNegotiateMemory"
 
-This reverts commit 00b7d8fdcd8e5f4712176ec6be797d358a698926.
+This reverts commit 4ecf297a4c0af68ff8af8c3a8e6b0832bddd14d5.
 
-Reason for revert: This seems to have broken a test:
-
-test/scenario/video_stream_unittest.cc:267
-Expected: (num_vga_frames_) > (0u), actual: 0 vs 0
-Stack trace:
-0x7fa730f7b92e: webrtc::test::VideoStreamTest_ResolutionAdaptsToAvailableBandwidth_Test::TestBody() @ ??:??
-0x7fa6777bfb26: testing::Test::Run() @ ??:??
-0x7fa6777c0b6b: testing::TestInfo::Run() @ ??:??
-... Google Test internal frames ...
+Reason for revert: Impacted unexpected application usages
 
 Original change's description:
-> Fix Loss Based BWE V2 blocked by missing RR RTCP feedback
+> Default enable WebRTC-HeaderExtensionNegotiateMemory
 >
-> Loss Based BWE V2 was being blocked by an early return when RR RTCP
-> feedback was missing, even though V2 doesn't depend on RR RTCP packets.
+> Spec change: https://github.com/w3c/webrtc-extensions/pull/238
 >
-> This change reorders the checks in UpdateEstimate() to:
-> - Check Loss Based BWE V2 readiness first
-> - Only check RR RTCP feedback for traditional loss-based BWE
+> Chromestatus entry for change: https://chromestatus.com/feature/5135528638939136
 >
-> This allows V2 to work independently of RR RTCP while preserving
-> existing behavior for traditional BWE.
->
-> Bug: webrtc:463715720
-> Change-Id: Ia9ed189298c73b200f8bb41a3a9c105f4ca8095e
-> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/428481
-> Reviewed-by: Diep Bui <diepbp@webrtc.org>
-> Reviewed-by: Per Kjellander <perkj@webrtc.org>
-> Commit-Queue: Per Kjellander <perkj@webrtc.org>
-> Cr-Commit-Position: refs/heads/main@{#46337}
+> Bug: webrtc:439514253
+> Change-Id: I296f2f06dd69b4e30be419b44c926acfd2722e2d
+> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/407821
+> Commit-Queue: Harald Alvestrand <hta@webrtc.org>
+> Reviewed-by: Guido Urdaneta <guidou@webrtc.org>
+> Cr-Commit-Position: refs/heads/main@{#45993}
 
-Bug: webrtc:463715720
-Change-Id: I8471ea3db1a205276feb8fd80caf6a7fc530b562
-Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/429460
-Commit-Queue: Tomas Gunnarsson <tommi@webrtc.org>
-Reviewed-by: Diep Bui <diepbp@webrtc.org>
-Bot-Commit: Rubber Stamper <rubber-stamper@appspot.gserviceaccount.com>
-Cr-Commit-Position: refs/heads/main@{#46347}
+(cherry picked from commit 74d988fd57f8f1b6722d8ac6f49c686b9f2bc196)
+
+Bug: webrtc:439514253, chromium:467164231
+Change-Id: I95dbc8cbaf1b769ffaea291801684bc26e4b9ccb
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/433102
+Reviewed-by: Guido Urdaneta <guidou@webrtc.org>
+Commit-Queue: Harald Alvestrand <hta@webrtc.org>
+Cr-Original-Commit-Position: refs/heads/main@{#46456}
+No-Try: True
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/433485
+Commit-Queue: Guido Urdaneta <guidou@webrtc.org>
+Reviewed-by: Harald Alvestrand <hta@webrtc.org>
+Cr-Commit-Position: refs/branch-heads/7499@{#3}
+Cr-Branched-From: 1dfd30cf31a029cd127674a11e65c54c07afaf5d-refs/heads/main@{#46046}
 ---
- .../goog_cc/send_side_bandwidth_estimation.cc       | 13 ++++++-------
- 1 file changed, 6 insertions(+), 7 deletions(-)
+ pc/rtp_transceiver.cc          | 6 +++---
+ pc/rtp_transmission_manager.cc | 3 +--
+ 2 files changed, 4 insertions(+), 5 deletions(-)
 
-diff --git a/modules/congestion_controller/goog_cc/send_side_bandwidth_estimation.cc b/modules/congestion_controller/goog_cc/send_side_bandwidth_estimation.cc
-index fbf8d7c3f5..244b3292f8 100644
---- a/modules/congestion_controller/goog_cc/send_side_bandwidth_estimation.cc
-+++ b/modules/congestion_controller/goog_cc/send_side_bandwidth_estimation.cc
-@@ -446,6 +446,12 @@ void SendSideBandwidthEstimation::UpdateEstimate(Timestamp at_time) {
+diff --git a/pc/rtp_transceiver.cc b/pc/rtp_transceiver.cc
+index 4e5af7a31b..0ebeb6be1c 100644
+--- a/pc/rtp_transceiver.cc
++++ b/pc/rtp_transceiver.cc
+@@ -913,19 +913,19 @@ void RtpTransceiver::OnNegotiationUpdate(
+   RTC_DCHECK(content);
+   if (sdp_type == SdpType::kAnswer || sdp_type == SdpType::kPrAnswer) {
+     negotiated_header_extensions_ = content->rtp_header_extensions();
+-    if (!env_.field_trials().IsDisabled(
++    if (env_.field_trials().IsEnabled(
+             "WebRTC-HeaderExtensionNegotiateMemory")) {
+       header_extensions_to_negotiate_ = GetNegotiatedHeaderExtensions();
      }
-   }
-   UpdateMinHistory(at_time);
-+  if (last_loss_packet_report_.IsInfinite()) {
-+    // No feedback received.
-+    // TODO(srte): This is likely redundant in most cases.
-+    ApplyTargetLimits(at_time);
-+    return;
-+  }
- 
-   if (LossBasedBandwidthEstimatorV2ReadyForUse()) {
-     LossBasedBweV2::Result result =
-@@ -455,13 +461,6 @@ void SendSideBandwidthEstimation::UpdateEstimate(Timestamp at_time) {
-     return;
-   }
- 
--  if (last_loss_packet_report_.IsInfinite()) {
--    // No feedback received.
--    // TODO(srte): This is likely redundant in most cases.
--    ApplyTargetLimits(at_time);
--    return;
--  }
--
-   TimeDelta time_since_loss_packet_report = at_time - last_loss_packet_report_;
-   if (time_since_loss_packet_report < 1.2 * kMaxRtcpFeedbackInterval) {
-     // We only care about loss above a given bitrate threshold.
+   } else if (sdp_type == SdpType::kOffer) {
+-    if (!env_.field_trials().IsDisabled(
++    if (env_.field_trials().IsEnabled(
+             "WebRTC-HeaderExtensionNegotiateMemory")) {
+       header_extensions_for_rollback_ = header_extensions_to_negotiate_;
+       header_extensions_to_negotiate_ =
+           GetOfferedAndImplementedHeaderExtensions(content);
+     }
+   } else if (sdp_type == SdpType::kRollback) {
+-    if (!env_.field_trials().IsDisabled(
++    if (env_.field_trials().IsEnabled(
+             "WebRTC-HeaderExtensionNegotiateMemory")) {
+       RTC_CHECK(!header_extensions_for_rollback_.empty());
+       header_extensions_to_negotiate_ = header_extensions_for_rollback_;
+diff --git a/pc/rtp_transmission_manager.cc b/pc/rtp_transmission_manager.cc
+index 7368cb4bf6..f226ec1455 100644
+--- a/pc/rtp_transmission_manager.cc
++++ b/pc/rtp_transmission_manager.cc
+@@ -323,8 +323,7 @@ RtpTransmissionManager::CreateAndAddTransceiver(
+   // could be invalid, but should not cause a crash).
+   RTC_DCHECK(!FindSenderById(sender->id()));
+   std::vector<RtpHeaderExtensionCapability> header_extensions;
+-  if (!env_.field_trials().IsDisabled(
+-          "WebRTC-HeaderExtensionNegotiateMemory")) {
++  if (env_.field_trials().IsEnabled("WebRTC-HeaderExtensionNegotiateMemory")) {
+     // If we have already negotiated header extensions for this type,
+     // reuse the negotiated state for new transceivers of the same type.
+     for (const auto& transceiver : transceivers()->List()) {
