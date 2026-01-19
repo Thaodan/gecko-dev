@@ -10,10 +10,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/158a888cad8869a2f
  1 file changed, 8 insertions(+), 1 deletion(-)
 
 diff --git a/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc b/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
-index f799ba4234..6c009b762a 100644
+index 2c9619816e..d078565b03 100644
 --- a/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
 +++ b/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
-@@ -57,6 +57,13 @@
+@@ -60,6 +60,13 @@
  #include "rtc_base/thread_annotations.h"
  #include "rtc_base/time_utils.h"
  
@@ -27,10 +27,10 @@ index f799ba4234..6c009b762a 100644
  namespace webrtc {
  
  const int kBytesPerPixel = 4;
-@@ -303,7 +310,7 @@ void SharedScreenCastStreamPrivate::OnStreamParamChanged(
-   that->modifier_ =
-       has_modifier ? that->spa_video_format_.modifier : DRM_FORMAT_MOD_INVALID;
-   std::vector<const spa_pod*> params;
+@@ -336,7 +343,7 @@ void SharedScreenCastStreamPrivate::OnStreamParamChanged(
+     RTC_LOG(LS_INFO) << sb.str();
+   }
+ 
 -  const int buffer_types = has_modifier
 +  const int buffer_types = has_modifier && mozilla::gfx::IsDMABufEnabled()
                                 ? (1 << SPA_DATA_DmaBuf) | (1 << SPA_DATA_MemFd)
