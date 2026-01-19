@@ -29,7 +29,7 @@ index d0c8e6d843..f8d80ab9f1 100644
  rtc_library("task_queue_test") {
    visibility = [ "*" ]
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index f144b0d763..af517c6a5a 100644
+index c68adabacd..071cd116d1 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
 @@ -675,10 +675,14 @@ if (is_mac || is_ios) {
