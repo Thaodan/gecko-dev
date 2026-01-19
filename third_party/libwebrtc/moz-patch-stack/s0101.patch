@@ -804,7 +804,7 @@ index 6d9ebd1b94..66943b6c29 100644
    }
  }
 diff --git a/webrtc.gni b/webrtc.gni
-index 6d3d1853ad..da08c490e7 100644
+index ff289d9a25..59568d548b 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -5,12 +5,12 @@
