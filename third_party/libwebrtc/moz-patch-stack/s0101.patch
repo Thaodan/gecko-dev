@@ -126,7 +126,7 @@ index 3bfa335935..dfaa6444c1 100644
              "Generated during 'gn gen' by //BUILD.gn.",
              "",
 diff --git a/api/BUILD.gn b/api/BUILD.gn
-index 9fe83175d8..70605867cb 100644
+index 637d36f900..4119c1ee54 100644
 --- a/api/BUILD.gn
 +++ b/api/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -601,7 +601,7 @@ index d6a69eb1dc..8f7dc6da50 100644
  import("../../webrtc.gni")
  
 diff --git a/pc/BUILD.gn b/pc/BUILD.gn
-index 78fdbfe019..5fbb80a7ac 100644
+index 6c8b7f294d..cbe1d534ba 100644
 --- a/pc/BUILD.gn
 +++ b/pc/BUILD.gn
 @@ -30,8 +30,8 @@
@@ -702,7 +702,7 @@ index fd98be799b..fe30e9ece9 100644
      output_extension = "so"
    }
 diff --git a/sdk/BUILD.gn b/sdk/BUILD.gn
-index 8c556b7618..85a6371b72 100644
+index d8ee0dfc14..50a776e7e1 100644
 --- a/sdk/BUILD.gn
 +++ b/sdk/BUILD.gn
 @@ -9,12 +9,12 @@
@@ -731,7 +731,7 @@ index 8c556b7618..85a6371b72 100644
      }
    }
  
-@@ -1290,7 +1290,7 @@ if (is_ios || is_mac) {
+@@ -1291,7 +1291,7 @@ if (is_ios || is_mac) {
            }
  
            public_deps = [
