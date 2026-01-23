@@ -391,7 +391,9 @@ pref("gfx.downloadable_fonts.fallback_delay", 3000);
 pref("gfx.downloadable_fonts.fallback_delay_short", 100);
 
 #ifdef XP_WIN
-  pref("gfx.font_rendering.directwrite.use_gdi_table_loading", true);
+  // Bug 2011408 will remove this pref and the code that uses it completely if
+  // we don't see any performance issues.
+  pref("gfx.font_rendering.directwrite.use_gdi_table_loading", false);
 #endif
 
 #if defined(XP_WIN)
