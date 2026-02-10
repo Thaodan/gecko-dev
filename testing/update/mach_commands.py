@@ -268,7 +268,7 @@ def copy_macos_channelprefs(tempdir) -> str:
     print(f"Downloaded channelprefs.zip to {download_target} and unpacked to {unpack_target}")
 
     src = Path(tempdir, "channelprefs", TEST_UPDATE_CHANNEL)
-    dst = Path(installed_app_dir, "Contents", "Frameworks")
+    dst = Path(installed_app_dir, "Firefox.app", "Contents", "Frameworks")
 
     Path(installed_app_dir, "Firefox.app").chmod(455)  # rwx for all users
 
