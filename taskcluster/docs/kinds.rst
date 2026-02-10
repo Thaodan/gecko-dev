@@ -891,6 +891,14 @@ generate-baseline-profile-firebase
 ----------------------------------
 Run baseline profile generation for Android on Firebase TestLab.
 
-update
-------------
-Run tests to see if the executable can be updated to the latest release.
+update-test
+-----------
+Run tests to see if the Firefox executable can be updated to the latest release.
+
+run-macrobenchmark-firebase
+---------------------------
+Run Macrobenchmark for Android on Firebase TestLab.
+
+instrumented-build-macrobenchmark-apk
+-------------------------------------
+Generate instrumented apks used to run Macrobenchmark for Android apps.
