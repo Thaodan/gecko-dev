@@ -127,9 +127,6 @@ let JSWINDOWACTORS = {
       },
     },
     matches: ["about:messagepreview", "about:messagepreview?*"],
-    remoteTypes: ["privilegedabout"],
-    enablePreference:
-      "browser.newtabpage.activity-stream.asrouter.devtoolsEnabled",
   },
 
   AboutPocket: {

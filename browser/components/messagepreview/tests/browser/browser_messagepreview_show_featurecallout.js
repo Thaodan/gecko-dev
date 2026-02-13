@@ -4,8 +4,6 @@ const { AboutMessagePreviewParent } = ChromeUtils.importESModule(
   "resource:///actors/AboutWelcomeParent.sys.mjs"
 );
 
-let messageSandbox;
-
 // A feature callout that needs no modification
 const TEST_HAPPY_FEATURE_CALLOUT_MESSAGE = {
   id: "TEST_HAPPY_FEATURE_CALLOUT",
@@ -278,28 +276,32 @@ const TEST_VERY_BAD_FEATURE_CALLOUT = {
   provider: "panel_local_testing",
 };
 
-add_setup(async function () {
-  messageSandbox = sinon.createSandbox();
-  registerCleanupFunction(() => {
-    messageSandbox.restore();
-  });
-});
-
 /**
  * Test each version of the feature callout
  */
 add_task(async function test_show_happy_feature_callout_message() {
+  const messageSandbox = sinon.createSandbox();
   // FeatureCallout needs a new window
   const win = await BrowserTestUtils.openNewBrowserWindow();
-  let { browser } = await openMessagePreviewTab(win.gBrowser);
-  let aboutMessagePreviewActor = await getAboutMessagePreviewParent(browser);
-  messageSandbox.spy(aboutMessagePreviewActor, "showMessage");
-
-  await SpecialPowers.spawn(
-    browser,
-    [TEST_HAPPY_FEATURE_CALLOUT_MESSAGE],
-    message => content.wrappedJSObject.MPShowMessage(JSON.stringify(message))
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    win.gBrowser,
+    "about:messagepreview",
+    true
   );
+
+  let aboutMessagePreviewActor = await getAboutMessagePreviewParent(
+    tab.linkedBrowser
+  );
+  messageSandbox.spy(aboutMessagePreviewActor, "showMessage");
+  registerCleanupFunction(() => {
+    messageSandbox.restore();
+  });
+
+  await aboutMessagePreviewActor.receiveMessage({
+    name: "MessagePreview:SHOW_MESSAGE",
+    data: JSON.stringify(TEST_HAPPY_FEATURE_CALLOUT_MESSAGE),
+    validationEnabled: false,
+  });
 
   const { callCount } = aboutMessagePreviewActor.showMessage;
   Assert.greaterOrEqual(callCount, 1, "showMessage was called");
@@ -318,23 +320,32 @@ add_task(async function test_show_happy_feature_callout_message() {
 
   await waitForClick("button.dismiss-button", win);
   await dialogClosed(win);
-  messageSandbox.restore();
   await BrowserTestUtils.closeWindow(win);
 });
 
 add_task(async function test_show_feature_callout_without_trigger() {
+  const messageSandbox = sinon.createSandbox();
   // FeatureCallout needs a new window
   const win = await BrowserTestUtils.openNewBrowserWindow();
-  let { browser } = await openMessagePreviewTab(win.gBrowser);
-  let aboutMessagePreviewActor = await getAboutMessagePreviewParent(browser);
-  messageSandbox.spy(aboutMessagePreviewActor, "showMessage");
-
-  await SpecialPowers.spawn(
-    browser,
-    [TEST_FEATURE_CALLOUT_NO_TRIGGER],
-    async message =>
-      content.wrappedJSObject.MPShowMessage(JSON.stringify(message))
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    win.gBrowser,
+    "about:messagepreview",
+    true
   );
+
+  let aboutMessagePreviewActor = await getAboutMessagePreviewParent(
+    tab.linkedBrowser
+  );
+  messageSandbox.spy(aboutMessagePreviewActor, "showMessage");
+  registerCleanupFunction(() => {
+    messageSandbox.restore();
+  });
+
+  await aboutMessagePreviewActor.receiveMessage({
+    name: "MessagePreview:SHOW_MESSAGE",
+    data: JSON.stringify(TEST_FEATURE_CALLOUT_NO_TRIGGER),
+    validationEnabled: false,
+  });
 
   const { callCount } = aboutMessagePreviewActor.showMessage;
   Assert.greaterOrEqual(callCount, 1, "showMessage was called");
@@ -353,23 +364,32 @@ add_task(async function test_show_feature_callout_without_trigger() {
 
   await waitForClick("button.dismiss-button", win);
   await dialogClosed(win);
-  messageSandbox.restore();
   await BrowserTestUtils.closeWindow(win);
 });
 
 add_task(async function test_show_feature_callout_anchors() {
+  const messageSandbox = sinon.createSandbox();
   // FeatureCallout needs a new window
   const win = await BrowserTestUtils.openNewBrowserWindow();
-  let { browser } = await openMessagePreviewTab(win.gBrowser);
-  let aboutMessagePreviewActor = await getAboutMessagePreviewParent(browser);
-  messageSandbox.spy(aboutMessagePreviewActor, "showMessage");
-
-  await SpecialPowers.spawn(
-    browser,
-    [TEST_FEATURE_CALLOUT_ANCHORS],
-    async message =>
-      content.wrappedJSObject.MPShowMessage(JSON.stringify(message))
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    win.gBrowser,
+    "about:messagepreview",
+    true
   );
+
+  let aboutMessagePreviewActor = await getAboutMessagePreviewParent(
+    tab.linkedBrowser
+  );
+  messageSandbox.spy(aboutMessagePreviewActor, "showMessage");
+  registerCleanupFunction(() => {
+    messageSandbox.restore();
+  });
+
+  await aboutMessagePreviewActor.receiveMessage({
+    name: "MessagePreview:SHOW_MESSAGE",
+    data: JSON.stringify(TEST_FEATURE_CALLOUT_ANCHORS),
+    validationEnabled: false,
+  });
 
   const { callCount } = aboutMessagePreviewActor.showMessage;
   Assert.greaterOrEqual(callCount, 1, "showMessage was called");
@@ -388,23 +408,32 @@ add_task(async function test_show_feature_callout_anchors() {
 
   await waitForClick("button.dismiss-button", win);
   await dialogClosed(win);
-  messageSandbox.restore();
   await BrowserTestUtils.closeWindow(win);
 });
 
 add_task(async function test_show_bad_feature_callout_message() {
+  const messageSandbox = sinon.createSandbox();
   // FeatureCallout needs a new window
   const win = await BrowserTestUtils.openNewBrowserWindow();
-  let { browser } = await openMessagePreviewTab(win.gBrowser);
-  let aboutMessagePreviewActor = await getAboutMessagePreviewParent(browser);
-  messageSandbox.spy(aboutMessagePreviewActor, "showMessage");
-
-  await SpecialPowers.spawn(
-    browser,
-    [TEST_VERY_BAD_FEATURE_CALLOUT],
-    async message =>
-      content.wrappedJSObject.MPShowMessage(JSON.stringify(message))
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    win.gBrowser,
+    "about:messagepreview",
+    true
   );
+
+  let aboutMessagePreviewActor = await getAboutMessagePreviewParent(
+    tab.linkedBrowser
+  );
+  messageSandbox.spy(aboutMessagePreviewActor, "showMessage");
+  registerCleanupFunction(() => {
+    messageSandbox.restore();
+  });
+
+  await aboutMessagePreviewActor.receiveMessage({
+    name: "MessagePreview:SHOW_MESSAGE",
+    data: JSON.stringify(TEST_VERY_BAD_FEATURE_CALLOUT),
+    validationEnabled: false,
+  });
 
   const { callCount } = aboutMessagePreviewActor.showMessage;
   Assert.greaterOrEqual(callCount, 1, "showMessage was called");
@@ -423,6 +452,5 @@ add_task(async function test_show_bad_feature_callout_message() {
 
   await waitForClick("button.dismiss-button", win);
   await dialogClosed(win);
-  messageSandbox.restore();
   await BrowserTestUtils.closeWindow(win);
 });
