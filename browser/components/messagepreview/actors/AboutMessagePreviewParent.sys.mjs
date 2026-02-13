@@ -3,12 +3,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import { ASRouter } from "resource:///modules/asrouter/ASRouter.sys.mjs";
 import { JsonSchema } from "resource://gre/modules/JsonSchema.sys.mjs";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
   BookmarksBarButton: "resource:///modules/asrouter/BookmarksBarButton.sys.mjs",
   CFRPageActions: "resource:///modules/asrouter/CFRPageActions.sys.mjs",
@@ -19,6 +18,13 @@ ChromeUtils.defineESModuleGetters(lazy, {
   SpecialMessageActions:
     "resource://messaging-system/lib/SpecialMessageActions.sys.mjs",
   Spotlight: "resource:///modules/asrouter/Spotlight.sys.mjs",
+
+  log: () => {
+    const { Logger } = ChromeUtils.importESModule(
+      "resource://messaging-system/lib/Logger.sys.mjs"
+    );
+    return new Logger("AboutMessagePreviewParent");
+  },
 });
 
 const SWITCH_THEMES = {
@@ -113,7 +119,7 @@ export class AboutMessagePreviewParent extends JSWindowActorParent {
         }
 
         screen.anchors = [...existingAnchors, fallbackAnchor];
-        console.log("ANCHORS: ", screen.anchors);
+        lazy.log.debug("ANCHORS: ", screen.anchors);
       }
       // Try showing again
       await lazy.FeatureCalloutBroker.showFeatureCallout(browser, message);
@@ -136,7 +142,7 @@ export class AboutMessagePreviewParent extends JSWindowActorParent {
     try {
       message = JSON.parse(data);
     } catch (e) {
-      console.error("Could not parse message", e);
+      lazy.log.error("Could not parse message", e);
       return;
     }
 
@@ -147,7 +153,7 @@ export class AboutMessagePreviewParent extends JSWindowActorParent {
       ).then(rsp => rsp.json());
       const result = JsonSchema.validate(message, schema);
       if (!result.valid) {
-        console.error(
+        lazy.log.error(
           `Invalid message: ${JSON.stringify(result.errors, undefined, 2)}`
         );
       }
@@ -175,25 +181,27 @@ export class AboutMessagePreviewParent extends JSWindowActorParent {
         this.showPrivateBrowsingMessage(message, browser);
         return;
       default:
-        console.error(`Unsupported message template ${message.template}`);
+        lazy.log.error(`Unsupported message template ${message.template}`);
     }
   }
 
-  receiveMessage(message) {
+  async receiveMessage(message) {
     // validationEnabled is used for testing
     const { name, data, validationEnabled } = message;
 
     switch (name) {
       case "MessagePreview:SHOW_MESSAGE":
-        this.showMessage(data, validationEnabled);
+        await this.showMessage(data, validationEnabled);
         return;
       case "MessagePreview:CHANGE_THEME": {
         const theme = data.isDark ? SWITCH_THEMES.LIGHT : SWITCH_THEMES.DARK;
-        lazy.AddonManager.getAddonByID(theme).then(addon => addon.enable());
+        await lazy.AddonManager.getAddonByID(theme).then(addon =>
+          addon.enable()
+        );
         return;
       }
       default:
-        console.log(`Unexpected event ${name} was not handled.`);
+        lazy.log.debug(`Unexpected event ${name} was not handled.`);
     }
   }
 }
