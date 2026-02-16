@@ -372,8 +372,8 @@ export class UrlbarInput extends HTMLElement {
       this.#init();
     }
 
-    if (this.sapName == "searchbar") {
-      this.parentNode.setAttribute("overflows", "false");
+    if (this.inOverflowPanel && this.view.isOpen) {
+      this.view.close();
     }
 
     // Don't attach event listeners if the toolbar is not visible
@@ -472,8 +472,6 @@ export class UrlbarInput extends HTMLElement {
 
   #disconnectedCallback() {
     if (this.sapName == "searchbar") {
-      this.parentNode.removeAttribute("overflows");
-
       // Exit search mode to make sure it doesn't become stale while the
       // searchbar is invisible. Otherwise, the engine might get deleted
       // but we don't notice because the search service observer is inactive.
@@ -1189,7 +1187,7 @@ export class UrlbarInput extends HTMLElement {
       searchSource: this.getSearchSource(event),
     });
 
-    if (URL.canParse(url)) {
+    if (this.#isAddressbar && URL.canParse(url)) {
       // Annotate if the untrimmed value contained a scheme, to later potentially
       // be upgraded by schemeless HTTPS-First.
       openParams.schemelessInput = this.#getSchemelessInput(
@@ -2135,6 +2133,10 @@ export class UrlbarInput extends HTMLElement {
 
     if (this.searchMode) {
       this.confirmSearchMode();
+    }
+
+    if (this.inOverflowPanel) {
+      return;
     }
 
     this._lastSearchString = searchString;
@@ -3355,6 +3357,17 @@ export class UrlbarInput extends HTMLElement {
         });
       }
     });
+  }
+
+  get inOverflowPanel() {
+    if (!this.parentElement?.id) {
+      return false;
+    }
+    return (
+      lazy.CustomizableUI.getPlacementOfWidget(this.parentElement.id)?.area ==
+        lazy.CustomizableUI.AREA_FIXED_OVERFLOW_PANEL ||
+      this.parentElement.getAttribute("overflowedItem") == "true"
+    );
   }
 
   /**
@@ -5089,15 +5102,11 @@ export class UrlbarInput extends HTMLElement {
     }
 
     if (this.view.isOpen) {
-      if (lazy.UrlbarPrefs.get("closeOtherPanelsOnOpen")) {
-        // UrlbarView rolls up all popups when it opens, but we should
-        // do the same for UrlbarInput when it's already open in case
-        // a tab preview was opened
-        this.window.docShell.treeOwner
-          .QueryInterface(Ci.nsIInterfaceRequestor)
-          .getInterface(Ci.nsIAppWindow)
-          .rollupAllPopups();
-      }
+      // UrlbarView rolls up all popups when it opens, but we should
+      // do the same for UrlbarInput when it's already open in case
+      // a tab preview was opened
+      this.view.maybeRollupPopups();
+
       if (!value && !lazy.UrlbarPrefs.get("suggest.topsites")) {
         this.view.clear();
         if (!this.searchMode || !this.view.oneOffSearchButtons?.hasView) {
