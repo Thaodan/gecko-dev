@@ -3108,6 +3108,7 @@ pref("devtools.netmonitor.features.requestBlocking", true);
 
 // Enable the Application panel
 pref("devtools.application.enabled", true);
+pref("devtools.application.selectedSidebar", "service-workers");
 
 // The internal Anti tracking debugging panel
 pref("devtools.anti-tracking.enabled", false);
