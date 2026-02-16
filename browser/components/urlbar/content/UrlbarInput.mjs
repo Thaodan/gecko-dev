@@ -21,6 +21,8 @@ const lazy = XPCOMUtils.declareLazy({
     "moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs",
   BrowserUIUtils: "resource:///modules/BrowserUIUtils.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
+  CustomizableUI:
+    "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   ExtensionSearchHandler:
     "resource://gre/modules/ExtensionSearchHandler.sys.mjs",
   ExtensionUtils: "resource://gre/modules/ExtensionUtils.sys.mjs",
@@ -3038,6 +3040,7 @@ export class UrlbarInput extends HTMLElement {
         this.setAttribute("breakout", "true");
         this.parentNode.setAttribute("breakout", "true");
         this.showPopover();
+        this.#fixAddressbarSearchbarOrder();
         this.#updateTextboxPosition();
 
         resolve();
@@ -3352,6 +3355,52 @@ export class UrlbarInput extends HTMLElement {
         });
       }
     });
+  }
+
+  /**
+   * Should be directly after every showPopover to fix the popover order
+   * among urlbar and searchbar.
+   * Since a moz-urlbar only extends downwards when focused, the moz-urlbar
+   * that's higher (along the y axis) should also be on top (along the z axis).
+   *
+   * Note: this is a hack necessary because of bug 2014481.
+   * Once that's fixed, we can simply always show the focused one on top.
+   */
+  #fixAddressbarSearchbarOrder() {
+    let addressbar = /** @type {?UrlbarInput} */ (
+      this.document.getElementById("urlbar")
+    );
+    let searchbar = /** @type {?UrlbarInput} */ (
+      this.document.getElementById("searchbar-new")
+    );
+    if (
+      !searchbar?.matches(":popover-open") ||
+      !addressbar?.matches(":popover-open")
+    ) {
+      return;
+    }
+
+    let searchbarArea =
+      lazy.CustomizableUI.getPlacementOfWidget("search-container")?.area;
+    if (!searchbarArea) {
+      return;
+    }
+
+    const areasAboveNavbar = [
+      lazy.CustomizableUI.AREA_MENUBAR,
+      lazy.CustomizableUI.AREA_TABSTRIP,
+    ];
+    const areasBelowNavbar = [lazy.CustomizableUI.AREA_BOOKMARKS];
+
+    // If `this` is higher than the other bar, we don't need to do anything since
+    // showPopover was just called (hence we're already on top of the other one).
+    if (areasAboveNavbar.includes(searchbarArea) && this != searchbar) {
+      searchbar.hidePopover();
+      searchbar.showPopover();
+    } else if (areasBelowNavbar.includes(searchbarArea) && this != addressbar) {
+      addressbar.hidePopover();
+      addressbar.showPopover();
+    }
   }
 
   _updateUrlTooltip() {
