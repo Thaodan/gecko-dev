@@ -264,30 +264,22 @@ already_AddRefed<NodeInfo> nsNodeInfoManager::GetDocumentNodeInfo() {
 
 void* nsNodeInfoManager::Allocate(size_t aSize) {
   if (!mHasAllocated) {
-    if (mozilla::StaticPrefs::dom_arena_allocator_enabled_AtStartup()) {
-      if (!mArena) {
-        mozilla::dom::DocGroup* docGroup = GetDocument()->GetDocGroupOrCreate();
-        if (docGroup) {
-          MOZ_ASSERT(!GetDocument()->HasChildren());
-          mArena = docGroup->ArenaAllocator();
-        }
+    if (!mArena) {
+      mozilla::dom::DocGroup* docGroup = GetDocument()->GetDocGroupOrCreate();
+      if (docGroup) {
+        MOZ_ASSERT(!GetDocument()->HasChildren());
+        mArena = docGroup->ArenaAllocator();
       }
-#ifdef DEBUG
-      else {
-        mozilla::dom::DocGroup* docGroup = GetDocument()->GetDocGroup();
-        MOZ_ASSERT(docGroup);
-        MOZ_ASSERT(mArena == docGroup->ArenaAllocator());
-      }
-#endif
     }
+#ifdef DEBUG
+    else {
+      mozilla::dom::DocGroup* docGroup = GetDocument()->GetDocGroup();
+      MOZ_ASSERT(docGroup);
+      MOZ_ASSERT(mArena == docGroup->ArenaAllocator());
+    }
+#endif
     mHasAllocated = true;
   }
-
-#ifdef DEBUG
-  if (!mozilla::StaticPrefs::dom_arena_allocator_enabled_AtStartup()) {
-    MOZ_ASSERT(!mArena, "mArena should not set if the pref is not on");
-  };
-#endif
 
   if (mArena) {
     return mArena->Allocate(aSize);
@@ -298,9 +290,6 @@ void* nsNodeInfoManager::Allocate(size_t aSize) {
 void nsNodeInfoManager::SetArenaAllocator(mozilla::dom::DOMArena* aArena) {
   MOZ_DIAGNOSTIC_ASSERT_IF(mArena, mArena == aArena);
   MOZ_DIAGNOSTIC_ASSERT(!mHasAllocated);
-  MOZ_DIAGNOSTIC_ASSERT(
-      mozilla::StaticPrefs::dom_arena_allocator_enabled_AtStartup());
-
   if (!mArena) {
     mArena = aArena;
   }

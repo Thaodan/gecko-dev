@@ -134,11 +134,8 @@ static bool ShouldUseUAWidgetScope(const nsINode* aNode) {
 }
 
 void* nsINode::operator new(size_t aSize, nsNodeInfoManager* aManager) {
-  if (StaticPrefs::dom_arena_allocator_enabled_AtStartup()) {
-    MOZ_ASSERT(aManager, "nsNodeInfoManager needs to be initialized");
-    return aManager->Allocate(aSize);
-  }
-  return ::operator new(aSize);
+  MOZ_ASSERT(aManager, "nsNodeInfoManager needs to be initialized");
+  return aManager->Allocate(aSize);
 }
 void nsINode::operator delete(void* aPtr) { free_impl(aPtr); }
 
@@ -3924,17 +3921,15 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
     // node isn't allocated by the NodeInfoManager of this document,
     // so we need to do this SetArenaAllocator logic to bypass
     // the !HasChildren() check in NodeInfoManager::Allocate.
-    if (mozilla::StaticPrefs::dom_arena_allocator_enabled_AtStartup()) {
-      if (!newDoc->NodeInfoManager()->HasAllocated()) {
-        if (DocGroup* docGroup = newDoc->GetDocGroup()) {
-          newDoc->NodeInfoManager()->SetArenaAllocator(
-              docGroup->ArenaAllocator());
-        }
+    if (!newDoc->NodeInfoManager()->HasAllocated()) {
+      if (DocGroup* docGroup = newDoc->GetDocGroup()) {
+        newDoc->NodeInfoManager()->SetArenaAllocator(
+            docGroup->ArenaAllocator());
       }
+    }
 
-      if (domArenaToStore && newDoc->GetDocGroup() != oldDoc->GetDocGroup()) {
-        nsContentUtils::AddEntryToDOMArenaTable(aNode, domArenaToStore);
-      }
+    if (domArenaToStore && newDoc->GetDocGroup() != oldDoc->GetDocGroup()) {
+      nsContentUtils::AddEntryToDOMArenaTable(aNode, domArenaToStore);
     }
   }
 

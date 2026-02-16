@@ -4798,11 +4798,6 @@
   value: true
   mirror: always
 
-- name: dom.arena_allocator.enabled
-  type: bool
-  value: true
-  mirror: once
-
 - name: dom.serviceworkers.loadingCachedScriptOnWorkerThread.enabled
   type: RelaxedAtomicBool
   value: false
