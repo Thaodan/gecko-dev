@@ -103,10 +103,10 @@ const ClassSpec ListFormatObject::classSpec_ = {
 };
 
 struct js::intl::ListFormatOptions {
-  enum class Type : int8_t { Conjunction, Disjunction, Unit };
+  using Type = mozilla::intl::ListFormat::Type;
   Type type = Type::Conjunction;
 
-  enum class Style : int8_t { Long, Short, Narrow };
+  using Style = mozilla::intl::ListFormat::Style;
   Style style = Style::Long;
 };
 
@@ -336,40 +336,6 @@ static bool ResolveLocale(JSContext* cx, Handle<ListFormatObject*> listFormat) {
   return true;
 }
 
-static auto ToListFormatType(ListFormatOptions::Type type) {
-#ifndef USING_ENUM
-  using enum mozilla::intl::ListFormat::Type;
-#else
-  USING_ENUM(mozilla::intl::ListFormat::Type, Conjunction, Disjunction, Unit);
-#endif
-  switch (type) {
-    case ListFormatOptions::Type::Conjunction:
-      return Conjunction;
-    case ListFormatOptions::Type::Disjunction:
-      return Disjunction;
-    case ListFormatOptions::Type::Unit:
-      return Unit;
-  }
-  MOZ_CRASH("invalid list format type");
-}
-
-static auto ToListFormatStyle(ListFormatOptions::Style style) {
-#ifndef USING_ENUM
-  using enum mozilla::intl::ListFormat::Style;
-#else
-  USING_ENUM(mozilla::intl::ListFormat::Style, Long, Short, Narrow);
-#endif
-  switch (style) {
-    case ListFormatOptions::Style::Long:
-      return Long;
-    case ListFormatOptions::Style::Short:
-      return Short;
-    case ListFormatOptions::Style::Narrow:
-      return Narrow;
-  }
-  MOZ_CRASH("invalid list format style");
-}
-
 /**
  * Returns a new ListFormat with the locale and list formatting options
  * of the given ListFormat object.
@@ -387,8 +353,8 @@ static mozilla::intl::ListFormat* NewListFormat(
   }
 
   mozilla::intl::ListFormat::Options options = {
-      .mType = ToListFormatType(lfOptions.type),
-      .mStyle = ToListFormatStyle(lfOptions.style),
+      .mType = lfOptions.type,
+      .mStyle = lfOptions.style,
   };
 
   auto result = mozilla::intl::ListFormat::TryCreate(
