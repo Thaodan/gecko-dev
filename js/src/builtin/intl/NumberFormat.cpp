@@ -489,7 +489,7 @@ static constexpr std::string_view RoundingModeToString(
   using enum NumberFormatDigitOptions::RoundingMode;
 #else
   USING_ENUM(NumberFormatDigitOptions::RoundingMode, Ceil, Floor, Expand, Trunc,
-             HalfCeil, HalfFloor, HalfExpand, HalfTrunc, HalfEven);
+             HalfCeil, HalfFloor, HalfExpand, HalfTrunc, HalfEven, HalfOdd);
 #endif
   switch (roundingMode) {
     case Ceil:
@@ -510,6 +510,9 @@ static constexpr std::string_view RoundingModeToString(
       return "halfTrunc";
     case HalfEven:
       return "halfEven";
+    case HalfOdd:
+      // Not available in ECMA-402.
+      break;
   }
   MOZ_CRASH("invalid number format rounding mode");
 }
@@ -1532,77 +1535,6 @@ static UniqueChars NumberFormatLocale(
   return FormatLocale(cx, locale, keywords);
 }
 
-static auto ToCurrencyDisplay(
-    NumberFormatUnitOptions::CurrencyDisplay currencyDisplay) {
-#ifndef USING_ENUM
-  using enum mozilla::intl::NumberFormatOptions::CurrencyDisplay;
-#else
-  USING_ENUM(mozilla::intl::NumberFormatOptions::CurrencyDisplay, Symbol,
-             NarrowSymbol, Code, Name);
-#endif
-  switch (currencyDisplay) {
-    case NumberFormatUnitOptions::CurrencyDisplay::Symbol:
-      return Symbol;
-    case NumberFormatUnitOptions::CurrencyDisplay::NarrowSymbol:
-      return NarrowSymbol;
-    case NumberFormatUnitOptions::CurrencyDisplay::Code:
-      return Code;
-    case NumberFormatUnitOptions::CurrencyDisplay::Name:
-      return Name;
-  }
-  MOZ_CRASH("invalid currency display");
-}
-
-static auto ToUnitDisplay(NumberFormatUnitOptions::UnitDisplay unitDisplay) {
-#ifndef USING_ENUM
-  using enum mozilla::intl::NumberFormatOptions::UnitDisplay;
-#else
-  USING_ENUM(mozilla::intl::NumberFormatOptions::UnitDisplay, Short, Narrow,
-             Long);
-#endif
-  switch (unitDisplay) {
-    case NumberFormatUnitOptions::UnitDisplay::Short:
-      return Short;
-    case NumberFormatUnitOptions::UnitDisplay::Narrow:
-      return Narrow;
-    case NumberFormatUnitOptions::UnitDisplay::Long:
-      return Long;
-  }
-  MOZ_CRASH("invalid unit display");
-}
-
-static auto ToRoundingMode(
-    NumberFormatDigitOptions::RoundingMode roundingMode) {
-#ifndef USING_ENUM
-  using enum mozilla::intl::NumberFormatOptions::RoundingMode;
-#else
-  USING_ENUM(mozilla::intl::NumberFormatOptions::RoundingMode, Ceil, Floor,
-             Expand, Trunc, HalfCeil, HalfFloor, HalfExpand, HalfTrunc,
-             HalfEven);
-#endif
-  switch (roundingMode) {
-    case NumberFormatDigitOptions::RoundingMode::Ceil:
-      return Ceil;
-    case NumberFormatDigitOptions::RoundingMode::Floor:
-      return Floor;
-    case NumberFormatDigitOptions::RoundingMode::Expand:
-      return Expand;
-    case NumberFormatDigitOptions::RoundingMode::Trunc:
-      return Trunc;
-    case NumberFormatDigitOptions::RoundingMode::HalfCeil:
-      return HalfCeil;
-    case NumberFormatDigitOptions::RoundingMode::HalfFloor:
-      return HalfFloor;
-    case NumberFormatDigitOptions::RoundingMode::HalfExpand:
-      return HalfExpand;
-    case NumberFormatDigitOptions::RoundingMode::HalfTrunc:
-      return HalfTrunc;
-    case NumberFormatDigitOptions::RoundingMode::HalfEven:
-      return HalfEven;
-  }
-  MOZ_CRASH("invalid rounding mode");
-}
-
 static auto ToSignDisplay(NumberFormatOptions::SignDisplay signDisplay) {
 #ifndef USING_ENUM
   using enum mozilla::intl::NumberFormatOptions::SignDisplay;
@@ -1675,45 +1607,6 @@ static auto ToNotation(NumberFormatOptions::Notation notation,
   MOZ_CRASH("invalid notation");
 }
 
-static auto ToGrouping(NumberFormatOptions::UseGrouping useGrouping) {
-#ifndef USING_ENUM
-  using enum mozilla::intl::NumberFormatOptions::Grouping;
-#else
-  USING_ENUM(mozilla::intl::NumberFormatOptions::Grouping, Auto, Min2, Always,
-             Never);
-#endif
-  switch (useGrouping) {
-    case NumberFormatOptions::UseGrouping::Auto:
-      return Auto;
-    case NumberFormatOptions::UseGrouping::Min2:
-      return Min2;
-    case NumberFormatOptions::UseGrouping::Always:
-      return Always;
-    case NumberFormatOptions::UseGrouping::Never:
-      return Never;
-  }
-  MOZ_CRASH("invalid grouping");
-}
-
-static auto ToRoundingPriority(
-    NumberFormatDigitOptions::RoundingPriority roundingPriority) {
-#ifndef USING_ENUM
-  using enum mozilla::intl::NumberFormatOptions::RoundingPriority;
-#else
-  USING_ENUM(mozilla::intl::NumberFormatOptions::RoundingPriority, Auto,
-             MorePrecision, LessPrecision);
-#endif
-  switch (roundingPriority) {
-    case NumberFormatDigitOptions::RoundingPriority::Auto:
-      return Auto;
-    case NumberFormatDigitOptions::RoundingPriority::MorePrecision:
-      return MorePrecision;
-    case NumberFormatDigitOptions::RoundingPriority::LessPrecision:
-      return LessPrecision;
-  }
-  MOZ_CRASH("invalid rounding priority");
-}
-
 struct MozNumberFormatOptions : public mozilla::intl::NumberRangeFormatOptions {
   static_assert(std::is_base_of_v<mozilla::intl::NumberFormatOptions,
                                   mozilla::intl::NumberRangeFormatOptions>);
@@ -1775,7 +1668,7 @@ static void SetNumberFormatUnitOptions(
       unitOptions.currency.to_string_view().copy(options.currencyChars,
                                                  CurrencyLength);
 
-      auto display = ToCurrencyDisplay(unitOptions.currencyDisplay);
+      auto display = unitOptions.currencyDisplay;
 
       options.mCurrency = mozilla::Some(std::make_pair(
           std::string_view(options.currencyChars, CurrencyLength), display));
@@ -1784,7 +1677,7 @@ static void SetNumberFormatUnitOptions(
 
     case NumberFormatUnitOptions::Style::Unit: {
       auto name = UnitName(unitOptions.unit, options.unitChars);
-      auto display = ToUnitDisplay(unitOptions.unitDisplay);
+      auto display = unitOptions.unitDisplay;
 
       options.mUnit = mozilla::Some(std::make_pair(name, display));
       return;
@@ -1820,8 +1713,8 @@ static void SetNumberFormatDigitOptions(
 
   options.mMinIntegerDigits = mozilla::Some(digitOptions.minimumIntegerDigits);
   options.mRoundingIncrement = digitOptions.roundingIncrement;
-  options.mRoundingMode = ToRoundingMode(digitOptions.roundingMode);
-  options.mRoundingPriority = ToRoundingPriority(digitOptions.roundingPriority);
+  options.mRoundingMode = digitOptions.roundingMode;
+  options.mRoundingPriority = digitOptions.roundingPriority;
   options.mStripTrailingZero =
       digitOptions.trailingZeroDisplay ==
       NumberFormatDigitOptions::TrailingZeroDisplay::StripIfInteger;
@@ -1833,7 +1726,7 @@ static void SetNumberFormatOptions(const NumberFormatOptions& nfOptions,
   SetNumberFormatUnitOptions(nfOptions.unitOptions, options);
 
   options.mNotation = ToNotation(nfOptions.notation, nfOptions.compactDisplay);
-  options.mGrouping = ToGrouping(nfOptions.useGrouping);
+  options.mGrouping = nfOptions.useGrouping;
   if (nfOptions.unitOptions.style == NumberFormatUnitOptions::Style::Currency &&
       nfOptions.unitOptions.currencySign ==
           NumberFormatUnitOptions::CurrencySign::Accounting) {

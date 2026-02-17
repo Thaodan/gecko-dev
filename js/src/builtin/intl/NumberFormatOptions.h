@@ -7,6 +7,8 @@
 #ifndef builtin_intl_NumberFormatOptions_h
 #define builtin_intl_NumberFormatOptions_h
 
+#include "mozilla/intl/NumberFormat.h"
+
 #include <array>
 #include <stdint.h>
 
@@ -39,20 +41,10 @@ struct NumberFormatDigitOptions {
   int8_t minimumSignificantDigits = 0;  // integer ∈ [1, 21]
   int8_t maximumSignificantDigits = 0;  // integer ∈ [1, 21]
 
-  enum class RoundingMode : int8_t {
-    Ceil,
-    Floor,
-    Expand,
-    Trunc,
-    HalfCeil,
-    HalfFloor,
-    HalfExpand,
-    HalfTrunc,
-    HalfEven
-  };
+  using RoundingMode = mozilla::intl::NumberFormatOptions::RoundingMode;
   RoundingMode roundingMode = RoundingMode::HalfExpand;
 
-  enum class RoundingPriority : int8_t { Auto, MorePrecision, LessPrecision };
+  using RoundingPriority = mozilla::intl::NumberFormatOptions::RoundingPriority;
   RoundingPriority roundingPriority = RoundingPriority::Auto;
 
   enum class TrailingZeroDisplay : int8_t { Auto, StripIfInteger };
@@ -77,13 +69,13 @@ struct NumberFormatUnitOptions {
   enum class Style : int8_t { Decimal, Percent, Currency, Unit };
   Style style = Style::Decimal;
 
-  enum class CurrencyDisplay : int8_t { Symbol, NarrowSymbol, Code, Name };
+  using CurrencyDisplay = mozilla::intl::NumberFormatOptions::CurrencyDisplay;
   CurrencyDisplay currencyDisplay = CurrencyDisplay::Symbol;
 
   enum class CurrencySign : int8_t { Standard, Accounting };
   CurrencySign currencySign = CurrencySign::Standard;
 
-  enum class UnitDisplay : int8_t { Short, Narrow, Long };
+  using UnitDisplay = mozilla::intl::NumberFormatOptions::UnitDisplay;
   UnitDisplay unitDisplay = UnitDisplay::Short;
 
   struct Currency {
@@ -161,7 +153,7 @@ struct NumberFormatOptions {
   enum class CompactDisplay : int8_t { Short, Long };
   CompactDisplay compactDisplay = CompactDisplay::Short;
 
-  enum class UseGrouping : int8_t { Auto, Min2, Always, Never };
+  using UseGrouping = mozilla::intl::NumberFormatOptions::Grouping;
   UseGrouping useGrouping = UseGrouping::Auto;
 
   enum class SignDisplay : int8_t { Auto, Never, Always, ExceptZero, Negative };
@@ -246,7 +238,7 @@ struct PackedNumberFormatUnitOptions {
   using CurrencyDisplayField =
       packed::EnumField<StyleField,
                         NumberFormatUnitOptions::CurrencyDisplay::Symbol,
-                        NumberFormatUnitOptions::CurrencyDisplay::Name>;
+                        NumberFormatUnitOptions::CurrencyDisplay::NarrowSymbol>;
 
   using CurrencySignField =
       packed::EnumField<CurrencyDisplayField,
