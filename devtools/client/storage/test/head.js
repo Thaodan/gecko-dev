@@ -1092,7 +1092,6 @@ async function performAdd(store) {
   return rowId;
 }
 
-
 /**
  * Remove all items from a store.
  *
