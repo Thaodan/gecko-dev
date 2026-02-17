@@ -3600,7 +3600,7 @@ pref("browser.ipProtection.added", false);
 // Pref to track whether the user has upgraded to Mozilla VPN
 pref("browser.ipProtection.hasUpgraded", false);
 // Pref that enables bandwidth usage feature
-pref("browser.ipProtection.bandwidth.enabled", false);
+pref("browser.ipProtection.bandwidth.enabled", true);
 // Pref that displays egress location in VPN panel
 pref("browser.ipProtection.egressLocationEnabled", false);
 // Pref that flips at 50%, 75%, and 90% bandwidth usage thresholds
