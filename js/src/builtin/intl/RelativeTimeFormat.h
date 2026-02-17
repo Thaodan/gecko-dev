@@ -12,6 +12,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "builtin/intl/Packed.h"
 #include "gc/Barrier.h"
 #include "js/Class.h"
 #include "vm/NativeObject.h"
@@ -31,6 +32,34 @@ struct RelativeTimeFormatOptions {
 
   enum class Numeric : int8_t { Always, Auto };
   Numeric numeric = Numeric::Always;
+};
+
+struct PackedRelativeTimeFormatOptions {
+  using RawValue = uint32_t;
+
+  using StyleField =
+      packed::EnumField<RawValue, RelativeTimeFormatOptions::Style::Long,
+                        RelativeTimeFormatOptions::Style::Narrow>;
+
+  using NumericField =
+      packed::EnumField<StyleField, RelativeTimeFormatOptions::Numeric::Always,
+                        RelativeTimeFormatOptions::Numeric::Auto>;
+
+  using PackedValue = packed::PackedValue<NumericField>;
+
+  static auto pack(const RelativeTimeFormatOptions& options) {
+    RawValue rawValue =
+        StyleField::pack(options.style) | NumericField::pack(options.numeric);
+    return PackedValue::toValue(rawValue);
+  }
+
+  static auto unpack(JS::Value value) {
+    RawValue rawValue = PackedValue::fromValue(value);
+    return RelativeTimeFormatOptions{
+        .style = StyleField::unpack(rawValue),
+        .numeric = NumericField::unpack(rawValue),
+    };
+  }
 };
 
 class RelativeTimeFormatObject : public NativeObject {
@@ -85,16 +114,16 @@ class RelativeTimeFormatObject : public NativeObject {
     setFixedSlot(NUMBERING_SYSTEM, StringValue(numberingSystem));
   }
 
-  RelativeTimeFormatOptions* getOptions() const {
+  RelativeTimeFormatOptions getOptions() const {
     const auto& slot = getFixedSlot(OPTIONS);
     if (slot.isUndefined()) {
-      return nullptr;
+      return {};
     }
-    return static_cast<RelativeTimeFormatOptions*>(slot.toPrivate());
+    return PackedRelativeTimeFormatOptions::unpack(slot);
   }
 
-  void setOptions(RelativeTimeFormatOptions* options) {
-    setFixedSlot(OPTIONS, PrivateValue(options));
+  void setOptions(const RelativeTimeFormatOptions& options) {
+    setFixedSlot(OPTIONS, PackedRelativeTimeFormatOptions::pack(options));
   }
 
   mozilla::intl::RelativeTimeFormat* getRelativeTimeFormatter() const {
