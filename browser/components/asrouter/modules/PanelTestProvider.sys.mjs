@@ -2014,7 +2014,7 @@ const MESSAGES = () => [
       },
       body: "Body",
       image_url:
-        "chrome://activity-stream/content/data/content/assets/fox-doodle-waving.gif",
+        "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/a3c640c8-7594-4bb2-bc18-8b4744f3aaf2.gif",
       launch_url: "https://mozilla.org",
       requireInteraction: true,
       actions: [

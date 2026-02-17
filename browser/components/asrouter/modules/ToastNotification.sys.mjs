@@ -2,17 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
-
-ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
-  return console.createInstance({
-    prefix: "ToastNotification",
-    maxLogLevel: "Warn",
-  });
-});
 
 ChromeUtils.defineESModuleGetters(lazy, {
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
@@ -75,50 +67,15 @@ export const ToastNotification = {
     this.sendUserEventTelemetry("IMPRESSION", message, dispatch);
     dispatch({ type: "IMPRESSION", data: message });
 
-    let alert;
-
-    let imagePath;
-    const imgUrl = new URL(content.image_url);
-    const imgName = imgUrl.pathname.split("/").pop();
-    if (AppConstants.platform === "win" && imgName.endsWith(".gif")) {
-      alert = Cc["@mozilla.org/windows-alert-notification;1"].createInstance(
-        Ci.nsIWindowsAlertNotification
-      );
-
-      try {
-        const resp = await fetch(imgUrl);
-        if (!resp.ok) {
-          throw new Error(`Could not fetch ${content.image_url}`);
-        }
-
-        const bytes = new Uint8Array(await resp.arrayBuffer());
-        const uuid = Services.uuid.generateUUID().toString();
-
-        imagePath = PathUtils.join(PathUtils.tempDir, `${uuid}_${imgName}`);
-
-        lazy.logConsole.info(
-          `Saved ${content.image_url} to path: ${imagePath}`
-        );
-
-        await IOUtils.write(imagePath, bytes);
-
-        alert.imagePathUnchecked = imagePath;
-      } catch (error) {
-        lazy.logConsole.warn(`Animated gif notification: ${error}`);
-      }
-    } else {
-      alert = Cc["@mozilla.org/alert-notification;1"].createInstance(
-        Ci.nsIAlertNotification
-      );
-    }
-
+    let alert = Cc["@mozilla.org/alert-notification;1"].createInstance(
+      Ci.nsIAlertNotification
+    );
     let systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
-    // formatURL with a string parameter and a space in the URL will not
-    // replace it with %20, but formatURL accepts URL objects and they can
-    // interprete the string accordingly.
     alert.init(
       tag,
-      null /* aImageURL */,
+      content.image_url
+        ? Services.urlFormatter.formatURL(content.image_url)
+        : content.image_url,
       title,
       body,
       true /* aTextClickable */,
@@ -167,15 +124,6 @@ export const ToastNotification = {
     let obs = (subject, topic) => {
       if (topic === "alertshow") {
         shownPromise.resolve();
-      }
-
-      if (topic === "alertfinished") {
-        if (AppConstants.platform === "win" && alert?.imagePathUnchecked) {
-          // Notifiactions shown with `imagePathUnchecked` don't delete the
-          // provided file, so we have to clean it up ourselves.
-          lazy.logConsole.info(`Deleting ${imagePath}`);
-          IOUtils.remove(imagePath);
-        }
       }
     };
 

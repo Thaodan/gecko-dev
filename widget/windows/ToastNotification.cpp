@@ -426,7 +426,6 @@ ToastNotification::ShowAlert(nsIAlertNotification* aAlert,
   bool isSystemPrincipal = principal && principal->IsSystemPrincipal();
 
   auto imagePlacement = ImagePlacement::eInline;
-  nsAutoString imagePath;
   if (isSystemPrincipal) {
     nsCOMPtr<nsIWindowsAlertNotification> winAlert(do_QueryInterface(aAlert));
     if (winAlert) {
@@ -447,8 +446,6 @@ ToastNotification::ShowAlert(nsIAlertNotification* aAlert,
                   ("Invalid image placement enum value: %hhu", placement));
           return NS_ERROR_UNEXPECTED;
       }
-
-      MOZ_TRY(winAlert->GetImagePathUnchecked(imagePath));
     }
   }
 
@@ -461,8 +458,7 @@ ToastNotification::ShowAlert(nsIAlertNotification* aAlert,
   RefPtr<ToastNotificationHandler> handler = new ToastNotificationHandler(
       this, mAumid.ref(), aAlert, aAlertListener, name, cookie, title, text,
       hostPort, textClickable, requireInteraction, actions, isSystemPrincipal,
-      opaqueRelaunchData, inPrivateBrowsing, isSilent, imagePlacement,
-      imagePath);
+      opaqueRelaunchData, inPrivateBrowsing, isSilent, imagePlacement);
   mActiveHandlers.InsertOrUpdate(name, RefPtr{handler});
 
   MOZ_LOG(sWASLog, LogLevel::Debug,
@@ -870,18 +866,6 @@ NS_IMETHODIMP WindowsAlertNotification::SetImagePlacement(
 
   return NS_OK;
 }
-
-NS_IMETHODIMP WindowsAlertNotification::GetImagePathUnchecked(
-    nsAString& aImagePathUnchecked) {
-  aImagePathUnchecked = mImagePathUnchecked;
-  return NS_OK;
-};
-
-NS_IMETHODIMP WindowsAlertNotification::SetImagePathUnchecked(
-    const nsAString& aImagePathUnchecked) {
-  mImagePathUnchecked = aImagePathUnchecked;
-  return NS_OK;
-};
 
 }  // namespace widget
 }  // namespace mozilla
