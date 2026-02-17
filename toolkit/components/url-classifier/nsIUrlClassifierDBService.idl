@@ -206,12 +206,6 @@ interface nsIUrlClassifierDBService : nsISupports
    * Empty all the caches.
    */
   void clearCache();
-
-  /**
-   * Clean the simulated cache in RealTimeRequestSimulator.
-   * For testing purposes only.
-   */
-  void cleanRealTimeSimulatorCache();
 };
 
 /**
