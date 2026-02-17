@@ -2116,6 +2116,27 @@ static mozilla::intl::DateTimeFormat* GetOrCreateDateTimeFormat(
   return df;
 }
 
+static auto OptionToString(mozilla::intl::DateTimeFormat::HourCycle hourCycle) {
+  return HourCycleToString(hourCycle);
+}
+
+static auto OptionToString(mozilla::intl::DateTimeFormat::Text text) {
+  return TextComponentToString(text);
+}
+
+static auto OptionToString(mozilla::intl::DateTimeFormat::Numeric numeric) {
+  return NumericComponentToString(numeric);
+}
+
+static auto OptionToString(mozilla::intl::DateTimeFormat::Month month) {
+  return MonthToString(month);
+}
+
+static auto OptionToString(
+    mozilla::intl::DateTimeFormat::TimeZoneName timeZoneName) {
+  return TimeZoneNameToString(timeZoneName);
+}
+
 template <typename T>
 static bool SetOptionsProperty(JSContext* cx,
                                MutableHandle<IdValueVector> options,
@@ -2124,8 +2145,7 @@ static bool SetOptionsProperty(JSContext* cx,
   if (!intlProp) {
     return true;
   }
-  auto* str = NewStringCopyZ<CanGC>(
-      cx, mozilla::intl::DateTimeFormat::ToString(*intlProp));
+  auto* str = NewStringCopy<CanGC>(cx, OptionToString(*intlProp));
   if (!str) {
     return false;
   }
