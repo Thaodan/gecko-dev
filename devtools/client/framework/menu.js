@@ -27,11 +27,6 @@ class Menu extends EventEmitter {
     this.id = id;
   }
 
-  static getMenuElementById(id, doc) {
-    const menuDoc = DevToolsUtils.getTopWindow(doc.defaultView).document;
-    return menuDoc.getElementById(id);
-  }
-
   get items() {
     return this.menuitems;
   }
