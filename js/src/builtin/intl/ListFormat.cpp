@@ -175,10 +175,7 @@ static bool ListFormat(JSContext* cx, unsigned argc, Value* vp) {
   }
   listFormat->setRequestedLocales(requestedLocalesArray);
 
-  auto lfOptions = cx->make_unique<ListFormatOptions>();
-  if (!lfOptions) {
-    return false;
-  }
+  ListFormatOptions lfOptions{};
 
   if (args.hasDefined(1)) {
     // ResolveOptions, steps 2-3.
@@ -219,7 +216,7 @@ static bool ListFormat(JSContext* cx, unsigned argc, Value* vp) {
         ListFormatOptions::Type::Disjunction, ListFormatOptions::Type::Unit);
     if (!GetStringOption(cx, options, cx->names().type, types,
                          ListFormatOptions::Type::Conjunction,
-                         &lfOptions->type)) {
+                         &lfOptions.type)) {
       return false;
     }
 
@@ -228,12 +225,11 @@ static bool ListFormat(JSContext* cx, unsigned argc, Value* vp) {
         ListFormatOptions::Style::Long, ListFormatOptions::Style::Short,
         ListFormatOptions::Style::Narrow);
     if (!GetStringOption(cx, options, cx->names().style, styles,
-                         ListFormatOptions::Style::Long, &lfOptions->style)) {
+                         ListFormatOptions::Style::Long, &lfOptions.style)) {
       return false;
     }
   }
-  listFormat->setOptions(lfOptions.release());
-  AddCellMemory(listFormat, sizeof(ListFormatOptions), MemoryUse::IntlOptions);
+  listFormat->setOptions(lfOptions);
 
   // Steps 11-13. (Not applicable in our implementation.)
 
@@ -244,10 +240,6 @@ static bool ListFormat(JSContext* cx, unsigned argc, Value* vp) {
 
 void js::intl::ListFormatObject::finalize(JS::GCContext* gcx, JSObject* obj) {
   auto* listFormat = &obj->as<ListFormatObject>();
-
-  if (auto* options = listFormat->getOptions()) {
-    gcx->delete_(obj, options, MemoryUse::IntlOptions);
-  }
 
   if (auto* lf = listFormat->getListFormatSlot()) {
     RemoveICUCellMemory(gcx, obj, ListFormatObject::EstimatedMemoryUse);
@@ -338,7 +330,7 @@ static mozilla::intl::ListFormat* NewListFormat(
   if (!ResolveLocale(cx, listFormat)) {
     return nullptr;
   }
-  auto lfOptions = *listFormat->getOptions();
+  auto lfOptions = listFormat->getOptions();
 
   auto locale = EncodeLocale(cx, listFormat->getLocale());
   if (!locale) {
@@ -671,7 +663,7 @@ static bool listFormat_resolvedOptions(JSContext* cx, const CallArgs& args) {
   if (!ResolveLocale(cx, listFormat)) {
     return false;
   }
-  auto lfOptions = *listFormat->getOptions();
+  auto lfOptions = listFormat->getOptions();
 
   // Step 3.
   Rooted<IdValueVector> options(cx, cx);

@@ -10,6 +10,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "builtin/intl/Packed.h"
 #include "js/Class.h"
 #include "js/TypeDecls.h"
 #include "js/Value.h"
@@ -28,6 +29,34 @@ struct ListFormatOptions {
 
   enum class Style : int8_t { Long, Short, Narrow };
   Style style = Style::Long;
+};
+
+struct PackedListFormatOptions {
+  using RawValue = uint32_t;
+
+  using TypeField =
+      packed::EnumField<RawValue, ListFormatOptions::Type::Conjunction,
+                        ListFormatOptions::Type::Unit>;
+
+  using StyleField =
+      packed::EnumField<TypeField, ListFormatOptions::Style::Long,
+                        ListFormatOptions::Style::Narrow>;
+
+  using PackedValue = packed::PackedValue<StyleField>;
+
+  static auto pack(const ListFormatOptions& options) {
+    RawValue rawValue =
+        TypeField::pack(options.type) | StyleField::pack(options.style);
+    return PackedValue::toValue(rawValue);
+  }
+
+  static auto unpack(JS::Value value) {
+    RawValue rawValue = PackedValue::fromValue(value);
+    return ListFormatOptions{
+        .type = TypeField::unpack(rawValue),
+        .style = StyleField::unpack(rawValue),
+    };
+  }
 };
 
 class ListFormatObject : public NativeObject {
@@ -69,16 +98,16 @@ class ListFormatObject : public NativeObject {
     setFixedSlot(LOCALE, JS::StringValue(locale));
   }
 
-  ListFormatOptions* getOptions() const {
+  ListFormatOptions getOptions() const {
     const auto& slot = getFixedSlot(OPTIONS);
     if (slot.isUndefined()) {
-      return nullptr;
+      return {};
     }
-    return static_cast<ListFormatOptions*>(slot.toPrivate());
+    return PackedListFormatOptions::unpack(slot);
   }
 
-  void setOptions(ListFormatOptions* options) {
-    setFixedSlot(OPTIONS, JS::PrivateValue(options));
+  void setOptions(const ListFormatOptions& options) {
+    setFixedSlot(OPTIONS, PackedListFormatOptions::pack(options));
   }
 
   mozilla::intl::ListFormat* getListFormatSlot() const {
