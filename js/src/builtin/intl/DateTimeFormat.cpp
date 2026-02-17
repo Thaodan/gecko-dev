@@ -151,58 +151,51 @@ struct js::intl::DateTimeFormatOptions {
   enum class Defaults : int8_t { Date, Time, All };
   Defaults defaults = Defaults::Date;
 
-  enum class HourCycle : int8_t { H11, H12, H23, H24 };
+  using HourCycle = mozilla::intl::DateTimeFormat::HourCycle;
   mozilla::Maybe<HourCycle> hourCycle{};
 
   mozilla::Maybe<bool> hour12{};
 
-  enum class DateStyle : int8_t { Full, Long, Medium, Short };
+  using DateStyle = mozilla::intl::DateTimeFormat::Style;
   mozilla::Maybe<DateStyle> dateStyle{};
 
-  enum class TimeStyle : int8_t { Full, Long, Medium, Short };
+  using TimeStyle = mozilla::intl::DateTimeFormat::Style;
   mozilla::Maybe<TimeStyle> timeStyle{};
 
   // Components of date and time formats
   //
   // https://tc39.es/ecma402/#table-datetimeformat-components
 
-  enum class Weekday : int8_t { Narrow, Short, Long };
+  using Weekday = mozilla::intl::DateTimeFormat::Text;
   mozilla::Maybe<Weekday> weekday{};
 
-  enum class Era : int8_t { Narrow, Short, Long };
+  using Era = mozilla::intl::DateTimeFormat::Text;
   mozilla::Maybe<Era> era{};
 
-  enum class Year : int8_t { TwoDigit, Numeric };
+  using Year = mozilla::intl::DateTimeFormat::Numeric;
   mozilla::Maybe<Year> year{};
 
-  enum class Month : int8_t { TwoDigit, Numeric, Narrow, Short, Long };
+  using Month = mozilla::intl::DateTimeFormat::Month;
   mozilla::Maybe<Month> month{};
 
-  enum class Day : int8_t { TwoDigit, Numeric };
+  using Day = mozilla::intl::DateTimeFormat::Numeric;
   mozilla::Maybe<Day> day{};
 
-  enum class DayPeriod : int8_t { Narrow, Short, Long };
+  using DayPeriod = mozilla::intl::DateTimeFormat::Text;
   mozilla::Maybe<DayPeriod> dayPeriod{};
 
-  enum class Hour : int8_t { TwoDigit, Numeric };
+  using Hour = mozilla::intl::DateTimeFormat::Numeric;
   mozilla::Maybe<Hour> hour{};
 
-  enum class Minute : int8_t { TwoDigit, Numeric };
+  using Minute = mozilla::intl::DateTimeFormat::Numeric;
   mozilla::Maybe<Minute> minute{};
 
-  enum class Second : int8_t { TwoDigit, Numeric };
+  using Second = mozilla::intl::DateTimeFormat::Numeric;
   mozilla::Maybe<Second> second{};
 
   mozilla::Maybe<int8_t> fractionalSecondDigits{};
 
-  enum class TimeZoneName : int8_t {
-    Short,
-    Long,
-    ShortOffset,
-    LongOffset,
-    ShortGeneric,
-    LongGeneric
-  };
+  using TimeZoneName = mozilla::intl::DateTimeFormat::TimeZoneName;
   mozilla::Maybe<TimeZoneName> timeZoneName{};
 };
 
@@ -236,52 +229,51 @@ struct PackedDateTimeFormatOptions {
 
   using WeekdayField =
       packed::OptionalEnumField<TimeStyleField,
-                                DateTimeFormatOptions::Weekday::Narrow,
-                                DateTimeFormatOptions::Weekday::Long>;
+                                DateTimeFormatOptions::Weekday::Long,
+                                DateTimeFormatOptions::Weekday::Narrow>;
 
-  using EraField = packed::OptionalEnumField<WeekdayField,
-                                             DateTimeFormatOptions::Era::Narrow,
-                                             DateTimeFormatOptions::Era::Long>;
+  using EraField =
+      packed::OptionalEnumField<WeekdayField, DateTimeFormatOptions::Era::Long,
+                                DateTimeFormatOptions::Era::Narrow>;
 
   using YearField =
-      packed::OptionalEnumField<EraField, DateTimeFormatOptions::Year::TwoDigit,
-                                DateTimeFormatOptions::Year::Numeric>;
+      packed::OptionalEnumField<EraField, DateTimeFormatOptions::Year::Numeric,
+                                DateTimeFormatOptions::Year::TwoDigit>;
 
   using MonthField =
       packed::OptionalEnumField<YearField,
-                                DateTimeFormatOptions::Month::TwoDigit,
-                                DateTimeFormatOptions::Month::Long>;
+                                DateTimeFormatOptions::Month::Numeric,
+                                DateTimeFormatOptions::Month::Narrow>;
 
   using DayField =
-      packed::OptionalEnumField<MonthField,
-                                DateTimeFormatOptions::Day::TwoDigit,
-                                DateTimeFormatOptions::Day::Numeric>;
+      packed::OptionalEnumField<MonthField, DateTimeFormatOptions::Day::Numeric,
+                                DateTimeFormatOptions::Day::TwoDigit>;
 
   using DayPeriodField =
       packed::OptionalEnumField<DayField,
-                                DateTimeFormatOptions::DayPeriod::Narrow,
-                                DateTimeFormatOptions::DayPeriod::Long>;
+                                DateTimeFormatOptions::DayPeriod::Long,
+                                DateTimeFormatOptions::DayPeriod::Narrow>;
 
   using HourField =
       packed::OptionalEnumField<DayPeriodField,
-                                DateTimeFormatOptions::Hour::TwoDigit,
-                                DateTimeFormatOptions::Hour::Numeric>;
+                                DateTimeFormatOptions::Hour::Numeric,
+                                DateTimeFormatOptions::Hour::TwoDigit>;
 
   using MinuteField =
       packed::OptionalEnumField<HourField,
-                                DateTimeFormatOptions::Minute::TwoDigit,
-                                DateTimeFormatOptions::Minute::Numeric>;
+                                DateTimeFormatOptions::Minute::Numeric,
+                                DateTimeFormatOptions::Minute::TwoDigit>;
 
   using SecondField =
       packed::OptionalEnumField<MinuteField,
-                                DateTimeFormatOptions::Second::TwoDigit,
-                                DateTimeFormatOptions::Second::Numeric>;
+                                DateTimeFormatOptions::Second::Numeric,
+                                DateTimeFormatOptions::Second::TwoDigit>;
 
   using FractionalSecondDigitsField =
       packed::RangeField<SecondField, int8_t, 0, 3>;
 
   using TimeZoneNameField = packed::OptionalEnumField<
-      FractionalSecondDigitsField, DateTimeFormatOptions::TimeZoneName::Short,
+      FractionalSecondDigitsField, DateTimeFormatOptions::TimeZoneName::Long,
       DateTimeFormatOptions::TimeZoneName::LongGeneric>;
 
   using PackedValue = packed::PackedValue<TimeZoneNameField>;
@@ -1332,125 +1324,6 @@ static UniqueChars DateTimeFormatLocale(
   return FormatLocale(cx, localeStr, keywords);
 }
 
-template <typename TextComponent>
-static auto ToTextComponent(TextComponent value) {
-#ifndef USING_ENUM
-  using enum mozilla::intl::DateTimeFormat::Text;
-#else
-  USING_ENUM(mozilla::intl::DateTimeFormat::Text, Narrow, Short, Long);
-#endif
-  switch (value) {
-    case TextComponent::Narrow:
-      return Narrow;
-    case TextComponent::Short:
-      return Short;
-    case TextComponent::Long:
-      return Long;
-  }
-  MOZ_CRASH("invalid text component");
-}
-
-template <typename NumericComponent>
-static auto ToNumericComponent(NumericComponent value) {
-#ifndef USING_ENUM
-  using enum mozilla::intl::DateTimeFormat::Numeric;
-#else
-  USING_ENUM(mozilla::intl::DateTimeFormat::Numeric, TwoDigit, Numeric);
-#endif
-  switch (value) {
-    case NumericComponent::TwoDigit:
-      return TwoDigit;
-    case NumericComponent::Numeric:
-      return Numeric;
-  }
-  MOZ_CRASH("invalid numeric component");
-}
-
-static auto ToMonthComponent(DateTimeFormatOptions::Month value) {
-#ifndef USING_ENUM
-  using enum mozilla::intl::DateTimeFormat::Month;
-#else
-  USING_ENUM(mozilla::intl::DateTimeFormat::Month, TwoDigit, Numeric, Narrow,
-             Short, Long);
-#endif
-  switch (value) {
-    case DateTimeFormatOptions::Month::TwoDigit:
-      return TwoDigit;
-    case DateTimeFormatOptions::Month::Numeric:
-      return Numeric;
-    case DateTimeFormatOptions::Month::Narrow:
-      return Narrow;
-    case DateTimeFormatOptions::Month::Short:
-      return Short;
-    case DateTimeFormatOptions::Month::Long:
-      return Long;
-  }
-  MOZ_CRASH("invalid month component");
-}
-
-static auto ToTimeZoneNameComponent(DateTimeFormatOptions::TimeZoneName value) {
-#ifndef USING_ENUM
-  using enum mozilla::intl::DateTimeFormat::TimeZoneName;
-#else
-  USING_ENUM(mozilla::intl::DateTimeFormat::TimeZoneName, Short, Long,
-             ShortOffset, LongOffset, ShortGeneric, LongGeneric);
-#endif
-  switch (value) {
-    case DateTimeFormatOptions::TimeZoneName::Short:
-      return Short;
-    case DateTimeFormatOptions::TimeZoneName::Long:
-      return Long;
-    case DateTimeFormatOptions::TimeZoneName::ShortOffset:
-      return ShortOffset;
-    case DateTimeFormatOptions::TimeZoneName::LongOffset:
-      return LongOffset;
-    case DateTimeFormatOptions::TimeZoneName::ShortGeneric:
-      return ShortGeneric;
-    case DateTimeFormatOptions::TimeZoneName::LongGeneric:
-      return LongGeneric;
-  }
-  MOZ_CRASH("invalid time zone name component");
-}
-
-static auto ToHourCycleComponent(DateTimeFormatOptions::HourCycle value) {
-#ifndef USING_ENUM
-  using enum mozilla::intl::DateTimeFormat::HourCycle;
-#else
-  USING_ENUM(mozilla::intl::DateTimeFormat::HourCycle, H11, H12, H23, H24);
-#endif
-  switch (value) {
-    case DateTimeFormatOptions::HourCycle::H11:
-      return H11;
-    case DateTimeFormatOptions::HourCycle::H12:
-      return H12;
-    case DateTimeFormatOptions::HourCycle::H23:
-      return H23;
-    case DateTimeFormatOptions::HourCycle::H24:
-      return H24;
-  }
-  MOZ_CRASH("invalid hour cycle component");
-}
-
-template <typename DateTimeStyle>
-static auto ToDateTimeStyle(DateTimeStyle value) {
-#ifndef USING_ENUM
-  using enum mozilla::intl::DateTimeFormat::Style;
-#else
-  USING_ENUM(mozilla::intl::DateTimeFormat::Style, Full, Long, Medium, Short);
-#endif
-  switch (value) {
-    case DateTimeStyle::Full:
-      return Full;
-    case DateTimeStyle::Long:
-      return Long;
-    case DateTimeStyle::Medium:
-      return Medium;
-    case DateTimeStyle::Short:
-      return Short;
-  }
-  MOZ_CRASH("invalid date/time style");
-}
-
 enum class Required { Date, Time, YearMonth, MonthDay, Any };
 
 enum class Defaults { Date, Time, YearMonth, MonthDay, ZonedDateTime, All };
@@ -2067,13 +1940,10 @@ static mozilla::intl::DateTimeFormat* NewDateTimeFormat(
         break;
     }
 
-    static auto ToDateStyle = ToDateTimeStyle<DateTimeFormatOptions::DateStyle>;
-    static auto ToTimeStyle = ToDateTimeStyle<DateTimeFormatOptions::TimeStyle>;
-
     mozilla::intl::DateTimeFormat::StyleBag style = {
-        .date = dtfOptions.dateStyle.map(ToDateStyle),
-        .time = dtfOptions.timeStyle.map(ToTimeStyle),
-        .hourCycle = dtfOptions.hourCycle.map(ToHourCycleComponent),
+        .date = dtfOptions.dateStyle,
+        .time = dtfOptions.timeStyle,
+        .hourCycle = dtfOptions.hourCycle,
         .hour12 = dtfOptions.hour12,
     };
 
@@ -2158,29 +2028,20 @@ static mozilla::intl::DateTimeFormat* NewDateTimeFormat(
     return dfAdjustedResult.unwrap().release();
   }
 
-  static auto ToEra = ToTextComponent<DateTimeFormatOptions::Era>;
-  static auto ToYear = ToNumericComponent<DateTimeFormatOptions::Year>;
-  static auto ToDay = ToNumericComponent<DateTimeFormatOptions::Day>;
-  static auto ToWeekday = ToTextComponent<DateTimeFormatOptions::Weekday>;
-  static auto ToHour = ToNumericComponent<DateTimeFormatOptions::Hour>;
-  static auto ToMinute = ToNumericComponent<DateTimeFormatOptions::Minute>;
-  static auto ToSecond = ToNumericComponent<DateTimeFormatOptions::Second>;
-  static auto ToDayPeriod = ToTextComponent<DateTimeFormatOptions::DayPeriod>;
-
   // This is a DateTimeFormat defined by a components bag.
   mozilla::intl::DateTimeFormat::ComponentsBag bag = {
-      .era = dtfOptions.era.map(ToEra),
-      .year = dtfOptions.year.map(ToYear),
-      .month = dtfOptions.month.map(ToMonthComponent),
-      .day = dtfOptions.day.map(ToDay),
-      .weekday = dtfOptions.weekday.map(ToWeekday),
-      .hour = dtfOptions.hour.map(ToHour),
-      .minute = dtfOptions.minute.map(ToMinute),
-      .second = dtfOptions.second.map(ToSecond),
-      .timeZoneName = dtfOptions.timeZoneName.map(ToTimeZoneNameComponent),
+      .era = dtfOptions.era,
+      .year = dtfOptions.year,
+      .month = dtfOptions.month,
+      .day = dtfOptions.day,
+      .weekday = dtfOptions.weekday,
+      .hour = dtfOptions.hour,
+      .minute = dtfOptions.minute,
+      .second = dtfOptions.second,
+      .timeZoneName = dtfOptions.timeZoneName,
       .hour12 = dtfOptions.hour12,
-      .hourCycle = dtfOptions.hourCycle.map(ToHourCycleComponent),
-      .dayPeriod = dtfOptions.dayPeriod.map(ToDayPeriod),
+      .hourCycle = dtfOptions.hourCycle,
+      .dayPeriod = dtfOptions.dayPeriod,
       .fractionalSecondDigits = dtfOptions.fractionalSecondDigits,
   };
 
