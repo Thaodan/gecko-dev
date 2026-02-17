@@ -351,18 +351,23 @@ export class SessionLedger {
     // Return a temporary read-only ledger
     return {
       /**
-       * Checks if URL is in any of the merged ledgers.
+       * Returns the normalized URL if it is in any of the merged ledgers.
        *
        * @param {string} url - URL to check
        * @param {string} [baseUrl] - Optional base URL
-       * @returns {boolean} True if URL is in any merged ledger
+       * @returns {string|null} Normalized URL if found, otherwise null
        */
-      has(url, baseUrl = null) {
+      lookup(url, baseUrl = null) {
         const normalized = normalizeUrl(url, baseUrl);
         if (!normalized.success) {
-          return false;
+          return null;
         }
-        return mergedUrls.has(normalized.url);
+
+        if (!mergedUrls.has(normalized.url)) {
+          return null;
+        }
+
+        return normalized.url;
       },
 
       /**
