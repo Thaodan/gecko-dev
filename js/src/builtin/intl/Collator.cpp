@@ -118,14 +118,14 @@ struct js::intl::CollatorOptions {
   enum class Usage : int8_t { Sort, Search };
   Usage usage = Usage::Sort;
 
-  enum class Sensitivity : int8_t { Base, Accent, Case, Variant };
+  using Sensitivity = mozilla::intl::Collator::Sensitivity;
   mozilla::Maybe<Sensitivity> sensitivity{};
 
   mozilla::Maybe<bool> ignorePunctuation{};
 
   mozilla::Maybe<bool> numeric{};
 
-  enum class CaseFirst : int8_t { Upper, Lower, False };
+  using CaseFirst = mozilla::intl::Collator::CaseFirst;
   mozilla::Maybe<CaseFirst> caseFirst{};
 };
 
@@ -562,42 +562,6 @@ static bool ResolveLocale(JSContext* cx, Handle<CollatorObject*> collator) {
   return true;
 }
 
-static auto ToCollatorSensitivity(CollatorOptions::Sensitivity sensitivity) {
-#ifndef USING_ENUM
-  using enum mozilla::intl::Collator::Sensitivity;
-#else
-  USING_ENUM(mozilla::intl::Collator::Sensitivity, Base, Accent, Case, Variant);
-#endif
-  switch (sensitivity) {
-    case CollatorOptions::Sensitivity::Base:
-      return Base;
-    case CollatorOptions::Sensitivity::Accent:
-      return Accent;
-    case CollatorOptions::Sensitivity::Case:
-      return Case;
-    case CollatorOptions::Sensitivity::Variant:
-      return Variant;
-  }
-  MOZ_CRASH("invalid collator sensitivity");
-}
-
-static auto ToCollatorCaseFirst(CollatorOptions::CaseFirst caseFirst) {
-#ifndef USING_ENUM
-  using enum mozilla::intl::Collator::CaseFirst;
-#else
-  USING_ENUM(mozilla::intl::Collator::CaseFirst, False, Lower, Upper);
-#endif
-  switch (caseFirst) {
-    case CollatorOptions::CaseFirst::Upper:
-      return Upper;
-    case CollatorOptions::CaseFirst::Lower:
-      return Lower;
-    case CollatorOptions::CaseFirst::False:
-      return False;
-  }
-  MOZ_CRASH("invalid collator case first");
-}
-
 /**
  * Returns a new mozilla::intl::Collator with the locale and collation options
  * of the given Collator.
@@ -638,8 +602,8 @@ static mozilla::intl::Collator* NewIntlCollator(
   }
 
   mozilla::intl::Collator::Options options = {
-      .sensitivity = ToCollatorSensitivity(*colOptions.sensitivity),
-      .caseFirst = ToCollatorCaseFirst(*colOptions.caseFirst),
+      .sensitivity = *colOptions.sensitivity,
+      .caseFirst = *colOptions.caseFirst,
       .ignorePunctuation = *colOptions.ignorePunctuation,
       .numeric = *colOptions.numeric,
   };
