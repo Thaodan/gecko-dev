@@ -15,6 +15,7 @@
 #include "builtin/intl/FormatBuffer.h"
 #include "builtin/intl/LanguageTag.h"
 #include "builtin/intl/LocaleNegotiation.h"
+#include "builtin/intl/Packed.h"
 #include "builtin/intl/ParameterNegotiation.h"
 #include "builtin/intl/UsingEnum.h"
 #include "gc/GCContext.h"
@@ -105,6 +106,56 @@ const ClassSpec RelativeTimeFormatObject::classSpec_ = {
     nullptr,
     ClassSpec::DontDefineConstructor,
 };
+
+struct js::intl::RelativeTimeFormatOptions {
+  enum class Style : int8_t { Long, Short, Narrow };
+  Style style = Style::Long;
+
+  enum class Numeric : int8_t { Always, Auto };
+  Numeric numeric = Numeric::Always;
+};
+
+struct PackedRelativeTimeFormatOptions {
+  using RawValue = uint32_t;
+
+  using StyleField =
+      packed::EnumField<RawValue, RelativeTimeFormatOptions::Style::Long,
+                        RelativeTimeFormatOptions::Style::Narrow>;
+
+  using NumericField =
+      packed::EnumField<StyleField, RelativeTimeFormatOptions::Numeric::Always,
+                        RelativeTimeFormatOptions::Numeric::Auto>;
+
+  using PackedValue = packed::PackedValue<NumericField>;
+
+  static auto pack(const RelativeTimeFormatOptions& options) {
+    RawValue rawValue =
+        StyleField::pack(options.style) | NumericField::pack(options.numeric);
+    return PackedValue::toValue(rawValue);
+  }
+
+  static auto unpack(JS::Value value) {
+    RawValue rawValue = PackedValue::fromValue(value);
+    return RelativeTimeFormatOptions{
+        .style = StyleField::unpack(rawValue),
+        .numeric = NumericField::unpack(rawValue),
+    };
+  }
+};
+
+RelativeTimeFormatOptions js::intl::RelativeTimeFormatObject::getOptions()
+    const {
+  const auto& slot = getFixedSlot(OPTIONS);
+  if (slot.isUndefined()) {
+    return {};
+  }
+  return PackedRelativeTimeFormatOptions::unpack(slot);
+}
+
+void js::intl::RelativeTimeFormatObject::setOptions(
+    const RelativeTimeFormatOptions& options) {
+  setFixedSlot(OPTIONS, PackedRelativeTimeFormatOptions::pack(options));
+}
 
 static constexpr std::string_view StyleToString(
     RelativeTimeFormatOptions::Style style) {
