@@ -1185,8 +1185,15 @@ abstract class BaseBrowserFragment :
 
                     override suspend fun onEmailMaskClick(generatedFor: String) = withContext(IO) {
                         val relay = relayFeature.get() ?: return@withContext null
-                        val created =
-                            relay.getOrCreateNewMask(generatedFor) ?: return@withContext null
+                        val created = relay.getOrCreateNewMask(generatedFor)
+
+                        if (created == null) {
+                            val errorMessage =
+                                getString(R.string.email_masks_error_retrieving_masks)
+                            appStore.dispatch(AppAction.SnackbarAction.ShowSnackbar(errorMessage))
+                            return@withContext null
+                        }
+
                         created.fullAddress
                     }
                 },
