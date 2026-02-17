@@ -113,10 +113,8 @@ const ClassSpec DisplayNamesObject::classSpec_ = {
     ClassSpec::DontDefineConstructor,
 };
 
-// Similar to enums in mozilla::intl::DisplayNames, except uses smaller int
-// types to require less memory when allocating on the heap.
 struct js::intl::DisplayNamesOptions {
-  enum class Style : int8_t { Long, Short, Narrow, Abbreviated };
+  using Style = mozilla::intl::DisplayNames::Style;
   Style style = Style::Long;
 
   enum class Type : int8_t {
@@ -133,10 +131,10 @@ struct js::intl::DisplayNamesOptions {
   };
   Type type = Type::Language;
 
-  enum class Fallback : int8_t { Code, None };
+  using Fallback = mozilla::intl::DisplayNames::Fallback;
   Fallback fallback = Fallback::Code;
 
-  enum class LanguageDisplay : int8_t { Dialect, Standard };
+  using LanguageDisplay = mozilla::intl::DisplayNames::LanguageDisplay;
   LanguageDisplay languageDisplay = LanguageDisplay::Dialect;
 
   bool mozExtensions = false;
@@ -146,7 +144,7 @@ struct PackedDisplayNamesOptions {
   using RawValue = uint32_t;
 
   using StyleField =
-      packed::EnumField<RawValue, DisplayNamesOptions::Style::Long,
+      packed::EnumField<RawValue, DisplayNamesOptions::Style::Narrow,
                         DisplayNamesOptions::Style::Abbreviated>;
 
   using TypeField =
@@ -154,13 +152,13 @@ struct PackedDisplayNamesOptions {
                         DisplayNamesOptions::Type::DayPeriod>;
 
   using FallbackField =
-      packed::EnumField<TypeField, DisplayNamesOptions::Fallback::Code,
-                        DisplayNamesOptions::Fallback::None>;
+      packed::EnumField<TypeField, DisplayNamesOptions::Fallback::None,
+                        DisplayNamesOptions::Fallback::Code>;
 
   using LanguageDisplayField =
       packed::EnumField<FallbackField,
-                        DisplayNamesOptions::LanguageDisplay::Dialect,
-                        DisplayNamesOptions::LanguageDisplay::Standard>;
+                        DisplayNamesOptions::LanguageDisplay::Standard,
+                        DisplayNamesOptions::LanguageDisplay::Dialect>;
 
   using MozExtensionsField = packed::BooleanField<LanguageDisplayField>;
 
@@ -581,57 +579,6 @@ static bool ResolveLocale(JSContext* cx,
   return true;
 }
 
-static auto ToDisplayNamesStyle(DisplayNamesOptions::Style style) {
-#ifndef USING_ENUM
-  using enum mozilla::intl::DisplayNames::Style;
-#else
-  USING_ENUM(mozilla::intl::DisplayNames::Style, Long, Short, Narrow,
-             Abbreviated);
-#endif
-  switch (style) {
-    case DisplayNamesOptions::Style::Long:
-      return Long;
-    case DisplayNamesOptions::Style::Short:
-      return Short;
-    case DisplayNamesOptions::Style::Narrow:
-      return Narrow;
-    case DisplayNamesOptions::Style::Abbreviated:
-      return Abbreviated;
-  }
-  MOZ_CRASH("invalid display names style");
-}
-
-static auto ToDisplayNamesLanguageDisplay(
-    DisplayNamesOptions::LanguageDisplay languageDisplay) {
-#ifndef USING_ENUM
-  using enum mozilla::intl::DisplayNames::LanguageDisplay;
-#else
-  USING_ENUM(mozilla::intl::DisplayNames::LanguageDisplay, Dialect, Standard);
-#endif
-  switch (languageDisplay) {
-    case DisplayNamesOptions::LanguageDisplay::Dialect:
-      return Dialect;
-    case DisplayNamesOptions::LanguageDisplay::Standard:
-      return Standard;
-  }
-  MOZ_CRASH("invalid display names language display");
-}
-
-static auto ToDisplayNamesFallback(DisplayNamesOptions::Fallback fallback) {
-#ifndef USING_ENUM
-  using enum mozilla::intl::DisplayNames::Fallback;
-#else
-  USING_ENUM(mozilla::intl::DisplayNames::Fallback, Code, None);
-#endif
-  switch (fallback) {
-    case DisplayNamesOptions::Fallback::Code:
-      return Code;
-    case DisplayNamesOptions::Fallback::None:
-      return None;
-  }
-  MOZ_CRASH("invalid display names fallback");
-}
-
 static mozilla::intl::DisplayNames* NewDisplayNames(
     JSContext* cx, Handle<DisplayNamesObject*> displayNames) {
   if (!ResolveLocale(cx, displayNames)) {
@@ -645,9 +592,8 @@ static mozilla::intl::DisplayNames* NewDisplayNames(
   }
 
   mozilla::intl::DisplayNames::Options options = {
-      .style = ToDisplayNamesStyle(dnOptions.style),
-      .languageDisplay =
-          ToDisplayNamesLanguageDisplay(dnOptions.languageDisplay),
+      .style = dnOptions.style,
+      .languageDisplay = dnOptions.languageDisplay,
   };
 
   auto result = mozilla::intl::DisplayNames::TryCreate(locale.get(), options);
@@ -744,7 +690,7 @@ static bool ComputeDisplayName(JSContext* cx,
   }
   auto dnOptions = displayNames->getOptions();
   auto type = dnOptions.type;
-  auto fallback = ToDisplayNamesFallback(dnOptions.fallback);
+  auto fallback = dnOptions.fallback;
 
   FormatBuffer<char16_t, INITIAL_CHAR_BUFFER_SIZE> buffer(cx);
   mozilla::Result<mozilla::Ok, mozilla::intl::DisplayNamesError> result =
