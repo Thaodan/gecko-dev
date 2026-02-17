@@ -211,6 +211,7 @@ import org.mozilla.fenix.customtabs.ExternalAppBrowserActivity
 import org.mozilla.fenix.databinding.FragmentBrowserBinding
 import org.mozilla.fenix.downloads.DownloadService
 import org.mozilla.fenix.downloads.dialog.createDownloadAppDialog
+import org.mozilla.fenix.experiments.NimbusGeckoPrefHandler
 import org.mozilla.fenix.ext.accessibilityManager
 import org.mozilla.fenix.ext.breadcrumb
 import org.mozilla.fenix.ext.components
@@ -1400,6 +1401,11 @@ abstract class BaseBrowserFragment :
             owner = this,
             view = view,
         )
+        @org.mozilla.geckoview.ExperimentalGeckoViewApi
+        browserPrefObserverIntegration.get()?.let<BrowserPrefObserverIntegration, Unit> { integration ->
+            NimbusGeckoPrefHandler.browserPrefObserverIntegration = integration
+            integration.register(NimbusGeckoPrefHandler)
+        }
 
         context.settings().setSitePermissionSettingListener(viewLifecycleOwner) {
             // If the user connects to WIFI while on the BrowserFragment, this will update the

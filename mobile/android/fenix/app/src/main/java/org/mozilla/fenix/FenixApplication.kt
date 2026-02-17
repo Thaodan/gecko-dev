@@ -92,6 +92,7 @@ import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.initializeGlean
 import org.mozilla.fenix.components.metrics.MozillaProductDetector
 import org.mozilla.fenix.components.startMetricsIfEnabled
+import org.mozilla.fenix.experiments.NimbusGeckoPrefHandler
 import org.mozilla.fenix.experiments.maybeFetchExperiments
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.containsQueryParameters
@@ -123,6 +124,7 @@ import org.mozilla.fenix.theme.ThemeProvider
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.isLargeScreenSize
 import org.mozilla.fenix.wallpapers.Wallpaper
+import org.mozilla.geckoview.ExperimentalGeckoViewApi
 import java.util.Date
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToLong
@@ -527,6 +529,8 @@ open class FenixApplication : LocaleAwareApplication(), Provider, ThemeProvider 
                 components.nimbus.sdk.maybeFetchExperiments(
                     context = this@FenixApplication,
                 )
+                @ExperimentalGeckoViewApi
+                NimbusGeckoPrefHandler.getPreferenceStateFromGecko().await()
             }
         }
 
