@@ -479,6 +479,13 @@ open class FenixApplication : LocaleAwareApplication(), Provider, ThemeProvider 
                 logElapsedTime(logger, "Kicking-off account manager") {
                     components.backgroundServices.accountManager
                 }
+
+                // Start Relay feature to monitor account state throughout the app lifecycle.
+                // Note: This feature monitors FxA account changes and runs regardless of user
+                // settings; UI components check settings before actually using Relay functionality.
+                logElapsedTime(logger, "Starting Relay feature integration") {
+                    components.relayFeatureIntegration.start()
+                }
             }
         }
 

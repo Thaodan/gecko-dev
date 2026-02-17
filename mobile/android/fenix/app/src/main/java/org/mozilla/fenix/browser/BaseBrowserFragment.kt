@@ -169,7 +169,6 @@ import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.permissions.FenixSitePermissionLearnMoreUrlProvider
 import org.mozilla.fenix.browser.readermode.DefaultReaderModeController
 import org.mozilla.fenix.browser.readermode.ReaderModeController
-import org.mozilla.fenix.browser.relay.RelayFeatureIntegration
 import org.mozilla.fenix.browser.store.BrowserScreenMiddleware
 import org.mozilla.fenix.browser.store.BrowserScreenState
 import org.mozilla.fenix.browser.store.BrowserScreenStore
@@ -334,7 +333,6 @@ abstract class BaseBrowserFragment :
     private val shareResourceFeature = ViewBoundFeatureWrapper<ShareResourceFeature>()
     private val copyDownloadsFeature = ViewBoundFeatureWrapper<CopyDownloadFeature>()
     private val promptsFeature = ViewBoundFeatureWrapper<PromptFeature>()
-    private val relayFeature = ViewBoundFeatureWrapper<RelayFeatureIntegration>()
 
     @VisibleForTesting
     internal val findInPageIntegration = ViewBoundFeatureWrapper<FindInPageIntegration>()
@@ -1185,7 +1183,7 @@ abstract class BaseBrowserFragment :
                         get() = emailMaskBar
 
                     override suspend fun onEmailMaskClick(generatedFor: String) = withContext(IO) {
-                        val relay = relayFeature.get() ?: return@withContext null
+                        val relay = requireComponents.relayFeatureIntegration
                         val created = relay.getOrCreateNewMask(generatedFor)
 
                         if (created == null) {
@@ -1245,20 +1243,6 @@ abstract class BaseBrowserFragment :
             owner = this,
             view = view,
         )
-
-        if (context.settings().isEmailMaskFeatureEnabled && context.settings().isEmailMaskSuggestionEnabled) {
-            relayFeature.set(
-                feature = RelayFeatureIntegration(
-                    context = requireContext(),
-                    engine = requireComponents.core.engine,
-                    accountManager = requireComponents.backgroundServices.accountManager,
-                    store = requireComponents.relayEligibilityStore,
-                    appStore = requireComponents.appStore,
-                ),
-                owner = this,
-                view = view,
-            )
-        }
 
         sessionFeature.set(
             feature = SessionFeature(
