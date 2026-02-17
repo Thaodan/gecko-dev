@@ -131,7 +131,7 @@ add_task(async function test_smartbar_submit_chat() {
 
     const conversation = fetchWithHistoryStub.firstCall.args[0];
     const messages = conversation.getMessagesInOpenAiFormat();
-    const userMessage = messages.find(message => message.role === "user");
+    const userMessage = messages.findLast(message => message.role === "user");
 
     Assert.equal(
       userMessage.content,
