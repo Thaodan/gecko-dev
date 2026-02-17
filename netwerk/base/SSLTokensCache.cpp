@@ -8,6 +8,7 @@
 #include "CommonSocketControl.h"
 #include "TransportSecurityInfo.h"
 #include "mozilla/ArrayAlgorithm.h"
+#include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "nsIOService.h"
@@ -426,12 +427,14 @@ nsresult SSLTokensCache::GetLocked(const nsACString& aKey,
         if (cacheEntry->RecordCount() == 0) {
           mTokenCacheRecords.Remove(aKey);
         }
+        mozilla::glean::network::ssl_token_cache_hits.Get("hit"_ns).Add(1);
         return NS_OK;
       }
 
       LOG(("  skipping expired token [expirationTime=%" PRId64 ", now=%" PRId64
            "]",
            rec->mExpirationTime, now));
+      mozilla::glean::network::ssl_token_cache_expired.Add(1);
       mCacheSize -= rec->Size();
       cacheEntry->RemoveWithId(rec->mId);
     }
@@ -440,6 +443,7 @@ nsresult SSLTokensCache::GetLocked(const nsACString& aKey,
   }
 
   LOG(("  token not found"));
+  mozilla::glean::network::ssl_token_cache_hits.Get("miss"_ns).Add(1);
   return NS_ERROR_NOT_AVAILABLE;
 }
 
