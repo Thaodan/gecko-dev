@@ -566,9 +566,7 @@ nsresult nsDocumentOpenInfo::DispatchContent(nsIRequest* request) {
     }
   }
 
-  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-  if (mFlags & nsIURILoader::DONT_RETARGET ||
-      loadInfo->GetForceMediaDocument() != dom::ForceMediaDocument::None) {
+  if (mFlags & nsIURILoader::DONT_RETARGET) {
     LOG(
         ("  External handling forced or (listener not interested and no "
          "stream converter exists), and retargeting disallowed -> aborting"));
