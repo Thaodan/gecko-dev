@@ -61,6 +61,25 @@ Preferences.addAll([
 ]);
 
 /**
+ * Gets the icon to use for a particular engine, falling back to the placeholder
+ * if necessary.
+ *
+ * @param {SearchEngine} engine
+ * @param {number} [width]
+ *   The display width of the icon. @see {SearchEngine.getIconURL}
+ */
+async function getEngineIcon(engine, width) {
+  let iconURL = await engine.getIconURL(width);
+
+  return (
+    iconURL ??
+    (window.devicePixelRatio > 1
+      ? "chrome://browser/skin/search-engine-placeholder@2x.png"
+      : "chrome://browser/skin/search-engine-placeholder.png")
+  );
+}
+
+/**
  * Generates the config needed to populate the dropdowns for the user's
  * default search engine and separate private default search engine.
  *
@@ -77,8 +96,6 @@ Preferences.addAll([
 function createSearchEngineConfig({ settingId, getEngine, setEngine }) {
   return class extends Preferences.AsyncSetting {
     static id = settingId;
-    ENGINE_MODIFIED = "browser-search-engine-modified";
-    iconMap = new Map();
 
     /** @type {{options: PreferencesSettingsConfig[]}} */
     defaultGetControlConfig = { options: [] };
@@ -88,62 +105,47 @@ function createSearchEngineConfig({ settingId, getEngine, setEngine }) {
       return engine.id;
     }
 
+    /** @param {string} id */
     async set(id) {
       await setEngine(id);
     }
 
     async getControlConfig() {
       let engines = await lazy.SearchService.getVisibleEngines();
-      await Promise.allSettled(engines.map(e => this.loadEngineIcon(e)));
+      let optionsInfo = await Promise.allSettled(
+        engines.map(async engine => {
+          let url = await getEngineIcon(engine);
+          return {
+            value: engine.id,
+            controlAttrs: { label: engine.name },
+            iconSrc: url,
+          };
+        })
+      );
+
       return {
-        options: engines.map(engine => ({
-          value: engine.id,
-          iconSrc: this.getEngineIcon(engine),
-          controlAttrs: {
-            label: engine.name,
-          },
-        })),
+        options: optionsInfo
+          .filter(o => o.status == "fulfilled")
+          .map(o => o.value),
       };
     }
 
-    getEngineIcon(engine) {
-      return this.iconMap.get(engine.id);
-    }
-
-    getPlaceholderIcon() {
-      return window.devicePixelRatio > 1
-        ? "chrome://browser/skin/search-engine-placeholder@2x.png"
-        : "chrome://browser/skin/search-engine-placeholder.png";
-    }
-
-    async loadEngineIcon(engine) {
-      try {
-        let iconURL = await engine.getIconURL();
-        let url = iconURL ?? this.getPlaceholderIcon();
-        this.iconMap.set(engine.id, url);
-        return url;
-      } catch (error) {
-        console.warn(`Failed to load icon for engine ${engine.name}:`, error);
-        let placeholderIcon = this.getPlaceholderIcon();
-        this.iconMap.set(engine.id, placeholderIcon);
-        return placeholderIcon;
-      }
-    }
-
     setup() {
-      Services.obs.addObserver(this, this.ENGINE_MODIFIED);
-      return () => Services.obs.removeObserver(this, this.ENGINE_MODIFIED);
+      Services.obs.addObserver(this, lazy.SearchUtils.TOPIC_ENGINE_MODIFIED);
+      return () =>
+        Services.obs.removeObserver(
+          this,
+          lazy.SearchUtils.TOPIC_ENGINE_MODIFIED
+        );
     }
 
-    observe(subject, topic, data) {
-      if (topic == this.ENGINE_MODIFIED) {
-        let engine = subject.wrappedJSObject;
-
-        // Clean up cache for removed engines.
-        if (data == "engine-removed") {
-          this.iconMap.delete(engine.id);
-        }
-
+    /**
+     * @param {?{wrappedJSObject: SearchEngine}} subject
+     * @param {"browser-search-service"|"browser-search-engine-modified"} topic
+     * @param {string} _data
+     */
+    observe(subject, topic, _data) {
+      if (topic == lazy.SearchUtils.TOPIC_ENGINE_MODIFIED) {
         // Always emit change for any change that could affect the engine list
         // or default.
         this.emitChange();
@@ -641,7 +643,8 @@ function EngineListItemSetting(settingId, engine) {
     async getControlConfig() {
       /** @type {Partial<SettingControlConfig>} */
       return {
-        iconSrc: await engine.getIconURL(),
+        // 24 is the same size as `--icon-size-large`.
+        iconSrc: await getEngineIcon(engine, 24),
         controlAttrs: {
           class: engine.hidden ? "description-deemphasized" : "",
           label: engine.name,
