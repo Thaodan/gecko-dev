@@ -28,7 +28,6 @@ ChromeUtils.defineESModuleGetters(this, {
 
 const DEFAULT_HOMEPAGE_URL = "about:home";
 const BLANK_HOMEPAGE_URL = "chrome://browser/content/blanktab.html";
-const RESET_DEFAULTS_BUTTON_ENABLED = false;
 
 Preferences.addAll([
   { id: "browser.startup.homepage", type: "string" },
@@ -696,6 +695,22 @@ var gHomePane = {
     );
   },
 
+  get isPocketNewtabEnabled() {
+    const value = Services.prefs.getStringPref(
+      "browser.newtabpage.activity-stream.discoverystream.config",
+      ""
+    );
+    if (value) {
+      try {
+        return JSON.parse(value).enabled;
+      } catch (e) {
+        console.error("Failed to parse Discovery Stream pref.");
+      }
+    }
+
+    return false;
+  },
+
   async syncToNewTabPref() {
     let menulist = document.getElementById("newTabMode");
 
@@ -1246,8 +1261,9 @@ var gHomePane = {
    * Check all Home Tab preferences for user set values.
    */
   _changedHomeTabDefaultPrefs() {
+    // If Discovery Stream is enabled Firefox Home Content preference options are hidden
     const homeContentChanged =
-      RESET_DEFAULTS_BUTTON_ENABLED &&
+      !this.isPocketNewtabEnabled &&
       this.homePanePrefs.some(pref => pref.hasUserValue);
     const newtabPref = Preferences.get(this.NEWTAB_ENABLED_PREF);
     const extensionControlled = Preferences.get(
@@ -1286,7 +1302,8 @@ var gHomePane = {
    */
   restoreDefaultPrefsForHome() {
     this.restoreDefaultHomePage();
-    if (RESET_DEFAULTS_BUTTON_ENABLED) {
+    // If Discovery Stream is enabled Firefox Home Content preference options are hidden
+    if (!this.isPocketNewtabEnabled) {
       this.homePanePrefs.forEach(pref => Services.prefs.clearUserPref(pref.id));
     }
   },
