@@ -2085,19 +2085,6 @@ void Document::RecordPageLoadEventTelemetry() {
   }
 #endif
 
-  if (GetChannel()) {
-    nsCOMPtr<nsICacheInfoChannel> cacheInfoChannel =
-        do_QueryInterface(GetChannel());
-    if (cacheInfoChannel) {
-      nsICacheInfoChannel::CacheDisposition disposition =
-          nsICacheInfoChannel::kCacheUnknown;
-      nsresult rv = cacheInfoChannel->GetCacheDisposition(&disposition);
-      if (NS_SUCCEEDED(rv)) {
-        mPageloadEventData.set_cacheDisposition(disposition);
-      }
-    }
-  }
-
   nsAutoCString loadTypeStr;
   switch (docshell->GetLoadType()) {
     case LOAD_NORMAL:
@@ -2237,6 +2224,17 @@ void Document::AccumulatePageLoadTelemetry() {
     return;
   }
 
+  bool isCacheHit = false;
+  if (nsCOMPtr<nsICacheInfoChannel> cacheInfoChannel =
+          do_QueryInterface(GetChannel())) {
+    nsICacheInfoChannel::CacheDisposition disposition =
+        nsICacheInfoChannel::kCacheUnknown;
+    if (NS_SUCCEEDED(cacheInfoChannel->GetCacheDisposition(&disposition))) {
+      mPageloadEventData.set_cacheDisposition(disposition);
+      isCacheHit = disposition == nsICacheInfoChannel::kCacheHit;
+    }
+  }
+
   // Default duration is 0, use this to check for bogus negative values.
   const TimeDuration zeroDuration;
 
@@ -2330,7 +2328,11 @@ void Document::AccumulatePageLoadTelemetry() {
         }
       }
 
-      mPageloadEventData.set_httpVer(major);
+      // Don't record http version for cache hits since the version stored in
+      // the cache entry reflects the original request, not this navigation.
+      if (!isCacheHit) {
+        mPageloadEventData.set_httpVer(major);
+      }
     }
 
     uint32_t earlyHintType = 0;
