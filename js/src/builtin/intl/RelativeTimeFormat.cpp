@@ -157,7 +157,7 @@ void js::intl::RelativeTimeFormatObject::setOptions(
   setFixedSlot(OPTIONS, PackedRelativeTimeFormatOptions::pack(options));
 }
 
-static constexpr std::string_view StyleToString(
+static constexpr std::string_view RelativeTimeStyleToString(
     RelativeTimeFormatOptions::Style style) {
 #ifndef USING_ENUM
   using enum RelativeTimeFormatOptions::Style;
@@ -273,10 +273,10 @@ static bool RelativeTimeFormat(JSContext* cx, unsigned argc, Value* vp) {
     // Steps 5-9. (Performed in ResolveLocale)
 
     // Steps 10-11.
-    static constexpr auto styles =
-        MapOptions<StyleToString>(RelativeTimeFormatOptions::Style::Long,
-                                  RelativeTimeFormatOptions::Style::Short,
-                                  RelativeTimeFormatOptions::Style::Narrow);
+    static constexpr auto styles = MapOptions<RelativeTimeStyleToString>(
+        RelativeTimeFormatOptions::Style::Long,
+        RelativeTimeFormatOptions::Style::Short,
+        RelativeTimeFormatOptions::Style::Narrow);
     if (!GetStringOption(cx, options, cx->names().style, styles,
                          RelativeTimeFormatOptions::Style::Long,
                          &rtfOptions.style)) {
@@ -666,7 +666,8 @@ static bool relativeTimeFormat_resolvedOptions(JSContext* cx,
     return false;
   }
 
-  auto* style = NewStringCopy<CanGC>(cx, StyleToString(rtfOptions.style));
+  auto* style =
+      NewStringCopy<CanGC>(cx, RelativeTimeStyleToString(rtfOptions.style));
   if (!style) {
     return false;
   }
