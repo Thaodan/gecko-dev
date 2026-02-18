@@ -147,7 +147,7 @@ Object.assign(Chat, {
           yield { searching: true, query: toolParams.query };
         }
 
-        let result, searchHandoffBrowser;
+        let result;
         try {
           // Call the appropriate tool by name
           const toolFunc = this.toolMap[name];
@@ -159,15 +159,6 @@ Object.assign(Chat, {
           const params = hasParams ? toolParams : undefined;
 
           if (name === "run_search") {
-            if (!context.browsingContext) {
-              console.error(
-                "run_search: No browsingContext provided, aborting search handoff"
-              );
-              return;
-            }
-            // Save the browser element before the tool call navigates the page,
-            // which invalidates the original browsingContext.
-            searchHandoffBrowser = context.browsingContext.embedderElement;
             result = await toolFunc(params ?? {}, context);
           } else {
             result = await (hasParams ? toolFunc(params) : toolFunc());
@@ -188,11 +179,16 @@ Object.assign(Chat, {
           .catch(() => {});
 
         // run_search navigates away from the AI page; hand off to the sidebar
-        // to continue streaming after the search results are captured. Uses the
-        // pre-captured browser element since browsingContext is stale after
-        // navigation; ownerGlobal gives us the chrome window.
+        // to continue streaming after the search results are captured.
         if (name === "run_search") {
-          const win = searchHandoffBrowser?.ownerGlobal;
+          if (!context.browsingContext) {
+            console.error(
+              "run_search: No browsingContext provided, aborting search handoff"
+            );
+            return;
+          }
+
+          const win = context.browsingContext.topChromeWindow;
           if (!win || win.closed) {
             console.error(
               "run_search: Associated window not available or closed, aborting search handoff"
@@ -200,19 +196,20 @@ Object.assign(Chat, {
             return;
           }
 
-          // Re-look up the tab; it could have been closed during the
-          // async tool call.
-          const searchHandoffTab =
-            win.gBrowser.getTabForBrowser(searchHandoffBrowser);
-          if (!searchHandoffTab) {
-            console.error(
-              "run_search: Original tab no longer exists, aborting search handoff to avoid interfering with existing conversation"
-            );
-            return;
-          }
-
-          if (!searchHandoffTab.selected) {
-            win.gBrowser.selectedTab = searchHandoffTab;
+          // Ensure we're on the original tab before sidebar handoff
+          const originalBrowser = context.browsingContext.embedderElement;
+          if (originalBrowser && win.gBrowser) {
+            const originalTab = win.gBrowser.getTabForBrowser(originalBrowser);
+            if (!originalTab) {
+              console.error(
+                "run_search: Original tab no longer exists, aborting search handoff to avoid interfering with existing conversation"
+              );
+              return;
+            }
+            // Switch back to the original tab if user switched away
+            if (!originalTab.selectedTab) {
+              win.gBrowser.selectedTab = originalTab;
+            }
           }
 
           lazy.AIWindow.openSidebarAndContinue(win, conversation);
