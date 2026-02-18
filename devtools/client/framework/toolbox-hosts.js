@@ -136,7 +136,10 @@ class BottomHost extends BaseInBrowserHost {
 
     const { ownerDocument } = this.hostTab;
     this.#splitter = ownerDocument.createXULElement("splitter");
-    this.#splitter.setAttribute("class", "devtools-horizontal-splitter");
+    this.#splitter.classList.add(
+      "devtools-toolbox-splitter",
+      "devtools-horizontal-splitter"
+    );
     this.#splitter.setAttribute("resizebefore", "none");
     this.#splitter.setAttribute("resizeafter", "sibling");
 
@@ -204,7 +207,10 @@ class SidebarHost extends BaseInBrowserHost {
     const { ownerDocument } = this.hostTab;
 
     this.#splitter = ownerDocument.createXULElement("splitter");
-    this.#splitter.setAttribute("class", "devtools-side-splitter");
+    this.#splitter.classList.add(
+      "devtools-toolbox-splitter",
+      "devtools-side-splitter"
+    );
 
     this._createFrame();
 

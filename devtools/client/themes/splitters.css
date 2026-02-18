@@ -29,7 +29,7 @@
      inline-end for side splitters.*/
 
   --devtools-splitter-top-width: 2px;
-  --devtools-splitter-bottom-width: 2px;
+  --devtools-splitter-bottom-width: 1px;
   --devtools-horizontal-splitter-min-height: calc(
     var(--devtools-splitter-top-width) + var(--devtools-splitter-bottom-width) + var(--devtools-splitter-element-size)
   );
@@ -39,15 +39,14 @@
 
   /* Small draggable area on inline-start to avoid overlaps on scrollbars.*/
   --devtools-splitter-inline-start-width: 1px;
-  --devtools-splitter-inline-end-width: 4px;
+  --devtools-splitter-inline-end-width: 2px;
 
   --devtools-vertical-splitter-min-width: calc(
     var(--devtools-splitter-inline-start-width) + var(--devtools-splitter-inline-end-width) + var(--devtools-splitter-element-size)
   );
 }
 
-splitter.devtools-horizontal-splitter,
-.devtools-side-splitter {
+splitter.devtools-toolbox-splitter {
   appearance: none;
   background-image: none;
   border: 0;
@@ -56,6 +55,9 @@ splitter.devtools-horizontal-splitter,
   background-color: var(--devtools-splitter-color);
   background-clip: content-box;
   position: relative;
+  transition-duration: 0.5s;
+  transition-property: background-color, border-color;
+  transition-timing-function: ease-in-out;
 
   box-sizing: border-box;
 
@@ -65,6 +67,18 @@ splitter.devtools-horizontal-splitter,
      opaque ones in High Contrast Mode. --devtools-splitter-color has specific value
      in High Contrast Mode so we should be fine */
   forced-color-adjust: none;
+
+  &.disabled {
+    pointer-events: none;
+  }
+
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media -moz-pref("sidebar.revamp") {
+    &:is(:focus-visible, :hover) {
+      background-color: var(--focus-outline-color);
+      border-color: var(--focus-outline-color);
+    }
+  }
 }
 
 splitter.devtools-horizontal-splitter {
@@ -91,7 +105,7 @@ splitter.devtools-horizontal-splitter {
   background-color: var(--theme-emphasized-splitter-color-hover);
 }
 
-.devtools-side-splitter {
+splitter.devtools-side-splitter {
   min-width: var(--devtools-vertical-splitter-min-width);
 
   border-inline-start-width: var(--devtools-splitter-inline-start-width);
@@ -101,9 +115,4 @@ splitter.devtools-horizontal-splitter {
   margin-inline-end: calc(-1 * var(--devtools-splitter-inline-end-width));
 
   cursor: ew-resize;
-}
-
-.devtools-horizontal-splitter.disabled,
-.devtools-side-splitter.disabled {
-  pointer-events: none;
 }
