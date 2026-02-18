@@ -1443,7 +1443,7 @@ Preferences.addSetting({
 Preferences.addSetting({
   id: "ipProtectionNotOptedIn",
   pref: "browser.ipProtection.entitlementCache",
-  get: prefVal => prefVal == "null",
+  get: prefVal => !prefVal,
 });
 Preferences.addSetting({
   id: "ipProtectionNotOptedInSection",
