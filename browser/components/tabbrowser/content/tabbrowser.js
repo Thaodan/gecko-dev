@@ -6834,7 +6834,14 @@
           if (neighbor?.splitview) {
             neighbor = neighbor.splitview;
           }
-          if (neighbor && this.isTab(element) && tabIndex > element._tPos) {
+          let useAfter = false;
+          if (this.isTab(element)) {
+            useAfter = neighbor && tabIndex > element._tPos;
+          } else if (this.isSplitViewWrapper(element)) {
+            useAfter = neighbor && tabIndex >= this.tabs.length - 1;
+          }
+
+          if (useAfter) {
             neighbor.after(element);
           } else {
             this.tabContainer.insertBefore(element, neighbor);
