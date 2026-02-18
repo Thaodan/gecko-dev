@@ -4,9 +4,6 @@
 
 /* import-globals-from extensionControlled.js */
 /* import-globals-from preferences.js */
-/**
- *  @import { SearchEngine } from "moz-src:///toolkit/components/search/SearchEngine.sys.mjs";
- */
 
 const lazy = XPCOMUtils.declareLazy({
   AddonSearchEngine:
@@ -1270,7 +1267,11 @@ class EngineStore {
     var removedEngine = this.engines.splice(index, 1)[0];
     this.engines.splice(aNewIndex, 0, removedEngine);
 
-    return lazy.SearchService.moveEngine(aEngine.originalEngine, aNewIndex);
+    return lazy.SearchService.moveEngine(
+      aEngine.originalEngine,
+      aNewIndex,
+      true
+    );
   }
 
   /**
@@ -1356,7 +1357,7 @@ class EngineStore {
         this.engines.splice(i, 0, e);
         let engine = e.originalEngine;
         engine.hidden = false;
-        await lazy.SearchService.moveEngine(engine, i);
+        await lazy.SearchService.moveEngine(engine, i, true);
         added++;
       }
     }
