@@ -749,7 +749,7 @@ function getCellValue(id, column) {
  */
 async function editCell(id, column, newValue, validate = true) {
   const row = getRowCells(id, true);
-  const editableFieldsEngine = gUI.table._editableFieldsEngine;
+  const editableFieldsEngine = gUI.table.editableFieldsEngine;
 
   editableFieldsEngine.edit(row[column]);
 
@@ -768,7 +768,7 @@ async function editCell(id, column, newValue, validate = true) {
  */
 function startCellEdit(id, column, selectText = true) {
   const row = getRowCells(id, true);
-  const editableFieldsEngine = gUI.table._editableFieldsEngine;
+  const editableFieldsEngine = gUI.table.editableFieldsEngine;
   const cell = row[column];
 
   info("Selecting row " + id);
@@ -778,7 +778,7 @@ function startCellEdit(id, column, selectText = true) {
   editableFieldsEngine.edit(cell);
 
   if (!selectText) {
-    const textbox = gUI.table._editableFieldsEngine.textbox;
+    const textbox = gUI.table.editableFieldsEngine.textbox;
     textbox.selectionEnd = textbox.selectionStart;
   }
 }
@@ -813,7 +813,7 @@ function checkCellUneditable(id, column) {
   const row = getRowCells(id, true);
   const cell = row[column];
 
-  const editableFieldsEngine = gUI.table._editableFieldsEngine;
+  const editableFieldsEngine = gUI.table.editableFieldsEngine;
   const textbox = editableFieldsEngine.textbox;
 
   // When a field is being edited, the cell is hidden, and the textbox is made visible.
@@ -877,7 +877,7 @@ function showAllColumns(state) {
  *         Validate result? Default true.
  */
 async function typeWithTerminator(str, terminator, validate = true) {
-  const editableFieldsEngine = gUI.table._editableFieldsEngine;
+  const editableFieldsEngine = gUI.table.editableFieldsEngine;
   const textbox = editableFieldsEngine.textbox;
   const colName = textbox.closest(".table-widget-column").id;
 
@@ -905,7 +905,7 @@ async function typeWithTerminator(str, terminator, validate = true) {
 }
 
 function getCurrentEditorValue() {
-  const editableFieldsEngine = gUI.table._editableFieldsEngine;
+  const editableFieldsEngine = gUI.table.editableFieldsEngine;
   const textbox = editableFieldsEngine.textbox;
 
   return textbox.value;

@@ -573,8 +573,8 @@ class StorageUI extends EventEmitter {
   makeFieldsEditable(editableFields) {
     if (editableFields && editableFields.length) {
       this.table.makeFieldsEditable(editableFields);
-    } else if (this.table._editableFieldsEngine) {
-      this.table._editableFieldsEngine.destroy();
+    } else if (this.table.editableFieldsEngine) {
+      this.table.editableFieldsEngine.destroy();
     }
   }
 
