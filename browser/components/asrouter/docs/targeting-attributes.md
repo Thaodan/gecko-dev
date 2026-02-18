@@ -87,7 +87,6 @@ Please note that some targeting attributes require stricter controls on the tele
 * [searchEngines](#searchengines)
 * [sync](#sync)
 * [systemArch](#systemarch)
-* [tabNotesCount](#tabnotescount)
 * [topFrecentSites](#topfrecentsites)
 * [totalBlockedCount](#totalblockedcount)
 * [totalBookmarksCount](#totalbookmarkscount)
@@ -1193,17 +1192,6 @@ The architecture of this Firefox build: x86, x86-64 or aarch64.
 ```ts
 declare const systemArch: string | null;
 ```
-
-### `tabNotesCount`
-
-The total number of tab notes the user has stored in their current profile.
-
-#### Definition
-
-```ts
-declare const tabNotesCount: Promise<number>;
-```
-
 
 ### `totalSearches`
 
