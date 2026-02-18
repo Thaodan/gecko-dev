@@ -161,6 +161,8 @@ skip-if = [
 
 ["browser_homepage_firefox_home.js"]
 
+["browser_homepage_firefox_home_recent_activity.js"]
+
 ["browser_homepage_firefox_home_shortcuts.js"]
 
 ["browser_homepage_firefox_home_sponsored_shortcuts.js"]
