@@ -91,7 +91,6 @@ import org.mozilla.fenix.addons.ExtensionsProcessDisabledBackgroundController
 import org.mozilla.fenix.addons.ExtensionsProcessDisabledForegroundController
 import org.mozilla.fenix.bindings.BrowsingModeBinding
 import org.mozilla.fenix.bindings.ExternalAppLinkStatusBinding
-import org.mozilla.fenix.bindings.SummarizeToolbarHighlightBinding
 import org.mozilla.fenix.bookmarks.DesktopFolders
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.browser.browsingmode.DefaultBrowsingModeManager
@@ -269,15 +268,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
             appLinksUseCases = components.useCases.appLinksUseCases,
             browserStore = components.core.store,
             appStore = components.appStore,
-        )
-    }
-
-    private val summarizeToolbarHighlightBinding by lazy {
-        SummarizeToolbarHighlightBinding(
-            appStore = components.appStore,
-            featureDiscoverySettings = components.core.summarizeFeatureDiscoverySettings,
-            browserStore = components.core.store,
-            mainDispatcher = Main,
         )
     }
 
@@ -571,7 +561,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
             downloadSnackbar,
             privateBrowsingLockFeature,
             externalAppLinkStatusBinding,
-            summarizeToolbarHighlightBinding,
         )
 
         if (!isCustomTabIntent(intent)) {

@@ -423,7 +423,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
 
         requirePreference<SwitchPreference>(R.string.pref_key_enable_shake_to_summarize).apply {
             isVisible = Config.channel.isDebug
-            isChecked = context.settings().shakeToSummarizeFeatureFlagEnabled
+            isChecked = context.settings().shakeToSummarizeFeatureEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 

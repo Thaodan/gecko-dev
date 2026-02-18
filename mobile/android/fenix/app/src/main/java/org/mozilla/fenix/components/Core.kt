@@ -132,8 +132,6 @@ import org.mozilla.fenix.settings.advanced.getSelectedLocale
 import org.mozilla.fenix.share.DefaultSentFromFirefoxManager
 import org.mozilla.fenix.share.DefaultSentFromStorage
 import org.mozilla.fenix.share.SaveToPDFMiddleware
-import org.mozilla.fenix.summarization.onboarding.FenixSummarizeFeatureDiscoverySettings
-import org.mozilla.fenix.summarization.onboarding.SummarizeFeatureDiscoverySettings
 import org.mozilla.fenix.telemetry.TelemetryMiddleware
 import org.mozilla.fenix.utils.getUndoDelay
 import org.mozilla.geckoview.GeckoRuntime
@@ -652,14 +650,6 @@ class Core(
     val webAppManifestStorage by lazyMonitored { ManifestStorage(context) }
 
     val loginExceptionStorage by lazyMonitored { LoginExceptionStorage(context) }
-
-    /**
-     * Fenix implementation of [SummarizeFeatureDiscoverySettings]
-     * backed by [org.mozilla.fenix.utils.Settings]
-     */
-    val summarizeFeatureDiscoverySettings: SummarizeFeatureDiscoverySettings by lazyMonitored {
-        FenixSummarizeFeatureDiscoverySettings(settings = context.components.settings)
-    }
 
     /**
      * Shared Preferences that encrypt/decrypt using Android KeyStore and lib-dataprotect for 23+
