@@ -18,6 +18,7 @@
 #include "nsObjCExceptions.h"
 #include "nsCocoaUtils.h"
 #include "nsCocoaWindow.h"
+#include "nsComputedDOMStyle.h"
 #include "nsGkAtoms.h"
 #include "nsGlobalWindowInner.h"
 #include "nsPIDOMWindow.h"
