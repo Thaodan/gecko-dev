@@ -125,11 +125,13 @@ export const AIWindowUI = {
       aiBrowser.setAttribute("data-conversation-id", conversation.id);
 
       const contentDoc = aiBrowser.contentDocument;
-      contentDoc.dispatchEvent(
-        new aiBrowser.contentWindow.CustomEvent("OpenConversation", {
-          detail: conversation,
-        })
-      );
+      if (contentDoc && aiBrowser.contentWindow) {
+        contentDoc.dispatchEvent(
+          new aiBrowser.contentWindow.CustomEvent("OpenConversation", {
+            detail: conversation,
+          })
+        );
+      }
     }
   },
 
