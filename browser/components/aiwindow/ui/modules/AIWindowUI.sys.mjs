@@ -141,11 +141,10 @@ export const AIWindowUI = {
    * @param {Window} win
    */
   closeSidebar(win) {
-    const nodes = this._getSidebarElements(win);
-    if (!nodes) {
+    if (!this.isSidebarOpen(win)) {
       return;
     }
-    const { box, splitter } = nodes;
+    const { box, splitter } = this._getSidebarElements(win);
 
     // @todo Bug2012536
     // Test behavior of hidden vs collapsed with the intent that

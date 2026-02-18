@@ -3,6 +3,10 @@
 
 "use strict";
 
+const { AIWindowUI } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs"
+);
+
 // Ensure Window Switcher button is visible when AI Window is enabled in prefs
 add_task(async function test_window_switcher_button_visibility() {
   await SpecialPowers.pushPrefEnv({
@@ -259,5 +263,54 @@ add_task(async function test_onAccountLogout_switches_windows() {
     "Window should switch to classic mode after logout"
   );
 
+  await SpecialPowers.popPrefEnv();
+});
+
+// Sidebar should be hidden when switching to Classic Window
+add_task(async function test_hide_sidebar_when_switching_to_classic_window() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.smartwindow.enabled", true],
+      ["browser.smartwindow.firstrun.hasCompleted", true],
+    ],
+  });
+
+  const win = await openAIWindow();
+  const exampleUrl = "https://example.com/";
+
+  await BrowserTestUtils.loadURIString({
+    browser: win.gBrowser.selectedTab.linkedBrowser,
+    uriString: exampleUrl,
+  });
+
+  // Show sidebar elements directly to avoid triggering AI network request
+  let box = win.document.getElementById("ai-window-box");
+  let splitter = win.document.getElementById("ai-window-splitter");
+  box.hidden = false;
+  splitter.hidden = false;
+
+  Assert.ok(AIWindowUI.isSidebarOpen(win), "Sidebar should be open");
+
+  // Switch to classic
+  let button = win.document.getElementById("ai-window-toggle");
+  let view = PanelMultiView.getViewNode(win.document, "ai-window-toggle-view");
+  let viewShownPromise = BrowserTestUtils.waitForEvent(view, "ViewShown");
+  EventUtils.synthesizeMouseAtCenter(button, {}, win);
+  await viewShownPromise;
+
+  let classicButton = view.querySelector("#ai-window-switch-classic");
+  EventUtils.synthesizeMouseAtCenter(classicButton, {}, win);
+
+  await TestUtils.waitForCondition(
+    () => !win.document.documentElement.hasAttribute("ai-window"),
+    "Window should be in Classic Window mode"
+  );
+
+  Assert.ok(
+    !AIWindowUI.isSidebarOpen(win),
+    "Sidebar should be closed after switching to Classic Window"
+  );
+
+  await BrowserTestUtils.closeWindow(win);
   await SpecialPowers.popPrefEnv();
 });
