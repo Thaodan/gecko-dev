@@ -255,10 +255,10 @@ nsresult ClientSource::WindowExecutionReady(nsPIDOMWindowInner* aInnerWindow) {
   }
 
   Document* doc = aInnerWindow->GetExtantDoc();
-  NS_ENSURE_TRUE(doc, NS_ERROR_DOM_INVALID_STATE_ERR);
+  NS_ENSURE_TRUE(doc, NS_ERROR_UNEXPECTED);
 
   nsIURI* uri = doc->GetOriginalURI();
-  NS_ENSURE_TRUE(uri, NS_ERROR_NOT_AVAILABLE);
+  NS_ENSURE_TRUE(uri, NS_ERROR_UNEXPECTED);
 
   // Don't use nsAutoCString here since IPC requires a full nsCString anyway.
   nsCString spec;
