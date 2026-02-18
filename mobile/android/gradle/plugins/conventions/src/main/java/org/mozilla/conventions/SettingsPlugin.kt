@@ -17,6 +17,10 @@ class SettingsPlugin : Plugin<Settings> {
         settings.gradle.allprojects {
             pluginManager.apply(ProjectPlugin::class.java)
         }
+
+        settings.gradle.rootProject {
+            pluginManager.apply(BuildConfigPlugin::class.java)
+        }
     }
 
     @Suppress("UNCHECKED_CAST")

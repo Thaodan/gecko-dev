@@ -7,6 +7,9 @@ package org.mozilla.conventions
 import com.charleskorn.kaml.Yaml
 import kotlinx.serialization.Serializable
 import org.gradle.api.Action
+import org.gradle.api.Plugin
+import org.gradle.api.Project
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.initialization.Settings
 import org.gradle.api.logging.Logging
 import java.io.File
@@ -49,6 +52,44 @@ data class ApkConfig(
     val abi: String,
     val fileName: String,
 )
+
+class BuildConfigPlugin : Plugin<Project> {
+    override fun apply(project: Project) {
+        project.tasks.register("printProjectDependencies") {
+            description = "Prints inter-project dependencies as JSON"
+            val outputFile = File(project.projectDir, "build/printProjectDependencies.json")
+
+            val allDeps = mutableMapOf<String, List<String>>()
+            project.subprojects.forEach { subproject ->
+                val name = subproject.path.removePrefix(":")
+                val deps = mutableSetOf<String>()
+
+                subproject.configurations
+                    .filter { it.isCanBeResolved }
+                    .forEach { config ->
+                        config.incoming.resolutionResult.allComponents.forEach { component ->
+                            val id = component.id
+                            if (id is ProjectComponentIdentifier) {
+                                val depPath = id.projectPath.removePrefix(":")
+                                if (depPath != name) {
+                                    deps.add(depPath)
+                                }
+                            }
+                        }
+                    }
+
+                allDeps[name] = deps.sorted()
+            }
+
+            doLast {
+                val json = groovy.json.JsonOutput.toJson(allDeps)
+                outputFile.parentFile.mkdirs()
+                outputFile.writeText(json)
+                logger.debug("Wrote project dependencies to $outputFile")
+            }
+        }
+    }
+}
 
 /**
  * Registers projects from a [BuildConfig] into the Gradle [Settings], optionally filtering
