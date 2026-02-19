@@ -177,6 +177,14 @@ skip-if = [
 
 ["browser_homepage_firefox_home_widgets_2.js"]
 
+["browser_homepage_homepage.js"]
+
+["browser_homepage_homepage_custom_homepage_button.js"]
+
+["browser_homepage_homepage_restore_defaults.js"]
+
+["browser_homepage_homepage_restore_defaults_2.js"]
+
 ["browser_homepages_filter_aboutpreferences.js"]
 
 ["browser_homepages_use_bookmark.js"]
