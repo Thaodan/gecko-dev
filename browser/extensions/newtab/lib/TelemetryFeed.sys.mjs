@@ -863,7 +863,7 @@ export class TelemetryFeed {
       return;
     }
 
-    if (this.sovEnabled()) {
+    if (!this.sovEnabled()) {
       Glean.topSites.pingType.set(pingType);
       Glean.topSites.position.set(legacyTelemetryPosition);
       Glean.topSites.source.set(source);
