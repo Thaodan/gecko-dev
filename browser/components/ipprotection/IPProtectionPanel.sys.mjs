@@ -490,8 +490,9 @@ export class IPProtectionPanel {
    */
   destroy() {
     if (this.panel) {
+      const doc = this.panel.ownerDocument;
       this.panel.remove();
-      this.#removePanelListeners(this.panel.ownerDocument);
+      this.#removePanelListeners(doc);
       this.panel = null;
       if (this.state.error) {
         this.setState({
