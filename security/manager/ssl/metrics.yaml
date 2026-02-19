@@ -119,7 +119,6 @@ tls:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: TLS_CIPHER_SUITE
 
 cert_compression:
     failures:
@@ -741,7 +740,6 @@ ssl_handshake:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_HANDSHAKE_VERSION
 
   privacy:
     type: custom_distribution
@@ -762,7 +760,6 @@ ssl_handshake:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_HANDSHAKE_PRIVACY
 
   result:
     type: custom_distribution
@@ -786,7 +783,6 @@ ssl_handshake:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_HANDSHAKE_RESULT
 
   result_first_try:
     type: custom_distribution
@@ -808,7 +804,6 @@ ssl_handshake:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_HANDSHAKE_RESULT_FIRST_TRY
 
   result_conservative:
     type: custom_distribution
@@ -874,7 +869,6 @@ ssl_handshake:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_HANDSHAKE_RESULT_ECH_GREASE
 
   completed:
     type: custom_distribution
@@ -895,7 +889,6 @@ ssl_handshake:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_HANDSHAKE_TYPE
 
 ssl:
   time_until_ready:
@@ -913,7 +906,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_TIME_UNTIL_READY
 
   time_until_ready_first_try:
     type: timing_distribution
@@ -931,7 +923,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_TIME_UNTIL_READY_FIRST_TRY
 
   time_until_ready_conservative:
     type: timing_distribution
@@ -985,7 +976,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_TIME_UNTIL_READY_ECH_GREASE
 
   time_until_handshake_finished_keyed_by_ka:
     type: labeled_timing_distribution
@@ -1005,7 +995,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_TIME_UNTIL_HANDSHAKE_FINISHED_KEYED_BY_KA
 
   bytes_before_cert_callback:
     type: memory_distribution
@@ -1022,7 +1011,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_BYTES_BEFORE_CERT_CALLBACK
 
   npn_type:
     type: custom_distribution
@@ -1042,7 +1030,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_NPN_TYPE
 
   resumed_session:
     type: labeled_counter
@@ -1062,7 +1049,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: h#SSL_RESUMED_SESSION
 
   key_exchange_algorithm_full:
     type: custom_distribution
@@ -1083,7 +1069,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_KEY_EXCHANGE_ALGORITHM_FULL
 
   key_exchange_algorithm_resumed:
     type: custom_distribution
@@ -1104,7 +1089,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_KEY_EXCHANGE_ALGORITHM_RESUMED
 
   tls13_intolerance_reason_pre:
     type: custom_distribution
@@ -1354,7 +1338,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_KEA_ECDHE_CURVE_FULL
 
   auth_algorithm_full:
     type: custom_distribution
@@ -1375,7 +1358,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_AUTH_ALGORITHM_FULL
 
   auth_rsa_key_size_full:
     type: custom_distribution
@@ -1395,7 +1377,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_AUTH_RSA_KEY_SIZE_FULL
 
   auth_ecdsa_curve_full:
     type: custom_distribution
@@ -1416,7 +1397,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_AUTH_ECDSA_CURVE_FULL
 
   reasons_for_not_false_starting:
     type: custom_distribution
