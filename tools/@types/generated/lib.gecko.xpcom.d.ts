@@ -5380,6 +5380,7 @@ interface mozILocaleService extends nsISupports {
   readonly insertSeparatorBeforeAccesskeys: boolean;
   readonly acceptLanguages: string;
   readonly fontLanguageGroup: string;
+  readonly urlFixupSuffix: string;
 }
 
 // https://searchfox.org/mozilla-central/source/intl/locale/mozIOSPreferences.idl

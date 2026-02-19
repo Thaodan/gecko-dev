@@ -1282,10 +1282,7 @@ function maybeAddPrefixAndSuffix(oldHost) {
     "browser.fixup.alternate.prefix",
     "www."
   );
-  let suffix = Services.prefs.getCharPref(
-    "browser.fixup.alternate.suffix",
-    ".com"
-  );
+  let suffix = Services.locale.urlFixupSuffix;
   let newHost = "";
   let numDots = (oldHost.match(/\./g) || []).length;
   if (numDots == 0) {

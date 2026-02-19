@@ -3936,7 +3936,7 @@ export class SmartbarInput extends HTMLElement {
 
   /**
    * If appropriate, this prefixes a search string with 'www.' and suffixes it
-   * with browser.fixup.alternate.suffix prior to navigating.
+   * with Services.locale.urlFixupSuffix prior to navigating.
    *
    * @param {Event} event
    *   The event that triggered this query.
@@ -3956,7 +3956,7 @@ export class SmartbarInput extends HTMLElement {
       return null;
     }
 
-    let suffix = Services.prefs.getCharPref("browser.fixup.alternate.suffix");
+    let suffix = Services.locale.urlFixupSuffix;
     if (!suffix.endsWith("/")) {
       suffix += "/";
     }
