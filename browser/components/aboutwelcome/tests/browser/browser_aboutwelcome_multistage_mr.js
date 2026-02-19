@@ -95,7 +95,7 @@ add_task(async function test_aboutwelcome_easy_setup_screen_impression() {
     .stub(AWScreenUtils, "evaluateScreenTargeting")
     .resolves(false)
     .withArgs(
-      "doesAppNeedPin && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser"
+      "attributionData.campaign != 'smart_window' && doesAppNeedPin && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser"
     )
     .resolves(true)
     .withArgs("isDeviceMigration")
@@ -975,7 +975,7 @@ add_task(async function test_aboutwelcome_no_backups() {
     .resolves(false)
     // Easy setup for secondary top button
     .withArgs(
-      "doesAppNeedPin && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser"
+      "attributionData.campaign != 'smart_window' && doesAppNeedPin && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser"
     )
     .resolves(true)
     // Restore from backup pref gating
@@ -1027,7 +1027,7 @@ add_task(async function test_aboutwelcome_secondary_top_signin_only() {
     .resolves(false)
     // Mock Easy Setup for secondary button top testing
     .withArgs(
-      "doesAppNeedPin && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser"
+      "attributionData.campaign != 'smart_window' && doesAppNeedPin && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser"
     )
     .resolves(true)
     // Sign in button targeting
@@ -1076,7 +1076,7 @@ add_task(async function test_aboutwelcome_secondary_top_backup_restore_only() {
     .resolves(false)
     // Mock Easy Setup for secondary button top testing
     .withArgs(
-      "doesAppNeedPin && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser"
+      "attributionData.campaign != 'smart_window' && doesAppNeedPin && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser"
     )
     .resolves(true)
     // Show Restore Backup top button
@@ -1124,7 +1124,7 @@ add_task(async function test_aboutwelcome_both_secondary_top_buttons() {
     .stub(AWScreenUtils, "evaluateScreenTargeting")
     // Mock Easy Setup for secondary button top testing
     .withArgs(
-      "doesAppNeedPin && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser"
+      "attributionData.campaign != 'smart_window' && doesAppNeedPin && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser"
     )
     .resolves(true)
     // Show Sign-in top button
