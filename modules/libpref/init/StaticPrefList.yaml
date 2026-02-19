@@ -7106,6 +7106,8 @@
 #if defined(XP_MACOSX) || defined(MOZ_WAYLAND)
   value: true
 #elif defined(XP_WIN)
+# Change to true when shipping HDR video on Windows
+# https://bugzilla.mozilla.org/show_bug.cgi?id=2012848
   value: @IS_EARLY_BETA_OR_EARLIER@
 #else
   value: false
@@ -11188,6 +11190,8 @@
 #if defined(XP_MACOSX) || defined(MOZ_WAYLAND)
   value: true
 #elif defined(XP_WIN)
+# Change to true when shipping HDR video on Windows
+# https://bugzilla.mozilla.org/show_bug.cgi?id=2012848
   value: @IS_EARLY_BETA_OR_EARLIER@
 #else
   value: false
@@ -12177,9 +12181,11 @@
     value: false
     mirror: once
 
+# Change to true when shipping HDR video on Windows
+# https://bugzilla.mozilla.org/show_bug.cgi?id=2012848
 -   name: media.wmf.force.allow-p010-format
     type: RelaxedAtomicBool
-    value: false
+    value: @IS_EARLY_BETA_OR_EARLIER@
     mirror: always
 
 -   name: media.wmf.use-sync-texture
