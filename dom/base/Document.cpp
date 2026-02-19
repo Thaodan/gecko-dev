@@ -8997,9 +8997,8 @@ bool IsLowercaseASCII(const nsAString& aValue) {
 already_AddRefed<Element> Document::CreateElement(
     const nsAString& aTagName, const ElementCreationOptionsOrString& aOptions,
     ErrorResult& rv) {
-  // https://dom.spec.whatwg.org/#dom-document-createelement
-  if (!nsContentUtils::IsValidElementLocalName(aTagName)) {
-    rv.ThrowInvalidCharacterError("Invalid element name");
+  rv = nsContentUtils::CheckQName(aTagName, false);
+  if (rv.Failed()) {
     return nullptr;
   }
 
@@ -9076,9 +9075,8 @@ already_AddRefed<Element> Document::CreateElementNS(
 already_AddRefed<Element> Document::CreateXULElement(
     const nsAString& aTagName, const ElementCreationOptionsOrString& aOptions,
     ErrorResult& aRv) {
-  // https://dom.spec.whatwg.org/#dom-document-createelement
-  if (!nsContentUtils::IsValidElementLocalName(aTagName)) {
-    aRv.ThrowInvalidCharacterError("Invalid element name");
+  aRv = nsContentUtils::CheckQName(aTagName, false);
+  if (aRv.Failed()) {
     return nullptr;
   }
 
@@ -9176,9 +9174,9 @@ already_AddRefed<Attr> Document::CreateAttribute(const nsAString& aName,
     return nullptr;
   }
 
-  // https://dom.spec.whatwg.org/#dom-document-createattribute
-  if (!nsContentUtils::IsValidAttributeLocalName(aName)) {
-    rv.ThrowInvalidCharacterError("Invalid attribute name");
+  nsresult res = nsContentUtils::CheckQName(aName, false);
+  if (NS_FAILED(res)) {
+    rv.Throw(res);
     return nullptr;
   }
 
@@ -9190,9 +9188,8 @@ already_AddRefed<Attr> Document::CreateAttribute(const nsAString& aName,
   }
 
   RefPtr<mozilla::dom::NodeInfo> nodeInfo;
-  nsresult res =
-      mNodeInfoManager->GetNodeInfo(name, nullptr, kNameSpaceID_None,
-                                    ATTRIBUTE_NODE, getter_AddRefs(nodeInfo));
+  res = mNodeInfoManager->GetNodeInfo(name, nullptr, kNameSpaceID_None,
+                                      ATTRIBUTE_NODE, getter_AddRefs(nodeInfo));
   if (NS_FAILED(res)) {
     rv.Throw(res);
     return nullptr;
@@ -11830,21 +11827,20 @@ already_AddRefed<Element> Document::CreateElem(const nsAString& aName,
                                                int32_t aNamespaceID,
                                                const nsAString* aIs) {
 #ifdef DEBUG
-  if (!aPrefix) {
-    NS_ASSERTION(nsContentUtils::IsValidElementLocalName(aName),
-                 "Don't pass invalid names to Document::CreateElem");
-  } else {
-    nsAutoString qName;
+  nsAutoString qName;
+  if (aPrefix) {
     aPrefix->ToString(qName);
     qName.Append(':');
-    qName.Append(aName);
-
-    const char16_t* localNameEnd;
-    const char16_t* colon;
-    NS_ASSERTION(NS_SUCCEEDED(nsContentUtils::ParseQualifiedNameRelaxed(
-                     qName, ELEMENT_NODE, &colon, &localNameEnd)),
-                 "Don't pass invalid prefixes to Document::CreateElem.");
   }
+  qName.Append(aName);
+
+  // Note: "a:b:c" is a valid name in non-namespaces XML, and
+  // Document::CreateElement can call us with such a name and no prefix,
+  // which would cause an error if we just used true here.
+  bool nsAware = aPrefix != nullptr || aNamespaceID != GetDefaultNamespaceID();
+  NS_ASSERTION(NS_SUCCEEDED(nsContentUtils::CheckQName(qName, nsAware)),
+               "Don't pass invalid prefixes to Document::CreateElem, "
+               "check caller.");
 #endif
 
   RefPtr<mozilla::dom::NodeInfo> nodeInfo;
