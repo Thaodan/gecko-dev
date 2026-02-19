@@ -139,7 +139,7 @@ class IPPProxyManagerSingleton extends EventTarget {
   #networkErrorObserver = null;
   // If this is set, we're awaiting a proxy pass rotation
   #rotateProxyPassPromise = null;
-  #activatedAt = 0;
+  #activatedAt = false;
 
   #rotationTimer = 0;
   #usageRefreshAbortController = null;
@@ -366,7 +366,7 @@ class IPPProxyManagerSingleton extends EventTarget {
       if (usage) {
         this.#setUsage(usage);
         if (this.#usage.remaining <= 0) {
-          this.#pass = null;
+          this.#pass == null;
           this.#setState(IPPProxyStates.PAUSED);
           return false;
         }
@@ -441,9 +441,7 @@ class IPPProxyManagerSingleton extends EventTarget {
 
     lazy.logConsole.info("Stopped");
 
-    const sessionLength = this.#activatedAt
-      ? ChromeUtils.now() - this.#activatedAt
-      : 0;
+    const sessionLength = ChromeUtils.now() - this.#activatedAt;
 
     Glean.ipprotection.toggled.record({
       userAction,

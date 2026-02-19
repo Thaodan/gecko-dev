@@ -694,13 +694,12 @@ const listeners = new Set();
  */
 async function waitUntilURL(browser, predicate) {
   const prom = Promise.withResolvers();
-  let done = false;
+  const done = false;
   const check = arg => {
     if (done) {
       return;
     }
     if (predicate(arg)) {
-      done = true;
       listeners.delete(listener);
       browser.removeProgressListener(listener);
       prom.resolve(arg);
