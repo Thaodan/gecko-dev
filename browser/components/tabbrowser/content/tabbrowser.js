@@ -3845,18 +3845,32 @@
         tabIndex = this.#elementIndexToTabIndex(elementIndex);
       }
 
+      // When tabs are adopted across windows, they exit the tab split of the
+      // source window, moved to the new window, and finally moved into a split
+      // view in the new window. Although the splitViewId stays effectively the
+      // same, the TabMove event fire a few times for these transitions.
+      // To reduce noise in extension API events, we temporarily flag these
+      // tabs to allow ext-tabs.js to filter out such TabMove events.
       for (let tab of container.tabs) {
+        tab.removedByAdoption = true;
         let adoptedTab = this.adoptTab(tab, {
           tabIndex,
         });
+        adoptedTab.addedByAdoption = true;
         newTabs.push(adoptedTab);
         tabIndex = adoptedTab._tPos + 1;
       }
 
-      return this.addTabSplitView(newTabs, {
-        id: container.splitViewId,
-        insertBefore: newTabs[0],
-      });
+      try {
+        return this.addTabSplitView(newTabs, {
+          id: container.splitViewId,
+          insertBefore: newTabs[0],
+        });
+      } finally {
+        for (let tab of newTabs) {
+          delete tab.addedByAdoption;
+        }
+      }
     }
 
     /**
