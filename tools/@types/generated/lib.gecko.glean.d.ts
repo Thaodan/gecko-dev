@@ -1776,6 +1776,10 @@ interface GleanImpl {
     nonBlankPaint: GleanTimingDistribution;
   }
 
+  urlfixup: {
+    suffix: GleanDualLabeledCounter;
+  }
+
   useCounter: {
     contentDocumentsDestroyed: GleanCounter;
     dedicatedWorkersDestroyed: GleanCounter;
