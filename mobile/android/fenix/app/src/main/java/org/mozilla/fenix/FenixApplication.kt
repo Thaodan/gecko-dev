@@ -94,6 +94,7 @@ import org.mozilla.fenix.components.metrics.MozillaProductDetector
 import org.mozilla.fenix.components.startMetricsIfEnabled
 import org.mozilla.fenix.experiments.NimbusGeckoPrefHandler
 import org.mozilla.fenix.experiments.maybeFetchExperiments
+import org.mozilla.fenix.ext.application
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.containsQueryParameters
 import org.mozilla.fenix.ext.isCustomEngine
@@ -587,12 +588,24 @@ open class FenixApplication : LocaleAwareApplication(), Provider, ThemeProvider 
         }
     }
 
+    /**
+     * Sets up LeakCanary based on different build variant implementations.
+     *
+     * Only [ReleaseChannel.Debug] activates LeakCanary. Other variants are no-op.
+     */
     protected open fun setupLeakCanary() {
-        // no-op, LeakCanary is disabled by default
+        // The specific LeakCanarySetup implementation used will be determined based on build variant.
+        (LeakCanarySetup as LeakCanarySetupInterface).setup(application = application, components = components)
     }
 
+    /**
+     * Updates LeakCanary based on different build variant implementations.
+     *
+     * Only [ReleaseChannel.Debug] updates LeakCanary. Other variants are no-op.
+     */
     open fun updateLeakCanaryState(isEnabled: Boolean) {
-        // no-op, LeakCanary is disabled by default
+        // The specific LeakCanarySetup implementation used will be determined based on build variant.
+        (LeakCanarySetup as LeakCanarySetupInterface).updateState(isEnabled = isEnabled, components = components)
     }
 
     private fun setupPush() {
