@@ -155,9 +155,20 @@ export const AIWindow = {
         currentURI.equalsExceptRef(aboutNewTabURI) ||
         currentURI.equalsExceptRef(aboutHomeURI)
       ) {
+        if (this._hasActiveChatInBrowser(browser)) {
+          continue;
+        }
         browser.loadURI(newTabURI, { triggeringPrincipal });
       }
     }
+  },
+
+  _hasActiveChatInBrowser(browser) {
+    const aiWindowElement = browser.contentDocument?.querySelector("ai-window");
+    if (!aiWindowElement) {
+      return false;
+    }
+    return aiWindowElement.classList.contains("chat-active");
   },
 
   _onAIWindowEnabledPrefChange() {

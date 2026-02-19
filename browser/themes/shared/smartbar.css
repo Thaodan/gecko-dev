@@ -30,6 +30,10 @@
     overflow-y: auto;
   }
 
+  &[hidden] {
+    display: none;
+  }
+
   &[open] > .urlbarView {
     display: block;
   }
