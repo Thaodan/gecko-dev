@@ -902,6 +902,9 @@ export var PictureInPicture = {
     this.weakWinToBrowser.set(win, browser);
     this.addPiPBrowserToWeakMap(browser);
     this.addOriginatingWinToWeakMap(browser);
+    if (!browser.docShellIsActive) {
+      browser.docShellIsActive = true;
+    }
 
     win.setScrubberPosition(videoData.scrubberPosition);
     win.setTimestamp(videoData.timestamp);
