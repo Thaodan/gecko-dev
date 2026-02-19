@@ -972,6 +972,21 @@ Preferences.addSetting({
     canShowAiFeature(aiControlTranslations, aiControlDefault),
 });
 
+Preferences.addSetting({
+  id: "checkSpelling",
+  pref: "layout.spellcheckDefault",
+  get: prefVal => prefVal != 0,
+  set: val => (val ? 1 : 0),
+});
+
+Preferences.addSetting({
+  id: "downloadDictionaries",
+});
+
+Preferences.addSetting({
+  id: "spellCheckPromo",
+});
+
 function createNeverTranslateSitesDescription() {
   const description = document.createElement("span");
   description.dataset.l10nId =
@@ -3021,6 +3036,37 @@ SettingGroupManager.registerGroups({
         id: "translationsManageButton",
         l10nId: "settings-translations-more-settings-button",
         control: "moz-box-button",
+      },
+    ],
+  },
+  spellCheck: {
+    l10nId: "settings-spellcheck-header",
+    iconSrc: "chrome://global/skin/icons/check.svg",
+    headingLevel: 2,
+    items: [
+      {
+        id: "checkSpelling",
+        l10nId: "check-user-spelling",
+        supportPage: "how-do-i-use-firefox-spell-checker",
+      },
+      {
+        id: "downloadDictionaries",
+        l10nId: "spellcheck-download-dictionaries",
+        control: "moz-box-link",
+        controlAttrs: {
+          href: Services.urlFormatter.formatURLPref(
+            "browser.dictionaries.download.url"
+          ),
+        },
+      },
+      {
+        id: "spellCheckPromo",
+        l10nId: "spellcheck-promo",
+        control: "moz-promo",
+        controlAttrs: {
+          imagesrc:
+            "chrome://browser/content/preferences/spell-check-promo.svg",
+        },
       },
     ],
   },
@@ -5349,6 +5395,7 @@ var gMainPane = {
     initSettingGroup("fonts");
     initSettingGroup("support");
     initSettingGroup("translations");
+    initSettingGroup("spellCheck");
     initSettingGroup("performance");
     initSettingGroup("defaultBrowser");
     initSettingGroup("startup");
@@ -5539,15 +5586,6 @@ var gMainPane = {
 
     // Notify observers that the UI is now ready
     Services.obs.notifyObservers(window, "main-pane-loaded");
-
-    Preferences.addSyncFromPrefListener(
-      document.getElementById("checkSpelling"),
-      () => this.readCheckSpelling()
-    );
-    Preferences.addSyncToPrefListener(
-      document.getElementById("checkSpelling"),
-      () => this.writeCheckSpelling()
-    );
     this.setInitialized();
   },
 
@@ -6512,46 +6550,6 @@ var gMainPane = {
     );
 
     migrationWizardDialog.showModal();
-  },
-
-  /**
-   * Stores the original value of the spellchecking preference to enable proper
-   * restoration if unchanged (since we're mapping a tristate onto a checkbox).
-   */
-  _storedSpellCheck: 0,
-
-  /**
-   * Returns true if any spellchecking is enabled and false otherwise, caching
-   * the current value to enable proper pref restoration if the checkbox is
-   * never changed.
-   *
-   * layout.spellcheckDefault
-   * - an integer:
-   *     0  disables spellchecking
-   *     1  enables spellchecking, but only for multiline text fields
-   *     2  enables spellchecking for all text fields
-   */
-  readCheckSpelling() {
-    var pref = Preferences.get("layout.spellcheckDefault");
-    this._storedSpellCheck = pref.value;
-
-    return pref.value != 0;
-  },
-
-  /**
-   * Returns the value of the spellchecking preference represented by UI,
-   * preserving the preference's "hidden" value if the preference is
-   * unchanged and represents a value not strictly allowed in UI.
-   */
-  writeCheckSpelling() {
-    var checkbox = document.getElementById("checkSpelling");
-    if (checkbox.checked) {
-      if (this._storedSpellCheck == 2) {
-        return 2;
-      }
-      return 1;
-    }
-    return 0;
   },
 
   _minUpdatePrefDisableTime: 1000,

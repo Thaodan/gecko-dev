@@ -540,9 +540,19 @@ settings-translations-subpage-no-sites-added =
 use-system-locale =
    .label = Use your operating system settings for “{ $localeName }” to format dates, times, numbers, and measurements.
 
+settings-spellcheck-header =
+    .label = Spell check
+
 check-user-spelling =
     .label = Check your spelling as you type
     .accesskey = t
+
+spellcheck-download-dictionaries =
+    .label = Download dictionaries
+
+spellcheck-promo =
+    .heading = How to use spell checking
+    .message = Right-click a text field to turn spell check on or off or to change the language. Not all fields support spell check.
 
 ## General Section - Files and Applications
 
