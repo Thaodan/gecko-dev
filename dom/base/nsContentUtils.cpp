@@ -9869,7 +9869,7 @@ mozilla::Result<bool, nsresult> nsContentUtils::SynthesizeTouchEvent(
   }
 
   WidgetTouchEvent event(true, msg, aWidget);
-  event.mFlags.mIsSynthesizedForTests = true;
+  event.mFlags.mIsSynthesizedForTests = aOptions.mIsDOMEventSynthesized;
   event.mModifiers = nsContentUtils::GetWidgetModifiers(aModifiers);
   if (aOptions.mIsPen) {
     event.mInputSource = MouseEvent_Binding::MOZ_SOURCE_PEN;
