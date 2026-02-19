@@ -632,27 +632,24 @@ Preferences.addSetting({
   id: "handlersView",
   setup: emitChange => {
     emitChange();
-    // Load the data and build the list of handlers for applications pane.
-    // By doing this after pageshow, we ensure it doesn't delay painting
-    // of the preferences page.
-    window.addEventListener("pageshow", () => {
-      /**
-       * Don't init when not on General pane
-       */
-      if (location.hash && location.hash !== "#general") {
-        return;
-      }
-      AppFileHandler.preInit();
-    });
-
     /**
-     * Must support use cases where the user has initially hard
-     * loaded the general preferences from a pane other
-     * than General, but then changes to the General pane.
+     * @param {CustomEvent} event
      */
-    window.addEventListener("hashchange", () => {
-      AppFileHandler.preInit();
-    });
+    async function appInitializer(event) {
+      if (event.detail.category == "paneGeneral") {
+        await AppFileHandler.preInit();
+        /**
+         * Need to send an observer notification so that tests will know when
+         * everything in the handlersView is built and loaded.
+         */
+        Services.obs.notifyObservers(window, "app-handler-loaded");
+        window.removeEventListener("paneshown", appInitializer);
+      }
+    }
+    // Load the data and build the list of handlers for applications
+    // pane after page is shown to ensure it doesn't delay painting
+    // of the preferences page.
+    window.addEventListener("paneshown", appInitializer);
   },
 });
 
@@ -5556,9 +5553,6 @@ var gMainPane = {
 
   preInit() {
     promiseLoadHandlersList = new Promise((resolve, reject) => {
-      // Load the data and build the list of handlers for applications pane.
-      // By doing this after pageshow, we ensure it doesn't delay painting
-      // of the preferences page.
       window.addEventListener(
         "pageshow",
         () => {
