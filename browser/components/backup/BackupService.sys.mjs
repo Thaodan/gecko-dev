@@ -3078,6 +3078,7 @@ export class BackupService extends EventTarget {
 
     Glean.browserBackup.restoreStarted.record({
       restore_id: this.#_state.restoreID,
+      replace: replaceCurrentProfile,
     });
 
     try {
