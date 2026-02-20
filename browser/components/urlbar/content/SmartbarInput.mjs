@@ -395,6 +395,7 @@ export class SmartbarInput extends HTMLElement {
         this
       );
       this._inputCta.addEventListener("aiwindow-input-cta:on-action", this);
+      this.addEventListener("ai-website-chip:remove", this);
       this.#findWebsiteContextChipsContainer();
       this.#updateContextChips();
     }
@@ -612,6 +613,7 @@ export class SmartbarInput extends HTMLElement {
         this
       );
       this._inputCta.removeEventListener("aiwindow-input-cta:on-action", this);
+      this.removeEventListener("ai-website-chip:remove", this);
     }
 
     this._resizeObserver?.disconnect();
@@ -1231,6 +1233,13 @@ export class SmartbarInput extends HTMLElement {
     // Forward custom input CTA events.
     if (event.type.startsWith("aiwindow-input-cta:")) {
       this.handleCtaInputEvent(/** @type {CustomEvent} */ (event));
+      return;
+    }
+
+    // Handle website chip remove events.
+    if (event.type === "ai-website-chip:remove") {
+      const { url } = /** @type {CustomEvent} */ (event).detail;
+      this.removeContextMention(url);
       return;
     }
 
@@ -6307,6 +6316,40 @@ export class SmartbarInput extends HTMLElement {
   setAndUpdateContextWebsites(websites) {
     this.#contextWebsites = websites;
     this.#updateContextChips();
+  }
+
+  /**
+   * Add a website to the context chips.
+   *
+   * @param {object} mention - The mention to add
+   * @param {string} mention.type - The type of context
+   * @param {string} mention.url - The mention URL
+   * @param {string} mention.label - The mention label
+   */
+  addContextMention(mention) {
+    const hasMention = this.#contextWebsites.some(
+      site => site.url === mention.url
+    );
+    if (hasMention) {
+      return;
+    }
+    this.#contextWebsites = [...this.#contextWebsites, mention];
+    this.#updateContextChips();
+  }
+
+  /**
+   * Remove a context mention.
+   *
+   * @param {string} url - The URL of the mention
+   */
+  removeContextMention(url) {
+    const originalLength = this.#contextWebsites.length;
+    this.#contextWebsites = this.#contextWebsites.filter(
+      site => site.url !== url
+    );
+    if (this.#contextWebsites.length !== originalLength) {
+      this.#updateContextChips();
+    }
   }
 }
 
