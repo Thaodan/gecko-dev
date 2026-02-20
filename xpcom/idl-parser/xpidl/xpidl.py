@@ -1814,10 +1814,8 @@ class IDLParser:
 
     states = (("nativeid", "exclusive"),)
 
-    hexchar = r"[a-fA-F0-9]"
-
     t_NUMBER = r"-?\d+"
-    t_HEXNUM = r"0x%s+" % hexchar
+    t_HEXNUM = "0x[a-fA-F0-9]+"
     t_LSHIFT = r"<<"
     t_RSHIFT = r">>"
 
@@ -1835,9 +1833,8 @@ class IDLParser:
         r"//[^\n]*"
 
     def t_IID(self, t):
+        r"[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
         return t
-
-    t_IID.__doc__ = r"%(c)s{8}-%(c)s{4}-%(c)s{4}-%(c)s{4}-%(c)s{12}" % {"c": hexchar}
 
     def t_IDENTIFIER(self, t):
         r"(unsigned\ long\ long|unsigned\ short|unsigned\ long|long\ long)(?!_?[A-Za-z][A-Za-z_0-9])|_?[A-Za-z][A-Za-z_0-9]*"  # NOQA: E501
