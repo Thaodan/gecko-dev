@@ -425,11 +425,22 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Seek(const int32_t aWhence,
     return Err(rv);
   }
 
-  // XXX This call is necessary only in NS_SEEK_CUR case.
-  int64_t current;
-  rv = Tell(&current);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  int64_t current = 0;
+  if (baseCurrent > 0) {
+    // The underlying stream is always written in fixed-size units (mBlockSize)
+    // with padding, according to the flush implementation of
+    // EncryptedOutputStream. And baseCurrent always points to the end of the
+    // current block in our buffer, according to ParseNextChunk and Seek. That
+    // means baseCurrent is always a multiple of mBlockSize.
+    MOZ_DIAGNOSTIC_ASSERT(
+        std::has_single_bit(*mBlockSize) &&
+        (0 == (static_cast<size_t>(baseCurrent) & (*mBlockSize - 1))));
+    // Thus, (baseCurrent / *mBlockSize - 1) gives the number of preceding
+    // blocks. We multiply this by MaxPayloadLength() and add mNextByte to
+    // arrive at the current logical position.
+    current =
+        (baseCurrent / *mBlockSize - 1) * mEncryptedBlock->MaxPayloadLength() +
+        mNextByte;
   }
 
   rv = EnsureDecryptedStreamSize();
@@ -437,11 +448,8 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Seek(const int32_t aWhence,
     return rv;
   }
 
-  int64_t baseBlocksOffset;
-  int64_t nextByteOffset;
   switch (aWhence) {
     case NS_SEEK_CUR:
-      // XXX Simplify this without using Tell.
       aOffset += current;
       break;
 
@@ -449,7 +457,6 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Seek(const int32_t aWhence,
       break;
 
     case NS_SEEK_END:
-      // XXX Simplify this without using Seek/Tell.
       aOffset += *mDecryptedStreamSize;
       break;
 
@@ -461,6 +468,15 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Seek(const int32_t aWhence,
     return NS_ERROR_ILLEGAL_VALUE;
   }
 
+  // If the target offset is in the current block, it is enough to move
+  // mNextByte.
+  int64_t blockStart = current - mNextByte;
+  if (blockStart <= aOffset &&
+      aOffset <= blockStart + static_cast<int64_t>(mPlainBytes)) {
+    mNextByte += aOffset - current;
+    return NS_OK;
+  }
+
   // Seek changes the state, so restore the original position if the subsequent
   // operations fail.
   auto autoRestorePreviousState =
@@ -470,10 +486,10 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Seek(const int32_t aWhence,
         (void)NS_WARN_IF(NS_FAILED(rv));
       });
 
-  baseBlocksOffset = aOffset / mEncryptedBlock->MaxPayloadLength();
-  nextByteOffset = aOffset % mEncryptedBlock->MaxPayloadLength();
+  const int64_t baseBlocksOffset =
+      aOffset / mEncryptedBlock->MaxPayloadLength();
+  const int64_t nextByteOffset = aOffset % mEncryptedBlock->MaxPayloadLength();
 
-  // XXX If we remain in the same block as before, we can skip this.
   rv =
       (*mBaseSeekableStream)->Seek(NS_SEEK_SET, baseBlocksOffset * *mBlockSize);
   if (NS_WARN_IF(NS_FAILED(rv))) {
