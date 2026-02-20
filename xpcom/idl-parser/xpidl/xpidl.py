@@ -102,7 +102,7 @@ def getBuiltinOrNativeTypeName(t):
         return t.name
     elif t.kind == "native":
         assert t.specialtype is not None
-        return "[%s]" % t.specialtype
+        return f"[{t.specialtype}]"
     else:
         return None
 
@@ -264,7 +264,7 @@ class Location:
 
     def get(self):
         self.resolve()
-        return "%s line %s:%s" % (self._file, self._lineno, self._colno)
+        return f"{self._file} line {self._lineno}:{self._colno}"
 
     def lineno(self):
         self.resolve()
@@ -272,13 +272,7 @@ class Location:
 
     def __str__(self):
         self.resolve()
-        return "%s line %s:%s\n%s\n%s" % (
-            self._file,
-            self._lineno,
-            self._colno,
-            self._line,
-            self.pointerline(),
-        )
+        return f"{self._file} line {self._lineno}:{self._colno}\n{self._line}\n{self.pointerline()}"
 
 
 class NameMap:
@@ -362,13 +356,10 @@ class IDLError(Exception):
         self.notes = notes
 
     def __str__(self):
-        error = "%s: %s, %s" % (
-            self.warning and "warning" or "error",
-            self.message,
-            self.location,
-        )
+        prefix = self.warning and "warning" or "error"
+        error = f"{prefix}: {self.message}, {self.location}"
         if self.notes is not None:
-            error += "\nnote: %s" % self.notes
+            error += f"\nnote: {self.notes}"
         return error
 
 
@@ -380,7 +371,7 @@ class Include:
         self.location = location
 
     def __str__(self):
-        return "".join(["include '%s'\n" % self.filename])
+        return f"include '{self.filename}'\n"
 
     def resolve(self, parent):
         def incfiles():
@@ -497,7 +488,7 @@ class CDATA:
             )
 
     def __str__(self):
-        return "cdata: %s\n\t%r\n" % (self.location.get(), self.data)
+        return f"cdata: {self.location.get()}\n\t{self.data!r}\n"
 
     def count(self):
         return 0
@@ -553,7 +544,7 @@ class Typedef:
         return self.name
 
     def __str__(self):
-        return "typedef %s %s\n" % (self.type, self.name)
+        return f"typedef {self.type} {self.name}\n"
 
 
 class Forward:
@@ -599,7 +590,7 @@ class Forward:
         return self.name
 
     def __str__(self):
-        return "forward-declared %s\n" % self.name
+        return f"forward-declared {self.name}\n"
 
 
 class Native:
@@ -792,7 +783,7 @@ class Native:
         raise TSNoncompat(f"Native type {self.name} unsupported in TypeScript")
 
     def __str__(self):
-        return "native %s(%s)\n" % (self.name, self.nativename)
+        return f"native {self.name}({self.nativename})\n"
 
 
 class WebIDL:
@@ -843,7 +834,7 @@ class WebIDL:
         return self.name
 
     def __str__(self):
-        return "webidl %s\n" % self.name
+        return f"webidl {self.name}\n"
 
 
 class Interface:
@@ -975,9 +966,9 @@ class Interface:
         return f"{prefix}*const {self.name}"
 
     def __str__(self):
-        l = ["interface %s\n" % self.name]
+        l = [f"interface {self.name}\n"]
         if self.base is not None:
-            l.append("\tbase %s\n" % self.base)
+            l.append(f"\tbase {self.base}\n")
         l.append(str(self.attributes))
         if self.members is None:
             l.append("\tincomplete type\n")
@@ -1078,7 +1069,7 @@ class InterfaceAttributes:
     def __str__(self):
         l = []
         if self.uuid:
-            l.append("\tuuid: %s\n" % self.uuid)
+            l.append(f"\tuuid: {self.uuid}\n")
         if self.scriptable:
             l.append("\tscriptable\n")
         if self.builtinclass:
@@ -1131,7 +1122,7 @@ class ConstMember:
         return self.value
 
     def __str__(self):
-        return "\tconst %s %s = %s\n" % (self.type, self.name, self.getValue())
+        return f"\tconst {self.type} {self.name} = {self.getValue()}\n"
 
     def count(self):
         return 0
@@ -1209,8 +1200,8 @@ class CEnum:
         return f"{self.iface.name}.{self.basename}"
 
     def __str__(self):
-        body = ", ".join("%s = %s" % v for v in self.variants)
-        return "\tcenum %s : %d { %s };\n" % (self.name, self.width, body)
+        body = ", ".join(f"{v} = {v}" for v in self.variants)
+        return f"\tcenum {self.name} : {self.width} {{ {body} }};\n"
 
 
 # Infallible doesn't work for all return types.
@@ -1458,11 +1449,8 @@ class Attribute:
         return not (self.noscript or self.notxpcom or self.nostdcall)
 
     def __str__(self):
-        return "\t%sattribute %s %s\n" % (
-            self.readonly and "readonly " or "",
-            self.type,
-            self.name,
-        )
+        readonly = "readonly " if self.readonly else ""
+        return f"\t{readonly}attribute {self.type} {self.name}\n"
 
     def count(self):
         return self.readonly and 1 or 2
@@ -1581,11 +1569,8 @@ class Method:
         return not (self.noscript or self.notxpcom or self.nostdcall)
 
     def __str__(self):
-        return "\t%s %s(%s)\n" % (
-            self.type,
-            self.name,
-            ", ".join([p.name for p in self.params]),
-        )
+        params = (", ".join([p.name for p in self.params]),)
+        return f"\t{self.type} {self.name}({params})\n"
 
     def toIDL(self):
         if len(self.raises):
@@ -1797,7 +1782,7 @@ TypeId = namedtuple("TypeId", "name params")
 
 # Make str(TypeId) produce a nicer value
 TypeId.__str__ = lambda self: (
-    "%s<%s>" % (self.name, ", ".join(str(p) for p in self.params))
+    f"{self.name}<{', '.join(str(p) for p in self.params)}>"
     if self.params is not None
     else self.name
 )
