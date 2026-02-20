@@ -810,7 +810,7 @@ class WebIDL:
         config = parent.webidlconfig.get(self.name, {})
         self.native = config.get("nativeType")
         if self.native is None:
-            self.native = "mozilla::dom::%s" % self.name
+            self.native = f"mozilla::dom::{self.name}"
         self.headerFile = config.get("headerFile")
         if self.headerFile is None:
             self.headerFile = self.native.replace("::", "/") + ".h"
@@ -1166,7 +1166,7 @@ class CEnum:
         # so we don't collide in the global namespace. Hacky/ugly but it does
         # the job well enough, and the name will still be interface::variant in
         # C++.
-        self.name = "%s_%s" % (self.iface.name, self.basename)
+        self.name = f"{self.iface.name}_{self.basename}"
         self.iface.idl.setName(self)
 
         # Compute the value for each enum variant that doesn't set its own
