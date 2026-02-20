@@ -18,8 +18,8 @@ Method {
 
 def attrAsMethodStruct(iface, m, getter):
     params = [
-        'Param { name: "%s", ty: "%s" }' % x
-        for x in rust.attributeRawParamList(iface, m, getter)
+        f'Param {{ name: "{name}", ty: "{ty}" }}'
+        for name, ty in rust.attributeRawParamList(iface, m, getter)
     ]
     return derive_method_tmpl % {
         "name": rust.attributeNativeName(m, getter),
@@ -30,7 +30,8 @@ def attrAsMethodStruct(iface, m, getter):
 
 def methodAsMethodStruct(iface, m):
     params = [
-        'Param { name: "%s", ty: "%s" }' % x for x in rust.methodRawParamList(iface, m)
+        f'Param {{ name: "{name}", ty: "{ty}" }}'
+        for name, ty in rust.methodRawParamList(iface, m)
     ]
     return derive_method_tmpl % {
         "name": rust.methodNativeName(m),
@@ -55,27 +56,27 @@ def write_interface(iface, fd):
 
     assert iface.base or (iface.name == "nsISupports")
 
-    base = 'Some("%s")' % iface.base if iface.base is not None else "None"
+    base = f'Some("{iface.base}")' if iface.base is not None else "None"
     try:
         methods = ""
         for member in iface.members:
             if type(member) is xpidl.Attribute:
-                methods += "/* %s */\n" % member.toIDL()
-                methods += "%s,\n" % attrAsMethodStruct(iface, member, True)
+                methods += f"/* {member.toIDL()} */\n"
+                methods += f"{attrAsMethodStruct(iface, member, True)},\n"
                 if not member.readonly:
-                    methods += "%s,\n" % attrAsMethodStruct(iface, member, False)
+                    methods += f"{attrAsMethodStruct(iface, member, False)},\n"
                 methods += "\n"
 
             elif type(member) is xpidl.Method:
-                methods += "/* %s */\n" % member.toIDL()
-                methods += "%s,\n\n" % methodAsMethodStruct(iface, member)
+                methods += f"/* {member.toIDL()} */\n"
+                methods += f"{methodAsMethodStruct(iface, member)},\n\n"
         fd.write(
             derive_iface_tmpl
             % {
                 "name": iface.name,
                 "base": base,
                 "sync": "true" if iface.attributes.rust_sync else "false",
-                "methods": "Ok(&[\n%s])" % methods,
+                "methods": f"Ok(&[\n{methods}])",
             }
         )
     except xpidl.RustNoncompat as reason:
@@ -85,7 +86,7 @@ def write_interface(iface, fd):
                 "name": iface.name,
                 "base": base,
                 "sync": "false",
-                "methods": 'Err("%s")' % reason,
+                "methods": f'Err("{reason}")',
             }
         )
 
