@@ -6929,8 +6929,8 @@ class HandlerListItem {
     }
   }
 
-  createNode() {
-    this.node = /** @type {ApplicationFileHandlerItemActionsMenuOption} */ (
+  async createNode() {
+    this.node = /** @type {MozBoxItem} */ (
       document.createElement("moz-box-item")
     );
 
@@ -6942,9 +6942,8 @@ class HandlerListItem {
     this.setOrRemoveAttributes([[null, "type", this.handlerInfoWrapper.type]]);
 
     let typeDescription = this.handlerInfoWrapper.typeDescription;
-    localizeElement(this.node, typeDescription);
 
-    this.node.setAttribute("label", typeDescription.raw);
+    await setLocalizedLabel(this.node, typeDescription);
 
     this.actionsMenu = /** @type {MozSelect} */ (
       document.createElement("moz-select")
@@ -7286,19 +7285,22 @@ class HandlerListItem {
 }
 
 /**
- * This API facilitates dual-model of some localization APIs which
- * may operate on raw strings of l10n id/args pairs.
+ * Localizes the label of the provided item.
  *
- * @param {Element} node - Either raw string to be used
+ * @param {MozBoxItem} item
  * @param {any} l10n - Either raw string to be used as text value of the element or the l10n-id, or l10n-id + l10n-args
+ *
+ * @returns {Promise<void>}
  */
-function localizeElement(node, l10n) {
+async function setLocalizedLabel(item, l10n) {
+  let label;
   if (l10n.hasOwnProperty("raw")) {
-    node.removeAttribute("data-l10n-id");
-    node.textContent = l10n.raw;
+    label = l10n.raw;
   } else {
-    document.l10n.setAttributes(node, l10n.id, l10n.args);
+    [label] = await document.l10n.formatValues([l10n]);
   }
+  item.removeAttribute("data-l10n-id");
+  item.setAttribute("label", label);
 }
 
 /**
@@ -7875,50 +7877,60 @@ const AppFileHandler = (function () {
        */
       const unorderedItems = [];
 
+      /**
+       * @type {Array<Promise<void>>}
+       */
+      let promises = [];
+
       var visibleTypes = this._visibleTypes;
       for (const visibleType of visibleTypes) {
         const handlerItem = new HandlerListItem(visibleType);
 
-        const node = handlerItem.createNode();
-        unorderedItems.push(node);
+        promises.push(
+          handlerItem.createNode().then(node => {
+            unorderedItems.push(node);
 
-        this.items.push(handlerItem);
+            this.items.push(handlerItem);
 
-        let originalValue = handlerItem.actionsMenu.value;
+            let originalValue = handlerItem.actionsMenu.value;
 
-        handlerItem.actionsMenu.addEventListener("change", async e => {
-          const newValue = handlerItem.actionsMenu.value;
+            handlerItem.actionsMenu.addEventListener("change", async e => {
+              const newValue = handlerItem.actionsMenu.value;
 
-          if (newValue !== "choose-app" && newValue !== "manage-app") {
-            /**
-             * Must explicitly wait for MozSelect to update the value
-             * here, because sometimes it hasn't updated yet.
-             */
-            await handlerItem.actionsMenu.updateComplete;
+              if (newValue !== "choose-app" && newValue !== "manage-app") {
+                /**
+                 * Must explicitly wait for MozSelect to update the value
+                 * here, because sometimes it hasn't updated yet.
+                 */
+                await handlerItem.actionsMenu.updateComplete;
 
-            this._onSelectActionsMenuOption(handlerItem);
-          } else {
-            /**
-             * Temporarily revert the value back to its original
-             * until dialogs interaction ends.
-             */
-            handlerItem.actionsMenu.value = originalValue;
+                this._onSelectActionsMenuOption(handlerItem);
+              } else {
+                /**
+                 * Temporarily revert the value back to its original
+                 * until dialogs interaction ends.
+                 */
+                handlerItem.actionsMenu.value = originalValue;
 
-            /**
-             * Prevent change notification to any parent elements.
-             */
-            e.stopPropagation();
+                /**
+                 * Prevent change notification to any parent elements.
+                 */
+                e.stopPropagation();
 
-            if (newValue === "choose-app") {
-              this.chooseApp(handlerItem);
-            } else {
-              this.manageApp(handlerItem);
-            }
-          }
+                if (newValue === "choose-app") {
+                  this.chooseApp(handlerItem);
+                } else {
+                  this.manageApp(handlerItem);
+                }
+              }
 
-          originalValue = newValue;
-        });
+              originalValue = newValue;
+            });
+          })
+        );
       }
+
+      await Promise.allSettled(promises);
       /**
        * Append items sorted.
        */
@@ -7940,9 +7952,7 @@ const AppFileHandler = (function () {
       // Otherwise we can just append the fragment and it'll
       // get localized via the Mutation Observer.
 
-      for (const element of unorderedItems) {
-        this._list.appendChild(element);
-      }
+      this._list.appendChild(itemsFragment);
 
       this._filter.addEventListener("MozInputSearch:search", () =>
         this.filter()
