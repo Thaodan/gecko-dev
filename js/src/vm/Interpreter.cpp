@@ -5066,7 +5066,12 @@ static bool OptimizeGetIteratorForArray(JSObject* obj, JSContext* cx) {
   //   * %ArrayIteratorPrototype%.next is not modified
   //   * %ArrayIteratorPrototype%.return is not defined
   //   * return is nowhere on the proto chain
-  return IsArrayWithDefaultIterator<MustBePacked::Yes>(obj, cx);
+  if (!IsArrayWithDefaultIterator<MustBePacked::Yes>(obj, cx)) {
+    return false;
+  }
+  // Also check optimizeGetIteratorBytecodeFuse for the current realm. See the
+  // OptimizeGetIteratorBytecodeFuse comment for why this is necessary.
+  return cx->realm()->realmFuses.optimizeGetIteratorBytecodeFuse.intact();
 }
 
 static bool OptimizeArgumentsSpreadCall(JSContext* cx, HandleObject obj,

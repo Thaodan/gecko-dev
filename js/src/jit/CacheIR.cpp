@@ -6079,9 +6079,8 @@ AttachDecision OptimizeSpreadCallIRGenerator::tryAttachArray() {
   writer.guardShape(objId, arr->shape());
   writer.guardArrayIsPacked(objId);
 
-  // Ensure Array.prototype[@@iterator] and %ArrayIteratorPrototype%.next
-  // haven't been mutated.
-  writer.guardFuse(RealmFuses::FuseIndex::OptimizeGetIteratorFuse);
+  // Guard on the other conditions listed in OptimizeGetIteratorForArray.
+  writer.guardFuse(RealmFuses::FuseIndex::OptimizeGetIteratorBytecodeFuse);
 
   writer.loadObjectResult(objId);
   writer.returnFromIC();
@@ -16981,10 +16980,8 @@ AttachDecision OptimizeGetIteratorIRGenerator::tryAttachArray() {
   writer.guardShape(objId, arr->shape());
   writer.guardArrayIsPacked(objId);
 
-  // Guard on Array.prototype[@@iterator] and %ArrayIteratorPrototype%.next.
-  // This fuse also ensures the prototype chain for Array Iterator is
-  // maintained and that no return method is added.
-  writer.guardFuse(RealmFuses::FuseIndex::OptimizeGetIteratorFuse);
+  // Guard on the other conditions listed in OptimizeGetIteratorForArray.
+  writer.guardFuse(RealmFuses::FuseIndex::OptimizeGetIteratorBytecodeFuse);
 
   writer.loadBooleanResult(true);
   writer.returnFromIC();
