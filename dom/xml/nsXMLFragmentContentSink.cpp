@@ -17,6 +17,7 @@
 #include "nsError.h"
 #include "nsHashKeys.h"
 #include "nsIContent.h"
+#include "nsIDocShell.h"
 #include "nsIExpatSink.h"
 #include "nsIFragmentContentSink.h"
 #include "nsIScriptError.h"
