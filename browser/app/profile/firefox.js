@@ -693,6 +693,10 @@ pref("browser.urlbar.merino.timeoutMs", 200);
 // Comma-separated list of providers to request from Merino
 pref("browser.urlbar.merino.providers", "");
 
+// Merino endpoint prefs to be used for weather widgets
+pref("browser.urlbar.merino.weather.reportEndpointURL", "https://prod.merino.prod.webservices.mozgcp.net/api/v1/suggest");
+pref("browser.urlbar.merino.weather.hourlyEndpointURL", "");
+
 // Comma-separated list of client variants to send to Merino
 pref("browser.urlbar.merino.clientVariants", "");
 
