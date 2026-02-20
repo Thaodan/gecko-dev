@@ -1961,9 +1961,9 @@ tracking-manage-exceptions =
 
 ## Privacy Section - Permissions
 
-permissions-header2 =
+permissions-header3 =
     .label = Permissions
-    .description = Permissions you give to websites you browse.
+    .description = Manage what websites can access, control, or trigger.
 
 permissions-location2 =
     .label = Location
@@ -2003,13 +2003,13 @@ permissions-block-popups2 =
 
 # "popup" is a misspelling that is more popular than the correct spelling of
 # "pop-up" so it's included as a search keyword, not displayed in the UI.
-permissions-block-popups-exceptions-button2 =
-    .label = Manage pop-up and third-party redirect exceptions
+permissions-block-popups-exceptions-button3 =
+    .label = Manage redirects
     .accesskey = E
-    .searchkeywords = popups
+    .searchkeywords = popups,pop-ups
 
-permissions-addon-install-warning2 =
-    .label = Warn when websites try to install extensions
+permissions-addon-install-warning3 =
+    .label = Show warning when websites try to install extensions
     .accesskey = W
 
 permissions-addon-exceptions2 =

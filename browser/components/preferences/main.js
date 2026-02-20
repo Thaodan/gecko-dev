@@ -4119,7 +4119,7 @@ SettingGroupManager.registerGroups({
   },
   permissions: {
     id: "permissions",
-    l10nId: "permissions-header2",
+    l10nId: "permissions-header3",
     headingLevel: 2,
     items: [
       {
@@ -4233,7 +4233,7 @@ SettingGroupManager.registerGroups({
         items: [
           {
             id: "popupPolicyButton",
-            l10nId: "permissions-block-popups-exceptions-button2",
+            l10nId: "permissions-block-popups-exceptions-button3",
             control: "moz-box-button",
             controlAttrs: {
               "search-l10n-ids":
@@ -4244,7 +4244,7 @@ SettingGroupManager.registerGroups({
       },
       {
         id: "warnAddonInstall",
-        l10nId: "permissions-addon-install-warning2",
+        l10nId: "permissions-addon-install-warning3",
         items: [
           {
             id: "addonExceptions",
