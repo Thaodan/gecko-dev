@@ -6,6 +6,9 @@
  * Test that top-level net monitor error boundary catches child errors.
  */
 add_task(async function () {
+  Services.fog.testResetFOG();
+  startTelemetry();
+
   await pushPref("devtools.netmonitor.persistlog", true);
   const { monitor } = await initNetMonitor(SIMPLE_URL, {
     requestCount: 1,
@@ -39,5 +42,27 @@ add_task(async function () {
   );
 
   is(errorPanel, !undefined);
+
+  const events = Glean.devtoolsMain.toolboxComponentError.testGetValue();
+  is(
+    events.length,
+    1,
+    "One devtoolsMain.toolboxComponentError event was collected"
+  );
+
+  is(
+    events[0].extra.error_name,
+    "TypeError",
+    "toolboxComponentError event has the expected error name"
+  );
+  ok(
+    events[0].extra.stack.includes("resource://devtools/client/netmonitor/src"),
+    "toolboxComponentError event has the expected stack"
+  );
+  ok(
+    events[0].extra.component_stack.includes("in AppErrorBoundary"),
+    "toolboxComponentError event has the expected component stack"
+  );
+
   return teardown(monitor);
 });
