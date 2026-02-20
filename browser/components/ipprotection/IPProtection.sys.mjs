@@ -303,6 +303,7 @@ class IPProtectionWidget {
     await Promise.resolve();
     let moved = !!lazy.CustomizableUI.getPlacementOfWidget(widgetId);
     if (!moved) {
+      Glean.ipprotection.removedFromToolbar.record();
       lazy.IPPProxyManager.stop();
     }
   }
