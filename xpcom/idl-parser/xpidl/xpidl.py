@@ -2291,5 +2291,5 @@ class IDLParser:
 if __name__ == "__main__":
     p = IDLParser()
     for f in sys.argv[1:]:
-        print("Parsing %s" % f)
+        print(f"Parsing {f}")
         p.parse(open(f, encoding="utf-8").read(), filename=f)
