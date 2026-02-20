@@ -1020,6 +1020,11 @@ nsresult ScriptLoader::StartLoadInternal(
     // resource.
     aRequest->GetScriptLoadContext()->NotifyStart(channel);
     aRequest->GetScriptLoadContext()->NotifyStop(rv);
+    // If this was a preload that failed to start, deregister it so a
+    // subsequent attempt to load the same URL can succeed.
+    if (aRequest->GetScriptLoadContext()->IsPreload()) {
+      mDocument->Preloads().DeregisterPreload(key);
+    }
   }
 
   NS_ENSURE_SUCCESS(rv, rv);
