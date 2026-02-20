@@ -915,11 +915,8 @@ pref("browser.search.serpMetricsRecordedCounter", 0);
 // days
 pref("browser.search.widget.removeAfterDaysUnused", 120);
 
-#ifdef NIGHTLY_BUILD
+// Feature gate for searchbar based on urlbar code.
 pref("browser.search.widget.new", true);
-#else
-pref("browser.search.widget.new", false);
-#endif
 
 // The number of times the search function in the URL bar has been used,
 // capped at 100.
