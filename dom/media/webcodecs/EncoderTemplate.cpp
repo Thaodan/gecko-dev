@@ -705,7 +705,7 @@ void EncoderTemplate<EncoderType>::Reconfigure(
 
   RefPtr<ConfigTypeInternal> config = aMessage->Config();
   RefPtr<WebCodecsConfigurationChangeList> configDiff =
-      config->Diff(*mActiveConfig);
+      mActiveConfig->Diff(*config);
 
   // Nothing to do, return now, but per spec the config
   // must be output next time a packet is output.
