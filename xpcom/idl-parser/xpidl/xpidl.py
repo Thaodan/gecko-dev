@@ -48,10 +48,11 @@ def attlistToIDL(attlist):
     attlist = list(attlist)
     attlist.sort(key=lambda a: a[0])
 
-    return "[%s] " % ",".join([
-        "%s%s" % (name, value is not None and "(%s)" % value or "")
+    attribs = ",".join([
+        f"{name}({value})" if value is not None else name
         for name, value, aloc in attlist
     ])
+    return f"[{attribs}] "
 
 
 _paramsHardcode = {
@@ -81,10 +82,11 @@ def paramAttlistToIDL(attlist):
 
     sorted.extend(attlist)
 
-    return "[%s] " % ", ".join([
-        "%s%s" % (name, value is not None and " (%s)" % value or "")
+    attribs = ", ".join([
+        f"{name} ({value})" if value is not None else name
         for name, value, aloc in sorted
     ])
+    return f"[{attribs}] "
 
 
 def unaliasType(t):
@@ -1447,8 +1449,8 @@ class Attribute:
 
     def toIDL(self):
         attribs = attlistToIDL(self.attlist)
-        readonly = self.readonly and "readonly " or ""
-        return "%s%sattribute %s %s;" % (attribs, readonly, self.type, self.name)
+        readonly = "readonly " if self.readonly else ""
+        return f"{attribs}{readonly}attribute {self.type} {self.name};"
 
     def isScriptable(self):
         if not self.iface.attributes.scriptable:
@@ -1587,17 +1589,14 @@ class Method:
 
     def toIDL(self):
         if len(self.raises):
-            raises = " raises (%s)" % ",".join(self.raises)
+            raises = ",".join(self.raises)
+            raises = f" raises ({raises})"
         else:
             raises = ""
 
-        return "%s%s %s (%s)%s;" % (
-            attlistToIDL(self.attlist),
-            self.type,
-            self.name,
-            ", ".join([p.toIDL() for p in self.params]),
-            raises,
-        )
+        attribs = attlistToIDL(self.attlist)
+        params = ", ".join([p.toIDL() for p in self.params])
+        return f"{attribs}{self.type} {self.name} ({params}){raises};"
 
     def needsJSTypes(self):
         if self.implicit_jscontext:
@@ -1699,12 +1698,8 @@ class Param:
             raise IDLError("Unexpected parameter attribute", self.location)
 
     def toIDL(self):
-        return "%s%s %s %s" % (
-            paramAttlistToIDL(self.attlist),
-            self.paramtype,
-            self.type,
-            self.name,
-        )
+        attribs = paramAttlistToIDL(self.attlist)
+        return f"{attribs}{self.paramtype} {self.type} {self.name}"
 
     def tsType(self):
         # A generic retval param type needs special handling.
