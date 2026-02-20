@@ -236,15 +236,15 @@ def paramlistNames(m, return_param=True):
 
 
 header = """/*
- * DO NOT EDIT.  THIS FILE IS GENERATED FROM $SRCDIR/%(relpath)s
+ * DO NOT EDIT.  THIS FILE IS GENERATED FROM $SRCDIR/{relpath}
  */
 
-#ifndef __gen_%(basename)s_h__
-#define __gen_%(basename)s_h__
+#ifndef __gen_{basename}_h__
+#define __gen_{basename}_h__
 """
 
 include = """
-#include "%(basename)s.h"
+#include "{basename}.h"
 """
 
 jsvalue_include = """
@@ -268,10 +268,10 @@ header_end = """/* For IDL files that don't want to include root IDL files. */
 """
 
 footer = """
-#endif /* __gen_%(basename)s_h__ */
+#endif /* __gen_{basename}_h__ */
 """
 
-forward_decl = """class %(name)s; /* forward declaration */
+forward_decl = """class {name}; /* forward declaration */
 
 """
 
@@ -282,14 +282,14 @@ def idl_basename(f):
 
 
 def print_header(idl, fd, filename, relpath):
-    fd.write(header % {"relpath": relpath, "basename": idl_basename(filename)})
+    fd.write(header.format(relpath=relpath, basename=idl_basename(filename)))
 
     foundinc = False
     for inc in idl.includes():
         if not foundinc:
             foundinc = True
             fd.write("\n")
-        fd.write(include % {"basename": idl_basename(inc.filename)})
+        fd.write(include.format(basename=idl_basename(inc.filename)))
 
     if idl.needsJSTypes():
         fd.write(jsvalue_include)
@@ -327,7 +327,7 @@ def print_header(idl, fd, filename, relpath):
             write_webidl(p, fd)
             continue
         if p.kind == "forward":
-            fd.write(forward_decl % {"name": p.name})
+            fd.write(forward_decl.format(name=p.name))
             continue
         if p.kind == "interface":
             write_interface(p, fd)
@@ -337,7 +337,7 @@ def print_header(idl, fd, filename, relpath):
             nativetype = p.realtype.nativeType("in")
             fd.write(f"typedef {nativetype} {p.name};\n\n")
 
-    fd.write(footer % {"basename": idl_basename(filename)})
+    fd.write(footer.format(basename=idl_basename(filename)))
 
 
 def write_webidl(p, fd):
@@ -351,12 +351,12 @@ def write_webidl(p, fd):
 
 
 iface_header = r"""
-/* starting interface:    %(name)s */
-#define %(defname)s_IID_STR "%(iid)s"
+/* starting interface:    {name} */
+#define {defname}_IID_STR "{iid}"
 
-#define %(defname)s_IID \
-  {0x%(m0)s, 0x%(m1)s, 0x%(m2)s, \
-    { %(m3joined)s }}
+#define {defname}_IID \
+  {{0x{m0}, 0x{m1}, 0x{m2}, \
+    {{ {m3joined} }}}}
 
 """
 
@@ -369,71 +369,71 @@ uuid_decoder = re.compile(
     re.X,
 )
 
-iface_prolog = """ {
+iface_prolog = """ {{
  public:
 
-  NS_INLINE_DECL_STATIC_IID(%(defname)s_IID)
+  NS_INLINE_DECL_STATIC_IID({defname}_IID)
 
 """
 
 iface_scriptable = """\
   /* Used by ToJSValue to check which scriptable interface is implemented. */
-  using ScriptableInterfaceType = %(name)s;
+  using ScriptableInterfaceType = {name};
 
 """
 
-iface_epilog = """};
+iface_epilog = """}};
 """
 
 iface_decl = """
 
 /* Use this macro when declaring classes that implement this interface. */
-#define NS_DECL_%(macroname)s """
+#define NS_DECL_{macroname} """
 
 iface_nonvirtual = """
 
 /* Use this macro when declaring the members of this interface when the
    class doesn't implement the interface. This is useful for forwarding. */
-#define NS_DECL_NON_VIRTUAL_%(macroname)s """
+#define NS_DECL_NON_VIRTUAL_{macroname} """
 
 iface_forward = """
 
 /* Use this macro to declare functions that forward the behavior of this interface to another object. */
-#define NS_FORWARD_%(macroname)s(_to) """  # NOQA: E501
+#define NS_FORWARD_{macroname}(_to) """  # NOQA: E501
 
 iface_forward_safe = """
 
 /* Use this macro to declare functions that forward the behavior of this interface to another object in a safe way. */
-#define NS_FORWARD_SAFE_%(macroname)s(_to) """  # NOQA: E501
+#define NS_FORWARD_SAFE_{macroname}(_to) """  # NOQA: E501
 
 builtin_infallible_tmpl = """\
-  %(attributes)sinline %(realtype)s %(nativename)s(%(args)s)
-  {
-    %(realtype)sresult;
-    mozilla::DebugOnly<nsresult> rv = %(nativename)s(%(argnames)s&result);
+  {attributes}inline {realtype} {nativename}({args})
+  {{
+    {realtype}result;
+    mozilla::DebugOnly<nsresult> rv = {nativename}({argnames}&result);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
     return result;
-  }
+  }}
 """
 
 # NOTE: We don't use RefPtr::forget here because we don't want to need the
-# definition of %(realtype)s in scope, which we would need for the
+# definition of {realtype} in scope, which we would need for the
 # AddRef/Release calls.
 refcnt_infallible_tmpl = """\
-  %(attributes)s inline already_AddRefed<%(realtype)s> %(nativename)s(%(args)s)
-  {
-    %(realtype)s* result = nullptr;
-    mozilla::DebugOnly<nsresult> rv = %(nativename)s(%(argnames)s&result);
+  {attributes} inline already_AddRefed<{realtype}> {nativename}({args})
+  {{
+    {realtype}* result = nullptr;
+    mozilla::DebugOnly<nsresult> rv = {nativename}({argnames}&result);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
-    return already_AddRefed<%(realtype)s>(result);
-  }
+    return already_AddRefed<{realtype}>(result);
+  }}
 """
 
 iface_threadsafe_tmpl = """\
-namespace mozilla::detail {
+namespace mozilla::detail {{
 template <>
-class InterfaceNeedsThreadSafeRefCnt<%(name)s> : public std::true_type {};
-}
+class InterfaceNeedsThreadSafeRefCnt<{name}> : public std::true_type {{}};
+}}
 """
 
 
@@ -461,13 +461,13 @@ def infallibleDecl(member):
         argnames = paramlistNames(member, return_param=False)
         attributes = methodAttributes(member)
 
-    return tmpl % {
-        "attributes": attributes,
-        "realtype": realtype,
-        "nativename": nativename,
-        "args": args,
-        "argnames": argnames + ", " if argnames else "",
-    }
+    return tmpl.format(
+        attributes=attributes,
+        realtype=realtype,
+        nativename=nativename,
+        args=args,
+        argnames=argnames + ", " if argnames else "",
+    )
 
 
 def write_interface(iface, fd):
@@ -553,7 +553,7 @@ def write_interface(iface, fd):
         "implclass": implclass,
     })
 
-    fd.write(iface_header % names)
+    fd.write(iface_header.format(**names))
 
     printComments(fd, iface.doccomments, "")
 
@@ -569,10 +569,10 @@ def write_interface(iface, fd):
     fd.write(iface.name)
     if iface.base:
         fd.write(f" : public {iface.base}")
-    fd.write(iface_prolog % names)
+    fd.write(iface_prolog.format(**names))
 
     if iface.attributes.scriptable:
-        fd.write(iface_scriptable % names)
+        fd.write(iface_scriptable.format(**names))
 
     for key, group in itertools.groupby(iface.members, key=type):
         if key == xpidl.ConstMember:
@@ -590,12 +590,12 @@ def write_interface(iface, fd):
                 else:
                     raise Exception(f"Unexpected interface member: {member}")
 
-    fd.write(iface_epilog % names)
+    fd.write(iface_epilog.format(**names))
 
     if iface.attributes.rust_sync:
-        fd.write(iface_threadsafe_tmpl % names)
+        fd.write(iface_threadsafe_tmpl.format(**names))
 
-    fd.write(iface_decl % names)
+    fd.write(iface_decl.format(**names))
 
     def writeDeclaration(fd, iface, virtual):
         declType = "NS_IMETHOD" if virtual else "nsresult"
@@ -619,9 +619,9 @@ def write_interface(iface, fd):
             fd.write("\\")
 
     writeDeclaration(fd, iface, True)
-    fd.write(iface_nonvirtual % names)
+    fd.write(iface_nonvirtual.format(**names))
     writeDeclaration(fd, iface, False)
-    fd.write(iface_forward % names)
+    fd.write(iface_forward.format(**names))
 
     def emitTemplate(forward_infallible, tmpl, tmpl_notxpcom=None):
         if tmpl_notxpcom is None:
@@ -634,40 +634,36 @@ def write_interface(iface, fd):
                     )
                 attr_tmpl = tmpl_notxpcom if member.notxpcom else tmpl
                 fd.write(
-                    attr_tmpl
-                    % {
-                        "asNative": attributeAsNative(member, True),
-                        "nativeName": attributeNativeName(member, True),
-                        "paramList": attributeParamNames(member, True),
-                    }
+                    attr_tmpl.format(
+                        asNative=attributeAsNative(member, True),
+                        nativeName=attributeNativeName(member, True),
+                        paramList=attributeParamNames(member, True),
+                    )
                 )
                 if not member.readonly:
                     fd.write(
-                        attr_tmpl
-                        % {
-                            "asNative": attributeAsNative(member, False),
-                            "nativeName": attributeNativeName(member, False),
-                            "paramList": attributeParamNames(member, False),
-                        }
+                        attr_tmpl.format(
+                            asNative=attributeAsNative(member, False),
+                            nativeName=attributeNativeName(member, False),
+                            paramList=attributeParamNames(member, False),
+                        )
                     )
             elif isinstance(member, xpidl.Method):
                 if member.notxpcom:
                     fd.write(
-                        tmpl_notxpcom
-                        % {
-                            "asNative": methodAsNative(member),
-                            "nativeName": methodNativeName(member),
-                            "paramList": paramlistNames(member),
-                        }
+                        tmpl_notxpcom.format(
+                            asNative=methodAsNative(member),
+                            nativeName=methodNativeName(member),
+                            paramList=paramlistNames(member),
+                        )
                     )
                 else:
                     fd.write(
-                        tmpl
-                        % {
-                            "asNative": methodAsNative(member),
-                            "nativeName": methodNativeName(member),
-                            "paramList": paramlistNames(member),
-                        }
+                        tmpl.format(
+                            asNative=methodAsNative(member),
+                            nativeName=methodNativeName(member),
+                            paramList=paramlistNames(member),
+                        )
                     )
         if len(iface.members) == 0:
             fd.write("\\\n  /* no methods! */")
@@ -676,18 +672,18 @@ def write_interface(iface, fd):
 
     emitTemplate(
         True,
-        "\\\n  %(asNative)s override { return _to %(nativeName)s(%(paramList)s); } ",
+        "\\\n  {asNative} override {{ return _to {nativeName}({paramList}); }} ",
     )
 
-    fd.write(iface_forward_safe % names)
+    fd.write(iface_forward_safe.format(**names))
 
     # Don't try to safely forward notxpcom functions, because we have no
     # sensible default error return.  Instead, the caller will have to
     # implement them.
     emitTemplate(
         False,
-        "\\\n  %(asNative)s override { return !_to ? NS_ERROR_NULL_POINTER : _to->%(nativeName)s(%(paramList)s); } ",  # NOQA: E501
-        "\\\n  %(asNative)s override; ",
+        "\\\n  {asNative} override {{ return !_to ? NS_ERROR_NULL_POINTER : _to->{nativeName}({paramList}); }} ",  # NOQA: E501
+        "\\\n  {asNative} override; ",
     )
 
     fd.write("\n\n")
