@@ -54,10 +54,6 @@ name = "dump"
 path = "examples/dump.rs"
 
 [[test]]
-name = "test_afconvert"
-path = "tests/test_afconvert.rs"
-
-[[test]]
 name = "test_avis"
 path = "tests/test_avis.rs"
 
