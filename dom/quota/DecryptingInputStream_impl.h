@@ -297,6 +297,23 @@ nsresult DecryptingInputStream<CipherStrategy>::EnsureDecryptedStreamSize() {
     return NS_OK;
   }
 
+  // Restore the previous state.
+  // mPlainBuffer has to be restored also, because ParseNextChunk changes it.
+  int64_t baseCurrent;
+  nsresult rv = (*mBaseSeekableStream)->Tell(&baseCurrent);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return Err(rv);
+  }
+  auto savedPlainBuffer = mPlainBuffer.Clone();
+  auto autoRestorePreviousState =
+      MakeScopeExit([baseSeekableStream = *mBaseSeekableStream,
+                     savedBaseCurrent = baseCurrent, &savedPlainBuffer,
+                     &plainBuffer = mPlainBuffer] {
+        nsresult rv = baseSeekableStream->Seek(NS_SEEK_SET, savedBaseCurrent);
+        (void)NS_WARN_IF(NS_FAILED(rv));
+        plainBuffer = std::move(savedPlainBuffer);
+      });
+
   auto decryptedStreamSizeOrErr = [this]() -> Result<int64_t, nsresult> {
     nsresult rv = (*mBaseSeekableStream)->Seek(NS_SEEK_SET, 0);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -326,12 +343,8 @@ nsresult DecryptingInputStream<CipherStrategy>::EnsureDecryptedStreamSize() {
     }
     MOZ_ASSERT(bytesRead);
 
-    mPlainBytes = bytesRead;
-
-    mNextByte = bytesRead;
-
     int64_t current;
-    rv = Tell(&current);
+    rv = TellInternal(&current, bytesRead);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return Err(rv);
     }
@@ -351,6 +364,12 @@ nsresult DecryptingInputStream<CipherStrategy>::EnsureDecryptedStreamSize() {
 template <typename CipherStrategy>
 NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Tell(
     int64_t* const aRetval) {
+  return TellInternal(aRetval, mNextByte);
+}
+
+template <typename CipherStrategy>
+NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::TellInternal(
+    int64_t* const aRetval, uint64_t const aBlockOffset) {
   MOZ_ASSERT(aRetval);
 
   if (!mBaseStream) {
@@ -377,7 +396,8 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Tell(
   const auto fullBlocks = basePosition / *mBlockSize;
   MOZ_ASSERT(fullBlocks);
 
-  *aRetval = (fullBlocks - 1) * mEncryptedBlock->MaxPayloadLength() + mNextByte;
+  *aRetval =
+      (fullBlocks - 1) * mEncryptedBlock->MaxPayloadLength() + aBlockOffset;
   return NS_OK;
 }
 
@@ -411,25 +431,12 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Seek(const int32_t aWhence,
     return Err(rv);
   }
 
-  // Can't call this just in NS_SEEK_CUR case, because ensuring the decrypted
-  // size below may change the current position.
+  // XXX This call is necessary only in NS_SEEK_CUR case.
   int64_t current;
   rv = Tell(&current);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
-
-  // If there's a failure we need to restore any previous state.
-  auto autoRestorePreviousState =
-      MakeScopeExit([baseSeekableStream = *mBaseSeekableStream,
-                     savedBaseCurrent = baseCurrent,
-                     savedPlainBytes = mPlainBytes, savedNextByte = mNextByte,
-                     &plainBytes = mPlainBytes, &nextByte = mNextByte] {
-        nsresult rv = baseSeekableStream->Seek(NS_SEEK_SET, savedBaseCurrent);
-        (void)NS_WARN_IF(NS_FAILED(rv));
-        plainBytes = savedPlainBytes;
-        nextByte = savedNextByte;
-      });
 
   rv = EnsureDecryptedStreamSize();
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -459,6 +466,15 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Seek(const int32_t aWhence,
   if (aOffset < 0 || aOffset > *mDecryptedStreamSize) {
     return NS_ERROR_ILLEGAL_VALUE;
   }
+
+  // Seek changes the state, so restore the original position if the subsequent
+  // operations fail.
+  auto autoRestorePreviousState =
+      MakeScopeExit([baseSeekableStream = *mBaseSeekableStream,
+                     savedBaseCurrent = baseCurrent] {
+        nsresult rv = baseSeekableStream->Seek(NS_SEEK_SET, savedBaseCurrent);
+        (void)NS_WARN_IF(NS_FAILED(rv));
+      });
 
   baseBlocksOffset = aOffset / mEncryptedBlock->MaxPayloadLength();
   nextByteOffset = aOffset % mEncryptedBlock->MaxPayloadLength();
