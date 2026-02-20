@@ -75,28 +75,22 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Available(
     return NS_BASE_STREAM_CLOSED;
   }
 
-  int64_t oldPos, endPos;
-  nsresult rv = Tell(&oldPos);
+  int64_t current;
+  nsresult rv = Tell(&current);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
-  rv = Seek(SEEK_END, 0);
+  rv = EnsureDecryptedStreamSize();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
-  rv = Tell(&endPos);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  auto length = CheckedUint64(*mDecryptedStreamSize) - current;
+  if (!length.isValid()) {
+    return nsresult::NS_ERROR_ILLEGAL_VALUE;
   }
-
-  rv = Seek(SEEK_SET, oldPos);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  *aLengthOut = endPos - oldPos;
+  *aLengthOut = length.value();
   return NS_OK;
 }
 
