@@ -1129,8 +1129,7 @@ static Result<Ok, nsCString> InitializeVisibleRectAndDisplaySize(
     uint32_t w = static_cast<uint32_t>(round(wScale * aVisibleRect->Width()));
     uint32_t h = static_cast<uint32_t>(round(hScale * aVisibleRect->Height()));
     if (w == 0 || h == 0) {
-      return Err(
-          "Computed display size is zero in at least one dimension"_ns);
+      return Err("Computed display size is zero in at least one dimension"_ns);
     }
     aDisplaySize.emplace(gfx::IntSize(w, h));
   }
@@ -1167,9 +1166,9 @@ InitializeFrameWithResourceAndSize(nsIGlobalObject* aGlobal,
     // to do in this case?
   }
 
-  MOZ_TRY(InitializeVisibleRectAndDisplaySize(visibleRect, displaySize,
-                                              gfx::IntRect({0, 0}, image->GetSize()),
-                                              image->GetSize()));
+  MOZ_TRY(InitializeVisibleRectAndDisplaySize(
+      visibleRect, displaySize, gfx::IntRect({0, 0}, image->GetSize()),
+      image->GetSize()));
 
   Maybe<uint64_t> duration = OptionalToMaybe(aInit.mDuration);
 
@@ -1208,9 +1207,8 @@ InitializeFrameFromOtherFrame(nsIGlobalObject* aGlobal, VideoFrameData&& aData,
   Maybe<gfx::IntRect> visibleRect = init.first;
   Maybe<gfx::IntSize> displaySize = init.second;
 
-  MOZ_TRY(InitializeVisibleRectAndDisplaySize(visibleRect, displaySize,
-                                              aData.mVisibleRect,
-                                              aData.mDisplaySize));
+  MOZ_TRY(InitializeVisibleRectAndDisplaySize(
+      visibleRect, displaySize, aData.mVisibleRect, aData.mDisplaySize));
 
   Maybe<uint64_t> duration = OptionalToMaybe(aInit.mDuration);
 
