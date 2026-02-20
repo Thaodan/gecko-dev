@@ -3002,9 +3002,6 @@ pref("devtools.toolbox.alwaysOnTop", true);
 //   All privileged javascript, documents and workers running in the parent process.
 pref("devtools.browsertoolbox.scope", "parent-process");
 
-// This preference will enable watching top-level targets from the server side.
-pref("devtools.target-switching.server.enabled", true);
-
 // Controls the hability to debug popups from the same DevTools
 // of the original tab the popups are coming from
 pref("devtools.popups.debug", false);
