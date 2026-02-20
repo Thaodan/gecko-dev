@@ -168,7 +168,8 @@ class Builtin:
         if const and self.isPointer():
             rustname = self.rustname.replace("*mut", "*const")
 
-        return "%s%s" % ("*mut " if "out" in calltype else "", rustname)
+        prefix = "*mut " if "out" in calltype else ""
+        return f"{prefix}{rustname}"
 
     def tsType(self):
         if self.tsname:
@@ -541,7 +542,8 @@ class Typedef:
         return f"{self.name} {suffix}"
 
     def rustType(self, calltype):
-        return "%s%s" % ("*mut " if "out" in calltype else "", self.name)
+        prefix = "*mut " if "out" in calltype else ""
+        return f"{prefix}{self.name}"
 
     def tsType(self):
         # Make sure that underlying type is supported: doesn't throw TSNoncompat.
@@ -585,10 +587,11 @@ class Forward:
 
     def rustType(self, calltype):
         if rustPreventForward(self.name):
-            raise RustNoncompat("forward declaration %s is unsupported" % self.name)
+            raise RustNoncompat(f"forward declaration {self.name} is unsupported")
         if calltype == "element":
-            return "Option<RefPtr<%s>>" % self.name
-        return "%s*const %s" % ("*mut" if "out" in calltype else "", self.name)
+            return f"Option<RefPtr<{self.name}>>"
+        prefix = "*mut " if "out" in calltype else ""
+        return f"{prefix}*const {self.name}"
 
     def tsType(self):
         return self.name
@@ -831,7 +834,8 @@ class WebIDL:
 
     def rustType(self, calltype, const=False):
         # Just expose the type as a void* - we can't do any better.
-        return "%s*const libc::c_void" % ("*mut " if "out" in calltype else "")
+        prefix = "*mut " if "out" in calltype else ""
+        return f"{prefix}*const libc::c_void"
 
     def tsType(self):
         return self.name
@@ -964,8 +968,9 @@ class Interface:
 
     def rustType(self, calltype, const=False):
         if calltype == "element":
-            return "Option<RefPtr<%s>>" % self.name
-        return "%s*const %s" % ("*mut " if "out" in calltype else "", self.name)
+            return f"Option<RefPtr<{self.name}>>"
+        prefix = "*mut " if "out" in calltype else ""
+        return f"{prefix}*const {self.name}"
 
     def __str__(self):
         l = ["interface %s\n" % self.name]
@@ -1195,7 +1200,8 @@ class CEnum:
         return f"{self.iface.name}::{self.basename} {suffix}"
 
     def rustType(self, calltype):
-        return "%s u%d" % ("*mut" if "out" in calltype else "", self.width)
+        prefix = "*mut " if "out" in calltype else ""
+        return f"{prefix}u{self.width}"
 
     def tsType(self):
         return f"{self.iface.name}.{self.basename}"
@@ -1739,11 +1745,10 @@ class LegacyArray:
         return f"{prefix}{elemtype}*{suffix}"
 
     def rustType(self, calltype, const=False):
-        return "%s%s%s" % (
-            "*mut " if "out" in calltype else "",
-            "*const " if const else "*mut ",
-            self.type.rustType("legacyelement"),
-        )
+        prefix1 = "*mut " if "out" in calltype else ""
+        prefix2 = "*const " if const else "*mut "
+        elemtype = self.type.rustType("legacyelement")
+        return f"{prefix1}{prefix2}{elemtype}"
 
     def tsType(self):
         return self.type.tsType() + "[]"
@@ -1779,13 +1784,14 @@ class Array:
         if calltype == "legacyelement":
             raise IDLError("[array] Array<T> is unsupported", self.location)
 
-        base = "thin_vec::ThinVec<%s>" % self.type.rustType("element")
+        elemtype = self.type.rustType("element")
         if "out" in calltype:
-            return "*mut %s" % base
+            prefix = "*mut "
         elif "in" == calltype:
-            return "*const %s" % base
+            prefix = "*const "
         else:
-            return base
+            prefix = ""
+        return f"{prefix}thin_vec::ThinVec<{elemtype}>"
 
     def tsType(self):
         return self.type.tsType() + "[]"
