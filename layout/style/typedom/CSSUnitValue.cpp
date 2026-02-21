@@ -92,6 +92,26 @@ void CSSUnitValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
       case eCSSProperty_border_right_width:
       case eCSSProperty_border_top_width:
       case eCSSProperty_outline_width:
+      case eCSSProperty_padding_block_end:
+      case eCSSProperty_padding_block_start:
+      case eCSSProperty_padding_bottom:
+      case eCSSProperty_padding_inline_end:
+      case eCSSProperty_padding_inline_start:
+      case eCSSProperty_padding_left:
+      case eCSSProperty_padding_right:
+      case eCSSProperty_padding_top:
+      case eCSSProperty_r:
+      case eCSSProperty_shape_margin:
+      case eCSSProperty_rx:
+      case eCSSProperty_ry:
+      case eCSSProperty_scroll_padding_block_end:
+      case eCSSProperty_scroll_padding_block_start:
+      case eCSSProperty_scroll_padding_bottom:
+      case eCSSProperty_scroll_padding_inline_end:
+      case eCSSProperty_scroll_padding_inline_start:
+      case eCSSProperty_scroll_padding_left:
+      case eCSSProperty_scroll_padding_right:
+      case eCSSProperty_scroll_padding_top:
         return aValue < 0;
 
       default:
