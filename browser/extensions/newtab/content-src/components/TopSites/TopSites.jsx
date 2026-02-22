@@ -179,6 +179,7 @@ export class _TopSites extends React.PureComponent {
                   unstyled={true}
                   onClose={this.onEditFormClose}
                   innerClassName="modal"
+                  headerId="topsites-form-title"
                 >
                   <TopSiteForm
                     site={props.TopSites.rows[editForm.index]}
