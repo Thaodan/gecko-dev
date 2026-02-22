@@ -49,9 +49,8 @@ function ModalOverlayWrapper({
           onClose(e);
         }
       }}
-      {...(headerId ? { "aria-labelledby": headerId } : {})}
     >
-      <div className={className} id={id}>
+      <div className={className} aria-labelledby={headerId} id={id}>
         {children}
       </div>
     </dialog>
