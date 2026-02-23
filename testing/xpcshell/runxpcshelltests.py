@@ -2464,7 +2464,7 @@ class XPCShellTests:
         # Start group for parallel test execution
         parallel_group_started = False
         if tests_queue:
-            self.log.group_start(name="parallel")
+            self.log.group_start(name="parallel", extra={"threads": self.threadCount})
             parallel_group_started = True
 
         while tests_queue or running_tests:

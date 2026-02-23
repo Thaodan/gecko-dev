@@ -4,6 +4,7 @@
 
 
 import json
+import math
 import os
 from collections import defaultdict
 
@@ -20,10 +21,11 @@ class ErrorSummaryFormatter(BaseFormatter):
                 "group_start": None,
                 "group_end": None,
                 "all_skipped": True,
-                "test_start": None,
+                "test_starts": {},
                 "test_times": [],
             }
         )
+        self.test_time_divisor = 1
         self.line_count = 0
         self.dump_passing_tests = False
 
@@ -96,7 +98,7 @@ class ErrorSummaryFormatter(BaseFormatter):
                     "group_start": None,
                     "group_end": None,
                     "all_skipped": True,
-                    "test_start": None,
+                    "test_starts": {},
                     "test_times": [],
                 }
         return self._output("test_groups", {"groups": list(item["tests"].keys())})
@@ -126,18 +128,24 @@ class ErrorSummaryFormatter(BaseFormatter):
         group = item["name"]
         if group in self.manifest_groups:
             self.groups[group]["group_start"] = item["time"]
+        else:
+            extra = item.get("extra") or {}
+            threads = extra.get("threads")
+            if threads and threads > 1:
+                self.test_time_divisor = threads
 
     def group_end(self, item):
         group = item["name"]
         if group in self.manifest_groups and not self.groups[group]["all_skipped"]:
             self.groups[group]["group_end"] = item["time"]
+        elif group not in self.manifest_groups:
+            self.test_time_divisor = 1
 
     def test_start(self, item):
-        group = item.get(
-            "group", self.test_to_group.get(self._clean_test_name(item["test"]), None)
-        )
-        if group and self.groups[group]["test_start"] is None:
-            self.groups[group]["test_start"] = item["time"]
+        test = self._clean_test_name(item["test"])
+        group = item.get("group", self.test_to_group.get(test, None))
+        if group:
+            self.groups[group]["test_starts"][test] = item["time"]
 
     def test_status(self, item):
         group = item.get(
@@ -157,18 +165,16 @@ class ErrorSummaryFormatter(BaseFormatter):
         )
 
     def test_end(self, item):
-        group = item.get(
-            "group", self.test_to_group.get(self._clean_test_name(item["test"]), None)
-        )
+        test = self._clean_test_name(item["test"])
+        group = item.get("group", self.test_to_group.get(test, None))
         if group:
             self.groups[group]["status"] = self._get_group_result(group, item)
-            if item["status"] == "SKIP":
-                self.groups[group]["test_start"] = None
-            elif self.groups[group]["test_start"]:
+            start_time = self.groups[group]["test_starts"].pop(test, None)
+            if item["status"] != "SKIP" and start_time is not None:
+                elapsed = item["time"] - start_time
                 self.groups[group]["test_times"].append(
-                    item["time"] - self.groups[group]["test_start"]
+                    math.ceil(elapsed / self.test_time_divisor)
                 )
-                self.groups[group]["test_start"] = None
 
         if not self.dump_passing_tests and "expected" not in item:
             return
@@ -176,7 +182,7 @@ class ErrorSummaryFormatter(BaseFormatter):
         if item.get("expected", "") == "":
             item["expected"] = item["status"]
 
-        return self._output_test(self._clean_test_name(item["test"]), None, item)
+        return self._output_test(test, None, item)
 
     def log(self, item):
         if item["level"] not in ("ERROR", "CRITICAL"):
