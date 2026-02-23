@@ -161,7 +161,7 @@
           }
 
           if (this.tabs.length < 2) {
-            this.unsplitTabs();
+            this.unsplitTabs("tab_close");
           }
         });
       }
@@ -332,9 +332,12 @@
 
     /**
      * Remove all tabs from the split view wrapper and delete the split view.
+     *
+     * @param {string} [trigger]
+     *   The trigger method for ending the split view. Used for telemetry.
      */
-    unsplitTabs() {
-      gBrowser.unsplitTabs(this);
+    unsplitTabs(trigger = null) {
+      gBrowser.unsplitTabs(this, trigger);
       gBrowser.setIsSplitViewActive(false, this.#tabs);
     }
 
@@ -365,19 +368,42 @@
 
     /**
      * Reverse order of the tabs in the split view wrapper.
+     *
+     * @param {string} [trigger]
+     *   The trigger method for reversing tabs. Used for telemetry.
      */
-    reverseTabs() {
+    reverseTabs(trigger = null) {
       const [firstTab, secondTab] = this.#tabs;
       gBrowser.moveTabBefore(secondTab, firstTab);
       this.#tabs = [secondTab, firstTab];
       gBrowser.showSplitViewPanels(this.#tabs);
       updateUrlbarButton.arm();
+
+      // Record telemetry
+      if (trigger) {
+        Glean.splitview.reverse.record({ trigger });
+      }
     }
 
     /**
      * Close all tabs in the split view wrapper and delete the split view.
+     *
+     * @param {string} [trigger]
+     *   The trigger method for ending the split view. Used for telemetry.
      */
-    close() {
+    close(trigger = null) {
+      // Record telemetry before closing
+      if (trigger) {
+        const tab_layout = gBrowser.tabContainer.verticalMode
+          ? "vertical"
+          : "horizontal";
+        Glean.splitview.end.record({
+          tab_layout,
+          trigger,
+        });
+      }
+      // Disconnect observer to prevent automatic unsplit from recording duplicate telemetry
+      this.#tabChangeObserver?.disconnect();
       gBrowser.removeTabs(this.#tabs);
     }
 
