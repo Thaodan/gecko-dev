@@ -9,25 +9,19 @@
 
 #include "nsISystemProxySettings.h"
 #include "nsStringFwd.h"
-#include "WindowsInternetFunctionsWrapper.h"
-#include "mozilla/RefPtr.h"
 
 class nsWindowsSystemProxySettings final : public nsISystemProxySettings {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSISYSTEMPROXYSETTINGS
 
-  explicit nsWindowsSystemProxySettings(
-      mozilla::toolkit::system::WindowsInternetFunctionsWrapper* aFunctions =
-          new mozilla::toolkit::system::WindowsInternetFunctionsWrapper());
+  nsWindowsSystemProxySettings();
 
  private:
   ~nsWindowsSystemProxySettings();
 
   bool MatchOverride(const nsACString& aHost);
   bool PatternMatch(const nsACString& aHost, const nsACString& aOverride);
-
-  RefPtr<mozilla::toolkit::system::WindowsInternetFunctionsWrapper> mFunctions;
 };
 
 #endif  // mozilla_toolkit_system_nsWindowsSystemProxySettings_h
