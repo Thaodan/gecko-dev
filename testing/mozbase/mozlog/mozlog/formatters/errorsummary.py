@@ -13,12 +13,15 @@ from .base import BaseFormatter
 class ErrorSummaryFormatter(BaseFormatter):
     def __init__(self):
         self.test_to_group = {}
+        self.manifest_groups = set()
         self.groups = defaultdict(
             lambda: {
                 "status": None,
+                "group_start": None,
+                "group_end": None,
+                "all_skipped": True,
+                "test_start": None,
                 "test_times": [],
-                "start": None,
-                "end": None,
             }
         )
         self.line_count = 0
@@ -64,15 +67,14 @@ class ErrorSummaryFormatter(BaseFormatter):
         known_intermittent = item.get("known_intermittent", [])
 
         if test_status == "SKIP":
-            self.groups[group]["start"] = None
             if result is None:
                 result = "SKIP"
-        elif test_status == test_expected or test_status in known_intermittent:
-            # If the test status is expected, or it's a known intermittent
-            # the group has at least one passing test
-            result = "OK"
         else:
-            result = "ERROR"
+            self.groups[group]["all_skipped"] = False
+            if test_status == test_expected or test_status in known_intermittent:
+                result = "OK"
+            else:
+                result = "ERROR"
 
         return result
 
@@ -85,21 +87,27 @@ class ErrorSummaryFormatter(BaseFormatter):
 
     def suite_start(self, item):
         self.test_to_group = {v: k for k in item["tests"] for v in item["tests"][k]}
+        self.manifest_groups = set(item["tests"].keys())
         # Initialize groups with no tests (missing manifests) with SKIP status
         for group, tests in item["tests"].items():
             if not tests:  # Empty test list
                 self.groups[group] = {
                     "status": "SKIP",
+                    "group_start": None,
+                    "group_end": None,
+                    "all_skipped": True,
+                    "test_start": None,
                     "test_times": [],
-                    "start": None,
-                    "end": None,
                 }
         return self._output("test_groups", {"groups": list(item["tests"].keys())})
 
     def suite_end(self, data):
         output = []
         for group, info in self.groups.items():
-            duration = sum(info["test_times"])
+            if info["group_start"] is not None and info["group_end"] is not None:
+                duration = info["group_end"] - info["group_start"]
+            else:
+                duration = sum(info["test_times"])
 
             output.append(
                 self._output(
@@ -114,12 +122,22 @@ class ErrorSummaryFormatter(BaseFormatter):
 
         return "".join(output)
 
+    def group_start(self, item):
+        group = item["name"]
+        if group in self.manifest_groups:
+            self.groups[group]["group_start"] = item["time"]
+
+    def group_end(self, item):
+        group = item["name"]
+        if group in self.manifest_groups and not self.groups[group]["all_skipped"]:
+            self.groups[group]["group_end"] = item["time"]
+
     def test_start(self, item):
         group = item.get(
             "group", self.test_to_group.get(self._clean_test_name(item["test"]), None)
         )
-        if group and self.groups[group]["start"] is None:
-            self.groups[group]["start"] = item["time"]
+        if group and self.groups[group]["test_start"] is None:
+            self.groups[group]["test_start"] = item["time"]
 
     def test_status(self, item):
         group = item.get(
@@ -144,11 +162,13 @@ class ErrorSummaryFormatter(BaseFormatter):
         )
         if group:
             self.groups[group]["status"] = self._get_group_result(group, item)
-            if self.groups[group]["start"]:
+            if item["status"] == "SKIP":
+                self.groups[group]["test_start"] = None
+            elif self.groups[group]["test_start"]:
                 self.groups[group]["test_times"].append(
-                    item["time"] - self.groups[group]["start"]
+                    item["time"] - self.groups[group]["test_start"]
                 )
-                self.groups[group]["start"] = None
+                self.groups[group]["test_start"] = None
 
         if not self.dump_passing_tests and "expected" not in item:
             return
