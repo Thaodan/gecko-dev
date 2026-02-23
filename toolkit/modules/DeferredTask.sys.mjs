@@ -80,6 +80,10 @@ const Timer = Components.Constructor(
  *   saveDeferredTask.disarm();
  *   saveDeferredTask.finalize().then(() => OS.File.remove(...))
  *                              .then(null, Components.utils.reportError);
+ *
+ * Warning for use in browser windows: to avoid unnecessarily delaying the
+ * garbage collection of the window global, release the taskFn callback by
+ * calling "disarm()" and "finalize" from the "unload" listener.
  */
 export class DeferredTask {
   /**
@@ -293,8 +297,10 @@ export class DeferredTask {
 
     // Wait for the operation to be completed, or resolve immediately.
     if (this._runningPromise) {
+      this._runningPromise.then(() => this.#releaseTaskCallback());
       return this._runningPromise;
     }
+    this.#releaseTaskCallback();
     return Promise.resolve();
   }
   #finalized = false;
@@ -363,5 +369,9 @@ export class DeferredTask {
         this.#caller
       );
     }
+  }
+
+  #releaseTaskCallback() {
+    this.#taskFn = null;
   }
 }

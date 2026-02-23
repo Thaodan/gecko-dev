@@ -2284,7 +2284,8 @@ var SidebarController = {
       this._animationExpandOnHoverDelayDurationMs,
       EXPAND_ON_HOVER_DEBOUNCE_TIMEOUT_MS
     );
-    this.mouseEnterTask?.arm();
+    this.mouseEnterTask.arm();
+    window.addEventListener("unload", this, { once: true });
   },
 
   get expandOnHoverComplete() {
@@ -2337,6 +2338,10 @@ var SidebarController = {
         if (e.composedTarget.tagName !== "tooltip") {
           await this._removeHoverStateBlocker();
         }
+        break;
+      case "unload":
+        this.mouseEnterTask.disarm();
+        this.mouseEnterTask.finalize();
         break;
       default:
         break;
