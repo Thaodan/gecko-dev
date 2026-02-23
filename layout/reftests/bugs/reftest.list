@@ -949,7 +949,6 @@ fuzzy(0-1,0-10) == 413361-1.html 413361-1-ref.html # bug 1128229
 == 413982.html 413982-ref.html
 == 414638.html 414638-ref.html
 == 414851-1.html 414851-1-ref.html
-== 416106-1.xhtml 416106-1-ref.xhtml
 == 416752-1.html 416752-1-ref.html
 == 417178-1.html 417178-1-ref.html
 == 417246-1.html 417246-1-ref.html
