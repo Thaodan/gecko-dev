@@ -115,7 +115,7 @@ const gLoggingPresets = {
   },
   "media-playback": {
     modules:
-      "HTMLMediaElement:4,HTMLMediaElementEvents:4,cubeb:5,PlatformDecoderModule:5,AudioSink:5,AudioSinkWrapper:5,MediaDecoderStateMachine:4,MediaDecoder:4,MediaFormatReader:5,GMP:5,EME:5,MediaSource:5,MediaSourceSamples:5,Autoplay:5,GVAutoplay:5,MFMediaEngine:5,FFmpegVideo:5,FFmpegAudio:5,FFmpegLib:4,VideoFrameContainer:5,CompositableTextureParent:5",
+      "AudioSink:5,AudioSinkWrapper:5,Autoplay:5,CompositableTextureParent:5,EME:5,FFmpegAudio:5,FFmpegLib:4,FFmpegVideo:5,GMP:5,GVAutoplay:5,HTMLMediaElement:4,HTMLMediaElementEvents:4,MFMediaEngine:5,MediaDecoder:4,MediaDecoderStateMachine:4,MediaFormatReader:5,MediaSource:5,MediaSourceSamples:5,PlatformDecoderModule:5,VideoFrameContainer:5,cubeb:5",
     l10nIds: {
       label: "about-logging-preset-media-playback-label",
       description: "about-logging-preset-media-playback-description",
