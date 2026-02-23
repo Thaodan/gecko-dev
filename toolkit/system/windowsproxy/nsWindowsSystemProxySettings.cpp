@@ -29,7 +29,9 @@ NS_IMETHODIMP nsWindowsSystemProxySettings::GetMainThreadOnly(
 
 nsWindowsSystemProxySettings::nsWindowsSystemProxySettings(
     mozilla::toolkit::system::WindowsInternetFunctionsWrapper* aFunctions)
-    : mFunctions(aFunctions) {}
+    : mFunctions(aFunctions) {
+  mFunctions->Init();
+}
 
 nsWindowsSystemProxySettings::~nsWindowsSystemProxySettings() {}
 
