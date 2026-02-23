@@ -21,10 +21,10 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable, Optional
 
-from filelock import FileLock, Timeout
 from mozfile import json
 from packaging.specifiers import SpecifierSet
 
+from mach.filelock import FileLock, Timeout
 from mach.requirements import (
     MachEnvRequirements,
     UnexpectedFlexibleRequirementException,
