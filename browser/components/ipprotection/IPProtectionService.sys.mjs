@@ -60,7 +60,7 @@ export const IPProtectionStates = Object.freeze({
 class IPProtectionServiceSingleton extends EventTarget {
   #state = IPProtectionStates.UNINITIALIZED;
 
-  #guardian = null;
+  guardian = null;
 
   #helpers = null;
 
@@ -74,15 +74,11 @@ class IPProtectionServiceSingleton extends EventTarget {
     return this.#state;
   }
 
-  get guardian() {
-    if (!this.#guardian) {
-      this.#guardian = new lazy.GuardianClient();
-    }
-    return this.#guardian;
-  }
-
   constructor() {
     super();
+
+    this.guardian = new lazy.GuardianClient();
+
     this.updateState = this.#updateState.bind(this);
     this.setState = this.#setState.bind(this);
 
@@ -116,7 +112,6 @@ class IPProtectionServiceSingleton extends EventTarget {
     if (this.#state === IPProtectionStates.UNINITIALIZED) {
       return;
     }
-    this.#guardian = null;
 
     this.#helpers.forEach(helper => helper.uninit());
 
