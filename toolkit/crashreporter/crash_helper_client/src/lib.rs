@@ -5,7 +5,7 @@
 use anyhow::{bail, Result};
 use crash_helper_common::{
     messages::{self},
-    BreakpadString, IPCClientChannel, IPCConnector, ProcessHandle, RawIPCConnector,
+    BreakpadString, GeckoChildId, IPCClientChannel, IPCConnector, ProcessHandle, RawIPCConnector,
 };
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use minidump_writer::minidump_writer::{AuxvType, DirectAuxvDumpInfo};
@@ -68,21 +68,25 @@ impl CrashHelperClient {
     }
 
     #[cfg(any(target_os = "android", target_os = "linux"))]
-    fn register_auxv_info(&mut self, pid: Pid, auxv_info: DirectAuxvDumpInfo) -> Result<()> {
-        let message = messages::RegisterAuxvInfo::new(pid, auxv_info);
+    fn register_auxv_info(
+        &mut self,
+        id: GeckoChildId,
+        auxv_info: DirectAuxvDumpInfo,
+    ) -> Result<()> {
+        let message = messages::RegisterAuxvInfo::new(id, auxv_info);
         self.connector.send_message(message)?;
         Ok(())
     }
 
     #[cfg(any(target_os = "android", target_os = "linux"))]
-    fn unregister_auxv_info(&mut self, pid: Pid) -> Result<()> {
-        let message = messages::UnregisterAuxvInfo::new(pid);
+    fn unregister_auxv_info(&mut self, id: GeckoChildId) -> Result<()> {
+        let message = messages::UnregisterAuxvInfo::new(id);
         self.connector.send_message(message)?;
         Ok(())
     }
 
-    fn transfer_crash_report(&mut self, pid: Pid) -> Result<CrashReport> {
-        let message = messages::TransferMinidump::new(pid);
+    fn transfer_crash_report(&mut self, id: GeckoChildId) -> Result<CrashReport> {
+        let message = messages::TransferMinidump::new(id);
         self.connector.send_message(message)?;
 
         let reply = self
@@ -92,7 +96,7 @@ impl CrashHelperClient {
         if reply.path.is_empty() {
             // TODO: We should return Result<Option<CrashReport>> instead of
             // this. Semantics would be better once we interact with Rust
-            bail!("Minidump for pid {pid:} was not found");
+            bail!("Minidump for id {id:} was not found");
         }
 
         Ok(CrashReport {
@@ -231,7 +235,7 @@ pub unsafe extern "C" fn register_child_ipc_channel(
     }
 }
 
-/// Request the crash report generated for the process associated with `pid`.
+/// Request the crash report generated for the process identified by `id`.
 /// If the crash report is found an object holding a pointer to the minidump
 /// and a potential error message will be returned. Otherwise the function will
 /// return `null`.
@@ -244,10 +248,10 @@ pub unsafe extern "C" fn register_child_ipc_channel(
 #[no_mangle]
 pub unsafe extern "C" fn transfer_crash_report(
     client: *mut CrashHelperClient,
-    pid: Pid,
+    id: GeckoChildId,
 ) -> *mut CrashReport {
     let client = client.as_mut().unwrap();
-    if let Ok(crash_report) = client.transfer_crash_report(pid) {
+    if let Ok(crash_report) = client.transfer_crash_report(id) {
         // The object will be owned by the C++ code from now on, until it is
         // passed back in `release_crash_report`.
         Box::into_raw(Box::new(crash_report))
@@ -324,7 +328,7 @@ fn collect_exception_records(
     }
 }
 
-/// Send the auxiliary vector information for the process identified by `pid`
+/// Send the auxiliary vector information for the process identified by `id`
 /// to the crash helper.
 ///
 /// # Safety
@@ -337,7 +341,7 @@ fn collect_exception_records(
 #[no_mangle]
 pub unsafe extern "C" fn register_child_auxv_info(
     client: *mut CrashHelperClient,
-    pid: Pid,
+    id: GeckoChildId,
     auxv_info_ptr: *const rust_minidump_writer_linux::DirectAuxvDumpInfo,
 ) -> bool {
     let client = client.as_mut().unwrap();
@@ -348,11 +352,11 @@ pub unsafe extern "C" fn register_child_auxv_info(
         entry_address: (*auxv_info_ptr).entry_address as AuxvType,
     };
 
-    client.register_auxv_info(pid, auxv_info).is_ok()
+    client.register_auxv_info(id, auxv_info).is_ok()
 }
 
 /// Deregister previously sent auxiliary vector information for the process
-/// identified by `pid`.
+/// identified by `id`.
 ///
 /// # Safety
 ///
@@ -363,10 +367,10 @@ pub unsafe extern "C" fn register_child_auxv_info(
 #[no_mangle]
 pub unsafe extern "C" fn unregister_child_auxv_info(
     client: *mut CrashHelperClient,
-    pid: Pid,
+    id: GeckoChildId,
 ) -> bool {
     let client = client.as_mut().unwrap();
-    client.unregister_auxv_info(pid).is_ok()
+    client.unregister_auxv_info(id).is_ok()
 }
 
 /******************************************************************************
@@ -392,7 +396,7 @@ static RENDEZVOUS_FAILED: AtomicBool = AtomicBool::new(false);
 /// a valid pipe handle (on Windows) or a valid file descriptor (on all other
 /// platforms).
 #[no_mangle]
-pub unsafe extern "C" fn crash_helper_rendezvous(raw_connector: RawIPCConnector) {
+pub unsafe extern "C" fn crash_helper_rendezvous(raw_connector: RawIPCConnector, id: GeckoChildId) {
     let Ok(connector) = IPCConnector::from_raw_connector(raw_connector) else {
         RENDEZVOUS_FAILED.store(true, Ordering::Relaxed);
         return;
@@ -401,7 +405,7 @@ pub unsafe extern "C" fn crash_helper_rendezvous(raw_connector: RawIPCConnector)
     let join_handle = thread::spawn(move || {
         if let Ok(message) = connector.recv_reply::<messages::ChildProcessRendezVous>() {
             let res = CrashHelperClient::prepare_for_minidump(message.crash_helper_pid);
-            let message = messages::ChildProcessRendezVousReply::new(res, process::id() as Pid);
+            let message = messages::ChildProcessRendezVousReply::new(res, process::id() as Pid, id);
             if connector.send_message(message).is_ok() {
                 assert!(
                     CHILD_IPC_ENDPOINT

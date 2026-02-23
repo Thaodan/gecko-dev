@@ -3382,12 +3382,10 @@ bool SetRemoteExceptionHandler(int& aArgc, char** aArgv) {
     return false;
   }
 
-  struct RawIPCConnector raw_connector = {
+  RawIPCConnector raw_connector = {
       .send = send_right->release(),
       .recv = recv_right->release(),
   };
-
-  crash_helper_rendezvous(raw_connector);
 #else
   auto endpoint = geckoargs::sCrashHelper.Get(aArgc, aArgv);
 
@@ -3400,9 +3398,9 @@ bool SetRemoteExceptionHandler(int& aArgc, char** aArgv) {
 #  else
   RawIPCConnector raw_connector = {.socket = endpoint->release()};
 #  endif  // defined(XP_WIN)
-
-  crash_helper_rendezvous(raw_connector);
 #endif    // defined(XP_DARWIN)
+
+  crash_helper_rendezvous(raw_connector, GetGeckoChildID());
   RegisterRuntimeExceptionModule();
   InitializeAppNotes();
   RegisterAnnotations();
@@ -3462,7 +3460,7 @@ bool SetRemoteExceptionHandler(int& aArgc, char** aArgv) {
   return gExceptionHandler->IsOutOfProcess();
 }  // namespace CrashReporter
 
-bool TakeMinidumpForChild(ProcessId childPid, nsIFile** dump,
+bool TakeMinidumpForChild(GeckoChildID aChildId, nsIFile** dump,
                           AnnotationTable& aAnnotations) {
   if (!GetEnabled()) {
     return false;
@@ -3473,7 +3471,17 @@ bool TakeMinidumpForChild(ProcessId childPid, nsIFile** dump,
   {
     StaticMutexAutoLock lock(gCrashHelperClientMutex);
     if (gCrashHelperClient) {
-      crash_report = transfer_crash_report(gCrashHelperClient, childPid);
+      // HACK: Because of a potential synchronization issue with the macOS
+      // Breakpad crash generator we might request a minidump that is still
+      // being generated. Repeating the request spins the crash helper's event
+      // loop and picks it up. This is not great but we'll fix it for good
+      // once we stop relying on Breakpad's crash generator.
+      for (int i = 0; i < 2; i++) {
+        crash_report = transfer_crash_report(gCrashHelperClient, aChildId);
+        if (crash_report) {
+          break;
+        }
+      }
     }
   }
 
@@ -3520,12 +3528,12 @@ bool TakeMinidumpForChild(ProcessId childPid, nsIFile** dump,
   return true;
 }
 
-bool FinalizeOrphanedMinidump(ProcessId aChildPid, GeckoProcessType aType,
+bool FinalizeOrphanedMinidump(GeckoChildID aChildId, GeckoProcessType aType,
                               nsString* aDumpId) {
   AnnotationTable annotations;
   nsCOMPtr<nsIFile> minidump;
 
-  if (!TakeMinidumpForChild(aChildPid, getter_AddRefs(minidump), annotations)) {
+  if (!TakeMinidumpForChild(aChildId, getter_AddRefs(minidump), annotations)) {
     return false;
   }
 
@@ -3753,18 +3761,18 @@ void GetCurrentProcessAuxvInfo(DirectAuxvDumpInfo* aAuxvInfo) {
   aAuxvInfo->entry_address = getauxval(AT_ENTRY);
 }
 
-void RegisterChildAuxvInfo(pid_t aChildPid,
+void RegisterChildAuxvInfo(GeckoChildID aChildId,
                            const DirectAuxvDumpInfo& aAuxvInfo) {
   StaticMutexAutoLock lock(gCrashHelperClientMutex);
   if (gCrashHelperClient) {
-    register_child_auxv_info(gCrashHelperClient, aChildPid, &aAuxvInfo);
+    register_child_auxv_info(gCrashHelperClient, aChildId, &aAuxvInfo);
   }
 }
 
-void UnregisterChildAuxvInfo(pid_t aChildPid) {
+void UnregisterChildAuxvInfo(GeckoChildID aChildId) {
   StaticMutexAutoLock lock(gCrashHelperClientMutex);
   if (gCrashHelperClient) {
-    unregister_child_auxv_info(gCrashHelperClient, aChildPid);
+    unregister_child_auxv_info(gCrashHelperClient, aChildId);
   }
 }
 

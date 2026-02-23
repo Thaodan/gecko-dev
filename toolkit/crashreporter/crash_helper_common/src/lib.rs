@@ -17,6 +17,9 @@ mod platform;
 use bytes::Bytes;
 use messages::MessageError;
 
+// Matches the same type in mozglue/misc/ProcessType.h
+pub type GeckoChildId = i32;
+
 // Re-export the platform-specific types and functions
 pub use crate::breakpad::{BreakpadChar, BreakpadData, BreakpadRawData, Pid};
 pub use crate::ipc_channel::{IPCChannel, IPCClientChannel};
