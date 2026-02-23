@@ -989,8 +989,10 @@ Function SendPing
                       $\nDefault Status = $R2 \
                       $\nSet As Sefault Status = $R3 \
                       $\nDownload Server IP = $DownloadServerIP \
-                      $\nPost-Signing Data = $PostSigningData \
-                      $\nProfile cleanup prompt shown = $ProfileCleanupPromptType \
+                      $\nPost-Signing Data = $PostSigningData"
+
+    ; Reached the message box line limit, remaining values shown in a second one
+    MessageBox MB_OK "Profile cleanup prompt shown = $ProfileCleanupPromptType \
                       $\nDid profile cleanup = $CheckboxCleanupProfile \
                       $\nDistribution ID = $DistributionID \
                       $\nDistribution Version = $DistributionVersion \
