@@ -912,7 +912,7 @@
     <string name="preferences_downloads_default_location_title">Default download location</string>
     <!-- Message shown as the summary of the download location preference when the
            app has lost the permission to access a previously selected custom folder. -->
-    <string name="preference_downloads_folder_permission_lost">You don’t have permission to use this folder. Try choosing a different one.</string>
+    <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">You don’t have permission to use this folder. Try choosing a different one.</string>
     <!-- Preference title for choosing an app to handle downloads -->
     <string name="preferences_choose_app_for_downloads">Manage downloads with another app</string>
     <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
