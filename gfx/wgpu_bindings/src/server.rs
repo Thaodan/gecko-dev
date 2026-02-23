@@ -145,7 +145,6 @@ pub extern "C" fn wgpu_server_new(owner: WebGPUParentPtr) -> *mut Global {
 
     let dx12_shader_compiler = wgt::Dx12Compiler::DynamicDxc {
         dxc_path: "dxcompiler.dll".into(),
-        max_shader_model: wgt::DxcShaderModel::V6_6,
     };
 
     let global = wgc::global::Global::new(
@@ -157,6 +156,7 @@ pub extern "C" fn wgpu_server_new(owner: WebGPUParentPtr) -> *mut Global {
                 gl: wgt::GlBackendOptions {
                     gles_minor_version: wgt::Gles3MinorVersion::Automatic,
                     fence_behavior: wgt::GlFenceBehavior::Normal,
+                    debug_fns: wgt::GlDebugFns::Auto,
                 },
                 dx12: wgt::Dx12BackendOptions {
                     shader_compiler: dx12_shader_compiler,
@@ -507,6 +507,7 @@ unsafe fn adapter_request_device(
                     None,
                     &enabled_extensions,
                     desc.required_features,
+                    &desc.required_limits,
                     &desc.memory_hints,
                     family_info.queue_family_index,
                     0,
@@ -701,9 +702,13 @@ impl From<Result<(), BufferAccessError>> for BufferMapAsyncStatus {
             | Err(BufferAccessError::UnalignedOffset { .. }) => {
                 BufferMapAsyncStatus::InvalidAlignment
             }
-            Err(BufferAccessError::OutOfBoundsUnderrun { .. })
-            | Err(BufferAccessError::OutOfBoundsOverrun { .. })
-            | Err(BufferAccessError::NegativeRange { .. }) => BufferMapAsyncStatus::InvalidRange,
+            Err(BufferAccessError::OutOfBoundsStartOffsetUnderrun { .. })
+            | Err(BufferAccessError::OutOfBoundsStartOffsetOverrun { .. })
+            | Err(BufferAccessError::OutOfBoundsEndOffsetOverrun { .. })
+            | Err(BufferAccessError::MapStartOffsetOverrun { .. })
+            | Err(BufferAccessError::MapEndOffsetOverrun { .. }) => {
+                BufferMapAsyncStatus::InvalidRange
+            }
             Err(BufferAccessError::Failed)
             | Err(BufferAccessError::NotMapped)
             | Err(BufferAccessError::MapAborted) => BufferMapAsyncStatus::Error,
