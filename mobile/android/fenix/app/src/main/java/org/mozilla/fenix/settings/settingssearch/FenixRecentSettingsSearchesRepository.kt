@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import org.mozilla.fenix.settings.datastore.RecentSettingsSearchItem
 import org.mozilla.fenix.settings.datastore.RecentSettingsSearches
-import org.mozilla.fenix.settings.settingssearch.DefaultFenixSettingsIndexer.Companion.preferenceFileInformationList
+import org.mozilla.fenix.settings.settingssearch.DefaultFenixSettingsIndexer.Companion.defaultPreferenceFileInformationList
 
 private val Context.recentSearchesDataStore: DataStore<RecentSettingsSearches> by dataStore(
     fileName = "recent_searches.pb",
@@ -30,7 +30,7 @@ class FenixRecentSettingsSearchesRepository(
     override val recentSearches: Flow<List<SettingsSearchItem>> =
         context.recentSearchesDataStore.data.map { protoResult ->
             protoResult.itemsList.mapNotNull { protoItem ->
-                val prefInfo = preferenceFileInformationList.find {
+                val prefInfo = defaultPreferenceFileInformationList.find {
                     it.xmlResourceId == protoItem.xmlResourceId
                 } ?: return@mapNotNull null
 
