@@ -23,9 +23,7 @@ use anyhow::Result;
 use crash_annotations::{
     should_include_annotation, type_of_annotation, CrashAnnotation, CrashAnnotationType,
 };
-use crash_helper_common::{
-    messages, BreakpadChar, BreakpadData, BreakpadString, GeckoChildId, Pid,
-};
+use crash_helper_common::{messages, BreakpadChar, BreakpadData, BreakpadString, Pid};
 use mozannotation_server::{AnnotationData, CAnnotation};
 use num_traits::FromPrimitive;
 use once_cell::sync::Lazy;
@@ -59,8 +57,6 @@ impl CrashReport {
 // arrival. When crashes are retrieved they're similarly pulled out in the
 // order they've arrived.
 static CRASH_REPORTS: Lazy<Mutex<HashMap<Pid, Vec<CrashReport>>>> = Lazy::new(Default::default);
-static CRASH_REPORTS_BY_ID: Lazy<Mutex<HashMap<GeckoChildId, CrashReport>>> =
-    Lazy::new(Default::default);
 
 /******************************************************************************
  * Crash generator                                                            *
@@ -99,10 +95,8 @@ impl CrashGenerator {
         self.breakpad_server.set_path(path);
     }
 
-    pub(crate) fn move_report_to_id(&self, pid: Pid, id: GeckoChildId) {
+    pub(crate) fn retrieve_minidump(&self, pid: Pid) -> messages::TransferMinidumpReply {
         let mut map = CRASH_REPORTS.lock().unwrap();
-        let mut id_map = CRASH_REPORTS_BY_ID.lock().unwrap();
-
         if let Some(mut entry) = map.remove(&pid) {
             let crash_report = entry.remove(0);
 
@@ -110,13 +104,6 @@ impl CrashGenerator {
                 map.insert(pid, entry);
             }
 
-            id_map.insert(id, crash_report);
-        }
-    }
-
-    pub(crate) fn retrieve_minidump(&self, id: GeckoChildId) -> messages::TransferMinidumpReply {
-        let mut map = CRASH_REPORTS_BY_ID.lock().unwrap();
-        if let Some(crash_report) = map.remove(&id) {
             messages::TransferMinidumpReply::new(crash_report.path, crash_report.error)
         } else {
             // Report not found, reply with a zero length path

@@ -48,16 +48,19 @@ using mozilla::Nothing;
 
 #if defined(XP_WIN)
 typedef HANDLE ProcessHandle;
+typedef DWORD ProcessId;
 typedef DWORD ThreadId;
 typedef HANDLE FileHandle;
 const FileHandle kInvalidFileHandle = INVALID_HANDLE_VALUE;
 #elif defined(XP_MACOSX)
 typedef task_t ProcessHandle;
+typedef pid_t ProcessId;
 typedef mach_port_t ThreadId;
 typedef int FileHandle;
 const FileHandle kInvalidFileHandle = -1;
 #else
 typedef int ProcessHandle;
+typedef pid_t ProcessId;
 typedef int ThreadId;
 typedef int FileHandle;
 const FileHandle kInvalidFileHandle = -1;
@@ -208,25 +211,25 @@ nsresult SetSubmitReports(bool aSubmitReport);
 
 // Out-of-process crash reporter API.
 
-// Return true if a dump was found for |aChildID|, and return the
+// Return true if a dump was found for |childPid|, and return the
 // path in |dump|.  The caller owns the last reference to |dump| if it
 // is non-nullptr. The annotations for the crash will be stored in
 // |aAnnotations|.
-bool TakeMinidumpForChild(GeckoChildID aChildID, nsIFile** dump,
+bool TakeMinidumpForChild(ProcessId childPid, nsIFile** dump,
                           AnnotationTable& aAnnotations);
 
 /**
- * If a dump was found for |aChildID| then write a minimal .extra file to
+ * If a dump was found for |childPid| then write a minimal .extra file to
  * complete it and remove it from the list of pending crash dumps. It's
  * required to call this method after a non-main process crash if the crash
  * report could not be finalized via the CrashReporterHost (for example because
  * it wasn't instanced yet).
  *
- * @param aChildID The id of the crashed child process
+ * @param aChildPid The pid of the crashed child process
  * @param aType The type of the crashed process
  * @param aDumpId A string that will be filled with the dump ID
  */
-[[nodiscard]] bool FinalizeOrphanedMinidump(GeckoChildID aChildID,
+[[nodiscard]] bool FinalizeOrphanedMinidump(ProcessId aChildPid,
                                             GeckoProcessType aType,
                                             nsString* aDumpId = nullptr);
 

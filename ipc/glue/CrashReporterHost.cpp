@@ -24,10 +24,10 @@
 namespace mozilla::ipc {
 
 CrashReporterHost::CrashReporterHost(
-    GeckoProcessType aProcessType, GeckoChildID aChildID,
+    GeckoProcessType aProcessType, base::ProcessId aPid,
     const CrashReporter::CrashReporterInitArgs& aInitArgs)
     : mProcessType(aProcessType),
-      mChildID(aChildID),
+      mPid(aPid),
       mThreadId(aInitArgs.threadId()),
       mStartTime(::time(nullptr)),
       mFinalized(false) {
@@ -39,7 +39,7 @@ CrashReporterHost::CrashReporterHost(
   auxvInfo.program_header_address = ipdlAuxvInfo.programHeaderAddress();
   auxvInfo.linux_gate_address = ipdlAuxvInfo.linuxGateAddress();
   auxvInfo.entry_address = ipdlAuxvInfo.entryAddress();
-  CrashReporter::RegisterChildAuxvInfo(mChildID, auxvInfo);
+  CrashReporter::RegisterChildAuxvInfo(mPid, auxvInfo);
 #endif  // defined(XP_LINUX) && defined(MOZ_CRASHREPORTER) &&
         // defined(MOZ_OXIDIZED_BREAKPAD)
 }
@@ -47,7 +47,7 @@ CrashReporterHost::CrashReporterHost(
 CrashReporterHost::~CrashReporterHost() {
 #if defined(XP_LINUX) && defined(MOZ_CRASHREPORTER) && \
     defined(MOZ_OXIDIZED_BREAKPAD)
-  CrashReporter::UnregisterChildAuxvInfo(mChildID);
+  CrashReporter::UnregisterChildAuxvInfo(mPid);
 #endif  // defined(XP_LINUX) && defined(MOZ_CRASHREPORTER) &&
         // defined(MOZ_OXIDIZED_BREAKPAD)
 }
@@ -67,7 +67,7 @@ RefPtr<nsIFile> CrashReporterHost::TakeCrashedChildMinidump() {
   MOZ_ASSERT(!HasMinidump());
 
   RefPtr<nsIFile> crashDump;
-  if (!CrashReporter::TakeMinidumpForChild(mChildID, getter_AddRefs(crashDump),
+  if (!CrashReporter::TakeMinidumpForChild(mPid, getter_AddRefs(crashDump),
                                            annotations)) {
     return nullptr;
   }

@@ -219,12 +219,12 @@ bool GetLastRunCrashID(nsAString& id) { return false; }
 
 bool SetRemoteExceptionHandler(int& aArgc, char** aArgv) { return false; }
 
-bool TakeMinidumpForChild(GeckoChildID aChildId, nsIFile** aDump,
+bool TakeMinidumpForChild(ProcessId childPid, nsIFile** dump,
                           AnnotationTable& aAnnotations) {
   return false;
 }
 
-bool FinalizeOrphanedMinidump(GeckoChildID aChildId, GeckoProcessType aType,
+bool FinalizeOrphanedMinidump(ProcessId aChildPid, GeckoProcessType aType,
                               nsString* aDumpId) {
   return false;
 }

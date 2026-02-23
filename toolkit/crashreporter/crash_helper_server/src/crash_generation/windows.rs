@@ -4,12 +4,12 @@
 
 use super::{finalize_crash_report, BreakpadProcessId, CrashGenerator};
 
-use crash_helper_common::messages;
+use crash_helper_common::{messages, Pid};
 use std::{
     convert::TryInto,
     fs::{create_dir_all, File},
     mem::{size_of, zeroed},
-    os::windows::io::{AsHandle, AsRawHandle, BorrowedHandle},
+    os::windows::io::AsRawHandle,
     path::PathBuf,
     ptr::{null, null_mut},
 };
@@ -27,7 +27,7 @@ use windows_sys::Win32::{
             VER_MINORVERSION, VER_SERVICEPACKMAJOR, VER_SERVICEPACKMINOR,
         },
         SystemServices::VER_GREATER_EQUAL,
-        Threading::{GetProcessId, GetThreadId},
+        Threading::{OpenProcess, PROCESS_ALL_ACCESS},
     },
 };
 
@@ -43,26 +43,22 @@ impl CrashGenerator {
         let mut exception_records = message.exception_records;
         let exception_records_ptr = link_exception_records(&mut exception_records);
 
-        let handle = message.process.as_raw_handle() as HANDLE;
-        let pid = get_process_id(message.process.as_handle())?;
+        let handle = open_process(message.pid)?;
         let mut exception_pointers = EXCEPTION_POINTERS {
             ExceptionRecord: exception_records_ptr,
             ContextRecord: &mut context as *mut _,
         };
 
         let exception = MINIDUMP_EXCEPTION_INFORMATION {
-            ThreadId: get_thread_id(message.thread.as_handle())?,
+            ThreadId: message.tid,
             ExceptionPointers: &mut exception_pointers,
             ClientPointers: FALSE,
         };
 
-        // SAFETY: `handle` is guaranteed to be a valid handle and so is
-        // `minidump_file`. The remaining pointers going into this function are
-        // taken from objects allocated on the stack.
         let res = unsafe {
             MiniDumpWriteDump(
                 handle,
-                pid,
+                message.pid,
                 minidump_file.as_raw_handle() as _,
                 minidump_type,
                 &exception,
@@ -72,7 +68,10 @@ impl CrashGenerator {
         };
 
         if res != FALSE {
-            let process_id = BreakpadProcessId { pid, handle };
+            let process_id = BreakpadProcessId {
+                pid: message.pid,
+                handle,
+            };
 
             finalize_crash_report(
                 process_id,
@@ -158,18 +157,10 @@ fn is_windows8_or_later() -> bool {
     }
 }
 
-fn get_process_id(handle: BorrowedHandle) -> Result<u32, ()> {
+fn open_process(pid: Pid) -> Result<HANDLE, ()> {
     // SAFETY: No pointers involved, worst case we get an error
-    match unsafe { GetProcessId(handle.as_raw_handle() as HANDLE) } {
+    match unsafe { OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid) } {
         0 => Err(()),
-        pid => Ok(pid),
-    }
-}
-
-fn get_thread_id(handle: BorrowedHandle) -> Result<u32, ()> {
-    // SAFETY: No pointers involved, worst case we get an error
-    match unsafe { GetThreadId(handle.as_raw_handle() as HANDLE) } {
-        0 => Err(()),
-        tid => Ok(tid),
+        handle => Ok(handle),
     }
 }
