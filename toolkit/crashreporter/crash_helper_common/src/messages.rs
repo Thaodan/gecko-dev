@@ -334,8 +334,8 @@ impl Message for TransferMinidumpReply {
 
 #[cfg(target_os = "windows")]
 pub struct WindowsErrorReportingMinidump {
-    pub pid: Pid,
-    pub tid: Pid, // TODO: This should be a different type
+    pub process: AncillaryData,
+    pub thread: AncillaryData,
     pub exception_records: Vec<EXCEPTION_RECORD>,
     pub context: CONTEXT,
 }
@@ -343,19 +343,22 @@ pub struct WindowsErrorReportingMinidump {
 #[cfg(target_os = "windows")]
 impl WindowsErrorReportingMinidump {
     pub fn new(
-        pid: Pid,
-        tid: Pid,
+        process: AncillaryData,
+        thread: AncillaryData,
         exception_records: Vec<EXCEPTION_RECORD>,
         context: CONTEXT,
     ) -> WindowsErrorReportingMinidump {
         WindowsErrorReportingMinidump {
-            pid,
-            tid,
+            process,
+            thread,
             exception_records,
             context,
         }
     }
 }
+
+#[cfg(target_os = "windows")]
+const WINDOWS_ERROR_REPORTING_MINIDUMP_ANCILLARY_DATA_LEN: usize = 2;
 
 #[cfg(target_os = "windows")]
 impl Message for WindowsErrorReportingMinidump {
@@ -364,14 +367,13 @@ impl Message for WindowsErrorReportingMinidump {
     }
 
     fn payload_size(&self) -> usize {
-        (size_of::<Pid>() * 2)
-            + size_of::<usize>()
+        size_of::<usize>()
             + (size_of::<EXCEPTION_RECORD>() * self.exception_records.len())
             + size_of::<CONTEXT>()
     }
 
     fn ancillary_data_len(&self) -> usize {
-        0
+        WINDOWS_ERROR_REPORTING_MINIDUMP_ANCILLARY_DATA_LEN
     }
 
     fn header(&self) -> Vec<u8> {
@@ -384,8 +386,6 @@ impl Message for WindowsErrorReportingMinidump {
 
     fn into_payload(self) -> (Vec<u8>, Vec<AncillaryData>) {
         let mut buffer = Vec::<u8>::with_capacity(self.payload_size());
-        buffer.extend(self.pid.to_ne_bytes());
-        buffer.extend(self.tid.to_ne_bytes());
         buffer.extend(self.exception_records.len().to_ne_bytes());
         for exception_record in self.exception_records.iter() {
             let bytes: [u8; size_of::<EXCEPTION_RECORD>()] =
@@ -394,29 +394,22 @@ impl Message for WindowsErrorReportingMinidump {
         }
         let bytes: [u8; size_of::<CONTEXT>()] = unsafe { std::mem::transmute(self.context) };
         buffer.extend(bytes);
-        (buffer, vec![])
+        (buffer, vec![self.process, self.thread])
     }
 
     fn decode(
         data: &[u8],
         ancillary_data: Vec<AncillaryData>,
     ) -> Result<WindowsErrorReportingMinidump, MessageError> {
-        if !ancillary_data.is_empty() {
+        if ancillary_data.len() < WINDOWS_ERROR_REPORTING_MINIDUMP_ANCILLARY_DATA_LEN {
+            return Err(MessageError::MissingAncillary);
+        } else if ancillary_data.len() > WINDOWS_ERROR_REPORTING_MINIDUMP_ANCILLARY_DATA_LEN {
             return Err(MessageError::UnexpectedAncillaryData);
         }
 
-        let bytes: [u8; size_of::<Pid>()] = data[0..size_of::<Pid>()].try_into()?;
-        let pid = Pid::from_ne_bytes(bytes);
-        let offset = size_of::<Pid>();
-
-        let bytes: [u8; size_of::<Pid>()] = data[offset..(offset + size_of::<Pid>())].try_into()?;
-        let tid = Pid::from_ne_bytes(bytes);
-        let offset = offset + size_of::<Pid>();
-
-        let bytes: [u8; size_of::<usize>()] =
-            data[offset..(offset + size_of::<usize>())].try_into()?;
+        let bytes: [u8; size_of::<usize>()] = data[0..size_of::<usize>()].try_into()?;
         let exception_records_n = usize::from_ne_bytes(bytes);
-        let offset = offset + size_of::<usize>();
+        let offset = size_of::<usize>();
 
         let mut exception_records = Vec::<EXCEPTION_RECORD>::with_capacity(exception_records_n);
         for i in 0..exception_records_n {
@@ -434,9 +427,13 @@ impl Message for WindowsErrorReportingMinidump {
             data[offset..(offset + size_of::<CONTEXT>())].try_into()?;
         let context = unsafe { std::mem::transmute::<[u8; size_of::<CONTEXT>()], CONTEXT>(bytes) };
 
+        let mut iter = ancillary_data.into_iter();
+        let process = iter.next().unwrap();
+        let thread = iter.next().unwrap();
+
         Ok(WindowsErrorReportingMinidump {
-            pid,
-            tid,
+            process,
+            thread,
             exception_records,
             context,
         })

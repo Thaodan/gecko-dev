@@ -11,6 +11,8 @@ use crash_helper_common::{
 use minidump_writer::minidump_writer::{AuxvType, DirectAuxvDumpInfo};
 #[cfg(target_os = "android")]
 use std::os::fd::RawFd;
+#[cfg(target_os = "windows")]
+use std::os::windows::io::OwnedHandle;
 use std::{
     ffi::{c_char, CString, OsString},
     hint::spin_loop,
@@ -283,15 +285,15 @@ pub unsafe extern "C" fn release_crash_report(crash_report: *mut CrashReport) {
 #[cfg(target_os = "windows")]
 pub unsafe fn report_external_exception(
     main_process_pid: Pid,
-    pid: Pid,
-    thread: Pid, // TODO: This should be a different type, but it's the same on Windows
+    process: OwnedHandle,
+    thread: OwnedHandle,
     exception_record_ptr: *mut EXCEPTION_RECORD,
     context_ptr: *mut CONTEXT,
 ) {
     let exception_records = collect_exception_records(exception_record_ptr);
     let context = unsafe { context_ptr.read() };
     let message =
-        messages::WindowsErrorReportingMinidump::new(pid, thread, exception_records, context);
+        messages::WindowsErrorReportingMinidump::new(process, thread, exception_records, context);
 
     // In the code below we connect to the crash helper, send our message and
     // wait for a reply before returning, but we ignore errors because we
