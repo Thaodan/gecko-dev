@@ -20,6 +20,7 @@ import androidx.navigation.fragment.findNavController
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.storeProvider
 import org.mozilla.fenix.GleanMetrics.SettingsSearch
 import org.mozilla.fenix.ext.components
+import org.mozilla.fenix.settings.settingssearch.DefaultFenixSettingsIndexer.Companion.defaultPreferenceFileInformationList
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
@@ -59,7 +60,10 @@ open class SettingsSearchFragment : Fragment() {
     }
 
     protected open fun buildSettingsSearchStore(): SettingsSearchStore {
-        val recentSettingsSearchesRepository = FenixRecentSettingsSearchesRepository(requireContext())
+        val recentSettingsSearchesRepository = FenixRecentSettingsSearchesRepository(
+            dataStore = requireContext().recentSearchesDataStore,
+            preferenceFileInformationList = defaultPreferenceFileInformationList,
+        )
 
         return storeProvider.get { restoredState ->
             SettingsSearchStore(

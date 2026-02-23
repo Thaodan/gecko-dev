@@ -8,6 +8,7 @@ import androidx.lifecycle.coroutineScope
 import androidx.navigation.fragment.findNavController
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.storeProvider
 import org.mozilla.fenix.settings.settingssearch.DefaultFenixSettingsIndexer
+import org.mozilla.fenix.settings.settingssearch.FenixRecentSettingsSearchesRepository
 import org.mozilla.fenix.settings.settingssearch.PreferenceFileInformation
 import org.mozilla.fenix.settings.settingssearch.SettingsSearchAction
 import org.mozilla.fenix.settings.settingssearch.SettingsSearchFragment
@@ -15,6 +16,7 @@ import org.mozilla.fenix.settings.settingssearch.SettingsSearchItem
 import org.mozilla.fenix.settings.settingssearch.SettingsSearchMiddleware
 import org.mozilla.fenix.settings.settingssearch.SettingsSearchState
 import org.mozilla.fenix.settings.settingssearch.SettingsSearchStore
+import org.mozilla.fenix.settings.settingssearch.secretRecentSearchesDataStore
 
 /**
  * Fragment for the secret settings search screen.
@@ -22,27 +24,30 @@ import org.mozilla.fenix.settings.settingssearch.SettingsSearchStore
 class SecretSettingsSearchFragment : SettingsSearchFragment() {
 
     override fun buildSettingsSearchStore(): SettingsSearchStore = storeProvider.get { restoredState ->
+        val secretPreferenceFileInformationList = listOf(
+            PreferenceFileInformation.SecretSettingsPreferences,
+        )
+
         SettingsSearchStore(
             initialState = restoredState ?: SettingsSearchState.Default(emptyList()),
             middleware = listOf(
                 SettingsSearchMiddleware(
                     fenixSettingsIndexer = DefaultFenixSettingsIndexer(
                         context = requireContext(),
-                        preferenceFileInformationList = listOf(
-                            PreferenceFileInformation.SecretSettingsPreferences,
-                        ),
+                        preferenceFileInformationList = secretPreferenceFileInformationList,
                     ),
                     navController = findNavController(),
+                    recentSettingsSearchesRepository = FenixRecentSettingsSearchesRepository(
+                        dataStore = requireContext().secretRecentSearchesDataStore,
+                        preferenceFileInformationList = secretPreferenceFileInformationList,
+                    ),
                     scope = viewLifecycleOwner.lifecycle.coroutineScope,
                 ),
             ),
         )
     }
 
-    override fun onResultItemClick(
-        item: SettingsSearchItem,
-        isRecentSearch: Boolean,
-    ) {
+    override fun onResultItemClick(item: SettingsSearchItem, isRecentSearch: Boolean) {
         settingsSearchStore.dispatch(SettingsSearchAction.ResultItemClicked(item))
     }
 }
