@@ -3978,7 +3978,7 @@ SettingGroupManager.registerGroups({
         options: [
           {
             value: "remember",
-            l10nId: "history-remember-option-all",
+            l10nId: "history-remember-option-all2",
           },
           { value: "dontremember", l10nId: "history-remember-option-never2" },
           { value: "custom", l10nId: "history-remember-option-custom2" },
@@ -4054,7 +4054,7 @@ SettingGroupManager.registerGroups({
         options: [
           {
             value: "remember",
-            l10nId: "history-remember-option-all",
+            l10nId: "history-remember-option-all2",
           },
           { value: "dontremember", l10nId: "history-remember-option-never2" },
           {

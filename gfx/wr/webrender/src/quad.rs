@@ -7,6 +7,7 @@ use euclid::{Scale, point2};
 
 use crate::ItemUid;
 use crate::gpu_types::ClipSpace;
+use crate::pattern::repeat::RepeatedPattern;
 use crate::render_task::{SubTask, RectangleClipSubTask, ImageClipSubTask};
 use crate::transform::TransformPalette;
 use crate::batch::{BatchKey, BatchKind, BatchTextures};
@@ -115,6 +116,7 @@ pub fn prepare_quad(
     let shared_pattern = if pattern_builder.use_shared_pattern() {
         Some(pattern_builder.build(
             None,
+            LayoutVector2D::zero(),
             &pattern_ctx,
             &mut PatternBuilderState {
                 frame_gpu_data: frame_state.frame_gpu_data,
@@ -155,6 +157,7 @@ pub fn prepare_quad(
         pattern_builder,
         shared_pattern.as_ref(),
         local_rect,
+        LayoutVector2D::zero(),
         aligned_aa_edges,
         transfomed_aa_edges,
         prim_instance_index,
@@ -205,6 +208,7 @@ pub fn prepare_repeatable_quad(
     let shared_pattern = if pattern_builder.use_shared_pattern() {
         Some(pattern_builder.build(
             None,
+            LayoutVector2D::zero(),
             &pattern_ctx,
             &mut PatternBuilderState {
                 frame_gpu_data: frame_state.frame_gpu_data,
@@ -252,6 +256,7 @@ pub fn prepare_repeatable_quad(
             pattern_builder,
             shared_pattern.as_ref(),
             local_rect,
+            LayoutVector2D::zero(),
             aligned_aa_edges,
             transfomed_aa_edges,
             prim_instance_index,
@@ -271,9 +276,116 @@ pub fn prepare_repeatable_quad(
         return;
     }
 
-    // TODO: In some cases it would be a lot more efficient to bake the repeated
-    // pattern into a texture and use a repeating image shader instead of duplicating
-    // the primitive, especially with a high number of repetitions.
+    let repeated_rect = LayoutRect::from_origin_and_size(
+        local_rect.min,
+        stretch_size + tile_spacing,
+    );
+
+    let scales = map_prim_to_raster.scale_factors();
+    let pattern_transform = ScaleOffset::from_scale(scales.into()).then_scale(device_pixel_scale.0);
+    let surface_rect: DeviceRect = pattern_transform.map_rect(&repeated_rect);
+
+    // TODO: If the source pattern is an image, we can repeat it directly using the
+    // repeat shader, without an extra render task. The image primitive has not been
+    // ported to the quad infrastructure yet.
+    let src_task_id: Option<RenderTaskId> = None;
+
+    // If the number of repetitions is high, we are better off using a shader, but we
+    // want to avoid the extra render task if it is large.
+    let num_repetitions = local_rect.area() / stretch_size.area();
+    let repeat_using_a_shader = src_task_id.is_some()
+        || (num_repetitions > 16.0 && surface_rect.area() < 1024.0 * 1024.0);
+
+    if repeat_using_a_shader {
+        let mut pattern_state = PatternBuilderState {
+            frame_gpu_data: frame_state.frame_gpu_data,
+            transforms: frame_state.transforms,
+            rg_builder: frame_state.rg_builder,
+            clip_store: frame_state.clip_store,
+        };
+
+        let (src_task_id, opaque) = match src_task_id {
+            Some(_) => unimplemented!(),
+            None => {
+                // The source is not an image. Make it one by rendering
+                // the pattern in a render task.
+
+                let base_pattern = shared_pattern.unwrap_or_else(||{
+                    pattern_builder.build(
+                        None,
+                        LayoutVector2D::zero(),
+                        &pattern_ctx,
+                        &mut pattern_state,
+                    )
+                });
+
+                let task_id = prepare_indirect_pattern(
+                    prim_spatial_node_index,
+                    pic_context.raster_spatial_node_index,
+                    local_rect,
+                    local_rect,
+                    &surface_rect,
+                    Some(&pattern_transform),
+                    DevicePixelScale::identity(),
+                    GpuTransformId::IDENTITY,
+                    &base_pattern,
+                    QuadFlags::empty(),
+                    EdgeMask::empty(),
+                    cache_key,
+                    None,
+                    &pattern_ctx,
+                    interned_clips,
+                    &mut pattern_state,
+                    frame_state.resource_cache,
+                    &mut frame_state.surface_builder
+                );
+
+                (task_id, base_pattern.is_opaque)
+            }
+        };
+
+        let repetitions = RepeatedPattern {
+            stretch_size,
+            spacing: tile_spacing,
+            src_task_id,
+            src_is_opaque: opaque,
+        };
+
+        let shared_pattern = repetitions.build(
+            None,
+            LayoutVector2D::zero(),
+            &pattern_ctx,
+            &mut pattern_state,
+        );
+
+        // Note: caching is disabled when using the repeating shader.
+        // The cache key would need more information about the repetition.
+        prepare_quad_impl(
+            strategy,
+            &repetitions,
+            Some(&shared_pattern),
+            local_rect,
+            LayoutVector2D::zero(),
+            aligned_aa_edges,
+            transfomed_aa_edges,
+            prim_instance_index,
+            &None,
+            prim_spatial_node_index,
+            clip_chain,
+            device_pixel_scale,
+            &map_prim_to_raster,
+            &pattern_ctx,
+            pic_context,
+            targets,
+            interned_clips,
+            frame_state,
+            scratch,
+        );
+
+        return;
+    }
+
+    // Repeat by duplicating the primitive.
 
     let visible_rect = compute_conservative_visible_rect(
         clip_chain,
@@ -281,21 +393,41 @@ pub fn prepare_repeatable_quad(
         frame_state.current_dirty_region().visibility_spatial_node,
         prim_spatial_node_index,
         frame_context.spatial_tree,
-    );
+    ).intersection_unchecked(&clip_chain.local_clip_rect);
 
     let stride = stretch_size + tile_spacing;
     let repetitions = crate::image_tiling::repetitions(&local_rect, &visible_rect, stride);
     for tile in repetitions {
         let tile_rect = LayoutRect::from_origin_and_size(tile.origin, stretch_size);
+        let pattern_offset = tile.origin - local_rect.min;
+        let shared_pattern = if pattern_builder.use_shared_pattern() {
+            Some(pattern_builder.build(
+                None,
+                pattern_offset,
+                &pattern_ctx,
+                &mut PatternBuilderState {
+                    frame_gpu_data: frame_state.frame_gpu_data,
+                    transforms: frame_state.transforms,
+                    rg_builder: frame_state.rg_builder,
+                    clip_store: frame_state.clip_store,
+                },
+            ))
+        } else {
+            None
+        };
+
         prepare_quad_impl(
             strategy,
             pattern_builder,
             shared_pattern.as_ref(),
             &tile_rect,
+            pattern_offset,
             aligned_aa_edges & tile.edge_flags,
             transfomed_aa_edges & tile.edge_flags,
             prim_instance_index,
-            &cache_key,
+            // Bug 2017832 - Caching breaks manually repeated patterns
+            // with SWGL for some reason.
+            &None,
             prim_spatial_node_index,
             clip_chain,
             device_pixel_scale,
@@ -315,6 +447,7 @@ fn prepare_quad_impl(
     pattern_builder: &dyn PatternBuilder,
     shared_pattern: Option<&Pattern>,
     local_rect: &LayoutRect,
+    pattern_offset: LayoutVector2D,
     aligned_aa_edges: EdgeMask,
     transfomed_aa_edges: EdgeMask,
     prim_instance_index: PrimitiveInstanceIndex,
@@ -392,6 +525,7 @@ fn prepare_quad_impl(
         let pattern = shared_pattern.cloned().unwrap_or_else(|| {
             pattern_builder.build(
                 None,
+                pattern_offset,
                 &ctx,
                 &mut state,
             )
@@ -457,7 +591,7 @@ fn prepare_quad_impl(
 
     // Rounding is important here because clipped_surface_rect.min may be used as the origin
     // of render tasks. Fractional values would introduce fractional offsets in the render tasks.
-    let mut clipped_surface_rect = (clipped_raster_rect * device_scale).round();
+    let clipped_surface_rect = (clipped_raster_rect * device_scale).round();
     if clipped_surface_rect.is_empty() {
         return;
     }
@@ -468,73 +602,30 @@ fn prepare_quad_impl(
             let pattern = shared_pattern.cloned().unwrap_or_else(|| {
                 pattern_builder.build(
                     None,
+                    pattern_offset,
                     &ctx,
                     &mut state,
                 )
             });
 
-            let quad = create_quad_primitive(
-                &local_rect,
+            let task_id = prepare_indirect_pattern(
+                prim_spatial_node_index,
+                pic_context.raster_spatial_node_index,
+                local_rect,
                 &clip_chain.local_clip_rect,
                 &clipped_surface_rect,
                 local_to_device_scale_offset.as_ref(),
-                round_edges,
-                &pattern,
-            );
-
-            let main_prim_address = state.frame_gpu_data.f32.push(&quad);
-
-            if prim_is_2d_scale_translation && aa_flags.is_empty() {
-                // If the primitive has a simple transform, then quad.clip is in device space
-                // and is a strict subset of clipped_surface_rect. If there is no anti-aliasing,
-                // and the pattern is opaque, we want to ensure that the primitive covers the
-                // entire render task so that we can safely skip clearing it.
-                // In this situation, create_quad_primitive has rounded the edges of quad.clip
-                // so we are not introducing a fractional offset in clipped_surface_rect.
-                clipped_surface_rect = quad.clip.cast_unit();
-            }
-
-            let task_size = clipped_surface_rect.size().to_i32();
-
-            let cache_key = cache_key.as_ref().map(|key| {
-                RenderTaskCacheKey {
-                    size: task_size,
-                    kind: RenderTaskCacheKeyKind::Quad(key.clone()),
-                }
-            });
-
-            if pattern.is_opaque {
-                quad_flags |= QuadFlags::IS_OPAQUE;
-            }
-
-            // Render the primtive as a single instance in a render task, apply a mask
-            // and composite it in the current picture.
-            // The coordinates are provided to the shaders:
-            //  - in layout space for the render task,
-            //  - in device space for the instance that draw into the destination picture.
-            let task_id = add_render_task_with_mask(
-                &pattern,
-                &local_rect.intersection_unchecked(&clip_chain.local_clip_rect),
-                task_size,
-                clipped_surface_rect.min,
-                clip_chain.clips_range,
-                prim_spatial_node_index,
-                pic_context.raster_spatial_node_index,
-                main_prim_address,
-                transform_id,
-                aa_flags,
-                quad_flags,
                 device_pixel_scale,
-                needs_scissor,
-                cache_key.as_ref(),
-                ctx.spatial_tree,
-                interned_clips,
-                state.clip_store,
+                transform_id,
+                &pattern,
+                quad_flags,
+                aa_flags,
+                cache_key,
+                Some(clip_chain),
+                ctx, interned_clips,
+                &mut state,
                 frame_state.resource_cache,
-                state.rg_builder,
-                state.frame_gpu_data,
-                state.transforms,
-                &mut frame_state.surface_builder,
+                &mut frame_state.surface_builder
             );
 
             add_composite_prim(
@@ -555,6 +646,7 @@ fn prepare_quad_impl(
                 y_tiles,
                 pattern_builder,
                 shared_pattern,
+                pattern_offset,
                 quad_flags,
                 aa_flags,
                 clip_chain,
@@ -603,6 +695,97 @@ fn prepare_quad_impl(
     }
 }
 
+fn prepare_indirect_pattern(
+    prim_spatial_node_index: SpatialNodeIndex,
+    raster_spatial_node_index: SpatialNodeIndex,
+    local_rect: &LayoutRect,
+    local_clip_rect: &LayoutRect,
+    clipped_surface_rect: &DeviceRect,
+    local_to_device_scale_offset: Option<&ScaleOffset>,
+    device_pixel_scale: DevicePixelScale,
+    transform_id: GpuTransformId,
+    pattern: &Pattern,
+    mut quad_flags: QuadFlags,
+    aa_flags: EdgeMask,
+    cache_key: &Option<QuadCacheKey>,
+    clip_chain: Option<&ClipChainInstance>,
+    ctx: &PatternBuilderContext,
+    interned_clips: &DataStore<ClipIntern>,
+    state: &mut PatternBuilderState,
+    resource_cache: &mut ResourceCache,
+    surface_builder: &mut SurfaceBuilder,
+) -> RenderTaskId {
+    let round_edges = !aa_flags;
+    let quad = create_quad_primitive(
+        local_rect,
+        local_clip_rect,
+        clipped_surface_rect,
+        local_to_device_scale_offset,
+        round_edges,
+        pattern,
+    );
+
+    let main_prim_address = state.frame_gpu_data.f32.push(&quad);
+
+    let mut clipped_surface_rect = *clipped_surface_rect;
+    if local_to_device_scale_offset.is_some() && aa_flags.is_empty() {
+        // If the primitive has a simple transform, then quad.clip is in device space
+        // and is a strict subset of clipped_surface_rect. If there is no anti-aliasing,
+        // and the pattern is opaque, we want to ensure that the primitive covers the
+        // entire render task so that we can safely skip clearing it.
+        // In this situation, create_quad_primitive has rounded the edges of quad.clip
+        // so we are not introducing a fractional offset in clipped_surface_rect.
+        clipped_surface_rect = quad.clip.cast_unit();
+    }
+
+    let task_size = clipped_surface_rect.size().to_i32();
+
+    let cache_key = cache_key.as_ref().map(|key| {
+        RenderTaskCacheKey {
+            size: task_size,
+            kind: RenderTaskCacheKeyKind::Quad(key.clone()),
+        }
+    });
+
+    if pattern.is_opaque {
+        quad_flags |= QuadFlags::IS_OPAQUE;
+    }
+
+    let needs_scissor = local_to_device_scale_offset.is_none();
+
+    let mut local_coverage_rect = *local_rect;
+    let mut clips_range = ClipNodeRange { first: 0, count: 0 };
+    if let Some(clip_chain) = clip_chain {
+        local_coverage_rect = local_coverage_rect.intersection_unchecked(&clip_chain.local_clip_rect);
+        clips_range = clip_chain.clips_range;
+    }
+
+    add_render_task_with_mask(
+        &pattern,
+        &local_coverage_rect,
+        task_size,
+        clipped_surface_rect.min,
+        clips_range,
+        prim_spatial_node_index,
+        raster_spatial_node_index,
+        main_prim_address,
+        transform_id,
+        aa_flags,
+        quad_flags,
+        device_pixel_scale,
+        needs_scissor,
+        cache_key.as_ref(),
+        ctx.spatial_tree,
+        interned_clips,
+        state.clip_store,
+        resource_cache,
+        state.rg_builder,
+        state.frame_gpu_data,
+        state.transforms,
+        surface_builder,
+    )
+}
+
 fn prepare_nine_patch(
     prim_instance_index: PrimitiveInstanceIndex,
     local_rect: &LayoutRect,
@@ -628,9 +811,6 @@ fn prepare_nine_patch(
     // Render the primtive as a nine-patch decomposed in device space.
     // Nine-patch segments that need it are drawn in a render task and then composited into the
     // destination picture.
-    // The coordinates are provided to the shaders:
-    //  - in layout space for the render task,
-    //  - in device space for the instances that draw into the destination picture.
 
     let mut device_prim_rect: DeviceRect = local_to_device.map_rect(&local_rect);
     let mut device_clip_rect: DeviceRect = local_to_device
@@ -639,7 +819,9 @@ fn prepare_nine_patch(
 
     let rounded_edges = !aa_flags;
     device_prim_rect = rounded_edges.select(device_prim_rect.round(), device_prim_rect);
-    device_clip_rect = rounded_edges.select(device_clip_rect.round(), device_clip_rect);
+    device_clip_rect = rounded_edges
+        .select(device_clip_rect.round(), device_clip_rect)
+        .intersection_unchecked(&device_prim_rect);
     let clipped_surface_rect = rounded_edges
         .select(device_clip_rect, *clipped_surface_rect)
         .to_i32();
@@ -765,7 +947,7 @@ fn prepare_nine_patch(
             } else {
                 scratch.quad_direct_segments.push(QuadSegment {
                     rect: segment_device_rect.to_f32().cast_unit(),
-                    task_id: RenderTaskId::INVALID,
+                    task_id: pattern.texture_input.task_id,
                 });
             };
         }
@@ -805,6 +987,7 @@ fn prepare_tiles(
     y_tiles: u16,
     pattern_builder: &dyn PatternBuilder,
     shared_pattern: Option<&Pattern>,
+    pattern_offset: LayoutVector2D,
     mut quad_flags: QuadFlags,
     aa_flags: EdgeMask,
     clip_chain: &ClipChainInstance,
@@ -996,6 +1179,7 @@ fn prepare_tiles(
                 None => {
                     pattern_builder.build(
                         Some(tile.rect),
+                        pattern_offset,
                         &ctx,
                         &mut state,
                     )
@@ -1063,11 +1247,18 @@ fn prepare_tiles(
             None => {
                 pattern_builder.build(
                     Some(device_prim_rect),
+                    pattern_offset,
                     &ctx,
                     &mut state,
                 )
             }
         };
+
+        if pattern.texture_input.task_id != RenderTaskId::INVALID {
+            for segment in &mut scratch.quad_direct_segments {
+                segment.task_id = pattern.texture_input.task_id;
+            }
+        }
 
         add_pattern_prim(
             &pattern,

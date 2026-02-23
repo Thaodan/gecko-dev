@@ -4,7 +4,9 @@
 
 pub mod gradient;
 pub mod box_shadow;
+pub mod repeat;
 
+use api::units::LayoutVector2D;
 use api::{ColorF, units::DeviceRect};
 
 use crate::clip::{ClipIntern, ClipStore};
@@ -23,12 +25,13 @@ use crate::transform::TransformPalette;
 pub enum PatternKind {
     ColorOrTexture = 0,
     Gradient = 1,
+    Repeat = 2,
 
-    Mask = 2,
+    Mask = 3,
     // When adding patterns, don't forget to update the NUM_PATTERNS constant.
 }
 
-pub const NUM_PATTERNS: u32 = 3;
+pub const NUM_PATTERNS: u32 = 4;
 
 impl PatternKind {
     pub fn from_u32(val: u32) -> Self {
@@ -91,9 +94,10 @@ pub struct PatternBuilderState<'a> {
 pub trait PatternBuilder {
     fn build(
         &self,
-        _sub_rect: Option<DeviceRect>,
-        _ctx: &PatternBuilderContext,
-        _state: &mut PatternBuilderState,
+        sub_rect: Option<DeviceRect>,
+        offset: LayoutVector2D,
+        ctx: &PatternBuilderContext,
+        state: &mut PatternBuilderState,
     ) -> Pattern;
 
     fn get_base_color(
