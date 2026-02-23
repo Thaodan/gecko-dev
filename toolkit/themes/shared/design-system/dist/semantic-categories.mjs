@@ -259,6 +259,22 @@ export const tokensTable = {
       name: "--button-background-color-selected",
     },
     {
+      value: {
+        light: "#f8f8fa",
+        dark: "rgb(35, 34, 43)",
+        forcedColors: "Canvas",
+        default: "light-dark(#f8f8fa, rgb(35, 34, 43))",
+      },
+      name: "--table-background-color",
+    },
+    {
+      value: {
+        default: "var(--color-accent-primary)",
+        forcedColors: "AccentColor",
+      },
+      name: "--table-header-background-color",
+    },
+    {
       value: { default: "var(--background-color-canvas)" },
       name: "--table-row-background-color",
     },
@@ -484,6 +500,13 @@ export const tokensTable = {
     {
       value: "var(--button-border-color-active)",
       name: "--button-border-color-selected",
+    },
+    {
+      value: {
+        default: "color-mix(in srgb, currentColor 41%, transparent)",
+        forcedColors: "CanvasText",
+      },
+      name: "--table-border-color",
     },
   ],
   "border-radius": [
@@ -796,6 +819,8 @@ export const tokensTable = {
       value: "var(--focus-outline-width) solid var(--focus-outline-color)",
       name: "--focus-outline",
     },
+  ],
+  "outline-color": [
     {
       value: {
         default: "var(--color-accent-primary)",
@@ -803,12 +828,6 @@ export const tokensTable = {
       },
       name: "--focus-outline-color",
     },
-    {
-      value: "calc(-1 * var(--focus-outline-width))",
-      name: "--focus-outline-inset",
-    },
-    { value: "2px", name: "--focus-outline-offset" },
-    { value: "2px", name: "--focus-outline-width" },
     {
       value: {
         light: "var(--color-red-70)",
@@ -818,8 +837,16 @@ export const tokensTable = {
       },
       name: "--outline-color-error",
     },
+  ],
+  "outline-offset": [
+    {
+      value: "calc(-1 * var(--focus-outline-width))",
+      name: "--focus-outline-inset",
+    },
+    { value: "2px", name: "--focus-outline-offset" },
     { value: "1px", name: "--link-focus-outline-offset" },
   ],
+  "outline-width": [{ value: "2px", name: "--focus-outline-width" }],
   "font-size": [
     {
       value: { brand: { default: "15px" }, platform: { default: "unset" } },
@@ -1197,6 +1224,18 @@ export const tokensTable = {
       },
       name: "--link-color-visited",
     },
+    {
+      value: {
+        forcedColors: "AccentColorText",
+        brand: {
+          light: "var(--color-white)",
+          dark: "var(--color-gray-100)",
+          default: "light-dark(var(--color-white), var(--color-gray-100))",
+        },
+        platform: { default: "AccentColorText" },
+      },
+      name: "--table-header-text-color",
+    },
   ],
   border: [
     {
@@ -1266,47 +1305,6 @@ export const tokensTable = {
     { value: "var(--dimension-20)", name: "--icon-size-medium" },
     { value: "var(--dimension-24)", name: "--icon-size-large" },
     { value: "var(--dimension-32)", name: "--icon-size-xlarge" },
-  ],
-  "table-background": [
-    {
-      value: {
-        light: "#f8f8fa",
-        dark: "rgb(35, 34, 43)",
-        forcedColors: "Canvas",
-        default: "light-dark(#f8f8fa, rgb(35, 34, 43))",
-      },
-      name: "--table-background-color",
-    },
-  ],
-  "table-border": [
-    {
-      value: {
-        default: "color-mix(in srgb, currentColor 41%, transparent)",
-        forcedColors: "CanvasText",
-      },
-      name: "--table-border-color",
-    },
-  ],
-  "table-header": [
-    {
-      value: {
-        default: "var(--color-accent-primary)",
-        forcedColors: "AccentColor",
-      },
-      name: "--table-header-background-color",
-    },
-    {
-      value: {
-        forcedColors: "AccentColorText",
-        brand: {
-          light: "var(--color-white)",
-          dark: "var(--color-gray-100)",
-          default: "light-dark(var(--color-white), var(--color-gray-100))",
-        },
-        platform: { default: "AccentColorText" },
-      },
-      name: "--table-header-text-color",
-    },
   ],
 };
 
