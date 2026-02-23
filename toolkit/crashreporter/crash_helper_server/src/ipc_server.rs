@@ -129,18 +129,18 @@ impl IPCServer {
         match connection.endpoint {
             IPCEndpoint::Parent => match header.kind {
                 messages::Kind::SetCrashReportPath => {
-                    let message = messages::SetCrashReportPath::decode(&data, ancillary_data)?;
+                    let message = messages::SetCrashReportPath::decode(data, ancillary_data)?;
                     generator.set_path(message.path);
                 }
                 messages::Kind::TransferMinidump => {
-                    let message = messages::TransferMinidump::decode(&data, ancillary_data)?;
+                    let message = messages::TransferMinidump::decode(data, ancillary_data)?;
                     connector.send_message(generator.retrieve_minidump(message.pid))?;
                 }
                 messages::Kind::GenerateMinidump => {
                     todo!("Implement all messages");
                 }
                 messages::Kind::RegisterChildProcess => {
-                    let message = messages::RegisterChildProcess::decode(&data, ancillary_data)?;
+                    let message = messages::RegisterChildProcess::decode(data, ancillary_data)?;
                     let connector = IPCConnector::from_ancillary(message.ancillary_data)?;
                     connector.send_message(messages::ChildProcessRendezVous::new(
                         process::id() as Pid
@@ -164,12 +164,12 @@ impl IPCServer {
                 }
                 #[cfg(any(target_os = "android", target_os = "linux"))]
                 messages::Kind::RegisterAuxvInfo => {
-                    let message = messages::RegisterAuxvInfo::decode(&data, ancillary_data)?;
+                    let message = messages::RegisterAuxvInfo::decode(data, ancillary_data)?;
                     generator.register_auxv_info(message)?;
                 }
                 #[cfg(any(target_os = "android", target_os = "linux"))]
                 messages::Kind::UnregisterAuxvInfo => {
-                    let message = messages::UnregisterAuxvInfo::decode(&data, ancillary_data)?;
+                    let message = messages::UnregisterAuxvInfo::decode(data, ancillary_data)?;
                     generator.unregister_auxv_info(message)?;
                 }
                 kind => {
@@ -183,7 +183,7 @@ impl IPCServer {
                 #[cfg(target_os = "windows")]
                 messages::Kind::WindowsErrorReporting => {
                     let message =
-                        messages::WindowsErrorReportingMinidump::decode(&data, ancillary_data)?;
+                        messages::WindowsErrorReportingMinidump::decode(data, ancillary_data)?;
                     let res = generator.generate_wer_minidump(message);
                     match res {
                         Ok(_) => {}

@@ -143,9 +143,10 @@ impl IPCConnector {
     {
         let expected_payload_len = message.payload_size();
         let expected_ancillary_len = message.ancillary_data_len();
-        self.send(&message.header(), vec![])
+        let (header, payload, ancillary_data) = message.encode();
+
+        self.send(header.as_ref(), vec![])
             .map_err(IPCError::TransmissionFailure)?;
-        let (payload, ancillary_data) = message.into_payload();
         assert!(payload.len() == expected_payload_len);
         assert!(ancillary_data.len() == expected_ancillary_len);
         self.send(&payload, ancillary_data)
@@ -163,7 +164,7 @@ impl IPCConnector {
         }
 
         let (data, ancillary_data) = self.recv(header.size)?;
-        T::decode(&data, ancillary_data).map_err(IPCError::from)
+        T::decode(data, ancillary_data).map_err(IPCError::from)
     }
 
     fn send_nonblock(&self, buff: &[u8], fds: &[AncillaryData]) -> Result<(), PlatformError> {
@@ -209,7 +210,7 @@ impl IPCConnector {
 
     pub(crate) fn recv_header(&self) -> Result<messages::Header, IPCError> {
         let (header, _) = self.recv(messages::HEADER_SIZE)?;
-        messages::Header::decode(&header).map_err(IPCError::BadMessage)
+        messages::Header::decode(header).map_err(IPCError::BadMessage)
     }
 
     fn recv_nonblock(
