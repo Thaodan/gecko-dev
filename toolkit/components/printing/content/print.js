@@ -73,7 +73,6 @@ function createDeferredTask(fn, timeout) {
 function cancelDeferredTasks() {
   for (let task of deferredTasks) {
     task.disarm();
-    task.finalize();
   }
   PrintEventHandler._updatePrintPreviewTask?.disarm();
   deferredTasks = [];
@@ -104,9 +103,6 @@ window.addEventListener(
   "unload",
   () => {
     document.textContent = "";
-
-    cancelDeferredTasks();
-    PrintEventHandler._updatePrintPreviewTask?.finalize();
   },
   { once: true }
 );

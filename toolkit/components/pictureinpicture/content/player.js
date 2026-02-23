@@ -384,7 +384,6 @@ let Player = {
 
   uninit() {
     this.resizeDebouncer.disarm();
-    this.resizeDebouncer.finalize();
     PictureInPicture.unload(window, this.actor);
   },
 

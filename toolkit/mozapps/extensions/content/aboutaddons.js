@@ -1744,24 +1744,17 @@ class InlineOptionsBrowser extends HTMLElement {
     this._embedderElement?.removeEventListener("FullZoomChange", this);
     this._embedderElement?.removeEventListener("TextZoomChange", this);
     this._embedderElement = null;
-    this.updatePositionTask.disarm();
   }
 
   handleEvent(e) {
     switch (e.type) {
       case "scroll":
-        this.updatePositionTask.arm();
-        window.addEventListener("unload", this, { once: true });
-        break;
-      case "unload":
-        this.updatePositionTask.disarm();
-        this.updatePositionTask.finalize();
-        break;
+        return this.updatePositionTask.arm();
       case "FullZoomChange":
       case "TextZoomChange":
-        this.maybeUpdateZoom();
-        break;
+        return this.maybeUpdateZoom();
     }
+    return undefined;
   }
 
   maybeUpdateZoom() {

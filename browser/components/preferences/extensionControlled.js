@@ -307,7 +307,5 @@ function initializeProxyUI(container) {
   Services.prefs.addObserver("", proxyObserver);
   window.addEventListener("unload", () => {
     Services.prefs.removeObserver("", proxyObserver);
-    deferredUpdate.disarm();
-    deferredUpdate.finalize();
   });
 }

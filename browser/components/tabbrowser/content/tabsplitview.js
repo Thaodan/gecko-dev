@@ -19,28 +19,18 @@
    *
    * @type {DeferredTask}
    */
-  let updateUrlbarButton;
-  const updateUrlbarIndicatorSoon = () => {
-    if (!updateUrlbarButton) {
-      updateUrlbarButton = new DeferredTask(() => {
-        const { activeSplitView, selectedTab } = gBrowser;
-        const button = document.getElementById("split-view-button");
-        if (activeSplitView) {
-          const activeIndex = activeSplitView.tabs.indexOf(selectedTab);
-          button.hidden = false;
-          button.setAttribute("data-active-index", activeIndex);
-        } else {
-          button.hidden = true;
-          button.removeAttribute("data-active-index");
-        }
-      }, 0);
-      window.addEventListener("unload", () => {
-        updateUrlbarButton.disarm();
-        updateUrlbarButton.finalize();
-      });
+  const updateUrlbarButton = new DeferredTask(() => {
+    const { activeSplitView, selectedTab } = gBrowser;
+    const button = document.getElementById("split-view-button");
+    if (activeSplitView) {
+      const activeIndex = activeSplitView.tabs.indexOf(selectedTab);
+      button.hidden = false;
+      button.setAttribute("data-active-index", activeIndex);
+    } else {
+      button.hidden = true;
+      button.removeAttribute("data-active-index");
     }
-    updateUrlbarButton.arm();
-  };
+  }, 0);
 
   class MozTabSplitViewWrapper extends MozXULElement {
     /** @type {MutationObserver} */
@@ -223,7 +213,7 @@
      * Show all Split View tabs in the content area.
      */
     #activate(skipShowPanels = false) {
-      updateUrlbarIndicatorSoon();
+      updateUrlbarButton.arm();
       if (!skipShowPanels) {
         gBrowser.showSplitViewPanels(this.#tabs);
       }
@@ -242,7 +232,7 @@
       if (!skipHidePanels) {
         gBrowser.hideSplitViewPanels(this.#tabs);
       }
-      updateUrlbarIndicatorSoon();
+      updateUrlbarButton.arm();
       this.container.dispatchEvent(
         new CustomEvent("TabSplitViewDeactivate", {
           detail: { tabs: this.#tabs, splitview: this },
@@ -381,7 +371,7 @@
       gBrowser.moveTabBefore(secondTab, firstTab);
       this.#tabs = [secondTab, firstTab];
       gBrowser.showSplitViewPanels(this.#tabs);
-      updateUrlbarIndicatorSoon();
+      updateUrlbarButton.arm();
     }
 
     /**
