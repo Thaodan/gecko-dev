@@ -24,7 +24,6 @@
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/WindowsVersion.h"
 #include "mozilla/gfx/gfxVars.h"
-#include "mozilla/glean/DomMediaPlatformsWmfMetrics.h"
 #include "mozilla/mscom/EnsureMTA.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIXULRuntime.h"
@@ -140,16 +139,10 @@ void WMFDecoderModule::Init() {
         WmfDecoderModuleMarkerAndLog("WMFInit Decoder Failed",
                                      "%s failed with code 0x%lx",
                                      EnumValueToString(type), hr);
-        if (hr == WINCODEC_ERR_COMPONENTNOTFOUND) {
-          if (type == WMFStreamType::AV1) {
-            WmfDecoderModuleMarkerAndLog("No AV1 extension",
-                                         "Lacking of AV1 extension");
-            glean::media::wmf_codec_no_extension.Get("av1"_ns).Set(true);
-          } else if (type == WMFStreamType::HEVC) {
-            WmfDecoderModuleMarkerAndLog("No HEVC extension",
-                                         "Lacking of HEVC extension");
-            glean::media::wmf_codec_no_extension.Get("hevc"_ns).Set(true);
-          }
+        if (hr == WINCODEC_ERR_COMPONENTNOTFOUND &&
+            type == WMFStreamType::AV1) {
+          WmfDecoderModuleMarkerAndLog("No AV1 extension",
+                                       "Lacking of AV1 extension");
           sLackOfExtensionTypes += type;
         }
       }
