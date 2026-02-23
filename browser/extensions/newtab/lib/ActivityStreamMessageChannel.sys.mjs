@@ -50,9 +50,6 @@ export class ActivityStreamMessageChannel {
     this.onNewTabLoad = this.onNewTabLoad.bind(this);
     this.onNewTabUnload = this.onNewTabUnload.bind(this);
     this.onNewTabInit = this.onNewTabInit.bind(this);
-
-    // Retain per-<browser> listener refs so we can remove them later.
-    this._renderLayersListeners = new WeakMap();
   }
 
   /**
@@ -274,56 +271,21 @@ export class ActivityStreamMessageChannel {
     this.tabLoaded(tabDetails);
   }
 
-  setRenderLayers(browser) {
-    if (this.isPreloadedBrowser(browser)) {
-      const win = browser.ownerGlobal;
-      if (!win || win.closed) {
-        return;
-      }
+  tabLoaded(tabDetails) {
+    tabDetails.loaded = true;
+
+    let { browser } = tabDetails;
+    if (
+      this.isPreloadedBrowser(browser) &&
+      browser.ownerGlobal.windowState !== browser.ownerGlobal.STATE_MINIMIZED &&
+      !browser.ownerGlobal.isFullyOccluded
+    ) {
       // As a perceived performance optimization, if this loaded Activity Stream
       // happens to be a preloaded browser in a window that is not minimized or
       // occluded, have it render its layers to the compositor now to increase
       // the odds that by the time we switch to the tab, the layers are already
       // ready to present to the user.
-      const shouldRender =
-        win.windowState !== win.STATE_MINIMIZED && !win.isFullyOccluded;
-      if (browser.renderLayers !== shouldRender) {
-        browser.renderLayers = shouldRender;
-      }
-    }
-  }
-
-  tabLoaded(tabDetails) {
-    tabDetails.loaded = true;
-    const { browser } = tabDetails;
-
-    this.setRenderLayers(browser);
-    // Avoid double-registering if we ever re-enter tabLoaded for the same browser.
-    if (
-      this.isPreloadedBrowser(browser) &&
-      !this._renderLayersListeners.has(browser)
-    ) {
-      const win = browser.ownerGlobal;
-      const onSizeModeChange = () => this.setRenderLayers(browser);
-      const onOcclusionStateChange = () => this.setRenderLayers(browser);
-
-      const cleanup = () => {
-        // No need to remove the unload listener here, as it's set with {once: true}.
-        win.removeEventListener("sizemodechange", onSizeModeChange);
-        win.removeEventListener("occlusionstatechange", onOcclusionStateChange);
-        this._renderLayersListeners.delete(browser);
-      };
-
-      win.addEventListener("sizemodechange", onSizeModeChange);
-      win.addEventListener("occlusionstatechange", onOcclusionStateChange);
-      win.addEventListener("unload", cleanup, { once: true });
-
-      this._renderLayersListeners.set(browser, {
-        win,
-        onSizeModeChange,
-        onOcclusionStateChange,
-        cleanup,
-      });
+      browser.renderLayers = true;
     }
 
     this.onActionFromContent({ type: at.NEW_TAB_LOAD }, tabDetails.portID);
@@ -337,22 +299,6 @@ export class ActivityStreamMessageChannel {
    * @param  {obj} tabDetails details about a loaded tab, similar to onNewTabInit
    */
   onNewTabUnload(msg, tabDetails) {
-    const { browser } = tabDetails;
-
-    const listeners = this._renderLayersListeners.get(browser);
-    if (listeners) {
-      const { win, onSizeModeChange, onOcclusionStateChange, cleanup } =
-        listeners;
-
-      if (win && !win.closed) {
-        win.removeEventListener("sizemodechange", onSizeModeChange);
-        win.removeEventListener("occlusionstatechange", onOcclusionStateChange);
-        win.removeEventListener("unload", cleanup);
-      }
-
-      this._renderLayersListeners.delete(browser);
-    }
-
     this.onActionFromContent({ type: at.NEW_TAB_UNLOAD }, tabDetails.portID);
   }
 
