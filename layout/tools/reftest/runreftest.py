@@ -53,7 +53,7 @@ except ImportError as e:  # noqa
     Marionette = reraise_
 
 import reftestcommandline
-from output import OutputHandler, ReftestFormatter
+from output import OutputHandler
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -311,17 +311,8 @@ class RefTest:
         if self.log:
             return
 
-        mozlog.commandline.log_formatters["tbpl"] = (
-            ReftestFormatter,
-            "Reftest specific formatter for the"
-            "benefit of legacy log parsers and"
-            "tools such as the reftest analyzer",
-        )
-        fmt_options = {}
-        if not options.log_tbpl_level and os.environ.get("MOZ_REFTEST_VERBOSE"):
-            options.log_tbpl_level = fmt_options["level"] = "debug"
         self.log = mozlog.commandline.setup_logging(
-            "reftest harness", options, {"tbpl": sys.stdout}, fmt_options
+            "reftest harness", options, {"raw": sys.stdout}
         )
 
     def getGtkTheme(self):

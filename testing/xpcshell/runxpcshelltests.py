@@ -2638,7 +2638,7 @@ def main():
     parser = parser_desktop()
     options = parser.parse_args()
 
-    log = commandline.setup_logging("XPCShell", options, {"tbpl": sys.stdout})
+    log = commandline.setup_logging("XPCShell", options, {"raw": sys.stdout})
 
     if options.xpcshell is None and options.app_binary is None:
         log.error(
