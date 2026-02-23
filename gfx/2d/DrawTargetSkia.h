@@ -40,6 +40,9 @@ class DrawTargetSkia : public DrawTarget {
   DrawTargetSkia();
   virtual ~DrawTargetSkia();
 
+  void Link(const char* aDest, const char* aURI, const Rect& aRect) override;
+  void Destination(const char* aDestination, const Point& aPoint) override;
+
   DrawTargetType GetType() const override;
   BackendType GetBackendType() const override { return BackendType::SKIA; }
   already_AddRefed<SourceSurface> Snapshot(SurfaceFormat aFormat);
