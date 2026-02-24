@@ -124,9 +124,16 @@ HTMLSelectElement::HTMLSelectElement(
       mOptGroupCount(0),
       mSelectedIndex(-1) {
   SetHasWeirdParserInsertionMode();
+
+  // DoneAddingChildren() will be called later if it's from the parser,
+  // otherwise it is
+
   // Set up our default state: enabled, optional, and valid.
   AddStatesSilently(ElementState::ENABLED | ElementState::OPTIONAL_ |
                     ElementState::VALID);
+
+  AddMutationObserver(this);
+  SetupShadowTree();
 }
 
 void HTMLSelectElement::SetupShadowTree() {
@@ -161,7 +168,7 @@ void HTMLSelectElement::SetupShadowTree() {
 Text* HTMLSelectElement::GetSelectedContentText() const {
   auto* sr = GetShadowRoot();
   if (!sr) {
-    MOZ_ASSERT(OwnerDoc()->IsStaticDocument() || !IsInComposedDoc());
+    MOZ_ASSERT(OwnerDoc()->IsStaticDocument());
     return nullptr;
   }
   auto* label = sr->GetFirstChild();
@@ -1124,8 +1131,9 @@ bool HTMLSelectElement::SelectSomething(bool aNotify) {
 
 nsresult HTMLSelectElement::BindToTree(BindContext& aContext,
                                        nsINode& aParent) {
-  MOZ_TRY(
-      nsGenericHTMLFormControlElementWithState::BindToTree(aContext, aParent));
+  nsresult rv =
+      nsGenericHTMLFormControlElementWithState::BindToTree(aContext, aParent);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   // If there is a disabled fieldset in the parent chain, the element is now
   // barred from constraint validation.
@@ -1136,20 +1144,10 @@ nsresult HTMLSelectElement::BindToTree(BindContext& aContext,
   // And now make sure our state is up to date
   UpdateValidityElementStates(false);
 
-  if (IsInComposedDoc()) {
-    AddMutationObserver(this);
-    SetupShadowTree();
-  }
-
-  return NS_OK;
+  return rv;
 }
 
 void HTMLSelectElement::UnbindFromTree(UnbindContext& aContext) {
-  if (IsInComposedDoc()) {
-    RemoveMutationObserver(this);
-    TeardownUAShadowRoot(NotifyUAWidget::No);
-  }
-
   nsGenericHTMLFormControlElementWithState::UnbindFromTree(aContext);
 
   // We might be no longer disabled because our parent chain changed.
