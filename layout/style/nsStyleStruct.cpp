@@ -2299,8 +2299,7 @@ nsStyleDisplay::nsStyleDisplay()
       mWebkitLineClamp(0),
       mShapeMargin(LengthPercentage::Zero()),
       mShapeOutside(StyleShapeOutside::None()),
-      mAnchorScope(StyleScopedNameKeyword::None()),
-      mTimelineScope(StyleScopedNameKeyword::None()) {
+      mAnchorScope(StyleAnchorScopeKeyword::None()) {
   MOZ_COUNT_CTOR(nsStyleDisplay);
 }
 
@@ -2359,8 +2358,7 @@ nsStyleDisplay::nsStyleDisplay(const nsStyleDisplay& aSource)
       mShapeMargin(aSource.mShapeMargin),
       mShapeOutside(aSource.mShapeOutside),
       mAnchorName(aSource.mAnchorName),
-      mAnchorScope(aSource.mAnchorScope),
-      mTimelineScope(aSource.mTimelineScope) {
+      mAnchorScope(aSource.mAnchorScope) {
   MOZ_COUNT_CTOR(nsStyleDisplay);
 }
 
