@@ -35,7 +35,7 @@ add_task(async function test_profile_feature_jstracing() {
         "Found string for 'a' method call"
       );
       const functionBFrameStringIdx = contentThread.stringTable.findIndex(s =>
-        s.startWith(`b (${url}:10:15)`)
+        s.startsWith(`b (${url}:10:15)`)
       );
       Assert.greater(
         functionBFrameStringIdx,
