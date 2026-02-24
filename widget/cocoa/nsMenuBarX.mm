@@ -634,7 +634,17 @@ void nsMenuBarX::AquifyMenuBar() {
     // remove prefs item and its separator, but save off the pref content node
     // so we can invoke its command later.
     HideItem(domDoc, u"menu_PrefsSeparator"_ns);
-    mPrefItemContent = HideItem(domDoc, u"menu_preferences"_ns);
+
+    // Ventura changed the name of the "Preferences" menu item to "Settings"
+    // so store the correct one and hide the other.
+    if (nsCocoaFeatures::OnVenturaOrLater()) {
+      HideItem(domDoc, u"menu_preferences"_ns);
+      mPrefItemContent = HideItem(domDoc, u"menu_settings"_ns);
+    } else {
+      mPrefItemContent = HideItem(domDoc, u"menu_preferences"_ns);
+      HideItem(domDoc, u"menu_settings"_ns);
+    }
+
     if (!sPrefItemContent) {
       sPrefItemContent = mPrefItemContent;
     }
@@ -815,8 +825,11 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
 
     // Add the Preferences menu item
     itemBeingAdded = CreateNativeAppMenuItem(
-        aMenu, u"menu_preferences"_ns, @selector(menuItemHit:),
-        eCommand_ID_Prefs, nsMenuBarX::sNativeEventTarget);
+        aMenu,
+        nsCocoaFeatures::OnVenturaOrLater() ? u"menu_settings"_ns
+                                            : u"menu_preferences"_ns,
+        @selector(menuItemHit:), eCommand_ID_Prefs,
+        nsMenuBarX::sNativeEventTarget);
     if (itemBeingAdded) {
       [sApplicationMenu addItem:itemBeingAdded];
       [itemBeingAdded release];
