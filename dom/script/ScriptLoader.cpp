@@ -1080,20 +1080,28 @@ RequestPriority FetchPriorityToRequestPriority(
 }
 }  // namespace
 
-void ScriptLoader::NotifyObserversForCachedScript(
-    nsIURI* aURI, nsINode* aContext, nsIPrincipal* aTriggeringPrincipal,
-    nsSecurityFlags aSecurityFlags, nsContentPolicyType aContentPolicyType,
-    SubResourceNetworkMetadataHolder* aNetworkMetadata) {
+void ScriptLoader::NotifyObserversForCachedScript(ScriptLoadRequest* aRequest) {
   nsCOMPtr<nsIObserverService> obsService = services::GetObserverService();
 
   if (!obsService->HasObservers("http-on-resource-cache-response")) {
     return;
   }
 
+  nsIScriptElement* element = aRequest->GetScriptLoadContext()->mScriptElement;
+
+  nsCOMPtr<nsINode> context;
+  if (element) {
+    context = do_QueryInterface(element);
+  } else {
+    context = mDocument;
+  }
+
   nsCOMPtr<nsIChannel> channel;
   nsresult rv = CreateChannelForScriptLoading(
-      getter_AddRefs(channel), mDocument, aURI, aContext, aTriggeringPrincipal,
-      aSecurityFlags, aContentPolicyType);
+      getter_AddRefs(channel), mDocument, aRequest->URI(), context,
+      aRequest->FetchOptions()->mTriggeringPrincipal,
+      CORSModeToSecurityFlags(aRequest->FetchOptions()->mCORSMode),
+      nsIContentPolicy::TYPE_INTERNAL_SCRIPT);
   if (NS_FAILED(rv)) {
     return;
   }
@@ -1101,8 +1109,8 @@ void ScriptLoader::NotifyObserversForCachedScript(
   RefPtr<net::HttpBaseChannel> httpBaseChannel = do_QueryObject(channel);
   if (httpBaseChannel) {
     const net::nsHttpResponseHead* responseHead = nullptr;
-    if (aNetworkMetadata) {
-      responseHead = aNetworkMetadata->GetResponseHead();
+    if (aRequest->mNetworkMetadata) {
+      responseHead = aRequest->mNetworkMetadata->GetResponseHead();
     }
     httpBaseChannel->SetDummyChannelForCachedResource(responseHead);
   }
@@ -1256,19 +1264,7 @@ void ScriptLoader::EmulateNetworkEvents(ScriptLoadRequest* aRequest) {
   MOZ_ASSERT(aRequest->mNetworkMetadata);
   MOZ_ASSERT(!aRequest->IsWasmBytes());
 
-  nsIScriptElement* element = aRequest->GetScriptLoadContext()->mScriptElement;
-
-  nsCOMPtr<nsINode> context;
-  if (element) {
-    context = do_QueryInterface(element);
-  } else {
-    context = mDocument;
-  }
-
-  NotifyObserversForCachedScript(
-      aRequest->URI(), context, aRequest->FetchOptions()->mTriggeringPrincipal,
-      CORSModeToSecurityFlags(aRequest->FetchOptions()->mCORSMode),
-      nsIContentPolicy::TYPE_INTERNAL_SCRIPT, aRequest->mNetworkMetadata);
+  NotifyObserversForCachedScript(aRequest);
 
   {
     nsAutoCString name;

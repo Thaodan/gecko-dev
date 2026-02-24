@@ -493,10 +493,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
    */
   void EmulateNetworkEvents(ScriptLoadRequest* aRequest);
 
-  void NotifyObserversForCachedScript(
-      nsIURI* aURI, nsINode* aContext, nsIPrincipal* aTriggeringPrincipal,
-      nsSecurityFlags aSecurityFlags, nsContentPolicyType aContentPolicyType,
-      SubResourceNetworkMetadataHolder* aNetworkMetadata);
+  void NotifyObserversForCachedScript(ScriptLoadRequest* aRequest);
 
   /**
    * Unblocks the creator parser of the parser-blocking scripts.
