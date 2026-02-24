@@ -22,7 +22,7 @@ static bool sNeckoIOLayerRunning = false;
 static PRCallOnceType sNeckoIOLayerInit;
 
 static void NeckoIOLayerPreAssertions() {
-    MOZ_ASSERT(OnSocketThread());
+  MOZ_ASSERT(OnSocketThread());
   MOZ_ASSERT(!sNeckoIOLayerRunning);
   sNeckoIOLayerRunning = true;
 }
