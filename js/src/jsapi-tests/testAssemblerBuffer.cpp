@@ -112,7 +112,6 @@ BEGIN_TEST(testAssemblerBuffer_BranchDeadlineSet) {
   DLSet dls(alloc);
 
   CHECK(dls.empty());
-  CHECK(alloc.isEmpty());  // Constructor must be infallible.
   CHECK_EQUAL(dls.size(), 0u);
   CHECK_EQUAL(dls.maxRangeSize(), 0u);
 
