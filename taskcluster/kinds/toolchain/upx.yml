@@ -19,3 +19,12 @@ linux64-upx:
     treeherder:
         symbol: TL(upx)
     worker-type: b-linux-docker-amd
+
+win64-upx:
+    treeherder:
+        symbol: TW64(upx)
+    worker-type: b-win2022
+    fetches:
+        toolchain:
+            - win64-cmake
+            - vs-toolchain
