@@ -491,9 +491,12 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   /**
    * Helper function to notify network observers for cached request.
    */
-  void EmulateNetworkEvents(ScriptLoadRequest* aRequest);
+  void EmulateNetworkEvents(ScriptLoadRequest* aRequest,
+                            const Maybe<nsAutoString>& aCharsetForPreload);
 
-  void NotifyObserversForCachedScript(ScriptLoadRequest* aRequest);
+  void NotifyObserversForCachedScript(
+      ScriptLoadRequest* aRequest,
+      const Maybe<nsAutoString>& aCharsetForPreload);
 
   /**
    * Unblocks the creator parser of the parser-blocking scripts.
