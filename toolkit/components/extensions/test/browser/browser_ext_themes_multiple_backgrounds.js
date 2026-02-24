@@ -29,8 +29,8 @@ add_task(async function test_support_backgrounds_position() {
 
   await extension.startup();
 
-  let docEl = window.document.documentElement;
-  let toolbox = document.querySelector("#navigator-toolbox");
+  let docEl = document.documentElement;
+  let body = document.body;
 
   Assert.ok(docEl.hasAttribute("lwtheme"), "LWT attribute should be set");
   Assert.ok(
@@ -38,17 +38,17 @@ add_task(async function test_support_backgrounds_position() {
     "LWT text color attribute should be set"
   );
 
-  let toolboxCS = window.getComputedStyle(toolbox);
-  let toolboxBgImage = toolboxCS.backgroundImage.split(",")[0].trim();
+  let bodyCS = window.getComputedStyle(body);
+  let bodyBgImage = bodyCS.backgroundImage.split(",")[0].trim();
   Assert.equal(
-    toolboxCS.backgroundImage,
+    bodyCS.backgroundImage,
     [1, 2, 2, 2]
-      .map(num => toolboxBgImage.replace(/face[\d]*/, `face${num}`))
+      .map(num => bodyBgImage.replace(/face[\d]*/, `face${num}`))
       .join(", "),
     "The backgroundImage should use face1.png once and face2.png three times."
   );
   Assert.equal(
-    toolboxCS.backgroundPosition,
+    bodyCS.backgroundPosition,
     "100% 0%, 0% 0%, 50% 0%, 100% 100%",
     "The backgroundPosition should use the three values provided, preceded by the default for theme_frame."
   );
@@ -58,7 +58,7 @@ add_task(async function test_support_backgrounds_position() {
    * --lwt-background-tiling.
    */
   Assert.equal(
-    toolboxCS.backgroundRepeat,
+    bodyCS.backgroundRepeat,
     "no-repeat, no-repeat",
     "The backgroundPosition should use the default value."
   );
@@ -66,12 +66,12 @@ add_task(async function test_support_backgrounds_position() {
   await extension.unload();
 
   Assert.ok(!docEl.hasAttribute("lwtheme"), "LWT attribute should not be set");
-  toolboxCS = window.getComputedStyle(toolbox);
+  bodyCS = window.getComputedStyle(body);
 
   // Styles should've reverted to their initial values.
-  Assert.equal(toolboxCS.backgroundImage, "none");
-  Assert.equal(toolboxCS.backgroundPosition, "0% 0%");
-  Assert.equal(toolboxCS.backgroundRepeat, "repeat");
+  Assert.equal(bodyCS.backgroundImage, "none");
+  Assert.equal(bodyCS.backgroundPosition, "0% 0%");
+  Assert.equal(bodyCS.backgroundRepeat, "repeat");
 });
 
 add_task(async function test_support_backgrounds_repeat() {
@@ -102,7 +102,7 @@ add_task(async function test_support_backgrounds_repeat() {
   await extension.startup();
 
   let docEl = window.document.documentElement;
-  let toolbox = document.querySelector("#navigator-toolbox");
+  let body = document.body;
 
   Assert.ok(docEl.hasAttribute("lwtheme"), "LWT attribute should be set");
   Assert.ok(
@@ -110,13 +110,13 @@ add_task(async function test_support_backgrounds_repeat() {
     "LWT text color attribute should be set"
   );
 
-  let toolboxCS = window.getComputedStyle(toolbox);
-  let toolboxImage = toolboxCS.backgroundImage.split(",")[0].trim();
+  let bodyCS = window.getComputedStyle(body);
+  let bodyImage = bodyCS.backgroundImage.split(",")[0].trim();
   Assert.equal(
     [0, 1, 2, 3]
-      .map(num => toolboxImage.replace(/face[\d]*/, `face${num}`))
+      .map(num => bodyImage.replace(/face[\d]*/, `face${num}`))
       .join(", "),
-    toolboxCS.backgroundImage,
+    bodyCS.backgroundImage,
     "The backgroundImage should use face.png four times."
   );
   /**
@@ -125,12 +125,12 @@ add_task(async function test_support_backgrounds_repeat() {
    * --lwt-background-alignment.
    */
   Assert.equal(
-    toolboxCS.backgroundPosition,
+    bodyCS.backgroundPosition,
     "100% 0%, 100% 0%",
-    "The backgroundPosition should use the default value for navigator-toolbox."
+    "The backgroundPosition should use the default value for body."
   );
   Assert.equal(
-    toolboxCS.backgroundRepeat,
+    bodyCS.backgroundRepeat,
     "no-repeat, repeat-x, repeat-y, repeat",
     "The backgroundRepeat should use the three values provided for --lwt-background-tiling, preceeded by the default for theme_frame."
   );
@@ -164,7 +164,7 @@ add_task(async function test_additional_images_check() {
   await extension.startup();
 
   let docEl = window.document.documentElement;
-  let toolbox = document.querySelector("#navigator-toolbox");
+  let body = document.body;
 
   Assert.ok(docEl.hasAttribute("lwtheme"), "LWT attribute should be set");
   Assert.ok(
@@ -172,8 +172,8 @@ add_task(async function test_additional_images_check() {
     "LWT text color attribute should be set"
   );
 
-  let toolboxCS = window.getComputedStyle(toolbox);
-  let bgImage = toolboxCS.backgroundImage.split(",")[0].trim();
+  let bodyCS = window.getComputedStyle(body);
+  let bgImage = bodyCS.backgroundImage.split(",")[0].trim();
   Assert.ok(
     bgImage.includes("face.png"),
     `The backgroundImage should use face.png. Actual value is: ${bgImage}`
@@ -183,12 +183,12 @@ add_task(async function test_additional_images_check() {
     `The backgroundImage should use face.png. Actual value is: ${bgImage}`
   );
   Assert.equal(
-    toolboxCS.backgroundPosition,
+    bodyCS.backgroundPosition,
     "100% 0%, 100% 0%",
     "The backgroundPosition should use the default value."
   );
   Assert.equal(
-    toolboxCS.backgroundRepeat,
+    bodyCS.backgroundRepeat,
     "no-repeat, no-repeat",
     "The backgroundRepeat should use the default value."
   );

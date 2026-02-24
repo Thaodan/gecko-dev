@@ -23,8 +23,8 @@ function validateTheme(backgroundImage, accentColor, textColor, isLWT) {
   let docEl = window.document.documentElement;
   let rootCS = window.getComputedStyle(docEl);
 
-  let toolbox = document.querySelector("#navigator-toolbox");
-  let toolboxCS = window.getComputedStyle(toolbox);
+  let body = document.body;
+  let bodyCS = window.getComputedStyle(body);
 
   if (isLWT) {
     Assert.ok(docEl.hasAttribute("lwtheme"), "LWT attribute should be set");
@@ -41,7 +41,7 @@ function validateTheme(backgroundImage, accentColor, textColor, isLWT) {
     textColor = hexToRGB(textColor);
   }
   Assert.ok(
-    toolboxCS.backgroundImage.includes(backgroundImage),
+    bodyCS.backgroundImage.includes(backgroundImage),
     "Expected correct background image"
   );
   Assert.equal(
@@ -77,10 +77,8 @@ add_task(async function test_dynamic_theme_updates() {
     },
   });
 
-  let rootCS = window.getComputedStyle(window.document.documentElement);
-  let toolboxCS = window.getComputedStyle(
-    window.document.documentElement.querySelector("#navigator-toolbox")
-  );
+  let rootCS = window.getComputedStyle(document.documentElement);
+  let bodyCS = window.getComputedStyle(document.body);
   await extension.startup();
 
   extension.sendMessage("update-theme", {
@@ -118,7 +116,7 @@ add_task(async function test_dynamic_theme_updates() {
   await extension.awaitMessage("theme-reset");
 
   let { color } = rootCS;
-  let backgroundImage = toolboxCS.backgroundImage;
+  let backgroundImage = bodyCS.backgroundImage;
   let backgroundColor = getToolboxBackgroundColor();
   validateTheme(backgroundImage, backgroundColor, color, false);
 
@@ -148,10 +146,8 @@ add_task(async function test_dynamic_theme_updates_with_data_url() {
     },
   });
 
-  let rootCS = window.getComputedStyle(window.document.documentElement);
-  let toolboxCS = window.getComputedStyle(
-    window.document.documentElement.querySelector("#navigator-toolbox")
-  );
+  let rootCS = window.getComputedStyle(document.documentElement);
+  let bodyCS = window.getComputedStyle(document.body);
   await extension.startup();
 
   extension.sendMessage("update-theme", {
@@ -187,7 +183,7 @@ add_task(async function test_dynamic_theme_updates_with_data_url() {
   await extension.awaitMessage("theme-reset");
 
   let { color } = rootCS;
-  let backgroundImage = toolboxCS.backgroundImage;
+  let backgroundImage = bodyCS.backgroundImage;
   let backgroundColor = getToolboxBackgroundColor();
   validateTheme(backgroundImage, backgroundColor, color, false);
 

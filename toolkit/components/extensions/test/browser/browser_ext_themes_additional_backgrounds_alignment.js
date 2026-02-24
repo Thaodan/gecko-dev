@@ -25,18 +25,17 @@ add_task(async function test_default_additional_backgrounds_alignment() {
 
   await extension.startup();
 
-  let toolbox = document.querySelector("#navigator-toolbox");
-  let toolboxCS = window.getComputedStyle(toolbox);
+  let body = document.body;
+  let bodyCS = window.getComputedStyle(body);
   /**
    * We expect duplicate background-position values because we apply `right top`
    * once for theme_frame, and again as the default value of
    * --lwt-background-alignment.
    */
   Assert.equal(
-    toolboxCS.getPropertyValue("background-position"),
+    bodyCS.getPropertyValue("background-position"),
     `${RIGHT_TOP}, ${RIGHT_TOP}`,
-    toolbox.id +
-      " contains theme_frame and default lwt-background-alignment properties"
+    "body contains theme_frame and default lwt-background-alignment properties"
   );
 
   await extension.unload();
@@ -75,12 +74,12 @@ add_task(async function test_additional_backgrounds_alignment() {
 
   await extension.startup();
 
-  let toolbox = document.querySelector("#navigator-toolbox");
-  let toolboxCS = window.getComputedStyle(toolbox);
+  let body = document.body;
+  let bodyCS = window.getComputedStyle(body);
   Assert.equal(
-    toolboxCS.getPropertyValue("background-position"),
+    bodyCS.getPropertyValue("background-position"),
     RIGHT_TOP + ", " + LEFT_BOTTOM + ", " + CENTER_CENTER + ", " + RIGHT_TOP,
-    toolbox.id +
+    body.id +
       " contains theme_frame and additional_backgrounds alignment properties"
   );
 
