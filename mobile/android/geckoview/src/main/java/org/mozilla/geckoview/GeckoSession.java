@@ -80,6 +80,7 @@ import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.GeckoDragAndDrop;
 import org.mozilla.gecko.GeckoThread;
+import org.mozilla.gecko.HapticFeedbackController;
 import org.mozilla.gecko.IGeckoEditableParent;
 import org.mozilla.gecko.MagnifiableSurfaceView;
 import org.mozilla.gecko.NativeQueue;
@@ -157,6 +158,8 @@ public class GeckoSession {
   private final EventDispatcher mEventDispatcher = new EventDispatcher(mNativeQueue);
 
   private final SessionTextInput mTextInput = new SessionTextInput(this, mNativeQueue);
+
+  private final HapticFeedbackController mHapticFeedbackController = new HapticFeedbackController();
   private SessionAccessibility mAccessibility;
   private SessionFinder mFinder;
   private SessionPdfFileSaver mPdfFileSaver;
@@ -1657,6 +1660,19 @@ public class GeckoSession {
             }
           });
     }
+
+    @WrapForJNI(calledFrom = "gecko")
+    private void performHapticFeedback(final int effect) {
+      final Window self = this;
+      ThreadUtils.runOnUiThread(
+          () -> {
+            final GeckoSession session = self.mOwner.get();
+            if (session == null) {
+              return;
+            }
+            session.getHapticFeedbackController().performHapticFeedback(effect);
+          });
+    }
   }
 
   private class Listener implements BundleEventListener {
@@ -1893,6 +1909,17 @@ public class GeckoSession {
   public @NonNull SessionTextInput getTextInput() {
     // May be called on any thread.
     return mTextInput;
+  }
+
+  /**
+   * Get the HapticFeedbackController instance for this session.
+   *
+   * @return HapticFeedbackController instance.
+   */
+  @UiThread
+  /* package */ @NonNull
+  HapticFeedbackController getHapticFeedbackController() {
+    return mHapticFeedbackController;
   }
 
   /**
