@@ -83,14 +83,14 @@ class TabNotesControllerClass {
     Services.obs.addObserver(this, "CanonicalURL:ActorUnregistered");
     if (this.TAB_NOTES_ENABLED) {
       lazy.logConsole.debug("browserFirstWindowReady", "Tab notes enabled");
-      return this.#init().then(() => {
+      this.#init().then(() => {
         for (const win of lazy.BrowserWindowTracker.orderedWindows) {
           this.#initWindow(win);
         }
       });
+    } else {
+      lazy.logConsole.debug("browserFirstWindowReady", "Tab notes disabled");
     }
-    lazy.logConsole.debug("browserFirstWindowReady", "Tab notes disabled");
-    return Promise.resolve();
   }
 
   /**
@@ -172,7 +172,7 @@ class TabNotesControllerClass {
    * @see tabnotes.manifest
    */
   browserQuitApplicationGranted() {
-    return this.#deinit();
+    this.#deinit();
   }
 
   /**
