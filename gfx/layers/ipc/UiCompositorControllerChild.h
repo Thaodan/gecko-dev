@@ -87,8 +87,7 @@ class UiCompositorControllerChild final
       const CompositorScrollUpdate& aUpdate);
   mozilla::ipc::IPCResult RecvScreenPixels(
       uint64_t aRequestId, Maybe<ipc::FileDescriptor>&& aHardwareBuffer,
-      Maybe<ipc::FileDescriptor>&& aAcquireFence,
-      ScreenPixelsResolver&& aResolver);
+      Maybe<ipc::FileDescriptor>&& aAcquireFence);
 
  private:
   explicit UiCompositorControllerChild(const uint64_t& aProcessToken,
