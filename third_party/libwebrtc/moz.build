@@ -465,7 +465,6 @@ DIRS += [
     "/third_party/libwebrtc/rtc_base/safe_minmax_gn",
     "/third_party/libwebrtc/rtc_base/sample_counter_gn",
     "/third_party/libwebrtc/rtc_base/sanitizer_gn",
-    "/third_party/libwebrtc/rtc_base/sigslot_trampoline_gn",
     "/third_party/libwebrtc/rtc_base/socket_address_gn",
     "/third_party/libwebrtc/rtc_base/socket_factory_gn",
     "/third_party/libwebrtc/rtc_base/socket_gn",
