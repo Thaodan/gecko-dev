@@ -19,12 +19,26 @@ function hexToRGB(hex) {
   );
 }
 
-function validateTheme(backgroundImage, accentColor, textColor, isLWT) {
+function imageDataFromDataURI(dataURIString) {
+  return Uint8Array.from(
+    atob(dataURIString.replace("data:image/png;base64,", "")),
+    byte => byte.charCodeAt(0)
+  ).buffer;
+}
+
+function validateTheme(
+  backgroundImage,
+  accentColor,
+  textColor,
+  isLWT,
+  hasVerticalAlign = false
+) {
   let docEl = window.document.documentElement;
   let rootCS = window.getComputedStyle(docEl);
 
-  let body = document.body;
-  let bodyCS = window.getComputedStyle(body);
+  let toolbox = document.querySelector("#navigator-toolbox");
+  let toolboxCS = window.getComputedStyle(toolbox);
+  let bodyCS = window.getComputedStyle(window.document.body);
 
   if (isLWT) {
     Assert.ok(docEl.hasAttribute("lwtheme"), "LWT attribute should be set");
@@ -40,8 +54,20 @@ function validateTheme(backgroundImage, accentColor, textColor, isLWT) {
   if (textColor.startsWith("#")) {
     textColor = hexToRGB(textColor);
   }
+
+  Assert.equal(
+    hasVerticalAlign,
+    docEl.hasAttribute("lwtheme-image-y-align"),
+    "root element should have attribute lwtheme-image-y-align when custom vertical alignment is expected"
+  );
   Assert.ok(
-    bodyCS.backgroundImage.includes(backgroundImage),
+    // The background image is expected to be set on the body element
+    // unless the background image needed to a custom vertical alignment,
+    // in which case the background image is expected to be set on the
+    // #navigator-toolbox element. See Bug 1952602.
+    hasVerticalAlign
+      ? toolboxCS.backgroundImage.includes(backgroundImage)
+      : bodyCS.backgroundImage.includes(backgroundImage),
     "Expected correct background image"
   );
   Assert.equal(
@@ -59,8 +85,8 @@ add_task(async function test_dynamic_theme_updates() {
       permissions: ["theme"],
     },
     files: {
-      "image1.png": BACKGROUND_1,
-      "image2.png": BACKGROUND_2,
+      "image1.png": imageDataFromDataURI(BACKGROUND_1),
+      "image2.png": imageDataFromDataURI(BACKGROUND_2),
     },
     background() {
       browser.test.onMessage.addListener((msg, details) => {
@@ -77,13 +103,19 @@ add_task(async function test_dynamic_theme_updates() {
     },
   });
 
-  let rootCS = window.getComputedStyle(document.documentElement);
-  let bodyCS = window.getComputedStyle(document.body);
+  let rootCS = window.getComputedStyle(window.document.documentElement);
+  let toolboxCS = window.getComputedStyle(
+    window.document.documentElement.querySelector("#navigator-toolbox")
+  );
   await extension.startup();
 
+  // Check with customized background vertical alignment
   extension.sendMessage("update-theme", {
     images: {
-      theme_frame: "image1.png",
+      additional_backgrounds: ["image1.png"],
+    },
+    properties: {
+      additional_backgrounds_alignment: ["right center"],
     },
     colors: {
       frame: ACCENT_COLOR_1,
@@ -93,10 +125,9 @@ add_task(async function test_dynamic_theme_updates() {
 
   await extension.awaitMessage("theme-updated");
 
-  validateTheme("image1.png", ACCENT_COLOR_1, TEXT_COLOR_1, true);
+  validateTheme("image1.png", ACCENT_COLOR_1, TEXT_COLOR_1, true, true);
 
-  // Check with the LWT aliases (to update on Firefox 69, because the
-  // LWT aliases are going to be removed).
+  // Check without customized background vertical alignment.
   extension.sendMessage("update-theme", {
     images: {
       theme_frame: "image2.png",
@@ -116,7 +147,7 @@ add_task(async function test_dynamic_theme_updates() {
   await extension.awaitMessage("theme-reset");
 
   let { color } = rootCS;
-  let backgroundImage = bodyCS.backgroundImage;
+  let backgroundImage = toolboxCS.backgroundImage;
   let backgroundColor = getToolboxBackgroundColor();
   validateTheme(backgroundImage, backgroundColor, color, false);
 
@@ -146,8 +177,10 @@ add_task(async function test_dynamic_theme_updates_with_data_url() {
     },
   });
 
-  let rootCS = window.getComputedStyle(document.documentElement);
-  let bodyCS = window.getComputedStyle(document.body);
+  let rootCS = window.getComputedStyle(window.document.documentElement);
+  let toolboxCS = window.getComputedStyle(
+    window.document.documentElement.querySelector("#navigator-toolbox")
+  );
   await extension.startup();
 
   extension.sendMessage("update-theme", {
@@ -183,7 +216,7 @@ add_task(async function test_dynamic_theme_updates_with_data_url() {
   await extension.awaitMessage("theme-reset");
 
   let { color } = rootCS;
-  let backgroundImage = bodyCS.backgroundImage;
+  let backgroundImage = toolboxCS.backgroundImage;
   let backgroundColor = getToolboxBackgroundColor();
   validateTheme(backgroundImage, backgroundColor, color, false);
 

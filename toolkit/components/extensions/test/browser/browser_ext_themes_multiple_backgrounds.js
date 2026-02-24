@@ -30,7 +30,6 @@ add_task(async function test_support_backgrounds_position() {
   await extension.startup();
 
   let docEl = document.documentElement;
-  let body = document.body;
 
   Assert.ok(docEl.hasAttribute("lwtheme"), "LWT attribute should be set");
   Assert.ok(
@@ -38,17 +37,18 @@ add_task(async function test_support_backgrounds_position() {
     "LWT text color attribute should be set"
   );
 
-  let bodyCS = window.getComputedStyle(body);
-  let bodyBgImage = bodyCS.backgroundImage.split(",")[0].trim();
+  let bgImageElement = gNavToolbox;
+  let bgImageCS = window.getComputedStyle(bgImageElement);
+  let mainBgImage = bgImageCS.backgroundImage.split(",")[0].trim();
   Assert.equal(
-    bodyCS.backgroundImage,
+    bgImageCS.backgroundImage,
     [1, 2, 2, 2]
-      .map(num => bodyBgImage.replace(/face[\d]*/, `face${num}`))
+      .map(num => mainBgImage.replace(/face[\d]*/, `face${num}`))
       .join(", "),
     "The backgroundImage should use face1.png once and face2.png three times."
   );
   Assert.equal(
-    bodyCS.backgroundPosition,
+    bgImageCS.backgroundPosition,
     "100% 0%, 0% 0%, 50% 0%, 100% 100%",
     "The backgroundPosition should use the three values provided, preceded by the default for theme_frame."
   );
@@ -58,7 +58,7 @@ add_task(async function test_support_backgrounds_position() {
    * --lwt-background-tiling.
    */
   Assert.equal(
-    bodyCS.backgroundRepeat,
+    bgImageCS.backgroundRepeat,
     "no-repeat, no-repeat",
     "The backgroundPosition should use the default value."
   );
@@ -66,12 +66,12 @@ add_task(async function test_support_backgrounds_position() {
   await extension.unload();
 
   Assert.ok(!docEl.hasAttribute("lwtheme"), "LWT attribute should not be set");
-  bodyCS = window.getComputedStyle(body);
+  bgImageCS = window.getComputedStyle(bgImageElement);
 
   // Styles should've reverted to their initial values.
-  Assert.equal(bodyCS.backgroundImage, "none");
-  Assert.equal(bodyCS.backgroundPosition, "0% 0%");
-  Assert.equal(bodyCS.backgroundRepeat, "repeat");
+  Assert.equal(bgImageCS.backgroundImage, "none");
+  Assert.equal(bgImageCS.backgroundPosition, "0% 0%");
+  Assert.equal(bgImageCS.backgroundRepeat, "repeat");
 });
 
 add_task(async function test_support_backgrounds_repeat() {
@@ -102,7 +102,9 @@ add_task(async function test_support_backgrounds_repeat() {
   await extension.startup();
 
   let docEl = window.document.documentElement;
-  let body = document.body;
+
+  let bgImageElement = document.body;
+  let bgImageCS = window.getComputedStyle(bgImageElement);
 
   Assert.ok(docEl.hasAttribute("lwtheme"), "LWT attribute should be set");
   Assert.ok(
@@ -110,13 +112,12 @@ add_task(async function test_support_backgrounds_repeat() {
     "LWT text color attribute should be set"
   );
 
-  let bodyCS = window.getComputedStyle(body);
-  let bodyImage = bodyCS.backgroundImage.split(",")[0].trim();
+  let mainBgImage = bgImageCS.backgroundImage.split(",")[0].trim();
   Assert.equal(
     [0, 1, 2, 3]
-      .map(num => bodyImage.replace(/face[\d]*/, `face${num}`))
+      .map(num => mainBgImage.replace(/face[\d]*/, `face${num}`))
       .join(", "),
-    bodyCS.backgroundImage,
+    bgImageCS.backgroundImage,
     "The backgroundImage should use face.png four times."
   );
   /**
@@ -125,12 +126,12 @@ add_task(async function test_support_backgrounds_repeat() {
    * --lwt-background-alignment.
    */
   Assert.equal(
-    bodyCS.backgroundPosition,
+    bgImageCS.backgroundPosition,
     "100% 0%, 100% 0%",
-    "The backgroundPosition should use the default value for body."
+    "The backgroundPosition should use the default value."
   );
   Assert.equal(
-    bodyCS.backgroundRepeat,
+    bgImageCS.backgroundRepeat,
     "no-repeat, repeat-x, repeat-y, repeat",
     "The backgroundRepeat should use the three values provided for --lwt-background-tiling, preceeded by the default for theme_frame."
   );
@@ -172,23 +173,23 @@ add_task(async function test_additional_images_check() {
     "LWT text color attribute should be set"
   );
 
-  let bodyCS = window.getComputedStyle(body);
-  let bgImage = bodyCS.backgroundImage.split(",")[0].trim();
+  let bgImageCS = window.getComputedStyle(body);
+  let mainBgImage = bgImageCS.backgroundImage.split(",")[0].trim();
   Assert.ok(
-    bgImage.includes("face.png"),
-    `The backgroundImage should use face.png. Actual value is: ${bgImage}`
+    mainBgImage.includes("face.png"),
+    `The backgroundImage should use face.png. Actual value is: ${mainBgImage}`
   );
   Assert.ok(
-    bgImage.includes("face.png"),
-    `The backgroundImage should use face.png. Actual value is: ${bgImage}`
+    mainBgImage.includes("face.png"),
+    `The backgroundImage should use face.png. Actual value is: ${mainBgImage}`
   );
   Assert.equal(
-    bodyCS.backgroundPosition,
+    bgImageCS.backgroundPosition,
     "100% 0%, 100% 0%",
     "The backgroundPosition should use the default value."
   );
   Assert.equal(
-    bodyCS.backgroundRepeat,
+    bgImageCS.backgroundRepeat,
     "no-repeat, no-repeat",
     "The backgroundRepeat should use the default value."
   );
