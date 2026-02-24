@@ -35,6 +35,7 @@ only-for-build-platforms:
     - macosx64/opt
     - macosx64/debug
     - macosx64-aarch64/debug
+    - macosx64-aarch64/opt
     - win32-shippable/opt
     - win32-devedition/opt
     - win32/opt
