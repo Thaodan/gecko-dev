@@ -124,16 +124,9 @@ HTMLSelectElement::HTMLSelectElement(
       mOptGroupCount(0),
       mSelectedIndex(-1) {
   SetHasWeirdParserInsertionMode();
-
-  // DoneAddingChildren() will be called later if it's from the parser,
-  // otherwise it is
-
   // Set up our default state: enabled, optional, and valid.
   AddStatesSilently(ElementState::ENABLED | ElementState::OPTIONAL_ |
                     ElementState::VALID);
-
-  AddMutationObserver(this);
-  SetupShadowTree();
 }
 
 void HTMLSelectElement::SetupShadowTree() {
@@ -1131,9 +1124,8 @@ bool HTMLSelectElement::SelectSomething(bool aNotify) {
 
 nsresult HTMLSelectElement::BindToTree(BindContext& aContext,
                                        nsINode& aParent) {
-  nsresult rv =
-      nsGenericHTMLFormControlElementWithState::BindToTree(aContext, aParent);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(
+      nsGenericHTMLFormControlElementWithState::BindToTree(aContext, aParent));
 
   // If there is a disabled fieldset in the parent chain, the element is now
   // barred from constraint validation.
@@ -1144,10 +1136,20 @@ nsresult HTMLSelectElement::BindToTree(BindContext& aContext,
   // And now make sure our state is up to date
   UpdateValidityElementStates(false);
 
-  return rv;
+  if (IsInComposedDoc()) {
+    AddMutationObserver(this);
+    SetupShadowTree();
+  }
+
+  return NS_OK;
 }
 
 void HTMLSelectElement::UnbindFromTree(UnbindContext& aContext) {
+  if (IsInComposedDoc()) {
+    RemoveMutationObserver(this);
+    TeardownUAShadowRoot(NotifyUAWidget::No);
+  }
+
   nsGenericHTMLFormControlElementWithState::UnbindFromTree(aContext);
 
   // We might be no longer disabled because our parent chain changed.
