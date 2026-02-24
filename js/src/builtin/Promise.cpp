@@ -5349,11 +5349,6 @@ static bool PromiseAllKeyedResolveElementFunction(JSContext* cx, unsigned argc,
                                              createElementFunctions);
 }
 
-[[nodiscard]] static bool PerformPromiseAllSettledKeyed(
-    JSContext* cx, JS::Handle<JSObject*> promises, JS::Handle<JSObject*> C,
-    JS::Handle<PromiseCapability> resultCapability,
-    JS::Handle<JS::Value> promiseResolve);
-
 static bool PromiseAllSettledKeyedResolveElementFunction(JSContext* cx,
                                                          unsigned argc,
                                                          Value* vp);
