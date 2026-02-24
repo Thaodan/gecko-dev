@@ -231,6 +231,7 @@ DIRS += [
     "/third_party/libwebrtc/modules/audio_mixer/audio_mixer_impl_gn",
     "/third_party/libwebrtc/modules/audio_processing/aec3/adaptive_fir_filter_erl_gn",
     "/third_party/libwebrtc/modules/audio_processing/aec3/adaptive_fir_filter_gn",
+    "/third_party/libwebrtc/modules/audio_processing/aec3/aec3_block_gn",
     "/third_party/libwebrtc/modules/audio_processing/aec3/aec3_common_gn",
     "/third_party/libwebrtc/modules/audio_processing/aec3/aec3_fft_gn",
     "/third_party/libwebrtc/modules/audio_processing/aec3/aec3_gn",
