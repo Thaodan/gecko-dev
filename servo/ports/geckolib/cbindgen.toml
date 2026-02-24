@@ -96,7 +96,7 @@ exclude = [
 include = [
   "AlignmentBaseline",
   "AnchorName",
-  "AnchorScope",
+  "ScopedName",
   "AnimationName",
   "AnimationTimeline",
   "AnimationIterationCount",
