@@ -7294,13 +7294,24 @@ void nsTextFrame::PaintTextSelectionDecorations(
                                   *aParams.provider, mTextRun, startIOffset);
   gfxFloat iOffset, hyphenWidth;
   Range range;
-  int32_t app = aParams.textPaintStyle->PresContext()->AppUnitsPerDevPixel();
-  // XXX aTextBaselinePt is in AppUnits, shouldn't it be nsFloatPoint?
+  gfxFloat app = aParams.textPaintStyle->PresContext()->AppUnitsPerDevPixel();
+  // Use the parent frame's writing mode for decoration positioning, matching
+  // DrawTextRunAndDecorations. This matters when IsCentralBaseline() is true
+  // (e.g. vertical-lr), where GetLogicalBaseline(parentWM) differs from
+  // mAscent.
+  const WritingMode parentWM = GetParent()->GetWritingMode();
+  const bool verticalDec = parentWM.IsVertical();
+  gfxFloat decorationAscent = gfxFloat(GetLogicalBaseline(parentWM)) / app;
+  gfxFloat frameBStart = verticalDec ? aParams.framePt.x : aParams.framePt.y;
+  if (parentWM.IsVerticalRL()) {
+    frameBStart += GetSize().width;
+    decorationAscent = -decorationAscent;
+  }
   Point pt;
   if (verticalRun) {
-    pt.x = (aParams.textBaselinePt.x - mAscent) / app;
+    pt.x = frameBStart / app;
   } else {
-    pt.y = (aParams.textBaselinePt.y - mAscent) / app;
+    pt.y = frameBStart / app;
   }
   AutoTArray<SelectionType, 1> nextSelectionTypes;
   AutoTArray<RefPtr<nsAtom>, 1> highlightNames;
@@ -7327,7 +7338,7 @@ void nsTextFrame::PaintTextSelectionDecorations(
         DrawSelectionDecorations(
             aParams.context, aParams.dirtyRect, aSelectionType,
             highlightNames[index], *aParams.textPaintStyle,
-            selectedStyles[index], pt, xInFrame, width, mAscent / app,
+            selectedStyles[index], pt, xInFrame, width, decorationAscent,
             decorationMetrics, aParams.callbacks, verticalRun, kDecoration,
             aParams.glyphRange, aParams.provider);
       }
