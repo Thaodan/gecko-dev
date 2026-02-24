@@ -12,6 +12,7 @@ use crate::{
     IO_TIMEOUT,
 };
 
+use bytes::{BufMut, BytesMut};
 use std::{
     ffi::{CStr, OsString},
     os::windows::io::{
@@ -268,8 +269,7 @@ impl IPCConnector {
     {
         let expected_payload_len = message.payload_size();
         let expected_ancillary_data_len = message.ancillary_data_len();
-        let header = message.header();
-        let (payload, ancillary_data) = message.into_payload();
+        let (header, payload, ancillary_data) = message.encode();
         let handles_len = ancillary_data.len();
         assert!(payload.len() == expected_payload_len);
         assert!(
@@ -278,23 +278,23 @@ impl IPCConnector {
         );
 
         // Send the message header
-        OverlappedOperation::send(&self.handle, self.event.as_handle(), header)?;
+        OverlappedOperation::send(&self.handle, self.event.as_handle(), header.into())?;
 
         // Send the message payload plus the optional handles
         let mut buffer =
-            Vec::<u8>::with_capacity((MAX_HANDLES_PER_MESSAGE * HANDLE_SIZE) + payload.len());
+            BytesMut::with_capacity((MAX_HANDLES_PER_MESSAGE * HANDLE_SIZE) + payload.len());
 
         for handle in ancillary_data.into_iter() {
             let handle = self.clone_handle(handle)?;
-            buffer.extend(&handle.to_ne_bytes());
+            buffer.put_slice(&handle.to_ne_bytes());
         }
         for _i in handles_len..MAX_HANDLES_PER_MESSAGE {
-            buffer.extend(&INVALID_ANCILLARY_DATA.to_ne_bytes());
+            buffer.put_slice(&INVALID_ANCILLARY_DATA.to_ne_bytes());
         }
 
-        buffer.extend(payload);
+        buffer.put_slice(&payload);
 
-        OverlappedOperation::send(&self.handle, self.event.as_handle(), buffer)
+        OverlappedOperation::send(&self.handle, self.event.as_handle(), buffer.into())
     }
 
     pub fn recv_reply<T>(&self) -> Result<T, IPCError>
@@ -304,14 +304,14 @@ impl IPCConnector {
         let header = self
             .recv_buffer(HEADER_SIZE)
             .map_err(IPCError::ReceptionFailure)?;
-        let header = messages::Header::decode(&header).map_err(IPCError::BadMessage)?;
+        let header = messages::Header::decode(header).map_err(IPCError::BadMessage)?;
 
         if header.kind != T::kind() {
             return Err(IPCError::UnexpectedMessage(header.kind));
         }
 
         let (buffer, handle) = self.recv(header.size)?;
-        T::decode(&buffer, handle).map_err(IPCError::from)
+        T::decode(buffer, handle).map_err(IPCError::from)
     }
 
     pub(crate) fn sched_recv_header(&self) -> Result<OverlappedOperation, IPCError> {

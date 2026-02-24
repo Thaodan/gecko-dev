@@ -14,6 +14,7 @@ mod ipc_listener;
 mod ipc_queue;
 mod platform;
 
+use bytes::Bytes;
 use messages::MessageError;
 
 // Re-export the platform-specific types and functions
@@ -39,11 +40,11 @@ pub use crate::platform::{
 /// characters instead on Windows.
 pub trait BreakpadString {
     /// Turn an `OsString` into a vector of bytes
-    fn serialize(&self) -> Vec<u8>;
+    fn serialize(self) -> Bytes;
 
     /// Reconstruct an `OsString` from a vector of bytes obtained by calling
     /// the `BreakpadString::serialize()` function.
-    fn deserialize(bytes: &[u8]) -> Result<OsString, MessageError>;
+    fn deserialize(bytes: Vec<u8>) -> Result<OsString, MessageError>;
 
     /// Create an OsString from a C nul-terminated string.
     ///
