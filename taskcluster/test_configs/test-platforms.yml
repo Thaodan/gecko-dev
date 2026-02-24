@@ -310,7 +310,6 @@ macosx1500-aarch64/debug:
     test-sets:
         - macosx1500-aarch64-tests
         - macosx1500-64-jittests
-        - macosx1500-64-tests
 
 macosx1500-aarch64-shippable/opt:
     build-platform: macosx64-shippable/opt
