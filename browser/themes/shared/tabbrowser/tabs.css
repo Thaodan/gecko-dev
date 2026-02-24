@@ -5,15 +5,16 @@
 :root {
   --tabstrip-inner-border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
   --tabstrip-min-height: calc(var(--tab-min-height) + 2 * var(--tab-block-margin));
-  --tab-min-height: 36px;
-  --tab-group-suggestions-loading-animation-color-1: color-mix(in srgb, currentColor 5%, transparent);
-  --tab-group-suggestions-loading-animation-color-2: color-mix(in srgb, currentColor 35%, transparent);
+  --tab-inner-min-height: min(32px, 2.7em);
   &[uidensity="compact"] {
-    --tab-min-height: 29px;
+    --tab-inner-min-height: min(25px, 2em);
   }
   &[uidensity="touch"] {
-    --tab-min-height: 41px;
+    --tab-inner-min-height: min(37px, 2.8em);
   }
+  --tab-min-height: calc(4px + var(--tab-inner-min-height));
+  --tab-group-suggestions-loading-animation-color-1: color-mix(in srgb, currentColor 5%, transparent);
+  --tab-group-suggestions-loading-animation-color-2: color-mix(in srgb, currentColor 35%, transparent);
   --tab-group-label-height: max(1.5em, var(--tab-min-height) - 14px);
   --tab-group-label-padding: 4px;
   --tab-group-label-highlight-thickness: 3px;
@@ -853,7 +854,7 @@ tab-split-view-wrapper[dragtarget] {
   overflow: hidden;
 
   #tabbrowser-tabs:not([secondarytext-unsupported], [orient="vertical"]) & {
-    height: 2.7em;
+    height: var(--tab-inner-min-height);
   }
 
   &[pinned] {
@@ -1254,7 +1255,7 @@ tab-group > tab-split-view-wrapper {
   .tabbrowser-tab {
     padding-inline: 2px;
     .tab-background {
-      --tab-min-height: 32px;
+      --tab-min-height: var(--tab-inner-min-height); /* exclude the 4px normally added */
 
       .tab-group-line {
         inset-block-end: calc(((var(--tab-block-margin) / 2) + var(--space-xsmall)) * -1);
