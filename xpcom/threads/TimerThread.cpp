@@ -24,6 +24,98 @@
 
 using namespace mozilla;
 
+#ifdef XP_WIN
+// Include Windows header required for enabling high-precision timers.
+#  include <windows.h>
+#  include <mmsystem.h>
+
+// WindowsTimerFrequencyManager manages adjusting the Windows timer resolution
+// based on whether we're on battery power and the current process priority.
+class WindowsTimerFrequencyManager {
+ public:
+  explicit WindowsTimerFrequencyManager(
+      const hal::ProcessPriority processPriority)
+      : mTimerPeriodEvalInterval(
+            TimeDuration::FromSeconds(kTimerPeriodEvalIntervalSec)),
+        mNextTimerPeriodEval(TimeStamp::Now() + mTimerPeriodEvalInterval),
+        mLastTimePeriodSet(ComputeDesiredTimerPeriod(processPriority)),
+        mAdjustTimerPeriod(
+            StaticPrefs::timer_auto_increase_timer_resolution()) {
+    if (mAdjustTimerPeriod) {
+      timeBeginPeriod(mLastTimePeriodSet);
+    }
+  }
+
+  ~WindowsTimerFrequencyManager() {
+    // About to shut down - let's finish off the last time period that we set.
+    if (mAdjustTimerPeriod) {
+      timeEndPeriod(mLastTimePeriodSet);
+    }
+  }
+
+  void Update(const TimeStamp now, const hal::ProcessPriority processPriority) {
+    if (now >= mNextTimerPeriodEval) {
+      const UINT newTimePeriod = ComputeDesiredTimerPeriod(processPriority);
+      if (newTimePeriod != mLastTimePeriodSet) {
+        if (mAdjustTimerPeriod) {
+          timeEndPeriod(mLastTimePeriodSet);
+          timeBeginPeriod(newTimePeriod);
+        }
+        mLastTimePeriodSet = newTimePeriod;
+      }
+      mNextTimerPeriodEval = now + mTimerPeriodEvalInterval;
+    }
+  }
+
+ private:
+  const TimeDuration mTimerPeriodEvalInterval;
+  TimeStamp mNextTimerPeriodEval;
+  UINT mLastTimePeriodSet;
+
+  // If this is false, we will perform all of the logic but will stop short of
+  // actually changing the timer period.
+  const bool mAdjustTimerPeriod;
+
+  // kTimerPeriodEvalIntervalSec is the minimum amount of time that must pass
+  // before we will consider changing the timer period again.
+  static constexpr float kTimerPeriodEvalIntervalSec = 2.0f;
+
+  static constexpr UINT kTimerPeriodHiRes = 1;
+  static constexpr UINT kTimerPeriodLowRes = 16;
+
+  // Helper functions to determine what Windows timer resolution to target.
+  static constexpr UINT GetDesiredTimerPeriod(const bool aOnBatteryPower,
+                                              const bool aLowProcessPriority) {
+    const bool useLowResTimer = aOnBatteryPower || aLowProcessPriority;
+    return useLowResTimer ? kTimerPeriodLowRes : kTimerPeriodHiRes;
+  }
+
+  static constexpr void StaticUnitTests() {
+    static_assert(GetDesiredTimerPeriod(true, false) == kTimerPeriodLowRes);
+    static_assert(GetDesiredTimerPeriod(false, true) == kTimerPeriodLowRes);
+    static_assert(GetDesiredTimerPeriod(true, true) == kTimerPeriodLowRes);
+    static_assert(GetDesiredTimerPeriod(false, false) == kTimerPeriodHiRes);
+  }
+
+  static UINT ComputeDesiredTimerPeriod(
+      const hal::ProcessPriority processPriority) {
+    const bool lowPriorityProcess =
+        processPriority < hal::PROCESS_PRIORITY_FOREGROUND;
+
+    // NOTE: Using short-circuiting here to avoid call to GetSystemPowerStatus()
+    // when we know that that result will not affect the final result. (As
+    // confirmed by the static_assert's above, onBatteryPower does not affect
+    // the result when the lowPriorityProcess is true.)
+    SYSTEM_POWER_STATUS status;
+    const bool onBatteryPower = !lowPriorityProcess &&
+                                GetSystemPowerStatus(&status) &&
+                                (status.ACLineStatus == 0);
+
+    return GetDesiredTimerPeriod(onBatteryPower, lowPriorityProcess);
+  }
+};
+#endif
+
 // Uncomment the following line to enable runtime stats during development.
 // #define TIMERS_RUNTIME_STATS
 
@@ -145,7 +237,7 @@ TimerThread::~TimerThread() {
 
 #if TIMER_THREAD_STATISTICS
   {
-    TimerThreadMonitorAutoLock lock(mMonitor);
+    MonitorAutoLock lock(mMonitor);
     PrintStatistics();
   }
 #endif
@@ -174,6 +266,8 @@ TimerObserverRunnable::Run() {
     observerService->AddObserver(mObserver, "suspend_process_notification",
                                  false);
     observerService->AddObserver(mObserver, "resume_process_notification",
+                                 false);
+    observerService->AddObserver(mObserver, "ipc:process-priority-changed",
                                  false);
   }
   return NS_OK;
@@ -512,7 +606,7 @@ nsresult TimerThread::Shutdown() {
   nsTArray<Entry> timers;
   {
     // lock scope
-    TimerThreadMonitorAutoLock lock(mMonitor);
+    MonitorAutoLock lock(mMonitor);
 
     mShutdown = true;
 
@@ -571,11 +665,11 @@ struct IntervalComparator {
 
 }  // namespace
 
-TimerThread::WakeupTime TimerThread::ComputeWakeupTimeFromTimers() const {
+TimeStamp TimerThread::ComputeWakeupTimeFromTimers() const {
   mMonitor.AssertCurrentThreadOwns();
 
   if (mTimers.IsEmpty()) {
-    return {{}, {}};
+    return TimeStamp{};
   }
 
   // The first timer should be non-canceled and we rely on that here.
@@ -585,19 +679,18 @@ TimerThread::WakeupTime TimerThread::ComputeWakeupTimeFromTimers() const {
   // the same wake-up with mTimers[0] and use its timeout as our target wake-up
   // time.
 
-  const TimeDuration minTimerDelay = TimeDuration::FromMilliseconds(
-      StaticPrefs::timer_minimum_firing_delay_tolerance_ms());
-  const TimeDuration maxTimerDelay = TimeDuration::FromMilliseconds(
-      StaticPrefs::timer_maximum_firing_delay_tolerance_ms());
-
   // bundleWakeup is when we should wake up in order to be able to fire all of
   // the timers in our selected bundle. It will always be the timeout of the
   // last timer in the bundle.
   TimeStamp bundleWakeup = mTimers[0].mTimeout;
 
   // cutoffTime is the latest that we can wake up for the timers currently
-  // accepted into the bundle. This needs to be updated as we go through the
+  // accepted into the bundle. These needs to be updated as we go through the
   // list because later timers may have more strict delay tolerances.
+  const TimeDuration minTimerDelay = TimeDuration::FromMilliseconds(
+      StaticPrefs::timer_minimum_firing_delay_tolerance_ms());
+  const TimeDuration maxTimerDelay = TimeDuration::FromMilliseconds(
+      StaticPrefs::timer_maximum_firing_delay_tolerance_ms());
   TimeStamp cutoffTime =
       bundleWakeup + ComputeAcceptableFiringDelay(mTimers[0].mDelay,
                                                   minTimerDelay, maxTimerDelay);
@@ -620,9 +713,10 @@ TimerThread::WakeupTime TimerThread::ComputeWakeupTimeFromTimers() const {
     // This timer can be included in the bundle. Update bundleWakeup and
     // cutoffTime.
     bundleWakeup = curTimerDue;
-    const TimeDuration timerDelay = ComputeAcceptableFiringDelay(
-        curEntry.mDelay, minTimerDelay, maxTimerDelay);
-    cutoffTime = std::min(curTimerDue + timerDelay, cutoffTime);
+    cutoffTime = std::min(
+        curTimerDue + ComputeAcceptableFiringDelay(
+                          curEntry.mDelay, minTimerDelay, maxTimerDelay),
+        cutoffTime);
     MOZ_ASSERT(bundleWakeup <= cutoffTime);
   }
 
@@ -630,7 +724,7 @@ TimerThread::WakeupTime TimerThread::ComputeWakeupTimeFromTimers() const {
              ComputeAcceptableFiringDelay(mTimers[0].mDelay, minTimerDelay,
                                           maxTimerDelay));
 
-  return {bundleWakeup, cutoffTime - bundleWakeup};
+  return bundleWakeup;
 }
 
 TimeDuration TimerThread::ComputeAcceptableFiringDelay(
@@ -731,24 +825,19 @@ class TelemetryQueue {
   size_t mQueuedTimersFiredCount = 0;
 };
 
-void TimerThread::Wait(TimeDuration aWaitFor, TimeDuration aTolerance)
-    MOZ_REQUIRES(mMonitor) {
+void TimerThread::Wait(TimeDuration aWaitFor) MOZ_REQUIRES(mMonitor) {
   mWaiting = true;
   mNotified = false;
   {
     AUTO_PROFILER_MARKER("TimerThread::Wait", OTHER);
-#if defined(XP_WIN)
-    mMonitor.Wait(aWaitFor, aTolerance);
-#else
     mMonitor.Wait(aWaitFor);
-#endif
   }
   mWaiting = false;
 }
 
 NS_IMETHODIMP
 TimerThread::Run() {
-  TimerThreadMonitorAutoLock lock(mMonitor);
+  MonitorAutoLock lock(mMonitor);
 
   mProfilerThreadId = profiler_current_thread_id();
 
@@ -760,11 +849,16 @@ TimerThread::Run() {
 
   TelemetryQueue telemetryQueue;
 
+#ifdef XP_WIN
+  WindowsTimerFrequencyManager wTFM{
+      mCachedPriority.load(std::memory_order_relaxed)};
+#endif
+
   while (!mShutdown) {
     const bool chaosModeActive =
         ChaosMode::isActive(ChaosFeature::TimerScheduling);
 
-    TimeDuration waitFor, waitTolerance;
+    TimeDuration waitFor;
     if (!mSleeping) {
       // Determine how early we are going to allow timers to fire. In chaos mode
       // we mess with this a little bit.
@@ -790,9 +884,8 @@ TimerThread::Run() {
       }
 
       // Determine when we should wake up.
-      const auto [wakeupTime, wakeupTolerance] = ComputeWakeupTimeFromTimers();
+      const TimeStamp wakeupTime = ComputeWakeupTimeFromTimers();
       mIntendedWakeupTime = wakeupTime;
-      waitTolerance = wakeupTolerance;
 
       // About to sleep - let's make note of how many timers we processed and
       // see if we should send out a new batch of telemetry.
@@ -817,24 +910,21 @@ TimerThread::Run() {
           MOZ_LOG(GetTimerLog(), LogLevel::Debug,
                   ("waiting for %f\n", waitFor.ToMilliseconds()));
       }
+
+#ifdef XP_WIN
+      wTFM.Update(now, mCachedPriority.load(std::memory_order_relaxed));
+#endif
     } else {
       mIntendedWakeupTime = TimeStamp{};
       // Sleep for 0.1 seconds while not firing timers.
-      // NOTE: Re-evaluate this behavior. Why do we wake up ten times a second
-      // to do nothing?
       uint32_t milliseconds = 100;
       if (chaosModeActive) {
         milliseconds = ChaosMode::randomUint32LessThan(200);
       }
       waitFor = TimeDuration::FromMilliseconds(milliseconds);
-
-      // Don't need to wake up precisely when "sleeping"
-      static constexpr double sWaitToleranceWhenSleeping_ms = 32.0;
-      waitTolerance =
-          TimeDuration::FromMilliseconds(sWaitToleranceWhenSleeping_ms);
     }
 
-    Wait(waitFor, waitTolerance);
+    Wait(waitFor);
 
 #if TIMER_THREAD_STATISTICS
     CollectWakeupStatistics();
@@ -846,7 +936,7 @@ TimerThread::Run() {
 
 nsresult TimerThread::AddTimer(nsTimerImpl* aTimer,
                                const MutexAutoLock& aProofOfLock) {
-  TimerThreadMonitorAutoLock lock(mMonitor);
+  MonitorAutoLock lock(mMonitor);
   AUTO_TIMERS_STATS(TimerThread_AddTimer);
 
   if (mShutdown) {
@@ -919,7 +1009,7 @@ nsresult TimerThread::AddTimer(nsTimerImpl* aTimer,
 
 nsresult TimerThread::RemoveTimer(nsTimerImpl* aTimer,
                                   const MutexAutoLock& aProofOfLock) {
-  TimerThreadMonitorAutoLock lock(mMonitor);
+  MonitorAutoLock lock(mMonitor);
   AUTO_TIMERS_STATS(TimerThread_RemoveTimer);
 
   // Remove the timer from our array.  Tell callers that aTimer was not found
@@ -972,7 +1062,7 @@ nsresult TimerThread::RemoveTimer(nsTimerImpl* aTimer,
 
 TimeStamp TimerThread::FindNextFireTimeForCurrentThread(TimeStamp aDefault,
                                                         uint32_t aSearchBound) {
-  TimerThreadMonitorAutoLock lock(mMonitor);
+  MonitorAutoLock lock(mMonitor);
   AUTO_TIMERS_STATS(TimerThread_FindNextFireTimeForCurrentThread);
 
   for (const Entry& entry : mTimers) {
@@ -1148,7 +1238,7 @@ void TimerThread::PostTimerEvent(Entry& aPostMe) {
   RefPtr<nsTimerEvent> lockedEventPtr = ::new (KnownNotNull, p)
       nsTimerEvent(timer.forget(), aPostMe.mTimerSeq, mProfilerThreadId);
   {
-    TimerThreadMonitorAutoUnlock unlock(mMonitor);
+    MonitorAutoUnlock unlock(mMonitor);
     // Ensure references are released while we're unlocked.
     nsCOMPtr<nsIEventTarget> target = lockedTargetPtr.forget();
     RefPtr<nsTimerEvent> event = lockedEventPtr.forget();
@@ -1160,14 +1250,14 @@ void TimerThread::PostTimerEvent(Entry& aPostMe) {
 
 void TimerThread::DoBeforeSleep() {
   // Mainthread
-  TimerThreadMonitorAutoLock lock(mMonitor);
+  MonitorAutoLock lock(mMonitor);
   mSleeping = true;
 }
 
 // Note: wake may be notified without preceding sleep notification
 void TimerThread::DoAfterSleep() {
   // Mainthread
-  TimerThreadMonitorAutoLock lock(mMonitor);
+  MonitorAutoLock lock(mMonitor);
   mSleeping = false;
 
   // Wake up the timer thread to re-process the array to ensure the sleep delay
@@ -1179,8 +1269,18 @@ void TimerThread::DoAfterSleep() {
 }
 
 NS_IMETHODIMP
-TimerThread::Observe(nsISupports* /*aSubject*/, const char* aTopic,
-                     const char16_t* /*aData*/) {
+TimerThread::Observe(nsISupports* aSubject, const char* aTopic,
+                     const char16_t* aData) {
+  if (strcmp(aTopic, "ipc:process-priority-changed") == 0) {
+    nsCOMPtr<nsIPropertyBag2> props = do_QueryInterface(aSubject);
+    MOZ_ASSERT(props != nullptr);
+
+    int32_t priority = static_cast<int32_t>(hal::PROCESS_PRIORITY_UNKNOWN);
+    props->GetPropertyAsInt32(u"priority"_ns, &priority);
+    mCachedPriority.store(static_cast<hal::ProcessPriority>(priority),
+                          std::memory_order_relaxed);
+  }
+
   if (StaticPrefs::timer_ignore_sleep_wake_notifications()) {
     return NS_OK;
   }
@@ -1197,7 +1297,7 @@ TimerThread::Observe(nsISupports* /*aSubject*/, const char* aTopic,
 }
 
 uint32_t TimerThread::AllowedEarlyFiringMicroseconds() {
-  TimerThreadMonitorAutoLock lock(mMonitor);
+  MonitorAutoLock lock(mMonitor);
   return mAllowedEarlyFiringMicroseconds;
 }
 
@@ -1377,7 +1477,7 @@ NS_IMPL_ISUPPORTS(nsReadOnlyTimer, nsITimer)
 nsresult TimerThread::GetTimers(nsTArray<RefPtr<nsITimer>>& aRetVal) {
   nsTArray<RefPtr<nsTimerImpl>> timers;
   {
-    TimerThreadMonitorAutoLock lock(mMonitor);
+    MonitorAutoLock lock(mMonitor);
     for (const auto& entry : mTimers) {
       nsTimerImpl* timer = entry.mTimerImpl;
       if (!timer) {
