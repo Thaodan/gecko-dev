@@ -3253,26 +3253,6 @@ class MOZ_STACK_CLASS PromiseForOfIterator : public JS::ForOfIterator {
   }
 };
 
-[[nodiscard]] static bool PerformPromiseAll(
-    JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
-    Handle<PromiseCapability> resultCapability, HandleValue promiseResolve,
-    bool* done);
-
-[[nodiscard]] static bool PerformPromiseAllSettled(
-    JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
-    Handle<PromiseCapability> resultCapability, HandleValue promiseResolve,
-    bool* done);
-
-[[nodiscard]] static bool PerformPromiseAny(
-    JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
-    Handle<PromiseCapability> resultCapability, HandleValue promiseResolve,
-    bool* done);
-
-[[nodiscard]] static bool PerformPromiseRace(
-    JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
-    Handle<PromiseCapability> resultCapability, HandleValue promiseResolve,
-    bool* done);
-
 /**
  * ES2022 draft rev d03c1ec6e235a5180fa772b6178727c17974cb14
  *
@@ -3437,6 +3417,11 @@ template <typename PerformFuncT>
       cx, args, performFunc, nonObjectThisErrorMessage, nonIterableErrorMessage,
       initIter, maybeCloseIter);
 }
+
+[[nodiscard]] static bool PerformPromiseAll(
+    JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
+    Handle<PromiseCapability> resultCapability, HandleValue promiseResolve,
+    bool* done);
 
 /**
  * ES2026 draft rev 00146687f225a64e1b1e2d303acc6139a1adee7d
@@ -4566,6 +4551,11 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
   return true;
 }
 
+[[nodiscard]] static bool PerformPromiseRace(
+    JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
+    Handle<PromiseCapability> resultCapability, HandleValue promiseResolve,
+    bool* done);
+
 /**
  * ES2026 draft rev bdfd596ffad5aeb2957aed4e1db36be3665c69ec
  *
@@ -4619,6 +4609,11 @@ enum class PromiseAllSettledElementFunctionKind { Resolve, Reject };
 template <PromiseAllSettledElementFunctionKind Kind>
 static bool PromiseAllSettledElementFunction(JSContext* cx, unsigned argc,
                                              Value* vp);
+
+[[nodiscard]] static bool PerformPromiseAllSettled(
+    JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
+    Handle<PromiseCapability> resultCapability, HandleValue promiseResolve,
+    bool* done);
 
 /**
  * ES2026 draft rev bdfd596ffad5aeb2957aed4e1db36be3665c69ec
@@ -4841,6 +4836,11 @@ static bool PromiseAllSettledElementFunction(JSContext* cx, unsigned argc,
   args.rval().setUndefined();
   return true;
 }
+
+[[nodiscard]] static bool PerformPromiseAny(
+    JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
+    Handle<PromiseCapability> resultCapability, HandleValue promiseResolve,
+    bool* done);
 
 /**
  * ES2026 draft rev bdfd596ffad5aeb2957aed4e1db36be3665c69ec
