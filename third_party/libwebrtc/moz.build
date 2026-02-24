@@ -403,6 +403,7 @@ DIRS += [
     "/third_party/libwebrtc/rtc_base/byte_buffer_gn",
     "/third_party/libwebrtc/rtc_base/byte_order_gn",
     "/third_party/libwebrtc/rtc_base/callback_list_gn",
+    "/third_party/libwebrtc/rtc_base/callback_list_with_locks_gn",
     "/third_party/libwebrtc/rtc_base/checks_gn",
     "/third_party/libwebrtc/rtc_base/compile_assert_c_gn",
     "/third_party/libwebrtc/rtc_base/containers/flat_containers_internal_gn",
