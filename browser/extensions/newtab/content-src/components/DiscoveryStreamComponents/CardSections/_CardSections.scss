@@ -1,4 +1,5 @@
 // Bug 1964453: Some styles here may appear duplicative — due to @includes and media queries, certain rules are intentionally overwritten rather than relying on cascade behavior.
+
 @mixin section-card-small {
   grid-row: span 1;
   grid-column: span 1;
@@ -53,8 +54,8 @@
   }
 
   .context-menu-position-container .context-menu-button {
-    height: --size-item-large;
-    width: --size-item-large;
+    height: 32px;
+    width: 32px;
   }
 
   .ds-card-link {
@@ -97,8 +98,6 @@
 }
 
 @mixin section-card-medium {
-  --sections-card-menu-inline-reserve: calc(#{--size-item-large} + var(--space-small));
-
   grid-row: span 2;
   grid-column: span 1;
   flex-direction: column;
@@ -160,13 +159,14 @@
       margin-block-end: unset;
       inset-inline-end: initial;
       min-height: 28px;
-      padding-inline-end: var(--sections-card-menu-inline-reserve);
-    }
 
-    .sections-card-footer .source-wrapper {
-      flex: 1;
-      max-width: none;
-      min-width: 0;
+      // .source-wrapper {
+      //   max-width: 285px;
+      // }
+
+      .source {
+        width: 217px;
+      }
     }
 
     &:has(.story-footer .story-sponsored-label) {
@@ -181,8 +181,8 @@
   }
 
   .context-menu-position-container .context-menu-button {
-    height: --size-item-large;
-    width: --size-item-large;
+    height: 32px;
+    width: 32px;
   }
 
   &.ds-card.sections-card-ui {
@@ -200,6 +200,10 @@
   &:focus-within,
   &.active {
     .meta {
+      .source-wrapper {
+        max-width: 175px;
+      }
+
       .source-wrapper .source {
         display: block;
         width: unset;
@@ -222,8 +226,6 @@
 }
 
 @mixin section-card-large {
-  --sections-card-menu-inline-reserve: calc(#{--size-item-large} + var(--space-large));
-
   grid-row: span 2;
   grid-column: span 2;
 
@@ -323,13 +325,6 @@
           margin-block-end: var(--space-xxsmall);
           display: flex;
           align-items: center;
-          padding-inline-end: var(--sections-card-menu-inline-reserve);
-        }
-
-        .sections-card-footer .source-wrapper {
-          flex: 1;
-          max-width: none;
-          min-width: 0;
         }
       }
 
