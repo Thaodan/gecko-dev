@@ -161,7 +161,7 @@ void HTMLSelectElement::SetupShadowTree() {
 Text* HTMLSelectElement::GetSelectedContentText() const {
   auto* sr = GetShadowRoot();
   if (!sr) {
-    MOZ_ASSERT(OwnerDoc()->IsStaticDocument());
+    MOZ_ASSERT(OwnerDoc()->IsStaticDocument() || !IsInComposedDoc());
     return nullptr;
   }
   auto* label = sr->GetFirstChild();
