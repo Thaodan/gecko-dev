@@ -1078,12 +1078,6 @@ class PromiseReactionRecord : public MicroTaskEntry {
     return getFixedSlot(handlerArgSlot());
   }
 
-  JSObject* getAndClearHostDefinedData() {
-    JSObject* obj = getFixedSlot(Slots::HostDefinedData).toObjectOrNull();
-    setFixedSlot(Slots::HostDefinedData, UndefinedValue());
-    return obj;
-  }
-
   JSObject* enqueueGlobalRepresentative() const {
     return getFixedSlot(Slots::EnqueueGlobalRepresentative).toObjectOrNull();
   }
