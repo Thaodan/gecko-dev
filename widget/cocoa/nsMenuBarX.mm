@@ -5,7 +5,6 @@
 
 #include <objc/objc-runtime.h>
 
-#include "nsChildView.h"
 #include "nsCocoaFeatures.h"
 #include "nsCocoaUtils.h"
 #include "nsCocoaWindow.h"
@@ -21,7 +20,6 @@
 #include "nsThreadUtils.h"
 
 #include "nsIContent.h"
-#include "nsIWidget.h"
 #include "mozilla/dom/Document.h"
 #include "nsIAppStartup.h"
 #include "nsIStringBundle.h"
@@ -162,13 +160,15 @@ void nsMenuBarX::ConstructFallbackNativeMenus() {
     return;
   }
 
-  nsCOMPtr<nsIStringBundle> stringBundle;
-
   nsCOMPtr<nsIStringBundleService> bundleSvc =
       do_GetService(NS_STRINGBUNDLE_CONTRACTID);
+  if (!bundleSvc) {
+    return;
+  }
+
+  nsCOMPtr<nsIStringBundle> stringBundle;
   bundleSvc->CreateBundle("chrome://global/locale/fallbackMenubar.properties",
                           getter_AddRefs(stringBundle));
-
   if (!stringBundle) {
     return;
   }
@@ -1131,7 +1131,10 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
     if (menuBar && menuBar->mAboutItemContent) {
       mostSpecificContent = menuBar->mAboutItemContent;
     }
-    nsMenuUtilsX::DispatchCommandTo(mostSpecificContent, modifierFlags, button);
+    if (mostSpecificContent) {
+      nsMenuUtilsX::DispatchCommandTo(mostSpecificContent, modifierFlags,
+                                      button);
+    }
     return;
   }
   if (tag == eCommand_ID_Prefs) {
@@ -1139,7 +1142,10 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
     if (menuBar && menuBar->mPrefItemContent) {
       mostSpecificContent = menuBar->mPrefItemContent;
     }
-    nsMenuUtilsX::DispatchCommandTo(mostSpecificContent, modifierFlags, button);
+    if (mostSpecificContent) {
+      nsMenuUtilsX::DispatchCommandTo(mostSpecificContent, modifierFlags,
+                                      button);
+    }
     return;
   }
   if (tag == eCommand_ID_Account) {
@@ -1147,7 +1153,10 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
     if (menuBar && menuBar->mAccountItemContent) {
       mostSpecificContent = menuBar->mAccountItemContent;
     }
-    nsMenuUtilsX::DispatchCommandTo(mostSpecificContent, modifierFlags, button);
+    if (mostSpecificContent) {
+      nsMenuUtilsX::DispatchCommandTo(mostSpecificContent, modifierFlags,
+                                      button);
+    }
     return;
   }
   if (tag == eCommand_ID_HideApp) {
