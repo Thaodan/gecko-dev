@@ -1128,9 +1128,6 @@ void ScriptLoader::NotifyObserversForCachedScript(
     return;
   }
 
-  // TODO: Move the handling into SharedSubResourceCache once the notification
-  //       is merged between CSS and JS (bug 1919218)
-
   obsService->NotifyObservers(channel, "http-on-resource-cache-response",
                               nullptr);
 }
