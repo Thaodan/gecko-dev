@@ -176,11 +176,11 @@ template <unsigned NumRanges>
 class BranchDeadlineSet {
   // Maintain a list of pending deadlines for each range separately.
   //
-  // The offsets in each vector are always kept in ascending order.
+  // The offsets in each list are always kept in ascending order.
   //
-  // Because we have a separate vector for different ranges, as forward
+  // Because we have a separate list for different ranges, as forward
   // branches are added to the assembler buffer, their deadlines will
-  // always be appended to the vector corresponding to their range.
+  // always be appended to the list corresponding to their range.
   //
   // When binding labels, we expect a more-or-less LIFO order of branch
   // resolutions. This would always hold if we had strictly structured control
@@ -189,40 +189,40 @@ class BranchDeadlineSet {
   // We allow branch deadlines to be added and removed in any order, but
   // performance is best in the expected case of near LIFO order.
   //
-  using RangeVector = Vector<BufferOffset, 8, LifoAllocPolicy<Fallible>>;
+  using DeadlineList = Vector<BufferOffset, 8, LifoAllocPolicy<Fallible>>;
 
-  // We really just want "RangeVector deadline_[NumRanges];", but each vector
+  // We really just want "DeadlineList deadline_[NumRanges];", but each list
   // needs to be initialized with a LifoAlloc, and C++ doesn't bend that way.
   //
   // Use raw aligned storage instead and explicitly construct NumRanges
-  // vectors in our constructor.
-  mozilla::AlignedStorage2<RangeVector[NumRanges]> deadlineStorage_;
+  // lists in our constructor.
+  mozilla::AlignedStorage2<DeadlineList[NumRanges]> deadlineStorage_;
 
-  // Always access the range vectors through this method.
-  RangeVector& vectorForRange(unsigned rangeIdx) {
+  // Always access the deadline lists through this method.
+  DeadlineList& listForRange(unsigned rangeIdx) {
     MOZ_ASSERT(rangeIdx < NumRanges, "Invalid branch range index");
     return (*deadlineStorage_.addr())[rangeIdx];
   }
 
-  const RangeVector& vectorForRange(unsigned rangeIdx) const {
+  const DeadlineList& listForRange(unsigned rangeIdx) const {
     MOZ_ASSERT(rangeIdx < NumRanges, "Invalid branch range index");
     return (*deadlineStorage_.addr())[rangeIdx];
   }
 
   // Maintain a precomputed earliest deadline at all times.
-  // This is unassigned only when all deadline vectors are empty.
+  // This is unassigned only when all deadline lists are empty.
   BufferOffset earliest_;
 
-  // The range vector owning earliest_. Uninitialized when empty.
+  // The deadline list owning earliest_. Uninitialized when empty.
   unsigned earliestRange_;
 
   // Recompute the earliest deadline after it's been invalidated.
   void recomputeEarliest() {
     earliest_ = BufferOffset();
     for (unsigned r = 0; r < NumRanges; r++) {
-      auto& vec = vectorForRange(r);
-      if (!vec.empty() && (!earliest_.assigned() || vec[0] < earliest_)) {
-        earliest_ = vec[0];
+      auto& list = listForRange(r);
+      if (!list.empty() && (!earliest_.assigned() || list[0] < earliest_)) {
+        earliest_ = list[0];
         earliestRange_ = r;
       }
     }
@@ -241,18 +241,18 @@ class BranchDeadlineSet {
 
  public:
   explicit BranchDeadlineSet(LifoAlloc& alloc) : earliestRange_(0) {
-    // Manually construct vectors in the uninitialized aligned storage.
+    // Manually construct lists in the uninitialized aligned storage.
     // This is because C++ arrays can otherwise only be constructed with
     // the default constructor.
     for (unsigned r = 0; r < NumRanges; r++) {
-      new (&vectorForRange(r)) RangeVector(alloc);
+      new (&listForRange(r)) DeadlineList(alloc);
     }
   }
 
   ~BranchDeadlineSet() {
     // Aligned storage doesn't destruct its contents automatically.
     for (unsigned r = 0; r < NumRanges; r++) {
-      vectorForRange(r).~RangeVector();
+      listForRange(r).~DeadlineList();
     }
   }
 
@@ -263,7 +263,7 @@ class BranchDeadlineSet {
   size_t size() const {
     size_t count = 0;
     for (unsigned r = 0; r < NumRanges; r++) {
-      count += vectorForRange(r).length();
+      count += listForRange(r).length();
     }
     return count;
   }
@@ -272,7 +272,7 @@ class BranchDeadlineSet {
   size_t maxRangeSize() const {
     size_t count = 0;
     for (unsigned r = 0; r < NumRanges; r++) {
-      count = std::max(count, vectorForRange(r).length());
+      count = std::max(count, listForRange(r).length());
     }
     return count;
   }
@@ -299,18 +299,18 @@ class BranchDeadlineSet {
   // because of an OOM error.
   bool addDeadline(unsigned rangeIdx, BufferOffset deadline) {
     MOZ_ASSERT(deadline.assigned(), "Can only store assigned buffer offsets");
-    // This is the vector where deadline should be saved.
-    auto& vec = vectorForRange(rangeIdx);
+    // This is the list where deadline should be saved.
+    auto& list = listForRange(rangeIdx);
 
     // Fast case: Simple append to the relevant array. This never affects
     // the earliest deadline.
-    if (!vec.empty() && vec.back() < deadline) {
-      return vec.append(deadline);
+    if (!list.empty() && list.back() < deadline) {
+      return list.append(deadline);
     }
 
-    // Fast case: First entry to the vector. We need to update earliest_.
-    if (vec.empty()) {
-      return vec.append(deadline) && updateEarliest(rangeIdx, deadline);
+    // Fast case: First entry to the list. We need to update earliest_.
+    if (list.empty()) {
+      return list.append(deadline) && updateEarliest(rangeIdx, deadline);
     }
 
     return addDeadlineSlow(rangeIdx, deadline);
@@ -321,38 +321,38 @@ class BranchDeadlineSet {
   // the common case in addDeadline can be inlined while this part probably
   // won't inline.
   bool addDeadlineSlow(unsigned rangeIdx, BufferOffset deadline) {
-    auto& vec = vectorForRange(rangeIdx);
+    auto& list = listForRange(rangeIdx);
 
-    // Inserting into the middle of the vector. Use a log time binary search
+    // Inserting into the middle of the list. Use a log time binary search
     // and a linear time insert().
-    // Is it worthwhile special-casing the empty vector?
-    auto at = std::lower_bound(vec.begin(), vec.end(), deadline);
-    MOZ_ASSERT(at == vec.end() || *at != deadline,
+    // Is it worthwhile special-casing the empty list?
+    auto at = std::lower_bound(list.begin(), list.end(), deadline);
+    MOZ_ASSERT(at == list.end() || *at != deadline,
                "Cannot insert duplicate deadlines");
-    return vec.insert(at, deadline) && updateEarliest(rangeIdx, deadline);
+    return list.insert(at, deadline) && updateEarliest(rangeIdx, deadline);
   }
 
  public:
   // Remove a deadline from the set.
   // If (rangeIdx, deadline) is not in the set, nothing happens.
   void removeDeadline(unsigned rangeIdx, BufferOffset deadline) {
-    auto& vec = vectorForRange(rangeIdx);
+    auto& list = listForRange(rangeIdx);
 
-    if (vec.empty()) {
+    if (list.empty()) {
       return;
     }
 
-    if (deadline == vec.back()) {
+    if (deadline == list.back()) {
       // Expected fast case: Structured control flow causes forward
       // branches to be bound in reverse order.
-      vec.popBack();
+      list.popBack();
     } else {
       // Slow case: Binary search + linear erase.
-      auto where = std::lower_bound(vec.begin(), vec.end(), deadline);
-      if (where == vec.end() || *where != deadline) {
+      auto where = std::lower_bound(list.begin(), list.end(), deadline);
+      if (where == list.end() || *where != deadline) {
         return;
       }
-      vec.erase(where);
+      list.erase(where);
     }
     if (deadline == earliest_) {
       recomputeEarliest();
