@@ -503,10 +503,6 @@ struct Pool {
 
 // Template arguments:
 //
-// SliceSize
-//   Number of bytes in each allocated BufferSlice. See
-//   AssemblerBuffer::SliceSize.
-//
 // InstSize
 //   Size in bytes of the fixed-size instructions. This should be equal to
 //   sizeof(Inst). This is only needed here because the buffer is defined before
@@ -530,10 +526,9 @@ struct Pool {
 //   (range-index, deadline) pair.
 //
 //
-template <size_t SliceSize, size_t InstSize, class Inst, class Asm,
+template <size_t InstSize, class Inst, class Asm,
           unsigned NumShortBranchRanges = 0>
-struct AssemblerBufferWithConstantPools
-    : public AssemblerBuffer<SliceSize, Inst> {
+struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
  private:
   // The PoolEntry index counter. Each PoolEntry is given a unique index,
   // counting up from zero, and these can be mapped back to the actual pool
@@ -553,9 +548,6 @@ struct AssemblerBufferWithConstantPools
   };
 
  private:
-  using Parent = AssemblerBuffer<SliceSize, Inst>;
-  using typename Parent::Slice;
-
   // The size of a pool guard, in instructions. A branch around the pool.
   const unsigned guardSize_;
   // The size of the header that is put at the beginning of a full pool, in
@@ -642,11 +634,6 @@ struct AssemblerBufferWithConstantPools
   // they are being inserted.  The zero-vs-nonzero meaning is the same as that
   // documented for `inhibitPools_` above.
   unsigned int inhibitNops_;
-
- private:
-  // The buffer slices are in a double linked list.
-  Slice* getHead() const { return this->head; }
-  Slice* getTail() const { return this->tail; }
 
  public:
   AssemblerBufferWithConstantPools(unsigned guardSize, unsigned headerSize,
@@ -900,7 +887,7 @@ struct AssemblerBufferWithConstantPools
     defined(JS_CODEGEN_RISCV64)
     return this->putU32Aligned(value);
 #else
-    return this->AssemblerBuffer<SliceSize, Inst>::putInt(value);
+    return this->AssemblerBuffer<Inst>::putInt(value);
 #endif
   }
 
@@ -1001,8 +988,8 @@ struct AssemblerBufferWithConstantPools
     // Dump the pool with a guard branch around the pool.
     BufferOffset guard = this->putBytes(guardSize_ * InstSize, nullptr);
     BufferOffset header = this->putBytes(headerSize_ * InstSize, nullptr);
-    BufferOffset data = this->putBytesLarge(pool_.getPoolSize(),
-                                            (const uint8_t*)pool_.poolData());
+    BufferOffset data =
+        this->putBytes(pool_.getPoolSize(), (const uint8_t*)pool_.poolData());
     if (this->oom()) {
       return;
     }
@@ -1226,23 +1213,14 @@ struct AssemblerBufferWithConstantPools
     }
     // The pools should have all been flushed, check.
     MOZ_ASSERT(pool_.numEntries() == 0);
-    for (Slice* cur = getHead(); cur != nullptr; cur = cur->getNext()) {
-      memcpy(dest, &cur->instructions[0], cur->length());
-      dest += cur->length();
-    }
+    memcpy(dest, this->data(), this->size());
   }
 
   bool appendRawCode(const uint8_t* code, size_t numBytes) {
     if (this->oom()) {
       return false;
     }
-    // The pools should have all been flushed, check.
     MOZ_ASSERT(pool_.numEntries() == 0);
-    while (numBytes > SliceSize) {
-      this->putBytes(SliceSize, code);
-      numBytes -= SliceSize;
-      code += SliceSize;
-    }
     this->putBytes(numBytes, code);
     return !this->oom();
   }
