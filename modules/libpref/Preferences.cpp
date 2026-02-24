@@ -3080,18 +3080,17 @@ size_t nsPrefBranch::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
 }
 
 void nsPrefBranch::FreeObserverList() {
-  // We need to prevent anyone from modifying mObservers while we're iterating
-  // over it. In particular, some clients will call RemoveObserver() when
-  // they're removed and destructed via the iterator; we set
-  // mFreeingObserverList to keep those calls from touching mObservers.
+  // Clearing mObservers may release the last strong reference to observers,
+  // whose destructors may call RemoveObserver() re-entrantly. We set
+  // mFreeingObserverList to suppress those calls, both to avoid modifying
+  // mObservers during Clear() and to avoid redundant UnregisterCallback walks
+  // (the bulk removal is already handled by UnregisterCallbacksForBranch).
   mFreeingObserverList = true;
-  for (auto iter = mObservers.Iter(); !iter.Done(); iter.Next()) {
-    auto callback = iter.UserData();
-    Preferences::UnregisterCallback(nsPrefBranch::NotifyObserver,
-                                    callback->GetDomain(), callback,
-                                    Preferences::PrefixMatch);
-    iter.Remove();
-  }
+
+  // Remove all callback nodes for this branch in a single pass through the
+  // global callback list, instead of one pass per observer.
+  Preferences::UnregisterCallbacksForBranch(this);
+  mObservers.Clear();
 
   nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
   if (observerService) {
@@ -5860,6 +5859,34 @@ nsresult Preferences::UnregisterCallbacks(PrefChangedFunc aCallback,
                                           const char* const* aPrefs,
                                           void* aData, MatchKind aMatchKind) {
   return UnregisterCallbackImpl(aCallback, aPrefs, aData, aMatchKind);
+}
+
+/* static */
+void Preferences::UnregisterCallbacksForBranch(nsPrefBranch* aBranch) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (sShutdown || !sPreferences) {
+    return;
+  }
+
+  CallbackNode* node = gFirstCallback;
+  CallbackNode* prev_node = nullptr;
+
+  while (node) {
+    if (node->Func() == nsPrefBranch::NotifyObserver &&
+        static_cast<PrefCallback*>(node->Data())->GetPrefBranch() == aBranch) {
+      if (gCallbacksInProgress) {
+        node->ClearFunc();
+        gShouldCleanupDeadNodes = true;
+        prev_node = node;
+        node = node->Next();
+      } else {
+        node = pref_RemoveCallbackNode(node, prev_node);
+      }
+    } else {
+      prev_node = node;
+      node = node->Next();
+    }
+  }
 }
 
 template <typename T>
