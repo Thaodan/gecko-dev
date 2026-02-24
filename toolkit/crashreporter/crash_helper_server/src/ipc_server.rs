@@ -5,9 +5,10 @@
 use anyhow::{bail, Result};
 use crash_helper_common::{
     messages::{self, Header, Message},
-    AncillaryData, IPCConnector, IPCConnectorKey, IPCEvent, IPCListener, IPCQueue, Pid,
+    AncillaryData, GeckoChildId, IPCConnector, IPCConnectorKey, IPCEvent, IPCListener, IPCQueue,
+    Pid,
 };
-use std::{collections::HashMap, process, rc::Rc};
+use std::{collections::HashMap, ffi::OsString, process, rc::Rc};
 
 use crate::crash_generation::CrashGenerator;
 
@@ -28,15 +29,35 @@ enum IPCEndpoint {
     External,
 }
 
+struct ProcessId {
+    /// The pid of a process.
+    pid: Pid,
+    /// The Gecko-assigned ID of a process.
+    id: GeckoChildId,
+}
+
+impl ProcessId {
+    fn for_child(pid: Pid, id: GeckoChildId) -> ProcessId {
+        ProcessId { pid, id }
+    }
+
+    fn for_parent(pid: Pid) -> ProcessId {
+        ProcessId { pid, id: 0 }
+    }
+}
+
 struct IPCConnection {
     /// The platform-specific connector used for this connection
     connector: Rc<IPCConnector>,
     /// The type of process on the other side of this connection
     endpoint: IPCEndpoint,
-    #[allow(dead_code)]
-    /// The pid of the Firefox process this is connected to. This is `None`
-    /// when this is a connection to an external process.
-    pid: Option<Pid>,
+    /// The identifier of the process at the other end of this connection.
+    /// This is `None` for external processes or the Breakpad crash generator
+    /// and is set to some value for all other processes that have
+    /// successfully rendez-vous'd with the crash helper. In that case the pid
+    /// will be the `pid`` of the connected process and the `id` will be the
+    /// Gecko-assigned child ID for child proceses or 0 for the main process.
+    process: Option<ProcessId>,
 }
 
 pub(crate) struct IPCServer {
@@ -63,7 +84,7 @@ impl IPCServer {
             IPCConnection {
                 connector,
                 endpoint: IPCEndpoint::Parent,
-                pid: Some(client_pid),
+                process: Some(ProcessId::for_parent(client_pid)),
             },
         );
 
@@ -81,7 +102,7 @@ impl IPCServer {
                         IPCConnection {
                             connector,
                             endpoint: IPCEndpoint::External,
-                            pid: None,
+                            process: None,
                         },
                     );
                 }
@@ -100,6 +121,12 @@ impl IPCServer {
                         .connections
                         .remove(&key)
                         .expect("Disconnection event but no corresponding connection");
+
+                    if let Some(process) = connection.process {
+                        generator.move_report_to_id(process.pid, process.id);
+                    } else {
+                        log::error!("TODO");
+                    }
 
                     if connection.endpoint == IPCEndpoint::Parent {
                         // The main process disconnected, leave
@@ -134,7 +161,22 @@ impl IPCServer {
                 }
                 messages::Kind::TransferMinidump => {
                     let message = messages::TransferMinidump::decode(data, ancillary_data)?;
-                    connector.send_message(generator.retrieve_minidump(message.pid))?;
+                    let crash_report = {
+                        if let Some(crash_report) = generator.retrieve_minidump_by_id(message.id) {
+                            Some(crash_report)
+                        } else if let Some(pid) = self.find_pid(message.id) {
+                            generator.retrieve_minidump_by_pid(pid)
+                        } else {
+                            None
+                        }
+                    };
+
+                    let reply = crash_report.map_or(
+                        messages::TransferMinidumpReply::new(OsString::new(), None),
+                        |cr| messages::TransferMinidumpReply::new(cr.path, cr.error),
+                    );
+
+                    connector.send_message(reply)?;
                 }
                 messages::Kind::GenerateMinidump => {
                     todo!("Implement all messages");
@@ -158,7 +200,7 @@ impl IPCServer {
                         IPCConnection {
                             connector,
                             endpoint: IPCEndpoint::Child,
-                            pid: Some(reply.child_pid),
+                            process: Some(ProcessId::for_child(reply.child_pid, reply.id)),
                         },
                     );
                 }
@@ -200,5 +242,18 @@ impl IPCServer {
         };
 
         Ok(())
+    }
+
+    #[allow(dead_code)]
+    fn find_pid(&self, id: GeckoChildId) -> Option<Pid> {
+        for connection in self.connections.values() {
+            if let Some(process) = connection.process.as_ref() {
+                if process.id == id {
+                    return Some(process.pid);
+                }
+            }
+        }
+
+        None
     }
 }

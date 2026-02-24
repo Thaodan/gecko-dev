@@ -19,7 +19,7 @@ use windows_sys::Win32::System::Diagnostics::Debug::{CONTEXT, EXCEPTION_RECORD};
 use crate::{
     breakpad::Pid,
     ipc_connector::{AncillaryData, CONNECTOR_ANCILLARY_DATA_LEN},
-    BreakpadString,
+    BreakpadString, GeckoChildId,
 };
 
 #[derive(Debug, Error)]
@@ -302,12 +302,12 @@ impl Message for SetCrashReportPath {
  * generated for the specified pid. */
 
 pub struct TransferMinidump {
-    pub pid: Pid,
+    pub id: GeckoChildId,
 }
 
 impl TransferMinidump {
-    pub fn new(pid: Pid) -> TransferMinidump {
-        TransferMinidump { pid }
+    pub fn new(id: GeckoChildId) -> TransferMinidump {
+        TransferMinidump { id }
     }
 }
 
@@ -317,7 +317,7 @@ impl Message for TransferMinidump {
     }
 
     fn payload_size(&self) -> usize {
-        size_of::<Pid>()
+        size_of::<GeckoChildId>()
     }
 
     fn ancillary_data_len(&self) -> usize {
@@ -327,7 +327,7 @@ impl Message for TransferMinidump {
     fn encode(self) -> (Bytes, Bytes, Vec<AncillaryData>) {
         let header = Header::encode(Self::kind(), self.payload_size());
         let mut payload = BytesMut::with_capacity(self.payload_size());
-        payload.put_pid_ne(self.pid);
+        payload.put_i32_ne(self.id);
 
         (header, payload.freeze(), vec![])
     }
@@ -338,9 +338,9 @@ impl Message for TransferMinidump {
         }
 
         let mut data = Bytes::from(data);
-        let pid = data.try_get_pid_ne()?;
+        let id = data.try_get_i32_ne()?;
 
-        Ok(TransferMinidump { pid })
+        Ok(TransferMinidump { id })
     }
 }
 
@@ -589,14 +589,14 @@ impl Message for WindowsErrorReportingMinidumpReply {
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub struct RegisterAuxvInfo {
-    pub pid: Pid,
+    pub id: GeckoChildId,
     pub auxv_info: DirectAuxvDumpInfo,
 }
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 impl RegisterAuxvInfo {
-    pub fn new(pid: Pid, auxv_info: DirectAuxvDumpInfo) -> RegisterAuxvInfo {
-        RegisterAuxvInfo { pid, auxv_info }
+    pub fn new(id: GeckoChildId, auxv_info: DirectAuxvDumpInfo) -> RegisterAuxvInfo {
+        RegisterAuxvInfo { id, auxv_info }
     }
 }
 
@@ -609,7 +609,7 @@ impl Message for RegisterAuxvInfo {
     fn payload_size(&self) -> usize {
         // A bit hacky but we'll change this when we make
         // serialization/deserialization later.
-        size_of::<Pid>() + (size_of::<AuxvType>() * 4)
+        size_of::<GeckoChildId>() + (size_of::<AuxvType>() * 4)
     }
 
     fn ancillary_data_len(&self) -> usize {
@@ -620,7 +620,7 @@ impl Message for RegisterAuxvInfo {
         let header = Header::encode(Self::kind(), self.payload_size());
         let mut payload = BytesMut::with_capacity(self.payload_size());
 
-        payload.put_i32_ne(self.pid);
+        payload.put_i32_ne(self.id);
         // AuxvType is the size of a pointer
         payload.put_usize_ne(self.auxv_info.program_header_count as usize);
         payload.put_usize_ne(self.auxv_info.program_header_address as usize);
@@ -640,7 +640,7 @@ impl Message for RegisterAuxvInfo {
 
         let mut data = Bytes::from(data);
 
-        let pid = data.try_get_i32_ne()?;
+        let id = data.try_get_i32_ne()?;
         let program_header_count = data.try_get_usize_ne()? as AuxvType;
         let program_header_address = data.try_get_usize_ne()? as AuxvType;
         let linux_gate_address = data.try_get_usize_ne()? as AuxvType;
@@ -653,7 +653,7 @@ impl Message for RegisterAuxvInfo {
             linux_gate_address,
         };
 
-        Ok(RegisterAuxvInfo { pid, auxv_info })
+        Ok(RegisterAuxvInfo { id, auxv_info })
     }
 }
 
@@ -662,13 +662,13 @@ impl Message for RegisterAuxvInfo {
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub struct UnregisterAuxvInfo {
-    pub pid: Pid,
+    pub id: GeckoChildId,
 }
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 impl UnregisterAuxvInfo {
-    pub fn new(pid: Pid) -> UnregisterAuxvInfo {
-        UnregisterAuxvInfo { pid }
+    pub fn new(id: GeckoChildId) -> UnregisterAuxvInfo {
+        UnregisterAuxvInfo { id }
     }
 }
 
@@ -679,7 +679,7 @@ impl Message for UnregisterAuxvInfo {
     }
 
     fn payload_size(&self) -> usize {
-        size_of::<Pid>()
+        size_of::<GeckoChildId>()
     }
 
     fn ancillary_data_len(&self) -> usize {
@@ -690,7 +690,7 @@ impl Message for UnregisterAuxvInfo {
         let header = Header::encode(Self::kind(), self.payload_size());
         let mut payload = BytesMut::with_capacity(self.payload_size());
 
-        payload.put_i32_ne(self.pid);
+        payload.put_i32_ne(self.id);
 
         (header, payload.freeze(), vec![])
     }
@@ -705,9 +705,9 @@ impl Message for UnregisterAuxvInfo {
 
         let mut data = Bytes::from(data);
 
-        let pid = data.try_get_i32_ne()?;
+        let id = data.try_get_i32_ne()?;
 
-        Ok(UnregisterAuxvInfo { pid })
+        Ok(UnregisterAuxvInfo { id })
     }
 }
 
@@ -830,13 +830,15 @@ impl Message for ChildProcessRendezVous {
 pub struct ChildProcessRendezVousReply {
     pub dumpable: bool,
     pub child_pid: Pid,
+    pub id: GeckoChildId,
 }
 
 impl ChildProcessRendezVousReply {
-    pub fn new(dumpable: bool, child_pid: Pid) -> ChildProcessRendezVousReply {
+    pub fn new(dumpable: bool, child_pid: Pid, id: GeckoChildId) -> ChildProcessRendezVousReply {
         ChildProcessRendezVousReply {
             dumpable,
             child_pid,
+            id,
         }
     }
 }
@@ -847,7 +849,7 @@ impl Message for ChildProcessRendezVousReply {
     }
 
     fn payload_size(&self) -> usize {
-        size_of::<u8>() + size_of::<Pid>()
+        size_of::<u8>() + size_of::<Pid>() + size_of::<GeckoChildId>()
     }
 
     fn ancillary_data_len(&self) -> usize {
@@ -860,6 +862,7 @@ impl Message for ChildProcessRendezVousReply {
 
         payload.put_u8(self.dumpable.into());
         payload.put_pid_ne(self.child_pid);
+        payload.put_i32_ne(self.id);
 
         (header, payload.freeze(), vec![])
     }
@@ -875,10 +878,12 @@ impl Message for ChildProcessRendezVousReply {
         let mut data = Bytes::from(data);
         let dumpable = data.try_get_u8()? != 0;
         let child_pid = data.try_get_pid_ne()?;
+        let id = data.try_get_i32_ne()?;
 
         Ok(ChildProcessRendezVousReply {
             dumpable,
             child_pid,
+            id,
         })
     }
 }
