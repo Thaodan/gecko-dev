@@ -1142,6 +1142,10 @@
       "1964350": {
         "issue": "firefox-blocked-completely",
         "matches": ["*://*.bonusblitz.com/*"]
+      },
+      "2017590": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://*.slotsofvegas.com/*"]
       }
     },
     "interventions": [
