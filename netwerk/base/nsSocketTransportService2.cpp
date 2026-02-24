@@ -28,6 +28,7 @@
 #include "nsIOService.h"
 #include "nsIObserverService.h"
 #include "nsIWidget.h"
+#include "NeckoIOLayer.h"
 #include "nsServiceManagerUtils.h"
 #include "nsSocketTransport2.h"
 #include "nsThreadUtils.h"
@@ -1869,6 +1870,10 @@ void nsSocketTransportService::GetSocketConnections(
   for (uint32_t i = 0; i < mIdleList.Length(); i++) {
     AnalyzeConnection(data, &mIdleList[i], false);
   }
+}
+
+nsresult nsSocketTransportService::AttachNeckoIOLayer(PRFileDesc* aFd) {
+  return AttachNeckoDebugIOLayer(aFd);
 }
 
 bool nsSocketTransportService::IsTelemetryEnabledAndNotSleepPhase() {

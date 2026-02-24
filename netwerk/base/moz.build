@@ -192,6 +192,7 @@ UNIFIED_SOURCES += [
     "LoadInfo.cpp",
     "MockNetworkLayer.cpp",
     "MockNetworkLayerController.cpp",
+    "NeckoIOLayer.cpp",
     "NetworkConnectivityService.cpp",
     "NetworkDataCountLayer.cpp",
     "nsAsyncRedirectVerifyHelper.cpp",

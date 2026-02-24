@@ -652,6 +652,8 @@ nsUDPSocket::InitWithAddress(const NetAddr* aAddr, nsIPrincipal* aPrincipal,
 
   PRNetAddrToNetAddr(&addr, &mAddr);
 
+  gSocketTransportService->AttachNeckoIOLayer(mFD);
+
   if (StaticPrefs::network_socket_attach_mock_network_layer() &&
       xpc::AreNonLocalConnectionsDisabled()) {
     if (NS_FAILED(AttachMockNetworkLayer(mFD))) {
