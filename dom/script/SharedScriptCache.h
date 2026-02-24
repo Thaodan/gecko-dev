@@ -75,6 +75,30 @@ class ScriptHashKey : public PLDHashEntryHdr {
                 const nsCOMPtr<nsIURI> aURI);
   explicit ScriptHashKey(const ScriptLoadData& aLoadData);
 
+  // Create a key which can be used only for lookup.
+  // aKey is the result of ToStringForLookup.
+  static Maybe<ScriptHashKey> FromStringsForLookup(
+      const nsACString& aKey, const nsACString& aURI, const nsACString& aNonce,
+      const nsACString& aHintCharset);
+
+ private:
+  ScriptHashKey(nsIURI* aURI, nsIPrincipal* aPartitionPrincipal,
+                JS::loader::ScriptKind aKind, CORSMode aCORSMode,
+                mozilla::dom::ReferrerPolicy aReferrerPolicy,
+                const nsString& aNonce, const nsString& aHintCharset)
+      : PLDHashEntryHdr(),
+        mURI(aURI),
+        mPartitionPrincipal(aPartitionPrincipal),
+        mLoaderPrincipal(nullptr),
+        mKind(aKind),
+        mCORSMode(aCORSMode),
+        mReferrerPolicy(aReferrerPolicy),
+        mNonce(aNonce),
+        mHintCharset(aHintCharset) {
+    MOZ_COUNT_CTOR(ScriptHashKey);
+  }
+
+ public:
   MOZ_COUNTED_DTOR(ScriptHashKey)
 
   const ScriptHashKey& GetKey() const { return *this; }
@@ -97,6 +121,12 @@ class ScriptHashKey : public PLDHashEntryHdr {
   nsIURI* URI() const { return mURI; }
 
   enum { ALLOW_MEMMOVE = true };
+
+  // Stringifies this key's information for the aKey parameter for the
+  // FromStringsForLookup.
+  // This stringifies a subset of the fields, which cannot be directly
+  // extracted from the channel.
+  void ToStringForLookup(nsACString& aResult);
 
  protected:
   // Order the fields from the most important one as much as possible, while
