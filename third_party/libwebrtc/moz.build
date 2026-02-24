@@ -487,7 +487,6 @@ DIRS += [
     "/third_party/libwebrtc/rtc_base/system/unused_gn",
     "/third_party/libwebrtc/rtc_base/system/warn_current_thread_is_deadlocked_gn",
     "/third_party/libwebrtc/rtc_base/task_utils/repeating_task_gn",
-    "/third_party/libwebrtc/rtc_base/third_party/sigslot/sigslot_gn",
     "/third_party/libwebrtc/rtc_base/threading_gn",
     "/third_party/libwebrtc/rtc_base/timeutils_gn",
     "/third_party/libwebrtc/rtc_base/type_traits_gn",
