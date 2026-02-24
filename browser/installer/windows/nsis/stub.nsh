@@ -75,6 +75,7 @@ Var ExistingVersion
 Var ExistingBuildID
 Var DownloadedBytes
 Var DownloadRetryCount
+Var DesktopLauncherStatus
 
 ; After a failure, did the user choose to open the download page as a fallback?
 Var OpenedDownloadPage
@@ -949,7 +950,7 @@ Function SendPing
     Pop $HadOldInstall
 
     Call GetDesktopLauncherStatus
-    Pop $R9
+    Pop $DesktopLauncherStatus
 
 ; Note: ExitCode gets parsed here to determine values for "succeeded",
 ; "user_cancelled", etc.
@@ -1004,7 +1005,7 @@ Function SendPing
                       $\nStub Installer Build ID = $StubBuildID \
                       $\nLaunched by = $R4 \
                       $\nCount of rejected download requests = $DownloadRequestsBlockedByServer \
-                      $\nDesktop Launcher Status = $R9"
+                      $\nDesktop Launcher Status = $DesktopLauncherStatus"
     ; The following will exit the installer
     SetAutoClose true
     StrCpy $R9 "2"
@@ -1013,7 +1014,7 @@ Function SendPing
     ${StartTimer} ${DownloadIntervalMS} OnPing
     ; See https://firefox-source-docs.mozilla.org/toolkit/components/telemetry/data/install-ping.html#stub-ping
     ; for instructions on how to make changes to data being reported in this ping
-    InetBgDL::Get "${BaseURLStubPing}/${StubURLVersion}${StubURLVersionAppend}/${Channel}/${UpdateChannel}/${AB_CD}/$R0/$R1/$5/$6/$7/$8/$9/$ExitCode/$FirefoxLaunchCode/$DownloadRetryCount/$DownloadedBytes/$DownloadSizeBytes/$IntroPhaseSeconds/$OptionsPhaseSeconds/$0/$1/$DownloadFirstTransferSeconds/$2/$3/$4/$InitialInstallRequirementsCode/$OpenedDownloadPage/$HadOldInstall/$ExistingVersion/$ExistingBuildID/$R5/$R6/$R7/$R8/$R2/$R3/$DownloadServerIP/$PostSigningData/$ProfileCleanupPromptType/$CheckboxCleanupProfile/$DistributionID/$DistributionVersion/$WindowsUBR/$StubBuildID/$R4/$DownloadRequestsBlockedByServer/$R9" \
+    InetBgDL::Get "${BaseURLStubPing}/${StubURLVersion}${StubURLVersionAppend}/${Channel}/${UpdateChannel}/${AB_CD}/$R0/$R1/$5/$6/$7/$8/$9/$ExitCode/$FirefoxLaunchCode/$DownloadRetryCount/$DownloadedBytes/$DownloadSizeBytes/$IntroPhaseSeconds/$OptionsPhaseSeconds/$0/$1/$DownloadFirstTransferSeconds/$2/$3/$4/$InitialInstallRequirementsCode/$OpenedDownloadPage/$HadOldInstall/$ExistingVersion/$ExistingBuildID/$R5/$R6/$R7/$R8/$R2/$R3/$DownloadServerIP/$PostSigningData/$ProfileCleanupPromptType/$CheckboxCleanupProfile/$DistributionID/$DistributionVersion/$WindowsUBR/$StubBuildID/$R4/$DownloadRequestsBlockedByServer/$DesktopLauncherStatus" \
                   "$PLUGINSDIR\_temp" /END
 !endif
   ${Else}
