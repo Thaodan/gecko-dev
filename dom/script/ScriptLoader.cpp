@@ -1128,8 +1128,12 @@ void ScriptLoader::NotifyObserversForCachedScript(
     return;
   }
 
+  ScriptHashKey key(this, aRequest, aRequest->getLoadedScript());
+  nsAutoCString keyStr;
+  key.ToStringForLookup(keyStr);
+
   obsService->NotifyObservers(channel, "http-on-resource-cache-response",
-                              nullptr);
+                              NS_ConvertUTF8toUTF16(keyStr).get());
 }
 
 already_AddRefed<ScriptLoadRequest> ScriptLoader::CreateLoadRequest(
