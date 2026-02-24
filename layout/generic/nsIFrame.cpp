@@ -2335,11 +2335,9 @@ already_AddRefed<ComputedStyle> nsIFrame::ComputeSelectionStyle(
   if (!element) {
     return nullptr;
   }
-  RefPtr<ComputedStyle> parentStyle =
-      ServoStyleSet::ResolveServoStyle(*element);
   RefPtr<ComputedStyle> pseudoStyle =
       PresContext()->StyleSet()->ProbePseudoElementStyle(
-          *element, PseudoStyleType::Selection, nullptr, parentStyle);
+          *element, PseudoStyleType::Selection, nullptr, Style());
   if (!pseudoStyle) {
     return nullptr;
   }
@@ -2362,10 +2360,8 @@ already_AddRefed<ComputedStyle> nsIFrame::ComputeHighlightSelectionStyle(
   if (!element) {
     return nullptr;
   }
-  RefPtr<ComputedStyle> parentStyle =
-      ServoStyleSet::ResolveServoStyle(*element);
   return PresContext()->StyleSet()->ProbePseudoElementStyle(
-      *element, PseudoStyleType::Highlight, aHighlightName, parentStyle);
+      *element, PseudoStyleType::Highlight, aHighlightName, Style());
 }
 
 already_AddRefed<ComputedStyle> nsIFrame::ComputeTargetTextStyle() const {
@@ -2373,10 +2369,8 @@ already_AddRefed<ComputedStyle> nsIFrame::ComputeTargetTextStyle() const {
   if (!element) {
     return nullptr;
   }
-  RefPtr<ComputedStyle> parentStyle =
-      ServoStyleSet::ResolveServoStyle(*element);
   RefPtr pseudoStyle = PresContext()->StyleSet()->ProbePseudoElementStyle(
-      *element, PseudoStyleType::TargetText, nullptr, parentStyle);
+      *element, PseudoStyleType::TargetText, nullptr, Style());
   if (!pseudoStyle) {
     return nullptr;
   }

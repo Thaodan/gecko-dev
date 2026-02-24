@@ -474,10 +474,6 @@ already_AddRefed<ComputedStyle> ServoStyleSet::ResolvePseudoElementStyle(
                 .Consume();
     if (!style) {
       MOZ_ASSERT(isProbe);
-      if (cacheable) {
-        aParentStyle->SetCachedLazyPseudoStyle(nullptr, aType,
-                                               aFunctionalPseudoParameter);
-      }
       return nullptr;
     }
     if (cacheable) {
@@ -500,7 +496,7 @@ already_AddRefed<ComputedStyle> ServoStyleSet::ResolvePseudoElementStyle(
         return true;
       }();
       if (shouldCache) {
-        aParentStyle->SetCachedLazyPseudoStyle(style, aType,
+        aParentStyle->SetCachedLazyPseudoStyle(style,
                                                aFunctionalPseudoParameter);
       }
     }

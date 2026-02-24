@@ -6389,6 +6389,11 @@ void nsTextFrame::DrawSelectionDecorations(
       params.decoration =
           computedStyleFromPseudo->StyleTextReset()->mTextDecorationLine;
       params.descentLimit = -1.f;
+      params.defaultLineThickness = ComputeSelectionUnderlineHeight(
+          aTextPaintStyle.PresContext(), aFontMetrics, aSelectionType);
+      params.lineSize.height = ComputeDecorationLineThickness(
+          computedStyleFromPseudo->StyleTextReset()->mTextDecorationThickness,
+          params.defaultLineThickness, aFontMetrics, appUnitsPerDevPixel, this);
 
       const bool swapUnderline =
           wm.IsCentralBaseline() && IsUnderlineRight(*Style());
@@ -6409,17 +6414,6 @@ void nsTextFrame::DrawSelectionDecorations(
             computedStyleFromPseudo->StyleText()->mTextUnderlineOffset,
             aFontMetrics, appUnitsPerDevPixel, this, wm.IsCentralBaseline(),
             swapUnderline);
-
-        if (decoration == StyleTextDecorationLine::LINE_THROUGH) {
-          params.defaultLineThickness = aFontMetrics.strikeoutSize;
-        } else {
-          params.defaultLineThickness = ComputeSelectionUnderlineHeight(
-              aTextPaintStyle.PresContext(), aFontMetrics, aSelectionType);
-        }
-        params.lineSize.height = ComputeDecorationLineThickness(
-            computedStyleFromPseudo->StyleTextReset()->mTextDecorationThickness,
-            params.defaultLineThickness, aFontMetrics, appUnitsPerDevPixel,
-            this);
 
         PaintDecorationLine(params);
       };
@@ -7294,24 +7288,13 @@ void nsTextFrame::PaintTextSelectionDecorations(
                                   *aParams.provider, mTextRun, startIOffset);
   gfxFloat iOffset, hyphenWidth;
   Range range;
-  gfxFloat app = aParams.textPaintStyle->PresContext()->AppUnitsPerDevPixel();
-  // Use the parent frame's writing mode for decoration positioning, matching
-  // DrawTextRunAndDecorations. This matters when IsCentralBaseline() is true
-  // (e.g. vertical-lr), where GetLogicalBaseline(parentWM) differs from
-  // mAscent.
-  const WritingMode parentWM = GetParent()->GetWritingMode();
-  const bool verticalDec = parentWM.IsVertical();
-  gfxFloat decorationAscent = gfxFloat(GetLogicalBaseline(parentWM)) / app;
-  gfxFloat frameBStart = verticalDec ? aParams.framePt.x : aParams.framePt.y;
-  if (parentWM.IsVerticalRL()) {
-    frameBStart += GetSize().width;
-    decorationAscent = -decorationAscent;
-  }
+  int32_t app = aParams.textPaintStyle->PresContext()->AppUnitsPerDevPixel();
+  // XXX aTextBaselinePt is in AppUnits, shouldn't it be nsFloatPoint?
   Point pt;
   if (verticalRun) {
-    pt.x = frameBStart / app;
+    pt.x = (aParams.textBaselinePt.x - mAscent) / app;
   } else {
-    pt.y = frameBStart / app;
+    pt.y = (aParams.textBaselinePt.y - mAscent) / app;
   }
   AutoTArray<SelectionType, 1> nextSelectionTypes;
   AutoTArray<RefPtr<nsAtom>, 1> highlightNames;
@@ -7338,7 +7321,7 @@ void nsTextFrame::PaintTextSelectionDecorations(
         DrawSelectionDecorations(
             aParams.context, aParams.dirtyRect, aSelectionType,
             highlightNames[index], *aParams.textPaintStyle,
-            selectedStyles[index], pt, xInFrame, width, decorationAscent,
+            selectedStyles[index], pt, xInFrame, width, mAscent / app,
             decorationMetrics, aParams.callbacks, verticalRun, kDecoration,
             aParams.glyphRange, aParams.provider);
       }
@@ -8353,53 +8336,7 @@ bool nsTextFrame::CombineSelectionUnderlineRect(nsPresContext* aPresContext,
       if (!style || !style->HasTextDecorationLines()) {
         continue;
       }
-      // For pseudo-based selection styles (::selection, ::highlight,
-      // ::target-text), compute a decoration rect for each line type declared
-      // by the pseudo's style, mirroring the logic in DrawSelectionDecorations.
-      // This must use the pseudo's own text-underline-position and
-      // text-underline-offset (not the originating element's), and pass the
-      // correct decoration line type so that ComputeDecorationLineOffset
-      // applies the offset to underlines rather than treating them as
-      // overlines.
-      // descentLimit must be negative to disable lifting, matching
-      // DrawSelectionDecorations which also disables it for pseudo-based
-      // selection styles (the offset is explicitly specified by the author).
-      const auto* styleTextReset = style->StyleTextReset();
-      const auto& decThickness = styleTextReset->mTextDecorationThickness;
-      params.lineSize.width = aPresContext->AppUnitsToGfxUnits(aRect.width);
-      params.style = styleTextReset->mTextDecorationStyle;
-      params.descentLimit = -1.f;
-      const bool swapUnderline =
-          wm.IsCentralBaseline() && IsUnderlineRight(*style);
-      const auto* styleText = style->StyleText();
-      auto accumForLine = [&](StyleTextDecorationLine decoration) {
-        if (!(styleTextReset->mTextDecorationLine & decoration)) {
-          return;
-        }
-        params.decoration = decoration;
-        params.offset = ComputeDecorationLineOffset(
-            decoration, styleText->mTextUnderlinePosition,
-            styleText->mTextUnderlineOffset, metrics,
-            aPresContext->AppUnitsPerDevPixel(), this, wm.IsCentralBaseline(),
-            swapUnderline);
-
-        if (decoration == StyleTextDecorationLine::LINE_THROUGH) {
-          params.defaultLineThickness = metrics.strikeoutSize;
-        } else {
-          params.defaultLineThickness = ComputeSelectionUnderlineHeight(
-              aPresContext, metrics, sd->mSelectionType);
-        }
-        params.lineSize.height = ComputeDecorationLineThickness(
-            decThickness, params.defaultLineThickness, metrics,
-            aPresContext->AppUnitsPerDevPixel(), this);
-
-        nsRect decorationArea =
-            nsCSSRendering::GetTextDecorationRect(aPresContext, params);
-        aRect.UnionRect(aRect, decorationArea);
-      };
-      accumForLine(StyleTextDecorationLine::UNDERLINE);
-      accumForLine(StyleTextDecorationLine::OVERLINE);
-      accumForLine(StyleTextDecorationLine::LINE_THROUGH);
+      params.style = style->StyleTextReset()->mTextDecorationStyle;
     } else {
       auto index = nsTextPaintStyle::GetUnderlineStyleIndexForSelectionType(
           sd->mSelectionType);
