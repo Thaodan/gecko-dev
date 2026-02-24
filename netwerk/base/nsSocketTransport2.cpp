@@ -1417,8 +1417,6 @@ nsresult nsSocketTransport::InitiateSocket() {
   }
 #endif
 
-  mSocketTransportService->AttachNeckoIOLayer(fd);
-
   PRStatus status;
 
   // Make the socket non-blocking...

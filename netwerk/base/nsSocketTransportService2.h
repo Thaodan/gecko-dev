@@ -126,9 +126,6 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   bool IsKeepaliveEnabled() { return mKeepaliveEnabledPref; }
 
   bool IsTelemetryEnabledAndNotSleepPhase();
-
-  nsresult AttachNeckoIOLayer(PRFileDesc* aFd);
-
   PRIntervalTime MaxTimeForPrClosePref() { return mMaxTimeForPrClosePref; }
 
   // According the preference value of `network.socket.forcePort` this method
@@ -365,4 +362,4 @@ bool OnSocketThread();
 }  // namespace net
 }  // namespace mozilla
 
-#endif  // !nsSocketTransportService_h_
+#endif  // !nsSocketTransportService_h__
