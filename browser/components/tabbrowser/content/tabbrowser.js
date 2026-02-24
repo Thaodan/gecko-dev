@@ -3400,24 +3400,10 @@
      *   An optional argument that accepts a single tab, which, if passed, will
      *   cause the split view to be inserted just before this tab in the tab strip. By
      *   default, the split view will be created at the end of the tab strip.
-     * @param {string} [options.trigger]
-     *   The trigger method for creating the split view. Used for telemetry.
-     *   Valid values: "menu_add", "menu_open".
      */
-    addTabSplitView(
-      tabs,
-      { id = null, insertBefore = null, trigger = null } = {}
-    ) {
+    addTabSplitView(tabs, { id = null, insertBefore = null } = {}) {
       if (!tabs?.length) {
         throw new Error("Cannot create split view with zero tabs");
-      }
-
-      // Capture group information before tabs are moved
-      let tabGroupInfo = null;
-      if (trigger && tabs.length >= 2) {
-        const primaryGroup = tabs[0]?.group;
-        const secondaryGroup = tabs[1]?.group;
-        tabGroupInfo = { primaryGroup, secondaryGroup };
       }
 
       let splitview = this._createTabSplitView(id);
@@ -3434,33 +3420,6 @@
         return null;
       }
 
-      // Record telemetry for split view creation
-      if (trigger && tabGroupInfo) {
-        const tab_layout = this.tabContainer.verticalMode
-          ? "vertical"
-          : "horizontal";
-
-        let tabgroup;
-        const { primaryGroup, secondaryGroup } = tabGroupInfo;
-
-        if (!primaryGroup && !secondaryGroup) {
-          tabgroup = "none";
-        } else if (primaryGroup && secondaryGroup) {
-          tabgroup =
-            primaryGroup === secondaryGroup ? "both_same" : "both_different";
-        } else if (primaryGroup) {
-          tabgroup = "main";
-        } else {
-          tabgroup = "other";
-        }
-
-        Glean.splitview.start.record({
-          tab_layout,
-          trigger,
-          tabgroup,
-        });
-      }
-
       this.tabContainer.dispatchEvent(
         new CustomEvent("SplitViewCreated", {
           bubbles: true,
@@ -3474,25 +3433,10 @@
      *
      * @param {MozTabSplitViewWrapper} [splitView]
      *   The split view to remove.
-     * @param {string} [trigger]
-     *   The trigger method for ending the split view. Used for telemetry.
-     *   Valid values: "menu_separate", "icon_separate", "icon_close", "tab_close", "footer_separate".
      */
-    unsplitTabs(splitview, trigger = null) {
+    unsplitTabs(splitview) {
       if (!splitview) {
         return;
-      }
-
-      // Record telemetry for split view end
-      if (trigger) {
-        const tab_layout = this.tabContainer.verticalMode
-          ? "vertical"
-          : "horizontal";
-
-        Glean.splitview.end.record({
-          tab_layout,
-          trigger,
-        });
       }
 
       // If the split view has about:opentabs open, remove that tab
@@ -3585,15 +3529,6 @@
 
     openSplitViewMenu(anchorElement) {
       const menu = document.getElementById("split-view-menu");
-      // Mark the menu with the source for telemetry purposes
-      // Check if the anchor is a toolbarbutton inside a footer
-      const isFromFooter =
-        anchorElement?.localName === "toolbarbutton" &&
-        anchorElement?.parentElement?.localName === "split-view-footer";
-      menu.setAttribute(
-        "data-trigger-source",
-        isFromFooter ? "footer" : "icon"
-      );
       menu.openPopup(anchorElement, "after_start");
     }
 
@@ -8893,31 +8828,13 @@
       this.splitViewCommandSet.addEventListener("command", event => {
         switch (event.target.id) {
           case "splitViewCmd_separateTabs":
-            {
-              // Determine trigger based on the menu's data attribute
-              const menu = event.target.parentElement;
-              const source = menu?.getAttribute("data-trigger-source");
-
-              this.#activeSplitView.unsplitTabs(`${source ?? "icon"}_separate`);
-            }
+            this.#activeSplitView.unsplitTabs();
             break;
           case "splitViewCmd_reverseTabs":
-            {
-              // Determine trigger based on the menu's data attribute
-              const menu = event.target.parentElement;
-              const source = menu?.getAttribute("data-trigger-source");
-
-              this.#activeSplitView.reverseTabs(source ?? "icon");
-            }
+            this.#activeSplitView.reverseTabs();
             break;
           case "splitViewCmd_closeTabs":
-            {
-              // Determine trigger based on the menu's data attribute
-              const menu = event.target.parentElement;
-              const source = menu?.getAttribute("data-trigger-source");
-
-              this.#activeSplitView.close(`${source ?? "icon"}_close`);
-            }
+            this.#activeSplitView.close();
             break;
         }
       });
@@ -10816,19 +10733,14 @@ var TabContextMenu = {
     }
 
     let newTab = null;
-    let trigger;
     if (this.contextTabs.length < 2) {
       // Open new tab to split with context tab
       newTab = gBrowser.addTrustedTab("about:opentabs");
       tabsToAdd = [this.contextTabs[0], newTab];
-      trigger = "menu_add";
-    } else {
-      trigger = "menu_open";
     }
 
     gBrowser.addTabSplitView(tabsToAdd, {
       insertBefore,
-      trigger,
     });
 
     if (newTab) {
@@ -10840,9 +10752,7 @@ var TabContextMenu = {
     const splitviews = new Set(
       this.contextTabs.map(tab => tab.splitview).filter(Boolean)
     );
-    splitviews.forEach(splitview =>
-      gBrowser.unsplitTabs(splitview, "menu_separate")
-    );
+    splitviews.forEach(splitview => gBrowser.unsplitTabs(splitview));
   },
 
   addNewBadge(menuItem) {
