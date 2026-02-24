@@ -251,7 +251,25 @@ nsUDPSocket::nsUDPSocket() {
   mSts = gSocketTransportService;
 }
 
-nsUDPSocket::~nsUDPSocket() { CloseSocket(); }
+nsUDPSocket::~nsUDPSocket() {
+  if (mFD) {
+    bool onSTSThread = false;
+    mSts->IsOnCurrentThread(&onSTSThread);
+    if (!onSTSThread) {
+      // can't use CloseSocket because we're being destroyed
+      PRFileDesc* fd = mFD;
+      mFD = nullptr;
+      if (gSocketTransportService &&
+          NS_SUCCEEDED(gSocketTransportService->Dispatch(
+              NS_NewRunnableFunction("nsUDPSocket::~nsUDPSocket",
+                                     [fd]() { PR_Close(fd); }),
+              NS_DISPATCH_NORMAL))) {
+        return;
+      }
+    }
+    CloseSocket();
+  }
+}
 
 void nsUDPSocket::AddOutputBytes(uint32_t aBytes) {
   mByteWriteCount += aBytes;
@@ -721,19 +739,13 @@ nsUDPSocket::Connect(const NetAddr* aAddr) {
 
 NS_IMETHODIMP
 nsUDPSocket::Close() {
-  {
-    MutexAutoLock lock(mLock);
-    // we want to proxy the close operation to the socket thread if a listener
-    // has been set.  otherwise, we should just close the socket here...
-    if (!mListener && !mSyncListener) {
-      // Here we want to go directly with closing the socket since some tests
-      // expects this happen synchronously.
-      CloseSocket();
-
-      return NS_OK;
-    }
+  nsresult rv = PostEvent(this, &nsUDPSocket::OnMsgClose);
+  if (NS_FAILED(rv)) {
+    // Try to avoid leaking an FD in the unlikely case PostEvent fails, even if
+    // happens on the wrong thread
+    CloseSocket();
   }
-  return PostEvent(this, &nsUDPSocket::OnMsgClose);
+  return NS_OK;
 }
 
 NS_IMETHODIMP
