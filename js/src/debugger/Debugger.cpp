@@ -1160,6 +1160,9 @@ bool DebugAPI::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame,
     if (success && completion.get().suspending()) {
       Debugger::suspendGeneratorDebuggerFrames(cx, frame);
     } else {
+      if (frame.isWasmDebugFrame()) {
+        DebugEnvironments::onPopWasm(cx, frame);
+      }
       Debugger::terminateDebuggerFrames(cx, frame);
     }
   });
