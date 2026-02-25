@@ -116,18 +116,10 @@ export class AIWindow extends MozLitElement {
    */
   #pendingMessageDelivery;
 
-  /**
-   * Gets the host browser element that embeds this AI window.
-   *
-   * @returns {Element|null} The host browser element, or null if not found
-   * @private
-   */
-  get #hostBrowser() {
-    return window.browsingContext?.embedderElement || null;
-  }
-
   #detectModeFromContext() {
-    return this.#hostBrowser?.id === "ai-window-browser" ? SIDEBAR : FULLPAGE;
+    return window.browsingContext?.embedderElement?.id === "ai-window-browser"
+      ? SIDEBAR
+      : FULLPAGE;
   }
 
   /**
@@ -137,7 +129,8 @@ export class AIWindow extends MozLitElement {
    * @private
    */
   #getPendingConversationId() {
-    return this.#hostBrowser?.getAttribute("data-conversation-id") || null;
+    const hostBrowser = window.browsingContext?.embedderElement;
+    return hostBrowser?.getAttribute("data-conversation-id") || null;
   }
 
   /**
@@ -231,7 +224,8 @@ export class AIWindow extends MozLitElement {
       return this.#conversation.id;
     }
 
-    return this.#hostBrowser?.getAttribute("data-conversation-id");
+    const hostBrowser = window.browsingContext?.embedderElement;
+    return hostBrowser?.getAttribute("data-conversation-id");
   }
 
   connectedCallback() {
@@ -377,8 +371,9 @@ export class AIWindow extends MozLitElement {
       this.openConversation(conversation);
     }
 
-    if (this.#hostBrowser?.hasAttribute("data-continue-streaming")) {
-      this.#hostBrowser.removeAttribute("data-continue-streaming");
+    const hostBrowser = window.browsingContext?.embedderElement;
+    if (hostBrowser?.hasAttribute("data-continue-streaming")) {
+      hostBrowser.removeAttribute("data-continue-streaming");
       this.#continueAfterToolResult();
     }
   }
@@ -1125,10 +1120,9 @@ export class AIWindow extends MozLitElement {
         document.title = this.#conversation.title;
       }
       this.#updateTabFavicon();
-      this.hostBrowser?.setAttribute(
-        "data-conversation-id",
-        this.#conversation.id
-      );
+
+      const hostBrowser = window.browsingContext?.embedderElement;
+      hostBrowser?.setAttribute("data-conversation-id", this.#conversation.id);
 
       // Update smartbar chips to reflect the current tab when sidebar reopens
       if (this.#smartbar && this.mode === "sidebar") {
@@ -1169,12 +1163,6 @@ export class AIWindow extends MozLitElement {
 
     // Show Smartbar suggestions for cleared chats
     this.#smartbar?.unsuppressStartQuery();
-
-    // Clear the conversation ID from the tab state manager
-    this.#dispatchChromeEvent(
-      "ai-window:clear-conversation",
-      this.#getAIWindowEventOptions()
-    );
 
     // Submitting a message with a new convoId here.
     // This will clear the chat content area in the child process via side effect.
