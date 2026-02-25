@@ -8342,7 +8342,53 @@ bool nsTextFrame::CombineSelectionUnderlineRect(nsPresContext* aPresContext,
       if (!style || !style->HasTextDecorationLines()) {
         continue;
       }
-      params.style = style->StyleTextReset()->mTextDecorationStyle;
+      // For pseudo-based selection styles (::selection, ::highlight,
+      // ::target-text), compute a decoration rect for each line type declared
+      // by the pseudo's style, mirroring the logic in DrawSelectionDecorations.
+      // This must use the pseudo's own text-underline-position and
+      // text-underline-offset (not the originating element's), and pass the
+      // correct decoration line type so that ComputeDecorationLineOffset
+      // applies the offset to underlines rather than treating them as
+      // overlines.
+      // descentLimit must be negative to disable lifting, matching
+      // DrawSelectionDecorations which also disables it for pseudo-based
+      // selection styles (the offset is explicitly specified by the author).
+      const auto* styleTextReset = style->StyleTextReset();
+      const auto& decThickness = styleTextReset->mTextDecorationThickness;
+      params.lineSize.width = aPresContext->AppUnitsToGfxUnits(aRect.width);
+      params.style = styleTextReset->mTextDecorationStyle;
+      params.descentLimit = -1.f;
+      const bool swapUnderline =
+          wm.IsCentralBaseline() && IsUnderlineRight(*style);
+      const auto* styleText = style->StyleText();
+      auto accumForLine = [&](StyleTextDecorationLine decoration) {
+        if (!(styleTextReset->mTextDecorationLine & decoration)) {
+          return;
+        }
+        params.decoration = decoration;
+        params.offset = ComputeDecorationLineOffset(
+            decoration, styleText->mTextUnderlinePosition,
+            styleText->mTextUnderlineOffset, metrics,
+            aPresContext->AppUnitsPerDevPixel(), this, wm.IsCentralBaseline(),
+            swapUnderline);
+
+        if (decoration == StyleTextDecorationLine::LINE_THROUGH) {
+          params.defaultLineThickness = metrics.strikeoutSize;
+        } else {
+          params.defaultLineThickness = ComputeSelectionUnderlineHeight(
+              aPresContext, metrics, sd->mSelectionType);
+        }
+        params.lineSize.height = ComputeDecorationLineThickness(
+            decThickness, params.defaultLineThickness, metrics,
+            aPresContext->AppUnitsPerDevPixel(), this);
+
+        nsRect decorationArea =
+            nsCSSRendering::GetTextDecorationRect(aPresContext, params);
+        aRect.UnionRect(aRect, decorationArea);
+      };
+      accumForLine(StyleTextDecorationLine::UNDERLINE);
+      accumForLine(StyleTextDecorationLine::OVERLINE);
+      accumForLine(StyleTextDecorationLine::LINE_THROUGH);
     } else {
       auto index = nsTextPaintStyle::GetUnderlineStyleIndexForSelectionType(
           sd->mSelectionType);
