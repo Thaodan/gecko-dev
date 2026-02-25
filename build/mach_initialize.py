@@ -167,6 +167,28 @@ def initialize(topsrcdir, args=()):
     )
     _maybe_activate_mozillabuild_environment()
 
+    from concurrent.futures import ThreadPoolExecutor
+
+    # Sparse checkouts may not have all mach_commands.py files. Ignore
+    # errors from missing files. Same for spidermonkey tarballs.
+    def _compute_missing_ok():
+        import mozversioncontrol
+
+        try:
+            repo = mozversioncontrol.get_repository_object(path=topsrcdir)
+        except (mozversioncontrol.InvalidRepoPath, mozversioncontrol.MissingVCSTool):
+            repo = None
+        if repo == "SOURCE":
+            return False
+        elif repo is not None:
+            return repo.sparse_checkout_present()
+        else:
+            return os.path.exists(os.path.join(topsrcdir, "INSTALL"))
+
+    missing_ok_executor = ThreadPoolExecutor(max_workers=1)
+    missing_ok_future = missing_ok_executor.submit(_compute_missing_ok)
+    missing_ok_executor.shutdown(wait=False)
+
     import mach.main
     from mach.command_util import (
         MACH_COMMANDS,
@@ -383,16 +405,6 @@ def initialize(topsrcdir, args=()):
     for category, meta in CATEGORIES.items():
         driver.define_category(category, meta["short"], meta["long"], meta["priority"])
 
-    # Sparse checkouts may not have all mach_commands.py files. Ignore
-    # errors from missing files. Same for spidermonkey tarballs.
-    repo = resolve_repository()
-    if repo != "SOURCE":
-        missing_ok = (
-            repo is not None and repo.sparse_checkout_present()
-        ) or os.path.exists(os.path.join(topsrcdir, "INSTALL"))
-    else:
-        missing_ok = ()
-
     commands_that_need_all_modules_loaded = [
         "busted",
         "help",
@@ -433,7 +445,9 @@ def initialize(topsrcdir, args=()):
         }
 
     driver.command_site_manager = command_site_manager
-    load_commands_from_spec(command_modules_to_load, topsrcdir, missing_ok=missing_ok)
+    load_commands_from_spec(
+        command_modules_to_load, topsrcdir, missing_ok=missing_ok_future.result()
+    )
 
     return driver
 
