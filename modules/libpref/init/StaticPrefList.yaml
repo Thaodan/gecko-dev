@@ -4359,6 +4359,12 @@
   value: false
   mirror: always
 
+# Whether Scoped Custom Element Registries are enabled
+- name: dom.scoped-custom-element-registries.enabled
+  type: bool
+  value: false
+  mirror: always
+
 # A pref that is used to slow down database initialization for testing purposes.
 - name: dom.simpledb.databaseInitialization.pauseOnIOThreadMs
   type: RelaxedAtomicUint32
