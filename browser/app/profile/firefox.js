@@ -2276,6 +2276,7 @@ pref("browser.smartwindow.endpoint", "https://mlpa-prod-prod-mozilla.global.ssl.
 pref("browser.smartwindow.memories", true);
 pref("browser.smartwindow.firstrun.autoAdvanceMS", 3000);
 pref("browser.smartwindow.firstrun.hasCompleted", false);
+pref("browser.smartwindow.showThemesNotice", true);
 pref("browser.smartwindow.firstrun.modelChoice", "");
 pref("browser.smartwindow.model", "");
 pref("browser.smartwindow.preferences.endpoint", "");
