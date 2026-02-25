@@ -363,7 +363,7 @@ static uint32_t gLastTouchID = 0;
 // event is a correct one when we get it.
 // Store it and issue it later from enter notify event if it's correct,
 // throw it away otherwise.
-MOZ_RUNINIT static GUniquePtr<GdkEventCrossing> sStoredLeaveNotifyEvent;
+constinit static GUniquePtr<GdkEventCrossing> sStoredLeaveNotifyEvent;
 
 // GDK's MAX_WL_BUFFER_SIZE is 4083 (4096 minus header, string
 // argument length and NUL byte). Here truncates the string length
