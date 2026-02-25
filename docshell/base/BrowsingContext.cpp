@@ -856,6 +856,24 @@ void BrowsingContext::Embed() {
   }
 }
 
+nsGlobalWindowInner* BrowsingContext::GetOpenedDocumentPiPWindow() const {
+  nsPIDOMWindowOuter* outer = GetDOMWindow();
+  if (!outer) {
+    return nullptr;
+  }
+
+  nsPIDOMWindowInner* inner = outer->GetCurrentInnerWindow();
+  if (!inner) {
+    return nullptr;
+  }
+
+  DocumentPictureInPicture* dpip = inner->GetExtantDocumentPictureInPicture();
+  if (!dpip) {
+    return nullptr;
+  }
+  return dpip->GetWindow();
+}
+
 const char* BrowsingContext::BrowsingContextCoherencyChecks(
     ContentParent* aOriginProcess) {
 #define COHERENCY_ASSERT(condition) \
@@ -2697,28 +2715,6 @@ void BrowsingContext::IncrementHistoryEntryCountForBrowsingContext() {
   (void)SetHistoryEntryCount(GetHistoryEntryCount() + 1);
 }
 
-// https://wicg.github.io/document-picture-in-picture/#focusing-the-opener-window
-static bool ConsumePiPWindowTransientActivation(nsPIDOMWindowOuter* outer) {
-  NS_ENSURE_TRUE(outer, false);
-
-  nsPIDOMWindowInner* inner = outer->GetCurrentInnerWindow();
-  NS_ENSURE_TRUE(inner, false);
-
-  DocumentPictureInPicture* dpip = inner->GetExtantDocumentPictureInPicture();
-  if (!dpip) {
-    return false;
-  }
-  nsGlobalWindowInner* pipWindow = dpip->GetWindow();
-  if (!pipWindow) {
-    return false;
-  }
-
-  WindowContext* wc = pipWindow->GetWindowContext();
-  NS_ENSURE_TRUE(wc, false);
-
-  return wc->ConsumeTransientUserGestureActivation();
-}
-
 std::tuple<bool, bool> BrowsingContext::CanFocusCheck(CallerType aCallerType) {
   nsFocusManager* fm = nsFocusManager::GetFocusManager();
   if (!fm) {
@@ -2742,11 +2738,17 @@ std::tuple<bool, bool> BrowsingContext::CanFocusCheck(CallerType aCallerType) {
         PopupBlocker::openBlocked;
   }
 
+  // https://wicg.github.io/document-picture-in-picture/#focusing-the-opener-window
   // Allow the opener to get system focus if the PIP window has transient
   // activation
-  if (!canFocus && IsTopContent() &&
-      ConsumePiPWindowTransientActivation(GetDOMWindow())) {
-    canFocus = true;
+  if (!canFocus && IsTopContent()) {
+    if (nsGlobalWindowInner* pipWindow = GetOpenedDocumentPiPWindow()) {
+      if (WindowContext* wc = pipWindow->GetWindowContext()) {
+        if (wc->ConsumeTransientUserGestureActivation()) {
+          canFocus = true;
+        }
+      }
+    }
   }
 
   bool isActive = false;
