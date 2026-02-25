@@ -355,7 +355,7 @@ static bool IsAccelAngleSupported(nsACString* const out_failureId) {
 
 class AngleErrorReporting {
  public:
-  constexpr AngleErrorReporting() : mFailureId(nullptr) {
+  AngleErrorReporting() : mFailureId(nullptr) {
     // No static constructor
   }
 
@@ -390,7 +390,7 @@ class AngleErrorReporting {
   nsACString* mFailureId;
 };
 
-constinit AngleErrorReporting gAngleErrorReporter;
+MOZ_RUNINIT AngleErrorReporting gAngleErrorReporter;
 
 static std::shared_ptr<EglDisplay> GetAndInitDisplayForAccelANGLE(
     GLLibraryEGL& egl, nsACString* const out_failureId,

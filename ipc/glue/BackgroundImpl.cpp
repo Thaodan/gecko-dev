@@ -745,7 +745,7 @@ bool ParentImpl::sShutdownHasStarted = false;
 // ChildImpl Static Members
 // -----------------------------------------------------------------------------
 
-MOZ_GLOBINIT ChildImpl::ThreadInfoWrapper
+MOZ_RUNINIT ChildImpl::ThreadInfoWrapper
     ChildImpl::sParentAndContentProcessThreadInfo;
 
 bool ChildImpl::sShutdownHasStarted = false;

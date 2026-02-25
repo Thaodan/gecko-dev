@@ -48,11 +48,10 @@
 #include <numeric>
 #include <vector>
 
-#if defined(MOZ_CLANG_PLUGIN) && defined(__GLIBCXX__) && \
-    (__GLIBCXX__ <= 20230707)
-#  define MOZ_GLIBCXX_CONSTINIT __attribute__((annotate("moz_global_var")))
+#ifdef MOZ_CLANG_PLUGIN
+#  define MOZ_RUNINIT __attribute__((annotate("moz_global_var")))
 #else
-#  define MOZ_GLIBCXX_CONSTINIT
+#  define MOZ_RUNINIT
 #endif
 
 //---------------------------------------------------------------------------
@@ -611,7 +610,7 @@ static double gSampleInterval_sec;
 static RAPL* gRapl;
 
 // All the sampled "total" values, in Watts.
-MOZ_GLIBCXX_CONSTINIT static std::vector<double> gTotals_W;
+MOZ_RUNINIT static std::vector<double> gTotals_W;
 
 // Power = Energy / Time, where power is measured in Watts, Energy is measured
 // in Joules, and Time is measured in seconds.

@@ -42,7 +42,7 @@ namespace mozilla::phc {
 
 // HACK: The breakpad code expects this global variable even though we don't
 // use it in the wrapper.
-constinit mozilla::phc::AddrInfo gAddrInfo;
+MOZ_RUNINIT mozilla::phc::AddrInfo gAddrInfo;
 
 }  // namespace mozilla::phc
 

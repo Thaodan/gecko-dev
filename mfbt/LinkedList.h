@@ -296,7 +296,7 @@ class LinkedListElement {
 
   enum class NodeKind { Normal, Sentinel };
 
-  constexpr explicit LinkedListElement(NodeKind nodeKind)
+  explicit LinkedListElement(NodeKind nodeKind)
       : mNext(this), mPrev(this), mIsSentinel(nodeKind == NodeKind::Sentinel) {}
 
   /*
@@ -464,8 +464,7 @@ class LinkedList {
   };
 
  public:
-  constexpr LinkedList()
-      : mSentinel(LinkedListElement<T>::NodeKind::Sentinel) {}
+  LinkedList() : mSentinel(LinkedListElement<T>::NodeKind::Sentinel) {}
 
   LinkedList(LinkedList<T>&& aOther) : mSentinel(std::move(aOther.mSentinel)) {}
 

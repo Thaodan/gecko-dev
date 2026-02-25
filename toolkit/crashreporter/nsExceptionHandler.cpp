@@ -216,7 +216,7 @@ static const XP_CHAR dumpFileExtension[] = XP_TEXT(".dmp");
 
 static const XP_CHAR extraFileExtension[] = XP_TEXT(".extra");
 static const XP_CHAR memoryReportExtension[] = XP_TEXT(".memory.json.gz");
-constinit static std::optional<xpstring> defaultMemoryReportPath;
+MOZ_RUNINIT static std::optional<xpstring> defaultMemoryReportPath = {};
 
 static const char kCrashMainID[] = "crash.main.3\n";
 
@@ -227,13 +227,13 @@ static google_breakpad::ExceptionHandler* gExceptionHandler = nullptr;
 static mozilla::Atomic<bool> gEncounteredChildException(false);
 constinit static nsCString gServerURL;
 
-static MOZ_GLIBCXX_CONSTINIT xpstring pendingDirectory;
-static MOZ_GLIBCXX_CONSTINIT xpstring crashReporterPath;
-static MOZ_GLIBCXX_CONSTINIT xpstring crashHelperPath;
-static MOZ_GLIBCXX_CONSTINIT xpstring memoryReportPath;
+MOZ_RUNINIT static xpstring pendingDirectory;
+MOZ_RUNINIT static xpstring crashReporterPath;
+MOZ_RUNINIT static xpstring crashHelperPath;
+MOZ_RUNINIT static xpstring memoryReportPath;
 
 // Where crash events should go.
-static MOZ_GLIBCXX_CONSTINIT xpstring eventsDirectory;
+MOZ_RUNINIT static xpstring eventsDirectory;
 
 // If this is false, we don't launch the crash reporter
 static bool doReport = true;
@@ -278,7 +278,7 @@ static bool sIncludeContextHeap = false;
 static std::terminate_handler oldTerminateHandler = nullptr;
 
 #if defined(XP_WIN) || defined(XP_MACOSX)
-MOZ_GLIBCXX_CONSTINIT static nsCString childCrashNotifyPipe;
+MOZ_RUNINIT static nsCString childCrashNotifyPipe;
 
 #elif defined(XP_LINUX)
 static int clientSocketFd = -1;
@@ -372,16 +372,21 @@ static void SetJitExceptionHandler() {
 #  endif
 #endif  // defined(XP_WIN)
 
+MOZ_RUNINIT static struct ReservedResources {
 #if defined(XP_WIN) && !defined(HAVE_64BIT_BUILD)
-constinit static struct ReservedResources {
   // This should be bigger than xul.dll plus a bit of extra space for
   // MinidumpWriteDump allocations.
   static const SIZE_T kReserveSize = 0x5000000;  // 80 MB
   void* mVirtualMemory;
-
-  constexpr ReservedResources() : mVirtualMemory(nullptr) {}
-} gReservedResources;
 #endif
+
+  ReservedResources()
+#if defined(XP_WIN) && !defined(HAVE_64BIT_BUILD)
+      : mVirtualMemory(nullptr)
+#endif
+  {
+  }
+} gReservedResources;
 
 static void ReserveResources() {
 #if defined(XP_WIN) && !defined(HAVE_64BIT_BUILD)

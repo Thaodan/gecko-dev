@@ -84,7 +84,7 @@ struct ListHelper {
   LinkedList<nsSHistory> mList;
 };
 
-constinit static ListHelper gSHistoryList;
+MOZ_RUNINIT static ListHelper gSHistoryList;
 // Max viewers allowed total, across all SHistory objects - negative default
 // means we will calculate how many viewers to cache based on total memory
 int32_t nsSHistory::sHistoryMaxTotalViewers = -1;

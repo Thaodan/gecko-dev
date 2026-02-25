@@ -141,7 +141,7 @@ class ContentAnalysisTest : public testing::Test {
   };
 };
 
-MOZ_GLIBCXX_CONSTINIT nsString ContentAnalysisTest::mPipeName;
+MOZ_RUNINIT nsString ContentAnalysisTest::mPipeName;
 MOZ_RUNINIT MozAgentInfo ContentAnalysisTest::mAgentInfo;
 
 TEST_F(ContentAnalysisTest, AllowUrlList) {
