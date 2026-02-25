@@ -107,7 +107,6 @@ void HTMLTemplateElement::SetHTML(const nsAString& aHTML,
   nsContentUtils::SetHTML(content, this, aHTML, aOptions, aError);
 }
 
-/* https://html.spec.whatwg.org/#dom-element-sethtmlunsafe */
 void HTMLTemplateElement::SetHTMLUnsafe(const TrustedHTMLOrString& aHTML,
                                         const SetHTMLUnsafeOptions& aOptions,
                                         nsIPrincipal* aSubjectPrincipal,

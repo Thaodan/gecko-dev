@@ -206,7 +206,6 @@ EXPORTS.mozilla.dom += [
     "InteractiveWidget.h",
     "IntlUtils.h",
     "JSExecutionUtils.h",
-    "LifecycleCallbackArgs.h",
     "Link.h",
     "LinkStyle.h",
     "Location.h",

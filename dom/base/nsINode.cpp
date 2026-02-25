@@ -62,7 +62,6 @@
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/dom/HTMLTemplateElement.h"
 #include "mozilla/dom/L10nOverlays.h"
-#include "mozilla/dom/LifecycleCallbackArgs.h"
 #include "mozilla/dom/Link.h"
 #include "mozilla/dom/MutationObservers.h"
 #include "mozilla/dom/NodeBinding.h"

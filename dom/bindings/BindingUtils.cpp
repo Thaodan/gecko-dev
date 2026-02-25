@@ -3753,7 +3753,7 @@ class MOZ_RAII AutoConstructionDepth final {
 
 }  // anonymous namespace
 
-/* https://html.spec.whatwg.org/#html-element-constructors */
+// https://html.spec.whatwg.org/multipage/dom.html#htmlconstructor
 namespace binding_detail {
 bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
                      constructors::id::ID aConstructorId,
@@ -3761,8 +3761,10 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
                      CreateInterfaceObjectsMethod aCreator) {
   JS::CallArgs args = JS::CallArgsFromVp(aArgc, aVp);
 
-  // 1. "If NewTarget is equal to the active function object, then throw a
-  //    TypeError."
+  // Per spec, this is technically part of step 3, but doing the check
+  // directly lets us provide a better error message.  And then in
+  // step 2 we can work with newTarget in a simpler way because we
+  // know it's an object.
   if (!args.isConstructing()) {
     return ThrowConstructorWithoutNew(aCx,
                                       NamesOfInterfacesWithProtos(aProtoId));
@@ -3779,21 +3781,14 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
     return false;
   }
 
+  // Now we start the [HTMLConstructor] algorithm steps from
+  // https://html.spec.whatwg.org/multipage/dom.html#htmlconstructor
+
   ErrorResult rv;
   auto scopeExit =
       MakeScopeExit([&]() { (void)rv.MaybeSetPendingException(aCx); });
 
-  // 2. Let registry be null.
-  // 3. If the surrounding agent's active custom element constructor
-  //    map[NewTarget] exists:
-  // 3.1. Set registry to the surrounding agent's active custom element
-  //      constructor map[NewTarget].
-  // 3.2. Remove the surrounding agent's active custom element constructor
-  //      map[NewTarget].
-  // TODO(keithamus): Scoped registries
-
-  // 4. "Otherwise, set registry to the current global object's associated
-  //    Document's custom element registry."
+  // Step 1.
   nsCOMPtr<nsPIDOMWindowInner> window =
       do_QueryInterface(global.GetAsSupports());
   if (!window) {
@@ -3814,6 +3809,8 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
     return false;
   }
 
+  // Step 2.
+
   // The newTarget might be a cross-compartment wrapper. Get the underlying
   // object so we can do the spec's object-identity checks.  If we ever stop
   // unwrapping here, carefully audit uses of newTarget below!
@@ -3828,9 +3825,6 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
     return false;
   }
 
-  // 1. "If NewTarget is equal to the active function object, then throw a
-  //    TypeError."
-  //
   // Enter the compartment of our underlying newTarget object, so we end
   // up comparing to the constructor object for our interface from that global.
   // XXXbz This is not what the spec says to do, and it's not super-clear to me
@@ -3851,9 +3845,7 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
     }
   }
 
-  // 5. "Let definition be the item in registry's custom element definition set
-  //    with constructor equal to NewTarget. If there is no such item, then
-  //    throw a TypeError."
+  // Step 3.
   RefPtr<CustomElementDefinition> definition =
       registry->LookupCustomElementDefinition(aCx, newTarget);
   if (!definition) {
@@ -3861,15 +3853,9 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
     return false;
   }
 
-  // 7. "If definition's local name is equal to definition's name (i.e.,
-  //    definition is for an autonomous custom element):"
-  // 8. "Otherwise (i.e., if definition is for a customized built-in element):"
-  //    "Let valid local names be the list of local names..."
-  //    "If valid local names does not contain definition's local name, then
-  //    throw a TypeError."
-  // XXX: Steps 7 and 8 do some sanity checks on our callee. We add to those a
+  // Steps 4, 5, 6 do some sanity checks on our callee.  We add to those a
   // determination of what sort of element we're planning to construct.
-  // Technically, this should happen (implicitly) in step 9, but this
+  // Technically, this should happen (implicitly) in step 8, but this
   // determination is side-effect-free, so it's OK.
   int32_t ns = definition->mNamespaceID;
 
@@ -3900,8 +3886,9 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
 
   int32_t tag = eHTMLTag_userdefined;
   if (!definition->IsCustomBuiltIn()) {
-    // 7.1. "If the active function object is not HTMLElement, then throw a
-    //       TypeError."
+    // Step 4.
+    // If the definition is for an autonomous custom element, the active
+    // function should be HTMLElement or extend from XULElement.
     if (!cb) {
       cb = HTMLElement_Binding::GetConstructorObjectHandle;
     }
@@ -3919,10 +3906,10 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
     }
   } else {
     if (ns == kNameSpaceID_XHTML) {
-      // 8.1. "Let valid local names be the list of local names for elements
-      //       defined in this specification..."
-      // 8.2. "If valid local names does not contain definition's local name,
-      //       then throw a TypeError."
+      // Step 5.
+      // If the definition is for a customized built-in element, the localName
+      // should be one of the ones defined in the specification for this
+      // interface.
       tag = nsHTMLTags::CaseSensitiveAtomTagToId(definition->mLocalName);
       if (tag == eHTMLTag_userdefined) {
         rv.ThrowTypeError<MSG_ILLEGAL_CONSTRUCTOR>();
@@ -3957,10 +3944,7 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
     }
   }
 
-  // 10. "Let prototype be ? Get(NewTarget, "prototype")."
-  // 11. "If prototype is not an Object, then: Let realm be
-  //     ? GetFunctionRealm(NewTarget). Set prototype to the interface prototype
-  //     object..."
+  // Steps 7 and 8.
   JS::Rooted<JSObject*> desiredProto(aCx);
 
   // Check which construction path we're taking before running any JS.
@@ -3983,11 +3967,15 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
 
   MOZ_ASSERT(desiredProto, "How could we not have a prototype by now?");
 
+  // We need to do some work to actually return an Element, so we do step 8 on
+  // one branch and steps 9-12 on another branch, then common up the "return
+  // element" work.
   RefPtr<Element> element;
   if (isDirectConstruction) {
-    // 9. "If definition's construction stack is empty:"
-    // 9.1. "Let element be the result of internally creating a new object
-    //       implementing the interface..."
+    // Step 8.
+    // Now we go to construct an element.  We want to do this in global's
+    // realm, not caller realm (the normal constructor behavior),
+    // just in case those elements create JS things.
     JSAutoRealm ar(aCx, global.Get());
 
     RefPtr<NodeInfo> nodeInfo = doc->NodeInfoManager()->GetNodeInfo(
@@ -4008,19 +3996,15 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
       }
     }
 
-    // 9.7. "Set element's custom element state to "custom"."
-    // 9.8. "Set element's custom element definition to definition."
     element->SetCustomElementData(MakeUnique<CustomElementData>(
         definition->mType, CustomElementData::State::eCustom));
 
     element->SetCustomElementDefinition(definition);
-    // 9.10. "Return element."
   } else {
-    // 12. "Let element be the last entry in definition's construction stack."
+    // Step 9.
     element = constructionStack.LastElement();
 
-    // 13. "If element is an already constructed marker, then throw a
-    //      TypeError."
+    // Step 10.
     if (element == ALREADY_CONSTRUCTED_MARKER) {
       rv.ThrowTypeError(
           "Cannot instantiate a custom element inside its own constructor "
@@ -4028,7 +4012,7 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
       return false;
     }
 
-    // 14. "Perform ? element.[[SetPrototypeOf]](prototype)."
+    // Step 11.
     // Do prototype swizzling for upgrading a custom element here, for cases
     // when we have a reflector already.  If we don't have one yet, we will
     // create it with the right proto (by calling GetOrCreateDOMReflector with
@@ -4046,12 +4030,13 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
       PreserveWrapper(element.get());
     }
 
-    // 15. "Replace the last entry in definition's construction stack with an
-    //      already constructed marker."
+    // Step 12.
     constructionStack.LastElement() = ALREADY_CONSTRUCTED_MARKER;
   }
 
-  // 16. "Return element."
+  // Tail end of step 8 and step 13: returning the element.  We want to do this
+  // part in the global's realm, though in practice it won't matter much
+  // because Element always knows which realm it should be created in.
   JSAutoRealm ar(aCx, global.Get());
   if (!js::IsObjectInContextCompartment(desiredProto, aCx) &&
       !JS_WrapObject(aCx, &desiredProto)) {
