@@ -79,13 +79,7 @@ class BaseInBrowserHost {
     // Ignore any BrowsingContext which isn't the debugged tab's BrowsingContext
     // (toolbox may be half destroyed and the linkedBrowser be null when moving a tab
     // with DevTools to another window)
-    // Note: Don't compare BCs directly, as host BC can be stale during navigation.
-    if (this.hostTab.linkedBrowser?.browserId != subject.browserId) {
-      return;
-    }
-
-    // The debugged tab's BC changed and the old one became inactive.
-    if (subject.isReplaced) {
+    if (this.hostTab.linkedBrowser?.browsingContext != subject) {
       return;
     }
 
