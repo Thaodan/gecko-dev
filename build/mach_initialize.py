@@ -296,10 +296,8 @@ def initialize(topsrcdir, args=()):
             context.telemetry,
             handler.name == "bootstrap",
             success,
-            Path(topsrcdir),
-            Path(state_dir),
-            driver.settings,
             context._telemetry_start_time_ns,
+            driver._system_metrics_future,
         )
 
     def populate_context(key=None):
@@ -349,10 +347,59 @@ def initialize(topsrcdir, args=()):
 
         return create_telemetry_from_environment(driver.settings)
 
+    def _precollect_system_metrics():
+        from mach.telemetry import resolve_is_employee
+        from mozbuild.telemetry import (
+            get_cpu_brand,
+            get_crowdstrike_running,
+            get_distro_and_version,
+            get_fleet_running,
+            get_psutil_stats,
+            get_shell_info,
+            get_vscode_running,
+        )
+
+        cpu_brand = get_cpu_brand()
+        distro, distro_version = get_distro_and_version()
+        vscode_terminal, ssh_connection = get_shell_info()
+        vscode_running = get_vscode_running()
+        is_employee = resolve_is_employee(
+            Path(topsrcdir), Path(state_dir), driver.settings
+        )
+        fleet_running = get_fleet_running() if is_employee else None
+        crowdstrike_running = get_crowdstrike_running() if is_employee else None
+        psutil_stats = get_psutil_stats()
+
+        return {
+            "cpu_brand": cpu_brand,
+            "distro": distro,
+            "distro_version": distro_version,
+            "vscode_terminal": vscode_terminal,
+            "ssh_connection": ssh_connection,
+            "vscode_running": vscode_running,
+            "is_employee": is_employee,
+            "fleet_running": fleet_running,
+            "crowdstrike_running": crowdstrike_running,
+            "psutil_stats": psutil_stats,
+        }
+
     from concurrent.futures import ThreadPoolExecutor
 
-    telemetry_executor = ThreadPoolExecutor(max_workers=1)
-    driver._telemetry_future = telemetry_executor.submit(_create_telemetry)
+    if sys.platform == "win32":
+        telemetry_executor = ThreadPoolExecutor(max_workers=2)
+        driver._telemetry_future = telemetry_executor.submit(_create_telemetry)
+        driver._system_metrics_future = telemetry_executor.submit(
+            _precollect_system_metrics
+        )
+    else:
+        telemetry_executor = ThreadPoolExecutor(max_workers=1)
+        driver._telemetry_future = telemetry_executor.submit(_create_telemetry)
+
+        class _LazyResult:
+            def result(self):
+                return _precollect_system_metrics()
+
+        driver._system_metrics_future = _LazyResult()
     telemetry_executor.shutdown(wait=False)
 
     aliases = driver.settings.alias
@@ -456,10 +503,8 @@ def _finalize_telemetry_glean(
     telemetry,
     is_bootstrap,
     success,
-    topsrcdir,
-    state_dir,
-    settings,
     start_time_ns,
+    system_metrics_future,
 ):
     """Submit telemetry collected by Glean.
 
@@ -468,16 +513,7 @@ def _finalize_telemetry_glean(
     """
     import time
 
-    from mach.telemetry import MACH_METRICS_PATH, resolve_is_employee
-    from mozbuild.telemetry import (
-        get_cpu_brand,
-        get_crowdstrike_running,
-        get_distro_and_version,
-        get_fleet_running,
-        get_psutil_stats,
-        get_shell_info,
-        get_vscode_running,
-    )
+    from mach.telemetry import MACH_METRICS_PATH
 
     moz_automation = any(e in os.environ for e in ("MOZ_AUTOMATION", "TASK_ID"))
 
@@ -489,35 +525,48 @@ def _finalize_telemetry_glean(
     mach_metrics.mach.success.set(success)
     mach_metrics.mach.moz_automation.set(moz_automation)
 
-    system_metrics = mach_metrics.mach.system
-    cpu_brand = get_cpu_brand()
-    if cpu_brand:
-        system_metrics.cpu_brand.set(cpu_brand)
-    distro, version = get_distro_and_version()
-    system_metrics.distro.set(distro)
-    system_metrics.distro_version.set(version)
+    try:
+        collected_metrics = system_metrics_future.result()
+    except Exception as e:
+        print(
+            f"Warning: failed to collect system telemetry metrics: {e}",
+            file=sys.stderr,
+        )
+        collected_metrics = None
 
-    vscode_terminal, ssh_connection = get_shell_info()
-    system_metrics.vscode_terminal.set(vscode_terminal)
-    system_metrics.ssh_connection.set(ssh_connection)
-    system_metrics.vscode_running.set(get_vscode_running())
+    if collected_metrics is not None:
+        system_metrics = mach_metrics.mach.system
+        if collected_metrics["cpu_brand"]:
+            system_metrics.cpu_brand.set(collected_metrics["cpu_brand"])
+        for attr in (
+            "distro",
+            "distro_version",
+            "vscode_terminal",
+            "ssh_connection",
+            "vscode_running",
+        ):
+            getattr(system_metrics, attr).set(collected_metrics[attr])
 
-    # Only collect Fleet and CrowdStrike metrics for Mozilla employees
-    if resolve_is_employee(topsrcdir, state_dir, settings):
-        system_metrics.fleet_running.set(get_fleet_running())
-        system_metrics.crowdstrike_running.set(get_crowdstrike_running())
-
-    has_psutil, logical_cores, physical_cores, memory_total = get_psutil_stats()
-    if has_psutil:
-        # psutil may not be available (we may not have been able to download
-        # a wheel or build it from source).
-        system_metrics.logical_cores.add(logical_cores)
-        if physical_cores is not None:
-            system_metrics.physical_cores.add(physical_cores)
-        if memory_total is not None:
-            system_metrics.memory.accumulate(
-                int(math.ceil(float(memory_total) / (1024 * 1024 * 1024)))
+        if collected_metrics["fleet_running"] is not None:
+            system_metrics.fleet_running.set(collected_metrics["fleet_running"])
+        if collected_metrics["crowdstrike_running"] is not None:
+            system_metrics.crowdstrike_running.set(
+                collected_metrics["crowdstrike_running"]
             )
+
+        has_psutil, logical_cores, physical_cores, memory_total = collected_metrics[
+            "psutil_stats"
+        ]
+        if has_psutil:
+            # psutil may not be available (we may not have been able to download
+            # a wheel or build it from source).
+            system_metrics.logical_cores.add(logical_cores)
+            if physical_cores is not None:
+                system_metrics.physical_cores.add(physical_cores)
+            if memory_total is not None:
+                system_metrics.memory.accumulate(
+                    int(math.ceil(float(memory_total) / (1024 * 1024 * 1024)))
+                )
     telemetry.submit(is_bootstrap)
 
 
