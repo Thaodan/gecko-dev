@@ -6389,11 +6389,6 @@ void nsTextFrame::DrawSelectionDecorations(
       params.decoration =
           computedStyleFromPseudo->StyleTextReset()->mTextDecorationLine;
       params.descentLimit = -1.f;
-      params.defaultLineThickness = ComputeSelectionUnderlineHeight(
-          aTextPaintStyle.PresContext(), aFontMetrics, aSelectionType);
-      params.lineSize.height = ComputeDecorationLineThickness(
-          computedStyleFromPseudo->StyleTextReset()->mTextDecorationThickness,
-          params.defaultLineThickness, aFontMetrics, appUnitsPerDevPixel, this);
 
       const bool swapUnderline =
           wm.IsCentralBaseline() && IsUnderlineRight(*Style());
@@ -6414,6 +6409,17 @@ void nsTextFrame::DrawSelectionDecorations(
             computedStyleFromPseudo->StyleText()->mTextUnderlineOffset,
             aFontMetrics, appUnitsPerDevPixel, this, wm.IsCentralBaseline(),
             swapUnderline);
+
+        if (decoration == StyleTextDecorationLine::LINE_THROUGH) {
+          params.defaultLineThickness = aFontMetrics.strikeoutSize;
+        } else {
+          params.defaultLineThickness = ComputeSelectionUnderlineHeight(
+              aTextPaintStyle.PresContext(), aFontMetrics, aSelectionType);
+        }
+        params.lineSize.height = ComputeDecorationLineThickness(
+            computedStyleFromPseudo->StyleTextReset()->mTextDecorationThickness,
+            params.defaultLineThickness, aFontMetrics, appUnitsPerDevPixel,
+            this);
 
         PaintDecorationLine(params);
       };
