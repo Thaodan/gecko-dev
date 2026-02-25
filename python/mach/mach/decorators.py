@@ -87,17 +87,13 @@ class _MachCommand:
         self.no_auto_log = no_auto_log
 
     def create_instance(self, context, virtualenv_name):
-        metrics = None
-        if self.metrics_path:
-            metrics = context.telemetry.metrics(self.metrics_path)
-
         # This ensures the resulting class is defined inside `mach` so that logging
         # works as expected, and has a meaningful name
         subclass = type(self.name, (MachCommandBase,), {})
         return subclass(
             context,
             virtualenv_name=virtualenv_name,
-            metrics=metrics,
+            metrics_path=self.metrics_path,
             no_auto_log=self.no_auto_log,
         )
 

@@ -66,7 +66,6 @@ def create_telemetry_from_environment(settings):
 def report_invocation_metrics(telemetry, command):
     metrics = telemetry.metrics(MACH_METRICS_PATH)
     metrics.mach.command.set(command)
-    metrics.mach.duration.start()
 
     try:
         instance = MozbuildObject.from_environment()
