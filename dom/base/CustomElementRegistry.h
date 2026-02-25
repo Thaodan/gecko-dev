@@ -411,6 +411,10 @@ class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
   CustomElementDefinition* LookupCustomElementDefinition(
       JSContext* aCx, JSObject* aConstructor) const;
 
+  /**
+   * Enqueue a custom element callback reaction.
+   * https://html.spec.whatwg.org/#enqueue-a-custom-element-callback-reaction
+   */
   static void EnqueueLifecycleCallback(ElementCallbackType aType,
                                        Element* aCustomElement,
                                        const LifecycleCallbackArgs& aArgs,
@@ -418,7 +422,7 @@ class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
 
   /**
    * Upgrade an element.
-   * https://html.spec.whatwg.org/multipage/scripting.html#upgrades
+   * https://html.spec.whatwg.org/#concept-upgrade-an-element
    */
   MOZ_CAN_RUN_SCRIPT
   static void Upgrade(Element* aElement, CustomElementDefinition* aDefinition,
@@ -553,9 +557,15 @@ class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
               CustomElementConstructor& aFunctionConstructor,
               const ElementDefinitionOptions& aOptions, ErrorResult& aRv);
 
+  /**
+   * https://html.spec.whatwg.org/#dom-customelementregistry-get
+   */
   void Get(const nsAString& name,
            OwningCustomElementConstructorOrUndefined& aRetVal);
 
+  /**
+   * https://html.spec.whatwg.org/#dom-customelementregistry-getname
+   */
   void GetName(JSContext* aCx, CustomElementConstructor& aConstructor,
                nsAString& aResult);
 
