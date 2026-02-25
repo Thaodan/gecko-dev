@@ -39,12 +39,10 @@ class ToastNotificationHandler final : public nsISupports {
       bool aRequireInteraction,
       const nsTArray<RefPtr<nsIAlertAction>>& aActions, bool aIsSystemPrincipal,
       const nsAString& aOpaqueRelaunchData, bool aInPrivateBrowsing,
-      bool aIsSilent, ImagePlacement aImagePlacement = ImagePlacement::eInline,
-      const nsAString& aImagePathUnchecked = u""_ns)
+      bool aIsSilent, ImagePlacement aImagePlacement = ImagePlacement::eInline)
       : mBackend(backend),
         mAumid(aAumid),
-        mImageUri(aImagePathUnchecked),
-        mHasImage(!aImagePathUnchecked.IsEmpty()),
+        mHasImage(false),
         mAlertNotification(aAlertNotification),
         mAlertListener(aAlertListener),
         mName(aName),
