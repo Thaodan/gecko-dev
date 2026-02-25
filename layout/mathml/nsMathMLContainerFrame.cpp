@@ -414,19 +414,14 @@ nsMathMLContainerFrame::Stretch(DrawTarget* aDrawTarget,
           nsEmbellishData coreData;
           GetEmbellishDataFrom(mEmbellishData.coreFrame, coreData);
 
-          nscoord leadingSpace = 0, trailingSpace = 0;
-          if (!StaticPrefs::
-                  mathml_lspace_rspace_for_child_spacing_during_mrow_layout_enabled()) {
-            leadingSpace = coreData.leadingSpace;
-            trailingSpace = coreData.trailingSpace;
-          }
-          mBoundingMetrics.width += leadingSpace + trailingSpace;
+          mBoundingMetrics.width +=
+              coreData.leadingSpace + coreData.trailingSpace;
           aDesiredStretchSize.Width() = mBoundingMetrics.width;
           aDesiredStretchSize.mBoundingMetrics.width = mBoundingMetrics.width;
 
           nscoord dx = StyleVisibility()->mDirection == StyleDirection::Rtl
-                           ? trailingSpace
-                           : leadingSpace;
+                           ? coreData.trailingSpace
+                           : coreData.leadingSpace;
           if (dx != 0) {
             mBoundingMetrics.leftBearing += dx;
             mBoundingMetrics.rightBearing += dx;
@@ -1100,35 +1095,14 @@ static nscoord GetThinSpace(const nsStyleFont* aStyleFont) {
   return aStyleFont->mFont.size.ScaledBy(3.0f / 18.0f).ToAppUnits();
 }
 
-static void GetCoreOperatorLeftAndRightSpace(nsIFrame* aFrame, bool aRTL,
-                                             nscoord& aLeftSpace,
-                                             nscoord& aRightSpace) {
-  if (!StaticPrefs::
-          mathml_lspace_rspace_for_child_spacing_during_mrow_layout_enabled()) {
-    aLeftSpace = 0;
-    aRightSpace = 0;
-    return;
-  }
-
-  nsEmbellishData embellishData;
-  nsMathMLContainerFrame::GetEmbellishDataFrom(aFrame, embellishData);
-  nsEmbellishData coreData;
-  nsMathMLContainerFrame::GetEmbellishDataFrom(embellishData.coreFrame,
-                                               coreData);
-  aLeftSpace = aRTL ? coreData.trailingSpace : coreData.leadingSpace;
-  aRightSpace = aRTL ? coreData.leadingSpace : coreData.trailingSpace;
-}
-
 class nsMathMLContainerFrame::RowChildFrameIterator {
  public:
   explicit RowChildFrameIterator(nsMathMLContainerFrame* aParentFrame,
-                                 const PlaceFlags& aFlags,
-                                 bool aAddOperatorSpacing)
+                                 const PlaceFlags& aFlags)
       : mParentFrame(aParentFrame),
         mReflowOutput(aParentFrame->GetWritingMode()),
         mX(0),
         mFlags(aFlags),
-        mAddOperatorSpacing(aAddOperatorSpacing),
         mChildFrameType(MathMLFrameType::Unknown),
         mCarrySpace(0),
         mFromFrameType(MathMLFrameType::Unknown),
@@ -1152,12 +1126,6 @@ class nsMathMLContainerFrame::RowChildFrameIterator {
     mX += mReflowOutput.mBoundingMetrics.width + mItalicCorrection;
     mX += mMargin.LeftRight();
 
-    if (mAddOperatorSpacing) {
-      nscoord dummy, rightSpace;
-      GetCoreOperatorLeftAndRightSpace(mChildFrame, mRTL, dummy, rightSpace);
-      mX += rightSpace;
-    }
-
     if (!mRTL) {
       mChildFrame = mChildFrame->GetNextSibling();
     } else {
@@ -1175,13 +1143,6 @@ class nsMathMLContainerFrame::RowChildFrameIterator {
     nscoord space = GetInterFrameSpacing(prevFrameType, mChildFrameType,
                                          &mFromFrameType, &mCarrySpace);
     mX += space * GetThinSpace(mParentFrame->StyleFont());
-
-    if (mAddOperatorSpacing) {
-      nscoord leftSpace, dummy;
-      GetCoreOperatorLeftAndRightSpace(mChildFrame, mRTL, leftSpace, dummy);
-      mX += leftSpace;
-    }
-
     return *this;
   }
 
@@ -1203,7 +1164,6 @@ class nsMathMLContainerFrame::RowChildFrameIterator {
   ReflowOutput mReflowOutput;
   nscoord mX;
   const PlaceFlags mFlags;
-  bool mAddOperatorSpacing;
   nsMargin mMargin;
 
   nscoord mItalicCorrection;
@@ -1245,11 +1205,7 @@ void nsMathMLContainerFrame::Place(DrawTarget* aDrawTarget,
   // This is needed in case this frame is empty (i.e., no child frames)
   mBoundingMetrics = nsBoundingMetrics();
 
-  // TODO(bug 2018403): Also add space around children of mtd/math elements,
-  // these are currently handled specially in AddInterFrameSpacingToSize().
-  bool add_space =
-      !mEmbellishData.flags.contains(MathMLEmbellishFlag::EmbellishedOperator);
-  RowChildFrameIterator child(this, aFlags, add_space);
+  RowChildFrameIterator child(this, aFlags);
   nscoord ascent = 0, descent = 0;
   while (child.Frame()) {
     nscoord topMargin = child.Margin().top;
@@ -1297,7 +1253,7 @@ void nsMathMLContainerFrame::Place(DrawTarget* aDrawTarget,
   //////////////////
   // Place Children
   if (!aFlags.contains(PlaceFlag::MeasureOnly)) {
-    PositionRowChildFrames(shiftX, aDesiredSize.BlockStartAscent(), add_space);
+    PositionRowChildFrames(shiftX, aDesiredSize.BlockStartAscent());
   }
 }
 
@@ -1308,10 +1264,9 @@ void nsMathMLContainerFrame::PlaceAsMrow(DrawTarget* aDrawTarget,
 }
 
 void nsMathMLContainerFrame::PositionRowChildFrames(nscoord aOffsetX,
-                                                    nscoord aBaseline,
-                                                    bool aAddOperatorSpacing) {
+                                                    nscoord aBaseline) {
   PlaceFlags flags;
-  RowChildFrameIterator child(this, flags, aAddOperatorSpacing);
+  RowChildFrameIterator child(this, flags);
   while (child.Frame()) {
     nscoord dx = aOffsetX + child.X() + child.Margin().left;
     nscoord dy = aBaseline - child.Ascent();
@@ -1364,8 +1319,6 @@ static nscoord AddInterFrameSpacingToSize(ReflowOutput& aDesiredSize,
   if (MOZ_UNLIKELY(!parentContent)) {
     return 0;
   }
-  // TODO(bug 2018403): Wrap children of math and mtd in an anonymous mrow, so
-  // that this whole logic can go away.
   if (parentContent->IsAnyOfMathMLElements(nsGkAtoms::math, nsGkAtoms::mtd)) {
     gap = GetInterFrameSpacingFor(parent, aFrame);
     // add our own italic correction
@@ -1373,21 +1326,14 @@ static nscoord AddInterFrameSpacingToSize(ReflowOutput& aDesiredSize,
     nsMathMLContainerFrame::GetItalicCorrection(
         aDesiredSize.mBoundingMetrics, leftCorrection, italicCorrection);
     gap += leftCorrection;
-
-    // Take into account lspace/rspace around (embellished) operators.
-    nscoord leftSpace, rightSpace;
-    bool isRTL = parent->StyleVisibility()->mDirection == StyleDirection::Rtl;
-    GetCoreOperatorLeftAndRightSpace(aFrame, isRTL, leftSpace, rightSpace);
-    gap += leftSpace;
-
     if (gap) {
       aDesiredSize.mBoundingMetrics.leftBearing += gap;
       aDesiredSize.mBoundingMetrics.rightBearing += gap;
       aDesiredSize.mBoundingMetrics.width += gap;
       aDesiredSize.Width() += gap;
     }
-    aDesiredSize.mBoundingMetrics.width += italicCorrection + rightSpace;
-    aDesiredSize.Width() += italicCorrection + rightSpace;
+    aDesiredSize.mBoundingMetrics.width += italicCorrection;
+    aDesiredSize.Width() += italicCorrection;
   }
   return gap;
 }

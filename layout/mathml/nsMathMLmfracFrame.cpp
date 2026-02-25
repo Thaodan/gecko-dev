@@ -213,9 +213,7 @@ void nsMathMLmfracFrame::Place(DrawTarget* aDrawTarget,
   // in the core since our last visit there)
   nscoord leftSpace = 0;
   nscoord rightSpace = 0;
-  if (!StaticPrefs::
-          mathml_lspace_rspace_for_child_spacing_during_mrow_layout_enabled() &&
-      outermostEmbellished) {
+  if (outermostEmbellished) {
     const bool isRTL = StyleVisibility()->mDirection == StyleDirection::Rtl;
     nsEmbellishData coreData;
     GetEmbellishDataFrom(mEmbellishData.coreFrame, coreData);
