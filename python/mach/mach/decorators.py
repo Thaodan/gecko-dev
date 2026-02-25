@@ -7,6 +7,8 @@ import collections
 import collections.abc
 from typing import Optional
 
+from mozbuild.base import MachCommandBase
+
 from .base import MachError
 from .registrar import Registrar
 
@@ -85,7 +87,9 @@ class _MachCommand:
         self.no_auto_log = no_auto_log
 
     def create_instance(self, context, virtualenv_name):
-        from mozbuild.base import MachCommandBase
+        metrics = None
+        if self.metrics_path:
+            metrics = context.telemetry.metrics(self.metrics_path)
 
         # This ensures the resulting class is defined inside `mach` so that logging
         # works as expected, and has a meaningful name
@@ -93,7 +97,7 @@ class _MachCommand:
         return subclass(
             context,
             virtualenv_name=virtualenv_name,
-            metrics_path=self.metrics_path,
+            metrics=metrics,
             no_auto_log=self.no_auto_log,
         )
 
