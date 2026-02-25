@@ -258,13 +258,17 @@ def initialize(topsrcdir, args=()):
         """Perform global operations after command dispatch.
 
 
-        For now,  we will use this to handle build system telemetry.
+        For now, we will use this to handle build system telemetry.
         """
 
         # Don't finalize telemetry data if this mach command was invoked as part of
         # another mach command.
         if depth != 1:
             return
+
+        # Wait for the background telemetry initialization to complete
+        if context._telemetry_init_done is not None:
+            context._telemetry_init_done.wait()
 
         _finalize_telemetry_glean(
             context.telemetry,
@@ -273,6 +277,7 @@ def initialize(topsrcdir, args=()):
             Path(topsrcdir),
             Path(state_dir),
             driver.settings,
+            context._telemetry_start_time_ns,
         )
 
     def populate_context(key=None):
@@ -312,6 +317,21 @@ def initialize(topsrcdir, args=()):
     # always load local repository configuration
     driver.settings_paths.append(topsrcdir)
     driver.load_settings()
+
+    # Start Glean telemetry initialization in a background thread early so
+    # that the expensive Glean SDK import and setup can overlap with command
+    # site activation, module loading, and arg parsing. The result is
+    # consumed in _run() via driver._telemetry_future.
+    def _create_telemetry():
+        from mach.telemetry import create_telemetry_from_environment
+
+        return create_telemetry_from_environment(driver.settings)
+
+    from concurrent.futures import ThreadPoolExecutor
+
+    telemetry_executor = ThreadPoolExecutor(max_workers=1)
+    driver._telemetry_future = telemetry_executor.submit(_create_telemetry)
+    telemetry_executor.shutdown(wait=False)
 
     aliases = driver.settings.alias
 
@@ -419,13 +439,20 @@ def initialize(topsrcdir, args=()):
 
 
 def _finalize_telemetry_glean(
-    telemetry, is_bootstrap, success, topsrcdir, state_dir, settings
+    telemetry,
+    is_bootstrap,
+    success,
+    topsrcdir,
+    state_dir,
+    settings,
+    start_time_ns,
 ):
     """Submit telemetry collected by Glean.
 
     Finalizes some metrics (command success state and duration, system information) and
     requests Glean to send the collected data.
     """
+    import time
 
     from mach.telemetry import MACH_METRICS_PATH, resolve_is_employee
     from mozbuild.telemetry import (
@@ -441,7 +468,10 @@ def _finalize_telemetry_glean(
     moz_automation = any(e in os.environ for e in ("MOZ_AUTOMATION", "TASK_ID"))
 
     mach_metrics = telemetry.metrics(MACH_METRICS_PATH)
-    mach_metrics.mach.duration.stop()
+
+    elapsed_ns = time.monotonic_ns() - start_time_ns
+    mach_metrics.mach.duration.set_raw_nanos(elapsed_ns)
+
     mach_metrics.mach.success.set(success)
     mach_metrics.mach.moz_automation.set(moz_automation)
 
