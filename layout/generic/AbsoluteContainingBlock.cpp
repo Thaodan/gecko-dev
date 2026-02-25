@@ -772,9 +772,6 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
                             anchorPosResolutionCache.ptrOr(nullptr),
                             reuseUnfragmentedAnchorPosReferences);
 
-        // TODO(TYLin, Bug 2009647): We'll support a measuring reflow in
-        // printing scenario for fragmentainer-aware abspos positioning such
-        // that nsIFrame::UnfragmentedPositionProperty() will be set.
         if (aReflowInput.mFlags.mIsInFragmentainerMeasuringReflow) {
           kidFrame->SetOrUpdateDeletableProperty(
               UnfragmentedPositionProperty(),
