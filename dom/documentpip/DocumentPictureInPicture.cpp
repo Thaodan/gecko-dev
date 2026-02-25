@@ -94,7 +94,7 @@ void DocumentPictureInPicture::OnPiPClosed() {
   mLastOpenedWindow = nullptr;
 }
 
-nsGlobalWindowInner* DocumentPictureInPicture::GetWindow() {
+nsGlobalWindowInner* DocumentPictureInPicture::GetWindow() const {
   if (mLastOpenedWindow && mLastOpenedWindow->GetOuterWindow() &&
       !mLastOpenedWindow->GetOuterWindow()->Closed()) {
     return nsGlobalWindowInner::Cast(mLastOpenedWindow);
