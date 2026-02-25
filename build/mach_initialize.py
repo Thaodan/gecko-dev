@@ -557,12 +557,12 @@ class FinderHook(MetaPathFinder):
         if spec is None or spec.origin is None:
             return spec
 
+        # Skip normalization for non-bytecode files.
+        if not spec.origin.endswith((".pyc", ".pyo")):
+            return spec
+
         # Normalize the origin path.
         path = os.path.normcase(os.path.abspath(spec.origin))
-        # Note: we could avoid normcase and abspath above for non pyc/pyo
-        # files, but those are actually rare, so it doesn't really matter.
-        if not path.endswith((".pyc", ".pyo")):
-            return spec
 
         # Ignore modules outside our source directory
         if not path.startswith(self._source_dir):
