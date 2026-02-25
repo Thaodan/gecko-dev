@@ -33,6 +33,7 @@ class FetchClientMlpaServiceTest {
                 request = AuthenticationService.Request(
                     userId = UserId("my-user-id"),
                     integrityToken = IntegrityToken("my-integrity-token"),
+                    packageName = PackageName("my.package.name"),
                 ),
             )
 
@@ -64,6 +65,7 @@ class FetchClientMlpaServiceTest {
                 request = AuthenticationService.Request(
                     userId = UserId("my-user-id"),
                     integrityToken = IntegrityToken("my-integrity-token"),
+                    packageName = PackageName("my.package.name"),
                 ),
             )
 
@@ -84,6 +86,7 @@ class FetchClientMlpaServiceTest {
                 request = AuthenticationService.Request(
                     userId = UserId("my-user-id"),
                     integrityToken = IntegrityToken("my-integrity-token"),
+                    packageName = PackageName("my.package.name"),
                 ),
             )
 
