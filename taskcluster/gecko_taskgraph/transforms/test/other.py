@@ -233,6 +233,7 @@ def handle_keyed_by(config, tasks):
         "docker-image",
         "max-run-time",
         "chunks",
+        "default-chunks",
         "suite",
         "run-on-projects",
         "os-groups",
