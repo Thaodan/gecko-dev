@@ -142,6 +142,18 @@ function fieldCallCannotGC(csu, fullfield)
 
 function ignoreEdgeUse(edge, variable, body)
 {
+    // Maybe<T> initializes some padding, which should not be treated as
+    // emplacing its contents so ignore it here.
+    if (edge.Kind == "Assign") {
+        const rhs = edge.Exp[0];
+        if (rhs.Kind == "Fld" && rhs.Field.Name[0] == "padding") {
+            const csu = rhs.Field.FieldCSU.Type;
+            if (csu.Kind == "CSU" && csu.Name.includes("MaybeStorage<")) {
+                return true;
+            }
+        }
+    }
+
     // Horrible special case for ignoring a false positive in xptcstubs: there
     // is a local variable 'paramBuffer' holding an array of nsXPTCMiniVariant
     // on the stack, which appears to be live across a GC call because its
