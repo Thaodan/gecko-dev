@@ -1117,3 +1117,18 @@ void nsMathMLmoFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
 nscoord nsMathMLmoFrame::ItalicCorrection() {
   return UseMathMLChar() ? mMathMLChar.ItalicCorrection() : 0;
 }
+
+nscoord nsMathMLmoFrame::FixInterFrameSpacing(ReflowOutput& aDesiredSize) {
+  nscoord gap = nsMathMLContainerFrame::FixInterFrameSpacing(aDesiredSize);
+  if (!gap) {
+    return 0;
+  }
+
+  // Move the MathML character.
+  nsRect rect;
+  mMathMLChar.GetRect(rect);
+  rect.MoveBy(gap, 0);
+  mMathMLChar.SetRect(rect);
+
+  return gap;
+}
