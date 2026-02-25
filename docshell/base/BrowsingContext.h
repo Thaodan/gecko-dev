@@ -1244,6 +1244,9 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   void SendCommitTransaction(ContentChild* aChild, const BaseTransaction& aTxn,
                              uint64_t aEpoch);
 
+  // Update dependents if the activeness of this BC was explicitly changed.
+  void ActivenessChanged(bool aIsActive);
+
   bool CanSet(FieldIndex<IDX_SessionStoreEpoch>, uint32_t aEpoch,
               ContentParent* aSource) {
     return IsTop() && !aSource;
