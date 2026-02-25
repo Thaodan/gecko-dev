@@ -38,10 +38,6 @@ export class AIChatContentParent extends JSWindowActorParent {
         this.#notifyContentReady();
         break;
 
-      case "AIChatContent:DispatchNewChat":
-        this.#handleNewChat();
-        break;
-
       case "aiChatContentActor:footer-action":
         this.#handleFooterActionFromChild(data);
         break;
@@ -104,15 +100,6 @@ export class AIChatContentParent extends JSWindowActorParent {
       }
     } catch (e) {
       console.warn("Could not open link from AI Window chat", e);
-    }
-  }
-
-  #handleNewChat() {
-    try {
-      const aiWindow = this.#getAIWindowElement();
-      aiWindow.onCreateNewChatClick();
-    } catch (e) {
-      console.warn("Could not open new Smart Window chat", e);
     }
   }
 

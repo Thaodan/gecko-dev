@@ -19,8 +19,10 @@ export class AIChatContent extends MozLitElement {
     assistantIsLoading: { type: Boolean },
     conversationState: { type: Array },
     followUpSuggestions: { type: Array },
-    errorObj: { type: Object },
+    errorStatus: { type: String },
     isSearching: { type: Boolean },
+    searchQuery: { type: String },
+    showErrorMessage: { type: Boolean },
     tokens: { type: Object },
   };
 
@@ -28,9 +30,11 @@ export class AIChatContent extends MozLitElement {
     super();
     this.assistantIsLoading = false;
     this.conversationState = [];
+    this.errorStatus = null;
     this.followUpSuggestions = [];
-    this.errorObj = null;
     this.isSearching = false;
+    this.searchQuery = null;
+    this.showErrorMessage = false;
   }
 
   connectedCallback() {
@@ -84,11 +88,6 @@ export class AIChatContent extends MozLitElement {
     this.addEventListener(
       "SmartWindowPrompt:prompt-selected",
       this.#onFollowUpSelected.bind(this)
-    );
-
-    this.addEventListener(
-      "aiChatError:new-chat",
-      this.openNewChatAfterError.bind(this)
     );
   }
 
@@ -144,11 +143,11 @@ export class AIChatContent extends MozLitElement {
     const message = event.detail;
 
     if (message?.content?.isError) {
-      this.handleErrorEvent(message?.content);
+      this.handleErrorEvent(message?.content?.status);
       return;
     }
 
-    this.errorObj = null;
+    this.showErrorMessage = false;
     this.#checkConversationState(message);
 
     switch (message.role) {
@@ -200,10 +199,11 @@ export class AIChatContent extends MozLitElement {
     this.#scrollToBottom();
   }
 
-  handleErrorEvent(error) {
+  handleErrorEvent(errorStatus) {
     this.assistantIsLoading = false;
     this.isSearching = false;
-    this.errorObj = error;
+    this.errorStatus = errorStatus;
+    this.showErrorMessage = true;
     this.requestUpdate();
   }
 
@@ -228,12 +228,7 @@ export class AIChatContent extends MozLitElement {
   }
 
   retryUserMessageAfterError() {
-    const lastMessage = this.conversationState.findLast(m => m);
-
-    if (!lastMessage) {
-      return;
-    }
-
+    const lastMessage = this.conversationState.at(-1);
     this.#dispatchAction("retry-after-error", {
       ...lastMessage,
       content: { type: "text", body: lastMessage.body },
@@ -325,14 +320,6 @@ export class AIChatContent extends MozLitElement {
     this.requestUpdate();
   }
 
-  openNewChatAfterError() {
-    const event = new CustomEvent("AIChatContent:DispatchNewChat", {
-      bubbles: true,
-      composed: true,
-    });
-    this.dispatchEvent(event);
-  }
-
   #renderMessage(msg) {
     if (!msg) {
       return nothing;
@@ -379,11 +366,11 @@ export class AIChatContent extends MozLitElement {
   }
 
   #renderError() {
-    if (!this.errorObj) {
+    if (!this.showErrorMessage) {
       return nothing;
     }
     return html`<chat-assistant-error
-      .error=${this.errorObj}
+      .errorStatus=${this.errorStatus}
     ></chat-assistant-error>`;
   }
 

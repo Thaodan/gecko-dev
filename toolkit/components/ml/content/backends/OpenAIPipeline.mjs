@@ -384,7 +384,6 @@ export class OpenAIPipeline {
           text: "",
           requestId,
           tokens: [],
-          errorMessage: error.error,
         },
         type: Progress.ProgressType.INFERENCE,
         statusText: Progress.ProgressStatusText.DONE,
