@@ -671,7 +671,7 @@ var Impl = {
     );
 
     payloadObj.processes = {};
-    let processTypes = ["parent", "content", "extension", "dynamic"];
+    let processTypes = ["parent", "content", "dynamic"];
     // Only include the GPU process if we've accumulated data for it.
     if (measurementsContainGPU) {
       processTypes.push("gpu");
