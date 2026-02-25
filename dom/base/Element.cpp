@@ -100,6 +100,7 @@
 #include "mozilla/dom/HTMLTemplateElement.h"
 #include "mozilla/dom/KeyframeAnimationOptionsBinding.h"
 #include "mozilla/dom/KeyframeEffect.h"
+#include "mozilla/dom/LifecycleCallbackArgs.h"
 #include "mozilla/dom/MouseEvent.h"
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/MutationObservers.h"

@@ -22,6 +22,7 @@
 #include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/HTMLElement.h"
 #include "mozilla/dom/HTMLElementBinding.h"
+#include "mozilla/dom/LifecycleCallbackArgs.h"
 #include "mozilla/dom/PrimitiveConversions.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ShadowIncludingTreeIterator.h"
