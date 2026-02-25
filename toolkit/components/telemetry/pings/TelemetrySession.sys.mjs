@@ -666,10 +666,6 @@ var Impl = {
       key => "socket" in measurements[key]
     );
 
-    let measurementsContainUtility = Object.keys(measurements).some(
-      key => "utility" in measurements[key]
-    );
-
     payloadObj.processes = {};
     let processTypes = ["parent", "content", "dynamic"];
     // Only include the GPU process if we've accumulated data for it.
@@ -678,9 +674,6 @@ var Impl = {
     }
     if (measurementsContainSocket) {
       processTypes.push("socket");
-    }
-    if (measurementsContainUtility) {
-      processTypes.push("utility");
     }
 
     // Collect per-process measurements.
