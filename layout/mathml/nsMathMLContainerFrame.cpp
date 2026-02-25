@@ -414,14 +414,19 @@ nsMathMLContainerFrame::Stretch(DrawTarget* aDrawTarget,
           nsEmbellishData coreData;
           GetEmbellishDataFrom(mEmbellishData.coreFrame, coreData);
 
-          mBoundingMetrics.width +=
-              coreData.leadingSpace + coreData.trailingSpace;
+          nscoord leadingSpace = 0, trailingSpace = 0;
+          if (!StaticPrefs::
+                  mathml_lspace_rspace_for_child_spacing_during_mrow_layout_enabled()) {
+            leadingSpace = coreData.leadingSpace;
+            trailingSpace = coreData.trailingSpace;
+          }
+          mBoundingMetrics.width += leadingSpace + trailingSpace;
           aDesiredStretchSize.Width() = mBoundingMetrics.width;
           aDesiredStretchSize.mBoundingMetrics.width = mBoundingMetrics.width;
 
           nscoord dx = StyleVisibility()->mDirection == StyleDirection::Rtl
-                           ? coreData.trailingSpace
-                           : coreData.leadingSpace;
+                           ? trailingSpace
+                           : leadingSpace;
           if (dx != 0) {
             mBoundingMetrics.leftBearing += dx;
             mBoundingMetrics.rightBearing += dx;
