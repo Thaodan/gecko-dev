@@ -24,8 +24,7 @@ from .config import ConfigSettings
 from .dispatcher import CommandAction
 from .logging import LoggingManager
 from .registrar import Registrar
-from .sentry import NoopErrorReporter, register_sentry
-from .telemetry import report_invocation_metrics
+from .sentry import NoopErrorReporter
 from .util import UserError, setenv
 
 SUGGEST_MACH_BUSTED_TEMPLATE = r"""
@@ -299,6 +298,8 @@ To see more help for a specific command, run:
     def _run(self, argv):
         if self.populate_context_handler:
             topsrcdir = Path(self.populate_context_handler("topdir"))
+            from .sentry import register_sentry
+
             sentry = register_sentry(argv, self.settings, topsrcdir)
         else:
             sentry = NoopErrorReporter()
@@ -371,6 +372,8 @@ To see more help for a specific command, run:
             context._telemetry_init_done = threading.Event()
 
             def _finish_telemetry_init(future):
+                from .telemetry import report_invocation_metrics
+
                 context.telemetry = future.result()
                 report_invocation_metrics(context.telemetry, handler.name)
                 context._telemetry_init_done.set()

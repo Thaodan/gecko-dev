@@ -7,8 +7,6 @@ import collections
 import collections.abc
 from typing import Optional
 
-from mozbuild.base import MachCommandBase
-
 from .base import MachError
 from .registrar import Registrar
 
@@ -87,6 +85,8 @@ class _MachCommand:
         self.no_auto_log = no_auto_log
 
     def create_instance(self, context, virtualenv_name):
+        from mozbuild.base import MachCommandBase
+
         # This ensures the resulting class is defined inside `mach` so that logging
         # works as expected, and has a meaningful name
         subclass = type(self.name, (MachCommandBase,), {})
