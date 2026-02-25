@@ -12,6 +12,7 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CloseWatcherManager.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentPictureInPicture.h"
 #include "mozilla/dom/UserActivationIPCUtils.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/PermissionDelegateIPCUtils.h"
@@ -629,7 +630,15 @@ static void ConsumeUserGestureActivationBetweenPiP(BrowsingContext* aTop,
     opener->GetBrowsingContext()->PreOrderWalk(aCallback);
   } else {
     // 5. Get top-level navigable's last opened PiP window
-    nsGlobalWindowInner* pip = aTop->GetOpenedDocumentPiPWindow();
+    nsPIDOMWindowOuter* outer = aTop->GetDOMWindow();
+    NS_ENSURE_TRUE_VOID(outer);
+    nsPIDOMWindowInner* inner = outer->GetCurrentInnerWindow();
+    NS_ENSURE_TRUE_VOID(inner);
+    DocumentPictureInPicture* dpip = inner->GetExtantDocumentPictureInPicture();
+    if (!dpip) {
+      return;
+    }
+    nsGlobalWindowInner* pip = dpip->GetWindow();
     if (!pip) {
       return;
     }
