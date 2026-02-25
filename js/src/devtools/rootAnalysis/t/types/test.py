@@ -13,7 +13,7 @@ assert "unsafe4" in hazmap
 assert "unsafe5" in hazmap
 assert "safe6" not in hazmap
 
-sgc = test.load_typeInfo()['SingleGCField']
+sgc = test.load_typeInfo()["SingleGCField"]
 assert "CellPtr" in sgc
 assert "Cell" in sgc
 assert "Container<Cell*, Cell*>" not in sgc

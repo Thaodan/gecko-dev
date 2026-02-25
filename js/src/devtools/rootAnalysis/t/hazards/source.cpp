@@ -439,8 +439,13 @@ class Subcell : public Cell {
 template <typename T>
 struct RefPtr {
   bool empty = false;
-  ~RefPtr() { if (!empty) GC(); }
-  bool forget() { empty = true; return true; }
+  ~RefPtr() {
+    if (!empty) GC();
+  }
+  bool forget() {
+    empty = true;
+    return true;
+  }
   bool use() { return true; }
   void assign_with_AddRef(T* aRawPtr) { asm(""); }
 };
@@ -621,20 +626,23 @@ void partial_assignments() {
 
   GC();
 
-  a1.cell = makecell(); // no hazard for a1 - cell field reassigned
-  a2.i = 7;             // hazard for a2 - cell field still live
-  b1.a.cell = makecell(); // no hazard for b1 - nested cell field reassigned
-  b2.a.i = 7;           // hazard for b2 - nested cell field still live
-  c1.cell = makecell(); // hazard for c1 - cell2 field still live
-  c2.cell2 = makecell(); // hazard for c2 - cell field still live
-  aw1.a.cell = makecell(); // no hazard for aw1 - fully reassigns the tracked part
-  aw2.a.i = 7;          // hazard for aw2 - a.cell field still live
-  aw3.a = A{makecell(), 7}; // no hazard for aw3 - whole nested struct reassigned
-  bw1.b.a.cell = makecell(); // no hazard for bw1 - fully reassigns the tracked part
-  bw2.b.vp = nullptr;   // hazard for bw2 - b.a.cell field still live
+  a1.cell = makecell();    // no hazard for a1 - cell field reassigned
+  a2.i = 7;                // hazard for a2 - cell field still live
+  b1.a.cell = makecell();  // no hazard for b1 - nested cell field reassigned
+  b2.a.i = 7;              // hazard for b2 - nested cell field still live
+  c1.cell = makecell();    // hazard for c1 - cell2 field still live
+  c2.cell2 = makecell();   // hazard for c2 - cell field still live
+  aw1.a.cell =
+      makecell();  // no hazard for aw1 - fully reassigns the tracked part
+  aw2.a.i = 7;     // hazard for aw2 - a.cell field still live
+  aw3.a =
+      A{makecell(), 7};  // no hazard for aw3 - whole nested struct reassigned
+  bw1.b.a.cell =
+      makecell();      // no hazard for bw1 - fully reassigns the tracked part
+  bw2.b.vp = nullptr;  // hazard for bw2 - b.a.cell field still live
   bw3.b = B{A{makecell(), 7},
             nullptr};  // no hazard for bw3 - whole nested struct reassigned
-  d.as[1].cell = makecell(); // hazard for d - other elements are still live
+  d.as[1].cell = makecell();  // hazard for d - other elements are still live
 
   usecell(a1.cell);
   usecell(a2.cell);
@@ -658,7 +666,9 @@ void closure() {
     GC();
     Cell* cell = makecell();
     bool invert = true;
-    auto lambda_safe1 = [cell, invert]() { return invert ^ (cell != makecell()); };
+    auto lambda_safe1 = [cell, invert]() {
+      return invert ^ (cell != makecell());
+    };
     if (lambda_safe1()) break;
   }
 
