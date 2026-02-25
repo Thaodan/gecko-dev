@@ -433,6 +433,9 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   void SetForceAppWindowActive(bool, ErrorResult&);
   void RecomputeAppWindowVisibility();
 
+  void IncrementDocumentPiPWindowCount();
+  void DecrementDocumentPiPWindowCount();
+
   already_AddRefed<nsISHEntry> GetMostRecentLoadingSessionHistoryEntry();
 
   already_AddRefed<BounceTrackingState> GetBounceTrackingState();
@@ -668,6 +671,8 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   // See CanonicalBrowsingContext.forceAppWindowActive.
   bool mForceAppWindowActive = false;
+
+  uint32_t mDocumentPiPWindowCount = 0;
 
   bool mIsReplaced = false;
 

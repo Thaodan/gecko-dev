@@ -298,7 +298,10 @@ struct EmbedderColorSchemes {
   FIELD(ParentalControlsEnabled, bool)                                        \
   /* If true, this traversable is a Document Picture-in-Picture and           \
      is subject to certain restrictions */                                    \
-  FIELD(IsDocumentPiP, bool)
+  FIELD(IsDocumentPiP, bool)                                                  \
+  /* True if this is a content browsing context whose page has an open        \
+     Document Picture-in-Picture window */                                    \
+  FIELD(ControlsDocumentPiP, bool)
 
 // BrowsingContext, in this context, is the cross process replicated
 // environment in which information about documents is stored. In
@@ -1355,6 +1358,10 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   bool CanSet(FieldIndex<IDX_ExplicitActive>, const ExplicitActiveStatus&,
               ContentParent* aSource);
   void DidSet(FieldIndex<IDX_ExplicitActive>, ExplicitActiveStatus aOldValue);
+
+  bool CanSet(FieldIndex<IDX_ControlsDocumentPiP>, bool,
+              ContentParent* aSource);
+  void DidSet(FieldIndex<IDX_ControlsDocumentPiP>, bool aOldValue);
 
   bool CanSet(FieldIndex<IDX_IsActiveBrowserWindowInternal>, const bool& aValue,
               ContentParent* aSource);

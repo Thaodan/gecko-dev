@@ -730,6 +730,11 @@ void BrowsingContext::CleanUpDanglingRemoteOuterWindowProxies(
 bool BrowsingContext::IsActive() const {
   const BrowsingContext* current = this;
   do {
+    if (current->GetControlsDocumentPiP()) {
+      // XXX Make Media PiP use a similar mechanism too (bug 2016174).
+      MOZ_ASSERT(current->IsTop(), "Only top can open document PiP windows");
+      return true;
+    }
     auto explicit_ = current->GetExplicitActive();
     if (explicit_ != ExplicitActiveStatus::None) {
       return explicit_ == ExplicitActiveStatus::Active;
@@ -3125,6 +3130,57 @@ void BrowsingContext::DidSet(FieldIndex<IDX_GVInaudibleAutoplayRequestStatus>) {
              "browsing context");
 }
 
+bool BrowsingContext::CanSet(FieldIndex<IDX_ControlsDocumentPiP>, bool,
+                             ContentParent* aSource) {
+  const bool setByOwner =
+      aSource ? Canonical()->IsOwnedByProcess(aSource->ChildID())
+              : IsInProcess();
+  return IsTopContent() && setByOwner;
+}
+
+void BrowsingContext::DidSet(FieldIndex<IDX_ControlsDocumentPiP>,
+                             bool aOldValue) {
+  const bool controlsPiP = GetControlsDocumentPiP();
+  MOZ_ASSERT(IsTopContent());
+
+  if (controlsPiP == aOldValue) {
+    return;
+  }
+
+  if (XRE_IsParentProcess()) {
+    CanonicalBrowsingContext* chromeTopBC =
+        Canonical()->TopCrossChromeBoundary();
+
+    if (controlsPiP) {
+      chromeTopBC->IncrementDocumentPiPWindowCount();
+    } else {
+      chromeTopBC->DecrementDocumentPiPWindowCount();
+    }
+  } else {
+    // Document PiP keeps PresShell active
+    RefPtr<PresShell> presShell =
+        mDocShell ? mDocShell->GetPresShell() : nullptr;
+    if (presShell) {
+      presShell->ActivenessMaybeChanged();
+    }
+  }
+
+  const bool isActive = IsActive();
+  const bool wasActive = [&] {
+    if (aOldValue) {
+      return true;
+    }
+    if (GetExplicitActive() != ExplicitActiveStatus::None) {
+      return GetExplicitActive() == ExplicitActiveStatus::Active;
+    }
+    return GetParent() && GetParent()->IsActive();
+  }();
+
+  if (isActive != wasActive) {
+    ActivenessChanged(isActive);
+  }
+}
+
 bool BrowsingContext::CanSet(FieldIndex<IDX_ExplicitActive>,
                              const ExplicitActiveStatus&,
                              ContentParent* aSource) {
@@ -3137,6 +3193,9 @@ void BrowsingContext::DidSet(FieldIndex<IDX_ExplicitActive>,
 
   const bool isActive = IsActive();
   const bool wasActive = [&] {
+    if (GetControlsDocumentPiP()) {
+      return true;
+    }
     if (aOldValue != ExplicitActiveStatus::None) {
       return aOldValue == ExplicitActiveStatus::Active;
     }
