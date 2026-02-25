@@ -835,18 +835,7 @@ nsresult mozJSModuleLoader::GetScriptForLocation(
 
     if (aUseMemMap) {
       AutoMemMap map;
-      auto result = map.init(aModuleFile);
-      if (result.isErr()) {
-        rv = result.propagateErr();
-        if (rv == NS_ERROR_FILE_NOT_FOUND) {
-          // In local builds, files are read from the disk instead of omni.ja,
-          // which causes aUseMemMap to be true. To be consistent with packaged
-          // builds, call CheckForBrokenChromeURL() here. For context, see:
-          // https://bugzilla.mozilla.org/show_bug.cgi?id=2018078#c4
-          mozilla::net::CheckForBrokenChromeURL(nullptr, aInfo.URI());
-        }
-        return rv;
-      }
+      MOZ_TRY(map.init(aModuleFile));
 
       // Note: exceptions will get handled further down;
       // don't early return for them here.

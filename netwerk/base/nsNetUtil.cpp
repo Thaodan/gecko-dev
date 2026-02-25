@@ -4222,8 +4222,7 @@ void CheckForBrokenChromeURL(nsILoadInfo* aLoadInfo, nsIURI* aURI) {
   nsAutoCString host;
   aURI->GetHost(host);
   // Ignore test hits.
-  if (host.EqualsLiteral("mochitests") || host.EqualsLiteral("reftest") ||
-      host.EqualsLiteral("testing-common") || host.EqualsLiteral("test")) {
+  if (host.EqualsLiteral("mochitests") || host.EqualsLiteral("reftest")) {
     return;
   }
 
@@ -4274,13 +4273,6 @@ void CheckForBrokenChromeURL(nsILoadInfo* aLoadInfo, nsIURI* aURI) {
   // command line, which is then looked up in both app-specific and toolkit-wide
   // locations.
   if (spec.Find("backgroundtasks") != kNotFound) {
-    return;
-  }
-
-  // SessionStoreFunctions.sys.mjs may be missing at runtime in xpcshell tests:
-  // https://bugzilla.mozilla.org/show_bug.cgi?id=2018078#c3
-  if (spec.EqualsLiteral(
-          "resource:///modules/sessionstore/SessionStoreFunctions.sys.mjs")) {
     return;
   }
 
