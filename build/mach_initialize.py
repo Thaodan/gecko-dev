@@ -169,6 +169,20 @@ def initialize(topsrcdir, args=()):
 
     from concurrent.futures import ThreadPoolExecutor
 
+    def _precompute_mozconfig_info():
+        try:
+            import mozpack.path as mozpath
+            from mozbuild.base import MozbuildObject
+            from mozbuild.mozconfig import MozconfigLoader
+
+            MozbuildObject.get_base_mozconfig_info(
+                mozpath.realpath(topsrcdir),
+                MozconfigLoader.AUTODETECT,
+                os.environ.get("MOZCONFIG"),
+            )
+        except Exception:
+            pass
+
     # Sparse checkouts may not have all mach_commands.py files. Ignore
     # errors from missing files. Same for spidermonkey tarballs.
     def _compute_missing_ok():
@@ -185,9 +199,10 @@ def initialize(topsrcdir, args=()):
         else:
             return os.path.exists(os.path.join(topsrcdir, "INSTALL"))
 
-    missing_ok_executor = ThreadPoolExecutor(max_workers=1)
-    missing_ok_future = missing_ok_executor.submit(_compute_missing_ok)
-    missing_ok_executor.shutdown(wait=False)
+    background_executor = ThreadPoolExecutor(max_workers=2)
+    background_executor.submit(_precompute_mozconfig_info)
+    missing_ok_future = background_executor.submit(_compute_missing_ok)
+    background_executor.shutdown(wait=False)
 
     import mach.main
     from mach.command_util import (
