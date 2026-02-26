@@ -1074,7 +1074,6 @@ already_AddRefed<SourceSurface> NVImage::GetAsSourceSurface() {
 
   if (NS_WARN_IF(NS_FAILED(gfx::ConvertYCbCrToRGB(
           aData, format, size, mapping.GetData(), mapping.GetStride())))) {
-    MOZ_ASSERT_UNREACHABLE("Failed to convert YUV into RGB data");
     return nullptr;
   }
 
