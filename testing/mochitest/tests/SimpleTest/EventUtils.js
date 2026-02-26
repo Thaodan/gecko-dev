@@ -1977,21 +1977,11 @@ function _parseNativeModifiers(aModifiers, aWindow = window) {
 // Win: These constants can be found by inspecting registry keys under
 //      HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Keyboard Layouts
 
-// KB5070311 added AltGr to Arabic keyboard layouts on Windows 11 24H2+
-// (build 26100+).
-var _EU_arabicHasAltGr = false;
-if (_EU_isWin()) {
-  try {
-    _EU_arabicHasAltGr =
-      parseInt(Services.sysinfo.getProperty("build"), 10) >= 26100;
-  } catch (ex) {}
-}
-
 const KEYBOARD_LAYOUT_ARABIC = {
   name: "Arabic",
   Mac: 6,
   Win: 0x00000401,
-  hasAltGrOnWin: _EU_arabicHasAltGr,
+  hasAltGrOnWin: false,
 };
 _defineConstant("KEYBOARD_LAYOUT_ARABIC", KEYBOARD_LAYOUT_ARABIC);
 const KEYBOARD_LAYOUT_ARABIC_PC = {
