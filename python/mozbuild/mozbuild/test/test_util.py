@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import copy
-import functools
 import hashlib
 import itertools
 import os
@@ -536,72 +535,6 @@ class TestStrictOrderingOnAppendListWithFlagsFactory(unittest.TestCase):
         self.assertEqual(len(foo), 3)
         foo[3:] = zot
         assertExtended(foo)
-
-
-class TestMemoize(unittest.TestCase):
-    def test_memoize(self):
-        self._count = 0
-
-        @functools.cache
-        def wrapped(a, b):
-            self._count += 1
-            return a + b
-
-        self.assertEqual(self._count, 0)
-        self.assertEqual(wrapped(1, 1), 2)
-        self.assertEqual(self._count, 1)
-        self.assertEqual(wrapped(1, 1), 2)
-        self.assertEqual(self._count, 1)
-        self.assertEqual(wrapped(2, 1), 3)
-        self.assertEqual(self._count, 2)
-        self.assertEqual(wrapped(1, 2), 3)
-        self.assertEqual(self._count, 3)
-        self.assertEqual(wrapped(1, 2), 3)
-        self.assertEqual(self._count, 3)
-        self.assertEqual(wrapped(1, 1), 2)
-        self.assertEqual(self._count, 3)
-
-    def test_memoize_method(self):
-        class foo:
-            def __init__(self):
-                self._count = 0
-
-            @functools.cache
-            def wrapped(self, a, b):
-                self._count += 1
-                return a + b
-
-        instance = foo()
-        self.assertEqual(instance._count, 0)
-        self.assertEqual(instance.wrapped(1, 1), 2)
-        self.assertEqual(instance._count, 1)
-        self.assertEqual(instance.wrapped(1, 1), 2)
-        self.assertEqual(instance._count, 1)
-        self.assertEqual(instance.wrapped(2, 1), 3)
-        self.assertEqual(instance._count, 2)
-        self.assertEqual(instance.wrapped(1, 2), 3)
-        self.assertEqual(instance._count, 3)
-        self.assertEqual(instance.wrapped(1, 2), 3)
-        self.assertEqual(instance._count, 3)
-        self.assertEqual(instance.wrapped(1, 1), 2)
-        self.assertEqual(instance._count, 3)
-
-    def test_memoized_property(self):
-        class foo:
-            def __init__(self):
-                self._count = 0
-
-            @functools.cached_property
-            def wrapped(self):
-                self._count += 1
-                return 42
-
-        instance = foo()
-        self.assertEqual(instance._count, 0)
-        self.assertEqual(instance.wrapped, 42)
-        self.assertEqual(instance._count, 1)
-        self.assertEqual(instance.wrapped, 42)
-        self.assertEqual(instance._count, 1)
 
 
 class TestTypedList(unittest.TestCase):
