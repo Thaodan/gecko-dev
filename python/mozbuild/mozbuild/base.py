@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import errno
+import functools
 import io
 import json
 import logging
@@ -36,7 +37,6 @@ from .util import (
     cpu_count,
     is_running_under_coding_agent,
     memoize,
-    memoized_property,
 )
 
 try:
@@ -445,7 +445,7 @@ class MozbuildObject(ProcessExecutionMixin):
 
         return platform_name, bits + "bit"
 
-    @memoized_property
+    @functools.cached_property
     def repository(self):
         """Get a `mozversioncontrol.Repository` object for the
         top source directory."""

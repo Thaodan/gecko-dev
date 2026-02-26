@@ -11,7 +11,7 @@ import sys
 import types
 from collections import OrderedDict
 from contextlib import contextmanager
-from functools import wraps
+from functools import cached_property, wraps
 
 import mozpack.path as mozpath
 
@@ -29,7 +29,6 @@ from mozbuild.util import (
     ReadOnlyDict,
     ReadOnlyNamespace,
     memoize,
-    memoized_property,
 )
 
 # TRACE logging level, below (thus more verbose than) DEBUG
@@ -1013,7 +1012,7 @@ class ConfigureSandbox(dict):
             wrapped = getattr(wrapped, attr)
         return wrapped
 
-    @memoized_property
+    @cached_property
     def _wrapped_os(self):
         wrapped_os = {}
         exec("from os import *", {}, wrapped_os)
@@ -1027,7 +1026,7 @@ class ConfigureSandbox(dict):
         wrapped_os["path"] = ReadOnlyNamespace(**wrapped_path)
         return ReadOnlyNamespace(**wrapped_os)
 
-    @memoized_property
+    @cached_property
     def _wrapped_subprocess(self):
         wrapped_subprocess = {}
         exec("from subprocess import *", {}, wrapped_subprocess)

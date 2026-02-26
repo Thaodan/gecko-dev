@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import copy
+import functools
 import hashlib
 import itertools
 import os
@@ -33,7 +34,6 @@ from mozbuild.util import (
     hash_file,
     hexdump,
     memoize,
-    memoized_property,
     pair,
     resolve_target_to_make,
 )
@@ -599,7 +599,7 @@ class TestMemoize(unittest.TestCase):
             def __init__(self):
                 self._count = 0
 
-            @memoized_property
+            @functools.cached_property
             def wrapped(self):
                 self._count += 1
                 return 42

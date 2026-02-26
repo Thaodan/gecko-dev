@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from functools import cached_property
 from io import StringIO
 
 from buildconfig import topobjdir, topsrcdir
@@ -16,7 +17,7 @@ from mozfile import json
 from mozpack import path as mozpath
 
 from mozbuild.configure import ConfigureSandbox
-from mozbuild.util import ReadOnlyNamespace, memoized_property
+from mozbuild.util import ReadOnlyNamespace
 
 
 def fake_short_path(path):
@@ -119,15 +120,15 @@ class ConfigureTestSandbox(ConfigureSandbox):
 
         super().__init__(config, environ, *args, **kwargs)
 
-    @memoized_property
+    @cached_property
     def _wrapped_mozfile(self):
         return ReadOnlyNamespace(which=self.which, json=json)
 
-    @memoized_property
+    @cached_property
     def _wrapped_os(self):
         return self.imported_os
 
-    @memoized_property
+    @cached_property
     def _wrapped_subprocess(self):
         return ReadOnlyNamespace(
             CalledProcessError=subprocess.CalledProcessError,
@@ -138,7 +139,7 @@ class ConfigureTestSandbox(ConfigureSandbox):
             Popen=self.Popen,
         )
 
-    @memoized_property
+    @cached_property
     def _wrapped_ctypes(self):
         class CTypesFunc:
             def __init__(self, func):
@@ -157,7 +158,7 @@ class ConfigureTestSandbox(ConfigureSandbox):
             wintypes=ReadOnlyNamespace(LPCWSTR=0, LPWSTR=1, DWORD=2),
         )
 
-    @memoized_property
+    @cached_property
     def _wrapped__winreg(self):
         def OpenKey(*args, **kwargs):
             raise OSError()

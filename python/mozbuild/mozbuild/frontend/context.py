@@ -14,6 +14,7 @@ If you are looking for the absolute authority on what moz.build files can
 contain, you've come to the right place.
 """
 
+import functools
 import itertools
 import operator
 import os
@@ -34,7 +35,6 @@ from mozbuild.util import (
     TypedList,
     TypedNamedTuple,
     memoize,
-    memoized_property,
 )
 
 from .. import schedules
@@ -147,7 +147,7 @@ class Context(KeyedDefaultDict):
             return []
         return self._all_paths[self._all_paths.index(self.main_path) :]
 
-    @memoized_property
+    @functools.cached_property
     def objdir(self):
         return mozpath.join(self.config.topobjdir, self.relobjdir).rstrip("/")
 
@@ -168,7 +168,7 @@ class Context(KeyedDefaultDict):
         assert self.main_path
         return self._relsrcdir(self.current_path or self.main_path)
 
-    @memoized_property
+    @functools.cached_property
     def relobjdir(self):
         assert self.main_path
         return mozpath.relpath(mozpath.dirname(self.main_path), self.config.topsrcdir)
@@ -903,7 +903,7 @@ class Path(ContextDerivedValue, str, metaclass=PathMeta):
     def __hash__(self):
         return hash(self.full_path)
 
-    @memoized_property
+    @functools.cached_property
     def target_basename(self):
         return mozpath.basename(self.full_path)
 
@@ -929,7 +929,7 @@ class SourcePath(Path):
         self.full_path = mozpath.normpath(path)
         return self
 
-    @memoized_property
+    @functools.cached_property
     def translated(self):
         """Returns the corresponding path in the objdir.
 
