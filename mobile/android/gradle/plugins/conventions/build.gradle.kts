@@ -11,6 +11,8 @@ dependencies {
     implementation(libs.kaml)
 }
 
+group = "org.mozilla"
+
 val mozconfig = gradle.extra["mozconfig"] as Map<*, *>
 val topobjdir = mozconfig["topobjdir"] as String
 
