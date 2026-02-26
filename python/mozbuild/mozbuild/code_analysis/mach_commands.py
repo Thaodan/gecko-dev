@@ -17,6 +17,7 @@ import xml.etree.ElementTree as ET
 from types import SimpleNamespace
 
 import mozpack.path as mozpath
+import yaml
 from mach.decorators import Command, CommandArgument, SubCommand
 from mach.main import Mach
 from mozversioncontrol import get_repository_object
@@ -294,16 +295,16 @@ def static_analysis(command_context):
 )
 def check(
     command_context,
-    source,
-    jobs,
-    strip,
-    verbose,
-    checks,
-    fix,
-    header_filter,
-    output,
-    format,
-    outgoing,
+    source=None,
+    jobs=2,
+    strip=1,
+    verbose=False,
+    checks="-*",
+    fix=False,
+    header_filter="",
+    output=None,
+    format="text",
+    outgoing=False,
 ):
     from mozbuild.controller.building import (
         StaticAnalysisFooter,
@@ -336,25 +337,25 @@ def check(
 
     # Split in several chunks to avoid hitting Python's limit of 100 groups in re
     compile_db = json.loads(open(_compile_db).read())
+    total = 0
     import re
 
     chunk_size = 50
-
-    sources = []
-
     for offset in range(0, len(source), chunk_size):
-        source_chunks = [f for f in source[offset : offset + chunk_size]]
+        source_chunks = [
+            re.escape(f) for f in source[offset : offset + chunk_size].copy()
+        ]
         name_re = re.compile("(" + ")|(".join(source_chunks) + ")")
         for f in compile_db:
             if name_re.search(f["file"]):
-                sources.append(f["file"])
+                total = total + 1
 
     # Filter source to remove excluded files
-    source = _generate_path_list(command_context, sources, verbose=verbose)
+    source = _generate_path_list(command_context, source, verbose=verbose)
 
-    if not sources or not source:
+    if not total or not source:
         command_context.log(
-            logging.WARNING,
+            logging.INFO,
             "static-analysis",
             {},
             "There are no files eligible for analysis. Please note that 'header' files "
@@ -368,7 +369,7 @@ def check(
         command_context.topsrcdir,
         command_context.topobjdir,
         get_clang_tidy_config(command_context).checks_with_data,
-        len(sources),
+        total,
     )
 
     footer = StaticAnalysisFooter(command_context.log_manager.terminal, monitor)
@@ -389,7 +390,6 @@ def check(
                 sources=source[i : (i + batch_size)],
                 jobs=jobs,
                 fix=fix,
-                verbose=verbose,
             )
             rc = command_context.run_process(
                 args=args,
@@ -528,7 +528,6 @@ def _get_clang_tidy_command(
     sources,
     jobs,
     fix,
-    verbose=True,
 ):
     if checks == "-*":
         checks = ",".join(get_clang_tidy_config(command_context).checks)
@@ -556,13 +555,10 @@ def _get_clang_tidy_command(
     # the checkers to our code.
     cfg = get_clang_tidy_config(command_context).checks_config
     if cfg:
-        common_args += [f"-config={json.dumps(cfg)}"]
+        common_args += ["-config=%s" % yaml.dump(cfg)]
 
     if fix:
         common_args += ["-fix"]
-
-    if not verbose:
-        common_args += ["-quiet"]
 
     return (
         [
@@ -1046,7 +1042,7 @@ def print_checks(command_context, verbose=False):
     args = [
         clang_paths._clang_tidy_path,
         "-list-checks",
-        f"-checks={','.join(get_clang_tidy_config(command_context).checks)}",
+        "-checks=%s" % get_clang_tidy_config(command_context).checks,
     ]
 
     return command_context.run_process(args=args, pass_thru=True)
@@ -1399,17 +1395,29 @@ def _build_export(command_context, jobs, verbose=False):
         command_context.log(logging.INFO, "build_output", {"line": line}, "{line}")
 
     # First install what we can through install manifests.
+    rc = command_context._run_make(
+        directory=command_context.topobjdir,
+        target="pre-export",
+        line_handler=None,
+        silent=not verbose,
+    )
+    if rc != 0:
+        return rc
+
     # Then build the rest of the build dependencies by running the full
     # export target, because we can't do anything better.
-    return command_context._run_make(
-        directory=command_context.topobjdir,
-        target=("pre-export", "export", "pre-compile"),
-        line_handler=None,
-        print_directory=verbose,
-        log=verbose,
-        silent=not verbose,
-        num_jobs=jobs,
-    )
+    for target in ("export", "pre-compile"):
+        rc = command_context._run_make(
+            directory=command_context.topobjdir,
+            target=target,
+            line_handler=None,
+            silent=not verbose,
+            num_jobs=jobs,
+        )
+        if rc != 0:
+            return rc
+
+    return 0
 
 
 def _set_clang_tools_paths(command_context):
