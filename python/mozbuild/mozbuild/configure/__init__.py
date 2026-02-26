@@ -11,7 +11,7 @@ import sys
 import types
 from collections import OrderedDict
 from contextlib import contextmanager
-from functools import cached_property, wraps
+from functools import cache, cached_property, wraps
 
 import mozpack.path as mozpath
 
@@ -28,7 +28,6 @@ from mozbuild.configure.util import ConfigureOutputHandler, LineIO, getpreferred
 from mozbuild.util import (
     ReadOnlyDict,
     ReadOnlyNamespace,
-    memoize,
 )
 
 # TRACE logging level, below (thus more verbose than) DEBUG
@@ -148,7 +147,7 @@ class DependsFunction:
             for d in self.dependencies
         ]
 
-    @memoize
+    @cache
     def result(self):
         if self.when and not self.sandbox._value_for(self.when):
             return None
@@ -228,7 +227,7 @@ class CombinedDependsFunction(DependsFunction):
 
         super().__init__(sandbox, func, flatten_deps)
 
-    @memoize
+    @cache
     def result(self):
         resolved_args = (self.sandbox._value_for(d) for d in self.dependencies)
         return self._func(resolved_args)
@@ -290,6 +289,8 @@ class ConfigureSandbox(dict):
         sandbox.run(path)
         do_stuff(config)
     """
+
+    __hash__ = object.__hash__
 
     # The default set of builtins. We expose unicode as str to make sandboxed
     # files more python3-ready.
@@ -388,6 +389,7 @@ class ConfigureSandbox(dict):
         # A list of conditions to apply as a default `when` for every *_impl()
         self._default_conditions = []
 
+        self._resolved_options = {}
         self._helper = CommandLineHelper(environ, argv)
 
         assert isinstance(config, dict)
@@ -497,7 +499,7 @@ class ConfigureSandbox(dict):
         self._paths.pop(-1)
 
     @staticmethod
-    @memoize
+    @cache
     def get_compiled_source(source, path):
         return compile(source, path, "exec")
 
@@ -625,13 +627,13 @@ class ConfigureSandbox(dict):
 
         assert False
 
-    @memoize
+    @cache
     def _value_for_depends(self, obj):
         value = obj.result()
         self._logger.log(TRACE, "%r = %r", obj, value)
         return value
 
-    @memoize
+    @cache
     def _value_for_option(self, option):
         implied = {}
         matching_implied_options = [
@@ -668,8 +670,7 @@ class ConfigureSandbox(dict):
             )
 
         if value.origin == "implied":
-            recursed_value = getattr(self, "__value_for_option").get((option,))
-            if recursed_value is not None:
+            if self._resolved_options.get(option) is not None:
                 filename, line = implied[value.format(option.option)].caller
                 raise ConfigureError(
                     "'%s' appears somewhere in the direct or indirect dependencies when "
@@ -693,9 +694,11 @@ class ConfigureSandbox(dict):
                     % option_string.split("=", 1)[0]
                 )
             self._logger.log(TRACE, "%r = None", option)
+            self._resolved_options[option] = None
             return None
 
         self._logger.log(TRACE, "%r = %r", option, value)
+        self._resolved_options[option] = value
         return value
 
     def _dependency(self, arg, callee_name, arg_name=None):

@@ -1032,7 +1032,7 @@ def TypedNamedTuple(name, fields):
     return TypedTuple
 
 
-@memoize
+@functools.cache
 def TypedList(type, base_class=List):
     """A list with type coercion.
 

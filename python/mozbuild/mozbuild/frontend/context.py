@@ -34,7 +34,6 @@ from mozbuild.util import (
     StrictOrderingOnAppendListWithFlagsFactory,
     TypedList,
     TypedNamedTuple,
-    memoize,
 )
 
 from .. import schedules
@@ -79,6 +78,8 @@ class Context(KeyedDefaultDict):
 
     config is the ConfigEnvironment for this context.
     """
+
+    __hash__ = object.__hash__
 
     def __init__(self, allowed_variables={}, config=None, finder=None):
         self._allowed_variables = allowed_variables
@@ -151,7 +152,7 @@ class Context(KeyedDefaultDict):
     def objdir(self):
         return mozpath.join(self.config.topobjdir, self.relobjdir).rstrip("/")
 
-    @memoize
+    @functools.cache
     def _srcdir(self, path):
         return mozpath.join(self.config.topsrcdir, self._relsrcdir(path)).rstrip("/")
 
@@ -159,7 +160,7 @@ class Context(KeyedDefaultDict):
     def srcdir(self):
         return self._srcdir(self.current_path or self.main_path)
 
-    @memoize
+    @functools.cache
     def _relsrcdir(self, path):
         return mozpath.relpath(mozpath.dirname(path), self.config.topsrcdir)
 
@@ -990,7 +991,7 @@ class AbsolutePath(Path):
         return self
 
 
-@memoize
+@functools.cache
 def ContextDerivedTypedList(klass, base_class=List):
     """Specialized TypedList for use with ContextDerivedValue types."""
     assert issubclass(klass, ContextDerivedValue)
@@ -1008,7 +1009,7 @@ def ContextDerivedTypedList(klass, base_class=List):
     return _TypedList
 
 
-@memoize
+@functools.cache
 def ContextDerivedTypedListWithItems(type, base_class=List):
     """Specialized TypedList for use with ContextDerivedValue types."""
 
@@ -1020,7 +1021,7 @@ def ContextDerivedTypedListWithItems(type, base_class=List):
     return _TypedListWithItems
 
 
-@memoize
+@functools.cache
 def ContextDerivedTypedRecord(*fields):
     """Factory for objects with certain properties and dynamic
     type checks.
@@ -1133,7 +1134,7 @@ class Schedules:
         return Schedules(inclusive=inclusive, exclusive=exclusive)
 
 
-@memoize
+@functools.cache
 def ContextDerivedTypedHierarchicalStringList(type):
     """Specialized HierarchicalStringList for use with ContextDerivedValue
     types."""

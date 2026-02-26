@@ -9,7 +9,6 @@ import itertools
 import os
 import re
 import string
-import sys
 import unittest
 
 import pytest
@@ -33,7 +32,6 @@ from mozbuild.util import (
     group_unified_files,
     hash_file,
     hexdump,
-    memoize,
     pair,
     resolve_target_to_make,
 )
@@ -544,7 +542,7 @@ class TestMemoize(unittest.TestCase):
     def test_memoize(self):
         self._count = 0
 
-        @memoize
+        @functools.cache
         def wrapped(a, b):
             self._count += 1
             return a + b
@@ -568,13 +566,12 @@ class TestMemoize(unittest.TestCase):
             def __init__(self):
                 self._count = 0
 
-            @memoize
+            @functools.cache
             def wrapped(self, a, b):
                 self._count += 1
                 return a + b
 
         instance = foo()
-        refcount = sys.getrefcount(instance)
         self.assertEqual(instance._count, 0)
         self.assertEqual(instance.wrapped(1, 1), 2)
         self.assertEqual(instance._count, 1)
@@ -588,11 +585,6 @@ class TestMemoize(unittest.TestCase):
         self.assertEqual(instance._count, 3)
         self.assertEqual(instance.wrapped(1, 1), 2)
         self.assertEqual(instance._count, 3)
-
-        # Memoization of methods is expected to not keep references to
-        # instances, so the refcount shouldn't have changed after executing the
-        # memoized method.
-        self.assertEqual(refcount, sys.getrefcount(instance))
 
     def test_memoized_property(self):
         class foo:

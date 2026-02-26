@@ -118,7 +118,13 @@ class ConfigureTestSandbox(ConfigureSandbox):
         os_contents["environ"] = dict(environ)
         self.imported_os = ReadOnlyNamespace(**os_contents)
 
+        self._dependency_overrides = {}
         super().__init__(config, environ, *args, **kwargs)
+
+    def _value_for_depends(self, obj):
+        if obj in self._dependency_overrides:
+            return self._dependency_overrides[obj]
+        return super()._value_for_depends(obj)
 
     @cached_property
     def _wrapped_mozfile(self):

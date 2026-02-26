@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, # You can obtain one at http://mozilla.org/MPL/2.0/.
 import concurrent.futures
+import functools
 import json
 import logging
 import ntpath
@@ -24,7 +25,7 @@ from mozversioncontrol import get_repository_object
 
 from mozbuild import build_commands
 from mozbuild.controller.clobber import Clobberer
-from mozbuild.util import cpu_count, memoize
+from mozbuild.util import cpu_count
 
 
 # Function used to run clang-format on a batch of files. It is a helper function
@@ -441,7 +442,7 @@ def get_files_with_commands(command_context, compile_db, source):
     return commands_list
 
 
-@memoize
+@functools.cache
 def get_clang_tidy_config(command_context):
     from mozbuild.code_analysis.utils import ClangTidyConfig
 

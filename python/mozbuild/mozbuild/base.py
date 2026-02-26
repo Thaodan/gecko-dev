@@ -36,7 +36,6 @@ from .util import (
     construct_log_filename,
     cpu_count,
     is_running_under_coding_agent,
-    memoize,
 )
 
 try:
@@ -301,7 +300,7 @@ class MozbuildObject(ProcessExecutionMixin):
         self._virtualenv_manager = command_site_manager
 
     @staticmethod
-    @memoize
+    @functools.cache
     def get_base_mozconfig_info(topsrcdir, path, env_mozconfig):
         # env_mozconfig is only useful for unittests, which change the value of
         # the environment variable, which has an impact on autodetection (when
