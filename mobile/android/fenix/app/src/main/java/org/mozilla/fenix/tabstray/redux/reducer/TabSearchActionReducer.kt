@@ -5,7 +5,7 @@
 package org.mozilla.fenix.tabstray.redux.reducer
 
 import org.mozilla.fenix.tabstray.TabSearchAction
-import org.mozilla.fenix.tabstray.TabsTrayState
+import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 
 /**
  * Reducer for [TabSearchAction] dispatched from the Tabs Tray store.
