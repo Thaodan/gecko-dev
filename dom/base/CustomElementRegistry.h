@@ -14,11 +14,8 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CustomElementRegistryBinding.h"
-#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementInternals.h"
-#include "mozilla/dom/ElementInternalsBinding.h"
-#include "mozilla/dom/HTMLFormElement.h"
 #include "nsAtomHashKeys.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsTHashSet.h"
@@ -31,6 +28,7 @@ namespace dom {
 
 struct CustomElementData;
 struct ElementDefinitionOptions;
+struct LifecycleCallbackArgs;
 class CallbackFunction;
 class CustomElementCallback;
 class CustomElementReaction;
@@ -48,30 +46,6 @@ enum class ElementCallbackType {
   eFormDisabled,
   eFormStateRestore,
   eGetCustomInterface
-};
-
-struct LifecycleCallbackArgs {
-  // Used by the attribute changed callback.
-  RefPtr<nsAtom> mName;
-  nsString mOldValue;
-  nsString mNewValue;
-  nsString mNamespaceURI;
-
-  // Used by the adopted callback.
-  RefPtr<Document> mOldDocument;
-  RefPtr<Document> mNewDocument;
-
-  // Used by the form associated callback.
-  RefPtr<HTMLFormElement> mForm;
-
-  // Used by the form disabled callback.
-  bool mDisabled;
-
-  // Used by the form state restore callback.
-  Nullable<OwningFileOrUSVStringOrFormData> mState;
-  RestoreReason mReason;
-
-  size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const;
 };
 
 // Each custom element has an associated callback queue and an element is
