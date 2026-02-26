@@ -80,16 +80,14 @@
                 android:isolatedProcess="true"
                 android:process=":isolatedTab{{ id }}">
         </service>
+    {% endfor %}
         <service
-                android:name="org.mozilla.gecko.process.GeckoChildProcessServices$isolatedTabWithZygote{{ id }}"
+                android:name="org.mozilla.gecko.process.GeckoChildProcessServices$zygoteTab"
                 android:enabled="true"
                 android:exported="false"
                 android:isolatedProcess="true"
-                {% if (id == 0) %}
-                    android:useAppZygote="true"
-                {% endif %}
-                android:process=":isolatedTabWithZygote{{ id }}">
+                android:useAppZygote="true"
+                android:process=":zygoteTab">
         </service>
-    {% endfor %}
     </application>
 </manifest>
