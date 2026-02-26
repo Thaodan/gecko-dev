@@ -28,6 +28,21 @@ ChromeUtils.defineLazyGetter(lazy, "logger", () =>
 const NULL = Symbol("NULL");
 
 /**
+ * @typedef {object} NetworkConditions
+ * @property {string} type
+ */
+
+/**
+ * Enum of possible network conditions.
+ *
+ * @readonly
+ * @enum {NetworkConditionsType}
+ */
+const NetworkConditionsType = {
+  Offline: "offline",
+};
+
+/**
  * Enum of possible natural orientations supported by the
  * emulation.setOrientationOverride command.
  *
@@ -286,6 +301,58 @@ class EmulationModule extends RootBiDiModule {
       resetValue: "",
       userContextIds,
       value: locale,
+    });
+  }
+
+  /**
+   * Emulates specific network conditions for the provided contexts, user
+   * contexts, or globally.
+   *
+   * @param {object=} options
+   * @param {Array<string>=} options.contexts
+   *     Optional list of browsing context ids.
+   * @param {(NetworkConditions|null)} options.networkConditions
+   *     Network conditions to emulate. At the moment only the value
+   *     NetworkConditionsOffline is supported.
+   *     Null value resets the override.
+   * @param {Array<string>=} options.userContexts
+   *     Optional list of user context ids.
+   *
+   * @throws {InvalidArgumentError}
+   *     Raised if an argument is of an invalid type or value.
+   * @throws {NoSuchFrameError}
+   *     If the browsing context cannot be found.
+   * @throws {NoSuchUserContextError}
+   *     Raised if the user context id could not be found.
+   */
+  async setNetworkConditions(options = {}) {
+    const {
+      contexts: contextIds = NULL,
+      networkConditions,
+      userContexts: userContextIds = NULL,
+    } = options;
+
+    if (networkConditions !== null) {
+      lazy.assert.object(
+        networkConditions,
+        lazy.pprint`Expected "networkConditions" to be an object, got ${networkConditions}`
+      );
+
+      lazy.assert.that(
+        conditions => conditions.type === NetworkConditionsType.Offline,
+        lazy.pprint`Expected "networkConditions.type" to be "offline", got ${networkConditions.type}`
+      )(networkConditions);
+    }
+
+    await this.#applyEmulationParameters({
+      async: false,
+      callback: setNetworkConditionsForBrowsingContext,
+      category: "network-conditions",
+      contextIds,
+      hasGlobalOverride: true,
+      resetValue: null,
+      userContextIds,
+      value: networkConditions,
     });
   }
 
@@ -1057,6 +1124,30 @@ export const setLocaleOverrideForBrowsingContext = options => {
 
   const contextId = lazy.NavigableManager.getIdForBrowsingContext(context);
   lazy.logger.trace(`[${contextId}] Updated locale override to: ${value}`);
+};
+
+/**
+ * Update the network conditions for the provided top-level browsing context.
+ *
+ * @param {object} options
+ * @param {BrowsingContext} options.context
+ *     Top-level browsing context object for which the network conditions are
+ *     updated.
+ * @param {NetworkConditions} options.value
+ *     The value of the NetworkConditions to enable.
+ */
+export const setNetworkConditionsForBrowsingContext = options => {
+  const { context, value } = options;
+
+  const contextId = lazy.NavigableManager.getIdForBrowsingContext(context);
+
+  if (value?.type === NetworkConditionsType.Offline) {
+    context.forceOffline = true;
+    lazy.logger.trace(`[${contextId}] Updated network conditions to "offline"`);
+  } else {
+    context.forceOffline = false;
+    lazy.logger.trace(`[${contextId}] Restored network conditions to default`);
+  }
 };
 
 /**
