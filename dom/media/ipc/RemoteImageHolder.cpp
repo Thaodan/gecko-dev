@@ -87,6 +87,12 @@ already_AddRefed<Image> RemoteImageHolder::DeserializeImage(
       return nullptr;
     }
 
+    if (!IntRect(IntPoint(), descriptor.ySize())
+             .Contains(descriptor.display())) {
+      MOZ_ASSERT_UNREACHABLE("YCbCr display rect exceeds Y plane dimensions!");
+      return nullptr;
+    }
+
     PlanarYCbCrData pData;
     pData.mYStride = descriptor.yStride();
     pData.mCbCrStride = descriptor.cbCrStride();
