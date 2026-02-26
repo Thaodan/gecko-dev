@@ -248,14 +248,6 @@ def getArtifactSuffix() {
 
 abstract class MachExec extends Exec {
     def MachExec() {
-        // Bug 1543982: When invoking `mach build` recursively, the outer `mach
-        // build` itself modifies the environment, causing configure to run
-        // again.  This tries to restore the environment that the outer `mach
-        // build` was invoked in.  See the comment in
-        // $topsrcdir/settings.gradle.
-        project.ext.mozconfig.mozconfig.env.unmodified.each { k, v -> environment.remove(k) }
-        environment project.ext.mozconfig.orig_mozconfig.env.unmodified
-        environment 'MOZCONFIG', project.ext.mozconfig.substs.MOZCONFIG
     }
 
     static def geckoBinariesOnlyIf(task, mozconfig) {
