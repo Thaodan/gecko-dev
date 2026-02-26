@@ -13,6 +13,7 @@ import mozilla.components.lib.state.helpers.AbstractBinding
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
+import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 
 /**
  * Binding to update the [TabsTrayStore] by listening to changes to [AppState].

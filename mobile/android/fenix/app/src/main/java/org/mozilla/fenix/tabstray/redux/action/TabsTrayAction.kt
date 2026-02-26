@@ -6,9 +6,9 @@ package org.mozilla.fenix.tabstray.redux.action
 
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.lib.state.Action
-import org.mozilla.fenix.tabstray.TabsTrayStore
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
+import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
 
 /**

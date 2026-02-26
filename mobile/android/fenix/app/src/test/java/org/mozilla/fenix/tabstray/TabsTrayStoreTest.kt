@@ -12,6 +12,7 @@ import org.junit.Test
 import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
+import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 
 class TabsTrayStoreTest {
 
@@ -139,7 +140,8 @@ class TabsTrayStoreTest {
 
     @Test
     fun `WHEN UpdateInactiveExpanded is dispatched THEN update inactiveTabsExpanded`() {
-        val tabsTrayStore = TabsTrayStore(initialState = TabsTrayState(inactiveTabsExpanded = false))
+        val tabsTrayStore =
+            TabsTrayStore(initialState = TabsTrayState(inactiveTabsExpanded = false))
 
         assertFalse(tabsTrayStore.state.inactiveTabsExpanded)
 
