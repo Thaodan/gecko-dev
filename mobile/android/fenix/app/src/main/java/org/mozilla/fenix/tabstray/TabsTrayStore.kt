@@ -12,6 +12,7 @@ import mozilla.components.lib.state.State
 import mozilla.components.lib.state.Store
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination
 import org.mozilla.fenix.tabstray.redux.reducer.TabSearchActionReducer
+import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabSearchState
 import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
 
@@ -92,61 +93,6 @@ data class TabsTrayState(
             selectedPage == Page.PrivateTabs && privateTabs.isNotEmpty() -> true
             else -> false
         }
-}
-
-/**
- * The different pagers in the tray that we can switch between in the [TrayPagerAdapter].
- */
-enum class Page {
-
-    /**
-     * The pager position that displays normal tabs.
-     */
-    NormalTabs,
-
-    /**
-     * The pager position that displays private tabs.
-     */
-    PrivateTabs,
-
-    /**
-     * The pager position that displays Synced Tabs.
-     */
-    SyncedTabs,
-
-    ;
-
-    companion object {
-        /**
-         * Returns the [Page] that corresponds to the [position].
-         *
-         * @param position The index of the page.
-         */
-        fun positionToPage(
-            position: Int,
-        ): Page {
-            return when (position) {
-                0 -> PrivateTabs
-                1 -> NormalTabs
-                else -> SyncedTabs
-            }
-        }
-
-        /**
-         * Returns the visual index that corresponds to the [page].
-         *
-         * @param page The [Page] whose visual index is being looked-up.
-         */
-        fun pageToPosition(
-            page: Page,
-        ): Int {
-            return when (page) {
-                PrivateTabs -> 0
-                NormalTabs -> 1
-                SyncedTabs -> 2
-            }
-        }
-    }
 }
 
 /**
