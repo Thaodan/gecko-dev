@@ -6,6 +6,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
+  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   IPPEnrollAndEntitleManager:
@@ -282,7 +283,10 @@ export class IPProtectionPanel {
   }
 
   #startProxy() {
-    lazy.IPPProxyManager.start();
+    const win = this.#window.get();
+    const inPrivateBrowsing =
+      !!win && lazy.PrivateBrowsingUtils.isWindowPrivate(win);
+    lazy.IPPProxyManager.start(true, inPrivateBrowsing);
   }
 
   #stopProxy() {
