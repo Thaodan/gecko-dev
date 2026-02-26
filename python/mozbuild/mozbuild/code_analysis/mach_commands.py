@@ -17,7 +17,6 @@ import xml.etree.ElementTree as ET
 from types import SimpleNamespace
 
 import mozpack.path as mozpath
-import yaml
 from mach.decorators import Command, CommandArgument, SubCommand
 from mach.main import Mach
 from mozversioncontrol import get_repository_object
@@ -390,6 +389,7 @@ def check(
                 sources=source[i : (i + batch_size)],
                 jobs=jobs,
                 fix=fix,
+                verbose=verbose,
             )
             rc = command_context.run_process(
                 args=args,
@@ -528,6 +528,7 @@ def _get_clang_tidy_command(
     sources,
     jobs,
     fix,
+    verbose=True,
 ):
     if checks == "-*":
         checks = ",".join(get_clang_tidy_config(command_context).checks)
@@ -555,10 +556,13 @@ def _get_clang_tidy_command(
     # the checkers to our code.
     cfg = get_clang_tidy_config(command_context).checks_config
     if cfg:
-        common_args += ["-config=%s" % yaml.dump(cfg)]
+        common_args += [f"-config={json.dumps(cfg)}"]
 
     if fix:
         common_args += ["-fix"]
+
+    if not verbose:
+        common_args += ["-quiet"]
 
     return (
         [
