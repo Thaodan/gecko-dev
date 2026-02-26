@@ -24,7 +24,7 @@ static GtkWidget* sLabel;
 static GtkWidget* sProgressBar;
 static GdkPixbuf* sPixbuf;
 
-constinit StringTable sStrings;
+MOZ_RUNINIT StringTable sStrings;
 
 static gboolean UpdateDialog(gpointer data) {
   if (sQuit) {

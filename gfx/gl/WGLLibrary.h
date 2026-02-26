@@ -104,11 +104,11 @@ class WGLLibrary {
 
  private:
   bool mInitialized = false;
-  PRLibrary* mOGLLibrary = nullptr;
-  bool mHasRobustness = false;
-  HWND mDummyWindow = nullptr;
-  HDC mRootDc = nullptr;
-  HGLRC mDummyGlrc = nullptr;
+  PRLibrary* mOGLLibrary;
+  bool mHasRobustness;
+  HWND mDummyWindow;
+  HDC mRootDc;
+  HGLRC mDummyGlrc;
 };
 
 // a global WGLLibrary instance

@@ -201,7 +201,7 @@ static void DestroyImageKey(void* aClosure) {
 }
 
 constinit static RefPtr<SourceSurface> gWRGlyphAtlas[8];
-constinit static LinkedList<WRUserData> gWRUsers;
+MOZ_RUNINIT static LinkedList<WRUserData> gWRUsers;
 UserDataKey WRUserData::sWRUserDataKey;
 
 /**

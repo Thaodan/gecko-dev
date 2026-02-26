@@ -177,8 +177,8 @@ void IMEContext::Clear() {
 
 static UINT sWM_MSIME_MOUSE = 0;  // mouse message for MSIME 98/2000
 
-constinit WritingMode IMMHandler::sWritingModeOfCompositionFont;
-constinit nsString IMMHandler::sIMEName;
+MOZ_RUNINIT WritingMode IMMHandler::sWritingModeOfCompositionFont;
+MOZ_RUNINIT nsString IMMHandler::sIMEName;
 UINT IMMHandler::sCodePage = 0;
 DWORD IMMHandler::sIMEProperty = 0;
 DWORD IMMHandler::sIMEUIProperty = 0;
@@ -2152,6 +2152,7 @@ void IMMHandler::AdjustCompositionFont(nsWindow* aWindow,
       aForceUpdate ||
       (!sCompositionFontsInitialized && !sCompositionFont.IsEmpty());
 
+  static WritingMode sCurrentWritingMode;
   static nsString sCurrentIMEName;
   if (!setCompositionFontForcibly &&
       sWritingModeOfCompositionFont == aWritingMode &&

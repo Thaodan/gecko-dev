@@ -77,7 +77,7 @@ class WritableBuffer {
   size_t Available() const { return sizeof(mBuffer) - mLen; }
 
  public:
-  constexpr WritableBuffer() : mBuffer{0}, mLen(0) {}
+  WritableBuffer() : mBuffer{0}, mLen(0) {}
 
   void Write(const char* aData, size_t aLen) {
     size_t writable_len = std::min(aLen, Available());
