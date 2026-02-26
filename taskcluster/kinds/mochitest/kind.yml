@@ -193,17 +193,19 @@ tasks:
                         android-em.*/debug-isolated-process: ['trunk']
                         android.*: built-projects
                         default: built-projects
-        chunks: dynamic
-        default-chunks:
-            by-test-platform:
-                android.*/debug: 10
-                linux.*/debug: 16
-                linux.*64-tsan/opt: 20
-                .*-ccov.*: 10
-                .*-asan.*: 10
-                linux.*/opt: 8
-                windows.*/debug: 8
-                default: 5
+        chunks:
+            by-variant:
+                inc-origin-init: dynamic
+                default:
+                    by-test-platform:
+                        android.*/debug: 10
+                        linux.*/debug: 16
+                        linux.*64-tsan/opt: 20
+                        .*-ccov.*: 10
+                        .*-asan.*: 10
+                        linux.*/opt: 8
+                        windows.*/debug: 8
+                        default: 5
         tier:
             by-variant:
                 no-fission:
@@ -360,13 +362,12 @@ tasks:
             by-variant:
                 trainhop-release: 1
                 trainhop-beta: 1
-                default: dynamic
-        default-chunks:
-            by-variant:
                 msix:
                     by-test-platform:
                         .*/debug: 16
                         default: 7
+                vertical-tabs: dynamic
+                inc-origin-init: dynamic
                 default:
                     by-test-platform:
                         linux.*/debug: 16
@@ -459,8 +460,7 @@ tasks:
                 by-test-platform:
                     .*-tsan.*: true
                     default: false
-        chunks: dynamic
-        default-chunks:
+        chunks:
             by-test-platform:
                 .*-tsan.*: 2
                 .*-asan.*: 2
@@ -571,11 +571,13 @@ tasks:
                         .*-wayland.*: []
                         default: built-projects
                 inc-origin-init: []
-        chunks: dynamic
-        default-chunks:
-            by-test-platform:
-                .*-tsan.*/opt: 6
-                default: 3
+        chunks:
+            by-variant:
+                inc-origin-init: dynamic
+                default:
+                    by-test-platform:
+                        .*-tsan.*/opt: 6
+                        default: 3
         max-run-time: 3600
         mozharness:
             mochitest-flavor: chrome
@@ -618,8 +620,7 @@ tasks:
                 linux.*64-ccov.*/.*: 7200
                 linux.*64-tsan/opt: 7200
                 default: 5400
-        chunks: dynamic
-        default-chunks:
+        chunks:
             by-test-platform:
                 .*-ccov.*: 12
                 linux.*-wayland.*/debug: 14
@@ -911,8 +912,7 @@ tasks:
                         (?!.*-qr).*: []
                         default: built-projects
         loopback-video: true
-        chunks: dynamic
-        default-chunks:
+        chunks:
             by-variant:
                 wmf-media-engine: 1
                 media-gpu: 1
@@ -1165,8 +1165,7 @@ tasks:
         variants:
             - webrender-sw
         run-on-projects: []  # Don't run this for now.
-        chunks: dynamic
-        default-chunks: 4
+        chunks: 4
         loopback-video: true
         max-run-time: 1800
         # Bug 1296733: llvmpipe with mesa 9.2.1 lacks thread safety

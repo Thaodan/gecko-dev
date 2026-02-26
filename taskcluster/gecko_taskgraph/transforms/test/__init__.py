@@ -109,7 +109,6 @@ test_description_schema = LegacySchema({
     Required("chunks"): optionally_keyed_by(
         "test-platform", "variant", Any(int, "dynamic")
     ),
-    Optional("default-chunks"): optionally_keyed_by("test-platform", "variant", int),
     # Timeout multiplier to apply to default test timeout values. Can be keyed
     # by test platform.
     Optional("timeoutfactor"): optionally_keyed_by("test-platform", Any(int, float)),
