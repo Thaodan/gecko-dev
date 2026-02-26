@@ -1097,6 +1097,13 @@ RefPtr<ShutdownPromise> MediaChangeMonitor::Shutdown() {
   mFlushPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
   mShutdownRequest.DisconnectIfExists();
 
+  mCreateDecoderHolder.RejectIfExists(
+      MediaResult(NS_ERROR_DOM_MEDIA_CANCELED, __func__), __func__);
+
+  if (mCreateDecoderRequest.Exists()) {
+    return mShutdownWhileCreationPromise.Ensure(__func__);
+  }
+
   if (mShutdownPromise) {
     // We have a shutdown in progress, return that promise instead as we can't
     // shutdown a decoder twice.
@@ -1155,22 +1162,43 @@ MediaChangeMonitor::CreateDecoder() {
   currentParams.mWrappers -= media::Wrapper::MediaChangeMonitor;
   LOG("MediaChangeMonitor::CreateDecoder, current params = %s",
       currentParams.ToString().get());
-  RefPtr<CreateDecoderPromise> p =
-      mPDMFactory->CreateDecoder(currentParams)
-          ->Then(
-              GetCurrentSerialEventTarget(), __func__,
-              [self = RefPtr{this}, this](RefPtr<MediaDataDecoder>&& aDecoder) {
-                MutexAutoLock lock(mMutex);
-                mDecoder = std::move(aDecoder);
-                DDLINKCHILD("decoder", mDecoder.get());
-                return CreateDecoderPromise::CreateAndResolve(true, __func__);
-              },
-              [self = RefPtr{this}](const MediaResult& aError) {
-                return CreateDecoderPromise::CreateAndReject(aError, __func__);
-              });
 
   mDecoderInitialized = false;
   mNeedKeyframe = true;
+
+  RefPtr<CreateDecoderPromise> p = mCreateDecoderHolder.Ensure(__func__);
+
+  mPDMFactory->CreateDecoder(currentParams)
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [self = RefPtr{this}, this](RefPtr<MediaDataDecoder>&& aDecoder) {
+            mCreateDecoderRequest.Complete();
+            if (!mShutdownWhileCreationPromise.IsEmpty()) {
+              aDecoder->Shutdown()->Then(
+                  GetCurrentSerialEventTarget(), __func__,
+                  [self,
+                   this](const ShutdownPromise::ResolveOrRejectValue& aValue) {
+                    mShutdownWhileCreationPromise.ResolveOrReject(aValue,
+                                                                  __func__);
+                  });
+              return;
+            }
+            {
+              MutexAutoLock lock(mMutex);
+              mDecoder = std::move(aDecoder);
+              DDLINKCHILD("decoder", mDecoder.get());
+            }
+            mCreateDecoderHolder.Resolve(true, __func__);
+          },
+          [self = RefPtr{this}, this](const MediaResult& aError) {
+            mCreateDecoderRequest.Complete();
+            if (!mShutdownWhileCreationPromise.IsEmpty()) {
+              mShutdownWhileCreationPromise.Resolve(true, __func__);
+              return;
+            }
+            mCreateDecoderHolder.Reject(aError, __func__);
+          })
+      ->Track(mCreateDecoderRequest);
 
   return p;
 }

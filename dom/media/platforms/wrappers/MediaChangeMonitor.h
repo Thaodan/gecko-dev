@@ -138,6 +138,10 @@ class MediaChangeMonitor final
   nsCOMPtr<nsISerialEventTarget> mThread;
   RefPtr<MediaDataDecoder> mDecoder;
   MozPromiseRequestHolder<CreateDecoderPromise> mDecoderRequest;
+  MozPromiseRequestHolder<PlatformDecoderModule::CreateDecoderPromise>
+      mCreateDecoderRequest;
+  MozPromiseHolder<CreateDecoderPromise> mCreateDecoderHolder;
+  MozPromiseHolder<ShutdownPromise> mShutdownWhileCreationPromise;
   MozPromiseRequestHolder<InitPromise> mInitPromiseRequest;
   MozPromiseHolder<InitPromise> mInitPromise;
   MozPromiseRequestHolder<DecodePromise> mDecodePromiseRequest;
