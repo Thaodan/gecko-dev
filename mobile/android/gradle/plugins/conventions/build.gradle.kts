@@ -11,8 +11,6 @@ dependencies {
     implementation(libs.kaml)
 }
 
-group = "org.mozilla"
-
 val mozconfig = gradle.extra["mozconfig"] as Map<*, *>
 val topobjdir = mozconfig["topobjdir"] as String
 
@@ -27,18 +25,4 @@ gradlePlugin {
         id = "org.mozilla.conventions.project"
         implementationClass = "org.mozilla.conventions.ProjectPlugin"
     }
-    plugins.register("org.mozilla.conventions.mach-tasks") {
-        id = "org.mozilla.conventions.mach-tasks"
-        implementationClass = "org.mozilla.conventions.MachTasksPlugin"
-    }
-}
-
-dependencies {
-    testImplementation(platform(libs.junit.bom))
-    testImplementation(libs.junit.jupiter)
-    testRuntimeOnly(libs.junit.platform.launcher)
-}
-
-tasks.test {
-    useJUnitPlatform()
 }

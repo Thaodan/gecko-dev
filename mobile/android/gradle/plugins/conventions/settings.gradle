@@ -15,8 +15,6 @@ pluginManagement {
     }
 }
 
-rootProject.name = "conventions"
-
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
