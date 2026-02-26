@@ -1054,7 +1054,7 @@ RefPtr<MediaDataDecoder::FlushPromise> MediaChangeMonitor::Flush() {
       - The old decoder is no longer referenced by the MediaChangeMonitor.
 
     If during (4):
-      - mDecoderRequest won't be empty.
+      - mCreateAndInitRequest won't be empty.
       - mDecoder is not set. Steps will continue to (5) to set and initialize it
 
     If during (5):
@@ -1063,7 +1063,7 @@ RefPtr<MediaDataDecoder::FlushPromise> MediaChangeMonitor::Flush() {
   */
 
   if (mDrainRequest.Exists() || mFlushRequest.Exists() ||
-      mShutdownRequest.Exists() || mDecoderRequest.Exists() ||
+      mShutdownRequest.Exists() || mCreateAndInitRequest.Exists() ||
       mInitPromiseRequest.Exists()) {
     // We let the current decoder complete and will resume after.
     RefPtr<FlushPromise> p = mFlushPromise.Ensure(__func__);
@@ -1089,7 +1089,7 @@ RefPtr<ShutdownPromise> MediaChangeMonitor::Shutdown() {
   AssertOnThread();
   mInitPromiseRequest.DisconnectIfExists();
   mInitPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
-  mDecoderRequest.DisconnectIfExists();
+  mCreateAndInitRequest.DisconnectIfExists();
   mDecodePromiseRequest.DisconnectIfExists();
   mDecodePromise.RejectIfExists(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
   mDrainRequest.DisconnectIfExists();
@@ -1220,7 +1220,7 @@ MediaResult MediaChangeMonitor::CreateDecoderAndInit(MediaRawData* aSample) {
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [self = RefPtr{this}, this, sample = RefPtr{aSample}] {
-            mDecoderRequest.Complete();
+            mCreateAndInitRequest.Complete();
             mDecoder->Init()
                 ->Then(
                     GetCurrentSerialEventTarget(), __func__,
@@ -1261,7 +1261,7 @@ MediaResult MediaChangeMonitor::CreateDecoderAndInit(MediaRawData* aSample) {
                 ->Track(mInitPromiseRequest);
           },
           [self = RefPtr{this}, this](const MediaResult& aError) {
-            mDecoderRequest.Complete();
+            mCreateAndInitRequest.Complete();
             if (!mFlushPromise.IsEmpty()) {
               // A Flush is pending, abort the current operation.
               mFlushPromise.Reject(aError, __func__);
@@ -1272,7 +1272,7 @@ MediaResult MediaChangeMonitor::CreateDecoderAndInit(MediaRawData* aSample) {
                             RESULT_DETAIL("Unable to create decoder")),
                 __func__);
           })
-      ->Track(mDecoderRequest);
+      ->Track(mCreateAndInitRequest);
   return NS_ERROR_DOM_MEDIA_INITIALIZING_DECODER;
 }
 
