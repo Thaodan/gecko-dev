@@ -1089,6 +1089,7 @@ RefPtr<ShutdownPromise> MediaChangeMonitor::Shutdown() {
   AssertOnThread();
   mInitPromiseRequest.DisconnectIfExists();
   mInitPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
+  mDecoderRequest.DisconnectIfExists();
   mDecodePromiseRequest.DisconnectIfExists();
   mDecodePromise.RejectIfExists(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
   mDrainRequest.DisconnectIfExists();
