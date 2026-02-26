@@ -140,6 +140,15 @@ def mozconfig(primary_config):
     return mozconfig_path
 
 
+@pytest.fixture
+def clean_objdir(objdir):
+    """Clean objdir to ensure fresh state."""
+    if objdir.exists():
+        shutil.rmtree(objdir)
+
+    yield
+
+
 AARS = {
     "geckoview.aar": "gradle/build/mobile/android/geckoview/outputs/aar/geckoview-debug.aar",
 }
@@ -214,24 +223,17 @@ def assert_success(returncode, output):
         pytest.fail(f"Command failed with return code: {returncode}\n{final_output}")
 
 
-def assert_all_task_statuses(objdir, acceptable_statuses, always_executed_tasks=None):
+def assert_all_task_statuses(objdir, acceptable_statuses):
     """Asserts that all tasks in build metrics have acceptable statuses."""
 
-    if always_executed_tasks is None:
-        always_executed_tasks = [
-            ":machBuildFaster",
-            ":machStagePackage",
-            # Always executes because it depends on assets from ${topobjdir}/dist/geckoview/assets
-            # which get timestamps updated by the mach tasks above. Takes 0.000 seconds so not
-            # a performance issue, but will be resolved when mach tasks get proper Gradle dependencies.
-            ":geckoview:generateDebugAssets",
-            # Always executes because suppressUselessCastInSafeArgs sets `outputs.upToDateWhen { false }`.
-            # We could try using a marker file otherwise, but the task runtime is negligible and the added
-            # complexity doesn't seem worth it for what should only be a short-term workaround until Google
-            # fixes the upstream Navigation bug that led to it being added in the first place.
-            ":fenix:generateSafeArgsDebug",
-            ":fenix:suppressUselessCastInSafeArgs",
-        ]
+    # Always executes because suppressUselessCastInSafeArgs sets `outputs.upToDateWhen { false }`.
+    # We could try using a marker file otherwise, but the task runtime is negligible and the added
+    # complexity doesn't seem worth it for what should only be a short-term workaround until Google
+    # fixes the upstream Navigation bug that led to it being added in the first place.
+    always_executed_tasks = [
+        ":fenix:generateSafeArgsDebug",
+        ":fenix:suppressUselessCastInSafeArgs",
+    ]
 
     build_metrics = get_test_run_build_metrics(objdir)
     assert build_metrics is not None, "Build metrics JSON not found"
@@ -253,7 +255,7 @@ def assert_all_task_statuses(objdir, acceptable_statuses, always_executed_tasks=
             )
 
 
-def assert_ordered_task_outcomes(objdir, ordered_expected_task_statuses):
+def assert_ordered_task_outcomes(objdir, ordered_expected_task_statuses, output=None):
     """Takes a list of (task_name, expected_status) tuples and verifies that they appear
     in the build metrics in the same order with the expected statuses.
     """
@@ -281,6 +283,12 @@ def assert_ordered_task_outcomes(objdir, ordered_expected_task_statuses):
         f"Task execution order mismatch. Expected: {expected_order}, Got: {task_order}"
     )
 
+    def _format_output():
+        if not output:
+            return ""
+        lines = output if isinstance(output, list) else output.splitlines()
+        return "\n\nGradle output:\n" + "\n".join(lines)
+
     # Check statuses for each task
     task_lookup = {task.get("path"): task for task in metrics_tasks}
     for task_name, expected_status in ordered_expected_task_statuses:
@@ -288,15 +296,20 @@ def assert_ordered_task_outcomes(objdir, ordered_expected_task_statuses):
         actual_status = task_info.get("status")
         assert actual_status == expected_status, (
             f"Task {task_name} had status '{actual_status}', expected '{expected_status}'"
+            + _format_output()
         )
 
 
-def test_artifact_build(objdir, mozconfig, run_mach):
+def test_artifact_build(objdir, mozconfig, run_mach, clean_objdir):
     assert_success(*run_mach(["build"]))
     # Order matters, since `mach build stage-package` depends on the
     # outputs of `mach build faster`.
     assert_ordered_task_outcomes(
-        objdir, [(":machBuildFaster", "SKIPPED"), (":machStagePackage", "SKIPPED")]
+        objdir,
+        [
+            (":machBuildFaster", "SKIPPED"),
+            (":machStagePackage", "SKIPPED"),
+        ],
     )
 
     _, omnijar_hash_to = hashes(objdir, "assets/omni.ja")
@@ -307,7 +320,11 @@ def test_artifact_build(objdir, mozconfig, run_mach):
     # Order matters, since `mach build stage-package` depends on the
     # outputs of `mach build faster`.
     assert_ordered_task_outcomes(
-        objdir, [(":machBuildFaster", "EXECUTED"), (":machStagePackage", "EXECUTED")]
+        objdir,
+        [
+            (":machBuildFaster", "EXECUTED"),
+            (":machStagePackage", "EXECUTED"),
+        ],
     )
 
     _, omnijar_hash_to = hashes(objdir, "assets/omni.ja")
@@ -315,6 +332,91 @@ def test_artifact_build(objdir, mozconfig, run_mach):
     (omnijar_hash_new,) = omnijar_hash_to.values()
 
     assert omnijar_hash_orig == omnijar_hash_new
+
+
+def test_mach_tasks_up_to_date(objdir, mozconfig, run_mach):
+    """Test that mach Gradle tasks are correctly UP-TO-DATE or EXECUTED depending on what inputs change."""
+    mozconfig_path = Path(mozconfig)
+    original_content = mozconfig_path.read_text()
+    mozconfig_path.write_text(original_content + "\nac_add_options --enable-debug\n")
+    assert_success(*run_mach(["build"]))
+
+    # First run, get to known state.
+    assert_success(*run_mach(["gradle", "machStagePackage"]))
+
+    # Second run, no changes, everything should be UP-TO-DATE
+    returncode, output = run_mach(["gradle", "machStagePackage", "--info"])
+    assert_success(returncode, output)
+    assert_ordered_task_outcomes(
+        objdir,
+        [
+            (":machConfigure", "UP-TO-DATE"),
+            (":machBuildFaster", "UP-TO-DATE"),
+            (":machStagePackage", "UP-TO-DATE"),
+        ],
+        output,
+    )
+
+    assets_dir = objdir / "dist" / "geckoview" / "assets"
+    if assets_dir.exists():
+        shutil.rmtree(assets_dir)
+
+    # Third run, remove outputs of machStagePackage, it should be EXECUTED
+    returncode, output = run_mach(["gradle", "machStagePackage", "--info"])
+    assert_success(returncode, output)
+    assert_ordered_task_outcomes(
+        objdir,
+        [
+            (":machConfigure", "UP-TO-DATE"),
+            (":machBuildFaster", "UP-TO-DATE"),
+            (":machStagePackage", "EXECUTED"),
+        ],
+        output,
+    )
+
+    mozconfig_path.write_text(original_content)
+
+    # Fourth run, mozconfig changed, everything should be EXECUTED
+    returncode, output = run_mach(["gradle", "machStagePackage", "--info"])
+    assert_success(returncode, output)
+    assert_ordered_task_outcomes(
+        objdir,
+        [
+            (":machConfigure", "EXECUTED"),
+            (":machBuildFaster", "EXECUTED"),
+            (":machStagePackage", "EXECUTED"),
+        ],
+        output,
+    )
+
+    # Fifth run, no changes. machConfigure is UP-TO-DATE, but machBuildFaster
+    # re-executes because its file inputs (from the backend deps file) were
+    # regenerated by machConfigure in the fourth run. The new file list is read
+    # at Gradle configuration time, so it differs from the fourth run's inputs.
+    returncode, output = run_mach(["gradle", "machStagePackage", "--info"])
+    assert_success(returncode, output)
+    assert_ordered_task_outcomes(
+        objdir,
+        [
+            (":machConfigure", "UP-TO-DATE"),
+            (":machBuildFaster", "EXECUTED"),
+            (":machStagePackage", "UP-TO-DATE"),
+        ],
+        output,
+    )
+
+    # Sixth run, everything should be UP-TO-DATE now
+    returncode, output = run_mach(["gradle", "machStagePackage", "--info"])
+    assert_success(returncode, output)
+    assert_ordered_task_outcomes(
+        objdir,
+        [
+            (":machConfigure", "UP-TO-DATE"),
+            (":machBuildFaster", "UP-TO-DATE"),
+            (":machStagePackage", "UP-TO-DATE"),
+        ],
+        output,
+    )
 
 
 def test_minify_fenix_incremental_build(objdir, mozconfig, run_mach):
