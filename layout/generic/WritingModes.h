@@ -256,6 +256,10 @@ class WritingMode {
     return !!(mWritingMode & StyleWritingMode::VERTICAL_SIDEWAYS);
   }
 
+  bool IsUpright() const {
+    return !!(mWritingMode & StyleWritingMode::UPRIGHT);
+  }
+
   /**
    * True if this is writing-mode: sideways-rl (convenience method).
    */
