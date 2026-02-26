@@ -269,11 +269,10 @@ impl Runner for FirefoxRunner {
         if !seen_no_remote {
             cmd.arg("-no-remote");
         }
-        if let Some(ref profile) = self.profile {
-            if !seen_profile {
+        if let Some(ref profile) = self.profile
+            && !seen_profile {
                 cmd.arg("-profile").arg(&profile.path);
             }
-        }
 
         info!("Running command: {:?}", cmd);
         let process = cmd.spawn()?;

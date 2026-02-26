@@ -39,7 +39,6 @@ use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::io::prelude::*;
 use std::io::Error as IoError;
-use std::io::ErrorKind;
 use std::io::Result as IoResult;
 use std::net::{Shutdown, TcpListener, TcpStream};
 use std::path::PathBuf;
@@ -225,12 +224,11 @@ impl MarionetteHandler {
     }
 
     fn close_connection(&mut self, wait_for_shutdown: bool) {
-        if let Ok(connection) = self.connection.get_mut() {
-            if let Some(conn) = connection.take() {
-                if let Err(e) = conn.close(wait_for_shutdown) {
-                    error!("Failed to close browser connection: {}", e)
-                }
-            }
+        if let Ok(connection) = self.connection.get_mut()
+            && let Some(conn) = connection.take()
+            && let Err(e) = conn.close(wait_for_shutdown)
+        {
+            error!("Failed to close browser connection: {}", e)
         }
     }
 }
@@ -1285,13 +1283,13 @@ impl MarionetteConnection {
 
         loop {
             // immediately abort connection attempts if process disappears
-            if let Browser::Local(browser) = browser {
-                if let Some(status) = browser.check_status() {
-                    return Err(WebDriverError::new(
-                        ErrorStatus::UnknownError,
-                        format!("Process unexpectedly closed with status {}", status),
-                    ));
-                }
+            if let Browser::Local(browser) = browser
+                && let Some(status) = browser.check_status()
+            {
+                return Err(WebDriverError::new(
+                    ErrorStatus::UnknownError,
+                    format!("Process unexpectedly closed with status {}", status),
+                ));
             }
 
             let last_err;
@@ -1428,10 +1426,7 @@ impl MarionetteConnection {
             let num_read = stream.read(buf)?;
             let byte = match num_read {
                 0 => {
-                    return Err(IoError::new(
-                        ErrorKind::Other,
-                        "EOF reading marionette message",
-                    ));
+                    return Err(IoError::other("EOF reading marionette message"));
                 }
                 1 => buf[0],
                 _ => panic!("Expected one byte got more"),
@@ -1452,10 +1447,7 @@ impl MarionetteConnection {
         while total_read < bytes {
             let num_read = stream.read(buf)?;
             if num_read == 0 {
-                return Err(IoError::new(
-                    ErrorKind::Other,
-                    "EOF reading marionette message",
-                ));
+                return Err(IoError::other("EOF reading marionette message"));
             }
             total_read += num_read;
             for x in &buf[..num_read] {

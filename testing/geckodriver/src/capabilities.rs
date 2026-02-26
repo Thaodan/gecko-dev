@@ -821,11 +821,11 @@ fn unzip_buffer(buf: &[u8], dest_dir: &Path) -> WebDriverResult<()> {
                 } else {
                     dest_path.parent()
                 };
-                if let Some(dir) = create_dir {
-                    if !dir.exists() {
-                        debug!("Creating profile directory tree {}", dir.to_string_lossy());
-                        fs::create_dir_all(dir)?;
-                    }
+                if let Some(dir) = create_dir
+                    && !dir.exists()
+                {
+                    debug!("Creating profile directory tree {}", dir.to_string_lossy());
+                    fs::create_dir_all(dir)?;
                 }
             }
 
