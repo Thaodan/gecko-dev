@@ -11,10 +11,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination
 import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
+import org.mozilla.fenix.tabstray.redux.reducer.DEFAULT_SYNCED_TABS_EXPANDED_STATE
+import org.mozilla.fenix.tabstray.redux.reducer.TabsTrayReducer
 import org.mozilla.fenix.tabstray.redux.state.TabSearchState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
-import org.mozilla.fenix.tabstray.redux.store.DEFAULT_SYNCED_TABS_EXPANDED_STATE
-import org.mozilla.fenix.tabstray.redux.store.TabsTrayReducer
 import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
 import org.mozilla.fenix.tabstray.syncedtabs.generateFakeTab
 import org.mozilla.fenix.tabstray.syncedtabs.getFakeSyncedTabList
@@ -159,13 +159,13 @@ class TabsTrayStoreReducerTest {
         val syncedTabs = getFakeSyncedTabList()
         val newSyncedTabs = listOf(
             SyncedTabsListItem.DeviceSection(
-            displayName = "Device 1",
-            tabs = listOf(
-                generateFakeTab("Mozilla", "www.mozilla.org"),
-                generateFakeTab("Google", "www.google.com"),
-                generateFakeTab("", "www.google.com"),
+                displayName = "Device 1",
+                tabs = listOf(
+                    generateFakeTab("Mozilla", "www.mozilla.org"),
+                    generateFakeTab("Google", "www.google.com"),
+                    generateFakeTab("", "www.google.com"),
+                ),
             ),
-        ),
         )
         val initialState = TabsTrayState(syncedTabs = syncedTabs, expandedSyncedTabs = expectedExpansionList)
 
@@ -182,13 +182,13 @@ class TabsTrayStoreReducerTest {
         val expectedExpansionList = listOf(true, true, false, false)
         val syncedTabs = listOf(
             SyncedTabsListItem.DeviceSection(
-            displayName = "Device 1",
-            tabs = listOf(
-                generateFakeTab("Mozilla", "www.mozilla.org"),
-                generateFakeTab("Google", "www.google.com"),
-                generateFakeTab("", "www.google.com"),
+                displayName = "Device 1",
+                tabs = listOf(
+                    generateFakeTab("Mozilla", "www.mozilla.org"),
+                    generateFakeTab("Google", "www.google.com"),
+                    generateFakeTab("", "www.google.com"),
+                ),
             ),
-        ),
         )
         val newSyncedTabs = getFakeSyncedTabList()
         val initialState = TabsTrayState(syncedTabs = syncedTabs, expandedSyncedTabs = expectedExpansionList)
