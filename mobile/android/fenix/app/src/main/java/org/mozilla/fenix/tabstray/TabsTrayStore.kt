@@ -4,195 +4,20 @@
 
 package org.mozilla.fenix.tabstray
 
-import mozilla.components.browser.state.state.TabSessionState
-import mozilla.components.lib.state.Action
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination
+import org.mozilla.fenix.tabstray.redux.action.TabGroupAction
+import org.mozilla.fenix.tabstray.redux.action.TabSearchAction
+import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
 import org.mozilla.fenix.tabstray.redux.reducer.TabSearchActionReducer
-import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabSearchState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
-import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
 
 /**
  * The default state of the synced tabs expanded state, which is true.
  */
 internal const val DEFAULT_SYNCED_TABS_EXPANDED_STATE = true
-
-/**
- * [Action] implementation related to [TabsTrayStore].
- */
-sealed interface TabsTrayAction : Action {
-
-    /**
-     * Entered multi-select mode.
-     */
-    object EnterSelectMode : TabsTrayAction
-
-    /**
-     * Exited multi-select mode.
-     */
-    object ExitSelectMode : TabsTrayAction
-
-    /**
-     * Added a new [TabSessionState] to the selection set.
-     */
-    data class AddSelectTab(val tab: TabSessionState) : TabsTrayAction
-
-    /**
-     * Removed a [TabSessionState] from the selection set.
-     */
-    data class RemoveSelectTab(val tab: TabSessionState) : TabsTrayAction
-
-    /**
-     * The active page in the tray that is now in focus.
-     */
-    data class PageSelected(val page: Page) : TabsTrayAction
-
-    /**
-     * A request to perform a "sync" action.
-     */
-    object SyncNow : TabsTrayAction
-
-    /**
-     * When a "sync" action has completed; this can be triggered immediately after [SyncNow] if
-     * no sync action was able to be performed.
-     */
-    object SyncCompleted : TabsTrayAction
-
-    /**
-     * Updates the [TabsTrayState.inactiveTabsExpanded] boolean
-     *
-     * @property expanded The updated boolean to [TabsTrayState.inactiveTabsExpanded]
-     */
-    data class UpdateInactiveExpanded(val expanded: Boolean) : TabsTrayAction
-
-    /**
-     * Updates the list of tabs in [TabsTrayState.inactiveTabs].
-     */
-    data class UpdateInactiveTabs(val tabs: List<TabSessionState>) : TabsTrayAction
-
-    /**
-     * Updates the list of tabs in [TabsTrayState.normalTabs].
-     */
-    data class UpdateNormalTabs(val tabs: List<TabSessionState>) : TabsTrayAction
-
-    /**
-     * Updates the list of tabs in [TabsTrayState.privateTabs].
-     */
-    data class UpdatePrivateTabs(val tabs: List<TabSessionState>) : TabsTrayAction
-
-    /**
-     * Updates the list of synced tabs in [TabsTrayState.syncedTabs].
-     */
-    data class UpdateSyncedTabs(val tabs: List<SyncedTabsListItem>) : TabsTrayAction
-
-    /**
-     * Updates the selected tab id.
-     *
-     * @property tabId The ID of the tab that is currently selected.
-     */
-    data class UpdateSelectedTabId(val tabId: String?) : TabsTrayAction
-
-    /**
-     * Expands or collapses the header on the synced tabs page.
-     *
-     * @property index The index of the header.
-     */
-    data class SyncedTabsHeaderToggled(val index: Int) : TabsTrayAction
-
-    /**
-     * [TabsTrayAction] fired when the tab auto close dialog is shown.
-     */
-    object TabAutoCloseDialogShown : TabsTrayAction
-
-    /**
-     * [TabsTrayAction] fired when the user requests to share all of their normal tabs.
-     */
-    object ShareAllNormalTabs : TabsTrayAction
-
-    /**
-     * [TabsTrayAction] fired when the user requests to share all of their private tabs.
-     */
-    object ShareAllPrivateTabs : TabsTrayAction
-
-    /**
-     * [TabsTrayAction] fired when the user requests to close all normal tabs.
-     */
-    object CloseAllNormalTabs : TabsTrayAction
-
-    /**
-     * [TabsTrayAction] fired when the user requests to close all private tabs.
-     */
-    object CloseAllPrivateTabs : TabsTrayAction
-
-    /**
-     * [TabsTrayAction] fired when the three-dot menu is displayed to the user.
-     */
-    object ThreeDotMenuShown : TabsTrayAction
-
-    /**
-     * [TabsTrayAction] fired when the user requests to bookmark selected tabs.
-     */
-    data class BookmarkSelectedTabs(val tabCount: Int) : TabsTrayAction
-
-    /**
-     * [TabsTrayAction] fired when the user clicks on the Tab Search icon.
-     */
-    object TabSearchClicked : TabsTrayAction
-
-    /**
-     * [TabsTrayAction] fired when the user clicks on the back button or swipes to navigate back.
-     */
-    object NavigateBackInvoked : TabsTrayAction
-}
-
-/**
- *[TabsTrayAction]'s that represent user interactions and [TabSearchState] updates for the
- * Tab Search feature.
- */
-sealed interface TabSearchAction : TabsTrayAction {
-
-    /**
-     * Updates the search query.
-     *
-     * @property query The query of tab search the user has typed in.
-     */
-    data class SearchQueryChanged(val query: String) : TabSearchAction
-
-    /**
-     * When the list of matching open tabs has been computed for the current [SearchQueryChanged] action.
-     *
-     * @property results The complete list of open tabs that match the current query.
-     */
-    data class SearchResultsUpdated(
-        val results: List<TabSessionState>,
-    ) : TabSearchAction
-
-    /**
-     * Fired when the user taps on a search result for an open tab.
-     *
-     * @property tab The tab selected by the user.
-     */
-    data class SearchResultClicked(val tab: TabSessionState) : TabSearchAction
-}
-
-/**
- *[TabsTrayAction]'s that represent user interactions for the Tab Group feature.
- */
-sealed interface TabGroupAction : TabsTrayAction {
-
-    /**
-     * Confirms the save of a tab group.
-     */
-    data object SaveClicked : TabGroupAction
-
-    /**
-     * Dismisses editing a tab group.
-     */
-    data object Dismiss : TabGroupAction
-}
 
 /**
  * Reducer for [TabsTrayStore].

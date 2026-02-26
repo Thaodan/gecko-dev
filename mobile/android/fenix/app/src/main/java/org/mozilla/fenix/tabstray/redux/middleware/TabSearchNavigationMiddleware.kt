@@ -7,8 +7,8 @@ package org.mozilla.fenix.tabstray.redux.middleware
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
-import org.mozilla.fenix.tabstray.TabSearchAction
-import org.mozilla.fenix.tabstray.TabsTrayAction
+import org.mozilla.fenix.tabstray.redux.action.TabSearchAction
+import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 
 /**
