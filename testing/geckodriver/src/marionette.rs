@@ -42,7 +42,7 @@ use std::io::Error as IoError;
 use std::io::ErrorKind;
 use std::io::Result as IoResult;
 use std::net::{Shutdown, TcpListener, TcpStream};
-use std::path::{PathBuf};
+use std::path::PathBuf;
 use std::sync::Mutex;
 use std::thread;
 use std::time;
@@ -1431,7 +1431,7 @@ impl MarionetteConnection {
                     return Err(IoError::new(
                         ErrorKind::Other,
                         "EOF reading marionette message",
-                    ))
+                    ));
                 }
                 1 => buf[0],
                 _ => panic!("Expected one byte got more"),
@@ -1653,8 +1653,9 @@ impl ToMarionette<MarionetteWebAuthnProtocol> for WebAuthnProtocol {
 
 impl ToMarionette<Map<String, Value>> for ActionsParameters {
     fn to_marionette(&self) -> WebDriverResult<Map<String, Value>> {
+        let value = serde_json::to_value(self)?;
         Ok(try_opt!(
-            serde_json::to_value(self)?.as_object(),
+            value.as_object(),
             ErrorStatus::UnknownError,
             "Expected an object"
         )
@@ -1688,8 +1689,9 @@ impl ToMarionette<MarionetteDate> for Date {
 
 impl ToMarionette<Map<String, Value>> for GetNamedCookieParameters {
     fn to_marionette(&self) -> WebDriverResult<Map<String, Value>> {
+        let value = serde_json::to_value(self)?;
         Ok(try_opt!(
-            serde_json::to_value(self)?.as_object(),
+            value.as_object(),
             ErrorStatus::UnknownError,
             "Expected an object"
         )
