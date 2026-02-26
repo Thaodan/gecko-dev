@@ -722,6 +722,8 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
                 if (components.appStore.state.wasNativeDefaultBrowserPromptShown) {
                     Metrics.defaultBrowserChangedViaNativeSystemPrompt.record(NoExtras())
                 }
+
+                components.appStore.dispatch(AppAction.UpdateDefaultBrowserStatus(true))
                 Events.defaultBrowserChanged.record(NoExtras())
             }
 
