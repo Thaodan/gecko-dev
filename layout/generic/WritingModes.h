@@ -470,7 +470,7 @@ class WritingMode {
    * Construct a default WritingMode, equivalent to specifying
    * 'writing-mode: horizontal-tb' and 'direction: ltr' in CSS.
    */
-  WritingMode() : mWritingMode{0} {}
+  constexpr WritingMode() : mWritingMode{0} {}
 
   /**
    * Construct writing mode based on a ComputedStyle.
