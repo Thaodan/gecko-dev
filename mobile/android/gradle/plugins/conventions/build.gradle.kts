@@ -27,6 +27,10 @@ gradlePlugin {
         id = "org.mozilla.conventions.project"
         implementationClass = "org.mozilla.conventions.ProjectPlugin"
     }
+    plugins.register("org.mozilla.conventions.mach-tasks") {
+        id = "org.mozilla.conventions.mach-tasks"
+        implementationClass = "org.mozilla.conventions.MachTasksPlugin"
+    }
 }
 
 dependencies {
