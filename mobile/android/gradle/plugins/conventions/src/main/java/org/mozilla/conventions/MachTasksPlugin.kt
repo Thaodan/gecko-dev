@@ -72,9 +72,25 @@ class MachTasksPlugin : Plugin<Project> {
         val mozconfigFileProvider = createMozconfigFileProvider(project, topsrcdir)
         val mozconfigServiceProvider = registerMozconfigService(project, mozconfig)
 
-        registerMachConfigure(project, mozconfig, mozconfigFileProvider, topsrcdir, topobjdir, substs)
-        registerMachBuildFaster(project, mozconfig, mozconfigServiceProvider, topsrcdir, topobjdir, substs)
-        registerMachStagePackage(project, mozconfig, mozconfigServiceProvider, topsrcdir, topobjdir, substs)
+        // List-valued substs (like GRADLE_MAVEN_REPOSITORIES) are originally comma-separated.
+        // When inherited as environment variables, the List objects are converted to strings and
+        // inadvertently become space-separated. We compute the normalized values once here and
+        // apply them to each mach task to ensure that both the `./mach configure` and the Gradle
+        // build's `machConfigure` entry points get identical envs.
+        val normalizedMachEnv: Provider<Map<String, String>> = project.provider {
+            val s = mozconfig["substs"] as Map<*, *>
+            buildMap {
+                s.forEach { (key, value) ->
+                    if (value is List<*> && key is String && System.getenv(key) != null) {
+                        put(key, value.joinToString(","))
+                    }
+                }
+            }
+        }
+
+        registerMachConfigure(project, mozconfig, mozconfigFileProvider, normalizedMachEnv, topsrcdir, topobjdir, substs)
+        registerMachBuildFaster(project, mozconfig, mozconfigServiceProvider, normalizedMachEnv, topsrcdir, topobjdir, substs)
+        registerMachStagePackage(project, mozconfig, mozconfigServiceProvider, normalizedMachEnv, topsrcdir, topobjdir, substs)
     }
 
     private fun createMozconfigFileProvider(project: Project, topsrcdir: String): Provider<RegularFile> {
@@ -117,6 +133,7 @@ class MachTasksPlugin : Plugin<Project> {
         project: Project,
         mozconfig: Map<*, *>,
         mozconfigFileProvider: Provider<RegularFile>,
+        normalizedMachEnv: Provider<Map<String, String>>,
         topsrcdir: String,
         topobjdir: String,
         substs: Map<*, *>
@@ -125,6 +142,8 @@ class MachTasksPlugin : Plugin<Project> {
             group = "mach"
             description = "Runs `./mach configure`"
             workingDir(topsrcdir)
+
+            environment(normalizedMachEnv.get())
 
             commandLine(substs["PYTHON3"] as String)
             args("${topsrcdir}/mach")
@@ -183,6 +202,7 @@ class MachTasksPlugin : Plugin<Project> {
         project: Project,
         mozconfig: Map<*, *>,
         mozconfigServiceProvider: Provider<MozconfigService>,
+        normalizedMachEnv: Provider<Map<String, String>>,
         topsrcdir: String,
         topobjdir: String,
         substs: Map<*, *>
@@ -195,6 +215,8 @@ class MachTasksPlugin : Plugin<Project> {
             dependsOn(project.tasks.named("machConfigure"))
 
             workingDir(topsrcdir)
+
+            environment(normalizedMachEnv.get())
 
             commandLine(substs["PYTHON3"] as String)
             args("${topsrcdir}/mach")
@@ -263,6 +285,7 @@ class MachTasksPlugin : Plugin<Project> {
         project: Project,
         mozconfig: Map<*, *>,
         mozconfigServiceProvider: Provider<MozconfigService>,
+        normalizedMachEnv: Provider<Map<String, String>>,
         topsrcdir: String,
         topobjdir: String,
         substs: Map<*, *>
@@ -275,6 +298,8 @@ class MachTasksPlugin : Plugin<Project> {
             dependsOn(project.tasks.named("machBuildFaster"))
 
             workingDir(topobjdir)
+
+            environment(normalizedMachEnv.get())
 
             commandLine(substs["PYTHON3"] as String)
             args("${topsrcdir}/mach")
