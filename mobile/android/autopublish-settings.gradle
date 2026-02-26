@@ -5,12 +5,10 @@
 // This settings file configures an Android project for substituting a
 // local Application Services and/or Glean.
 //
-// For convenience, this file reads the `autoPublish.*` properties from
-// `$topsrcdir/local.properties`, so that you only need to set them once
-// for all Android projects.
-//
-// You can also set or override these properties on a per-project basis,
-// by setting them in `$topsrcdir/mobile/android/{project}/local.properties`,
+// The `autoPublish.*` properties are read from `$topsrcdir/local.properties`
+// in mozconfig.gradle, so you only need to set them once for all Android
+// projects. You can also set or override these properties on a per-project
+// basis by setting them in `$topsrcdir/mobile/android/{project}/local.properties`,
 // if you want to only substitute App Services or Glean for a specific project,
 // or to substitute different versions for different projects.
 //
@@ -18,25 +16,6 @@
 // contents of your Application Services and Glean checkouts to the
 // Maven local repository. Any dependencies are then substituted to use
 // the locally published versions.
-
-def rootLocalProperties = new File(gradle.mozconfig.topsrcdir, "local.properties").with { localPropertiesFile ->
-    def localProperties = new Properties()
-    if (localPropertiesFile.canRead()) {
-        localPropertiesFile.withInputStream { localProperties.load(it) }
-    }
-    localProperties
-}
-
-[
-    "autoPublish.application-services.dir",
-    "autoPublish.glean.dir",
-].each { key ->
-    def relativeOrAbsolutePath = rootLocalProperties."$key"
-    if (relativeOrAbsolutePath != null) {
-        def autoPublishDir = new File(gradle.mozconfig.topsrcdir).toPath().resolve(relativeOrAbsolutePath)
-        gradle.ext."localProperties.$key" = autoPublishDir.toString()
-    }
-}
 
 gradle.settingsEvaluated {
     if (gradle.hasProperty("localProperties.autoPublish.application-services.dir")) {

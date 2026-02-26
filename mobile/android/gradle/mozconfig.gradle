@@ -175,13 +175,22 @@ def defaultMozconfigContents = readFileContents(new File(topsrcdir, 'mozconfig')
 def localPropertiesContents = readFileContents(new File(topsrcdir, 'local.properties'))
 
 def localMozconfigContents = ""
+def localProperties = new Properties()
 if (localPropertiesContents) {
-    def localProperties = new Properties()
     localProperties.load(new StringReader(localPropertiesContents))
     def localMozconfigPath = localProperties.getProperty("mozilla-central.mozconfig")
     if (localMozconfigPath) {
         def localMozconfigFile = new File(localMozconfigPath).isAbsolute() ? new File(localMozconfigPath) : new File(topsrcdir, localMozconfigPath)
         localMozconfigContents = readFileContents(localMozconfigFile)
+    }
+}
+
+// Extract autoPublish paths from local.properties for local substitution builds
+["autoPublish.application-services.dir", "autoPublish.glean.dir"].each { key ->
+    def relativeOrAbsolutePath = localProperties.getProperty(key)
+    if (relativeOrAbsolutePath != null) {
+        def autoPublishDir = new File(topsrcdir).toPath().resolve(relativeOrAbsolutePath)
+        gradle.ext."localProperties.$key" = autoPublishDir.toString()
     }
 }
 
