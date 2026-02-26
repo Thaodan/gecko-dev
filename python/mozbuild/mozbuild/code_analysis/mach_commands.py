@@ -1042,7 +1042,7 @@ def print_checks(command_context, verbose=False):
     args = [
         clang_paths._clang_tidy_path,
         "-list-checks",
-        "-checks=%s" % get_clang_tidy_config(command_context).checks,
+        f"-checks={','.join(get_clang_tidy_config(command_context).checks)}",
     ]
 
     return command_context.run_process(args=args, pass_thru=True)
