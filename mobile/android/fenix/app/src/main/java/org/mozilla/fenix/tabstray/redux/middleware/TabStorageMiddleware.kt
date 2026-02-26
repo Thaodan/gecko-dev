@@ -89,10 +89,10 @@ class TabStorageMiddleware(
 
         tabData.tabs.forEach { tab ->
             when {
-                tab.content.private -> privateTabs.add(TabsTrayItem.Tab(tabData = tab))
+                tab.content.private -> privateTabs.add(TabsTrayItem.Tab(tab = tab))
                 inactiveTabsEnabled && !tab.isActive(maxActiveTime = maxActiveTime) ->
-                    inactiveTabs.add(TabsTrayItem.Tab(tabData = tab))
-                else -> normalTabs.add(TabsTrayItem.Tab(tabData = tab))
+                    inactiveTabs.add(TabsTrayItem.Tab(tab = tab))
+                else -> normalTabs.add(TabsTrayItem.Tab(tab = tab))
             }
         }
 
