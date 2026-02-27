@@ -476,7 +476,7 @@ class XPCJSRuntime final : public mozilla::CycleCollectedJSRuntime {
   bool InitializeStrings(JSContext* cx);
 
   virtual bool DescribeCustomObjects(JSObject* aObject, const JSClass* aClasp,
-                                     char (&aName)[72]) const override;
+                                     char (&aName)[512]) const override;
   virtual bool NoteCustomGCThingXPCOMChildren(
       const JSClass* aClasp, JSObject* aObj,
       nsCycleCollectionTraversalCallback& aCb) const override;
