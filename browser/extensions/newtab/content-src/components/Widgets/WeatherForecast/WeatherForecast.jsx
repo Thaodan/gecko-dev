@@ -87,10 +87,7 @@ function WeatherForecast({ dispatch, isMaximized, widgetsMayBeMaximized }) {
     return undefined;
   }, [handleErrorIntersection, hasError]);
 
-  const nimbusWeatherDisplay = prefs.trainhopConfig?.weather?.display;
-  const showDetailedView =
-    nimbusWeatherDisplay === "detailed" ||
-    prefs["weather.display"] === "detailed";
+  const showDetailedView = prefs["weather.display"] === "detailed";
 
   // Check if weather is enabled (browser.newtabpage.activity-stream.showWeather)
   const { showWeather } = prefs;

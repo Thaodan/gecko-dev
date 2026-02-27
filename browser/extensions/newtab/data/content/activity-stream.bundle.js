@@ -13050,8 +13050,7 @@ function WeatherForecast({
     }
     return undefined;
   }, [handleErrorIntersection, hasError]);
-  const nimbusWeatherDisplay = prefs.trainhopConfig?.weather?.display;
-  const showDetailedView = nimbusWeatherDisplay === "detailed" || prefs["weather.display"] === "detailed";
+  const showDetailedView = prefs["weather.display"] === "detailed";
 
   // Check if weather is enabled (browser.newtabpage.activity-stream.showWeather)
   const {
@@ -13449,8 +13448,7 @@ function Widgets() {
   // Note that if the view is set to "detailed" but the weather forecast widget is not enabled,
   // then the mini weather widget will display with the "detailed" view
   const weatherForecastSystemEnabled = nimbusWeatherForecastTrainhopEnabled || prefs[PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED];
-  const nimbusWeatherDisplay = prefs.trainhopConfig?.weather?.display;
-  const showDetailedView = nimbusWeatherDisplay === "detailed" || prefs["weather.display"] === "detailed";
+  const showDetailedView = prefs["weather.display"] === "detailed";
 
   // Check if weather is enabled (browser.newtabpage.activity-stream.showWeather)
   const {
@@ -15991,8 +15989,7 @@ class _Weather extends (external_React_default()).PureComponent {
       Weather
     } = props;
     const WEATHER_SUGGESTION = Weather.suggestions?.[0];
-    const nimbusWeatherDisplay = Prefs.values.trainhopConfig?.weather?.display;
-    const showDetailedView = nimbusWeatherDisplay === "detailed" || Prefs.values["weather.display"] === "detailed";
+    const showDetailedView = Prefs.values["weather.display"] === "detailed";
     const nimbusWeatherForecastTrainhopEnabled = Prefs.values.trainhopConfig?.widgets?.weatherForecastEnabled;
     const weatherForecastWidgetEnabled = nimbusWeatherForecastTrainhopEnabled || Prefs.values["widgets.system.weatherForecast.enabled"];
     if (showDetailedView && weatherForecastWidgetEnabled) {

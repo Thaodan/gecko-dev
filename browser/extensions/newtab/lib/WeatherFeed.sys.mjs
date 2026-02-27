@@ -404,8 +404,7 @@ export class WeatherFeed {
         const { values } = this.store.getState().Prefs;
 
         const weatherForecastWidgetEnabled =
-          (values["weather.display"] === "detailed" ||
-            values.trainhopConfig?.weather?.display === "detailed") &&
+          values["weather.display"] === "detailed" &&
           (values["widgets.system.weatherForecast.enabled"] ||
             values.trainhopConfig?.widgets?.weatherForecastEnabled);
 
