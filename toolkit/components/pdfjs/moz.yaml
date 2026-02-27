@@ -57,5 +57,5 @@ updatebot:
     tasks:
       - type: vendoring
         enabled: true
-        frequency: every
+        frequency: "1 week, 3 commits"
         blocking: 1626408
