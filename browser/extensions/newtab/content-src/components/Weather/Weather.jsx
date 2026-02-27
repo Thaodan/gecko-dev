@@ -520,10 +520,7 @@ export class _Weather extends React.PureComponent {
 
     const WEATHER_SUGGESTION = Weather.suggestions?.[0];
 
-    const nimbusWeatherDisplay = Prefs.values.trainhopConfig?.weather?.display;
-    const showDetailedView =
-      nimbusWeatherDisplay === "detailed" ||
-      Prefs.values["weather.display"] === "detailed";
+    const showDetailedView = Prefs.values["weather.display"] === "detailed";
 
     const nimbusWeatherForecastTrainhopEnabled =
       Prefs.values.trainhopConfig?.widgets?.weatherForecastEnabled;
