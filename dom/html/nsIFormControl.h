@@ -297,8 +297,7 @@ bool nsIFormControl::IsButtonControl() const {
 bool nsIFormControl::AllowDraggableChildren() const {
   auto type = ControlType();
   return type == FormControlType::Object || type == FormControlType::Fieldset ||
-         type == FormControlType::Output ||
-         type == FormControlType::FormAssociatedCustomElement;
+         type == FormControlType::Output;
 }
 
 #endif /* nsIFormControl_h_ */
