@@ -3722,7 +3722,9 @@ export class BackupService extends EventTarget {
           // the RPM communication so we use the hash and parse that instead.
           [
             "about:editprofile" +
-              (copiedProfile ? `#copiedProfileName=${copiedProfile.name}` : ""),
+              (copiedProfile
+                ? `#copiedProfileName=${copiedProfile.name}`
+                : "#restoredProfile"),
           ]
         );
       }
