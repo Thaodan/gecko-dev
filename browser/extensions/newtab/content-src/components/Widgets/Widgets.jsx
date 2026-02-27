@@ -100,7 +100,10 @@ function Widgets() {
     nimbusWeatherForecastTrainhopEnabled ||
     prefs[PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED];
 
-  const showDetailedView = prefs["weather.display"] === "detailed";
+  const nimbusWeatherDisplay = prefs.trainhopConfig?.weather?.display;
+  const showDetailedView =
+    nimbusWeatherDisplay === "detailed" ||
+    prefs["weather.display"] === "detailed";
 
   // Check if weather is enabled (browser.newtabpage.activity-stream.showWeather)
   const { showWeather } = prefs;

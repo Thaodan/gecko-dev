@@ -247,10 +247,6 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // Timeout for Merino fetches (ms).
   ["merino.timeoutMs", 200],
 
-  // Merino endpoint prefs to be used for weather widgets
-  ["merino.weather.reportEndpointURL", ""],
-  ["merino.weather.hourlyEndpointURL", ""],
-
   // Set default NER threshold value of 0.5
   ["nerThreshold", [0.5, "float"]],
 
