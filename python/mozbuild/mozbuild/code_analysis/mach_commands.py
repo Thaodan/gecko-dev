@@ -296,16 +296,16 @@ def static_analysis(command_context):
 )
 def check(
     command_context,
-    source=None,
-    jobs=2,
-    strip=1,
-    verbose=False,
-    checks="-*",
-    fix=False,
-    header_filter="",
-    output=None,
-    format="text",
-    outgoing=False,
+    source,
+    jobs,
+    strip,
+    verbose,
+    checks,
+    fix,
+    header_filter,
+    output,
+    format,
+    outgoing,
 ):
     from mozbuild.controller.building import (
         StaticAnalysisFooter,
@@ -356,7 +356,7 @@ def check(
 
     if not total or not source:
         command_context.log(
-            logging.INFO,
+            logging.WARNING,
             "static-analysis",
             {},
             "There are no files eligible for analysis. Please note that 'header' files "
@@ -1396,28 +1396,20 @@ def _build_export(command_context, jobs, verbose=False):
         command_context.log(logging.INFO, "build_output", {"line": line}, "{line}")
 
     # First install what we can through install manifests.
-    rc = command_context._run_make(
-        directory=command_context.topobjdir,
-        target="pre-export",
-        line_handler=None,
-        silent=not verbose,
-    )
-    if rc != 0:
-        return rc
-
     # Then build the rest of the build dependencies by running the full
     # export target, because we can't do anything better.
-    for target in ("export", "pre-compile"):
+    for target in ("pre-export", "export", "pre-compile"):
         rc = command_context._run_make(
             directory=command_context.topobjdir,
             target=target,
             line_handler=None,
+            print_directory=verbose,
+            log=verbose,
             silent=not verbose,
             num_jobs=jobs,
         )
         if rc != 0:
             return rc
-
     return 0
 
 
