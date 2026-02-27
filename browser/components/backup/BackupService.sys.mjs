@@ -49,6 +49,8 @@ const RESTORED_BACKUP_METADATA_PREF_NAME =
 const SANITIZE_ON_SHUTDOWN_PREF_NAME = "privacy.sanitize.sanitizeOnShutdown";
 const FORCE_ENABLE_BACKUP_PROFILES_PREF_NAME =
   "browser.backup.profiles.force-enable";
+const BACKUP_ENABLED_ON_PROFILES_PREF_NAME =
+  "browser.backup.enabled_on.profiles";
 
 const SCHEMAS = Object.freeze({
   BACKUP_MANIFEST: 1,
@@ -3959,12 +3961,24 @@ export class BackupService extends EventTarget {
 
       // flush the embedded component's persistent data
       this.setEmbeddedComponentPersistentData({});
+
+      if (lazy.SelectableProfileService.currentProfile) {
+        BackupService.addToEnabledListPref(
+          lazy.SelectableProfileService.currentProfile.id
+        );
+      }
     } else {
       // set user-disabled pref if backup is being disabled
       Services.prefs.setBoolPref(
         "browser.backup.scheduled.user-disabled",
         true
       );
+
+      if (lazy.SelectableProfileService.currentProfile) {
+        BackupService.removeFromEnabledListPref(
+          lazy.SelectableProfileService.currentProfile.id
+        );
+      }
     }
   }
 
@@ -5182,5 +5196,49 @@ export class BackupService extends EventTarget {
       return false;
     }
     return exists;
+  }
+
+  static addToEnabledListPref(profileID) {
+    if (!lazy.SelectableProfileService.currentProfile) {
+      lazy.logConsole.warn(
+        "The enabled pref is only to be used for selectable profiles"
+      );
+      return;
+    }
+
+    let profilesEnabledOn = JSON.parse(
+      Services.prefs.getStringPref(BACKUP_ENABLED_ON_PROFILES_PREF_NAME, "{}")
+    );
+
+    profilesEnabledOn[profileID] = true;
+
+    Services.prefs.setStringPref(
+      BACKUP_ENABLED_ON_PROFILES_PREF_NAME,
+      JSON.stringify(profilesEnabledOn)
+    );
+  }
+
+  static async removeFromEnabledListPref(profileID) {
+    if (!lazy.SelectableProfileService.currentProfile) {
+      lazy.logConsole.warn(
+        "The enabled pref is only to be used for selectable profiles"
+      );
+      return;
+    }
+
+    let profilesEnabledOn = JSON.parse(
+      Services.prefs.getStringPref(BACKUP_ENABLED_ON_PROFILES_PREF_NAME, "{}")
+    );
+    delete profilesEnabledOn[profileID];
+    Services.prefs.setStringPref(
+      BACKUP_ENABLED_ON_PROFILES_PREF_NAME,
+      JSON.stringify(profilesEnabledOn)
+    );
+
+    // Since the remove could be happening during shutdown, let's manually do a flush shared pref to ensure
+    // the db has the shared pref value before deletion
+    await lazy.SelectableProfileService.flushSharedPrefToDatabase(
+      BACKUP_ENABLED_ON_PROFILES_PREF_NAME
+    );
   }
 }
