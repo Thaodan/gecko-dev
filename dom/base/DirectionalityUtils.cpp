@@ -791,7 +791,55 @@ void ResetDirectionSetByTextNode(Text* aTextNode,
   FindDirAutoElementsFrom(unboundFrom, autoElements);
   for (Element* autoElement : autoElements) {
     if (autoElement->GetDirectionality() != dir) {
-      // it's dir was not determined by this text node
+      // its dir was not determined by this text node
+      continue;
+    }
+    ResetAutoDirection(autoElement, /* aNotify = */ true);
+  }
+}
+
+void ResetDirectionSetBySlotHost(HTMLSlotElement* aSlot,
+                                 dom::UnbindContext& aContext) {
+  // https://html.spec.whatwg.org/#contained-text-auto-directionality
+  // Dynamic update for step 1.2. If descendant is a slot element whose root is
+  // a shadow root, then return the directionality of that shadow root's host.
+
+  MOZ_ASSERT(!aSlot->IsInComposedDoc(), "Should be disconnected already");
+  if (!AffectsDirAutoElement(aSlot) || EstablishesOwnDirection(aSlot)) {
+    return;
+  }
+  AutoTArray<Element*, 4> autoElements;
+  bool answerIsDefinitive = FindDirAutoElementsFrom(aSlot, autoElements);
+
+  if (answerIsDefinitive) {
+    // All dir=auto elements are in our (now detached) subtree. We're done, as
+    // nothing really changed for our purposes.
+    return;
+  }
+  auto* unboundFrom =
+      nsIContent::FromNodeOrNull(aContext.GetOriginalSubtreeParent());
+  if (!unboundFrom || !AffectsDirAutoElement(unboundFrom)) {
+    return;
+  }
+
+  const ShadowRoot* sr = unboundFrom->GetContainingShadow();
+  if (!sr) {
+    MOZ_ASSERT_UNREACHABLE(
+        "Should only be called if slot was in a shadow tree");
+    return;
+  }
+  Element* host = sr->GetHost();
+  MOZ_ASSERT(host);
+  Directionality dir = host->GetDirectionality();
+  if (dir == Directionality::Unset) {
+    return;
+  }
+
+  autoElements.Clear();
+  FindDirAutoElementsFrom(unboundFrom, autoElements);
+  for (Element* autoElement : autoElements) {
+    if (autoElement->GetDirectionality() != dir) {
+      // its dir was not determined by this slot's host
       continue;
     }
     ResetAutoDirection(autoElement, /* aNotify = */ true);
@@ -909,7 +957,7 @@ void SetDirOnBind(Element* aElement, nsIContent* aParent) {
     if (aParent->AffectsDirAutoSlot()) {
       aElement->SetAffectsDirAutoSlot();
     }
-    DownwardPropagateDirAutoFlags(aElement);
+    // Flags propagate to children when they are recursively bound.
 
     if (aElement->GetFirstChild() ||
         (aElement->IsInShadowTree() && !aElement->HasValidDir() &&
