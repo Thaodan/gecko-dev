@@ -125,12 +125,11 @@ class RegionDetector {
    */
   _home = null;
   /**
-   * The most recent location the user was detected. Production code should use
-   * the `current` getter.
+   * The most recent location the user was detected.
    *
-   * @type {string}
+   * @type {string|null}
    */
-  _current = null;
+  #current = null;
   /**
    * The RemoteSettings client used to sync region files.
    *
@@ -214,11 +213,11 @@ class RegionDetector {
   /**
    * Get the last region we detected the user to be in.
    *
-   * @returns {string}
+   * @returns {?string}
    *   The users current region.
    */
   get current() {
-    return this._current;
+    return this.#current;
   }
 
   /**
@@ -285,7 +284,7 @@ class RegionDetector {
    */
   _setCurrentRegion(region = "") {
     log.info("Setting current region:", region);
-    this._current = region;
+    this.#current = region;
 
     let now = Math.round(Date.now() / 1000);
     let prefs = Services.prefs;
