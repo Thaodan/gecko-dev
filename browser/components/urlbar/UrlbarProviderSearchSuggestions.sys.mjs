@@ -45,9 +45,6 @@ const TRENDING_HELP_URL =
   Services.urlFormatter.formatURLPref("app.support.baseURL") +
   "google-trending-searches-on-awesomebar";
 
-// Rich suggestions icon size in px.
-const RICH_ICON_SIZE = 28;
-
 /**
  * Returns whether the passed in string looks like a url.
  *
@@ -230,9 +227,8 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
    * @param {UrlbarQueryContext} queryContext
    * @param {(provider: UrlbarProvider, result: UrlbarResult) => void} addCallback
    *   Callback invoked by the provider to add a new result.
-   * @param {UrlbarController} controller The UrlbarController instance.
    */
-  async startQuery(queryContext, addCallback, controller) {
+  async startQuery(queryContext, addCallback) {
     let instance = this.queryInstance;
 
     let aliasEngine = await this._maybeGetAlias(queryContext);
@@ -294,8 +290,7 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
       queryContext,
       engine,
       query,
-      alias,
-      controller.browserWindow
+      alias
     );
 
     if (!results || instance != this.queryInstance) {
@@ -386,13 +381,7 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
    */
   #suggestionsController;
 
-  async #fetchSearchSuggestions(
-    queryContext,
-    engine,
-    searchString,
-    alias,
-    win
-  ) {
+  async #fetchSearchSuggestions(queryContext, engine, searchString, alias) {
     if (!engine) {
       return null;
     }
@@ -540,9 +529,7 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
               trending: entry.trending,
               description: entry.description || undefined,
               query,
-              icon: !entry.value
-                ? await engine.getIconURL()
-                : UrlbarUtils.getRemoteIconUrl(entry.icon, RICH_ICON_SIZE, win),
+              icon: !entry.value ? await engine.getIconURL() : entry.icon,
               helpUrl: entry.trending ? TRENDING_HELP_URL : undefined,
             },
             highlights: {

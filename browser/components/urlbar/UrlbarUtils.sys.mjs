@@ -19,18 +19,12 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 const lazy = XPCOMUtils.declareLazy({
   AIWindow:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
-  BrowserUIUtils: "resource:///modules/BrowserUIUtils.sys.mjs",
   ContextualIdentityService:
     "resource://gre/modules/ContextualIdentityService.sys.mjs",
   DEFAULT_FORM_HISTORY_PARAM:
     "moz-src:///toolkit/components/search/SearchSuggestionController.sys.mjs",
-  FaviconUtils: "moz-src:///toolkit/modules/FaviconUtils.sys.mjs",
   FormHistory: "resource://gre/modules/FormHistory.sys.mjs",
   KeywordUtils: "resource://gre/modules/KeywordUtils.sys.mjs",
-  parserUtils: {
-    service: "@mozilla.org/parserutils;1",
-    iid: Ci.nsIParserUtils,
-  },
   PlacesUIUtils: "moz-src:///browser/components/places/PlacesUIUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
@@ -49,7 +43,12 @@ const lazy = XPCOMUtils.declareLazy({
     "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
   UrlbarTokenizer:
     "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
+  BrowserUIUtils: "resource:///modules/BrowserUIUtils.sys.mjs",
   UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
+  parserUtils: {
+    service: "@mozilla.org/parserutils;1",
+    iid: Ci.nsIParserUtils,
+  },
 });
 
 export var UrlbarUtils = {
@@ -770,31 +769,6 @@ export var UrlbarUtils = {
       return "page-icon:" + url.href;
     }
     return this.ICON.DEFAULT;
-  },
-
-  /**
-   * Converts a given icon URL to a remote icon URL if it's not a trusted
-   * protocol.
-   *
-   * @param {string} iconUrl The URL of the icon.
-   * @param {number} size The desired size of the icon.
-   * @param {Window} win The window context.
-   * @returns {string|null} The URL of the remote icon or null if not available.
-   */
-  getRemoteIconUrl(iconUrl, size, win) {
-    let url = URL.parse(iconUrl);
-    if (!url) {
-      return null;
-    }
-    if (!lazy.FaviconUtils.TRUSTED_FAVICON_SCHEMES.includes(url.protocol)) {
-      return lazy.FaviconUtils.getMozRemoteImageURL(iconUrl, {
-        size: Math.floor(size * win.devicePixelRatio),
-        colorScheme: win.matchMedia("(prefers-color-scheme: dark)").matches
-          ? "dark"
-          : "light",
-      });
-    }
-    return iconUrl;
   },
 
   /**
@@ -2933,12 +2907,10 @@ export class UrlbarProvider {
    *   The query context object
    * @param {(provider: UrlbarProvider, result: UrlbarResult) => void} _addCallback
    *   Callback invoked by the provider to add a new result.
-   * @param {UrlbarController} _controller
-   *   The current controller.
    * @returns {void|Promise<void>}
    * @abstract
    */
-  startQuery(_queryContext, _addCallback, _controller) {
+  startQuery(_queryContext, _addCallback) {
     throw new Error("Trying to access the base class, must be overridden");
   }
 

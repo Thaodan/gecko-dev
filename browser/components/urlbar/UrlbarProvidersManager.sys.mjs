@@ -801,8 +801,7 @@ export class Query {
         (innerProvider, result) => {
           addedResult = true;
           this.add(innerProvider, result);
-        },
-        this.controller
+        }
       );
       if (!addedResult) {
         this.context.deferUserSelectionProviders.delete(provider.name);
