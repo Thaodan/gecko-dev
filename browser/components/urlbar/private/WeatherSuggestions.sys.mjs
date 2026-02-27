@@ -494,7 +494,7 @@ export class WeatherSuggestions extends SuggestProvider {
 
     let merino = this.#merino;
     let fetchInstance = (this.#fetchInstance = {});
-    let merinoSuggestion = await merino.fetchWeatherReport({
+    let merinoSuggestion = await merino.fetchWeather({
       source: "urlbar",
       country: cityGeoname?.countryCode,
       region: cityGeoname?.adminDivisionCodes

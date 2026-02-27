@@ -160,7 +160,6 @@ export const INITIAL_STATE = {
     lastUpdated: null,
     query: "",
     suggestions: [],
-    hourlyForecasts: [],
     locationData: {
       city: "",
       adminArea: "",
@@ -1043,8 +1042,7 @@ function Weather(prevState = INITIAL_STATE.Weather, action) {
       return {
         ...prevState,
         suggestions: action.data.suggestions,
-        hourlyForecasts: action.data.hourlyForecasts || [],
-        lastUpdated: action.data.lastUpdated,
+        lastUpdated: action.data.date,
         locationData: action.data.locationData || prevState.locationData,
         initialized: true,
       };

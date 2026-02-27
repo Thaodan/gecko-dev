@@ -22,7 +22,7 @@ add_setup(async () => {
   });
 });
 
-add_task(async function fetchWeatherReport() {
+add_task(async function fetchWeather() {
   const testData = [
     {
       params: {
@@ -130,7 +130,7 @@ add_task(async function fetchWeatherReport() {
   for (let { params, expected } of testData) {
     let stub = sinon.stub(merino, "fetch").resolves([]);
 
-    await merino.fetchWeatherReport(params);
+    await merino.fetchWeather(params);
 
     Assert.ok(stub.calledOnce);
     Assert.deepEqual(stub.firstCall.args[0], {
@@ -141,7 +141,6 @@ add_task(async function fetchWeatherReport() {
         ...expected.otherParams,
       },
       timeoutMs: expected.timeoutMs,
-      endpointUrl: UrlbarPrefs.get("merino.weather.reportEndpointURL"),
     });
 
     stub.restore();
