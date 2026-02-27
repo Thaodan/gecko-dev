@@ -29,6 +29,10 @@ export default {
       ],
       control: { type: "select" },
     },
+    layout: {
+      options: ["default", "medium-icon", "large-icon"],
+      control: { type: "select" },
+    },
   },
   parameters: {
     status: "in-development",
@@ -141,6 +145,8 @@ Default.args = {
   slottedActions: false,
   slottedActionsStart: false,
   supportPage: "",
+  slottedDescription: false,
+  layout: "default",
 };
 
 export const WithDescription = Template.bind({});
