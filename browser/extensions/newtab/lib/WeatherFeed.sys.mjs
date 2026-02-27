@@ -22,7 +22,7 @@ ChromeUtils.defineLazyGetter(lazy, "MerinoClient", () => {
   // Bug 2018111 - TemporaryMerinoClientShim backports fetchWeatherReport() and
   // fetchHourlyForecasts() with endpoint URL support. Remove this block
   // and use MerinoClient directly once Firefox 151 ships to release.
-  if (Services.vc.compare(AppConstants.MOZ_APP_VERSION, "148.0a1") >= 0) {
+  if (Services.vc.compare(AppConstants.MOZ_APP_VERSION, "151.0a1") < 0) {
     return ChromeUtils.importESModule(
       "resource://newtab/lib/TemporaryMerinoClientShim.sys.mjs"
     ).TemporaryMerinoClientShim;
@@ -409,7 +409,7 @@ export class WeatherFeed {
           (values["widgets.system.weatherForecast.enabled"] ||
             values.trainhopConfig?.widgets?.weatherForecastEnabled);
 
-        // @backward-compat { version 148 }
+        // @backward-compat { version 151 }
         // Read endpoint URLs from trainhopConfig or ActivityStream prefs so
         // they can be configured without a tree change. Remove once shipped;
         // MerinoClient will have the endpoints defined via UrlbarPrefs.
