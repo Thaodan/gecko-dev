@@ -9,10 +9,10 @@ recovered by the current version of Firefox.
 This ensures backward compatibility as the backup schema evolves.
 
 To add a new version:
-1. Before bumping SCHEMA_VERSION, run test_generate_backup_fixture.py to create the fixtures
-2. Add entry to VERSION_CONFIG in compat_config.py
+1. Before bumping SCHEMA_VERSION, run test_generate_backup_fixture.py to create the fixture
+2. Add entry to VERSION_CONFIG with backup_file, extra_checks list
 3. Implement any new _verify_* methods for extra_checks
-4. Add test methods: test_recover_vN_backup_selectable / _legacy
+4. Add test method: test_recover_vN_backup calling _test_recover_backup(N)
 """
 
 import os
@@ -24,7 +24,14 @@ import mozfile
 
 sys.path.append(os.fspath(Path(__file__).parents[0]))
 from backup_test_base import BackupTestBase
-from compat_config import VERSION_CONFIG
+
+VERSION_CONFIG = {
+    1: {
+        "backup_file": "v1_backup.html",
+        "recovery_password": "v1-test-recovery-password",
+        "extra_checks": [],
+    },
+}
 
 
 class BackupCompatibilityTest(BackupTestBase):
@@ -43,8 +50,7 @@ class BackupCompatibilityTest(BackupTestBase):
     def _test_recover_backup_selectable(self, version):
         """Test recovering a backup into a selectable profile environment."""
         config = VERSION_CONFIG[version]
-        backup_file = config["selectable_backup_file"] or config["legacy_backup_file"]
-        backup_path = self._get_backup_path(backup_file)
+        backup_path = self._get_backup_path(config["backup_file"])
         self.assertTrue(
             os.path.exists(backup_path),
             f"V{version} backup fixture must exist at {backup_path}",
@@ -97,7 +103,7 @@ class BackupCompatibilityTest(BackupTestBase):
 
         self._verify_common_data(version)
 
-        for check in config["extra_checks_selectable"]:
+        for check in config["extra_checks"]:
             verify_method = getattr(self, f"_verify_{check}")
             verify_method(version)
 
@@ -113,7 +119,7 @@ class BackupCompatibilityTest(BackupTestBase):
     def _test_recover_backup_legacy(self, version):
         """Test recovering a backup into a legacy profile environment."""
         config = VERSION_CONFIG[version]
-        backup_path = self._get_backup_path(config["legacy_backup_file"])
+        backup_path = self._get_backup_path(config["backup_file"])
         self.assertTrue(
             os.path.exists(backup_path),
             f"V{version} backup fixture must exist at {backup_path}",
@@ -170,7 +176,7 @@ class BackupCompatibilityTest(BackupTestBase):
 
         self._verify_common_data(version)
 
-        for check in config["extra_checks_legacy"]:
+        for check in config["extra_checks"]:
             verify_method = getattr(self, f"_verify_{check}")
             verify_method(version)
 
@@ -194,7 +200,7 @@ class BackupCompatibilityTest(BackupTestBase):
     def _get_backup_path(self, filename):
         """Get path to a backup fixture."""
         test_dir = os.path.dirname(__file__)
-        return os.path.join(test_dir, "compat-files/backups", filename)
+        return os.path.join(test_dir, "backups", filename)
 
     def _recover_backup(
         self,
@@ -294,25 +300,3 @@ class BackupCompatibilityTest(BackupTestBase):
             script_args=[pref_name],
         )
         self.assertTrue(value, f"Preference {pref_name} should be true")
-
-    def _verify_selectable_profile_metadata(self, version):
-        """Verify recovered profile has expected selectable profile metadata."""
-        metadata = self.get_selectable_profile_metadata()
-        self.assertEqual(
-            metadata["name"],
-            f"V{version} Test Profile",
-            f"Profile name should be 'V{version} Test Profile'",
-        )
-        self.assertEqual(
-            metadata["avatar"],
-            "book",
-            "Profile avatar should be 'book'",
-        )
-        self.assertIsNotNone(
-            metadata["theme"],
-            "Profile should have a theme object",
-        )
-        self.logger.info(
-            f"Verified selectable profile metadata: name={metadata['name']}, "
-            f"avatar={metadata['avatar']}"
-        )

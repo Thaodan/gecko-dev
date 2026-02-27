@@ -123,7 +123,11 @@ turn-off-scheduled-backups-confirm-button = Turn off and delete backup
 restore-from-backup-header = Restore your data
 # Variables:
 #   $date (string) - Date to be formatted based on locale
-restore-from-backup-support-link1 = What will be restored?
+restore-from-backup-description-with-metadata =
+    .message = This will replace all your current { -brand-short-name } data with your backup from { DATETIME($date, timeStyle: "short", dateStyle: "short") }.
+restore-from-backup-support-link =
+    .message = What will be restored?
+restore-from-backup-no-backup-file-link = Having problems finding your backup?
 
 restore-from-backup-filepicker-label = Backup file
 restore-from-backup-filepicker-title = Choose Backup File:
@@ -138,14 +142,6 @@ restore-from-backup-password-description = This unlocks your encrypted backup.
 restore-from-backup-cancel-button = Cancel
 restore-from-backup-confirm-button = Restore and restart
 restore-from-backup-restoring-button = Restoring…
-
-restore-from-backup-type-group-label =
-    .label = Replace current profile?
-restore-from-backup-type-replace =
-    .label = Replace all data with this backup
-restore-from-backup-type-add =
-    .label = Keep data and create new profile
-restore-from-backup-profiles-disabled-message = This will replace all your current { -brand-short-name } data with your backup.
 
 ## These strings are displayed in a small error message bar in the settings
 ## menu if there was an error when trying to restore a backed up profile
@@ -290,15 +286,9 @@ other-backup-files-founds =
     }
 
 # Variables:
-#   $profileName (String) - The name of the profile that was backed up.
-#   $date (Datetime) - The date the backup was created.
+#   $date (Datetime) - The date the backup was created
 #   $machineName (String) - Name of the machine that the backup was created on.
-backup-file-creation-metadata = { $profileName } Created on { DATETIME($date, year: "numeric", month: "numeric", day: "numeric") } on { $machineName }
-
-# Variables:
-#   $deviceName (String) - The name of the device from which the backup was created.
-#   $date (Number) - The epoch timestamp of the restore.
-backup-restored-profile-name = Restored from { $deviceName } on { DATETIME($date, year: "numeric", month: "numeric", day: "numeric") } at { DATETIME($date, hour: "2-digit", minute: "2-digit") }
+backup-file-creation-date-and-device = Created on { DATETIME($date, year: "numeric", month: "numeric", day: "numeric") } on { $machineName }
 
 backup-file-restore-file-validation-error = This file isn’t working. Try picking a different file. <a data-l10n-name="restore-problems">Still having problems?</a>
 

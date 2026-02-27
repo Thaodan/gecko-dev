@@ -110,7 +110,6 @@ class SelectableProfileServiceClass extends EventEmitter {
     "browser.crashReports.unsubmittedCheck.autoSubmit2",
     "browser.discovery.enabled",
     "browser.shell.checkDefaultBrowser",
-    "browser.backup.enabled_on.profiles",
     DAU_GROUPID_PREF_NAME,
     "datareporting.healthreport.uploadEnabled",
     "datareporting.policy.currentPolicyVersion",

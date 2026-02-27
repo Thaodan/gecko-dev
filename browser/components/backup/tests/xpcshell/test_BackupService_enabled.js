@@ -10,12 +10,6 @@ const { NimbusTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/NimbusTestUtils.sys.mjs"
 );
 
-const lazy = {};
-ChromeUtils.defineESModuleGetters(lazy, {
-  SelectableProfileService:
-    "resource:///modules/profiles/SelectableProfileService.sys.mjs",
-});
-
 const BACKUP_DIR_PREF_NAME = "browser.backup.location";
 const BACKUP_ARCHIVE_ENABLED_PREF_NAME = "browser.backup.archive.enabled";
 const BACKUP_ARCHIVE_ENABLED_OVERRIDE_PREF_NAME =
@@ -250,57 +244,6 @@ add_task(async function test_restore_selectable_profiles() {
     },
   });
 });
-
-add_task(
-  async function test_selectableProfilesAllowed_updates_on_enableChanged() {
-    let sandbox = sinon.createSandbox();
-    let isEnabledValue = false;
-
-    sandbox
-      .stub(lazy.SelectableProfileService, "isEnabled")
-      .get(() => isEnabledValue);
-
-    let bs = new BackupService();
-    bs.initStatusObservers();
-
-    Assert.equal(
-      bs.state.selectableProfilesAllowed,
-      false,
-      "selectableProfilesAllowed should initially be false"
-    );
-
-    let stateUpdatePromise = new Promise(resolve => {
-      bs.addEventListener("BackupService:StateUpdate", resolve, { once: true });
-    });
-
-    isEnabledValue = true;
-    lazy.SelectableProfileService.emit("enableChanged", true);
-    await stateUpdatePromise;
-
-    Assert.equal(
-      bs.state.selectableProfilesAllowed,
-      true,
-      "selectableProfilesAllowed should be true after enableChanged fires"
-    );
-
-    stateUpdatePromise = new Promise(resolve => {
-      bs.addEventListener("BackupService:StateUpdate", resolve, { once: true });
-    });
-
-    isEnabledValue = false;
-    lazy.SelectableProfileService.emit("enableChanged", false);
-    await stateUpdatePromise;
-
-    Assert.equal(
-      bs.state.selectableProfilesAllowed,
-      false,
-      "selectableProfilesAllowed should be false after disabling"
-    );
-
-    bs.uninitStatusObservers();
-    sandbox.restore();
-  }
-);
 
 async function archiveTemplate({ internalReason, disable, enable }) {
   Services.telemetry.clearScalars();

@@ -64,8 +64,6 @@ import "chrome://browser/content/profiles/profiles-theme-card.mjs";
 import "chrome://browser/content/profiles/profile-avatar-selector.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/moz-toggle.mjs";
-// eslint-disable-next-line import/no-unassigned-import
-import "chrome://global/content/elements/moz-support-link.mjs";
 
 const SAVE_NAME_TIMEOUT = 2000;
 const SAVED_MESSAGE_TIMEOUT = 5000;
@@ -80,7 +78,6 @@ export class EditProfileCard extends MozLitElement {
     profiles: { type: Array },
     themes: { type: Array },
     isCopy: { type: Boolean, reflect: true },
-    isRestored: { type: Boolean, reflect: true },
   };
 
   static queries = {
@@ -136,8 +133,6 @@ export class EditProfileCard extends MozLitElement {
     }
 
     this.isCopy = document.location.hash.includes("#copiedProfileName");
-    this.isRestored = document.location.hash.includes("#restoredProfile");
-
     let fakeParams = new URLSearchParams(
       document.location.hash.replace("#", "")
     );
@@ -166,7 +161,7 @@ export class EditProfileCard extends MozLitElement {
   }
 
   async setInitialInput() {
-    if (!this.isCopy && !this.isRestored) {
+    if (!this.isCopy) {
       return;
     }
 
@@ -363,23 +358,6 @@ export class EditProfileCard extends MozLitElement {
           })}
         ></h1>
         <p data-l10n-id="copied-profile-page-header-description"></p>
-      </div>`;
-    }
-
-    if (this.isRestored) {
-      return html`<div>
-        <h1
-          id="restored-profile-header"
-          data-l10n-id="restored-profile-page-header"
-        ></h1>
-        <p>
-          <span data-l10n-id="restored-profile-page-header-description"></span>
-          <a
-            is="moz-support-link"
-            support-page="profile-management"
-            data-l10n-id="restored-profile-page-learn-more"
-          ></a>
-        </p>
       </div>`;
     }
 

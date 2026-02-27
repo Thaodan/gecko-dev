@@ -93,11 +93,10 @@ export class BackupUIChild extends JSWindowActorChild {
         backupFile,
       });
     } else if (event.type == "BackupUI:RestoreFromBackupFile") {
-      let { backupFile, backupPassword, restoreType } = event.detail;
+      let { backupFile, backupPassword } = event.detail;
       let result = await this.sendQuery("RestoreFromBackupFile", {
         backupFile,
         backupPassword,
-        restoreType,
       });
 
       if (result.success) {
