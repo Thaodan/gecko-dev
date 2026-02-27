@@ -3023,7 +3023,6 @@ pref("devtools.inspector.enabled", true);
 // What was the last active sidebar in the inspector
 pref("devtools.inspector.selectedSidebar", "layoutview");
 pref("devtools.inspector.activeSidebar", "layoutview");
-pref("devtools.inspector.remote", false);
 
 // Enable the 3 pane mode in the inspector
 pref("devtools.inspector.three-pane-enabled", true);
