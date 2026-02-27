@@ -391,16 +391,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   void SetIsActiveInternal(bool aIsActive, ErrorResult& aRv) {
     ExplicitActiveStatus newValue = aIsActive ? ExplicitActiveStatus::Active
                                               : ExplicitActiveStatus::Inactive;
-    bool changed = GetExplicitActive() != newValue;
     SetExplicitActive(newValue, aRv);
-    if (changed) {
-      nsCOMPtr<nsIObserverService> observerService =
-          mozilla::services::GetObserverService();
-      if (observerService) {
-        observerService->NotifyObservers(
-            ToSupports(this), "browsing-context-active-change", nullptr);
-      }
-    }
   }
 
   void SetTouchEventsOverride(dom::TouchEventsOverride, ErrorResult& aRv);
