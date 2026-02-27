@@ -6233,7 +6233,7 @@ export class SmartbarInput extends HTMLElement {
           type: "tab",
           url,
           label: tab.label || url,
-          iconSrc: tab.image || lazy.UrlbarUtils.getIconForUrl(url),
+          iconSrc: this.#resolveTabIconSrc(tab.image, url),
         });
       }
     }
@@ -6254,6 +6254,7 @@ export class SmartbarInput extends HTMLElement {
     const container = this.#findWebsiteContextChipsContainer();
     if (container) {
       container.websites = finalWebsites;
+      container.removable = true;
       container.hidden = !finalWebsites.length;
     }
   }
@@ -6264,6 +6265,22 @@ export class SmartbarInput extends HTMLElement {
    */
   updateContextChips() {
     this.#updateContextChips();
+  }
+
+  /**
+   * Resolves a tab favicon to a URL safe for use in both aiWindow.html and
+   * aiChatContent.html. tab.image can be an external https:// URL (e.g. from
+   * session restore) which is blocked by both contexts' CSPs, so we fall back
+   * to page-icon: in that case.
+   *
+   * @param {string} tabImage
+   * @param {string} url
+   * @returns {string}
+   */
+  #resolveTabIconSrc(tabImage, url) {
+    return tabImage && !tabImage.startsWith("http")
+      ? tabImage
+      : lazy.UrlbarUtils.getIconForUrl(url);
   }
 
   /**
