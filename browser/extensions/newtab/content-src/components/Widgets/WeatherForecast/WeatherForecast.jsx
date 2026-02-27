@@ -46,6 +46,7 @@ function WeatherForecast({ dispatch, isMaximized, widgetsMayBeMaximized }) {
   const forecastRef = useIntersectionObserver(handleIntersection);
 
   const WEATHER_SUGGESTION = weatherData.suggestions?.[0];
+  const HOURLY_FORECASTS = weatherData.hourlyForecasts ?? [];
 
   const nimbusWeatherDisplay = prefs.trainhopConfig?.weather?.display;
   const showDetailedView =
@@ -77,7 +78,9 @@ function WeatherForecast({ dispatch, isMaximized, widgetsMayBeMaximized }) {
     !showDetailedView ||
     !weatherData?.initialized ||
     !weatherForecastWidgetEnabled ||
-    !isWeatherEnabled
+    !isWeatherEnabled ||
+    !WEATHER_SUGGESTION ||
+    !HOURLY_FORECASTS[0]
   ) {
     return null;
   }
@@ -377,41 +380,21 @@ function WeatherForecast({ dispatch, isMaximized, widgetsMayBeMaximized }) {
           ></p>
         )}
         <ul className="forecast-row-items">
-          <li>
-            <span>80&deg;</span>
-            <span
-              className={`weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`}
-            ></span>
-            <span>7:00</span>
-          </li>
-          <li>
-            <span>80&deg;</span>
-            <span
-              className={`weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`}
-            ></span>
-            <span>7:00</span>
-          </li>
-          <li>
-            <span>80&deg;</span>
-            <span
-              className={`weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`}
-            ></span>
-            <span>7:00</span>
-          </li>
-          <li>
-            <span>80&deg;</span>
-            <span
-              className={`weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`}
-            ></span>
-            <span>7:00</span>
-          </li>
-          <li>
-            <span>80&deg;</span>
-            <span
-              className={`weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`}
-            ></span>
-            <span>7:00</span>
-          </li>
+          {HOURLY_FORECASTS.map(slot => (
+            <li key={slot.epoch_date_time}>
+              <span>
+                {slot.temperature[prefs["weather.temperatureUnits"]]}&deg;
+              </span>
+              <span className={`weather-icon iconId${slot.icon_id}`}></span>
+              <span>
+                {(() => {
+                  const date = new Date(slot.date_time);
+                  const hours = date.getHours() % 12 || 12; // displays a 12-hour format
+                  return `${hours}:${String(date.getMinutes()).padStart(2, "0")}`; // gets rid of the extra :00 at the end
+                })()}
+              </span>
+            </li>
+          ))}
         </ul>
       </div>
 
