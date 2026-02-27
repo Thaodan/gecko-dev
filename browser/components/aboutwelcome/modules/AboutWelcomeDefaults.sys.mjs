@@ -234,7 +234,8 @@ const MR_ABOUT_WELCOME_DEFAULT = {
     },
     {
       id: "AW_SMART_WINDOW_NEEDS_DEFAULT_AND_PIN",
-      targeting: `isSmartWindow && doesAppNeedPin && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser`,
+      targeting:
+        "attributionData && attributionData.campaign == 'smart_window' && doesAppNeedPin && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser",
       force_hide_steps_indicator: true,
       content: {
         fullscreen: true,
@@ -362,7 +363,8 @@ const MR_ABOUT_WELCOME_DEFAULT = {
     },
     {
       id: "AW_SMART_WINDOW_NEEDS_DEFAULT",
-      targeting: `isSmartWindow && (!doesAppNeedPin || (unhandledCampaignAction == 'PIN_FIREFOX_TO_TASKBAR')) && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser`,
+      targeting:
+        "attributionData && attributionData.campaign == 'smart_window' && (!doesAppNeedPin || (unhandledCampaignAction == 'PIN_FIREFOX_TO_TASKBAR')) && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser",
       force_hide_steps_indicator: true,
       content: {
         fullscreen: true,
@@ -468,7 +470,8 @@ const MR_ABOUT_WELCOME_DEFAULT = {
     },
     {
       id: "AW_SMART_WINDOW_NEEDS_PIN",
-      targeting: `isSmartWindow && doesAppNeedPin && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && (!'browser.shell.checkDefaultBrowser'|preferenceValue || isDefaultBrowser || (unhandledCampaignAction == 'SET_DEFAULT_BROWSER'))`,
+      targeting:
+        "attributionData && attributionData.campaign == 'smart_window' && doesAppNeedPin && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && (!'browser.shell.checkDefaultBrowser'|preferenceValue || isDefaultBrowser || (unhandledCampaignAction == 'SET_DEFAULT_BROWSER'))",
       force_hide_steps_indicator: true,
       content: {
         fullscreen: true,
@@ -585,7 +588,8 @@ const MR_ABOUT_WELCOME_DEFAULT = {
     },
     {
       id: "AW_SMART_WINDOW_NO_CHECKBOXES",
-      targeting: `isSmartWindow && (!doesAppNeedPin || (unhandledCampaignAction == 'PIN_FIREFOX_TO_TASKBAR') || (unhandledCampaignAction == 'PIN_AND_DEFAULT')) && (!'browser.shell.checkDefaultBrowser'|preferenceValue || isDefaultBrowser || (unhandledCampaignAction == 'SET_DEFAULT_BROWSER') || (unhandledCampaignAction == 'PIN_AND_DEFAULT'))`,
+      targeting:
+        "attributionData && attributionData.campaign == 'smart_window' && (!doesAppNeedPin || (unhandledCampaignAction == 'PIN_FIREFOX_TO_TASKBAR') || (unhandledCampaignAction == 'PIN_AND_DEFAULT')) && (!'browser.shell.checkDefaultBrowser'|preferenceValue || isDefaultBrowser || (unhandledCampaignAction == 'SET_DEFAULT_BROWSER') || (unhandledCampaignAction == 'PIN_AND_DEFAULT'))",
       force_hide_steps_indicator: true,
       content: {
         fullscreen: true,
