@@ -5734,8 +5734,7 @@ static bool IsRelevantBlockFrame(const nsIFrame* aFrame) {
 }
 
 // Retrieve the content offsets of a frame
-static FrameContentRange GetRangeForFrame(const nsIFrame* aFrame,
-                                          bool includeReplaced = false) {
+static FrameContentRange GetRangeForFrame(const nsIFrame* aFrame) {
   nsIContent* content = aFrame->GetContent();
   if (!content) {
     NS_WARNING("Frame has no content");
@@ -5758,7 +5757,7 @@ static FrameContentRange GetRangeForFrame(const nsIFrame* aFrame,
     content = content->GetParent();
   }
 
-  if (!includeReplaced && aFrame->IsReplaced()) {
+  if (aFrame->IsReplaced()) {
     if (auto* parent = content->GetParent()) {
       // TODO(emilio): Revise this in presence of Shadow DOM / display:
       // contents, it's likely that we don't want to just walk the light tree,
@@ -5800,9 +5799,7 @@ static bool SelfIsSelectable(nsIFrame* aFrame, nsIFrame* aParentFrame,
     return false;
   }
   if ((aFlags & nsIFrame::SKIP_HIDDEN) &&
-      (!aFrame->StyleVisibility()->IsVisible() ||
-       aFrame->IsHiddenByContentVisibilityOnAnyAncestor(
-           nsIFrame::IncludeContentVisibility::Hidden))) {
+      !aFrame->StyleVisibility()->IsVisible()) {
     return false;
   }
   if (aFrame->IsGeneratedContentFrame()) {
@@ -6218,8 +6215,7 @@ nsIFrame::ContentOffsets nsIFrame::GetContentOffsetsFromPoint(
   // calculation method
   if (closest.frameEdge) {
     ContentOffsets offsets;
-    bool includeReplaced = (aFlags & INCLUDE_REPLACED) != 0;
-    FrameContentRange range = GetRangeForFrame(closest.frame, includeReplaced);
+    FrameContentRange range = GetRangeForFrame(closest.frame);
     offsets.content = range.content;
     if (closest.afterFrame) {
       offsets.offset = range.end;
