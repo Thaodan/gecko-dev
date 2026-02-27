@@ -88,9 +88,9 @@ class DataMutexBase {
   using AutoLock = AutoLockBase<T>;
   using ConstAutoLock = AutoLockBase<const T>;
 
-  constexpr explicit DataMutexBase(const char* aName) : mMutex(aName) {}
+  explicit DataMutexBase(const char* aName) : mMutex(aName) {}
 
-  constexpr DataMutexBase(T&& aValue, const char* aName)
+  DataMutexBase(T&& aValue, const char* aName)
       : mMutex(aName), mValue(std::move(aValue)) {}
 
   AutoLock Lock() { return AutoLock(this); }
@@ -108,7 +108,7 @@ class DataMutexBase {
 // char* aName in its ctor.
 class StaticMutexNameless : public StaticMutex {
  public:
-  constexpr explicit StaticMutexNameless(const char* aName) : StaticMutex() {}
+  explicit StaticMutexNameless(const char* aName) : StaticMutex() {}
 
  private:
   // Disallow copy construction, `=`, `new`, and `delete` like BaseStaticMutex.
