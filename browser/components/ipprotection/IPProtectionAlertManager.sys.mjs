@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { BANDWIDTH } from "chrome://browser/content/ipprotection/ipprotection-constants.mjs";
-
 const lazy = {};
 
 ChromeUtils.defineLazyGetter(lazy, "ipProtectionLocalization", () => {
@@ -12,8 +10,6 @@ ChromeUtils.defineLazyGetter(lazy, "ipProtectionLocalization", () => {
 
 ChromeUtils.defineESModuleGetters(lazy, {
   EveryWindow: "resource:///modules/EveryWindow.sys.mjs",
-  IPPEnrollAndEntitleManager:
-    "moz-src:///browser/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs",
   IPPProxyManager:
     "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs",
   IPPProxyStates:
@@ -68,10 +64,7 @@ class IPProtectionAlertManagerClass {
         errorBody,
       ] = lazy.ipProtectionLocalization.formatMessagesSync([
         { id: "vpn-paused-alert-title" },
-        {
-          id: "vpn-paused-alert-body",
-          args: { maxUsage: this.#getMaxBandwidthUsage() },
-        },
+        { id: "vpn-paused-alert-body", args: { maxUsage: 150 } },
         { id: "vpn-paused-alert-close-tabs-button" },
         { id: "vpn-paused-alert-continue-wo-vpn-button" },
         { id: "vpn-error-alert-title" },
@@ -89,26 +82,6 @@ class IPProtectionAlertManagerClass {
     }
 
     return this.#localizationMessages;
-  }
-
-  /**
-   * Check usage info for the max usage, then entitlement, then default to
-   * BANDWIDTH.MAX_IN_GB.
-   *
-   * @returns {object} An object with max and remaining as numbers
-   */
-  #getMaxBandwidthUsage() {
-    if (lazy.IPPProxyManager.usageInfo?.max != null) {
-      return Number(lazy.IPPProxyManager.usageInfo.max) / BANDWIDTH.BYTES_IN_GB;
-    } else if (lazy.IPPEnrollAndEntitleManager.entitlement?.maxBytes != null) {
-      // Usage info doesn't exist yet. Check the entitlement
-      return (
-        Number(lazy.IPPEnrollAndEntitleManager.entitlement?.maxBytes) /
-        BANDWIDTH.BYTES_IN_GB
-      );
-    }
-
-    return BANDWIDTH.MAX_IN_GB;
   }
 
   handleEvent(event) {

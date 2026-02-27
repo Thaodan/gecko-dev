@@ -38,10 +38,6 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
     this.handleEvent = this.#handleEvent.bind(this);
   }
 
-  get entitlement() {
-    return this.#entitlement;
-  }
-
   init() {
     // We will use data from the cache until we are fully functional. Then we
     // will recompute the state in `initOnStartupCompleted`.
