@@ -27,6 +27,27 @@ const weatherSuggestion = {
   },
 };
 
+const hourlyForecasts = [
+  {
+    epoch_date_time: 1000000000,
+    temperature: { c: 18, f: 64 },
+    icon_id: 5,
+    date_time: "2024-01-15T14:00:00",
+  },
+  {
+    epoch_date_time: 1000003600,
+    temperature: { c: 17, f: 62 },
+    icon_id: 6,
+    date_time: "2024-01-15T15:00:00",
+  },
+  {
+    epoch_date_time: 1000007200,
+    temperature: { c: 16, f: 61 },
+    icon_id: 7,
+    date_time: "2024-01-15T16:00:00",
+  },
+];
+
 const mockState = {
   ...INITIAL_STATE,
   Prefs: {
@@ -49,6 +70,7 @@ const mockState = {
       city: "Testville",
     },
     suggestions: [weatherSuggestion],
+    hourlyForecasts,
   },
 };
 
@@ -458,6 +480,43 @@ describe("<WeatherForecast>", () => {
       const [telemetryAction] = dispatch.getCall(1).args;
       assert.equal(telemetryAction.type, at.WIDGETS_USER_EVENT);
       assert.equal(telemetryAction.data.widget_size, "medium");
+    });
+  });
+
+  describe("hourly forecast", () => {
+    it("should display one row item per hourly forecast", () => {
+      const items = wrapper.find(".forecast-row-items li");
+      assert.equal(items.length, hourlyForecasts.length);
+    });
+
+    it("should render the correct weather icon class for each forecast item", () => {
+      const items = wrapper.find(".forecast-row-items li");
+      items.forEach((item, index) => {
+        assert.ok(
+          item
+            .find(`.weather-icon.iconId${hourlyForecasts[index].icon_id}`)
+            .exists()
+        );
+      });
+    });
+
+    it("should render an empty list when hourlyForecasts is empty", () => {
+      const noHourlyState = {
+        ...mockState,
+        Weather: {
+          ...mockState.Weather,
+          hourlyForecasts: [],
+        },
+      };
+
+      const noHourlyWrapper = mount(
+        <WrapWithProvider state={noHourlyState}>
+          <WeatherForecast dispatch={dispatch} />
+        </WrapWithProvider>
+      );
+
+      assert.equal(noHourlyWrapper.find(".forecast-row-items li").length, 0);
+      noHourlyWrapper.unmount();
     });
   });
 });
