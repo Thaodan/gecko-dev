@@ -70,14 +70,13 @@ add_task(async function testUnusedVariablesAndFiltering() {
         {
           name: "--my-var-1",
           value: `a`,
-          highlighted: true,
         },
         {
           name: "--my-var-2",
           value: `b`,
-          highlighted: true,
         },
       ],
+      highlighted: ["--my-var-1: a;", "--my-var-2: b;"],
     },
   ]);
 
@@ -107,12 +106,10 @@ add_task(async function testUnusedVariablesAndFiltering() {
         {
           name: "--my-var-1",
           value: `a`,
-          highlighted: false,
         },
         {
           name: "--my-var-2",
           value: `b`,
-          highlighted: false,
         },
       ],
     },
@@ -139,19 +136,17 @@ add_task(async function testUnusedVariablesAndFiltering() {
         {
           name: "--my-var-1",
           value: `a`,
-          highlighted: false,
         },
         {
           name: "--my-var-2",
           value: `b`,
-          highlighted: false,
         },
         {
           name: "--x",
           value: `hotpink`,
-          highlighted: true,
         },
       ],
+      highlighted: ["--x: hotpink;"],
     },
   ]);
 
@@ -226,9 +221,8 @@ add_task(async function testUnusedVariablesAndFiltering() {
       declarations: declarations.map(({ name, value }) => ({
         name,
         value,
-        // We didn't clear the search, --x should still be highlighted
-        highlighted: name === "--x",
       })),
+      highlighted: ["--x: hotpink;"],
     },
   ]);
 });

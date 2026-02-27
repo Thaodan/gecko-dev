@@ -1398,12 +1398,11 @@ function getSmallIncrementKey() {
  * @param {boolean|undefined} expectedElements[].declarations[].dirty - Is the declaration dirty,
  *        i.e. was it added/modified by the user (should have a left green border).
  *        Defaults to false
- * @param {boolean|undefined} expectedElements[].declarations[].highlighted - Is the declaration
- *        highlighted by a search.
  * @param {boolean|undefined} expectedElements[].declarations[].inactiveCSS - Is the declaration
  *        inactive.
  * @param {string} expectedElements[].header - If we're expecting a header (Inherited from,
  *        Pseudo-elements, …), the text of said header.
+ * @param {string[]} expectedElements[].highlighted - List of highlighted text (when using filter input).
  */
 function checkRuleViewContent(view, expectedElements) {
   const elementsInView = _getRuleViewElements(view);
@@ -1492,6 +1491,22 @@ function checkRuleViewContent(view, expectedElements) {
       `Element #${i} ("${selector}") is ${expectedElement.inherited ? "inherited" : "not inherited"}`
     );
 
+    const highlightedElements = Array.from(
+      elementInView.querySelectorAll(".ruleview-highlight")
+    ).map(el => el.textContent.trim());
+    Assert.deepEqual(
+      highlightedElements,
+      expectedElement.highlighted ?? [],
+      "The expected elements are highlighted"
+    );
+
+    // Bail out if callsite didn't provide any declarations
+    // we then ignore checking anything around declarations
+    if (!("declarations" in expectedElement)) {
+      info(`Ignore declarations for ${selector}`);
+      return;
+    }
+
     const ruleViewPropertyElements =
       elementInView.querySelectorAll(".ruleview-property");
     is(
@@ -1553,11 +1568,6 @@ function checkRuleViewContent(view, expectedElements) {
         !!ruleViewPropertyElement.hasAttribute("dirty"),
         !!expectedDeclaration?.dirty,
         `Element #${i} ("${selector}") declaration #${j} ("${propName.innerText}: ${propValue.innerText}") is ${expectedDeclaration?.dirty ? "dirty" : "not dirty"}`
-      );
-      is(
-        ruleViewPropertyElement.querySelector(".ruleview-highlight") !== null,
-        !!expectedDeclaration?.highlighted,
-        `Element #${i} ("${selector}") declaration #${j} ("${propName.innerText}: ${propValue.innerText}") is ${expectedDeclaration?.highlighted ? "highlighted" : "not highlighted"} `
       );
     });
   });

@@ -324,9 +324,9 @@ add_task(async function checkClearSearch() {
         {
           name: "--my-unique-var",
           value: "var(--my-color-1)",
-          highlighted: true,
         },
       ],
+      highlighted: ["--my-unique-var: var(--my-color-1);"],
     },
   ]);
   const rule = getRuleViewRuleEditor(view, 1).rule;
