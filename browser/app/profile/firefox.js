@@ -3507,6 +3507,7 @@ pref("browser.backup.enabled", true);
 pref("browser.backup.scheduled.enabled", false);
 
 // Prefs to control visibility and usability of the create backup and restore from backup features.
+// Currently, backup and restore is only enabled on Windows devices
 #ifdef XP_WIN
   pref("browser.backup.archive.enabled", true);
   pref("browser.backup.restore.enabled", true);

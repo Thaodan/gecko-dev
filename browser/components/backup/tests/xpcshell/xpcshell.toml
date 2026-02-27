@@ -8,8 +8,6 @@ prefs = [
   "browser.backup.log=true",
   "browser.backup.archive.enabled=true",
   "browser.backup.restore.enabled=true",
-  "browser.backup.archive.overridePlatformCheck=true",
-  "browser.backup.restore.overridePlatformCheck=true",
 ]
 
 ["test_AddonsBackupResource.js"]
