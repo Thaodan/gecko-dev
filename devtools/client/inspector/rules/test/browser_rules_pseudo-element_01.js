@@ -51,7 +51,7 @@ async function testTopLeft(inspector, view) {
     }
   );
 
-  const gutters = assertGutters(view);
+  const gutters = assertHeaders(view);
 
   info("Make sure that clicking on the twisty hides pseudo elements");
   const expander = gutters[0].querySelector(".ruleview-expander");
@@ -203,7 +203,7 @@ async function testTopRight(inspector, view) {
     }
   );
 
-  const gutters = assertGutters(view);
+  const gutters = assertHeaders(view);
 
   const expander = gutters[0].querySelector(".ruleview-expander");
   ok(
@@ -269,7 +269,7 @@ async function testParagraph(inspector, view) {
     }
   );
 
-  assertGutters(view);
+  assertHeaders(view);
 
   const elementFirstLineRule = rules.firstLineRules[0];
   is(
@@ -296,8 +296,7 @@ async function testParagraph(inspector, view) {
 async function testBody(inspector, view) {
   await selectNode("body", inspector);
 
-  const gutters = getGutters(view);
-  is(gutters.length, 0, "There are no gutter headings");
+  assertRuleViewHeaders(view, []);
 }
 
 async function testListAfterElement(inspector, view) {
@@ -318,16 +317,12 @@ async function testListAfterElement(inspector, view) {
     markerRules: 1,
   });
 
-  Assert.deepEqual(
-    getGutters(view).map(gutter => gutter.textContent),
-    [
-      "Pseudo-elements",
-      "This Element",
-      "Inherited from ol#list",
-      "Inherited from body",
-    ],
-    "Got expected gutter headings when selecting #list::after"
-  );
+  assertRuleViewHeaders(view, [
+    "Pseudo-elements",
+    "This Element",
+    "Inherited from ol#list",
+    "Inherited from body",
+  ]);
 }
 
 async function testListItem(inspector, view) {
@@ -346,7 +341,7 @@ async function testListItem(inspector, view) {
     }
   );
 
-  assertGutters(view);
+  assertHeaders(view);
 }
 
 async function testBackdrop(inspector, view) {
@@ -367,7 +362,7 @@ async function testBackdrop(inspector, view) {
     }
   );
 
-  assertGutters(view);
+  assertHeaders(view);
 
   info("Test ::backdrop rules are displayed when elements is fullscreen");
 
@@ -402,7 +397,7 @@ async function testBackdrop(inspector, view) {
     backdropRules: 1,
   });
 
-  assertGutters(view);
+  assertHeaders(view);
 
   // Exiting fullscreen is triggering an update, wait for it so it doesn't impact
   // the rest of the test
@@ -470,7 +465,7 @@ async function testCustomHighlight(inspector, view) {
     "Got expected properties for filter highlight"
   );
 
-  assertGutters(view);
+  assertHeaders(view);
 }
 
 async function testSlider(inspector, view) {
@@ -485,7 +480,7 @@ async function testSlider(inspector, view) {
       sliderTrackRules: 1,
     }
   );
-  assertGutters(view);
+  assertHeaders(view);
 
   info(
     "Check that ::slider-* pseudo elements are not displayed for non-range inputs"
@@ -513,7 +508,7 @@ async function testUrlFragmentTextDirective(inspector, view) {
       targetTextRules: 1,
     }
   );
-  assertGutters(view);
+  assertHeaders(view);
 }
 
 async function testDetailsContent(inspector, view) {
@@ -522,7 +517,7 @@ async function testDetailsContent(inspector, view) {
     elementRules: 3,
     detailsContentRules: 1,
   });
-  assertGutters(view);
+  assertHeaders(view);
 }
 
 function convertTextPropsToString(textProps) {
@@ -612,21 +607,10 @@ async function assertPseudoElementRulesNumbers(
   return rules;
 }
 
-function getGutters(view) {
-  return Array.from(view.element.querySelectorAll(".ruleview-header"));
-}
-
-function assertGutters(view) {
-  const gutters = getGutters(view);
-
-  is(gutters.length, 3, "There are 3 gutter headings");
-  is(gutters[0].textContent, "Pseudo-elements", "Gutter heading is correct");
-  is(gutters[1].textContent, "This Element", "Gutter heading is correct");
-  is(
-    gutters[2].textContent,
+function assertHeaders(view) {
+  return assertRuleViewHeaders(view, [
+    "Pseudo-elements",
+    "This Element",
     "Inherited from body",
-    "Gutter heading is correct"
-  );
-
-  return gutters;
+  ]);
 }
