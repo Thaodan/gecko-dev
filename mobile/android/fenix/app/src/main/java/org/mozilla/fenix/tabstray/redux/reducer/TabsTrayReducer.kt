@@ -11,6 +11,7 @@ import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
 import org.mozilla.fenix.tabstray.redux.state.TabSearchState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
+import kotlin.collections.plus
 
 /**
  * The default state of the synced tabs expanded state, which is true.
@@ -23,7 +24,6 @@ internal const val DEFAULT_SYNCED_TABS_EXPANDED_STATE = true
 internal object TabsTrayReducer {
     fun reduce(state: TabsTrayState, action: TabsTrayAction): TabsTrayState {
         return when (action) {
-            is TabsTrayAction.InitAction -> state
             is TabsTrayAction.EnterSelectMode ->
                 state.copy(mode = TabsTrayState.Mode.Select(emptySet()))
             is TabsTrayAction.ExitSelectMode ->
@@ -90,12 +90,6 @@ internal object TabsTrayReducer {
             }
             is TabsTrayAction.SyncedTabsHeaderToggled -> handleSyncedTabHeaderToggle(state, action)
             is TabGroupAction -> state
-            is TabsTrayAction.TabDataUpdateReceived -> state.copy(
-                selectedTabId = action.tabStorageUpdate.selectedTabId,
-                normalTabs = action.tabStorageUpdate.normalTabs,
-                inactiveTabs = action.tabStorageUpdate.inactiveTabs,
-                privateTabs = action.tabStorageUpdate.privateTabs,
-            )
         }
     }
 }

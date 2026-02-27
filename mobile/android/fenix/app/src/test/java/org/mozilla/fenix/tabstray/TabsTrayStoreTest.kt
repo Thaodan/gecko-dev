@@ -9,7 +9,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
@@ -26,7 +25,7 @@ class TabsTrayStoreTest {
         assertTrue(store.state.mode.selectedTabs.isEmpty())
         assertTrue(store.state.mode is TabsTrayState.Mode.Select)
 
-        store.dispatch(TabsTrayAction.AddSelectTab(TabsTrayItem.Tab(tab = createTab(url = "url"))))
+        store.dispatch(TabsTrayAction.AddSelectTab(createTab(url = "url")))
 
         store.dispatch(TabsTrayAction.ExitSelectMode)
         store.dispatch(TabsTrayAction.EnterSelectMode)
@@ -52,7 +51,7 @@ class TabsTrayStoreTest {
     fun `WHEN adding a tab to selection THEN it is added to the selectedTabs`() {
         val store = TabsTrayStore()
 
-        store.dispatch(TabsTrayAction.AddSelectTab(TabsTrayItem.Tab(tab = createTab(url = "url", id = "tab1"))))
+        store.dispatch(TabsTrayAction.AddSelectTab(createTab(url = "url", id = "tab1")))
 
         assertEquals("tab1", store.state.mode.selectedTabs.take(1).first().id)
     }
@@ -60,10 +59,10 @@ class TabsTrayStoreTest {
     @Test
     fun `WHEN removing a tab THEN it is removed from the selectedTabs`() {
         val store = TabsTrayStore()
-        val tabForRemoval = TabsTrayItem.Tab(tab = createTab(url = "url", id = "tab1"))
+        val tabForRemoval = createTab(url = "url", id = "tab1")
 
         store.dispatch(TabsTrayAction.AddSelectTab(tabForRemoval))
-        store.dispatch(TabsTrayAction.AddSelectTab(TabsTrayItem.Tab(tab = createTab(url = "url", id = "tab2"))))
+        store.dispatch(TabsTrayAction.AddSelectTab(createTab(url = "url", id = "tab2")))
 
         assertEquals(2, store.state.mode.selectedTabs.size)
 

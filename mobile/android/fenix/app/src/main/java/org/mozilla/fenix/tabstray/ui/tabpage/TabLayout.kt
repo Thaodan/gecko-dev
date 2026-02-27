@@ -21,8 +21,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyGridItemScope
-import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -54,22 +52,21 @@ import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import mozilla.components.browser.state.state.ContentState
+import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.support.utils.ext.isLandscape
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.SwipeToDismissState2
 import org.mozilla.fenix.tabstray.browser.compose.DragItemContainer
-import org.mozilla.fenix.tabstray.browser.compose.GridReorderState
 import org.mozilla.fenix.tabstray.browser.compose.createGridReorderState
 import org.mozilla.fenix.tabstray.browser.compose.createListReorderState
 import org.mozilla.fenix.tabstray.browser.compose.detectGridPressAndDragGestures
 import org.mozilla.fenix.tabstray.browser.compose.detectListPressAndDrag
-import org.mozilla.fenix.tabstray.data.TabsTrayItem
-import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.ui.tabitems.GridItemThumbnailPadding
-import org.mozilla.fenix.tabstray.ui.tabitems.TabGridTabItem
-import org.mozilla.fenix.tabstray.ui.tabitems.TabListTabItem
+import org.mozilla.fenix.tabstray.ui.tabitems.TabGridItem
+import org.mozilla.fenix.tabstray.ui.tabitems.TabListItem
 import org.mozilla.fenix.tabstray.ui.tabitems.gridItemAspectRatio
 import org.mozilla.fenix.theme.FirefoxTheme
 import kotlin.math.max
@@ -109,15 +106,15 @@ private val TabListLastItemShape = RoundedCornerShape(
 /**
  * Top-level UI for displaying a list of tabs.
  *
- * @param tabs The list of [TabsTrayItem] to display.
+ * @param tabs The list of [TabSessionState] to display.
  * @param displayTabsInGrid Whether the tabs should be displayed in a grid.
  * @param selectedTabId The ID of the currently selected tab.
  * @param selectionMode [TabsTrayState.Mode] indicating whether the Tabs Tray is in single selection
  * or multi-selection and contains the set of selected tabs.
  * @param modifier [Modifier] to be applied to the layout.
  * @param onTabClose Invoked when the user clicks to close a tab.
- * @param onItemClick Invoked when the user clicks on a tab.
- * @param onItemLongClick Invoked when the user long clicks a tab.
+ * @param onTabClick Invoked when the user clicks on a tab.
+ * @param onTabLongClick Invoked when the user long clicks a tab.
  * @param onMove Invoked when the user moves a tab.
  * @param onTabDragStart Invoked when starting to drag a tab.
  * @param header Optional layout to display before [tabs].
@@ -125,14 +122,14 @@ private val TabListLastItemShape = RoundedCornerShape(
 @Suppress("LongParameterList")
 @Composable
 fun TabLayout(
-    tabs: List<TabsTrayItem>,
+    tabs: List<TabSessionState>,
     displayTabsInGrid: Boolean,
     selectedTabId: String?,
     selectionMode: TabsTrayState.Mode,
     modifier: Modifier = Modifier,
-    onTabClose: (TabsTrayItem.Tab) -> Unit,
-    onItemClick: (TabsTrayItem) -> Unit,
-    onItemLongClick: (TabsTrayItem) -> Unit,
+    onTabClose: (TabSessionState) -> Unit,
+    onTabClick: (TabSessionState) -> Unit,
+    onTabLongClick: (TabSessionState) -> Unit,
     onMove: (String, String?, Boolean) -> Unit,
     onTabDragStart: () -> Unit,
     header: (@Composable () -> Unit)? = null,
@@ -140,7 +137,7 @@ fun TabLayout(
     var selectedTabIndex = 0
     selectedTabId?.let {
         tabs.forEachIndexed { index, tab ->
-            if (tab is TabsTrayItem.Tab && tab.id == selectedTabId) {
+            if (tab.id == selectedTabId) {
                 selectedTabIndex = index
                 return@forEachIndexed
             }
@@ -155,8 +152,8 @@ fun TabLayout(
             selectionMode = selectionMode,
             modifier = modifier,
             onTabClose = onTabClose,
-            onItemClick = onItemClick,
-            onItemLongClick = onItemLongClick,
+            onTabClick = onTabClick,
+            onTabLongClick = onTabLongClick,
             onMove = onMove,
             onTabDragStart = onTabDragStart,
             header = header,
@@ -169,8 +166,8 @@ fun TabLayout(
             selectionMode = selectionMode,
             modifier = modifier,
             onTabClose = onTabClose,
-            onItemClick = onItemClick,
-            onItemLongClick = onItemLongClick,
+            onTabClick = onTabClick,
+            onTabLongClick = onTabLongClick,
             onMove = onMove,
             onTabDragStart = onTabDragStart,
             header = header,
@@ -181,24 +178,24 @@ fun TabLayout(
 @Suppress("LongParameterList", "LongMethod")
 @Composable
 private fun TabGrid(
-    tabs: List<TabsTrayItem>,
+    tabs: List<TabSessionState>,
     selectedTabId: String?,
     selectedTabIndex: Int,
     selectionMode: TabsTrayState.Mode,
     modifier: Modifier = Modifier,
-    onTabClose: (TabsTrayItem.Tab) -> Unit,
-    onItemClick: (TabsTrayItem) -> Unit,
-    onItemLongClick: (TabsTrayItem) -> Unit,
+    onTabClose: (TabSessionState) -> Unit,
+    onTabClick: (TabSessionState) -> Unit,
+    onTabLongClick: (TabSessionState) -> Unit,
     onMove: (String, String?, Boolean) -> Unit,
     onTabDragStart: () -> Unit,
     header: (@Composable () -> Unit)? = null,
 ) {
-    val gridState = rememberLazyGridState(initialFirstVisibleItemIndex = selectedTabIndex)
+    val state = rememberLazyGridState(initialFirstVisibleItemIndex = selectedTabIndex)
     val tabListBottomPadding = dimensionResource(id = R.dimen.tab_tray_list_bottom_padding)
     val isInMultiSelectMode = selectionMode is TabsTrayState.Mode.Select
 
     val reorderState = createGridReorderState(
-        gridState = gridState,
+        gridState = state,
         onMove = { initialTab, newTab ->
             onMove(
                 (initialTab.key as String),
@@ -207,8 +204,8 @@ private fun TabGrid(
             )
         },
         onLongPress = { itemInfo ->
-            tabs.firstOrNull { tabItem -> tabItem.id == itemInfo.key }?.let { tab ->
-                onItemLongClick(tab)
+            tabs.firstOrNull { tab -> tab.id == itemInfo.key }?.let { tab ->
+                onTabLongClick(tab)
             }
         },
         onExitLongPress = onTabDragStart,
@@ -227,11 +224,11 @@ private fun TabGrid(
             modifier = modifier
                 .fillMaxSize()
                 .detectGridPressAndDragGestures(
-                    gridState = gridState,
+                    gridState = state,
                     reorderState = reorderState,
                     shouldLongPressToDrag = shouldLongPress,
                 ),
-            state = gridState,
+            state = state,
             contentPadding = PaddingValues(
                 horizontal = if (LocalContext.current.isLandscape()) {
                     52.dp
@@ -253,80 +250,44 @@ private fun TabGrid(
                 items = tabs,
                 key = { _, tab -> tab.id },
             ) { index, tab ->
-                TabGridItemContent(
-                    tab = tab,
-                    index = index,
-                    thumbnailSizePx = thumbnailSizePx,
-                    hasHeader = header != null,
-                    isSelected = tab.id == selectedTabId,
-                    isInMultiSelectMode = isInMultiSelectMode,
-                    isMultiSelected = selectionMode.selectedTabs.any { it.id == tab.id },
-                    reorderState = reorderState,
-                    gridState = gridState,
-                    onTabClose = onTabClose,
-                    onItemClick = onItemClick,
-                )
+                val decayAnimationSpec: DecayAnimationSpec<Float> = rememberSplineBasedDecay()
+                val density = LocalDensity.current
+                val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+                val swipeState = remember(isInMultiSelectMode, !state.isScrollInProgress) {
+                    SwipeToDismissState2(
+                        density = density,
+                        enabled = !isInMultiSelectMode && !state.isScrollInProgress,
+                        decayAnimationSpec = decayAnimationSpec,
+                        isRtl = isRtl,
+                    )
+                }
+                val swipingActive by remember(swipeState.swipingActive) {
+                    mutableStateOf(swipeState.swipingActive)
+                }
+
+                DragItemContainer(
+                    state = reorderState,
+                    position = index + if (header != null) 1 else 0,
+                    key = tab.id,
+                    swipingActive = swipingActive,
+                ) {
+                    TabGridItem(
+                        tab = tab,
+                        thumbnailSizePx = thumbnailSizePx,
+                        isSelected = tab.id == selectedTabId,
+                        multiSelectionEnabled = isInMultiSelectMode,
+                        multiSelectionSelected = selectionMode.selectedTabs.any { it.id == tab.id },
+                        shouldClickListen = reorderState.draggingItemKey != tab.id,
+                        swipeState = swipeState,
+                        onCloseClick = onTabClose,
+                        onClick = onTabClick,
+                    )
+                }
             }
 
             item(key = SPAN_ITEM_KEY, span = { GridItemSpan(maxLineSpan) }) {
                 Spacer(modifier = Modifier.height(tabListBottomPadding))
             }
-        }
-    }
-}
-
-@Suppress("LongParameterList")
-@Composable
-private fun LazyGridItemScope.TabGridItemContent(
-    tab: TabsTrayItem,
-    index: Int,
-    thumbnailSizePx: Int,
-    hasHeader: Boolean,
-    isSelected: Boolean,
-    isInMultiSelectMode: Boolean,
-    isMultiSelected: Boolean,
-    reorderState: GridReorderState,
-    gridState: LazyGridState,
-    onTabClose: (TabsTrayItem.Tab) -> Unit,
-    onItemClick: (TabsTrayItem) -> Unit,
-) {
-    val decayAnimationSpec: DecayAnimationSpec<Float> = rememberSplineBasedDecay()
-    val density = LocalDensity.current
-    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-    val swipeState = remember(isInMultiSelectMode, !gridState.isScrollInProgress) {
-        SwipeToDismissState2(
-            density = density,
-            enabled = !isInMultiSelectMode && !gridState.isScrollInProgress,
-            decayAnimationSpec = decayAnimationSpec,
-            isRtl = isRtl,
-        )
-    }
-    val swipingActive by remember(swipeState.swipingActive) {
-        mutableStateOf(swipeState.swipingActive)
-    }
-
-    DragItemContainer(
-        state = reorderState,
-        position = index + if (hasHeader) 1 else 0,
-        key = tab.id,
-        swipingActive = swipingActive,
-    ) {
-        when (tab) {
-            is TabsTrayItem.Tab -> {
-                TabGridTabItem(
-                    tab = tab,
-                    thumbnailSizePx = thumbnailSizePx,
-                    isSelected = isSelected,
-                    multiSelectionEnabled = isInMultiSelectMode,
-                    multiSelectionSelected = isMultiSelected,
-                    shouldClickListen = reorderState.draggingItemKey != tab.id,
-                    swipeState = swipeState,
-                    onCloseClick = onTabClose,
-                    onClick = onItemClick,
-                )
-            }
-
-            is TabsTrayItem.TabGroup -> {}
         }
     }
 }
@@ -351,14 +312,14 @@ private val BoxWithConstraintsScope.thumbnailSizePx: Int
 @Suppress("LongParameterList", "LongMethod", "CognitiveComplexMethod")
 @Composable
 private fun TabList(
-    tabs: List<TabsTrayItem>,
+    tabs: List<TabSessionState>,
     selectedTabId: String?,
     selectedTabIndex: Int,
     selectionMode: TabsTrayState.Mode,
     modifier: Modifier = Modifier,
-    onTabClose: (TabsTrayItem.Tab) -> Unit,
-    onItemClick: (TabsTrayItem) -> Unit,
-    onItemLongClick: (TabsTrayItem) -> Unit,
+    onTabClose: (TabSessionState) -> Unit,
+    onTabClick: (TabSessionState) -> Unit,
+    onTabLongClick: (TabSessionState) -> Unit,
     onMove: (String, String?, Boolean) -> Unit,
     header: (@Composable () -> Unit)? = null,
     onTabDragStart: () -> Unit = {},
@@ -375,9 +336,9 @@ private fun TabList(
                 initialTab.index < newTab.index,
             )
         },
-        onLongPress = { itemInfo ->
-            tabs.firstOrNull { tabItem -> tabItem.id == itemInfo.key }?.let { tab ->
-                onItemLongClick(tab)
+        onLongPress = {
+            tabs.firstOrNull { tab -> tab.id == it.key }?.let { tab ->
+                onTabLongClick(tab)
             }
         },
         onExitLongPress = onTabDragStart,
@@ -423,33 +384,26 @@ private fun TabList(
                 items = tabs,
                 key = { _, tab -> tab.id },
             ) { index, tab ->
-
-                when (tab) {
-                    is TabsTrayItem.Tab -> {
-                        DragItemContainer(
-                            state = reorderState,
-                            position = index + if (header != null) 1 else 0,
-                            key = tab.id,
-                        ) {
-                            TabListTabItem(
-                                tab = tab,
-                                modifier = if (index == tabs.size - 1) {
-                                    Modifier.clip(TabListLastItemShape)
-                                } else {
-                                    Modifier
-                                },
-                                isSelected = tab.id == selectedTabId,
-                                multiSelectionEnabled = isInMultiSelectMode,
-                                multiSelectionSelected = selectionMode.selectedTabs.any { it.id == tab.id },
-                                shouldClickListen = reorderState.draggingItemKey != tab.id,
-                                swipingEnabled = !state.isScrollInProgress,
-                                onCloseClick = onTabClose,
-                                onClick = onItemClick,
-                            )
-                        }
-                    }
-
-                    is TabsTrayItem.TabGroup -> {} // unsupported
+                DragItemContainer(
+                    state = reorderState,
+                    position = index + if (header != null) 1 else 0,
+                    key = tab.id,
+                ) {
+                    TabListItem(
+                        tab = tab,
+                        modifier = if (index == tabs.size - 1) {
+                            Modifier.clip(TabListLastItemShape)
+                        } else {
+                           Modifier
+                        },
+                        isSelected = tab.id == selectedTabId,
+                        multiSelectionEnabled = isInMultiSelectMode,
+                        multiSelectionSelected = selectionMode.selectedTabs.any { it.id == tab.id },
+                        shouldClickListen = reorderState.draggingItemKey != tab.id,
+                        swipingEnabled = !state.isScrollInProgress,
+                        onCloseClick = onTabClose,
+                        onClick = onTabClick,
+                    )
                 }
 
                 if (index != tabs.size - 1) {
@@ -524,8 +478,8 @@ private fun TabListPreview(
                 selectionMode = TabsTrayState.Mode.Normal,
                 displayTabsInGrid = false,
                 onTabClose = tabs::remove,
-                onItemClick = {},
-                onItemLongClick = {},
+                onTabClick = {},
+                onTabLongClick = {},
                 onTabDragStart = {},
                 onMove = { _, _, _ -> },
             )
@@ -548,8 +502,8 @@ private fun TabGridPreview(
             modifier = Modifier.background(MaterialTheme.colorScheme.surface),
             displayTabsInGrid = true,
             onTabClose = tabs::remove,
-            onItemClick = {},
-            onItemLongClick = {},
+            onTabClick = {},
+            onTabLongClick = {},
             onTabDragStart = {},
             onMove = { _, _, _ -> },
         )
@@ -572,14 +526,14 @@ private fun TabGridMultiSelectPreview() {
             modifier = Modifier.background(MaterialTheme.colorScheme.surface),
             displayTabsInGrid = true,
             onTabClose = {},
-            onItemClick = { tab ->
+            onTabClick = { tab ->
                 if (selectedTabs.contains(tab)) {
                     selectedTabs.remove(tab)
                 } else {
                     selectedTabs.add(tab)
                 }
             },
-            onItemLongClick = {},
+            onTabLongClick = {},
             onTabDragStart = {},
             onMove = { _, _, _ -> },
         )
@@ -600,14 +554,14 @@ private fun TabListMultiSelectPreview() {
             modifier = Modifier.background(MaterialTheme.colorScheme.surface),
             displayTabsInGrid = false,
             onTabClose = {},
-            onItemClick = { tab ->
+            onTabClick = { tab ->
                 if (selectedTabs.contains(tab)) {
                     selectedTabs.remove(tab)
                 } else {
                     selectedTabs.add(tab)
                 }
             },
-            onItemLongClick = {},
+            onTabLongClick = {},
             onTabDragStart = {},
             onMove = { _, _, _ -> },
         )
@@ -617,10 +571,13 @@ private fun TabListMultiSelectPreview() {
 private fun generateFakeTabsList(
     tabCount: Int = 10,
     isPrivate: Boolean = false,
-): List<TabsTrayItem> = List(tabCount) { index ->
-        createTab(
+): List<TabSessionState> =
+    List(tabCount) { index ->
+        TabSessionState(
             id = "tabId$index-$isPrivate",
-            url = "www.mozilla.com",
-            private = isPrivate,
+            content = ContentState(
+                url = "www.mozilla.com",
+                private = isPrivate,
+            ),
         )
     }

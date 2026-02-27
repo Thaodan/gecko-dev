@@ -19,6 +19,7 @@ import mozilla.components.browser.state.selector.getNormalOrPrivateTabs
 import mozilla.components.browser.state.selector.normalTabs
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.storage.sync.Tab
 import mozilla.components.concept.base.profiler.Profiler
@@ -51,8 +52,9 @@ import org.mozilla.fenix.home.HomeScreenViewModel.Companion.ALL_PRIVATE_TABS
 import org.mozilla.fenix.tabstray.SyncedTabsController
 import org.mozilla.fenix.tabstray.browser.InactiveTabsController
 import org.mozilla.fenix.tabstray.browser.TabsTrayFabController
-import org.mozilla.fenix.tabstray.data.TabsTrayItem
+import org.mozilla.fenix.tabstray.ext.getTabSessionState
 import org.mozilla.fenix.tabstray.ext.isActiveDownload
+import org.mozilla.fenix.tabstray.ext.isNormalTab
 import org.mozilla.fenix.tabstray.ext.isSelect
 import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
 import org.mozilla.fenix.tabstray.redux.state.Page
@@ -88,19 +90,19 @@ interface TabManagerController : SyncedTabsController, InactiveTabsController, T
     fun handleNavigateToHome()
 
     /**
-     * Deletes the [TabsTrayItem] with the specified [tabId] or calls [DownloadCancelDialogFragment]
+     * Deletes the [TabSessionState] with the specified [tabId] or calls [DownloadCancelDialogFragment]
      * if user tries to close the last private tab while private downloads are active.
      * This method has no effect if the tab does not exist.
      *
-     * @param tabId The id of the [TabsTrayItem] to be removed from the Tab Manager.
+     * @param tabId The id of the [TabSessionState] to be removed from the Tab Manager.
      * @param source app feature from which the tab with [tabId] was closed.
      */
     fun handleTabDeletion(tabId: String, source: String? = null)
 
     /**
-     * Deletes the [TabsTrayItem] with the specified [tabId]
+     * Deletes the [TabSessionState] with the specified [tabId]
      *
-     * @param tabId The id of the [TabsTrayItem] to be removed from the Tab Manager.
+     * @param tabId The id of the [TabSessionState] to be removed from the Tab Manager.
      * @param source app feature from which the tab with [tabId] was closed.
      */
     fun handleDeleteTabWarningAccepted(tabId: String, source: String? = null)
@@ -140,7 +142,7 @@ interface TabManagerController : SyncedTabsController, InactiveTabsController, T
     fun handleNavigateToRecentlyClosed()
 
     /**
-     * Marks all selected tabs' last access timestamp to be 15 days or [numDays];
+     * Marks all selected tabs with the [TabSessionState.lastAccess] to 15 days or [numDays];
      * enough time to have a tab considered as inactive.
      *
      * ⚠️ DO NOT USE THIS OUTSIDE OF DEBUGGING/TESTING.
@@ -152,18 +154,18 @@ interface TabManagerController : SyncedTabsController, InactiveTabsController, T
     /**
      * Adds the provided tab to the current selection of tabs.
      *
-     * @param tab [TabsTrayItem] that was long clicked.
+     * @param tab [TabSessionState] that was long clicked.
      */
-    fun handleTabLongClick(tab: TabsTrayItem): Boolean
+    fun handleTabLongClick(tab: TabSessionState): Boolean
 
     /**
      * Adds the provided tab to the current selection of tabs.
      *
-     * @param tab [TabsTrayItem] to be selected.
+     * @param tab [TabSessionState] to be selected.
      * @param source App feature from which the tab was selected.
      */
     fun handleTabSelected(
-        tab: TabsTrayItem,
+        tab: TabSessionState,
         source: String?,
     )
 
@@ -372,7 +374,7 @@ class DefaultTabManagerController(
     }
 
     override fun handleDeleteSelectedTabsClicked() {
-        val tabs = tabsTrayStore.state.mode.selectedTabs.filterIsInstance<TabsTrayItem.Tab>()
+        val tabs = tabsTrayStore.state.mode.selectedTabs
 
         TabsTray.closeSelectedTabs.record(TabsTray.CloseSelectedTabsExtra(tabCount = tabs.size))
 
@@ -385,8 +387,8 @@ class DefaultTabManagerController(
      * Helper function to delete multiple tabs and offer an undo option.
      */
     @VisibleForTesting
-    internal fun deleteMultipleTabs(tabs: Collection<TabsTrayItem>) {
-        val isPrivate = tabs.filterIsInstance<TabsTrayItem.Tab>().any { it.private }
+    internal fun deleteMultipleTabs(tabs: Collection<TabSessionState>) {
+        val isPrivate = tabs.any { it.content.private }
 
         // If user closes all the tabs from selected tabs page dismiss tray and navigate home.
         if (tabs.size == browserStore.state.getNormalOrPrivateTabs(isPrivate).size) {
@@ -433,7 +435,7 @@ class DefaultTabManagerController(
     }
 
     override fun handleBookmarkSelectedTabsClicked() {
-        val tabs = tabsTrayStore.state.mode.selectedTabs.filterIsInstance<TabsTrayItem.Tab>()
+        val tabs = tabsTrayStore.state.mode.selectedTabs
 
         tabsTrayStore.dispatch(TabsTrayAction.BookmarkSelectedTabs(tabCount = tabs.size))
 
@@ -454,8 +456,8 @@ class DefaultTabManagerController(
                 tabs.forEach { tab ->
                     bookmarksStorage.addItem(
                         parentGuid = parentNode!!.guid,
-                        url = tab.url,
-                        title = tab.title,
+                        url = tab.content.url,
+                        title = tab.content.title,
                         position = null,
                     )
                 }
@@ -471,7 +473,7 @@ class DefaultTabManagerController(
     }
 
     override fun handleAddSelectedTabsToCollectionClicked() {
-        val tabs = tabsTrayStore.state.mode.selectedTabs.filterIsInstance<TabsTrayItem.Tab>()
+        val tabs = tabsTrayStore.state.mode.selectedTabs
 
         TabsTray.selectedTabsToCollection.record(TabsTray.SelectedTabsToCollectionExtra(tabCount = tabs.size))
         TabsTray.saveToCollection.record(NoExtras())
@@ -482,12 +484,10 @@ class DefaultTabManagerController(
     }
 
     @VisibleForTesting
-    internal fun showCollectionsDialog(tabs: Collection<TabsTrayItem.Tab>) {
-        val tabIds = tabs.map { it.id }
-        val transformedTabs = browserStore.state.tabs.filter { it.id in tabIds }
+    internal fun showCollectionsDialog(tabs: Collection<TabSessionState>) {
         CollectionsDialog(
             storage = collectionStorage,
-            sessionList = transformedTabs,
+            sessionList = browserStore.getTabSessionState(tabs),
             onPositiveButtonClick = { id, isNewCollection ->
 
                 // If collection is null, a new one was created.
@@ -515,12 +515,12 @@ class DefaultTabManagerController(
     }
 
     override fun handleShareSelectedTabsClicked() {
-        val tabs = tabsTrayStore.state.mode.selectedTabs.filterIsInstance<TabsTrayItem.Tab>()
+        val tabs = tabsTrayStore.state.mode.selectedTabs
 
         TabsTray.shareSelectedTabs.record(TabsTray.ShareSelectedTabsExtra(tabCount = tabs.size))
 
         val data = tabs.map {
-            ShareData(url = it.url, title = it.title)
+            ShareData(url = it.content.url, title = it.content.title)
         }
         val directions = TabManagementFragmentDirections.actionGlobalShareFragment(
             data = data.toTypedArray(),
@@ -562,10 +562,8 @@ class DefaultTabManagerController(
         }
     }
 
-    override fun handleTabLongClick(tab: TabsTrayItem): Boolean {
-        return if (tab is TabsTrayItem.Tab &&
-            !tab.private && tabsTrayStore.state.mode.selectedTabs.isEmpty()
-        ) {
+    override fun handleTabLongClick(tab: TabSessionState): Boolean {
+        return if (tab.isNormalTab() && tabsTrayStore.state.mode.selectedTabs.isEmpty()) {
             Collections.longPress.record(NoExtras())
             tabsTrayStore.dispatch(TabsTrayAction.AddSelectTab(tab))
             true
@@ -574,16 +572,16 @@ class DefaultTabManagerController(
         }
     }
 
-    override fun handleTabSelected(tab: TabsTrayItem, source: String?) {
+    override fun handleTabSelected(tab: TabSessionState, source: String?) {
         val selected = tabsTrayStore.state.mode.selectedTabs
         when {
-            tab is TabsTrayItem.Tab && selected.isEmpty() && tabsTrayStore.state.mode.isSelect().not() -> {
+            selected.isEmpty() && tabsTrayStore.state.mode.isSelect().not() -> {
                 TabsTray.openedExistingTab.record(TabsTray.OpenedExistingTabExtra(source ?: "unknown"))
                 tabsUseCases.selectTab(tab.id)
                 appStore.dispatch(
                     AppAction.BrowsingModeManagerModeChanged(
                         mode = BrowsingMode.fromBoolean(
-                            tab.private,
+                            tab.content.private,
                         ),
                     ),
                 )
@@ -591,11 +589,11 @@ class DefaultTabManagerController(
                 handleNavigationRequested()
             }
 
-            tab is TabsTrayItem.Tab && tab.id in selected.map { it.id } -> {
+            tab.id in selected.map { it.id } -> {
                 tabsTrayStore.dispatch(TabsTrayAction.RemoveSelectTab(tab))
             }
 
-            tab is TabsTrayItem.Tab && source != INACTIVE_TABS_FEATURE_NAME -> {
+            source != INACTIVE_TABS_FEATURE_NAME -> {
                 tabsTrayStore.dispatch(TabsTrayAction.AddSelectTab(tab))
             }
         }
@@ -621,12 +619,12 @@ class DefaultTabManagerController(
         return false
     }
 
-    override fun handleInactiveTabClicked(tab: TabsTrayItem.Tab) {
+    override fun handleInactiveTabClicked(tab: TabSessionState) {
         TabsTray.openInactiveTab.add()
         handleTabSelected(tab, INACTIVE_TABS_FEATURE_NAME)
     }
 
-    override fun handleCloseInactiveTabClicked(tab: TabsTrayItem.Tab) {
+    override fun handleCloseInactiveTabClicked(tab: TabSessionState) {
         TabsTray.closeInactiveTab.add()
         handleTabDeletion(tab.id, INACTIVE_TABS_FEATURE_NAME)
     }

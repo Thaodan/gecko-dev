@@ -4,9 +4,8 @@
 
 package org.mozilla.fenix.tabstray.redux.action
 
+import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.lib.state.Action
-import org.mozilla.fenix.tabstray.data.TabStorageUpdate
-import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
@@ -19,21 +18,6 @@ import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
 sealed interface TabsTrayAction : Action {
 
     /**
-     * [TabsTrayAction]s which trigger storage side effects.
-     */
-    sealed interface TabsStorageAction
-
-    /**
-     * Dispatched when the Store has initialized.
-     */
-    object InitAction : TabsTrayAction, TabsStorageAction
-
-    /**
-     * Dispatched when a tab data update has been received.
-     */
-    data class TabDataUpdateReceived(val tabStorageUpdate: TabStorageUpdate) : TabsTrayAction
-
-    /**
      * Entered multi-select mode.
      */
     object EnterSelectMode : TabsTrayAction
@@ -44,14 +28,14 @@ sealed interface TabsTrayAction : Action {
     object ExitSelectMode : TabsTrayAction
 
     /**
-     * Added a new [TabsTrayItem] to the selection set.
+     * Added a new [mozilla.components.browser.state.state.TabSessionState] to the selection set.
      */
-    data class AddSelectTab(val tab: TabsTrayItem) : TabsTrayAction
+    data class AddSelectTab(val tab: TabSessionState) : TabsTrayAction
 
     /**
-     * Removed a [TabsTrayItem] from the selection set.
+     * Removed a [TabSessionState] from the selection set.
      */
-    data class RemoveSelectTab(val tab: TabsTrayItem) : TabsTrayAction
+    data class RemoveSelectTab(val tab: TabSessionState) : TabsTrayAction
 
     /**
      * The active page in the tray that is now in focus.
@@ -79,17 +63,17 @@ sealed interface TabsTrayAction : Action {
     /**
      * Updates the list of tabs in [org.mozilla.fenix.tabstray.redux.state.TabsTrayState.inactiveTabs].
      */
-    data class UpdateInactiveTabs(val tabs: List<TabsTrayItem.Tab>) : TabsTrayAction
+    data class UpdateInactiveTabs(val tabs: List<TabSessionState>) : TabsTrayAction
 
     /**
      * Updates the list of tabs in [org.mozilla.fenix.tabstray.redux.state.TabsTrayState.normalTabs].
      */
-    data class UpdateNormalTabs(val tabs: List<TabsTrayItem>) : TabsTrayAction
+    data class UpdateNormalTabs(val tabs: List<TabSessionState>) : TabsTrayAction
 
     /**
      * Updates the list of tabs in [org.mozilla.fenix.tabstray.redux.state.TabsTrayState.privateTabs].
      */
-    data class UpdatePrivateTabs(val tabs: List<TabsTrayItem>) : TabsTrayAction
+    data class UpdatePrivateTabs(val tabs: List<TabSessionState>) : TabsTrayAction
 
     /**
      * Updates the list of synced tabs in [org.mozilla.fenix.tabstray.redux.state.TabsTrayState.syncedTabs].
