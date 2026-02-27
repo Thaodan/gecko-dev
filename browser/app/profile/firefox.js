@@ -3538,6 +3538,7 @@ pref("browser.backup.scheduled.user-disabled", false);
 // How many milliseconds to wait for tab state to flush before continuing the
 // backup process.
 pref("browser.backup.tab-flush-timeout", 5000);
+pref("browser.backup.enabled_on.profiles", "{}");
 
 #ifdef NIGHTLY_BUILD
   // Pref to enable the new profiles
