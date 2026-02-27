@@ -200,7 +200,7 @@ class BackupCompatibilityTest(BackupTestBase):
     def _get_backup_path(self, filename):
         """Get path to a backup fixture."""
         test_dir = os.path.dirname(__file__)
-        return os.path.join(test_dir, "backups", filename)
+        return os.path.join(test_dir, "compat-files/backups", filename)
 
     def _recover_backup(
         self,
