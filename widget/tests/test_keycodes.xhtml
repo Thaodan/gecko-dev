@@ -51,10 +51,7 @@ const IS_MAC = navigator.platform.indexOf("Mac") == 0;
 const IS_WIN = navigator.platform.indexOf("Win") == 0;
 const OS_VERSION =
   IS_WIN  ? parseFloat(Services.sysinfo.getProperty("version")) : 0;
-const OS_BUILD =
-  IS_WIN  ? parseInt(Services.sysinfo.getProperty("build"), 10) : 0;
 const WIN8 = 6.2; // Can remove once bug 1594270 is closed
-const WIN11_24H2_BUILD = 26100;
 
 function isModifierKeyEvent(aEvent)
 {
@@ -5444,14 +5441,8 @@ function* runAltRightKeyOnWindows()
   var button = document.getElementById("button");
   button.focus();
 
-  const kArabicLayout = {
-    ...KEYBOARD_LAYOUT_ARABIC,
-    hasAltGrOnWin:
-      KEYBOARD_LAYOUT_ARABIC.hasAltGrOnWin || OS_BUILD >= WIN11_24H2_BUILD,
-  };
-
   const kKeyboardLayouts = [
-    { layout: kArabicLayout },
+    { layout: KEYBOARD_LAYOUT_ARABIC },
     { layout: KEYBOARD_LAYOUT_BRAZILIAN_ABNT },
     { layout: KEYBOARD_LAYOUT_EN_US },
     { layout: KEYBOARD_LAYOUT_FRENCH },
@@ -5483,7 +5474,7 @@ function* runAltRightKeyOnWindows()
     return synthesizeKey({layout: aKeyboardLayout.layout, keyCode: WIN_VK_RMENU,
                           modifiers: {}, chars: ""}, "button", function() {
       const kDescription =
-        "runAltRightKeyOnWindows(" + aKeyboardLayout.layout.name + "): ";
+        "runAltRightKeyOnWindows(" + aKeyboardLayout.layout.currentTestName + "): ";
       if (aKeyboardLayout.layout.hasAltGrOnWin) {
         is(events.length, 4,
            kDescription + "AltRight should fire 2 pairs of keydown and keyup events");
