@@ -6,7 +6,14 @@
 
 test_newtab({
   test: async function test_render_search_handoff() {
-    const selector = "content-search-handoff-ui";
+    const usingHandoffComponent = Services.prefs.getBoolPref(
+      "browser.newtabpage.activity-stream.search.useHandoffComponent",
+      false
+    );
+
+    const selector = usingHandoffComponent
+      ? "content-search-handoff-ui"
+      : ".search-handoff-button";
 
     let search = await ContentTaskUtils.waitForCondition(
       () => content.document.querySelector(selector),
