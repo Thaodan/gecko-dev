@@ -7,7 +7,7 @@
 /**
  * Bug 2007641 - Cannot check out on papajohns.com in CST timezone.
  *
- * The site is not always passing standard values to Intl.DateTimeFormat, which
+ * The site is not passing a standard value to Intl.DateTimeFormat, which
  * throws an exception on Firefox (but works on Chrome). We can detect this
  * and change the value to a standard one.
  */
@@ -22,9 +22,7 @@ try {
   const desc = Object.getOwnPropertyDescriptor(window.Intl, "DateTimeFormat");
   const { value } = desc;
   desc.value = function () {
-    switch (
-      arguments[1]?.timeZone?.toUpperCase().split("/").pop().substr(0, 3)
-    ) {
+    switch (arguments[1]?.timeZone.toUpperCase()) {
       case "AST":
         arguments[1].timeZone = "America/Anchorage";
         break;
