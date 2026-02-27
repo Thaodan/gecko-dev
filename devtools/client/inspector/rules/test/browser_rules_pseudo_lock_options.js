@@ -149,11 +149,7 @@ async function togglePseudoClass(inspector, view, pseudoClass) {
 
 function assertPseudoAdded(inspector, view, pseudoClass, numRules, childIndex) {
   info("Check that the rule view contains the pseudo-class rule");
-  is(
-    view.element.children.length,
-    numRules,
-    "Should have " + numRules + " rules."
-  );
+  assertDisplayedRulesCount(view, numRules);
   is(
     getRuleViewRuleEditor(view, childIndex).rule.selectorText,
     "div" + pseudoClass,
@@ -163,11 +159,7 @@ function assertPseudoAdded(inspector, view, pseudoClass, numRules, childIndex) {
 
 function assertPseudoRemoved(inspector, view, numRules) {
   info("Check that the rule view no longer contains the pseudo-class rule");
-  is(
-    view.element.children.length,
-    numRules,
-    "Should have " + numRules + " rules."
-  );
+  assertDisplayedRulesCount(view, numRules);
   is(
     getRuleViewRuleEditor(view, 1).rule.selectorText,
     "div",

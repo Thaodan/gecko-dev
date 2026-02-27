@@ -29,7 +29,7 @@ add_task(async function () {
 
 async function testFilterOverriddenProperty(inspector, ruleView) {
   info("Check that the correct rules are visible");
-  is(ruleView.element.children.length, 3, "Should have 3 rules.");
+  assertDisplayedRulesCount(ruleView, 3);
 
   let rule = getRuleViewRuleEditor(ruleView, 1).rule;
   let textPropEditor = getTextProperty(ruleView, 1, { width: "100%" }).editor;

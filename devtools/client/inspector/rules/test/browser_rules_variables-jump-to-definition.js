@@ -72,11 +72,7 @@ add_task(async function () {
   await selectNode("h1#testid", inspector);
 
   info("Check that the correct rules are visible");
-  is(
-    view.styleDocument.querySelectorAll(`.ruleview-rule`).length,
-    7,
-    "Should have 7 rules."
-  );
+  assertDisplayedRulesCount(view, 7);
 
   let rule = getRuleViewRuleEditor(view, 2).rule;
   is(rule.selectorText, "#testid", "Second rule is #testid.");

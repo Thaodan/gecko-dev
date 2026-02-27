@@ -38,7 +38,7 @@ async function testOpenExpanderAndAddTextInFilter(inspector, view) {
   await setSearchFilter(view, SEARCH);
 
   info("Check that the correct rules are visible");
-  is(view.element.children.length, 2, "Should have 2 rules.");
+  assertDisplayedRulesCount(view, 2);
   is(
     getRuleViewRuleEditor(view, 0).rule.selectorText,
     "element",
@@ -96,7 +96,7 @@ async function testClearSearchFilter(inspector, view) {
   await onRuleViewFiltered;
 
   info("Check the search filter is cleared and no rules are highlighted");
-  is(view.element.children.length, 3, "Should have 3 rules.");
+  assertDisplayedRulesCount(view, 3);
   ok(!searchField.value, "Search filter is cleared");
   ok(
     !view.styleDocument.querySelectorAll(".ruleview-highlight").length,

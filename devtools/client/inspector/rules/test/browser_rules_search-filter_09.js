@@ -33,7 +33,7 @@ add_task(async function () {
   let editor = await focusNewRuleViewProperty(ruleEditor);
 
   info("Check that the correct rules are visible");
-  is(view.element.children.length, 2, "Should have 2 rules.");
+  assertDisplayedRulesCount(view, 2);
   is(rule.selectorText, "#testid", "Second rule is #testid.");
   ok(
     prop.editor.container.classList.contains("ruleview-highlight"),

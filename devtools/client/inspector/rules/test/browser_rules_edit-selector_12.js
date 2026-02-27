@@ -24,7 +24,7 @@ add_task(async function () {
   await onRuleViewChanged;
 
   info("Check the rules are still displayed correctly");
-  is(view.elementStyle.rules.length, 3, "The element still has 3 rules.");
+  assertDisplayedRulesCount(view, 3);
 
   ruleEditor = getRuleViewRuleEditor(view, 1);
   is(

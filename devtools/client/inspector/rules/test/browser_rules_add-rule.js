@@ -65,8 +65,8 @@ add_task(async function () {
 
   info(`Check that clicking the "Add Rule" button clears the filter`);
   await selectNode("footer", inspector);
-  is(
-    view.element.children.length,
+  assertDisplayedRulesCount(
+    view,
     1,
     "footer only has 1 rule before clicking on the button."
   );
@@ -75,5 +75,5 @@ add_task(async function () {
   await addNewRuleAndDismissEditor(inspector, view, "footer", 1);
   await onRuleViewFiltered;
   is(view.searchField.value, "", "Search filter was cleared.");
-  is(view.element.children.length, 2, "A new rule was added");
+  assertDisplayedRulesCount(view, 2, "A new rule was added");
 });
