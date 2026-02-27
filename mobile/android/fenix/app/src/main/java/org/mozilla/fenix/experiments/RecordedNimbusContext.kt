@@ -18,6 +18,7 @@ import org.mozilla.experiments.nimbus.internal.JsonObject
 import org.mozilla.experiments.nimbus.internal.RecordedContext
 import org.mozilla.experiments.nimbus.internal.getCalculatedAttributes
 import org.mozilla.fenix.GleanMetrics.NimbusSystem
+import org.mozilla.fenix.GleanMetrics.Pings
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.home.pocket.ContentRecommendationsFeatureHelper
 import org.mozilla.fenix.termsofuse.experimentation.TermsOfUseAdvancedTargetingHelper
@@ -112,6 +113,7 @@ class RecordedNimbusContext(
                 touPoints = touPoints,
             ),
         )
+        Pings.nimbus.submit()
     }
 
     /**

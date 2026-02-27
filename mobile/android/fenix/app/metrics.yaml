@@ -13680,7 +13680,7 @@ nimbus_system:
       - project-nimbus@mozilla.com
     expires: never
     send_in_pings:
-      - nimbus-targeting-context
+      - nimbus
 
 partnerships:
   vivo_file_check_error:
