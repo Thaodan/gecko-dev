@@ -13389,7 +13389,8 @@ function WidgetsFeatureHighlight({
 
 const CONTAINER_ACTION_TYPES = {
   HIDE_ALL: "hide_all",
-  CHANGE_SIZE_ALL: "change_size_all"
+  CHANGE_SIZE_ALL: "change_size_all",
+  FEEDBACK: "feedback"
 };
 const PREF_WIDGETS_LISTS_ENABLED = "widgets.lists.enabled";
 const PREF_WIDGETS_SYSTEM_LISTS_ENABLED = "widgets.system.lists.enabled";
@@ -13398,6 +13399,8 @@ const PREF_WIDGETS_SYSTEM_TIMER_ENABLED = "widgets.system.focusTimer.enabled";
 const PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED = "widgets.system.weatherForecast.enabled";
 const PREF_WIDGETS_MAXIMIZED = "widgets.maximized";
 const PREF_WIDGETS_SYSTEM_MAXIMIZED = "widgets.system.maximized";
+const PREF_WIDGETS_FEEDBACK_ENABLED = "widgets.feedback.enabled";
+const WIDGETS_FEEDBACK_URL = "https://connect.mozilla.org/t5/discussions/feedback-welcome-for-new-tab-widgets-now-available-via-firefox/td-p/108354";
 
 // resets timer to default values (exported for testing)
 // In practice, this logic runs inside a useEffect when
@@ -13443,6 +13446,8 @@ function Widgets() {
   const nimbusTimerTrainhopEnabled = prefs.trainhopConfig?.widgets?.timerEnabled;
   const nimbusWeatherForecastTrainhopEnabled = prefs.trainhopConfig?.widgets?.weatherForecastEnabled;
   const nimbusMaximizedTrainhopEnabled = prefs.trainhopConfig?.widgets?.maximized;
+  const feedbackEnabled = prefs.trainhopConfig?.widgets?.feedbackEnabled || prefs[PREF_WIDGETS_FEEDBACK_ENABLED];
+  const feedbackUrl = prefs.trainhopConfig?.widgets?.feedbackUrl ?? WIDGETS_FEEDBACK_URL;
   const listsEnabled = (nimbusListsTrainhopEnabled || nimbusListsEnabled || prefs[PREF_WIDGETS_SYSTEM_LISTS_ENABLED]) && prefs[PREF_WIDGETS_LISTS_ENABLED];
   const timerEnabled = (nimbusTimerTrainhopEnabled || nimbusTimerEnabled || prefs[PREF_WIDGETS_SYSTEM_TIMER_ENABLED]) && prefs[PREF_WIDGETS_TIMER_ENABLED];
 
@@ -13577,6 +13582,24 @@ function Widgets() {
       toggleMaximize();
     }
   }
+  function handleFeedbackClick(e) {
+    e.preventDefault();
+    (0,external_ReactRedux_namespaceObject.batch)(() => {
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.OPEN_LINK,
+        data: {
+          url: feedbackUrl
+        }
+      }));
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.WIDGETS_CONTAINER_ACTION,
+        data: {
+          action_type: CONTAINER_ACTION_TYPES.FEEDBACK,
+          widget_size: widgetSize
+        }
+      }));
+    });
+  }
   function handleUserInteraction(widgetName) {
     const prefName = `widgets.${widgetName}.interaction`;
     const hasInteracted = prefs[prefName];
@@ -13637,7 +13660,12 @@ function Widgets() {
     handleUserInteraction: handleUserInteraction,
     isMaximized: isMaximized,
     widgetsMayBeMaximized: widgetsMayBeMaximized
-  }))));
+  })), feedbackEnabled && /*#__PURE__*/external_React_default().createElement("a", {
+    className: "widgets-feedback-link",
+    href: feedbackUrl,
+    "data-l10n-id": "newtab-widget-section-feedback",
+    onClick: handleFeedbackClick
+  })));
 }
 
 ;// CONCATENATED MODULE: ./content-src/components/DiscoveryStreamBase/DiscoveryStreamBase.jsx

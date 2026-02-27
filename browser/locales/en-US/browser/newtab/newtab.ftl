@@ -558,6 +558,7 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = Minimize widgets
     .aria-label = Collapse all widgets to compact size
+newtab-widget-section-feedback = Tell us what you think
 newtab-widget-lists-name-label-default =
     .label = Task list
 newtab-widget-lists-name-placeholder-default =

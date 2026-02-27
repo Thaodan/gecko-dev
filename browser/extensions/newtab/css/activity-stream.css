@@ -4345,6 +4345,12 @@ dialog:dir(rtl)::after {
   height: var(--widgets-small-card-height);
 }
 
+.widgets-feedback-link {
+  display: inline-block;
+  margin-block-start: var(--space-medium);
+  font-size: var(--font-size-small);
+}
+
 .feature-highlight .feature-highlight-modal.widget-highlight-wrapper {
   width: auto;
   max-width: min-content;

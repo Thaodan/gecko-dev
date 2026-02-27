@@ -1164,6 +1164,13 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "widgets.feedback.enabled",
+    {
+      title: "Enables the feedback link in the widgets container",
+      value: false,
+    },
+  ],
+  [
     "improvesearch.noDefaultSearchTile",
     {
       title: "Remove tiles that are the same as the default search",
