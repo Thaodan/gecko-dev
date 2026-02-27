@@ -29,7 +29,7 @@ async function testAddTextInFilter(inspector, view) {
   info("Check that the correct rules are visible");
   assertDisplayedRulesCount(view, 1);
 
-  const rule = getRuleViewRuleEditor(view, 0).rule;
+  const rule = getRuleViewRuleEditorAt(view, 0).rule;
 
   is(rule.selectorText, "element", "First rule is inline element.");
   ok(

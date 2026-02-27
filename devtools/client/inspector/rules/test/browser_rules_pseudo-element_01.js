@@ -55,16 +55,19 @@ async function testTopLeft(inspector, view) {
 
   info("Make sure that clicking on the twisty hides pseudo elements");
   const expander = gutters[0].querySelector(".ruleview-expander");
-  ok(!view.element.children[1].hidden, "Pseudo Elements are expanded");
+  ok(!getPseudoElementContainer(view).hidden, "Pseudo Elements are expanded");
 
   expander.click();
   ok(
-    view.element.children[1].hidden,
+    getPseudoElementContainer(view).hidden,
     "Pseudo Elements are collapsed by twisty"
   );
 
   expander.click();
-  ok(!view.element.children[1].hidden, "Pseudo Elements are expanded again");
+  ok(
+    !getPseudoElementContainer(view).hidden,
+    "Pseudo Elements are expanded again"
+  );
 
   info(
     "Make sure that dblclicking on the header container also toggles " +
@@ -76,15 +79,20 @@ async function testTopLeft(inspector, view) {
     view.styleWindow
   );
   ok(
-    view.element.children[1].hidden,
+    getPseudoElementContainer(view).hidden,
     "Pseudo Elements are collapsed by dblclicking"
   );
 
-  const elementRuleView = getRuleViewRuleEditor(view, 3);
+  const elementRuleView = getRuleViewRuleEditorAt(view, 7);
+  is(
+    elementRuleView.selectorText.textContent,
+    "element",
+    "About to modify the 'element' rule"
+  );
 
   const elementFirstLineRule = rules.firstLineRules[0];
   const elementFirstLineRuleView = [
-    ...view.element.children[1].children,
+    ...getPseudoElementContainer(view).children,
   ].filter(e => {
     return e._ruleEditor && e._ruleEditor.rule === elementFirstLineRule;
   })[0]._ruleEditor;
@@ -207,14 +215,14 @@ async function testTopRight(inspector, view) {
 
   const expander = gutters[0].querySelector(".ruleview-expander");
   ok(
-    !view.element.firstChild.classList.contains("show-expandable-container"),
+    getPseudoElementContainer(view).hidden,
     "Pseudo Elements remain collapsed after switching element"
   );
 
   expander.scrollIntoView();
   expander.click();
   ok(
-    !view.element.children[1].hidden,
+    !getPseudoElementContainer(view).hidden,
     "Pseudo Elements are shown again after clicking twisty"
   );
 }
@@ -613,4 +621,14 @@ function assertHeaders(view) {
     "This Element",
     "Inherited from body",
   ]);
+}
+
+/**
+ * Get the DOM Element containing all pseudo element rules.
+ *
+ * @param {RuleView} view
+ */
+function getPseudoElementContainer(view) {
+  // The very first element is the pseudo element headers and the second the container.
+  return view.element.children[1];
 }

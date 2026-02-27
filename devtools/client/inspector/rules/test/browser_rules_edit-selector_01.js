@@ -31,7 +31,7 @@ add_task(async function () {
 async function testEditSelector(view, name) {
   info("Test editing existing selector fields");
 
-  const idRuleEditor = getRuleViewRuleEditor(view, 1);
+  const idRuleEditor = getRuleViewRuleEditorAt(view, 1);
 
   info("Focusing an existing selector name in the rule-view");
   const editor = await focusEditableField(view, idRuleEditor.selectorText);
@@ -55,7 +55,7 @@ async function testEditSelector(view, name) {
   assertDisplayedRulesCount(view, 2);
   ok(getRuleViewRule(view, name), "Rule with " + name + " selector exists.");
   ok(
-    getRuleViewRuleEditor(view, 1).element.getAttribute("unmatched"),
+    getRuleViewRuleEditorAt(view, 1).element.getAttribute("unmatched"),
     "Rule with " + name + " does not match the current element."
   );
 }

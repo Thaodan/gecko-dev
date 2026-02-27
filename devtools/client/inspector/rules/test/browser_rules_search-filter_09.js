@@ -27,7 +27,7 @@ add_task(async function () {
   await setSearchFilter(view, SEARCH);
 
   info("Start entering a new property in the rule");
-  const ruleEditor = getRuleViewRuleEditor(view, 1);
+  const ruleEditor = getRuleViewRuleEditorAt(view, 1);
   const rule = ruleEditor.rule;
   const prop = getTextProperty(view, 1, { width: "100%" });
   let editor = await focusNewRuleViewProperty(ruleEditor);

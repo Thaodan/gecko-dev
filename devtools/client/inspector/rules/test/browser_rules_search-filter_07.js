@@ -27,7 +27,7 @@ add_task(async function () {
   await setSearchFilter(view, SEARCH);
 
   info("Focus the width property name");
-  const ruleEditor = getRuleViewRuleEditor(view, 1);
+  const ruleEditor = getRuleViewRuleEditorAt(view, 1);
   const rule = ruleEditor.rule;
   const propEditor = rule.textProps[0].editor;
   await focusEditableField(view, propEditor.nameSpan);

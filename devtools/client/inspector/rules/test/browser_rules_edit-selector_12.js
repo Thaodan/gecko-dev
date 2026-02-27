@@ -14,7 +14,7 @@ add_task(async function () {
   await selectNode("#target", inspector);
 
   info("Focus the selector in the rule-view");
-  let ruleEditor = getRuleViewRuleEditor(view, 1);
+  let ruleEditor = getRuleViewRuleEditorAt(view, 1);
   const editor = await focusEditableField(view, ruleEditor.selectorText);
 
   info("Change the selector to something else");
@@ -26,7 +26,7 @@ add_task(async function () {
   info("Check the rules are still displayed correctly");
   assertDisplayedRulesCount(view, 3);
 
-  ruleEditor = getRuleViewRuleEditor(view, 1);
+  ruleEditor = getRuleViewRuleEditorAt(view, 1);
   is(
     ruleEditor.element.getAttribute("unmatched"),
     "false",

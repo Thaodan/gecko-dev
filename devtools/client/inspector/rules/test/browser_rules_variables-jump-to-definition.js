@@ -74,7 +74,7 @@ add_task(async function () {
   info("Check that the correct rules are visible");
   assertDisplayedRulesCount(view, 7);
 
-  let rule = getRuleViewRuleEditor(view, 2).rule;
+  let rule = getRuleViewRuleEditorAt(view, 2).rule;
   is(rule.selectorText, "#testid", "Second rule is #testid.");
 
   info(
@@ -159,7 +159,7 @@ add_task(async function () {
   info(
     "Check that there are multiple jump to definition buttons when using multiple variables"
   );
-  rule = getRuleViewRuleEditor(view, 4).rule;
+  rule = getRuleViewRuleEditorAt(view, 4).rule;
   is(rule.selectorText, "h1", "Fifth rule is h1.");
   variableButtonEls = getJumpToDefinitionButtonForDeclaration(rule, {
     "background-color":
@@ -177,7 +177,7 @@ add_task(async function () {
   await highlightProperty(view, variableButtonEls[2], "--my-color-3", "green");
 
   info("Check that we can jump in @starting-style rule`");
-  rule = getRuleViewRuleEditor(view, 1).rule;
+  rule = getRuleViewRuleEditorAt(view, 1).rule;
   ok(rule.isInStartingStyle(), "Got expected starting style rule");
   variableButtonEls = getJumpToDefinitionButtonForDeclaration(rule, {
     "outline-color": "var(--my-color-1, var(--my-color-2))",
@@ -223,7 +223,7 @@ add_task(async function () {
     "pseudo element section is now expanded"
   );
 
-  rule = getRuleViewRuleEditor(view, 1, 0).rule;
+  rule = getRuleViewRuleEditorAt(view, 0).rule;
   is(rule.selectorText, "h2::after", "First rule is h2::after");
 
   await highlightProperty(
@@ -235,7 +235,7 @@ add_task(async function () {
     "azure"
   );
 
-  rule = getRuleViewRuleEditor(view, 1, 1).rule;
+  rule = getRuleViewRuleEditorAt(view, 1).rule;
   is(rule.selectorText, "h2::before", "First rule is h2::before");
 
   variableButtonEls = getJumpToDefinitionButtonForDeclaration(rule, {
@@ -263,7 +263,7 @@ add_task(async function () {
     "green"
   );
 
-  rule = getRuleViewRuleEditor(view, 4).rule;
+  rule = getRuleViewRuleEditorAt(view, 3).rule;
   is(rule.selectorText, "h2", "Got expected h2 rule");
   await highlightProperty(
     view,
@@ -329,7 +329,7 @@ add_task(async function checkClearSearch() {
       highlighted: ["--my-unique-var: var(--my-color-1);"],
     },
   ]);
-  const rule = getRuleViewRuleEditor(view, 1).rule;
+  const rule = getRuleViewRuleEditorAt(view, 1).rule;
   is(rule.selectorText, "h1", "Got expected rule");
   await highlightProperty(
     view,
@@ -411,7 +411,7 @@ add_task(async function checkJumpToUnusedVariable() {
     "Show unused variables button has expected text"
   );
 
-  const rule = getRuleViewRuleEditor(view, 1).rule;
+  const rule = getRuleViewRuleEditorAt(view, 1).rule;
   is(rule.selectorText, "h3", "Got expected rule");
 
   const variableButtonEls = getJumpToDefinitionButtonForDeclaration(rule, {

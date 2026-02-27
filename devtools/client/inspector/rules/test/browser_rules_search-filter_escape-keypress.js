@@ -34,12 +34,12 @@ async function testAddTextInFilter(inspector, view) {
   info("Check that the correct rules are visible");
   assertDisplayedRulesCount(view, 2);
   is(
-    getRuleViewRuleEditor(view, 0).rule.selectorText,
+    getRuleViewRuleEditorAt(view, 0).rule.selectorText,
     "element",
     "First rule is inline element."
   );
 
-  const rule = getRuleViewRuleEditor(view, 1).rule;
+  const rule = getRuleViewRuleEditorAt(view, 1).rule;
   const prop = getTextProperty(view, 1, { "background-color": "#00F" });
 
   is(rule.selectorText, "#testid", "Second rule is #testid.");

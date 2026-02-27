@@ -152,7 +152,7 @@ var openColorPickerAndSelectColor = async function (
   newRgba,
   expectedChange
 ) {
-  const ruleEditor = getRuleViewRuleEditor(view, ruleIndex);
+  const ruleEditor = getRuleViewRuleEditorAt(view, ruleIndex);
   const propEditor = ruleEditor.rule.textProps[propIndex].editor;
   const swatch = propEditor.valueSpan.querySelector(".inspector-colorswatch");
   const cPicker = view.tooltips.getTooltip("colorPicker");
@@ -195,7 +195,7 @@ var openCubicBezierAndChangeCoords = async function (
   coords,
   expectedChange
 ) {
-  const ruleEditor = getRuleViewRuleEditor(view, ruleIndex);
+  const ruleEditor = getRuleViewRuleEditorAt(view, ruleIndex);
   const propEditor = ruleEditor.rule.textProps[propIndex].editor;
   const swatch = propEditor.valueSpan.querySelector(".inspector-bezierswatch");
   const bezierTooltip = view.tooltips.getTooltip("cubicBezier");
@@ -254,7 +254,7 @@ var addProperty = async function (
 ) {
   info("Adding new property " + name + ":" + value + " to rule " + ruleIndex);
 
-  const ruleEditor = getRuleViewRuleEditor(view, ruleIndex);
+  const ruleEditor = getRuleViewRuleEditorAt(view, ruleIndex);
   let editor = await focusNewRuleViewProperty(ruleEditor);
   const numOfProps = ruleEditor.rule.textProps.length;
 
@@ -481,7 +481,7 @@ async function addNewRuleAndDismissEditor(
   const rule = await addNewRule(inspector, view);
 
   info("Getting the new rule at index " + expectedIndex);
-  const ruleEditor = getRuleViewRuleEditor(view, expectedIndex);
+  const ruleEditor = getRuleViewRuleEditorAt(view, expectedIndex);
   const editor = ruleEditor.selectorText.ownerDocument.activeElement;
   is(
     editor.value,
@@ -683,10 +683,8 @@ async function openEyedropper(view, swatch) {
  * @param {ruleView} view
  *        The rule-view instance.
  * @param {number} ruleIndex
- *        The index we expect the rule to have in the rule-view. If an array, the first
- *        item is the children index in the rule view, and the second item is the child
- *        node index in the retrieved rule view element. This is helpful to select rules
- *        inside the pseudo element section.
+ *        The index we expect the rule to have in the rule-view.
+ *        (the index consider hidden rules when their container is collapsed)
  * @param {boolean} addCompatibilityData
  *        Optional argument to add compatibility dat with the property data
  *
@@ -713,11 +711,7 @@ async function getPropertiesForRuleIndex(
   addCompatibilityData = false
 ) {
   const declaration = new Map();
-  let nodeIndex;
-  if (Array.isArray(ruleIndex)) {
-    [ruleIndex, nodeIndex] = ruleIndex;
-  }
-  const ruleEditor = getRuleViewRuleEditor(view, ruleIndex, nodeIndex);
+  const ruleEditor = getRuleViewRuleEditorAt(view, ruleIndex);
 
   for (const currProp of ruleEditor?.rule?.textProps || []) {
     const icon = currProp.editor.inactiveCssState;
@@ -1596,10 +1590,10 @@ function _getRuleViewElements(view) {
   return elementsInView;
 }
 
-function getUnusedVariableButton(view, elementIndexInView) {
-  return view.element.children[elementIndexInView].querySelector(
-    ".ruleview-show-unused-custom-css-properties"
-  );
+function getUnusedVariableButton(view, index) {
+  return view.styleDocument
+    .querySelectorAll(".ruleview-rule")
+    [index].querySelector(".ruleview-show-unused-custom-css-properties");
 }
 
 /**

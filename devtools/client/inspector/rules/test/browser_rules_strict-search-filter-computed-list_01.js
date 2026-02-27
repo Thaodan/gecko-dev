@@ -134,12 +134,12 @@ function checkRules(view, data) {
   info("Check that the correct rules are visible");
   assertDisplayedRulesCount(view, 2);
   is(
-    getRuleViewRuleEditor(view, 0).rule.selectorText,
+    getRuleViewRuleEditorAt(view, 0).rule.selectorText,
     "element",
     "First rule is inline element."
   );
 
-  const rule = getRuleViewRuleEditor(view, 1).rule;
+  const rule = getRuleViewRuleEditorAt(view, 1).rule;
   const textPropEditor = rule.textProps[0].editor;
   const computed = textPropEditor.computed;
 
@@ -187,7 +187,7 @@ async function clearSearchAndCheckRules(view) {
   const searchField = view.searchField;
   const searchClearButton = view.searchClearButton;
 
-  const rule = getRuleViewRuleEditor(view, 1).rule;
+  const rule = getRuleViewRuleEditorAt(view, 1).rule;
   const textPropEditor = rule.textProps[0].editor;
   const computed = textPropEditor.computed;
 

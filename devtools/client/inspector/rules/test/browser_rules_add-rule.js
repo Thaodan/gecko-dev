@@ -29,7 +29,7 @@ const TEST_URI = `
 `;
 
 const TEST_DATA = [
-  { node: "#testid", expected: "#testid", expectedIndex: 4 },
+  { node: "#testid", expected: "#testid", expectedIndex: 2 },
   { node: ".testclass2", expected: ".testclass2" },
   { node: ".class1.class2", expected: ".class1.class2" },
   { node: ".class3.class4", expected: ".class3.class4" },

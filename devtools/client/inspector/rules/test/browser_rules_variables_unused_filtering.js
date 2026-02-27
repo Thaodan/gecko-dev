@@ -169,7 +169,7 @@ add_task(async function testUnusedVariablesAndFiltering() {
   await focusEditableField(view, myVar2Prop.editor.valueSpan);
 
   info("hit tab");
-  const ruleEditor = getRuleViewRuleEditor(view, 1);
+  const ruleEditor = getRuleViewRuleEditorAt(view, 1);
   let onFocus = once(ruleEditor.element, "focus", true);
   let onRuleViewChanged = view.once("ruleview-changed");
   EventUtils.synthesizeKey("VK_TAB", {}, view.styleWindow);

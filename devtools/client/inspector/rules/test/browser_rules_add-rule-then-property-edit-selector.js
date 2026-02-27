@@ -51,7 +51,7 @@ add_task(async function () {
 });
 
 function testAddingProperty(view, index) {
-  const ruleEditor = getRuleViewRuleEditor(view, index);
+  const ruleEditor = getRuleViewRuleEditorAt(view, index);
   ruleEditor.addProperty("font-weight", "bold", "", true);
   const textProps = ruleEditor.rule.textProps;
   const lastRule = textProps[textProps.length - 1];
@@ -60,7 +60,7 @@ function testAddingProperty(view, index) {
 }
 
 async function testEditSelector(view, name) {
-  const idRuleEditor = getRuleViewRuleEditor(view, 1);
+  const idRuleEditor = getRuleViewRuleEditorAt(view, 1);
 
   info("Focusing an existing selector name in the rule-view");
   const editor = await focusEditableField(view, idRuleEditor.selectorText);
@@ -88,7 +88,7 @@ function checkModifiedElement(view, name, index) {
   assertDisplayedRulesCount(view, 2);
   ok(getRuleViewRule(view, name), "Rule with " + name + " selector exists.");
 
-  const idRuleEditor = getRuleViewRuleEditor(view, index);
+  const idRuleEditor = getRuleViewRuleEditorAt(view, index);
   const textProps = idRuleEditor.rule.textProps;
   const lastRule = textProps[textProps.length - 1];
   is(lastRule.name, "font-weight", "Last rule name is font-weight");

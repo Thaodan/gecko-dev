@@ -31,7 +31,7 @@ add_task(async function () {
 
 async function testEditSelector(view, name) {
   info("Test editing existing selector field");
-  const idRuleEditor = getRuleViewRuleEditor(view, 1);
+  const idRuleEditor = getRuleViewRuleEditorAt(view, 1);
   const editor = idRuleEditor.selectorText.ownerDocument.activeElement;
 
   info("Entering a new selector name and committing");

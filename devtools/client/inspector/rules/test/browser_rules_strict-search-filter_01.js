@@ -99,12 +99,12 @@ function checkRules(view, data) {
   info("Check that the correct rules are visible");
   assertDisplayedRulesCount(view, data.ruleCount);
   is(
-    getRuleViewRuleEditor(view, 0).rule.selectorText,
+    getRuleViewRuleEditorAt(view, 0).rule.selectorText,
     "element",
     "First rule is inline element."
   );
 
-  let rule = getRuleViewRuleEditor(view, 1).rule;
+  let rule = getRuleViewRuleEditorAt(view, 1).rule;
 
   is(rule.selectorText, "#testid", "Second rule is #testid.");
   ok(
@@ -115,7 +115,7 @@ function checkRules(view, data) {
   );
 
   if (data.ruleCount > 2) {
-    rule = getRuleViewRuleEditor(view, 2).rule;
+    rule = getRuleViewRuleEditorAt(view, 2).rule;
     is(rule.selectorText, ".testclass", "Third rule is .testclass.");
     ok(
       rule.textProps[data.propertyIndex].editor.container.classList.contains(

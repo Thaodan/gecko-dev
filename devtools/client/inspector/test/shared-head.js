@@ -1018,25 +1018,24 @@ async function removeContentPageElementAttribute(selector, attribute) {
 }
 
 /**
- * Get the rule editor from the rule-view given its index
+ * Get the rule editor from the rule-view given its index.
+ * The index is based on the list of all the applied rule
+ * for the currently selected DOM Element.
+ * This starts with any pseudo element rules (if any, and
+ * which may be hidden by default), then the element rule
+ * and finally all the other rules (including the inherited
+ * at the end).
  *
  * @param {CssRuleView} ruleView
  *        The instance of the rule-view panel
- * @param {number} childrenIndex
- *        The children index of the element to get
- * @param {number} nodeIndex
- *        The child node index of the element to get
+ * @param {number} index
+ *        The index of the element to get
  * @return {DOMNode} The rule editor if any at this index
  */
-function getRuleViewRuleEditor(ruleView, childrenIndex, nodeIndex) {
-  const child = ruleView.element.children[childrenIndex];
-  if (!child) {
-    return null;
-  }
-
-  return nodeIndex !== undefined
-    ? child.childNodes[nodeIndex]?._ruleEditor
-    : child._ruleEditor;
+function getRuleViewRuleEditorAt(ruleView, index) {
+  const ruleEl =
+    ruleView.styleDocument.querySelectorAll(".ruleview-rule")[index];
+  return ruleEl?._ruleEditor;
 }
 
 /**
@@ -1053,7 +1052,7 @@ function getRuleViewRuleEditor(ruleView, childrenIndex, nodeIndex) {
  * @return {TextProperty}
  */
 function getTextProperty(ruleView, ruleIndex, declaration) {
-  const ruleEditor = getRuleViewRuleEditor(ruleView, ruleIndex);
+  const ruleEditor = getRuleViewRuleEditorAt(ruleView, ruleIndex);
   const [[name, value]] = Object.entries(declaration);
   const textProp = ruleEditor.rule.textProps.find(prop => {
     return prop.name === name && prop.value === value;

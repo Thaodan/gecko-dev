@@ -26,7 +26,7 @@ add_task(async function () {
 });
 
 async function testEditClassSelector(view) {
-  let ruleEditor = getRuleViewRuleEditor(view, 1);
+  let ruleEditor = getRuleViewRuleEditorAt(view, 1);
   const editor = await focusEditableField(view, ruleEditor.selectorText);
 
   editor.input.value = "body";
@@ -35,7 +35,7 @@ async function testEditClassSelector(view) {
   await onRuleViewChanged;
 
   // Get the new rule editor that replaced the original
-  ruleEditor = getRuleViewRuleEditor(view, 1);
+  ruleEditor = getRuleViewRuleEditorAt(view, 1);
   const propEditor = ruleEditor.rule.textProps[0].editor;
 
   info("Check that the correct rules are visible");
@@ -55,7 +55,7 @@ async function testEditClassSelector(view) {
 }
 
 async function testEditDivSelector(view) {
-  let ruleEditor = getRuleViewRuleEditor(view, 2);
+  let ruleEditor = getRuleViewRuleEditorAt(view, 2);
   const editor = await focusEditableField(view, ruleEditor.selectorText);
 
   editor.input.value = "asdf";
@@ -64,7 +64,7 @@ async function testEditDivSelector(view) {
   await onRuleViewChanged;
 
   // Get the new rule editor that replaced the original
-  ruleEditor = getRuleViewRuleEditor(view, 2);
+  ruleEditor = getRuleViewRuleEditorAt(view, 2);
 
   info("Check that the correct rules are visible");
   assertDisplayedRulesCount(view, 3);

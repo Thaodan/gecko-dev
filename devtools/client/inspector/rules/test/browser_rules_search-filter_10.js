@@ -56,12 +56,12 @@ function checkRules(view, data) {
   info("Check that the correct rules are visible");
   assertDisplayedRulesCount(view, 2);
   is(
-    getRuleViewRuleEditor(view, 0).rule.selectorText,
+    getRuleViewRuleEditorAt(view, 0).rule.selectorText,
     "element",
     "First rule is inline element."
   );
 
-  const ruleEditor = getRuleViewRuleEditor(view, 1);
+  const ruleEditor = getRuleViewRuleEditorAt(view, 1);
 
   is(
     ruleEditor.rule.selectorText,
