@@ -323,6 +323,9 @@ prefs = [
   "security.pdf_signature_verification.enable_test_trust_anchors=true"
 ]
 
+["test_ssl_session_cache_pbm_exit.js"]
+run-sequentially = ["true"] # hardcoded ports
+
 ["test_ssl_status.js"]
 run-sequentially = ["true"] # hardcoded ports
 
