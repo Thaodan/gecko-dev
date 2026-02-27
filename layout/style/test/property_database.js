@@ -14296,6 +14296,7 @@ if (IsCSSPropertyPrefEnabled("layout.css.scroll-driven-animations.enabled")) {
     domProp: "animationRangeStart",
     inherited: false,
     type: CSS_TYPE_LONGHAND,
+    applies_to_marker: true,
     initial_values: ["normal"],
     other_values: [
       "0%",
@@ -14315,6 +14316,7 @@ if (IsCSSPropertyPrefEnabled("layout.css.scroll-driven-animations.enabled")) {
     domProp: "animationRangeEnd",
     inherited: false,
     type: CSS_TYPE_LONGHAND,
+    applies_to_marker: true,
     initial_values: ["normal"],
     other_values: [
       "100%",
