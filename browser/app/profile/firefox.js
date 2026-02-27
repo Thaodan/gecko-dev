@@ -1917,7 +1917,7 @@ pref("browser.newtabpage.activity-stream.unifiedAds.ohttp.enabled", false);
 // Weather widget for newtab
 pref("browser.newtabpage.activity-stream.showWeather", true);
 pref("browser.newtabpage.activity-stream.weather.query", "");
-pref("browser.newtabpage.activity-stream.weather.display", "simple");
+pref("browser.newtabpage.activity-stream.weather.display", "detailed");
 
 pref("browser.newtabpage.activity-stream.images.smart", true);
 
