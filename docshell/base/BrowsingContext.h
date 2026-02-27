@@ -455,6 +455,10 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
     return mDocShell ? mDocShell->GetWindow() : nullptr;
   }
 
+  // Returns the current Document PiP window opened from this BrowsingContext,
+  // if there is one. Only works in the content process that opened it.
+  nsGlobalWindowInner* GetOpenedDocumentPiPWindow() const;
+
   uint64_t GetRequestContextId() const { return mRequestContextId; }
 
   // Detach the current BrowsingContext from its parent, in both the
