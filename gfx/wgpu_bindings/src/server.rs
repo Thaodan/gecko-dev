@@ -751,7 +751,6 @@ pub struct BufferMapClosure {
     pub callback: unsafe extern "C" fn(user_data: *mut u8, status: BufferMapAsyncStatus),
     pub user_data: *mut u8,
 }
-unsafe impl Send for BufferMapClosure {}
 
 /// # Safety
 ///
@@ -767,13 +766,24 @@ pub unsafe extern "C" fn wgpu_server_buffer_map(
     closure: BufferMapClosure,
     mut error_buf: ErrorBuffer,
 ) {
-    let closure = Box::new(move |result| {
-        let _ = &closure;
-        (closure.callback)(closure.user_data, BufferMapAsyncStatus::from(result))
-    });
+    // Create a one-shot channel to carry the map result from the
+    // `buffer_map_async` callback to this thread.
+    let (map_result_sender, map_result_receiver) = futures_channel::oneshot::channel();
+
+    // Spawn a task on this thread to wait for that map result.
+    moz_task::spawn_local("wgpu_server_buffer_map callback", async move {
+        let result = map_result_receiver.await.unwrap();
+        (closure.callback)(closure.user_data, BufferMapAsyncStatus::from(result));
+    })
+    .detach();
+
     let operation = wgc::resource::BufferMapOperation {
         host: map_mode,
-        callback: Some(closure),
+        callback: Some(Box::new(move |result| {
+            // Send the map result from whatever thread this callback is running
+            // on to the task we spawned above.
+            map_result_sender.send(result).unwrap();
+        })),
     };
     let result = global.buffer_map_async(buffer_id, start, Some(size), operation);
 
@@ -2567,24 +2577,29 @@ fn process_buffer_map(
     };
 
     let closure = unsafe {
-        let closure = wgpu_parent_build_buffer_map_closure(
-            global.owner,
-            device_id,
-            buffer_id,
-            mode,
-            offset,
-            size,
-        );
-
-        Box::new(move |result| {
-            let _ = &closure;
-            (closure.callback)(closure.user_data, BufferMapAsyncStatus::from(result))
-        })
+        wgpu_parent_build_buffer_map_closure(global.owner, device_id, buffer_id, mode, offset, size)
     };
+
+    // Create a one-shot channel to carry the map result from the
+    // `buffer_map_async` callback to this thread.
+    let (map_result_sender, map_result_receiver) = futures_channel::oneshot::channel();
+
+    // Spawn a task on this thread to wait for that map result.
+    moz_task::spawn_local("process_buffer_map callback", async move {
+        let result = map_result_receiver.await.unwrap();
+        unsafe {
+            (closure.callback)(closure.user_data, BufferMapAsyncStatus::from(result));
+        }
+    })
+    .detach();
 
     let operation = wgc::resource::BufferMapOperation {
         host: mode,
-        callback: Some(closure),
+        callback: Some(Box::new(move |result| {
+            // Send the map result from whatever thread this callback is running
+            // on to the task we spawned above.
+            map_result_sender.send(result).unwrap();
+        })),
     };
     let result = global.buffer_map_async(buffer_id, offset, Some(size), operation);
 
