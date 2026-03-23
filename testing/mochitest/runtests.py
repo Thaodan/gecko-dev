@@ -3134,7 +3134,13 @@ toolbar#nav-bar {
         options.manifestFile = None
         # When runByManifest is true, runTests already sets profilePath
         # appropriately for each manifest (from profile-path key, or None).
-        if not options.runByManifest:
+        # restartAfterFailure and restartBetweenTests loop within runMochitests
+        # and need a fresh profile for each browser restart.
+        if (
+            not options.runByManifest
+            or options.restartAfterFailure
+            or options.restartBetweenTests
+        ):
             options.profilePath = None
 
     def initializeVirtualAudioDevices(self):
@@ -3345,7 +3351,10 @@ toolbar#nav-bar {
                     )
                     bisection_log = 1
 
-            result = self.doTests(options, testsToRun, manifestToFilter)
+            if options.restartBetweenTests:
+                result = self.doTests(options, testsToRun[:1], manifestToFilter)
+            else:
+                result = self.doTests(options, testsToRun, manifestToFilter)
             if result == TBPL_RETRY:  # terminate task
                 return result
 
@@ -3364,6 +3373,10 @@ toolbar#nav-bar {
                     testsToRun = testsToRun[firstFail + 1 :]
                     if testsToRun == []:
                         status = -1
+            elif options.restartBetweenTests:
+                testsToRun = testsToRun[1:]
+                if not testsToRun:
+                    status = -1
             else:
                 status = -1
 
@@ -3765,7 +3778,12 @@ toolbar#nav-bar {
     def doTests(self, options, testsToFilter=None, manifestToFilter=None):
         # A call to initializeLooping method is required in case of --run-by-dir or --bisect-chunk
         # since we need to initialize variables for each loop.
-        if options.bisectChunk or options.runByManifest:
+        if (
+            options.bisectChunk
+            or options.runByManifest
+            or options.restartAfterFailure
+            or options.restartBetweenTests
+        ):
             self.initializeLooping(options)
 
         # get debugger info, a dict of:
