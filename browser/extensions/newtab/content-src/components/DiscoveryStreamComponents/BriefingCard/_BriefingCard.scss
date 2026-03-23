@@ -9,6 +9,12 @@
   gap: var(--space-medium);
   position: relative;
 
+  // @nova-cleanup: override the :not(.nova-enabled) styles for the briefing card
+  &:not(.nova-enabled *) {
+    padding: var(--space-large);
+    gap: var(--space-medium);
+  }
+
   moz-button {
     position: absolute;
     inset-inline-end: var(--space-medium);
