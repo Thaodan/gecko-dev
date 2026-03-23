@@ -41,10 +41,10 @@ Cr-Branched-From: f680c1893f3b166b370439da52ae82d02f54969c-refs/heads/main@{#463
  2 files changed, 4 insertions(+), 5 deletions(-)
 
 diff --git a/pc/rtp_transceiver.cc b/pc/rtp_transceiver.cc
-index 85bbe1fd89..6e6a793711 100644
+index 9e4fc19080..4f7fdd98ac 100644
 --- a/pc/rtp_transceiver.cc
 +++ b/pc/rtp_transceiver.cc
-@@ -932,19 +932,19 @@ void RtpTransceiver::OnNegotiationUpdate(
+@@ -939,19 +939,19 @@ void RtpTransceiver::OnNegotiationUpdate(
    RTC_DCHECK(content);
    if (sdp_type == SdpType::kAnswer || sdp_type == SdpType::kPrAnswer) {
      negotiated_header_extensions_ = content->rtp_header_extensions();
@@ -68,10 +68,10 @@ index 85bbe1fd89..6e6a793711 100644
        RTC_CHECK(!header_extensions_for_rollback_.empty());
        header_extensions_to_negotiate_ = header_extensions_for_rollback_;
 diff --git a/pc/rtp_transmission_manager.cc b/pc/rtp_transmission_manager.cc
-index 7368cb4bf6..f226ec1455 100644
+index e7dad32804..cef124e0ba 100644
 --- a/pc/rtp_transmission_manager.cc
 +++ b/pc/rtp_transmission_manager.cc
-@@ -323,8 +323,7 @@ RtpTransmissionManager::CreateAndAddTransceiver(
+@@ -327,8 +327,7 @@ RtpTransmissionManager::CreateAndAddTransceiver(
    // could be invalid, but should not cause a crash).
    RTC_DCHECK(!FindSenderById(sender->id()));
    std::vector<RtpHeaderExtensionCapability> header_extensions;
