@@ -4,6 +4,7 @@
 
 import { ContentSection } from "content-src/components/CustomizeMenu/ContentSection/ContentSection";
 import { connect } from "react-redux";
+import { PREFS } from "content-src/lib/PrefsConstants.mjs";
 import React from "react";
 // eslint-disable-next-line no-shadow
 import { CSSTransition } from "react-transition-group";
@@ -43,8 +44,7 @@ export class _CustomizeMenu extends React.PureComponent {
 
   render() {
     const activationWindowVariant =
-      this.props.Prefs.values["activationWindow.variant"];
-
+      this.props.Prefs.values[PREFS.ACTIVATION_WINDOW_VARIANT];
     const activationWindowClass = activationWindowVariant
       ? `activation-window-variant-${activationWindowVariant}`
       : "";
