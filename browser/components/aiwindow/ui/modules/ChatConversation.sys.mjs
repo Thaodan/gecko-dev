@@ -435,6 +435,7 @@ export class ChatConversation extends EventEmitter {
 
     const realTimeContext = await this.getRealTimeInfo(engineInstance, {
       contextMentions: userOpts?.contextMentions,
+      securityProperties: this.securityProperties,
     });
     if (realTimeContext) {
       userContext.realTimeContext = realTimeContext;
@@ -444,7 +445,9 @@ export class ChatConversation extends EventEmitter {
       try {
         const memoriesContext = await this.getMemoriesContext(
           prompt,
-          engineInstance
+          engineInstance,
+          undefined,
+          this.securityProperties
         );
         if (memoriesContext) {
           userContext.memoriesContext = memoriesContext;
@@ -456,6 +459,7 @@ export class ChatConversation extends EventEmitter {
       }
     }
 
+    this.securityProperties.commit();
     return this;
   }
 
@@ -540,6 +544,7 @@ export class ChatConversation extends EventEmitter {
    * @param {RealTimeApiFunction} [options.getRealTimeMapping=constructRealTimeInfoInjectionMessage]
    * @param {ContextWebsite[]} [options.contextMentions]
    *   URLs provided by the user as additional context
+   * @param {SecurityProperties} [options.securityProperties]
    *
    * @returns {Promise<string|null>} - Promise that resolves with real time info or null
    */
@@ -548,6 +553,7 @@ export class ChatConversation extends EventEmitter {
     {
       getRealTimeMapping = constructRealTimeInfoInjectionMessage,
       contextMentions,
+      securityProperties,
     } = {}
   ) {
     const realTimeInfoMapping = await getRealTimeMapping();
@@ -556,6 +562,7 @@ export class ChatConversation extends EventEmitter {
         MODEL_FEATURES.REAL_TIME_CONTEXT_DATE
       );
       if (realTimeInfoMapping.hasTabInfo) {
+        securityProperties.setPrivateData();
         const realTimeTabPromptRaw = await engineInstance.loadPrompt(
           MODEL_FEATURES.REAL_TIME_CONTEXT_TAB
         );
@@ -608,16 +615,22 @@ export class ChatConversation extends EventEmitter {
    * @param {message} message
    * @param {openAIEngine} engineInstance
    * @param {MemoriesApiFunction} [constructMemories=constructRelevantMemoriesContextMessage]
+   * @param {SecurityProperties} [securityProperties]
    *
    * @returns {Promise<string|null>} - Promise that resolves with relevant memories or null
    */
   async getMemoriesContext(
     message,
     engineInstance,
-    constructMemories = constructRelevantMemoriesContextMessage
+    constructMemories = constructRelevantMemoriesContextMessage,
+    securityProperties
   ) {
     const memoriesContext = await constructMemories(message, engineInstance);
-    return memoriesContext?.content ?? null;
+    if (memoriesContext != null) {
+      securityProperties.setPrivateData();
+      return memoriesContext.content;
+    }
+    return null;
   }
 
   /**
