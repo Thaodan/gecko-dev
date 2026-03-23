@@ -2730,7 +2730,10 @@ unsafe fn process_message(
             external_texture_source_ids.as_ptr(),
             external_texture_source_ids.len(),
         ),
-        Message::QueueOnSubmittedWorkDone(queue_id) => {
+        Message::QueueOnSubmittedWorkDone {
+            device_id: _,
+            queue_id,
+        } => {
             let closure = wgpu_parent_build_submitted_work_done_closure(global.owner, queue_id);
             let closure = Box::new(move || {
                 let _ = &closure;
