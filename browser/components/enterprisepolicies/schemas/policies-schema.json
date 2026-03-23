@@ -1486,6 +1486,26 @@
       }
     },
 
+    "RelaunchRequired": {
+      "type": "object",
+      "properties": {
+        "NotificationPeriodHours": {
+          "type": "number"
+        },
+        "RestartTimeOfDay": {
+          "type": "object",
+          "properties": {
+            "Hour": {
+              "type": "number"
+            },
+            "Minute": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+
     "RequestedLocales": {
       "type": ["string", "array"],
       "items": {
