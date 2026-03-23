@@ -105,8 +105,15 @@ export class ChatConversation extends EventEmitter {
 
     // NOTE: Destructuring params.status causes a linter error
     this.status = params.status || CONVERSATION_STATUS.ACTIVE;
-    this.securityProperties =
-      params.securityProperties ?? new SecurityProperties();
+    if (params.securityProperties instanceof SecurityProperties) {
+      this.securityProperties = params.securityProperties;
+    } else if (params.securityProperties != null) {
+      this.securityProperties = SecurityProperties.fromJSON(
+        params.securityProperties
+      );
+    } else {
+      this.securityProperties = new SecurityProperties();
+    }
   }
 
   handleChunk(chunk, currentMessage, parserState) {
