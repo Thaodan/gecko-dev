@@ -2860,11 +2860,18 @@ unsafe fn process_message(
             queue_id,
         } => {
             let closure = wgpu_parent_build_submitted_work_done_closure(global.owner, queue_id);
-            let closure = Box::new(move || {
-                let _ = &closure;
+            let (work_done_sender, work_done_receiver) = futures_channel::oneshot::channel();
+            moz_task::spawn_local("WebGPU onSubmittedWorkDone callback", async move {
+                work_done_receiver.await.unwrap();
                 (closure.callback)(closure.user_data)
-            });
-            global.queue_on_submitted_work_done(queue_id, closure);
+            })
+            .detach();
+            global.queue_on_submitted_work_done(
+                queue_id,
+                Box::new(move || {
+                    work_done_sender.send(()).unwrap();
+                }),
+            );
         }
 
         Message::CreateSwapChain {
@@ -3071,7 +3078,6 @@ pub struct SubmittedWorkDoneClosure {
     pub callback: unsafe extern "C" fn(user_data: *mut u8),
     pub user_data: *mut u8,
 }
-unsafe impl Send for SubmittedWorkDoneClosure {}
 
 #[derive(Debug)]
 #[cfg(target_os = "linux")]
