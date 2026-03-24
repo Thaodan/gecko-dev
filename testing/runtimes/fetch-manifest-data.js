@@ -405,6 +405,12 @@ async function processDate(targetDate) {
     `Collected ${durations.length} manifest timings across ${tables.manifest.array.length} unique manifests and ${tables.jobName.array.length} job types`
   );
 
+  if (durations.length === 0) {
+    throw new Error(
+      "No manifest timing data collected. Aborting to avoid overwriting previous data with empty results."
+    );
+  }
+
   const taskIds = [];
   const taskJobNameIds = [];
   const taskCommitIds = [];
@@ -523,4 +529,7 @@ async function main() {
   await processDate(yesterday);
 }
 
-main().catch(console.error);
+main().catch(err => {
+  console.error(`FatalError: ${err.message}`);
+  process.exit(1);
+});
