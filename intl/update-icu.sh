@@ -68,6 +68,7 @@ for patch in \
  bug-2010411-patch-cldr-hv-en-root.diff \
  skip-norm-coll.diff \
  bug-1989738-remove-historical-eras.diff \
+ bug-1989738-use-gregorian-era.diff \
 ; do
   echo "Applying local patch $patch"
   patch -d ${icu_dir}/../../ -p1 --no-backup-if-mismatch < ${icu_dir}/../icu-patches/$patch

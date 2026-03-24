@@ -2961,6 +2961,8 @@ root{
             dayNames:alias{"/LOCALE/calendar/gregorian/dayNames"}
             eras{
                 abbreviated{
+                    0:alias{"/LOCALE/calendar/gregorian/eras/abbreviated/0"}
+                    1:alias{"/LOCALE/calendar/gregorian/eras/abbreviated/1"}
                     232{"Meiji"}
                     233{"Taishō"}
                     234{"Shōwa"}
@@ -2968,6 +2970,8 @@ root{
                     236{"Reiwa"}
                 }
                 narrow{
+                    0:alias{"/LOCALE/calendar/gregorian/eras/narrow/0"}
+                    1:alias{"/LOCALE/calendar/gregorian/eras/narrow/1"}
                     232{"M"}
                     233{"T"}
                     234{"S"}
