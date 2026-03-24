@@ -77,7 +77,7 @@ data class GameState(
             RIGHT -> head.copy(x = head.x + 1)
         }
 
-        val collidedWithSelf = newHead in fox.drop(1)
+        val collidedWithSelf = newHead in fox.dropLast(1)
         val collidedWithEdge = !withinBounds(newHead)
         val collidedWithFood = newHead == food || food in fox
         val isGameOver = collidedWithSelf || collidedWithEdge
