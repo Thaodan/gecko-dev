@@ -216,7 +216,7 @@ ArrayObject* SupportedLocalesOf(JSContext* cx,
  * default locale (perhaps via fallback, e.g. supporting "de-CH" through "de"
  * support implied by a "de-DE" locale). Otherwise uses the last-ditch locale.
  */
-JSLinearString* ComputeDefaultLocale(JSContext* cx);
+bool ComputeDefaultLocale(JSContext* cx, LanguageId* result);
 
 }  // namespace js::intl
 

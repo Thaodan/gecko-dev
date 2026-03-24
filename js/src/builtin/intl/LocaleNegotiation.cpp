@@ -248,16 +248,10 @@ static bool LookupSupportedLocales(
   // Step 1.
   MOZ_ASSERT(supportedLocales.empty());
 
-  auto* defaultLocale = cx->global()->globalIntlData().defaultLocale(cx);
-  if (!defaultLocale) {
+  auto defaultLocale = LanguageId::und();
+  if (!cx->global()->globalIntlData().defaultLocale(cx, &defaultLocale)) {
     return false;
   }
-
-  auto parsedLangId = ToLanguageId(defaultLocale);
-  MOZ_ASSERT(parsedLangId.isSome(), "unexpected invalid default locale");
-  MOZ_ASSERT(parsedLangId->second == 0, "unexpected variant subtags");
-
-  auto defaultLocaleId = parsedLangId->first;
 
   // Step 2.
   Rooted<JSLinearString*> noExtensionsLocale(cx);
@@ -277,8 +271,7 @@ static bool LookupSupportedLocales(
     // Step 2.b.
     mozilla::Maybe<LanguageId> availableLocale{};
     if (!BestAvailableLocale(cx, availableLocales, noExtensionsLocale,
-                             mozilla::Some(defaultLocaleId),
-                             &availableLocale)) {
+                             mozilla::Some(defaultLocale), &availableLocale)) {
       return false;
     }
 
@@ -477,16 +470,10 @@ static bool LookupMatcher(JSContext* cx, AvailableLocaleKind availableLocales,
                           MutableHandle<LookupMatcherResult> result) {
   MOZ_RELEASE_ASSERT(IsPackedArray(locales));
 
-  auto* defaultLocale = cx->global()->globalIntlData().defaultLocale(cx);
-  if (!defaultLocale) {
+  auto defaultLocale = LanguageId::und();
+  if (!cx->global()->globalIntlData().defaultLocale(cx, &defaultLocale)) {
     return false;
   }
-
-  auto parsedLangId = ToLanguageId(defaultLocale);
-  MOZ_ASSERT(parsedLangId.isSome(), "unexpected invalid default locale");
-  MOZ_ASSERT(parsedLangId->second == 0, "unexpected variant subtags");
-
-  auto defaultLocaleId = parsedLangId->first;
 
   // Step 1. (Not applicable)
 
@@ -512,7 +499,7 @@ static bool LookupMatcher(JSContext* cx, AvailableLocaleKind availableLocales,
     // Step 2.b.
     mozilla::Maybe<LanguageId> availableLocId{};
     if (!BestAvailableLocale(cx, availableLocales, noExtensionsLocale,
-                             mozilla::Some(defaultLocaleId), &availableLocId)) {
+                             mozilla::Some(defaultLocale), &availableLocId)) {
       return false;
     }
 
@@ -555,8 +542,14 @@ static bool LookupMatcher(JSContext* cx, AvailableLocaleKind availableLocales,
     }
   }
 
+  availableLocale =
+      NewStringCopy<CanGC>(cx, std::string_view{defaultLocale.toString()});
+  if (!availableLocale) {
+    return false;
+  }
+
   // Steps 3-5.
-  result.set({defaultLocale, nullptr});
+  result.set({availableLocale, nullptr});
   return true;
 }
 
@@ -1310,11 +1303,11 @@ static std::string_view AddImplicitScriptToLocale(std::string_view locale) {
   return {};
 }
 
-JSLinearString* js::intl::ComputeDefaultLocale(JSContext* cx) {
+bool js::intl::ComputeDefaultLocale(JSContext* cx, LanguageId* result) {
   const char* locale = cx->realm()->getLocale();
   if (!locale) {
     ReportOutOfMemory(cx);
-    return nullptr;
+    return false;
   }
 
   auto span = mozilla::MakeStringSpan(locale);
@@ -1328,7 +1321,7 @@ JSLinearString* js::intl::ComputeDefaultLocale(JSContext* cx) {
   if (!canParseLocale) {
     candidate = NewStringCopy<CanGC>(cx, LastDitchLocale());
     if (!candidate) {
-      return nullptr;
+      return false;
     }
   } else {
     // The default locale must be in [[AvailableLocales]], and that list must
@@ -1339,7 +1332,7 @@ JSLinearString* js::intl::ComputeDefaultLocale(JSContext* cx) {
     FormatBuffer<char, INITIAL_CHAR_BUFFER_SIZE> buffer(cx);
     if (auto result = tag.ToString(buffer); result.isErr()) {
       ReportInternalError(cx, result.unwrapErr());
-      return nullptr;
+      return false;
     }
 
     // Certain old-style language tags lack a script code, but in current usage
@@ -1352,7 +1345,7 @@ JSLinearString* js::intl::ComputeDefaultLocale(JSContext* cx) {
       candidate = NewStringCopy<CanGC>(cx, modernStyle);
     }
     if (!candidate) {
-      return nullptr;
+      return false;
     }
   }
 
@@ -1367,13 +1360,13 @@ JSLinearString* js::intl::ComputeDefaultLocale(JSContext* cx) {
   mozilla::Maybe<LanguageId> supportedCollator{};
   if (!BestAvailableLocale(cx, AvailableLocaleKind::Collator, candidate,
                            &supportedCollator)) {
-    return nullptr;
+    return false;
   }
 
   mozilla::Maybe<LanguageId> supportedDateTimeFormat{};
   if (!BestAvailableLocale(cx, AvailableLocaleKind::DateTimeFormat, candidate,
                            &supportedDateTimeFormat)) {
-    return nullptr;
+    return false;
   }
 
 #ifdef DEBUG
@@ -1391,7 +1384,7 @@ JSLinearString* js::intl::ComputeDefaultLocale(JSContext* cx) {
        }) {
     mozilla::Maybe<LanguageId> supported{};
     if (!BestAvailableLocale(cx, kind, candidate, &supported)) {
-      return nullptr;
+      return false;
     }
     MOZ_ASSERT(supported == supportedDateTimeFormat);
   }
@@ -1408,13 +1401,16 @@ JSLinearString* js::intl::ComputeDefaultLocale(JSContext* cx) {
     // requesting "de-CH" and Intl.DateTimeFormat supports "de-CH", but
     // Intl.Collator only "de", still return "de-CH" as the result.
     if (supportedCollator->isPrefixOf(*supportedDateTimeFormat)) {
-      return NewStringCopy<CanGC>(
-          cx, std::string_view{supportedDateTimeFormat->toString()});
+      *result = *supportedDateTimeFormat;
+    } else {
+      *result = *supportedCollator;
     }
-    return NewStringCopy<CanGC>(
-        cx, std::string_view{supportedCollator->toString()});
-  }
+  } else {
+    static constexpr auto lastDitch =
+        LanguageId::fromValidBcp49(LastDitchLocale());
 
-  // Return the last ditch locale if the candidate locale isn't supported.
-  return NewStringCopy<CanGC>(cx, LastDitchLocale());
+    // Return the last ditch locale if the candidate locale isn't supported.
+    *result = lastDitch;
+  }
+  return true;
 }
