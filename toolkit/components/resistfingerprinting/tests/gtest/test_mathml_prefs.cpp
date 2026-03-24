@@ -21,7 +21,6 @@ static const struct {
     {"mathml.disabled", "dis"},
     {"mathml.scale_stretchy_operators.enabled", "str"},
     {"mathml.mathspace_names.disabled", "spc"},
-    {"mathml.rtl_operator_mirroring.enabled", "rtl"},
     {"mathml.mathvariant_styling_fallback.disabled", "var"},
     {"mathml.operator_dictionary_accent.disabled", "acc"},
     {"mathml.legacy_mathvariant_attribute.disabled", "leg"},
@@ -111,7 +110,7 @@ TEST(ResistFingerprinting, UserCharacteristics_MathMLPrefs_NonAdjacent)
 
   // Set non-adjacent prefs: first and fourth
   Preferences::SetBool(kMathMLPrefs[0].pref, true);   // dis=1
-  Preferences::SetBool(kMathMLPrefs[3].pref, false);  // rtl=0
+  Preferences::SetBool(kMathMLPrefs[3].pref, false);  // var=0
 
   ASSERT_TRUE(mozilla::glean_pings::UserCharacteristics.TestSubmission(
       [](const nsACString& aReason) {
@@ -120,7 +119,7 @@ TEST(ResistFingerprinting, UserCharacteristics_MathMLPrefs_NonAdjacent)
                 .TestGetValue()
                 .unwrap()
                 .value();
-        ASSERT_STREQ("dis=1,rtl=0", result.get());
+        ASSERT_STREQ("dis=1,var=0", result.get());
       },
       []() {
         testing::PopulateMathMLPrefs();
