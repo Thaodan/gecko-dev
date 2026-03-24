@@ -431,19 +431,18 @@ static auto FindUnicodeExtensionSequence(const JSLinearString* locale) {
 }
 
 class LookupMatcherResult final {
-  JSLinearString* locale_ = nullptr;
+  LanguageId locale_ = LanguageId::und();
   JSLinearString* extension_ = nullptr;
 
  public:
   LookupMatcherResult() = default;
-  LookupMatcherResult(JSLinearString* locale, JSLinearString* extension)
+  LookupMatcherResult(LanguageId locale, JSLinearString* extension)
       : locale_(locale), extension_(extension) {}
 
-  auto* locale() const { return locale_; }
+  auto locale() const { return locale_; }
   auto* extension() const { return extension_; }
 
-  // Helper methods for WrappedPtrOperations.
-  auto localeDoNotUse() const { return &locale_; }
+  // Helper method for WrappedPtrOperations.
   auto extensionDoNotUse() const { return &extension_; }
 
   // Trace implementation.
@@ -451,7 +450,6 @@ class LookupMatcherResult final {
 };
 
 void LookupMatcherResult::trace(JSTracer* trc) {
-  TraceNullableRoot(trc, &locale_, "LookupMatcherResult::locale");
   TraceNullableRoot(trc, &extension_, "LookupMatcherResult::extension");
 }
 
@@ -463,10 +461,7 @@ class WrappedPtrOperations<LookupMatcherResult, Wrapper> {
   }
 
  public:
-  JS::Handle<JSLinearString*> locale() const {
-    return JS::Handle<JSLinearString*>::fromMarkedLocation(
-        container().localeDoNotUse());
-  }
+  LanguageId locale() const { return container().locale(); }
 
   JS::Handle<JSLinearString*> extension() const {
     return JS::Handle<JSLinearString*>::fromMarkedLocation(
@@ -504,7 +499,6 @@ static bool LookupMatcher(JSContext* cx, AvailableLocaleKind availableLocales,
   // Step 2.
   Rooted<JSLinearString*> locale(cx);
   Rooted<JSLinearString*> noExtensionsLocale(cx);
-  Rooted<JSLinearString*> availableLocale(cx);
   for (size_t i = 0, length = locales->length(); i < length; i++) {
     locale = locales->getDenseElement(i).toString()->ensureLinear(cx);
     if (!locale) {
@@ -521,20 +515,14 @@ static bool LookupMatcher(JSContext* cx, AvailableLocaleKind availableLocales,
     }
 
     // Step 2.b.
-    mozilla::Maybe<LanguageId> availableLocId{};
+    mozilla::Maybe<LanguageId> availableLocale{};
     if (!BestAvailableLocale(cx, availableLocales, noExtensionsLocale,
-                             mozilla::Some(defaultLocale), &availableLocId)) {
+                             mozilla::Some(defaultLocale), &availableLocale)) {
       return false;
     }
 
     // Step 2.c.
-    if (availableLocId) {
-      availableLocale = NewStringCopy<CanGC>(
-          cx, std::string_view{availableLocId->toString()});
-      if (!availableLocale) {
-        return false;
-      }
-
+    if (availableLocale) {
       // Step 2.c.i. (Not applicable)
 
       // Step 2.c.ii.
@@ -561,19 +549,13 @@ static bool LookupMatcher(JSContext* cx, AvailableLocaleKind availableLocales,
       }
 
       // Step 2.c.iii.
-      result.set({availableLocale, extension});
+      result.set({*availableLocale, extension});
       return true;
     }
   }
 
-  availableLocale =
-      NewStringCopy<CanGC>(cx, std::string_view{defaultLocale.toString()});
-  if (!availableLocale) {
-    return false;
-  }
-
   // Steps 3-5.
-  result.set({availableLocale, nullptr});
+  result.set({defaultLocale, nullptr});
   return true;
 }
 
@@ -739,17 +721,12 @@ static auto UnicodeExtensionComponents(const JSLinearString* extension) {
  * Return `true` in |result| iff `string` is a supported calendar for the
  * requested locale. Otherwise set |result| to `false`.
  */
-static bool IsSupportedCalendar(JSContext* cx, Handle<JSLinearString*> loc,
+static bool IsSupportedCalendar(JSContext* cx, LanguageId locale,
                                 Handle<JSLinearString*> string, bool* result) {
   MOZ_ASSERT(StringIsAscii(string));
 
-  auto locale = EncodeLocale(cx, loc);
-  if (!locale) {
-    return false;
-  }
-
-  auto keywords =
-      mozilla::intl::Calendar::GetBcp47KeywordValuesForLocale(locale.get());
+  auto keywords = mozilla::intl::Calendar::GetBcp47KeywordValuesForLocale(
+      locale.toString().c_str());
   if (keywords.isErr()) {
     ReportInternalError(cx, keywords.unwrapErr());
     return false;
@@ -776,19 +753,15 @@ static bool IsSupportedCalendar(JSContext* cx, Handle<JSLinearString*> loc,
  * Return `true` in |result| iff `string` is a supported collation for the
  * requested locale. Otherwise set |result| to `false`.
  */
-static bool IsSupportedCollation(JSContext* cx, Handle<JSLinearString*> loc,
+static bool IsSupportedCollation(JSContext* cx, LanguageId locale,
                                  Handle<JSLinearString*> string, bool* result) {
-  StringAsciiChars locale(loc);
-  if (!locale.init(cx)) {
-    return false;
-  }
-
   StringAsciiChars collation(string);
   if (!collation.init(cx)) {
     return false;
   }
 
-  *result = mozilla::intl::Collator::IsSupportedCollation(locale, collation);
+  *result = mozilla::intl::Collator::IsSupportedCollation(locale.toString(),
+                                                          collation);
   return true;
 }
 
@@ -929,14 +902,8 @@ static bool IsSupportedNumberingSystem(const JSLinearString* string) {
 /**
  * Return the default calendar of a locale.
  */
-static JSLinearString* DefaultCalendar(JSContext* cx,
-                                       Handle<JSLinearString*> loc) {
-  auto locale = EncodeLocale(cx, loc);
-  if (!locale) {
-    return nullptr;
-  }
-
-  auto calendar = mozilla::intl::Calendar::TryCreate(locale.get());
+static JSLinearString* DefaultCalendar(JSContext* cx, LanguageId locale) {
+  auto calendar = mozilla::intl::Calendar::TryCreate(locale.toString().c_str());
   if (calendar.isErr()) {
     ReportInternalError(cx, calendar.unwrapErr());
     return nullptr;
@@ -954,8 +921,8 @@ static JSLinearString* DefaultCalendar(JSContext* cx,
 /**
  * Return the default collation of a locale.
  */
-static JSLinearString* DefaultCollationCaseFirst(
-    JSContext* cx, Handle<JSLinearString*> locale) {
+static JSLinearString* DefaultCollationCaseFirst(JSContext* cx,
+                                                 LanguageId locale) {
   // If |locale| is the default locale (e.g. da-DK), but only supported through
   // a fallback (da), we need to get the actual locale before we can call
   // |sharedIntlData.isUpperCaseFirst|.
@@ -983,14 +950,9 @@ static JSLinearString* DefaultCollationCaseFirst(
  * Return the default numbering system of a locale.
  */
 static JSLinearString* DefaultNumberingSystem(JSContext* cx,
-                                              Handle<JSLinearString*> loc) {
-  auto locale = EncodeLocale(cx, loc);
-  if (!locale) {
-    return nullptr;
-  }
-
+                                              LanguageId locale) {
   auto numberingSystem =
-      mozilla::intl::NumberingSystem::TryCreate(locale.get());
+      mozilla::intl::NumberingSystem::TryCreate(locale.toString().c_str());
   if (numberingSystem.isErr()) {
     ReportInternalError(cx, numberingSystem.unwrapErr());
     return nullptr;
@@ -1008,9 +970,9 @@ static JSLinearString* DefaultNumberingSystem(JSContext* cx,
 /**
  * Check if a locale supports the requested value for a Unicode extension key.
  */
-static bool IsSupported(JSContext* cx, LocaleData localeData,
-                        Handle<JSLinearString*> locale, UnicodeExtensionKey key,
-                        Handle<JSLinearString*> value, bool* result) {
+static bool IsSupported(JSContext* cx, LocaleData localeData, LanguageId locale,
+                        UnicodeExtensionKey key, Handle<JSLinearString*> value,
+                        bool* result) {
   switch (key) {
     case UnicodeExtensionKey::Calendar: {
       return IsSupportedCalendar(cx, locale, value, result);
@@ -1047,8 +1009,7 @@ static bool IsSupported(JSContext* cx, LocaleData localeData,
  * Return the locale-specific default value for a Unicode extension key.
  */
 static bool DefaultValue(JSContext* cx, LocaleData localeData,
-                         Handle<JSLinearString*> locale,
-                         UnicodeExtensionKey key,
+                         LanguageId locale, UnicodeExtensionKey key,
                          MutableHandle<JSLinearString*> result) {
   switch (key) {
     case UnicodeExtensionKey::Calendar: {
@@ -1250,7 +1211,12 @@ bool js::intl::ResolveLocale(
   result.setUnicodeKeywords(supportedKeywords);
 
   // Step 15.
-  result.setDataLocale(foundLocale);
+  auto* foundLocaleStr =
+      NewStringCopy<CanGC>(cx, std::string_view{foundLocale.toString()});
+  if (!foundLocaleStr) {
+    return false;
+  }
+  result.setDataLocale(foundLocaleStr);
 
   // Step 16.
   return true;
