@@ -57,14 +57,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let ext =
             get_extension(&entry.installer).ok_or("Couldn't find from installer extension!")?;
         dest_path.push(format!("{i}.{ext}"));
-        let from_installer = dest_path
-            .to_str()
-            .ok_or("Couldn't convert dest_path to str!")?;
-        downloader.fetch(&entry.installer, from_installer)?;
+        downloader.fetch(&entry.installer, &dest_path)?;
         tests.push(Test {
             id: entry.id.clone(),
             mar: args.complete_mar.to_path_buf(),
-            from_installer: from_installer.to_string(),
+            from_installer: dest_path.clone(),
             locale: args.locale.clone(),
         });
         if let Some(partial_mar) = &entry.partial_mar {
@@ -73,7 +70,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             tests.push(Test {
                 id: entry.id.clone(),
                 mar: partial_path,
-                from_installer: from_installer.to_string(),
+                from_installer: dest_path.clone(),
                 locale: args.locale.clone(),
             });
         }
