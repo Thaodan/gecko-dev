@@ -12,6 +12,9 @@ use std::path::Path;
 use std::process::exit;
 use tempfile::TempDir;
 
+use env_logger::{Builder, Env};
+use log::info;
+
 use crate::cli::Args;
 use crate::downloader::{FileDownloader, UreqDownloader};
 use crate::runner::RealRunner;
@@ -27,6 +30,7 @@ fn get_extension(filename: &str) -> Option<&str> {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    Builder::from_env(Env::default().default_filter_or("info")).init();
     let args = Args::parse_and_validate();
     // Using `keep()` prevents the temporary directory from being cleaned up.
     // This is on purpose. When running in CI any necessary cleanup is handled
@@ -35,7 +39,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // around for debugging.
     let tmpdir = TempDir::with_prefix("update-verify")?.keep();
     let tmppath = tmpdir.to_str().ok_or("Couldn't parse tmpdir")?;
-    println!("Using tmpdir: {tmppath}");
+    info!("Using tmpdir: {tmppath}");
 
     let downloader = UreqDownloader;
     let runner = RealRunner;
@@ -96,7 +100,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
     let passes = results.iter().filter(|r| **r == TestResult::Pass).count();
     let fails = results.len() - passes;
-    println!("Summary of results: {} PASS, {} FAIL", passes, fails);
+    info!("Summary of results: {} PASS, {} FAIL", passes, fails);
     if fails > 0 {
         exit(1);
     }

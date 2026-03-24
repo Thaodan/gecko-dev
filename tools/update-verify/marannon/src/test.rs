@@ -9,6 +9,8 @@ use std::os::unix::fs::symlink;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+use log::info;
+
 use crate::runner::CommandRunner;
 use crate::updater::{prepare_updater, CertOverride};
 
@@ -151,7 +153,7 @@ fn run_test(
             path
         }
     };
-    println!(
+    info!(
         "Using updater at: {}",
         updater.to_str().unwrap_or("updater location")
     );
