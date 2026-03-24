@@ -315,8 +315,7 @@ class SharedIntlData {
    * service constructor. Otherwise sets |available| to false.
    */
   [[nodiscard]] bool isAvailableLocale(JSContext* cx, AvailableLocaleKind kind,
-                                       JS::Handle<JSLinearString*> locale,
-                                       bool* available);
+                                       LanguageId locale, bool* available);
 
   /**
    * Returns all available locales for |kind|.
@@ -363,8 +362,7 @@ class SharedIntlData {
    * Sets |isUpperFirst| to true if |locale| sorts upper-case characters
    * before lower-case characters.
    */
-  bool isUpperCaseFirst(JSContext* cx, JS::Handle<JSLinearString*> locale,
-                        bool* isUpperFirst);
+  bool isUpperCaseFirst(JSContext* cx, LanguageId locale, bool* isUpperFirst);
 
  private:
 #if DEBUG
@@ -382,7 +380,7 @@ class SharedIntlData {
   /**
    * Sets |ignorePunctuation| to true if |locale| ignores punctuation.
    */
-  bool isIgnorePunctuation(JSContext* cx, JS::Handle<JSLinearString*> locale,
+  bool isIgnorePunctuation(JSContext* cx, LanguageId locale,
                            bool* ignorePunctuation);
 
  private:

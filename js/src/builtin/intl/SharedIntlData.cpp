@@ -502,37 +502,17 @@ bool js::intl::SharedIntlData::ensureAvailableLocales(JSContext* cx) {
   return true;
 }
 
-template <typename CharT>
-static auto ToLanguageId(mozilla::Span<const CharT> locale) {
-  return js::LanguageId::fromBcp49(locale);
-}
-
-static auto ToLanguageId(const JSLinearString* locale) {
-  JS::AutoCheckCannotGC nogc;
-  if (locale->hasLatin1Chars()) {
-    return ToLanguageId(mozilla::AsChars(locale->latin1Range(nogc)));
-  }
-  return ToLanguageId(mozilla::Span{locale->twoByteRange(nogc)});
-}
-
 bool js::intl::SharedIntlData::isAvailableLocale(JSContext* cx,
                                                  AvailableLocaleKind kind,
-                                                 Handle<JSLinearString*> locale,
+                                                 LanguageId locale,
                                                  bool* available) {
   if (!ensureAvailableLocales(cx)) {
     return false;
   }
 
-  auto parsedLangId = ToLanguageId(locale);
-  if (!parsedLangId || parsedLangId->second > 0) {
-    *available = false;
-    return true;
-  }
-  auto langId = parsedLangId->first;
-
   switch (kind) {
     case AvailableLocaleKind::Collator:
-      *available = collatorAvailableLocales.has(langId);
+      *available = collatorAvailableLocales.has(locale);
       return true;
     case AvailableLocaleKind::DateTimeFormat:
     case AvailableLocaleKind::DisplayNames:
@@ -542,7 +522,7 @@ bool js::intl::SharedIntlData::isAvailableLocale(JSContext* cx,
     case AvailableLocaleKind::PluralRules:
     case AvailableLocaleKind::RelativeTimeFormat:
     case AvailableLocaleKind::Segmenter:
-      *available = availableLocales.has(langId);
+      *available = availableLocales.has(locale);
       return true;
   }
   MOZ_CRASH("Invalid Intl constructor");
@@ -637,7 +617,7 @@ bool js::intl::SharedIntlData::ensureUpperCaseFirstLocales(JSContext* cx) {
 #endif  // DEBUG
 
 bool js::intl::SharedIntlData::isUpperCaseFirst(JSContext* cx,
-                                                Handle<JSLinearString*> locale,
+                                                LanguageId locale,
                                                 bool* isUpperFirst) {
 #if DEBUG
   if (!ensureUpperCaseFirstLocales(cx)) {
@@ -645,19 +625,17 @@ bool js::intl::SharedIntlData::isUpperCaseFirst(JSContext* cx,
   }
 #endif
 
+  static constexpr auto danish = LanguageId::fromValidBcp49("da");
+  static constexpr auto maltese = LanguageId::fromValidBcp49("mt");
+
   // "da" (Danish) and "mt" (Maltese) are the only two supported locales using
   // upper-case first. CLDR also lists "cu" (Church Slavic) as an upper-case
   // first locale, but since it's not supported in ICU, we don't care about it
   // here.
-  bool isDefaultUpperCaseFirstLocale = js::StringEqualsLiteral(locale, "da") ||
-                                       js::StringEqualsLiteral(locale, "mt");
+  bool isDefaultUpperCaseFirstLocale = locale == danish || locale == maltese;
 
 #if DEBUG
-  auto parsedLangId = ToLanguageId(locale);
-  MOZ_ASSERT(parsedLangId.isSome(), "unexpected invalid locale");
-  MOZ_ASSERT(parsedLangId->second == 0, "unexpected subtags in locale");
-
-  *isUpperFirst = upperCaseFirstLocales.has(parsedLangId->first);
+  *isUpperFirst = upperCaseFirstLocales.has(locale);
 #else
   *isUpperFirst = isDefaultUpperCaseFirstLocale;
 #endif
@@ -709,24 +687,23 @@ bool js::intl::SharedIntlData::ensureIgnorePunctuationLocales(JSContext* cx) {
 }
 #endif  // DEBUG
 
-bool js::intl::SharedIntlData::isIgnorePunctuation(
-    JSContext* cx, Handle<JSLinearString*> locale, bool* ignorePunctuation) {
+bool js::intl::SharedIntlData::isIgnorePunctuation(JSContext* cx,
+                                                   LanguageId locale,
+                                                   bool* ignorePunctuation) {
 #if DEBUG
   if (!ensureIgnorePunctuationLocales(cx)) {
     return false;
   }
 #endif
 
+  static constexpr auto thai = LanguageId::fromValidBcp49("th");
+
   // "th" (Thai) is the only supported locale which ignores punctuation by
   // default.
-  bool isDefaultIgnorePunctuationLocale = js::StringEqualsLiteral(locale, "th");
+  bool isDefaultIgnorePunctuationLocale = locale == thai;
 
 #if DEBUG
-  auto parsedLangId = ToLanguageId(locale);
-  MOZ_ASSERT(parsedLangId.isSome(), "unexpected invalid locale");
-  MOZ_ASSERT(parsedLangId->second == 0, "unexpected subtags in locale");
-
-  *ignorePunctuation = ignorePunctuationLocales.has(parsedLangId->first);
+  *ignorePunctuation = ignorePunctuationLocales.has(locale);
 #else
   *ignorePunctuation = isDefaultIgnorePunctuationLocale;
 #endif
