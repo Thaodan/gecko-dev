@@ -371,44 +371,12 @@ js::intl::SharedIntlData::availableTimeZonesIteration(JSContext* cx) {
   return availableTimeZones.iter();
 }
 
-js::intl::SharedIntlData::LocaleHasher::Lookup::Lookup(
-    const JSLinearString* locale)
-    : js::intl::SharedIntlData::LinearStringLookup(locale) {
-  if (isLatin1) {
-    hash = mozilla::HashString(latin1Chars, length);
-  } else {
-    hash = mozilla::HashString(twoByteChars, length);
-  }
-}
-
-js::intl::SharedIntlData::LocaleHasher::Lookup::Lookup(std::string_view locale)
-    : js::intl::SharedIntlData::LinearStringLookup(locale) {
-  hash = mozilla::HashString(latin1Chars, length);
-}
-
-bool js::intl::SharedIntlData::LocaleHasher::match(Locale key,
-                                                   const Lookup& lookup) {
-  // TODO: Lookup to LanguageId
-  auto str = key.toString();
-  if (str.length() != lookup.length) {
-    return false;
-  }
-
-  if (lookup.isLatin1) {
-    return EqualChars(str.data(), lookup.latin1Chars, lookup.length);
-  }
-  return EqualChars(str.data(), lookup.twoByteChars, lookup.length);
-}
-
 template <class AvailableLocales>
 bool js::intl::SharedIntlData::getAvailableLocales(
     JSContext* cx, LocaleSet& locales,
     const AvailableLocales& availableLocales) {
   auto addLocale = [cx, &locales](LanguageId langId) {
-    auto str = langId.toString();
-
-    LocaleHasher::Lookup lookup(std::string_view{str});
-    LocaleSet::AddPtr p = locales.lookupForAdd(lookup);
+    LocaleSet::AddPtr p = locales.lookupForAdd(langId);
 
     // ICU shouldn't report any duplicate locales, but if it does, just ignore
     // the duplicated locale.
@@ -463,10 +431,10 @@ bool js::intl::SharedIntlData::getAvailableLocales(
     static_assert(std::string_view{lastDitch.toString()} == "en-GB");
 
 #ifdef DEBUG
-    static constexpr std::string_view lastDitchParent = "en";
+    static constexpr auto lastDitchParent = lastDitch.parentLocale();
+    static_assert(std::string_view{lastDitchParent.toString()} == "en");
 
-    LocaleHasher::Lookup lookup(lastDitchParent);
-    MOZ_ASSERT(locales.has(lookup),
+    MOZ_ASSERT(locales.has(lastDitchParent),
                "shouldn't be a need to add every locale implied by the "
                "last-ditch locale, merely just the last-ditch locale");
 #endif
@@ -527,6 +495,19 @@ bool js::intl::SharedIntlData::ensureAvailableLocales(JSContext* cx) {
   return true;
 }
 
+template <typename CharT>
+static auto ToLanguageId(mozilla::Span<const CharT> locale) {
+  return js::LanguageId::fromBcp49(locale);
+}
+
+static auto ToLanguageId(const JSLinearString* locale) {
+  JS::AutoCheckCannotGC nogc;
+  if (locale->hasLatin1Chars()) {
+    return ToLanguageId(mozilla::AsChars(locale->latin1Range(nogc)));
+  }
+  return ToLanguageId(mozilla::Span{locale->twoByteRange(nogc)});
+}
+
 bool js::intl::SharedIntlData::isAvailableLocale(JSContext* cx,
                                                  AvailableLocaleKind kind,
                                                  Handle<JSLinearString*> locale,
@@ -535,11 +516,16 @@ bool js::intl::SharedIntlData::isAvailableLocale(JSContext* cx,
     return false;
   }
 
-  LocaleHasher::Lookup lookup(locale);
+  auto parsedLangId = ToLanguageId(locale);
+  if (!parsedLangId || parsedLangId->second > 0) {
+    *available = false;
+    return true;
+  }
+  auto langId = parsedLangId->first;
 
   switch (kind) {
     case AvailableLocaleKind::Collator:
-      *available = collatorAvailableLocales.has(lookup);
+      *available = collatorAvailableLocales.has(langId);
       return true;
     case AvailableLocaleKind::DateTimeFormat:
     case AvailableLocaleKind::DisplayNames:
@@ -549,7 +535,7 @@ bool js::intl::SharedIntlData::isAvailableLocale(JSContext* cx,
     case AvailableLocaleKind::PluralRules:
     case AvailableLocaleKind::RelativeTimeFormat:
     case AvailableLocaleKind::Segmenter:
-      *available = availableLocales.has(lookup);
+      *available = availableLocales.has(langId);
       return true;
   }
   MOZ_CRASH("Invalid Intl constructor");
@@ -623,10 +609,8 @@ bool js::intl::SharedIntlData::ensureUpperCaseFirstLocales(JSContext* cx) {
                "ICU4X data locale with unexpected subtags");
 
     auto langId = parsedLangId->first;
-    auto str = langId.toString();
 
-    LocaleHasher::Lookup lookup(std::string_view{str});
-    LocaleSet::AddPtr p = upperCaseFirstLocales.lookupForAdd(lookup);
+    LocaleSet::AddPtr p = upperCaseFirstLocales.lookupForAdd(langId);
 
     // ICU shouldn't report any duplicate locales, but if it does, just
     // ignore the duplicated locale.
@@ -662,8 +646,11 @@ bool js::intl::SharedIntlData::isUpperCaseFirst(JSContext* cx,
                                        js::StringEqualsLiteral(locale, "mt");
 
 #if DEBUG
-  LocaleHasher::Lookup lookup(locale);
-  *isUpperFirst = upperCaseFirstLocales.has(lookup);
+  auto parsedLangId = ToLanguageId(locale);
+  MOZ_ASSERT(parsedLangId.isSome(), "unexpected invalid locale");
+  MOZ_ASSERT(parsedLangId->second == 0, "unexpected subtags in locale");
+
+  *isUpperFirst = upperCaseFirstLocales.has(parsedLangId->first);
 #else
   *isUpperFirst = isDefaultUpperCaseFirstLocale;
 #endif
@@ -695,10 +682,8 @@ bool js::intl::SharedIntlData::ensureIgnorePunctuationLocales(JSContext* cx) {
                "ICU4X data locale with unexpected subtags");
 
     auto langId = parsedLangId->first;
-    auto str = langId.toString();
 
-    LocaleHasher::Lookup lookup(std::string_view{str});
-    LocaleSet::AddPtr p = ignorePunctuationLocales.lookupForAdd(lookup);
+    LocaleSet::AddPtr p = ignorePunctuationLocales.lookupForAdd(langId);
 
     // ICU shouldn't report any duplicate locales, but if it does, just
     // ignore the duplicated locale.
@@ -730,8 +715,11 @@ bool js::intl::SharedIntlData::isIgnorePunctuation(
   bool isDefaultIgnorePunctuationLocale = js::StringEqualsLiteral(locale, "th");
 
 #if DEBUG
-  LocaleHasher::Lookup lookup(locale);
-  *ignorePunctuation = ignorePunctuationLocales.has(lookup);
+  auto parsedLangId = ToLanguageId(locale);
+  MOZ_ASSERT(parsedLangId.isSome(), "unexpected invalid locale");
+  MOZ_ASSERT(parsedLangId->second == 0, "unexpected subtags in locale");
+
+  *ignorePunctuation = ignorePunctuationLocales.has(parsedLangId->first);
 #else
   *ignorePunctuation = isDefaultIgnorePunctuationLocale;
 #endif

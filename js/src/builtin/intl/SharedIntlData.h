@@ -262,13 +262,13 @@ class SharedIntlData {
   using Locale = LanguageId;
 
   struct LocaleHasher {
-    struct Lookup : LinearStringLookup {
-      explicit Lookup(const JSLinearString* locale);
-      explicit Lookup(std::string_view locale);
-    };
+    using Lookup = Locale;
 
-    static js::HashNumber hash(const Lookup& lookup) { return lookup.hash; }
-    static bool match(Locale key, const Lookup& lookup);
+    static js::HashNumber hash(const Lookup& lookup) { return lookup.hash(); }
+
+    static bool match(Locale key, const Lookup& lookup) {
+      return key == lookup;
+    }
   };
 
   using LocaleSet = HashSet<Locale, LocaleHasher, SystemAllocPolicy>;
