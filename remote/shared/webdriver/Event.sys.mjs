@@ -163,8 +163,6 @@ event.synthesizeMultiTouch = function (opts, win) {
     tiltX: opts.tiltx,
     tiltY: opts.tilty,
     twist: opts.twist,
-    altitudeAngle: opts.altitudeAngle,
-    azimuthAngle: opts.azimuthAngle,
     modifiers,
   });
 };
