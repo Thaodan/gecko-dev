@@ -12,6 +12,7 @@ add_task(async function () {
   await testInstanceChange(inspector, viewDoc);
   await testOpszRounded(inspector, viewDoc);
   await testInstanceWghtRounded(inspector, viewDoc);
+  await testAxisStepRounded(inspector, viewDoc);
 });
 
 async function testWghtInteract(inspector, viewDoc) {
@@ -80,4 +81,15 @@ async function testInstanceWghtRounded(inspector, viewDoc) {
 
   wghtInput.focus();
   is(wghtInput.value, "699.444", "wght value is rounded after focusing");
+}
+
+async function testAxisStepRounded(inspector, viewDoc) {
+  await selectNode(".rounding", inspector);
+
+  const wghtInput = viewDoc.querySelector(`.font-value-input[name="wght"]`);
+  is(wghtInput.value, "699.444", "wght value is 699.444 before stepping");
+
+  wghtInput.focus();
+  EventUtils.sendKey("DOWN", viewDoc.defaultView);
+  is(wghtInput.value, "699.333", "wght value is rounded after stepping down");
 }
