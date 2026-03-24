@@ -29,6 +29,7 @@ UNIFIED_SOURCES += [
     "BaselineJIT.cpp",
     "BitSet.cpp",
     "BranchHinting.cpp",
+    "BranchPruning.cpp",
     "BytecodeAnalysis.cpp",
     "CacheIR.cpp",
     "CacheIRAOT.cpp",

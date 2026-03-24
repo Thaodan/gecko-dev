@@ -20,6 +20,7 @@
 #include "jit/BaselineFrame.h"
 #include "jit/BaselineJIT.h"
 #include "jit/BranchHinting.h"
+#include "jit/BranchPruning.h"
 #include "jit/CodeGenerator.h"
 #include "jit/CompileInfo.h"
 #include "jit/DominatorTree.h"

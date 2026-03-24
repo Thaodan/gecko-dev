@@ -30,9 +30,6 @@ class MIRGenerator;
 class MIRGraph;
 class MTest;
 
-[[nodiscard]] bool PruneUnusedBranches(const MIRGenerator* mir,
-                                       MIRGraph& graph);
-
 [[nodiscard]] bool FoldEmptyBlocks(MIRGraph& graph, bool* changed);
 
 [[nodiscard]] bool SplitCriticalEdgesForBlock(MIRGraph& graph,
@@ -72,10 +69,6 @@ void RenumberBlocks(MIRGraph& graph);
                                         MIRGraph& graph,
                                         bool updateAliasAnalysis,
                                         bool underValueNumberer = false);
-
-[[nodiscard]] bool RemoveUnmarkedBlocks(const MIRGenerator* mir,
-                                        MIRGraph& graph,
-                                        uint32_t numMarkedBlocks);
 
 [[nodiscard]] bool BuildPhiReverseMapping(MIRGraph& graph);
 
