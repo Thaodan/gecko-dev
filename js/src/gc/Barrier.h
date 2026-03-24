@@ -279,8 +279,6 @@
  *  |  |
  *  | WeakHeapPtr            provides read barriers only
  *  |
- * WriteBarriered            base class which provides common write operations
- *  |
  * HeapSlot                  similar to GCPtr, but tailored to slots storage
  *
  * The implementation of the barrier logic is implemented in the
@@ -678,36 +676,6 @@ class BarrieredPtrImpl
 
 }  // namespace gc
 
-template <class T>
-class WriteBarriered : public BarrieredBase<T>,
-                       public WrappedPtrOperations<T, WriteBarriered<T>> {
- protected:
-  // WriteBarriered is not directly instantiable.
-  explicit WriteBarriered(const T& v) : BarrieredBase<T>(v) {}
-
- public:
-  DECLARE_POINTER_CONSTREF_OPS(T);
-
-  // Use this if the automatic coercion to T isn't working.
-  const T& get() const { return this->unbarrieredGet(); }
-
-  // Use this if you want to change the value without invoking barriers.
-  // Obviously this is dangerous unless you know the barrier is not needed.
-  using BarrieredBase<T>::unbarrieredSet;
-
-  // For users who need to manually barrier the raw types.
-  static void preWriteBarrier(const T& v) {
-    InternalBarrierMethods<T>::preBarrier(v);
-  }
-
- protected:
-  void pre() { InternalBarrierMethods<T>::preBarrier(this->unbarrieredGet()); }
-  MOZ_ALWAYS_INLINE void post(const T& prev, const T& next) {
-    InternalBarrierMethods<T>::postBarrier(this->unbarrieredAddress(), prev,
-                                           next);
-  }
-};
-
 // Declare a barriered pointer template.
 //
 // This is done by inheritance rather than a using declaration so that the name
@@ -894,7 +862,8 @@ namespace js {
 // A pre- and post-barriered Value that is specialized to be aware that it
 // resides in a slots or elements vector. This allows it to be relocated in
 // memory, but with substantially less overhead than a HeapPtr.
-class HeapSlot : public WriteBarriered<Value> {
+class HeapSlot : public BarrieredBase<Value>,
+                 public WrappedPtrOperations<Value, HeapSlot> {
  public:
   enum Kind { Slot = 0, Element = 1 };
 
@@ -904,6 +873,20 @@ class HeapSlot : public WriteBarriered<Value> {
   }
 
   void initAsUndefined() { this->unbarrieredSet(UndefinedValue()); }
+
+  DECLARE_POINTER_CONSTREF_OPS(Value);
+
+  // Use this if the automatic coercion to T isn't working.
+  const Value& get() const { return this->unbarrieredGet(); }
+
+  // Use this if you want to change the value without invoking barriers.
+  // Obviously this is dangerous unless you know the barrier is not needed.
+  using BarrieredBase<Value>::unbarrieredSet;
+
+  // For users who need to manually barrier the raw types.
+  static void preWriteBarrier(const Value& v) {
+    InternalBarrierMethods<Value>::preBarrier(v);
+  }
 
   void destroy() { pre(); }
 
@@ -928,6 +911,10 @@ class HeapSlot : public WriteBarriered<Value> {
   }
 
  private:
+  void pre() {
+    InternalBarrierMethods<Value>::preBarrier(this->unbarrieredGet());
+  }
+
   void post(NativeObject* owner, Kind kind, uint32_t slot,
             const Value& target) {
 #ifdef DEBUG
