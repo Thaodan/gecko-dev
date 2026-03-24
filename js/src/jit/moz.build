@@ -111,6 +111,7 @@ UNIFIED_SOURCES += [
     "WarpOracle.cpp",
     "WarpSnapshot.cpp",
     "WasmBCE.cpp",
+    "WasmRefTypeAnalysis.cpp",
     "XrayJitInfo.cpp",
 ]
 
