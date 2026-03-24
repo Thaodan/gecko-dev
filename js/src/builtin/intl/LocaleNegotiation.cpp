@@ -1201,30 +1201,6 @@ ArrayObject* js::intl::CanonicalizeLocaleList(JSContext* cx,
   return LocalesListToArray(cx, requestedLocales);
 }
 
-static mozilla::Maybe<LanguageId> FromLocale(
-    const mozilla::intl::Locale& locale) {
-  MOZ_ASSERT(locale.Language().Present());
-
-  // Reject overlong language subtags.
-  if (locale.Language().Length() > 3) {
-    return mozilla::Nothing();
-  }
-
-  // The default locale must be in [[AvailableLocales]], and that list must
-  // not contain any locales with Unicode extension sequences, so remove any
-  // present in the candidate.
-
-  auto toStringView = [](auto span) {
-    return std::string_view{span.data(), span.size()};
-  };
-
-  auto language = toStringView(locale.Language().Span());
-  auto script = toStringView(locale.Script().Span());
-  auto region = toStringView(locale.Region().Span());
-
-  return mozilla::Some(LanguageId::fromParts(language, script, region));
-}
-
 /**
  * Certain old, commonly-used language tags that lack a script, are expected to
  * nonetheless imply one. This object maps these old-style tags to modern
@@ -1255,29 +1231,9 @@ static auto AddImplicitScriptToLocale(LanguageId locale) {
 }
 
 bool js::intl::ComputeDefaultLocale(JSContext* cx, LanguageId* result) {
-  const char* locale = cx->realm()->getLocale();
-  if (!locale) {
-    ReportOutOfMemory(cx);
-    return false;
-  }
-
-  auto span = mozilla::MakeStringSpan(locale);
-
-  mozilla::intl::Locale tag;
-  bool canParseLocale =
-      mozilla::intl::LocaleParser::TryParse(span, tag).isOk() &&
-      tag.Canonicalize().isOk();
-
-  static constexpr LanguageId lastDitchLocale = LastDitchLocale();
-
-  auto candidate = lastDitchLocale;
-  if (canParseLocale) {
-    candidate = FromLocale(tag).valueOr(lastDitchLocale);
-
-    // Certain old-style language tags lack a script code, but in current usage
-    // they *would* include a script code. Map these over to modern forms.
-    candidate = AddImplicitScriptToLocale(candidate);
-  }
+  // Certain old-style language tags lack a script code, but in current usage
+  // they *would* include a script code. Map these over to modern forms.
+  auto candidate = AddImplicitScriptToLocale(cx->realm()->getLocale());
 
   // 9.1 Internal slots of Service Constructors
   //
@@ -1337,7 +1293,7 @@ bool js::intl::ComputeDefaultLocale(JSContext* cx, LanguageId* result) {
     }
   } else {
     // Return the last ditch locale if the candidate locale isn't supported.
-    *result = lastDitchLocale;
+    *result = LastDitchLocale();
   }
   return true;
 }

@@ -39,7 +39,7 @@ class GlobalIntlData {
    * value controls the value returned by defaultLocale() that's what's
    * *actually* used.
    */
-  GCPtr<JSLinearString*> realmLocale_;
+  LanguageId realmLocale_ = LanguageId::und();
 
   /**
    * The actual default locale.

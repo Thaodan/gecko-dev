@@ -966,36 +966,11 @@ static const char* CaseMappingLocale(std::string_view lang) {
   return nullptr;
 }
 
-bool js::LocaleHasDefaultCaseMapping(const char* locale) {
-  MOZ_ASSERT(locale);
+bool js::LocaleHasDefaultCaseMapping(LanguageId locale) {
+  auto language = locale.language();
 
-  size_t languageSubtagLength;
-  if (auto* sep = strchr(locale, '-')) {
-    languageSubtagLength = sep - locale;
-  } else {
-    languageSubtagLength = std::strlen(locale);
-  }
-
-  // Invalid locale identifiers default to the last-ditch locale "en-GB", which
-  // has default case mapping.
-  mozilla::Span<const char> span{locale, languageSubtagLength};
-  {
-    // Tell the analysis the |IsStructurallyValidLanguageTag| function can't GC.
-    JS::AutoSuppressGCAnalysis nogc;
-    if (!mozilla::intl::IsStructurallyValidLanguageTag(span)) {
-      return true;
-    }
-  }
-
-  mozilla::intl::LanguageSubtag subtag{span};
-
-  // Canonical case for the language subtag is lower-case
-  {
-    // Tell the analysis the |ToLowerCase| function can't GC.
-    JS::AutoSuppressGCAnalysis nogc;
-
-    subtag.ToLowerCase();
-  }
+  mozilla::intl::LanguageSubtag subtag{
+      mozilla::Span{language.data(), language.length()}};
 
   // Replace outdated language subtags. Skips complex language mappings, which
   // is okay because none of the languages with special casing are affected by

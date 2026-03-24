@@ -47,17 +47,9 @@ void js::intl::GlobalIntlData::resetDateTimeFormat() {
 }
 
 bool js::intl::GlobalIntlData::ensureRealmLocale(JSContext* cx) {
-  const char* locale = cx->realm()->getLocale();
-  if (!locale) {
-    ReportOutOfMemory(cx);
-    return false;
-  }
-
-  if (!realmLocale_ || !StringEqualsAscii(realmLocale_, locale)) {
-    realmLocale_ = NewStringCopyZ<CanGC>(cx, locale);
-    if (!realmLocale_) {
-      return false;
-    }
+  auto locale = cx->realm()->getLocale();
+  if (realmLocale_ != locale) {
+    realmLocale_ = locale;
 
     // Clear the cached default locale.
     defaultLocale_ = LanguageId::und();
@@ -316,8 +308,6 @@ JS::Symbol* js::intl::GlobalIntlData::fallbackSymbol(JSContext* cx) {
 }
 
 void js::intl::GlobalIntlData::trace(JSTracer* trc) {
-  TraceNullableEdge(trc, &realmLocale_, "GlobalIntlData::realmLocale_");
-
   TraceNullableEdge(trc, &realmTimeZone_, "GlobalIntlData::realmTimeZone_");
   TraceNullableEdge(trc, &defaultTimeZone_, "GlobalIntlData::defaultTimeZone_");
   TraceNullableEdge(trc, &defaultTimeZoneObject_,
