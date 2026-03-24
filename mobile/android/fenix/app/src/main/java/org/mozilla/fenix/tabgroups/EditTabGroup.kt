@@ -13,13 +13,10 @@ import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -29,7 +26,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
@@ -39,20 +35,15 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.TextButton
 import mozilla.components.compose.base.theme.AcornTheme
 import org.mozilla.fenix.R
-import org.mozilla.fenix.compose.BottomSheetHandle
 import org.mozilla.fenix.tabstray.redux.action.TabGroupAction
 import org.mozilla.fenix.tabstray.redux.state.TabGroupFormState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.theme.PreviewThemeProvider
-import org.mozilla.fenix.theme.Theme
 
-private const val BOTTOM_SHEET_HANDLER_ALPHA = 0.4F
 private val formFieldShape = RoundedCornerShape(16.dp)
 
 /**
@@ -63,63 +54,22 @@ private val formFieldShape = RoundedCornerShape(16.dp)
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditTabGroupBottomSheet(
+fun EditTabGroup(
     tabsTrayStore: TabsTrayStore,
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
     val formState by tabsTrayStore.tabGroupFormStateFlow.collectAsState(
         initial = tabsTrayStore.state.tabGroupFormState ?: return,
     )
 
-    LaunchedEffect(Unit) {
-        if (!sheetState.isVisible) {
-            sheetState.show()
-        }
-    }
-
-    BottomSheet(
-        sheetState = sheetState,
+    EditTabGroupContent(
         formState = formState,
         onTabGroupNameChange = { newName ->
             tabsTrayStore.dispatch(TabGroupAction.NameChanged(newName))
-        },
-        onDismissRequest = {
-            tabsTrayStore.dispatch(TabGroupAction.FormDismissed)
         },
         onConfirmSave = {
             tabsTrayStore.dispatch(TabGroupAction.SaveClicked)
         },
     )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun BottomSheet(
-    sheetState: SheetState,
-    formState: TabGroupFormState,
-    onTabGroupNameChange: (String) -> Unit,
-    onDismissRequest: () -> Unit,
-    onConfirmSave: () -> Unit,
-) {
-    ModalBottomSheet(
-        onDismissRequest = onDismissRequest,
-        sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
-        dragHandle = {
-            BottomSheetHandle(
-                onRequestDismiss = onDismissRequest,
-                contentDescription = stringResource(R.string.edit_tab_group_bottom_sheet_close_content_description),
-                modifier = Modifier.padding(all = 16.dp).alpha(BOTTOM_SHEET_HANDLER_ALPHA),
-            )
-        },
-    ) {
-        EditTabGroupContent(
-            formState = formState,
-            onTabGroupNameChange = onTabGroupNameChange,
-            onConfirmSave = onConfirmSave,
-        )
-    }
 }
 
 @Composable
@@ -280,29 +230,5 @@ private fun EditTabGroupContentPreview(
                 onTabGroupNameChange = {},
             )
         }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@FlexibleWindowPreview
-@Composable
-private fun EditTabGroupBottomSheetPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
-    val tabsTrayStore = remember {
-        TabsTrayStore(
-            initialState = TabsTrayState(
-                tabGroupFormState = TabGroupFormState(
-                    tabGroupId = null,
-                    name = "",
-                    nextTabGroupNumber = 1,
-                    edited = false,
-                ),
-            ),
-        )
-    }
-
-    FirefoxTheme(theme) {
-        EditTabGroupBottomSheet(tabsTrayStore = tabsTrayStore)
     }
 }

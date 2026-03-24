@@ -22,7 +22,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -30,7 +29,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -41,18 +39,13 @@ import androidx.compose.ui.unit.dp
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import org.mozilla.fenix.R
-import org.mozilla.fenix.compose.BottomSheetHandle
 import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
-import org.mozilla.fenix.tabstray.redux.action.TabGroupAction
-import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
-import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
 import mozilla.components.ui.icons.R as iconsR
 
-private const val BOTTOM_SHEET_HANDLER_ALPHA = 0.4F
 private val ROUNDED_CORNER_SHAPE = RoundedCornerShape(4.dp)
 private val NEW_TAB_GROUP_COMPONENT_HEIGHT = 40.dp
 private val NEW_TAB_GROUP_COMPONENT_WIDTH = 78.dp
@@ -60,60 +53,22 @@ private val NEW_TAB_GROUP_COMPONENT_WIDTH = 78.dp
 /**
  * Prompt for the user to choose whether to add to a new or an existing tab group.
  *
- * @param tabsTrayStore [TabsTrayStore] used to listen for changes to
- * [TabsTrayState].
+ * @param tabGroups List of existing Tab Groups.
+ * @param onAddToNewTabGroup Invoked when user clicks to add to a new tab group.
+ * @param onAddToExistingTabGroup Invoked when user clicks to add to an existing tab group.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddToTabGroupBottomSheet(
-    tabsTrayStore: TabsTrayStore,
-) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-    LaunchedEffect(Unit) {
-        if (!sheetState.isVisible) {
-            sheetState.show()
-        }
-    }
-
-    BottomSheet(
-        sheetState = sheetState,
-        tabGroups = tabsTrayStore.state.tabGroups,
-        onDismissRequest = {
-            tabsTrayStore.dispatch(TabGroupAction.FormDismissed)
-        },
-        onAddToNewTabGroup = {},
-        onAddToExistingTabGroup = {},
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun BottomSheet(
-    sheetState: SheetState,
+fun AddToTabGroup(
     tabGroups: List<TabsTrayItem.TabGroup>,
-    onDismissRequest: () -> Unit,
     onAddToNewTabGroup: () -> Unit,
     onAddToExistingTabGroup: (TabsTrayItem.TabGroup) -> Unit,
 ) {
-    ModalBottomSheet(
-        onDismissRequest = onDismissRequest,
-        sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
-        dragHandle = {
-            BottomSheetHandle(
-                onRequestDismiss = onDismissRequest,
-                contentDescription = stringResource(R.string.add_to_tab_group_bottom_sheet_close_content_description),
-                modifier = Modifier.padding(all = 16.dp).alpha(BOTTOM_SHEET_HANDLER_ALPHA),
-            )
-        },
-    ) {
-        AddToTabGroupContent(
-            tabGroups = tabGroups,
-            onAddToNewTabGroup = onAddToNewTabGroup,
-            onAddToExistingTabGroup = onAddToExistingTabGroup,
-        )
-    }
+    AddToTabGroupContent(
+        tabGroups = tabGroups,
+        onAddToNewTabGroup = onAddToNewTabGroup,
+        onAddToExistingTabGroup = onAddToExistingTabGroup,
+    )
 }
 
 @Composable
@@ -262,21 +217,31 @@ private fun AddToTabGroupContentPreview(
     }
 }
 
- @OptIn(ExperimentalMaterial3Api::class)
- @FlexibleWindowPreview
- @Composable
- private fun AddToTabGroupBottomSheetPreview(
-     @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
- ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+@OptIn(ExperimentalMaterial3Api::class)
+@FlexibleWindowPreview
+@Composable
+private fun AddToTabGroupBottomSheetPreview(
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
+) {
+    val sheetState = rememberModalBottomSheetState()
+    LaunchedEffect(Unit) {
+        if (!sheetState.isVisible) {
+            sheetState.show()
+        }
+    }
 
     FirefoxTheme(theme) {
-        BottomSheet(
-            sheetState = sheetState,
-            tabGroups = emptyList(),
-            onDismissRequest = {},
-            onAddToNewTabGroup = {},
-            onAddToExistingTabGroup = {},
-        )
+        Surface {
+            ModalBottomSheet(
+                sheetState = sheetState,
+                onDismissRequest = {},
+            ) {
+                AddToTabGroupContent(
+                    tabGroups = emptyList(),
+                    onAddToNewTabGroup = {},
+                    onAddToExistingTabGroup = {},
+                )
+            }
+        }
     }
- }
+}
