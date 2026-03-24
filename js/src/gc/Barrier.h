@@ -1112,7 +1112,7 @@ template struct JS_PUBLIC_API StableCellHasher<JSScript*>;
 //
 // Barriered pointers with GC lifetime are not suitable for use as hashtable
 // keys.
-#define DEFINE_STABLE_CELL_HASHER(BarrieredPtr)                     \
+#define DEFINE_STABLE_CELL_HASHER(BarrieredPtr)                      \
   template <typename T>                                              \
   struct StableCellHasher<BarrieredPtr<T>> {                         \
     using Key = BarrieredPtr<T>;                                     \
@@ -1142,7 +1142,7 @@ DEFINE_STABLE_CELL_HASHER(WeakHeapPtr);
 
 // Declare a hasher struct to allow use of barriered pointers as keys in a
 // rekeyable hash table. Barriers are skipped for hash table lookup and rekey.
-#define DEFINE_BARRIERED_PTR_HASHER(Name, BarrieredPtr)                   \
+#define DEFINE_BARRIERED_PTR_HASHER(Name, BarrieredPtr)                    \
   template <class T>                                                       \
   struct Name {                                                            \
     using Key = BarrieredPtr<T>;                                           \
@@ -1205,7 +1205,7 @@ struct DefineComparisonOps<js::HeapSlot> : std::true_type {
 namespace mozilla {
 
 #define DEFINE_DEFAULT_HASHER(BarrieredPtr, Hasher) \
-  template <class T>                                 \
+  template <class T>                                \
   struct DefaultHasher<BarrieredPtr<T>> : Hasher<T> {}
 
 DEFINE_DEFAULT_HASHER(js::HeapPtr, js::HeapPtrHasher);
