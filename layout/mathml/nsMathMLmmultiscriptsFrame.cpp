@@ -55,9 +55,14 @@ nsMathMLmmultiscriptsFrame::TransmitAutomaticData() {
   mPresentationData.baseFrame = mFrames.FirstChild();
   GetEmbellishDataFrom(mPresentationData.baseFrame, mEmbellishData);
 
+  // The TeXbook (Ch 17. p.141) says the superscript inherits the compression
+  // while the subscript is compressed. So here we collect subscripts and set
+  // the compression flag in them.
+
   int32_t count = 0;
   bool isSubScript = !mContent->IsMathMLElement(nsGkAtoms::msup);
 
+  AutoTArray<nsIFrame*, 8> subScriptFrames;
   nsIFrame* childFrame = mFrames.FirstChild();
   while (childFrame) {
     if (childFrame->GetContent()->IsMathMLElement(nsGkAtoms::mprescripts)) {
@@ -66,11 +71,25 @@ nsMathMLmmultiscriptsFrame::TransmitAutomaticData() {
       // base frame
     } else {
       // super/subscript block
+      if (isSubScript) {
+        // subscript
+        subScriptFrames.AppendElement(childFrame);
+      } else {
+        // superscript
+      }
       PropagateFrameFlagFor(childFrame, NS_FRAME_MATHML_SCRIPT_DESCENDANT);
       isSubScript = !isSubScript;
     }
     count++;
     childFrame = childFrame->GetNextSibling();
+  }
+  if (!StaticPrefs::mathml_math_shift_enabled()) {
+    for (int32_t i = subScriptFrames.Length() - 1; i >= 0; i--) {
+      childFrame = subScriptFrames[i];
+      PropagatePresentationDataFor(childFrame,
+                                   MathMLPresentationFlag::Compressed,
+                                   MathMLPresentationFlag::Compressed);
+    }
   }
 
   return NS_OK;
@@ -195,7 +214,10 @@ void nsMathMLmmultiscriptsFrame::PlaceMultiScript(
   nscoord supScriptShift;
   nsPresentationData presentationData;
   aFrame->GetPresentationData(presentationData);
-  bool compressed = font->mMathShift == StyleMathShift::Compact;
+  bool compressed =
+      StaticPrefs::mathml_math_shift_enabled()
+          ? font->mMathShift == StyleMathShift::Compact
+          : presentationData.flags.contains(MathMLPresentationFlag::Compressed);
   if (mathFont) {
     // Try and get the super script shift from the MATH table. Note that
     // contrary to TeX we only have two parameters.
