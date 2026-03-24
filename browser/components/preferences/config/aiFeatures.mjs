@@ -26,11 +26,7 @@ const lazy = XPCOMUtils.declareLazy({
   GenAI: "resource:///modules/GenAI.sys.mjs",
   MemoryStore:
     "moz-src:///browser/components/aiwindow/services/MemoryStore.sys.mjs",
-  MODELS:
-    "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs",
 });
-
-let previousAssistantModel = "No model";
 
 Preferences.addAll([
   // browser.ai.control.* prefs defined in main.js
@@ -614,9 +610,6 @@ Preferences.addSetting({
     return null;
   },
   set(value, deps) {
-    const prev = deps.smartWindowFirstRunModelChoice.value;
-    previousAssistantModel = prev ? lazy.MODELS[prev].modelName : "No model";
-
     // Save model selection
     // Preset models save pref immediately, "Custom" waits for clicking the Save button
     if (value !== "0") {
@@ -632,18 +625,6 @@ Preferences.addSetting({
 
     // Write index to firstrun.modelChoice
     deps.smartWindowFirstRunModelChoice.value = value;
-  },
-  onUserChange(value, _) {
-    // sending telemetry only for the preset models
-    // custom model telemetry is sent after user hits the save button
-    if (value !== "0") {
-      const new_model = lazy.MODELS[value].modelName;
-      Glean.smartWindow.settingsModel.record({
-        previous_model: previousAssistantModel,
-        new_model,
-      });
-      previousAssistantModel = value;
-    }
   },
 });
 
@@ -747,13 +728,6 @@ Preferences.addSetting({
       return;
     }
 
-    const new_model = lazy.MODELS["0"].modelName;
-    Glean.smartWindow.settingsModel.record({
-      previous_model: previousAssistantModel,
-      new_model,
-    });
-    previousAssistantModel = new_model;
-
     // custom uses .model pref
     deps.smartWindowModel.value = modelName;
     deps.smartWindowEndpoint.value = modelEndpoint;
@@ -768,35 +742,17 @@ Preferences.addSetting({ id: "learnFromBrowsingActivityWrapper" });
 Preferences.addSetting({
   id: "learnFromChatActivity",
   pref: "browser.smartwindow.memories.generateFromConversation",
-  onUserChange(val) {
-    Glean.smartWindow.settingsMemories.record({
-      type: "chat",
-      enabled: val,
-    });
-  },
 });
 Preferences.addSetting({
   id: "learnFromBrowsingActivity",
   pref: "browser.smartwindow.memories.generateFromHistory",
-  onUserChange(val) {
-    Glean.smartWindow.settingsMemories.record({
-      type: "browsing",
-      enabled: val,
-    });
-  },
 });
 
 Preferences.addSetting({
   id: "manageMemoriesButton",
-  async onUserClick(e) {
+  onUserClick(e) {
     e.preventDefault();
     window.gotoPref("manageMemories");
-
-    const memories = await lazy.MemoryStore.getMemories();
-    Glean.smartWindow.memoriesPanelDisplayed.record({
-      source: "settings",
-      memories: memories?.length ?? 0,
-    });
   },
 });
 
@@ -852,7 +808,6 @@ Preferences.addSetting({
     );
 
     if (result.get("buttonNumClicked") === 0) {
-      Glean.smartWindow.memoriesNuke.record();
       for (const memory of memories) {
         try {
           await lazy.MemoryStore.hardDeleteMemory(memory.id, "settings");
@@ -1268,23 +1223,17 @@ SettingGroupManager.registerGroups({
           {
             value: "1",
             l10nId: "smart-window-model-fast",
-            get l10nArgs() {
-              return lazy.MODELS["1"];
-            },
+            l10nArgs: { modelName: "gemini-flash-lite" },
           },
           {
             value: "2",
             l10nId: "smart-window-model-flexible",
-            get l10nArgs() {
-              return lazy.MODELS["2"];
-            },
+            l10nArgs: { modelName: "Qwen3-235B-A22B-throughput" },
           },
           {
             value: "3",
             l10nId: "smart-window-model-personal",
-            get l10nArgs() {
-              return lazy.MODELS["3"];
-            },
+            l10nArgs: { modelName: "gpt-oss-120b" },
           },
           {
             value: "0",

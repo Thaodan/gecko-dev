@@ -3,11 +3,6 @@
 
 "use strict";
 
-Services.scriptloader.loadSubScript(
-  new URL("head_smart_window.js", gTestPath).href,
-  this
-);
-
 requestLongerTimeout(3);
 describe("Smart Window model settings", () => {
   let doc, win;
@@ -35,8 +30,32 @@ describe("Smart Window model settings", () => {
     await SpecialPowers.popPrefEnv();
   });
 
+  async function openPreferencesPage() {
+    await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
+    doc = gBrowser.selectedBrowser.contentDocument;
+    win = doc.ownerGlobal;
+  }
+
+  async function openSmartWindowPanel() {
+    await openPreferencesPage();
+
+    const paneLoaded = waitForPaneChange("ai");
+    const categoryButton = doc.getElementById("category-ai-features");
+    categoryButton.scrollIntoView();
+    EventUtils.synthesizeMouseAtCenter(categoryButton, {}, win);
+    await paneLoaded;
+
+    const personalizeButton = doc.getElementById(
+      "personalizeSmartWindowButton"
+    );
+    personalizeButton.scrollIntoView();
+    const panelLoaded = waitForPaneChange("personalizeSmartWindow");
+    EventUtils.synthesizeMouseAtCenter(personalizeButton, {}, win);
+    await panelLoaded;
+  }
+
   it("shows model selection when AI Window is enabled", async () => {
-    ({ doc, win } = await openSmartWindowPanel());
+    await openSmartWindowPanel();
 
     const modelSelection = doc.getElementById("modelSelection");
     Assert.ok(modelSelection, "Model selection exists");
@@ -47,7 +66,7 @@ describe("Smart Window model settings", () => {
   });
 
   it("selects no model on initial load if user didn't select from onboarding", async () => {
-    ({ doc, win } = await openSmartWindowPanel());
+    await openSmartWindowPanel();
 
     const modelSelection = doc.getElementById("modelSelection");
     Assert.equal(
@@ -62,7 +81,7 @@ describe("Smart Window model settings", () => {
       set: [["browser.smartwindow.firstrun.modelChoice", "2"]],
     });
 
-    ({ doc, win } = await openSmartWindowPanel());
+    await openSmartWindowPanel();
 
     const modelSelection = doc.getElementById("modelSelection");
     Assert.equal(
@@ -73,7 +92,7 @@ describe("Smart Window model settings", () => {
   });
 
   it("saves preset model immediately when selected", async () => {
-    ({ doc, win } = await openSmartWindowPanel());
+    await openSmartWindowPanel();
 
     const fastRadio = doc.querySelector(
       'moz-radio[data-l10n-id="smart-window-model-fast"]'
@@ -121,7 +140,7 @@ describe("Smart Window model settings", () => {
   });
 
   it("shows custom fields when custom radio is selected", async () => {
-    ({ doc, win } = await openSmartWindowPanel());
+    await openSmartWindowPanel();
 
     const customRadio = doc.querySelector(
       'moz-radio[data-l10n-id="smart-window-model-custom"]'
@@ -184,7 +203,7 @@ describe("Smart Window model settings", () => {
   });
 
   it("save button is disabled when endpoint is empty", async () => {
-    ({ doc, win } = await openSmartWindowPanel());
+    await openSmartWindowPanel();
 
     const customRadio = doc.querySelector(
       'moz-radio[data-l10n-id="smart-window-model-custom"]'
@@ -205,7 +224,7 @@ describe("Smart Window model settings", () => {
   });
 
   it("disables save button when endpoint URL is invalid", async () => {
-    ({ doc, win } = await openSmartWindowPanel());
+    await openSmartWindowPanel();
 
     const customRadio = doc.querySelector(
       'moz-radio[data-l10n-id="smart-window-model-custom"]'
@@ -235,7 +254,7 @@ describe("Smart Window model settings", () => {
   });
 
   it("enables save button when endpoint URL is valid HTTPS", async () => {
-    ({ doc, win } = await openSmartWindowPanel());
+    await openSmartWindowPanel();
 
     const customRadio = doc.querySelector(
       'moz-radio[data-l10n-id="smart-window-model-custom"]'
@@ -265,7 +284,7 @@ describe("Smart Window model settings", () => {
   });
 
   it("enables save button when endpoint URL is localhost", async () => {
-    ({ doc, win } = await openSmartWindowPanel());
+    await openSmartWindowPanel();
 
     const customRadio = doc.querySelector(
       'moz-radio[data-l10n-id="smart-window-model-custom"]'
@@ -295,7 +314,7 @@ describe("Smart Window model settings", () => {
   });
 
   it("saves custom model when save button is clicked", async () => {
-    ({ doc, win } = await openSmartWindowPanel());
+    await openSmartWindowPanel();
 
     const customRadio = doc.querySelector(
       'moz-radio[data-l10n-id="smart-window-model-custom"]'
@@ -383,7 +402,7 @@ describe("Smart Window model settings", () => {
       ],
     });
 
-    ({ doc, win } = await openSmartWindowPanel());
+    await openSmartWindowPanel();
 
     const customRadio = doc.querySelector(
       'moz-radio[data-l10n-id="smart-window-model-custom"]'
@@ -415,7 +434,7 @@ describe("Smart Window model settings", () => {
       set: [["browser.smartwindow.firstrun.modelChoice", "0"]],
     });
 
-    ({ doc, win } = await openSmartWindowPanel());
+    await openSmartWindowPanel();
 
     const fastRadio = doc.querySelector(
       'moz-radio[data-l10n-id="smart-window-model-fast"]'
@@ -442,7 +461,7 @@ describe("Smart Window model settings", () => {
       ],
     });
 
-    ({ doc, win } = await openSmartWindowPanel());
+    await openSmartWindowPanel();
 
     const modelSelection = doc.getElementById("modelSelection");
     Assert.equal(
@@ -462,7 +481,7 @@ describe("Smart Window model settings", () => {
       ],
     });
 
-    ({ doc, win } = await openSmartWindowPanel());
+    await openSmartWindowPanel();
 
     const customModelName = doc.getElementById("customModelName");
     const customModelEndpoint = doc.getElementById("customModelEndpoint");
