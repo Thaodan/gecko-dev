@@ -14,8 +14,8 @@
 /* This protocol's primary use is so widget/cocoa can talk back to us
    properly.
 
-   ChildView owns the topmost mozRootAccessible, and needs to take care of
-   setting up that parent/child relationship.
+   ChildView owns the topmost mozAccessible, and needs to take care of
+   setting up that represented/delegate relationship.
 
    This protocol is thus used to make sure it knows it's talking to us, and not
    just some random |id|.

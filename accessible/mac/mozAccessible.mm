@@ -14,7 +14,6 @@
 #import "MOXSearchInfo.h"
 #import "MOXTextMarkerDelegate.h"
 #import "MOXWebAreaAccessible.h"
-#import "mozRootAccessible.h"
 #import "mozTextAccessible.h"
 
 #include "LocalAccessible-inl.h"
@@ -73,15 +72,22 @@ using namespace mozilla::a11y;
 #pragma mark - mozAccessible widget
 
 - (BOOL)hasRepresentedView {
-  return NO;
+  return [self representedView] != nil;
 }
 
 - (id)representedView {
-  return nil;
+  if (![self isRoot]) {
+    // Only support represented views in root, for now ;)
+    return nil;
+  }
+
+  return static_cast<AccessibleWrap*>(mGeckoAccessible->AsLocal())
+      ->GetNativeWidget();
 }
 
 - (BOOL)isRoot {
-  return NO;
+  return mGeckoAccessible && mGeckoAccessible->IsLocal() &&
+         mGeckoAccessible->IsRoot();
 }
 
 #pragma mark -
@@ -1029,8 +1035,7 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
   // a random acc with the same ID) by checking:
   //  - The gecko acc is local, our a11y-announcement lives in browser.xhtml
   //  - The ID of the gecko acc is "a11y-announcement"
-  //  - The native acc is a direct descendent of the chrome window (ChildView in
-  //  a non-headless context, mozRootAccessible in a headless context).
+  //  - The native acc is a direct descendent of the chrome window.
   DocAccessible* maybeRoot = mGeckoAccessible->IsLocal()
                                  ? mGeckoAccessible->AsLocal()->Document()
                                  : nullptr;
