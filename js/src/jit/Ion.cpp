@@ -51,6 +51,7 @@
 #include "jit/ScriptFromCalleeToken.h"
 #include "jit/SimpleAllocator.h"
 #include "jit/Sink.h"
+#include "jit/TypeAnalysis.h"
 #include "jit/UnrollLoops.h"
 #include "jit/ValueNumbering.h"
 #include "jit/WarpBuilder.h"

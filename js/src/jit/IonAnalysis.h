@@ -67,9 +67,6 @@ void UnmarkLoopBlocks(MIRGraph& graph, const MBasicBlock* header);
 
 [[nodiscard]] bool FoldLoadsWithUnbox(const MIRGenerator* mir, MIRGraph& graph);
 
-[[nodiscard]] bool ApplyTypeInformation(const MIRGenerator* mir,
-                                        MIRGraph& graph);
-
 void RenumberBlocks(MIRGraph& graph);
 
 [[nodiscard]] bool AccountForCFGChanges(const MIRGenerator* mir,
