@@ -12896,11 +12896,9 @@ nsHttpChannel::EarlyHint(const nsACString& aLinkHeader,
                          const nsACString& aCspHeader) {
   LOG(("nsHttpChannel::EarlyHint.\n"));
 
-  if (nsCOMPtr<nsIEarlyHintObserver> obs = mEarlyHintObserver) {
-    if (nsContentUtils::ComputeIsSecureContext(this)) {
-      LOG(("nsHttpChannel::EarlyHint propagated.\n"));
-      obs->EarlyHint(aLinkHeader, aReferrerPolicy, aCspHeader);
-    }
+  if (mEarlyHintObserver && nsContentUtils::ComputeIsSecureContext(this)) {
+    LOG(("nsHttpChannel::EarlyHint propagated.\n"));
+    mEarlyHintObserver->EarlyHint(aLinkHeader, aReferrerPolicy, aCspHeader);
   }
   return NS_OK;
 }
