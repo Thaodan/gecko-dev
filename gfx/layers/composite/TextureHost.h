@@ -795,7 +795,6 @@ class BufferTextureHost : public TextureHost {
   virtual ~BufferTextureHost();
 
   virtual uint8_t* GetBuffer() const = 0;
-  virtual uint16_t* GetBuffer16() const = 0;
 
   virtual size_t GetBufferSize() const = 0;
 
@@ -849,14 +848,9 @@ class BufferTextureHost : public TextureHost {
                         const Range<wr::ImageKey>& aImageKeys,
                         PushDisplayItemFlagSet aFlags) override;
 
-  bool IsYCbCr() const;
-
   uint8_t* GetYChannel();
   uint8_t* GetCbChannel();
   uint8_t* GetCrChannel();
-  uint16_t* GetYChannel16();
-  uint16_t* GetCbChannel16();
-  uint16_t* GetCrChannel16();
   int32_t GetYStride() const;
   int32_t GetCbCrStride() const;
 
@@ -893,7 +887,6 @@ class ShmemTextureHost : public BufferTextureHost {
   void ForgetSharedData() override;
 
   uint8_t* GetBuffer() const override;
-  uint16_t* GetBuffer16() const override;
 
   size_t GetBufferSize() const override;
 
@@ -928,7 +921,6 @@ class MemoryTextureHost : public BufferTextureHost {
   void ForgetSharedData() override;
 
   uint8_t* GetBuffer() const override;
-  uint16_t* GetBuffer16() const override;
 
   size_t GetBufferSize() const override;
 

@@ -46,19 +46,14 @@ RefPtr<ID3D11Texture2D> TextureWrapperD3D11Allocator::CreateOrRecycle(
       return nullptr;
     }
 
-    DXGI_FORMAT dxgiFormat;
-    if (aSurfaceFormat == gfx::SurfaceFormat::NV12) {
-      dxgiFormat = DXGI_FORMAT_NV12;
-    } else if (aSurfaceFormat == gfx::SurfaceFormat::P010) {
-      dxgiFormat = DXGI_FORMAT_P010;
-    } else {
+    if (aSurfaceFormat != gfx::SurfaceFormat::NV12) {
       MOZ_ASSERT_UNREACHABLE("unexpected to be called");
       return nullptr;
     }
-    if (mSize != aSize || mDXGIFormat != dxgiFormat) {
+
+    if (mSize != aSize) {
       ClearAllTextures(lock);
       mSize = aSize;
-      mDXGIFormat = dxgiFormat;
     }
 
     if (!mRecycledTextures.empty()) {
@@ -69,7 +64,7 @@ RefPtr<ID3D11Texture2D> TextureWrapperD3D11Allocator::CreateOrRecycle(
   }
 
   CD3D11_TEXTURE2D_DESC desc(
-      mDXGIFormat, mSize.width, mSize.height, 1, 1,
+      DXGI_FORMAT_NV12, mSize.width, mSize.height, 1, 1,
       D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE);
 
   RefPtr<ID3D11Texture2D> texture2D;
@@ -79,7 +74,7 @@ RefPtr<ID3D11Texture2D> TextureWrapperD3D11Allocator::CreateOrRecycle(
     return nullptr;
   }
 
-  EnsureStagingTexture(device);
+  EnsureStagingTextureNV12(device);
   if (!mStagingTexture) {
     return nullptr;
   }
@@ -87,7 +82,7 @@ RefPtr<ID3D11Texture2D> TextureWrapperD3D11Allocator::CreateOrRecycle(
   return texture2D;
 }
 
-void TextureWrapperD3D11Allocator::EnsureStagingTexture(
+void TextureWrapperD3D11Allocator::EnsureStagingTextureNV12(
     RefPtr<ID3D11Device> aDevice) {
   MOZ_ASSERT(mThread->IsOnCurrentThread());
   MOZ_ASSERT(aDevice);
@@ -99,7 +94,7 @@ void TextureWrapperD3D11Allocator::EnsureStagingTexture(
   D3D11_TEXTURE2D_DESC desc = {};
   desc.Width = mSize.width;
   desc.Height = mSize.height;
-  desc.Format = mDXGIFormat;
+  desc.Format = DXGI_FORMAT_NV12;
   desc.MipLevels = 1;
   desc.ArraySize = 1;
   desc.Usage = D3D11_USAGE_STAGING;
@@ -117,7 +112,7 @@ void TextureWrapperD3D11Allocator::EnsureStagingTexture(
   mStagingTexture = stagingTexture;
 }
 
-RefPtr<ID3D11Texture2D> TextureWrapperD3D11Allocator::GetStagingTexture() {
+RefPtr<ID3D11Texture2D> TextureWrapperD3D11Allocator::GetStagingTextureNV12() {
   MOZ_ASSERT(mThread->IsOnCurrentThread());
 
   return mStagingTexture;
@@ -151,7 +146,7 @@ void TextureWrapperD3D11Allocator::RecycleTexture(
 
   {
     MutexAutoLock lock(mMutex);
-    if (device != mDevice || desc.Format != mDXGIFormat ||
+    if (device != mDevice || desc.Format != DXGI_FORMAT_NV12 ||
         desc.Width != static_cast<UINT>(mSize.width) ||
         desc.Height != static_cast<UINT>(mSize.height)) {
       return;
@@ -214,7 +209,8 @@ RefPtr<TextureHost> TextureHostWrapperD3D11::CreateFromBufferTexture(
   }
 
   auto* bufferTexture = aTextureHost->AsBufferTextureHost();
-  if (!bufferTexture || !bufferTexture->IsYCbCr()) {
+  if (!bufferTexture ||
+      bufferTexture->GetFormat() != gfx::SurfaceFormat::YUV420) {
     MOZ_ASSERT_UNREACHABLE("unexpected to be called");
     return nullptr;
   }
@@ -234,19 +230,10 @@ RefPtr<TextureHost> TextureHostWrapperD3D11::CreateFromBufferTexture(
   auto colorRange = bufferTexture->GetColorRange();
   auto chromaSubsampling = bufferTexture->GetChromaSubsampling();
 
-  gfx::SurfaceFormat outputFormat;
-  if (colorDepth == gfx::ColorDepth::COLOR_8) {
-    outputFormat = gfx::SurfaceFormat::NV12;
-  } else if (colorDepth == gfx::ColorDepth::COLOR_10) {
-    outputFormat = gfx::SurfaceFormat::P010;
-  } else {
-    outputFormat = gfx::SurfaceFormat::UNKNOWN;
-  }
-
-  // Check if data could be used with NV12/P010
+  // Check if data could be used with NV12
   // XXX support gfx::ColorRange::FULL
   if (size.width % 2 != 0 || size.height % 2 != 0 ||
-      outputFormat == gfx::SurfaceFormat::UNKNOWN ||
+      colorDepth != gfx::ColorDepth::COLOR_8 ||
       colorRange != gfx::ColorRange::LIMITED ||
       chromaSubsampling != gfx::ChromaSubsampling::HALF_WIDTH_AND_HEIGHT) {
     if (profiler_thread_is_being_profiled_for_markers()) {
@@ -267,8 +254,8 @@ RefPtr<TextureHost> TextureHostWrapperD3D11::CreateFromBufferTexture(
 
   auto descD3D10 = SurfaceDescriptorD3D10(
       nullptr, Some(id),
-      /* arrayIndex */ 0, outputFormat, size, colorSpace, colorRange,
-      /* hasKeyedMutex */ false, /* fencesHolderId */ Nothing());
+      /* arrayIndex */ 0, gfx::SurfaceFormat::NV12, size, colorSpace,
+      colorRange, /* hasKeyedMutex */ false, /* fencesHolderId */ Nothing());
 
   RefPtr<DXGITextureHostD3D11> textureHostD3D11 =
       new DXGITextureHostD3D11(flags, descD3D10);

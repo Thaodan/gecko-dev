@@ -336,12 +336,13 @@ TextureHost* WebRenderImageHost::GetAsTextureHostForComposite(
   RefPtr<TextureHost> texture = img->mTextureHost.get();
 #if XP_WIN
   // Convert YUV BufferTextureHost to TextureHostWrapperD3D11 if possible
-  if (const auto* bufferHost = texture->AsBufferTextureHost()) {
+  if (texture->AsBufferTextureHost()) {
     auto identifier = aAsyncImageManager->GetTextureFactoryIdentifier();
     const bool tryConvertToNV12 =
         StaticPrefs::gfx_video_convert_yuv_to_nv12_image_host_win() &&
         identifier.mSupportsD3D11NV12 &&
-        KnowsCompositor::SupportsD3D11(identifier) && (bufferHost->IsYCbCr());
+        KnowsCompositor::SupportsD3D11(identifier) &&
+        texture->GetFormat() == gfx::SurfaceFormat::YUV420;
     if (tryConvertToNV12) {
       PROFILER_MARKER_TEXT("WebRenderImageHost", GRAPHICS, {},
                            "Try ConvertToNV12"_ns);

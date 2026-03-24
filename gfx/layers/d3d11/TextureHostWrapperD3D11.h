@@ -7,7 +7,6 @@
 
 #include <deque>
 #include <unordered_map>
-#include <dxgiformat.h>
 
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/TextureHost.h"
@@ -33,9 +32,9 @@ class TextureWrapperD3D11Allocator {
   RefPtr<ID3D11Texture2D> CreateOrRecycle(gfx::SurfaceFormat aSurfaceFormat,
                                           gfx::IntSize aSize);
 
-  void EnsureStagingTexture(RefPtr<ID3D11Device> aDevice);
+  void EnsureStagingTextureNV12(RefPtr<ID3D11Device> aDevice);
 
-  RefPtr<ID3D11Texture2D> GetStagingTexture();
+  RefPtr<ID3D11Texture2D> GetStagingTextureNV12();
 
   RefPtr<ID3D11Device> GetDevice();
 
@@ -72,7 +71,6 @@ class TextureWrapperD3D11Allocator {
 
   RefPtr<ID3D11Device> mDevice;
   gfx::IntSize mSize;
-  DXGI_FORMAT mDXGIFormat = DXGI_FORMAT_NV12;
   std::deque<RefPtr<ID3D11Texture2D>> mRecycledTextures;
 };
 
