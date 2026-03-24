@@ -35,9 +35,10 @@ class MTest;
 [[nodiscard]] bool PruneUnusedBranches(const MIRGenerator* mir,
                                        MIRGraph& graph);
 
-[[nodiscard]] bool FoldTests(MIRGraph& graph);
-
 [[nodiscard]] bool FoldEmptyBlocks(MIRGraph& graph, bool* changed);
+
+[[nodiscard]] bool SplitCriticalEdgesForBlock(MIRGraph& graph,
+                                              MBasicBlock* block);
 
 [[nodiscard]] bool SplitCriticalEdges(MIRGraph& graph);
 

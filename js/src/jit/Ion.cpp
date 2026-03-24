@@ -27,6 +27,7 @@
 #include "jit/EffectiveAddressAnalysis.h"
 #include "jit/ExecutableAllocator.h"
 #include "jit/FoldLinearArithConstants.h"
+#include "jit/FoldTests.h"
 #include "jit/InlineScriptTree.h"
 #include "jit/InstructionReordering.h"
 #include "jit/Invalidation.h"
