@@ -4,8 +4,6 @@
 
 #include "YCbCrUtils.h"
 
-#include <bit>
-
 #include "gfx2DGlue.h"
 #include "libyuv.h"
 #include "mozilla/EndianUtils.h"
@@ -316,16 +314,16 @@ nsresult ConvertYCbCrToRGB(const layers::PlanarYCbCrData& aData,
     return result;
   }
 
-  if constexpr (std::endian::native == std::endian::big) {
-    // libyuv makes endian-correct result, which needs to be swapped to BGRX
-    if (aDestFormat != SurfaceFormat::R5G6B5_UINT16) {
-      if (!gfx::SwizzleData(aDestBuffer, aStride, gfx::SurfaceFormat::X8R8G8B8,
-                            aDestBuffer, aStride, gfx::SurfaceFormat::B8G8R8X8,
-                            aDestSize)) {
-        return NS_ERROR_UNEXPECTED;
-      }
+#if MOZ_BIG_ENDIAN()
+  // libyuv makes endian-correct result, which needs to be swapped to BGRX
+  if (aDestFormat != SurfaceFormat::R5G6B5_UINT16) {
+    if (!gfx::SwizzleData(aDestBuffer, aStride, gfx::SurfaceFormat::X8R8G8B8,
+                          aDestBuffer, aStride, gfx::SurfaceFormat::B8G8R8X8,
+                          aDestSize)) {
+      return NS_ERROR_UNEXPECTED;
     }
   }
+#endif
   return NS_OK;
 }
 
@@ -400,15 +398,15 @@ nsresult ConvertYCbCrToRGB32(const layers::PlanarYCbCrData& aData,
     }
   }
 
-  if constexpr (std::endian::native == std::endian::big) {
-    // libyuv makes endian-correct result, which needs to be reversed to BGR* or
-    // RGB*.
-    if (!gfx::SwizzleData(aDestBuffer, aStride, gfx::SurfaceFormat::X8R8G8B8,
-                          aDestBuffer, aStride, gfx::SurfaceFormat::B8G8R8X8,
-                          aData.mPictureRect.Size())) {
-      return NS_ERROR_UNEXPECTED;
-    }
+#if MOZ_BIG_ENDIAN()
+  // libyuv makes endian-correct result, which needs to be reversed to BGR* or
+  // RGB*.
+  if (!gfx::SwizzleData(aDestBuffer, aStride, gfx::SurfaceFormat::X8R8G8B8,
+                        aDestBuffer, aStride, gfx::SurfaceFormat::B8G8R8X8,
+                        aData.mPictureRect.Size())) {
+    return NS_ERROR_UNEXPECTED;
   }
+#endif
   return NS_OK;
 }
 
@@ -423,14 +421,14 @@ nsresult ConvertI420AlphaToARGB(const uint8_t* aSrcY, const uint8_t* aSrcU,
   if (NS_FAILED(result)) {
     return result;
   }
-  if constexpr (std::endian::native == std::endian::big) {
-    // libyuv makes endian-correct result, which needs to be swapped to BGRA
-    if (!gfx::SwizzleData(aDstARGB, aDstStrideARGB, gfx::SurfaceFormat::A8R8G8B8,
-                          aDstARGB, aDstStrideARGB, gfx::SurfaceFormat::B8G8R8A8,
-                          IntSize(aWidth, aHeight))) {
-      return NS_ERROR_UNEXPECTED;
-    }
+#if MOZ_BIG_ENDIAN()
+  // libyuv makes endian-correct result, which needs to be swapped to BGRA
+  if (!gfx::SwizzleData(aDstARGB, aDstStrideARGB, gfx::SurfaceFormat::A8R8G8B8,
+                        aDstARGB, aDstStrideARGB, gfx::SurfaceFormat::B8G8R8A8,
+                        IntSize(aWidth, aHeight))) {
+    return NS_ERROR_UNEXPECTED;
   }
+#endif
   return NS_OK;
 }
 

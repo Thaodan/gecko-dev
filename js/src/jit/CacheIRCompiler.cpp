@@ -11,7 +11,6 @@
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/ScopeExit.h"
 
-#include <bit>
 #include <type_traits>
 #include <utility>
 
@@ -7949,9 +7948,7 @@ bool CacheIRCompiler::emitLoadDataViewValueResult(
   // Swap the bytes in the loaded value.
   if (byteSize > 1) {
     Label skip;
-    masm.branch32(std::endian::native == std::endian::little
-                      ? Assembler::NotEqual
-                      : Assembler::Equal,
+    masm.branch32(MOZ_LITTLE_ENDIAN() ? Assembler::NotEqual : Assembler::Equal,
                   littleEndian, Imm32(0), &skip);
 
     switch (elementType) {
@@ -8239,14 +8236,10 @@ bool CacheIRCompiler::emitStoreDataViewValueResult(
   // Swap the bytes in the loaded value.
   Label skip;
   if (pushedLittleEndian) {
-    masm.branch32(std::endian::native == std::endian::little
-                      ? Assembler::NotEqual
-                      : Assembler::Equal,
+    masm.branch32(MOZ_LITTLE_ENDIAN() ? Assembler::NotEqual : Assembler::Equal,
                   Address(masm.getStackPointer(), 0), Imm32(0), &skip);
   } else {
-    masm.branch32(std::endian::native == std::endian::little
-                      ? Assembler::NotEqual
-                      : Assembler::Equal,
+    masm.branch32(MOZ_LITTLE_ENDIAN() ? Assembler::NotEqual : Assembler::Equal,
                   littleEndian, Imm32(0), &skip);
   }
   switch (elementType) {
