@@ -1,78 +1,205 @@
 From: Michael Froman <mfroman@mozilla.com>
-Date: Tue, 24 Mar 2026 14:01:51 -0500
-Subject: (tmp-cherry-pick) Revert "Stop reading arm_use_neon, arm_version in
- webrtc" (cbed3656d6)
+Date: Tue, 24 Mar 2026 14:03:46 -0500
+Subject: (tmp-cherry-pick) Revert "Wayland screencast: move failed modifier
+ tracking to EglDrmDevice" (faed192fd7)
 
-This reverts commit d1767395b66860a15d55b98849603d396eac090b.
+This reverts commit bbfc8863c0f59cdc3c4068b43613bbaeb9491ee0.
 
-Reason for revert: WebRTC must keep WEBRTC_ARCH_ARM / WEBRTC_ARCH_ARM_V7 for a little bit longer.
+Reason for revert: Parent Cl causes crashes
 
 Original change's description:
-> Stop reading arm_use_neon, arm_version in webrtc
+> Wayland screencast: move failed modifier tracking to EglDrmDevice
 >
-> These are always true (or >= 7) after
-> https://chromium-review.googlesource.com/c/chromium/src/+/7262201
+> Move DMA-BUF modifier failure tracking from SharedScreencastStream to
+> EglDrmDevice for better encapsulation and per-device tracking.
 >
-> Bug: chromium:469092869,webrtc:473768792
-> Change-Id: I6e20227da7175f84e15d8335026f35c32c95d564
-> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/440080
-> Reviewed-by: Mirko Bonadei <mbonadei@webrtc.org>
-> Reviewed-by: Harald Alvestrand <hta@webrtc.org>
-> Commit-Queue: Nico Weber <thakis@chromium.org>
-> Cr-Commit-Position: refs/heads/main@{#46560}
+> Bug: webrtc:461543454
+> Change-Id: I2462899b586ce7575f88b979b1142ecacd9e402d
+> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/431242
+> Reviewed-by: Alexander Cooper <alcooper@chromium.org>
+> Commit-Queue: Jan Grulich <grulja@gmail.com>
+> Cr-Commit-Position: refs/heads/main@{#46561}
 
-Bug: chromium:469092869,webrtc:473768792
+Bug: webrtc:461543454
 No-Presubmit: true
 No-Tree-Checks: true
 No-Try: true
-Change-Id: I12d3ecccb010e6feacb8c32d7d6e4693f2271043
-Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/440320
+Change-Id: I6b5bb660d942686244367438802a7dd3d74b100e
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/440440
+Reviewed-by: Danil Chapovalov <danilchap@webrtc.org>
+Owners-Override: Danil Chapovalov <danilchap@webrtc.org>
 Bot-Commit: Rubber Stamper <rubber-stamper@appspot.gserviceaccount.com>
-Owners-Override: Mirko Bonadei <mbonadei@webrtc.org>
-Commit-Queue: Mirko Bonadei <mbonadei@webrtc.org>
-Cr-Commit-Position: refs/heads/main@{#46564}
+Commit-Queue: Ilya Nikolaevskiy <ilnik@webrtc.org>
+Cr-Commit-Position: refs/heads/main@{#46570}
 ---
- BUILD.gn   | 15 +++++++--------
- webrtc.gni |  3 ++-
- 2 files changed, 9 insertions(+), 9 deletions(-)
+ modules/desktop_capture/BUILD.gn              |  2 --
+ .../linux/wayland/egl_dmabuf.cc               | 30 +---------------
+ .../linux/wayland/egl_dmabuf.h                | 11 ------
+ .../linux/wayland/shared_screencast_stream.cc | 34 ++++++-------------
+ 4 files changed, 12 insertions(+), 65 deletions(-)
 
-diff --git a/BUILD.gn b/BUILD.gn
-index 3fe05d14af..d42db430dc 100644
---- a/BUILD.gn
-+++ b/BUILD.gn
-@@ -448,14 +448,13 @@ config("common_config") {
-   }
+diff --git a/modules/desktop_capture/BUILD.gn b/modules/desktop_capture/BUILD.gn
+index aa91ec0815..82c10e4c5f 100644
+--- a/modules/desktop_capture/BUILD.gn
++++ b/modules/desktop_capture/BUILD.gn
+@@ -281,8 +281,6 @@ rtc_library("desktop_capture") {
+   visibility = [ "*" ]
+   defines = []
+   deps = [
+-    "//third_party/abseil-cpp/absl/container:flat_hash_map",
+-    "//third_party/abseil-cpp/absl/container:flat_hash_set",
+     "//third_party/abseil-cpp/absl/memory",
+     "//third_party/abseil-cpp/absl/strings",
+     "//third_party/abseil-cpp/absl/strings:string_view",
+diff --git a/modules/desktop_capture/linux/wayland/egl_dmabuf.cc b/modules/desktop_capture/linux/wayland/egl_dmabuf.cc
+index f8023af1d7..3cab6458e0 100644
+--- a/modules/desktop_capture/linux/wayland/egl_dmabuf.cc
++++ b/modules/desktop_capture/linux/wayland/egl_dmabuf.cc
+@@ -547,35 +547,7 @@ std::vector<uint64_t> EglDrmDevice::QueryDmaBufModifiers(uint32_t format) {
  
-   if (current_cpu == "arm") {
--    defines += [
--      "WEBRTC_ARCH_ARM",
+   // Support modifier-less buffers
+   modifiers.push_back(DRM_FORMAT_MOD_INVALID);
 -
--      # TODO(bugs.webrtc.org/473768792): Now that these are always set,
--      # remove all references to them in the code, then remove these defines.
--      "WEBRTC_ARCH_ARM_V7",
--      "WEBRTC_HAS_NEON",
--    ]
-+    defines += [ "WEBRTC_ARCH_ARM" ]
-+    if (arm_version >= 7) {
-+      defines += [ "WEBRTC_ARCH_ARM_V7" ]
-+      if (arm_use_neon) {
-+        defines += [ "WEBRTC_HAS_NEON" ]
-+      }
-+    }
-   }
+-  // Filter out failed modifiers
+-  MutexLock lock(&failed_modifiers_lock_);
+-  auto it = failed_modifiers_.find(format);
+-  if (it == failed_modifiers_.end()) {
+-    return modifiers;
+-  }
+-
+-  const auto& failed_set = it->second;
+-
+-  // Special case: if DRM_FORMAT_MOD_INVALID is in the failed set,
+-  // it means all modifiers failed for this format (older PipeWire)
+-  if (failed_set.count(DRM_FORMAT_MOD_INVALID) > 0) {
+-    return {};
+-  }
+-
+-  std::vector<uint64_t> filtered;
+-  for (uint64_t modifier : modifiers) {
+-    if (failed_set.count(modifier) == 0) {
+-      filtered.push_back(modifier);
+-    }
+-  }
+-
+-  return filtered;
+-}
+-
+-void EglDrmDevice::MarkModifierFailed(uint32_t format, uint64_t modifier) {
+-  MutexLock lock(&failed_modifiers_lock_);
+-  failed_modifiers_[format].insert(modifier);
++  return modifiers;
+ }
  
-   if (current_cpu == "mipsel") {
-diff --git a/webrtc.gni b/webrtc.gni
-index a33ae69f51..5c69818f10 100644
---- a/webrtc.gni
-+++ b/webrtc.gni
-@@ -154,7 +154,8 @@ declare_args() {
-   }
+ RTC_NO_SANITIZE("cfi-icall")
+diff --git a/modules/desktop_capture/linux/wayland/egl_dmabuf.h b/modules/desktop_capture/linux/wayland/egl_dmabuf.h
+index a6f8a19cc9..97ca0b3fc0 100644
+--- a/modules/desktop_capture/linux/wayland/egl_dmabuf.h
++++ b/modules/desktop_capture/linux/wayland/egl_dmabuf.h
+@@ -23,11 +23,7 @@
+ #include <string>
+ #include <vector>
  
-   # Determines whether NEON code will be built.
--  rtc_build_with_neon = current_cpu == "arm" || current_cpu == "arm64"
-+  rtc_build_with_neon =
-+      (current_cpu == "arm" && arm_use_neon) || current_cpu == "arm64"
+-#include "absl/container/flat_hash_map.h"
+-#include "absl/container/flat_hash_set.h"
+ #include "modules/desktop_capture/desktop_geometry.h"
+-#include "rtc_base/synchronization/mutex.h"
+-#include "rtc_base/thread_annotations.h"
  
-   # Enable this to build OpenH264 encoder/FFmpeg decoder. When building WebRTC
-   # as part of Chromium, this is delegated to `media_use_openh264`. When
+ namespace webrtc {
+ 
+@@ -65,8 +61,6 @@ class EglDrmDevice {
+                        uint8_t* data);
+   std::vector<uint64_t> QueryDmaBufModifiers(uint32_t format);
+ 
+-  void MarkModifierFailed(uint32_t format, uint64_t modifier);
+-
+  private:
+   EGLStruct egl_;
+   bool initialized_ = false;
+@@ -86,11 +80,6 @@ class EglDrmDevice {
+ 
+   GLuint fbo_ = 0;
+   GLuint texture_ = 0;
+-
+-  // Map of format -> failed modifiers that didn't work during import
+-  Mutex failed_modifiers_lock_;
+-  absl::flat_hash_map<uint32_t, absl::flat_hash_set<uint64_t>> failed_modifiers_
+-      RTC_GUARDED_BY(failed_modifiers_lock_);
+ };
+ 
+ class EglDmaBuf {
+diff --git a/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc b/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
+index 4b558037b1..3c93787d84 100644
+--- a/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
++++ b/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
+@@ -128,6 +128,8 @@ class SharedScreenCastStreamPrivate {
+ 
+   int64_t modifier_;
+   std::unique_ptr<EglDmaBuf> egl_dmabuf_;
++  // List of modifiers we query as supported by the graphics card/driver
++  std::vector<uint64_t> modifiers_;
+ 
+   // PipeWire types
+   std::unique_ptr<PipeWireInitializer> pw_initializer_;
+@@ -426,15 +428,9 @@ void SharedScreenCastStreamPrivate::OnRenegotiateFormat(void* data, uint64_t) {
+ 
+     for (uint32_t format : {SPA_VIDEO_FORMAT_BGRA, SPA_VIDEO_FORMAT_RGBA,
+                             SPA_VIDEO_FORMAT_BGRx, SPA_VIDEO_FORMAT_RGBx}) {
+-      std::vector<uint64_t> modifiers;
+-      auto render_device = that->egl_dmabuf_->GetRenderDevice();
+-      if (render_device) {
+-        modifiers = render_device->QueryDmaBufModifiers(format);
+-      }
+-
+-      if (!modifiers.empty()) {
++      if (!that->modifiers_.empty()) {
+         params.push_back(
+-            BuildFormat(&builder, format, modifiers,
++            BuildFormat(&builder, format, that->modifiers_,
+                         that->width_ && that->height_ ? &resolution : nullptr,
+                         &frame_rate));
+       }
+@@ -562,14 +558,13 @@ bool SharedScreenCastStreamPrivate::StartScreenCastStream(
+                             SPA_VIDEO_FORMAT_BGRx, SPA_VIDEO_FORMAT_RGBx}) {
+       // Modifiers can be used with PipeWire >= 0.3.33
+       if (has_required_pw_client_version && has_required_pw_server_version) {
+-        std::vector<uint64_t> modifiers;
+         auto render_device = egl_dmabuf_->GetRenderDevice();
+         if (render_device) {
+-          modifiers = render_device->QueryDmaBufModifiers(format);
++          modifiers_ = render_device->QueryDmaBufModifiers(format);
+         }
+ 
+-        if (!modifiers.empty()) {
+-          params.push_back(BuildFormat(&builder, format, modifiers,
++        if (!modifiers_.empty()) {
++          params.push_back(BuildFormat(&builder, format, modifiers_,
+                                        set_resolution ? &resolution : nullptr,
+                                        &default_frame_rate));
+         }
+@@ -1038,20 +1033,13 @@ bool SharedScreenCastStreamPrivate::ProcessDMABuffer(
+       stream_size_, spa_video_format_.format, plane_datas, modifier_, offset,
+       frame.size(), frame.data());
+   if (!imported) {
+-    RTC_LOG(LS_ERROR)
+-        << "DMA-BUF modifier " << modifier_ << " failed for format "
+-        << spa_video_format_.format << " ("
+-        << spa_debug_type_find_name(spa_type_video_format,
+-                                    spa_video_format_.format)
+-        << "), marking as failed and renegotiating stream parameters";
++    RTC_LOG(LS_ERROR) << "Dropping DMA-BUF modifier: " << modifier_
++                      << " and trying to renegotiate stream parameters";
+ 
+     if (pw_server_version_ >= kDropSingleModifierMinVersion) {
+-      render_device->MarkModifierFailed(spa_video_format_.format, modifier_);
++      std::erase(modifiers_, modifier_);
+     } else {
+-      // For older PipeWire versions, mark all modifiers as failed for this
+-      // format
+-      render_device->MarkModifierFailed(spa_video_format_.format,
+-                                        DRM_FORMAT_MOD_INVALID);
++      modifiers_.clear();
+     }
+ 
+     pw_loop_signal_event(pw_thread_loop_get_loop(pw_main_loop_), renegotiate_);
