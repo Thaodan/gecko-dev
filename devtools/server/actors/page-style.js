@@ -444,12 +444,20 @@ class PageStyleActor extends Actor {
       }
 
       if (options.includeVariations && FONT_VARIATIONS_ENABLED) {
-        // Round font variation axes default values before they're rendered to UI
+        // Round font variation axes values
         fontFace.variationAxes = font.getVariationAxes().map(axis => ({
           ...axis,
           defaultValue: toFixed(axis.defaultValue, 3),
         }));
-        fontFace.variationInstances = font.getVariationInstances();
+        fontFace.variationInstances = font
+          .getVariationInstances()
+          .map(instance => ({
+            ...instance,
+            values: instance.values.map(variationValue => ({
+              ...variationValue,
+              value: toFixed(variationValue.value, 3),
+            })),
+          }));
       }
 
       fontsArray.push(fontFace);

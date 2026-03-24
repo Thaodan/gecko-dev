@@ -11,6 +11,7 @@ add_task(async function () {
   await testWghtInteract(inspector, viewDoc);
   await testInstanceChange(inspector, viewDoc);
   await testOpszRounded(inspector, viewDoc);
+  await testInstanceWghtRounded(inspector, viewDoc);
 });
 
 async function testWghtInteract(inspector, viewDoc) {
@@ -54,4 +55,29 @@ async function testOpszRounded(inspector, viewDoc) {
 
   opszInput.focus();
   is(opszInput.value, "14.286", "opsz value is rounded after focusing");
+}
+
+async function testInstanceWghtRounded(inspector, viewDoc) {
+  await selectNode(".rounding", inspector);
+
+  let wghtInput = viewDoc.querySelector(`.font-value-input[name="wght"]`);
+  is(wghtInput.value, "400", "wght value is 400 initially");
+
+  const instanceSelect = viewDoc.querySelector(
+    "#font-editor .font-value-select"
+  );
+  instanceSelect.focus();
+  const onEditorUpdated = inspector.once("fonteditor-updated");
+  EventUtils.sendKey("LEFT", viewDoc.defaultView);
+  await onEditorUpdated;
+
+  wghtInput = viewDoc.querySelector(`.font-value-input[name="wght"]`);
+  is(
+    wghtInput.value,
+    "699.444",
+    "wght value is rounded after selecting new instance"
+  );
+
+  wghtInput.focus();
+  is(wghtInput.value, "699.444", "wght value is rounded after focusing");
 }
