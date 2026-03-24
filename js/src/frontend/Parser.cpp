@@ -45,6 +45,7 @@
 #include "frontend/ScriptIndex.h"  // ScriptIndex
 #include "frontend/TokenStream.h"  // IsKeyword, ReservedWordTokenKind, ReservedWordToCharZ, DeprecatedContent, *TokenStream*, CharBuffer, TokenKindToDesc
 #include "irregexp/RegExpAPI.h"
+#include "jit/JitOptions.h"  // fuzzingSafe
 #include "js/ColumnNumber.h"  // JS::LimitedColumnNumberOneOrigin, JS::ColumnNumberOneOrigin
 #include "js/ErrorReport.h"           // JSErrorBase
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
@@ -7656,6 +7657,11 @@ bool GeneralParser<ParseHandler, Unit>::classMember(
 #ifdef ENABLE_DECORATORS
   ListNodeType decorators = null();
   if (tt == TokenKind::At) {
+    if (fuzzingSafe) {
+      error(JSMSG_DECORATOR_FUZZING_UNSAFE);
+      return false;
+    }
+
     MOZ_TRY_VAR_OR_RETURN(decorators, decoratorList(yieldHandling), false);
 
     if (!tokenStream.getToken(&tt, TokenStream::SlashIsInvalid)) {
@@ -8129,6 +8135,11 @@ GeneralParser<ParseHandler, Unit>::classDefinition(
   ListNodeType decorators = null();
   FunctionNodeType addInitializerFunction = null();
   if (anyChars.isCurrentTokenType(TokenKind::At)) {
+    if (fuzzingSafe) {
+      error(JSMSG_DECORATOR_FUZZING_UNSAFE);
+      return errorResult();
+    }
+
     decorators = MOZ_TRY(decoratorList(yieldHandling));
     TokenKind next;
     if (!tokenStream.getToken(&next)) {
@@ -9765,6 +9776,10 @@ GeneralParser<ParseHandler, Unit>::statementListItem(
       //   DecoratorList[?Yield, ?Await] opt ClassDeclaration[?Yield, ~Default]
 #ifdef ENABLE_DECORATORS
     case TokenKind::At:
+      if (fuzzingSafe) {
+        error(JSMSG_DECORATOR_FUZZING_UNSAFE);
+        return errorResult();
+      }
       return classDefinition(yieldHandling, ClassStatement, NameRequired);
 #endif
 
@@ -12020,6 +12035,10 @@ GeneralParser<ParseHandler, Unit>::propertyOrMethodName(
     // ClassElementName[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]opt`
     if (TokenKindCanStartPropertyName(tt)) {
       tokenStream.consumeKnownToken(tt);
+      if (fuzzingSafe) {
+        error(JSMSG_DECORATOR_FUZZING_UNSAFE);
+        return errorResult();
+      }
       hasAccessor = true;
     }
   }
@@ -12619,6 +12638,11 @@ GeneralParser<ParseHandler, Unit>::primaryExpr(
 
 #ifdef ENABLE_DECORATORS
     case TokenKind::At:
+      if (fuzzingSafe) {
+        error(JSMSG_DECORATOR_FUZZING_UNSAFE);
+        return errorResult();
+      }
+
       return classDefinition(yieldHandling, ClassExpression, NameRequired);
 #endif
 
