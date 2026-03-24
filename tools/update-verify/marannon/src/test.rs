@@ -22,6 +22,8 @@ pub struct Test {
     pub locale: String,
     /// The MAR file to apply to the unpacked `from` installer
     pub mar: PathBuf,
+    /// The package containing the updater to use when applying the MAR
+    pub updater_package: PathBuf,
 }
 
 impl Display for Test {
@@ -80,11 +82,11 @@ pub(crate) fn run_tests(
     runner: &dyn CommandRunner,
 ) -> Result<Vec<TestResult>, Box<dyn std::error::Error>> {
     let mut results: Vec<TestResult> = vec![];
-    let mut prepared_installers: HashMap<PathBuf, PathBuf> = HashMap::new();
+    let mut prepared_updaters: HashMap<PathBuf, PathBuf> = HashMap::new();
     for test in tests {
         let result = run_test(
             &test,
-            &mut prepared_installers,
+            &mut prepared_updaters,
             check_updates,
             target_platform,
             to_installer,
@@ -117,7 +119,7 @@ pub(crate) fn run_tests(
 
 fn run_test(
     test: &Test,
-    prepared_installers: &mut HashMap<PathBuf, PathBuf>,
+    prepared_updaters: &mut HashMap<PathBuf, PathBuf>,
     check_updates: &Path,
     target_platform: &str,
     to_installer: &Path,
@@ -130,14 +132,14 @@ fn run_test(
     artifact_dir: &Path,
     runner: &dyn CommandRunner,
 ) -> Result<TestResult, Box<dyn std::error::Error>> {
-    let updater = match prepared_installers.get(&test.from_installer) {
+    let updater = match prepared_updaters.get(&test.from_installer) {
         Some(path) => path.clone(),
         None => {
-            let idx = prepared_installers.len();
+            let idx = prepared_updaters.len();
             let mut unpack_dir = tmpdir.to_path_buf();
             unpack_dir.push(format!("updater_{idx}"));
             let path = prepare_updater(
-                &test.from_installer,
+                &test.updater_package,
                 appname,
                 cert_replace_script,
                 cert_dir,
@@ -145,7 +147,7 @@ fn run_test(
                 &unpack_dir,
                 runner,
             )?;
-            prepared_installers.insert(test.from_installer.clone(), path.clone());
+            prepared_updaters.insert(test.from_installer.clone(), path.clone());
             path
         }
     };
@@ -251,6 +253,7 @@ mod tests {
             id: "from".to_string(),
             mar: tmp.join("test.mar"),
             from_installer: PathBuf::from("/nonexistent/installer.tar.xz"),
+            updater_package: PathBuf::from("/nonexistent/installer.tar.xz"),
             locale: "en-US".to_string(),
         };
 
