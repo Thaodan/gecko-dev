@@ -6,7 +6,6 @@
 
 #include "gfxFcPlatformFontList.h"
 #include "gfxFont.h"
-#include "gfxFontConstants.h"
 #include "gfxFT2Utils.h"
 #include "gfxPlatform.h"
 #include "nsPresContext.h"
@@ -17,17 +16,14 @@
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_mathml.h"
 #include "mozilla/glean/GfxMetrics.h"
-#include "mozilla/TimeStamp.h"
 #include "nsGkAtoms.h"
 #include "nsIConsoleService.h"
 #include "nsIGfxInfo.h"
 #include "mozilla/Components.h"
 #include "nsString.h"
 #include "nsStringFwd.h"
-#include "nsUnicodeProperties.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsDirectoryServiceDefs.h"
-#include "nsAppDirectoryServiceDefs.h"
 #include "nsCharSeparatedTokenizer.h"
 #include "nsXULAppAPI.h"
 #include "SharedFontList-impl.h"
@@ -36,7 +32,6 @@
 #undef StandardFonts
 #include "mozilla/intl/Locale.h"
 
-#include "mozilla/gfx/HelpersCairo.h"
 
 #include <cairo-ft.h>
 #include <fontconfig/fcfreetype.h>
@@ -65,7 +60,6 @@
 
 using namespace mozilla;
 using namespace mozilla::gfx;
-using namespace mozilla::unicode;
 using namespace mozilla::intl;
 
 #ifndef FC_POSTSCRIPT_NAME
@@ -408,7 +402,7 @@ gfxFontconfigFontEntry::~gfxFontconfigFontEntry() {
     // InitializeVarFuncs must have been called in order for mMMVar to be
     // non-null here, so we don't need to do it again.
     if (sDoneVar) {
-      auto ftFace = GetFTFace();
+      auto* ftFace = GetFTFace();
       MOZ_ASSERT(ftFace, "How did mMMVar get set without a face?");
       (*sDoneVar)(ftFace->GetFace()->glyph->library, mMMVar);
     } else {
@@ -416,7 +410,7 @@ gfxFontconfigFontEntry::~gfxFontconfigFontEntry() {
     }
   }
   if (mFTFaceInitialized) {
-    auto face = mFTFace.exchange(nullptr);
+    auto* face = mFTFace.exchange(nullptr);
     NS_IF_RELEASE(face);
   }
 }
@@ -938,7 +932,7 @@ gfxFont* gfxFontconfigFontEntry::CreateFontInstance(
     AutoWriteLock lock(mLock);
     // Here, we use the original mFTFace, not a potential clone with variation
     // settings applied.
-    auto ftFace = GetFTFace();
+    auto* ftFace = GetFTFace();
     unscaledFont = ftFace->GetData() ? new UnscaledFontFontconfig(ftFace)
                                      : new UnscaledFontFontconfig(
                                            std::move(file), index, ftFace);
@@ -968,7 +962,7 @@ SharedFTFace* gfxFontconfigFontEntry::GetFTFace() {
 }
 
 FTUserFontData* gfxFontconfigFontEntry::GetUserFontData() {
-  auto face = GetFTFace();
+  auto* face = GetFTFace();
   if (face && face->GetData()) {
     return static_cast<FTUserFontData*>(face->GetData());
   }
@@ -1006,7 +1000,7 @@ bool gfxFontconfigFontEntry::HasVariations() {
       return true;
     }
   } else {
-    if (auto ftFace = GetFTFace()) {
+    if (auto* ftFace = GetFTFace()) {
       if (ftFace->GetFace()->face_flags & FT_FACE_FLAG_MULTIPLE_MASTERS) {
         mHasVariations = HasVariationsState::Yes;
         return true;
@@ -1033,7 +1027,7 @@ FT_MM_Var* gfxFontconfigFontEntry::GetMMVar() {
   if (!sGetVar) {
     return nullptr;
   }
-  auto ftFace = GetFTFace();
+  auto* ftFace = GetFTFace();
   if (!ftFace) {
     return nullptr;
   }
@@ -1307,7 +1301,7 @@ void gfxFontconfigFontFamily::AddFacesToFontList(Func aAddPatternFunc) {
       if (!fe) {
         continue;
       }
-      auto fce = static_cast<gfxFontconfigFontEntry*>(fe.get());
+      auto* fce = static_cast<gfxFontconfigFontEntry*>(fe.get());
       aAddPatternFunc(fce->GetPattern(), mContainsAppFonts);
     }
   } else {
@@ -1872,7 +1866,7 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
                 return MakeUnique<FacesData>();
               })
           .get()
-          ->Add(fontlist::Face::InitData(initData), /* singleName = */ false);
+          ->Add(fontlist::Face::InitData(initData), /* aSingleName = */ false);
 
       n++;
       if (n == int(cIndex)) {

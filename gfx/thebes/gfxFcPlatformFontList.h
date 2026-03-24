@@ -8,10 +8,8 @@
 #include "gfxFT2FontBase.h"
 #include "gfxPlatformFontList.h"
 #include "mozilla/FontPropertyTypes.h"
-#include "mozilla/mozalloc.h"
 #include "mozilla/RefPtr.h"
 #include "nsClassHashtable.h"
-#include "nsTHashMap.h"
 
 #include <fontconfig/fontconfig.h>
 #include "ft2build.h"
