@@ -10,6 +10,7 @@ add_task(async function () {
 
   await testWghtInteract(inspector, viewDoc);
   await testInstanceChange(inspector, viewDoc);
+  await testOpszRounded(inspector, viewDoc);
 });
 
 async function testWghtInteract(inspector, viewDoc) {
@@ -42,4 +43,15 @@ async function testInstanceChange(inspector, viewDoc) {
 
   wghtInput.focus();
   is(wghtInput.value, "900", "wght value is 900 after focusing");
+  wghtInput.blur();
+}
+
+async function testOpszRounded(inspector, viewDoc) {
+  await selectNode(".rounding", inspector);
+
+  const opszInput = viewDoc.querySelector(`.font-value-input[name="opsz"]`);
+  is(opszInput.value, "14.286", "opsz value is rounded after selecting node");
+
+  opszInput.focus();
+  is(opszInput.value, "14.286", "opsz value is rounded after focusing");
 }

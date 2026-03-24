@@ -17,6 +17,10 @@ const {
   style: { ELEMENT_STYLE },
 } = require("resource://devtools/shared/constants.js");
 
+const {
+  toFixed,
+} = require("resource://devtools/shared/inspector/font-utils.js");
+
 loader.lazyRequireGetter(
   this,
   "StyleRuleActor",
@@ -440,7 +444,11 @@ class PageStyleActor extends Actor {
       }
 
       if (options.includeVariations && FONT_VARIATIONS_ENABLED) {
-        fontFace.variationAxes = font.getVariationAxes();
+        // Round font variation axes default values before they're rendered to UI
+        fontFace.variationAxes = font.getVariationAxes().map(axis => ({
+          ...axis,
+          defaultValue: toFixed(axis.defaultValue, 3),
+        }));
         fontFace.variationInstances = font.getVariationInstances();
       }
 
