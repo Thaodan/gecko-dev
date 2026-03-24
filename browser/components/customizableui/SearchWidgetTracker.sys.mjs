@@ -18,7 +18,7 @@ export const SearchWidgetTracker = {
    */
   init() {
     CustomizableUI.addListener(this);
-    this._updateSearchBarVisibilityBasedOnUsage();
+    this._removeWidgetIfUnused();
   },
 
   /**
@@ -36,9 +36,25 @@ export const SearchWidgetTracker = {
    *   True iff the action that happened was the removal of the DOM node.
    */
   onWidgetAfterDOMChange(node, _nextNode, _container, wasRemoval) {
-    if (wasRemoval && node.id == WIDGET_ID) {
-      this.removePersistedWidths();
+    if (node.id == WIDGET_ID && wasRemoval) {
+      this._removePersistedWidths();
     }
+  },
+
+  onCustomizeStart() {
+    this._widgetWasInNavBar = this._widgetIsInNavBar;
+  },
+
+  onCustomizeEnd() {
+    if (!this._widgetWasInNavBar && this._widgetIsInNavBar) {
+      // We consider the widget "used" when manually placing it, so that
+      // restarting without searching first won't automatically remove it again.
+      Services.prefs.setStringPref(
+        "browser.search.widget.lastUsed",
+        new Date().toISOString()
+      );
+    }
+    delete this._widgetWasInNavBar;
   },
 
   /**
@@ -48,7 +64,7 @@ export const SearchWidgetTracker = {
    * certain threshold, the widget is moved back into the customization
    * palette.
    */
-  _updateSearchBarVisibilityBasedOnUsage() {
+  _removeWidgetIfUnused() {
     if (!this._widgetIsInNavBar) {
       return;
     }
@@ -74,7 +90,7 @@ export const SearchWidgetTracker = {
    * the URL bar). Goes through each open browser window and removes the width
    * property / style on each existant search bar.
    */
-  removePersistedWidths() {
+  _removePersistedWidths() {
     Services.xulStore.removeValue(
       AppConstants.BROWSER_CHROME_URL,
       WIDGET_ID,

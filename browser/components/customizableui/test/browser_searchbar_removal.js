@@ -20,7 +20,7 @@ add_task(async function checkSearchBarPresent() {
     document.getElementById("searchbar-new"),
     "Search bar should be present in the Nav bar"
   );
-  SearchWidgetTracker._updateSearchBarVisibilityBasedOnUsage();
+  SearchWidgetTracker._removeWidgetIfUnused();
   Assert.ok(
     !document.getElementById("searchbar-new"),
     "Search bar should not be present in the Nav bar"
