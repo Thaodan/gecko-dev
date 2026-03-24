@@ -491,10 +491,10 @@ index ecda5a73aa..8e38dff076 100644
      "../api:transport_api",
      "../api/adaptation:resource_adaptation_api",
 diff --git a/call/audio_send_stream.h b/call/audio_send_stream.h
-index 84341b5cb1..2ae1742f91 100644
+index 86d2f8dc86..eafd892c59 100644
 --- a/call/audio_send_stream.h
 +++ b/call/audio_send_stream.h
-@@ -27,7 +27,7 @@
+@@ -26,7 +26,7 @@
  #include "api/frame_transformer_interface.h"
  #include "api/rtp_headers.h"
  #include "api/rtp_parameters.h"

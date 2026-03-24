@@ -15,7 +15,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/d380a43d59f4f7cbc
  4 files changed, 36 insertions(+)
 
 diff --git a/audio/audio_send_stream.cc b/audio/audio_send_stream.cc
-index 76156ce830..ec20109613 100644
+index cd91c1fe10..9edbd66bac 100644
 --- a/audio/audio_send_stream.cc
 +++ b/audio/audio_send_stream.cc
 @@ -438,6 +438,7 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats(
@@ -110,10 +110,10 @@ index 185f3e9975..5a2c547673 100644
    // Within this list, the sender-source SSRC pair is unique and per-pair the
    // ReportBlockData represents the latest Report Block that was received for
 diff --git a/call/audio_send_stream.h b/call/audio_send_stream.h
-index 2ae1742f91..21ae21b66f 100644
+index eafd892c59..79b8125202 100644
 --- a/call/audio_send_stream.h
 +++ b/call/audio_send_stream.h
-@@ -32,6 +32,7 @@
+@@ -31,6 +31,7 @@
  #include "api/units/time_delta.h"
  #include "call/audio_sender.h"
  #include "modules/rtp_rtcp/include/report_block_data.h"
@@ -121,7 +121,7 @@ index 2ae1742f91..21ae21b66f 100644
  
  namespace webrtc {
  
-@@ -68,6 +69,7 @@ class AudioSendStream : public AudioSender {
+@@ -67,6 +68,7 @@ class AudioSendStream : public AudioSender {
  
      ANAStats ana_statistics;
      AudioProcessingStats apm_statistics;
