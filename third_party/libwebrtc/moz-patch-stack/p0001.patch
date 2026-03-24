@@ -39,10 +39,10 @@ Cr-Commit-Position: refs/heads/main@{#46570}
  4 files changed, 12 insertions(+), 65 deletions(-)
 
 diff --git a/modules/desktop_capture/BUILD.gn b/modules/desktop_capture/BUILD.gn
-index aa91ec0815..82c10e4c5f 100644
+index d6d1cdf531..96a5835647 100644
 --- a/modules/desktop_capture/BUILD.gn
 +++ b/modules/desktop_capture/BUILD.gn
-@@ -281,8 +281,6 @@ rtc_library("desktop_capture") {
+@@ -280,8 +280,6 @@ rtc_library("desktop_capture") {
    visibility = [ "*" ]
    defines = []
    deps = [

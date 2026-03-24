@@ -26,7 +26,7 @@ index 3d233ff19c..f771394703 100644
  # These are the targets to skip header checking by default. The files in targets
  # matching these patterns (see "gn help label_pattern" for format) will not have
 diff --git a/media/BUILD.gn b/media/BUILD.gn
-index 5ca8d2c75a..2de2eecbc6 100644
+index 82410e5e84..4ed41f81d1 100644
 --- a/media/BUILD.gn
 +++ b/media/BUILD.gn
 @@ -7,7 +7,7 @@
@@ -39,7 +39,7 @@ index 5ca8d2c75a..2de2eecbc6 100644
  
  group("media") {
 diff --git a/modules/video_coding/BUILD.gn b/modules/video_coding/BUILD.gn
-index 95d8f1f1b0..d6a69eb1dc 100644
+index e1f7d9e7a4..4c74ff4465 100644
 --- a/modules/video_coding/BUILD.gn
 +++ b/modules/video_coding/BUILD.gn
 @@ -7,7 +7,7 @@
@@ -52,7 +52,7 @@ index 95d8f1f1b0..d6a69eb1dc 100644
  
  rtc_library("encoded_frame") {
 diff --git a/webrtc.gni b/webrtc.gni
-index 08fe47273e..f3a7788999 100644
+index faa4084e64..cd8c92ff02 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -489,8 +489,8 @@ all_poison_types = [

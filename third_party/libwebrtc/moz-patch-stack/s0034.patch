@@ -20,7 +20,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/58f47eacaf10d12e2
  11 files changed, 27 insertions(+), 27 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index 996905c2c4..4b57a76608 100644
+index f388ce751b..019e74c6ba 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -446,12 +446,12 @@ config("common_config") {
@@ -263,7 +263,7 @@ index e90ef0e06a..0e96125f40 100644
      cflags = [ "-mfpu=neon" ]
    }
 diff --git a/modules/desktop_capture/BUILD.gn b/modules/desktop_capture/BUILD.gn
-index 693e45ff8b..faa88d3543 100644
+index 8096ac6309..e666481d18 100644
 --- a/modules/desktop_capture/BUILD.gn
 +++ b/modules/desktop_capture/BUILD.gn
 @@ -10,7 +10,7 @@ import("//build/config/linux/gtk/gtk.gni")
@@ -276,7 +276,7 @@ index 693e45ff8b..faa88d3543 100644
  config("x11_config") {
    if (rtc_use_x11_extensions) {
 diff --git a/webrtc.gni b/webrtc.gni
-index 9e968a4114..6d70f8b591 100644
+index 598eafd82b..b99e321364 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -156,13 +156,13 @@ declare_args() {

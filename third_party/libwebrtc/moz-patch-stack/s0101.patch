@@ -75,7 +75,7 @@ index f771394703..5ef68516cf 100644
  # The python interpreter to use by default. On Windows, this will look
  # for vpython3.exe and vpython3.bat.
 diff --git a/BUILD.gn b/BUILD.gn
-index 3750de14aa..b10d4dcde2 100644
+index e8e44bffa5..07a994d749 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -21,15 +21,15 @@
@@ -107,7 +107,7 @@ index 3750de14aa..b10d4dcde2 100644
      defines = []
  
      deps = [
-@@ -856,7 +856,7 @@ rtc_static_library("dcsctp") {
+@@ -853,7 +853,7 @@ rtc_static_library("dcsctp") {
    visibility = [ "//:default" ]
    sources = []
    complete_static_lib = true
@@ -116,7 +116,7 @@ index 3750de14aa..b10d4dcde2 100644
    defines = []
    deps = [
      "net/dcsctp/public:factory",
-@@ -894,7 +894,7 @@ group("poison_default_neural_residual_echo_estimator") {
+@@ -891,7 +891,7 @@ group("poison_default_neural_residual_echo_estimator") {
  if (!build_with_chromium) {
    # Write debug logs to gn_logs.txt.
    # This is also required for Siso builds.
@@ -326,7 +326,7 @@ index 589142b014..2ee80ded55 100644
      }
    }
 diff --git a/examples/BUILD.gn b/examples/BUILD.gn
-index 0160ab4ca7..8a8c62dc16 100644
+index 759b97c18f..ac39facfb3 100644
 --- a/examples/BUILD.gn
 +++ b/examples/BUILD.gn
 @@ -9,15 +9,15 @@
@@ -350,7 +350,7 @@ index 0160ab4ca7..8a8c62dc16 100644
  }
  
  group("examples") {
-@@ -632,7 +632,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
+@@ -631,7 +631,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
            "../sdk:mediaconstraints_objc",
            "../sdk:peerconnectionfactory_base_objc",
            "../sdk:videocapture_objc",
@@ -359,7 +359,7 @@ index 0160ab4ca7..8a8c62dc16 100644
            "//third_party/ocmock",
          ]
        }
-@@ -739,7 +739,7 @@ if (is_linux || is_chromeos || is_win) {
+@@ -738,7 +738,7 @@ if (is_linux || is_chromeos || is_win) {
          "peerconnection/client/main_wnd.cc",
          "peerconnection/client/main_wnd.h",
        ]
@@ -427,7 +427,7 @@ index 9f5b865ba1..a2f5edb39b 100644
  
  group("logging") {
 diff --git a/media/BUILD.gn b/media/BUILD.gn
-index 2de2eecbc6..fba7d305b3 100644
+index 4ed41f81d1..678d86b496 100644
 --- a/media/BUILD.gn
 +++ b/media/BUILD.gn
 @@ -6,7 +6,7 @@
@@ -560,7 +560,7 @@ index 0e96125f40..c72b3714c4 100644
    }
  
 diff --git a/modules/desktop_capture/BUILD.gn b/modules/desktop_capture/BUILD.gn
-index 1bec6da0ca..f501b517fd 100644
+index b47202c3de..5303ce7ebb 100644
 --- a/modules/desktop_capture/BUILD.gn
 +++ b/modules/desktop_capture/BUILD.gn
 @@ -6,8 +6,8 @@
@@ -588,7 +588,7 @@ index a693604389..72972d18e1 100644
  import("../../webrtc.gni")
  
 diff --git a/modules/video_coding/BUILD.gn b/modules/video_coding/BUILD.gn
-index d6a69eb1dc..8f7dc6da50 100644
+index 4c74ff4465..f072067c4c 100644
 --- a/modules/video_coding/BUILD.gn
 +++ b/modules/video_coding/BUILD.gn
 @@ -6,7 +6,7 @@
@@ -601,7 +601,7 @@ index d6a69eb1dc..8f7dc6da50 100644
  import("../../webrtc.gni")
  
 diff --git a/pc/BUILD.gn b/pc/BUILD.gn
-index 804519a315..21553d6e55 100644
+index d7259a3e12..84b887bde5 100644
 --- a/pc/BUILD.gn
 +++ b/pc/BUILD.gn
 @@ -30,8 +30,8 @@
@@ -616,7 +616,7 @@ index 804519a315..21553d6e55 100644
  
  if (rtc_build_libsrtp) {
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index 63ea15810c..e80ac193e7 100644
+index bbe13b17eb..238ac5881f 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
 @@ -9,8 +9,8 @@
@@ -630,7 +630,7 @@ index 63ea15810c..e80ac193e7 100644
  }
  
  rtc_source_set("protobuf_utils") {
-@@ -1946,8 +1946,8 @@ if (!rtc_rusty_base64) {
+@@ -1945,8 +1945,8 @@ if (!rtc_rusty_base64) {
      ]
    }
  } else {
@@ -756,7 +756,7 @@ index 2823625062..fdd5474c33 100644
  import("../webrtc.gni")
  
 diff --git a/test/BUILD.gn b/test/BUILD.gn
-index 576b5951c2..84a9612156 100644
+index 6ca857995b..4febdc67fb 100644
 --- a/test/BUILD.gn
 +++ b/test/BUILD.gn
 @@ -6,10 +6,10 @@
@@ -804,7 +804,7 @@ index f05995da70..46ddb4f25e 100644
    }
  }
 diff --git a/webrtc.gni b/webrtc.gni
-index ff289d9a25..59568d548b 100644
+index d7e9486c5f..1c188e9985 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -5,12 +5,12 @@
