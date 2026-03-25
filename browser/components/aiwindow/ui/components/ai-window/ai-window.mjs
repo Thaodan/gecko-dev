@@ -36,8 +36,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/ui/modules/ChatMessage.sys.mjs",
   getRoleLabel:
     "moz-src:///browser/components/aiwindow/ui/modules/ChatUtils.sys.mjs",
-  getCurrentTabUrl:
-    "moz-src:///browser/components/aiwindow/ui/modules/ChatUtils.sys.mjs",
   NewTabStarterGenerator:
     "moz-src:///browser/components/aiwindow/models/ConversationSuggestions.sys.mjs",
   generateConversationStartersSidebar:
@@ -969,15 +967,22 @@ export class AIWindow extends MozLitElement {
 
   /**
    * @param {string} text
-   * @param {ContextWebsite[]} [contextMentions] - Context websites from the
-   * smartbar
-   * @param {?URL} [pageUrl] - Page URL string from the smartbar's current
-   * state. null means the user removed page context
+   * @param {ContextWebsite[]} [contextMentions]
+   * @param {string|null} [contextPageUrl] - Page URL string from the smartbar
+   * commit event. null means the user removed page context; undefined means
+   * fall back to the current tab URL.
    */
-  submitChatMessage(text, contextMentions, pageUrl) {
+  submitChatMessage(text, contextMentions, contextPageUrl) {
     const trimmed = String(text ?? "").trim();
     if (!trimmed) {
       return;
+    }
+
+    let pageUrl;
+    if (contextPageUrl === undefined) {
+      pageUrl = this.#getCurrentPageUrl();
+    } else {
+      pageUrl = contextPageUrl ? URL.parse(contextPageUrl) : null;
     }
 
     this.#recordChatInteraction();
@@ -1057,10 +1062,7 @@ export class AIWindow extends MozLitElement {
       message_seq: this.#conversation?.messageCount ?? 0,
       starter,
     });
-
-    const { pageUrl, contextWebsites } = this.#smartbar.getCurrentContextData();
-
-    this.submitChatMessage(text, contextWebsites, pageUrl);
+    this.submitChatMessage(text);
   }
 
   onOpenLink() {
@@ -1162,6 +1164,19 @@ export class AIWindow extends MozLitElement {
   }
 
   /**
+   * Gets the current url of the loaded page.
+   *
+   * @returns {URL} The page URL
+   *
+   * @private
+   */
+  #getCurrentPageUrl() {
+    return URL.fromURI(
+      window.browsingContext.topChromeWindow.gBrowser.currentURI
+    );
+  }
+
+  /**
    * Fetches an AI response based on the current user prompt.
    * Validates the prompt, updates conversation state, streams the response,
    * and dispatches updates to the browser actor.
@@ -1208,6 +1223,10 @@ export class AIWindow extends MozLitElement {
       );
 
       if (formattedPrompt) {
+        if (pageUrl === undefined) {
+          pageUrl = this.#getCurrentPageUrl();
+        }
+
         await this.#conversation.generatePrompt(
           formattedPrompt,
           pageUrl,
@@ -1477,7 +1496,7 @@ export class AIWindow extends MozLitElement {
       detail: {
         input,
         mode: this.mode,
-        pageUrl: lazy.getCurrentTabUrl(window),
+        pageUrl: this.#getCurrentPageUrl(),
         conversationId: this.#getDataConvId(),
         tab: topChromeWindow?.gBrowser?.selectedTab,
         conversation: this.#conversation,

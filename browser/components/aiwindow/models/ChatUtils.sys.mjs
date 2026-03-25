@@ -62,6 +62,7 @@ export function sanitizeUntrustedContent(text, truncateOnly = false) {
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
+  BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   MemoriesManager:
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs",
   renderPrompt: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
@@ -86,27 +87,33 @@ export function getLocalIsoTime() {
   }
 }
 
+function resolveTabMetadataDependencies(overrides = {}) {
+  return {
+    BrowserWindowTracker:
+      overrides.BrowserWindowTracker ?? lazy.BrowserWindowTracker,
+  };
+}
+
 /**
  * Get current tab metadata: url, title, description if available.
  *
- * @param {Array<ContextWebsite>} contextMentions
- *
+ * @param {object} [depsOverride]
  * @returns {Promise<{url: string, title: string, description: string}>}
  */
-export async function getCurrentTabMetadata(contextMentions = []) {
-  const currentTab = contextMentions.find(
-    contextWebsite => contextWebsite.type === "currentTab"
-  );
-
-  if (!currentTab) {
+export async function getCurrentTabMetadata(depsOverride) {
+  const { BrowserWindowTracker } = resolveTabMetadataDependencies(depsOverride);
+  const win = BrowserWindowTracker.getTopWindow();
+  const browser = win?.gBrowser?.selectedBrowser;
+  if (!browser) {
     return { url: "", title: "", description: "" };
   }
 
+  const url = browser.currentURI?.spec || "";
+  const title = sanitizeUntrustedContent(
+    browser.contentTitle || browser.documentTitle || ""
+  );
+
   let description = "";
-
-  const url = currentTab.url || "";
-  const title = sanitizeUntrustedContent(currentTab.label || "");
-
   /**
    * TODO: BUG 2015574
    * Need to extract page description in PageExtractor
@@ -120,15 +127,11 @@ export async function getCurrentTabMetadata(contextMentions = []) {
  * the memories injection message and the user message in the conversation
  * messages list.
  *
- * @param {Array<ContextWebsite>} contextMentions
- *
+ * @param {object} [depsOverride]
  * @returns {Promise<{url, title, description, locale, timezone, isoTimestamp, todayDate, hasTabInfo}>}
  */
-export async function constructRealTimeInfoInjectionMessage(
-  contextMentions = []
-) {
-  const { url, title, description } =
-    await getCurrentTabMetadata(contextMentions);
+export async function constructRealTimeInfoInjectionMessage(depsOverride) {
+  const { url, title, description } = await getCurrentTabMetadata(depsOverride);
   const isoTimestamp = getLocalIsoTime();
   const datePart = isoTimestamp?.split("T")[0] ?? "";
   const locale = Services.locale.appLocaleAsBCP47;
