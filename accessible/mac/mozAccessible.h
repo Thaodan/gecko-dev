@@ -87,8 +87,6 @@ enum CheckedState {
 
 - (void)maybePostValidationErrorChanged;
 
-- (void)maybeFireUAZoomChangeFocusEvent:(int)focusType;
-
 - (void)handleAnnouncementEvent:(NSString*)announcement
                        priority:(uint16_t)priority;
 
