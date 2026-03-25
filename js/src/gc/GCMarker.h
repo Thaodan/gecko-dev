@@ -487,7 +487,7 @@ class GCMarker {
 
 #ifdef JS_GC_CONCURRENT_MARKING
 
-  using MainThreadBuffer = js::Vector<JS::GCCellPtr, 0, SystemAllocPolicy>;
+  using MainThreadBuffer = js::Vector<JSObject*, 0, SystemAllocPolicy>;
 
   bool processMainThreadBuffers(JS::SliceBudget& budget);
   bool processMainThreadBuffer(MainThreadBuffer& buffer,
@@ -498,7 +498,7 @@ class GCMarker {
            grayMainThreadBuffer_.ref().empty();
   }
 
-  bool addToMainThreadBuffer(JS::GCCellPtr cell, JS::SliceBudget& budget);
+  bool addToMainThreadBuffer(JSObject* object, JS::SliceBudget& budget);
 
 #endif  // JS_GC_CONCURRENT_MARKING
 
