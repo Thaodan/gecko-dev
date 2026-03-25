@@ -59,9 +59,11 @@ Nesting header
 .. image:: img/nesting.png
     :class: border
     :alt: The nesting header
-    :width: 535px
+    :width: 659px
 
 For nesting structures inside a source code, such as namespaces, classes, functions, etc, Searchfox shows a sticky header for the nesting.
+
+The breadcrumbs also becomes a sticky header.
 
 For variable declarations spans across multiple lines in C++ code, the nesting header is shown if it has 10+ lines.
 
