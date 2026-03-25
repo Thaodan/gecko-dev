@@ -312,12 +312,13 @@ nsSynthVoiceRegistry::RemoveVoice(nsISpeechService* aService,
                         NS_ConvertUTF16toUTF8(aUri).get(),
                         (XRE_IsContentProcess()) ? "child" : "parent"));
 
-  RefPtr<VoiceData> retval = mUriVoiceMap.Get(aUri);
+  bool found = false;
+  VoiceData* retval = mUriVoiceMap.GetWeak(aUri, &found);
 
-  if (NS_WARN_IF(!retval)) {
+  if (NS_WARN_IF(!(found))) {
     return NS_ERROR_NOT_AVAILABLE;
   }
-  if (NS_WARN_IF(aService != retval->mService)) {
+  if (NS_WARN_IF(!(aService == retval->mService))) {
     return NS_ERROR_INVALID_ARG;
   }
 

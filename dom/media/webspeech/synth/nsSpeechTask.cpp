@@ -272,7 +272,6 @@ nsresult nsSpeechTask::DispatchMarkImpl(const nsAString& aName,
 void nsSpeechTask::Pause() {
   MOZ_ASSERT(XRE_IsParentProcess());
 
-  RefPtr<nsSpeechTask> kungFuDeathGrip(this);
   if (mCallback) {
     DebugOnly<nsresult> rv = mCallback->OnPause();
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Unable to call onPause() callback");
@@ -286,7 +285,6 @@ void nsSpeechTask::Pause() {
 void nsSpeechTask::Resume() {
   MOZ_ASSERT(XRE_IsParentProcess());
 
-  RefPtr<nsSpeechTask> kungFuDeathGrip(this);
   if (mCallback) {
     DebugOnly<nsresult> rv = mCallback->OnResume();
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
@@ -304,8 +302,8 @@ void nsSpeechTask::Cancel() {
 
   LOG(LogLevel::Debug, ("nsSpeechTask::Cancel"));
 
-  if (nsCOMPtr<nsISpeechTaskCallback> callback = mCallback) {
-    DebugOnly<nsresult> rv = callback->OnCancel();
+  if (mCallback) {
+    DebugOnly<nsresult> rv = mCallback->OnCancel();
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "Unable to call onCancel() callback");
   }
