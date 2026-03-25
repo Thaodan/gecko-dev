@@ -37,11 +37,6 @@ interface MetricsStorage {
     suspend fun updateSentState(event: Event)
 
     /**
-     * Updates locally-stored data related to an [event] that has just been sent.
-     */
-    suspend fun updatePersistentState(event: Event)
-
-    /**
      * Will try to register this as a recorder of app usage based on whether usage recording is still
      * needed. It will measure usage by to monitoring lifecycle callbacks from [application]'s
      * activities and should update local state using [updateUsageState].
@@ -73,8 +68,8 @@ internal class DefaultMetricsStorage(
     @Suppress("CyclomaticComplexMethod")
     override suspend fun shouldTrack(event: Event): Boolean =
         withContext(dispatcher) {
-            // The side-effect of storing days of use always needs to happen.
-            updateDaysOfUse()
+            // Update the persistent state before checking if we should track.
+            updatePersistentState(event)
             val currentTime = System.currentTimeMillis()
             shouldSendGenerally() && when (event) {
                 Event.GrowthData.ConversionEvent1 -> {
@@ -96,7 +91,9 @@ internal class DefaultMetricsStorage(
                 }
 
                 Event.GrowthData.ConversionEvent4 -> {
-                    shouldTrackFirstWeekActivity()
+                    currentTime.duringFirstWeek() &&
+                            !settings.firstWeekSeriesGrowthSent &&
+                            hasBeenActiveThreeDaysInFirstWeek()
                 }
 
                 Event.GrowthData.ConversionEvent5 -> {
@@ -109,7 +106,10 @@ internal class DefaultMetricsStorage(
                 }
 
                 is Event.GrowthData.ConversionEvent7 -> {
-                    hasUserReachedActivatedThreshold()
+                    currentTime.duringFirstWeek() &&
+                            !settings.growthUserActivatedSent &&
+                            settings.growthEarlySearchUsed &&
+                            hasBeenActiveThreeDaysInFirstWeek()
                 }
 
                 is Event.FirstWeekPostInstall.ConversionEvent8 -> {
@@ -182,14 +182,12 @@ internal class DefaultMetricsStorage(
         }
     }
 
-    override suspend fun updatePersistentState(event: Event) {
+    private fun updatePersistentState(event: Event) {
+        updateDaysOfUse()
         when (event) {
             is Event.GrowthData.ConversionEvent7 -> {
                 if (event.fromSearch && shouldUpdateSearchUsage()) {
                     settings.growthEarlySearchUsed = true
-                } else if (!event.fromSearch && shouldUpdateUsageCount()) {
-                    settings.growthEarlyUseCount.increment()
-                    settings.growthEarlyUseCountLastIncrement = System.currentTimeMillis()
                 }
             }
 
@@ -222,11 +220,7 @@ internal class DefaultMetricsStorage(
         }
     }
 
-    private fun shouldTrackFirstWeekActivity(): Boolean = Result.runCatching {
-        if (!System.currentTimeMillis().duringFirstWeek() || settings.firstWeekSeriesGrowthSent) {
-            return false
-        }
-
+    private fun hasBeenActiveThreeDaysInFirstWeek(): Boolean = Result.runCatching {
         val distinctDaysCount = settings.firstWeekDaysOfUseGrowthData
             .asSequence()
             .mapNotNull { dateFormatter.parse(it) }
@@ -360,19 +354,6 @@ internal class DefaultMetricsStorage(
         set(Calendar.MILLISECOND, 0)
     }.timeInMillis
 
-    private fun hasUserReachedActivatedThreshold(): Boolean {
-        return !settings.growthUserActivatedSent &&
-                settings.growthEarlyUseCount.value >= DAYS_ACTIVATED_THREASHOLD &&
-                settings.growthEarlySearchUsed
-    }
-
-    private fun shouldUpdateUsageCount(): Boolean {
-        val currentTime = System.currentTimeMillis()
-        return currentTime.afterFirstDay() &&
-                currentTime.duringFirstWeek() &&
-                settings.growthEarlyUseCountLastIncrement.hasBeenMoreThanDaySince()
-    }
-
     private fun shouldUpdateSearchUsage(): Boolean {
         val currentTime = System.currentTimeMillis()
         return currentTime.afterThirdDay() &&
@@ -424,9 +405,6 @@ internal class DefaultMetricsStorage(
 
         // The usage threshold we are interested in is currently 340 seconds.
         private const val USAGE_THRESHOLD_MILLIS = 1000 * 340
-
-        // The usage threshold for "activated" growth users.
-        private const val DAYS_ACTIVATED_THREASHOLD = 3
 
         // Minimum active days required for recurrent activity.
         private const val MINIMUM_ACTIVE_DAYS_FOR_RECURRENT_ACTIVITY = 2
