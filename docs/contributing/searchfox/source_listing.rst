@@ -46,12 +46,12 @@ Code coverage
 
 The light-blue line next to the blame strip shows the `code coverage <https://firefox-source-docs.mozilla.org/tools/code-coverage/index.html>`__ information.
 
-Hovering a pointer over the coverage strip shows a coverage popup, which shows how many times the line is hit in the automation.
+Hovering a pointer over the blame strip shows the coverage information, in the same popup as the blame, which shows how many times the line is hit in the automation.
 
-.. image:: img/coverage.png
+.. image:: img/blame.png
     :class: border
-    :alt: The code coverage information
-    :width: 589px
+    :alt: The code coverage information in the blame popup
+    :width: 688px
 
 Nesting header
 --------------
