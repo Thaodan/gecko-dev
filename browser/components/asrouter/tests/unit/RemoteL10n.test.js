@@ -73,8 +73,10 @@ describe("RemoteL10n", () => {
 
       assert.calledOnce(domL10nStub);
       const { args } = domL10nStub.firstCall;
-      // The only arg is the resource array.
-      assert.equal(args.length, 1);
+      // The first arg is the resource array,
+      // the second one is false (use async),
+      // and the third one is the bundle generator.
+      assert.equal(args.length, 2);
       assert.deepEqual(args[0], [
         "branding/brand.ftl",
         "browser/defaultBrowserNotification.ftl",
@@ -84,6 +86,7 @@ describe("RemoteL10n", () => {
         "browser/termsofuse.ftl",
         "toolkit/branding/brandings.ftl",
       ]);
+      assert.isFalse(args[1]);
       assert.calledOnce(l10nRegInstance.hasSource);
       assert.calledOnce(l10nRegInstance.registerSources);
       assert.notCalled(l10nRegInstance.removeSources);
@@ -94,8 +97,10 @@ describe("RemoteL10n", () => {
       RemoteL10n._createDOML10n();
 
       const { args } = domL10nStub.firstCall;
-      // The only arg is the resource array.
-      assert.equal(args.length, 1);
+      // The first arg is the resource array,
+      // the second one is false (use async),
+      // and the third one is null.
+      assert.equal(args.length, 2);
       assert.deepEqual(args[0], [
         "branding/brand.ftl",
         "browser/defaultBrowserNotification.ftl",
