@@ -1249,7 +1249,7 @@ this.tabs = class extends ExtensionAPIPersistent {
               } else if (tabsToMove.includes(otherTabInSplit)) {
                 // Order was explicitly specified, other tabs are in between.
                 // Unsplit tab to prepare for moving other tabs in between.
-                splitview.unsplitTabs();
+                gBrowser.unsplitTabs(splitview);
                 splitview = splitviewTabs = null;
               } else {
                 // Other tab in split was not specified, but the index points
