@@ -121,25 +121,6 @@ See :ref:`diagramming <searchfox_diagramming>` document for more details..
 
 For functions, classes, methods, and fields, Searchfox can show the diagram of how they're used, called, or related.
 
-These items are behind the alpha feature gate "Diagramming".
-
-Uses diagram of ...
-  Open a diagram that shows how given field is used.
-
-Calls diagram of ...
-  Open a diagram that shows how given function is called.
-
-Class diagram of ...
-  Open a diagram that shows given class and its fields, the hierarchy, etc.
-
-Inheritance diagram of ...
-  Open a diagram that shows the class hierarchy of given class.
-
-Go to use of ...
-  Open the use site of the function shown as the edge in the diagram.
-
-  This item is shown for the uses diagram's edge.
-
 GC analysis
 -----------
 
