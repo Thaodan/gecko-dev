@@ -179,10 +179,11 @@ class MenuDialogMiddleware(
         }
     }
 
-    private suspend fun TabSessionState?.checkSummarizationEligibility(): Boolean =
+    private suspend fun TabSessionState?.checkSummarizationEligibility(): Boolean = withContext(Dispatchers.Default) {
         this@checkSummarizationEligibility?.engineState?.engineSession?.let { session ->
             summarizationEligibilityChecker.checkLanguage(session).getOrDefault(false)
         } ?: false
+    }
 
     private suspend fun setupBookmarkState(
         store: Store<MenuState, MenuAction>,
