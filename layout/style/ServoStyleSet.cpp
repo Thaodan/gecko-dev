@@ -4,7 +4,6 @@
 
 #include "mozilla/ServoStyleSet.h"
 
-#include "COLRFonts.h"
 #include "PseudoStyleType.h"
 #include "gfxUserFontSet.h"
 #include "mozilla/AttributeStyles.h"

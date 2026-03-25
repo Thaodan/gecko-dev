@@ -512,18 +512,6 @@ hb_blob_t* gfxDWriteFontEntry::GetFontTable(uint32_t aTag) {
   return nullptr;
 }
 
-gfxFontEntry::FontTableCache* gfxDWriteFontEntry::GetFontTableCache(
-    bool aCreate) {
-  // Create the cache if it does not yet exist.
-  if (!mFontTableCache && aCreate) {
-    auto* cache = new FontTableCache();
-    if (!mFontTableCache.compareExchange(nullptr, cache)) {
-      delete cache;
-    }
-  }
-  return mFontTableCache;
-}
-
 nsresult gfxDWriteFontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
   AUTO_PROFILER_LABEL("gfxDWriteFontEntry::ReadCMAP", GRAPHICS);
 
