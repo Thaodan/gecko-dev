@@ -437,9 +437,10 @@
   }
 }
 
-.sections-mgmt-panel {
-  height: 100%;
+.sections-mgmt-panel,
+.widgets-mgmt-panel {
   // Width of panel minus the margins
+  height: 100%;
   inset-inline-start: var(--space-xlarge);
   position: absolute;
   inset-block-start: 0;
@@ -455,6 +456,37 @@
     transform: translateX(-100%);
   }
 
+  h3 {
+    font-size: inherit;
+    margin-block: 0 var(--space-small);
+  }
+
+  .arrow-button {
+    background: url('chrome://global/skin/icons/arrow-left.svg') no-repeat left center;
+
+    &:dir(rtl) {
+      background: url('chrome://global/skin/icons/arrow-right.svg') no-repeat right center;
+    }
+
+    border: none;
+    cursor: pointer;
+    margin-block-end: var(--space-xlarge);
+    padding-inline-start: var(--space-xlarge);
+    -moz-context-properties: fill;
+    fill: currentColor;
+    min-height: var(--size-item-small);
+    margin-inline-start: var(--space-xsmall);
+    margin-block-start: var(--space-xsmall);
+
+    h1 {
+      font-size: var(--font-size-root);
+      margin-block: 0;
+      font-weight: var(--button-font-weight);
+    }
+  }
+}
+
+.sections-mgmt-panel {
   @media (prefers-reduced-motion: no-preference) {
     &.sections-mgmt-panel-enter,
     &.sections-mgmt-panel-exit,
@@ -467,12 +499,6 @@
   &.sections-mgmt-panel-enter-done,
   &.sections-mgmt-panel-enter-active {
     transform: translateX(0);
-  }
-
-  // Typography
-  h3 {
-    font-size: inherit;
-    margin-block: 0 var(--space-small);
   }
 
   // List
@@ -496,32 +522,6 @@
     display: block;
     margin-block-end: var(--space-xxlarge);
     color: var(--text-color-deemphasized);
-  }
-
-  // Buttons
-  .arrow-button {
-    background: url('chrome://global/skin/icons/arrow-left.svg') no-repeat left center;
-
-    &:dir(rtl) {
-      background: url('chrome://global/skin/icons/arrow-right.svg') no-repeat right center;
-    }
-
-    border: none;
-    cursor: pointer;
-    margin-block-end: var(--space-xlarge);
-    padding-inline-start: var(--space-xlarge);
-    -moz-context-properties: fill;
-    fill: currentColor;
-    min-height: var(--size-item-small);
-    margin-inline-start: var(--space-xsmall);
-    margin-block-start: var(--space-xsmall);
-
-    h1 {
-      font-size: var(--font-size-root);
-      margin-block: 0;
-      font-weight: var(--button-font-weight);
-    }
-
   }
 
   // Follow / Unfollow and Block / Unblock Buttons
@@ -585,5 +585,26 @@
       }
     }
   }
+}
 
+.widgets-mgmt-panel {
+  @media (prefers-reduced-motion: no-preference) {
+    &.widgets-mgmt-panel-enter,
+    &.widgets-mgmt-panel-exit,
+    &.widgets-mgmt-panel-enter-done,
+    &.widgets-mgmt-panel-exit-done {
+      transition: transform 300ms;
+    }
+  }
+
+  &.widgets-mgmt-panel-enter-done,
+  &.widgets-mgmt-panel-enter-active {
+    transform: translateX(0);
+  }
+
+  .settings-widgets {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-large);
+  }
 }

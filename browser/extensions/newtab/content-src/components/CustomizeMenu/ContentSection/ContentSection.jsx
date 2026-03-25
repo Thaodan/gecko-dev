@@ -7,6 +7,8 @@ import { batch } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { SectionsMgmtPanel } from "../SectionsMgmtPanel/SectionsMgmtPanel";
 import { WallpaperCategories } from "../../WallpaperCategories/WallpaperCategories";
+// @nova-cleanup(move-directory): Update import path after WidgetsManagementPanel moves to components/CustomizeMenu/
+import { WidgetsManagementPanel } from "content-src/components/Nova/CustomizeMenu/WidgetsManagementPanel/WidgetsManagementPanel";
 
 export class ContentSection extends React.PureComponent {
   constructor(props) {
@@ -82,7 +84,7 @@ export class ContentSection extends React.PureComponent {
   }
 
   onPreferenceSelect(e) {
-    // eventSource: WEATHER | TOP_SITES | TOP_STORIES | WIDGET_LISTS | WIDGET_TIMER
+    // eventSource: WALLPAPERS | WEATHER | TOP_SITES | TOP_STORIES | WIDGET_LISTS | WIDGET_TIMER
     const { preference, eventSource } = e.target.dataset;
     let value;
     if (e.target.nodeName === "SELECT") {
@@ -155,15 +157,21 @@ export class ContentSection extends React.PureComponent {
       mayHaveWidgets,
       mayHaveTimerWidget,
       mayHaveListsWidget,
+      mayHaveWeatherForecast,
       openPreferences,
       wallpapersEnabled,
       activeWallpaper,
       setPref,
       mayHaveTopicSections,
+      weatherDisplay,
       exitEventFired,
       onSubpanelToggle,
       toggleSectionsMgmtPanel,
       showSectionsMgmtPanel,
+      // @nova-cleanup(remove-conditional): Remove novaEnabled
+      novaEnabled,
+      toggleWidgetsManagementPanel,
+      showWidgetsManagementPanel,
     } = this.props;
     const {
       topSitesEnabled,
@@ -174,17 +182,30 @@ export class ContentSection extends React.PureComponent {
     } = enabledSections;
     const { timerEnabled, listsEnabled } = enabledWidgets;
 
+    // @nova-cleanup(remove-conditional): This conditional adds the toggle for wallpaper visibility.
     return (
       <div className="home-section">
-        {wallpapersEnabled && (
+        {(wallpapersEnabled || novaEnabled) && (
           <>
             <div className="wallpapers-section">
-              <WallpaperCategories
-                setPref={setPref}
-                activeWallpaper={activeWallpaper}
-                exitEventFired={exitEventFired}
-                onSubpanelToggle={onSubpanelToggle}
-              />
+              {novaEnabled && (
+                <moz-toggle
+                  id="wallpapers-toggle"
+                  pressed={wallpapersEnabled || null}
+                  ontoggle={this.onPreferenceSelect}
+                  data-preference="newtabWallpapers.enabled"
+                  data-event-source="WALLPAPERS"
+                  data-l10n-id="newtab-wallpaper-toggle-title"
+                />
+              )}
+              {wallpapersEnabled && (
+                <WallpaperCategories
+                  setPref={setPref}
+                  activeWallpaper={activeWallpaper}
+                  exitEventFired={exitEventFired}
+                  onSubpanelToggle={onSubpanelToggle}
+                />
+              )}
             </div>
             {/* If widgets section is visible, hide this divider */}
             {!mayHaveWidgets && (
@@ -192,57 +213,73 @@ export class ContentSection extends React.PureComponent {
             )}
           </>
         )}
-        {mayHaveWidgets && (
-          <div className="widgets-section">
-            <div className="category-header">
-              <h2 data-l10n-id="newtab-custom-widget-section-title"></h2>
-            </div>
-            <div className="settings-widgets">
-              {/* Weather */}
-              {mayHaveWeather && (
-                <div id="weather-section" className="section">
-                  <moz-toggle
-                    id="weather-toggle"
-                    pressed={weatherEnabled || null}
-                    ontoggle={this.onPreferenceSelect}
-                    data-preference="showWeather"
-                    data-event-source="WEATHER"
-                    data-l10n-id="newtab-custom-widget-weather-toggle"
-                  />
-                </div>
-              )}
+        {mayHaveWidgets &&
+          (novaEnabled ? (
+            <WidgetsManagementPanel
+              enabledSections={enabledSections}
+              enabledWidgets={enabledWidgets}
+              mayHaveWeather={mayHaveWeather}
+              mayHaveTimerWidget={mayHaveTimerWidget}
+              mayHaveListsWidget={mayHaveListsWidget}
+              mayHaveWeatherForecast={mayHaveWeatherForecast}
+              weatherDisplay={weatherDisplay}
+              setPref={setPref}
+              exitEventFired={exitEventFired}
+              onSubpanelToggle={onSubpanelToggle}
+              togglePanel={toggleWidgetsManagementPanel}
+              showPanel={showWidgetsManagementPanel}
+            />
+          ) : (
+            <div className="widgets-section">
+              <div className="category-header">
+                <h2 data-l10n-id="newtab-custom-widget-section-title"></h2>
+              </div>
+              <div className="settings-widgets">
+                {/* Weather */}
+                {mayHaveWeather && (
+                  <div id="weather-section" className="section">
+                    <moz-toggle
+                      id="weather-toggle"
+                      pressed={weatherEnabled || null}
+                      ontoggle={this.onPreferenceSelect}
+                      data-preference="showWeather"
+                      data-event-source="WEATHER"
+                      data-l10n-id="newtab-custom-widget-weather-toggle"
+                    />
+                  </div>
+                )}
 
-              {/* Lists */}
-              {mayHaveListsWidget && (
-                <div id="lists-widget-section" className="section">
-                  <moz-toggle
-                    id="lists-toggle"
-                    pressed={listsEnabled || null}
-                    ontoggle={this.onPreferenceSelect}
-                    data-preference="widgets.lists.enabled"
-                    data-event-source="WIDGET_LISTS"
-                    data-l10n-id="newtab-custom-widget-lists-toggle"
-                  />
-                </div>
-              )}
+                {/* Lists */}
+                {mayHaveListsWidget && (
+                  <div id="lists-widget-section" className="section">
+                    <moz-toggle
+                      id="lists-toggle"
+                      pressed={listsEnabled || null}
+                      ontoggle={this.onPreferenceSelect}
+                      data-preference="widgets.lists.enabled"
+                      data-event-source="WIDGET_LISTS"
+                      data-l10n-id="newtab-custom-widget-lists-toggle"
+                    />
+                  </div>
+                )}
 
-              {/* Timer */}
-              {mayHaveTimerWidget && (
-                <div id="timer-widget-section" className="section">
-                  <moz-toggle
-                    id="timer-toggle"
-                    pressed={timerEnabled || null}
-                    ontoggle={this.onPreferenceSelect}
-                    data-preference="widgets.focusTimer.enabled"
-                    data-event-source="WIDGET_TIMER"
-                    data-l10n-id="newtab-custom-widget-timer-toggle"
-                  />
-                </div>
-              )}
-              <span className="divider" role="separator"></span>
+                {/* Timer */}
+                {mayHaveTimerWidget && (
+                  <div id="timer-widget-section" className="section">
+                    <moz-toggle
+                      id="timer-toggle"
+                      pressed={timerEnabled || null}
+                      ontoggle={this.onPreferenceSelect}
+                      data-preference="widgets.focusTimer.enabled"
+                      data-event-source="WIDGET_TIMER"
+                      data-l10n-id="newtab-custom-widget-timer-toggle"
+                    />
+                  </div>
+                )}
+                <span className="divider" role="separator"></span>
+              </div>
             </div>
-          </div>
-        )}
+          ))}
         <div className="settings-toggles">
           {/* Note: If widgets are enabled, the weather toggle will be moved under Widgets subsection */}
           {!mayHaveWidgets && mayHaveWeather && (
