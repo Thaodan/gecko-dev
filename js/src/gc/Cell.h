@@ -7,7 +7,8 @@
 #ifndef gc_Cell_h
 #define gc_Cell_h
 
-#include <bit>
+#include "mozilla/EndianUtils.h"
+
 #include <type_traits>
 
 #include "gc/GCContext.h"
@@ -711,28 +712,28 @@ class alignas(gc::CellAlignBytes) CellWithLengthAndFlags : public Cell {
 
   // Offsets for direct field from jit code. A number of places directly
   // access 32-bit length and flags fields so do endian trickery here.
-  static constexpr size_t offsetOfHeaderFlags() {
 #if JS_BITS_PER_WORD == 32
+  static constexpr size_t offsetOfHeaderFlags() {
     return offsetof(CellWithLengthAndFlags, header_);
-#else
-    if constexpr (std::endian::native == std::endian::little) {
-      return offsetof(CellWithLengthAndFlags, header_);
-    } else {
-      return offsetof(CellWithLengthAndFlags, header_) + sizeof(uint32_t);
-    }
-#endif
   }
   static constexpr size_t offsetOfHeaderLength() {
-#if JS_BITS_PER_WORD == 32
     return offsetof(CellWithLengthAndFlags, length_);
-#else
-    if constexpr (std::endian::native == std::endian::little) {
-      return offsetof(CellWithLengthAndFlags, header_) + sizeof(uint32_t);
-    } else {
-      return offsetof(CellWithLengthAndFlags, header_);
-    }
-#endif
   }
+#elif MOZ_LITTLE_ENDIAN()
+  static constexpr size_t offsetOfHeaderFlags() {
+    return offsetof(CellWithLengthAndFlags, header_);
+  }
+  static constexpr size_t offsetOfHeaderLength() {
+    return offsetof(CellWithLengthAndFlags, header_) + sizeof(uint32_t);
+  }
+#else
+  static constexpr size_t offsetOfHeaderFlags() {
+    return offsetof(CellWithLengthAndFlags, header_) + sizeof(uint32_t);
+  }
+  static constexpr size_t offsetOfHeaderLength() {
+    return offsetof(CellWithLengthAndFlags, header_);
+  }
+#endif
 };
 
 // Base class for non-nursery-allocatable GC things that allows storing a non-GC
