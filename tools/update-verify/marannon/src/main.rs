@@ -53,16 +53,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // All `from` builds given will be tested against the complete MAR. Entries that also
     // contained a partial MAR will be additionally tested against that.
     for (i, entry) in args.from.iter().enumerate() {
-        let mut dest_path = download_dir.clone();
+        let mut installer_dest_path = download_dir.clone();
         let ext =
             get_extension(&entry.installer).ok_or("Couldn't find from installer extension!")?;
-        dest_path.push(format!("{i}.{ext}"));
-        downloader.fetch(&entry.installer, &dest_path)?;
+        installer_dest_path.push(format!("{i}.{ext}"));
+        downloader.fetch(&entry.installer, &installer_dest_path)?;
+        let mut updater_dest_path = download_dir.clone();
+        updater_dest_path.push("updater.tar.xz");
+        downloader.fetch(&entry.updater_package, &updater_dest_path)?;
         tests.push(Test {
             id: entry.id.clone(),
             mar: args.complete_mar.to_path_buf(),
-            from_installer: dest_path.clone(),
+            from_installer: installer_dest_path.clone(),
             locale: args.locale.clone(),
+            updater_package: updater_dest_path.clone(),
         });
         if let Some(partial_mar) = &entry.partial_mar {
             let mut partial_path = args.partial_mar_dir.to_path_buf();
@@ -70,8 +74,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             tests.push(Test {
                 id: entry.id.clone(),
                 mar: partial_path,
-                from_installer: dest_path.clone(),
+                from_installer: installer_dest_path.clone(),
                 locale: args.locale.clone(),
+                updater_package: updater_dest_path.clone(),
             });
         }
     }
