@@ -2,9 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import json
 import multiprocessing
 import os
 import sys
+import threading
 import time
 import warnings
 from collections import OrderedDict, namedtuple
@@ -137,7 +139,6 @@ def _collect(pipe, poll_interval):
     data then forwards it on a pipe until told to stop.
     """
 
-    data = []
     processes = []
     sample_processes = "MOZ_PROCESS_SAMPLING" in os.environ
 
@@ -226,7 +227,7 @@ def _collect(pipe, poll_interval):
             swap_entry[sout_index] = swap_mem.sout - swap_last.sout
             swap_last = swap_mem
 
-            data.append((
+            pipe.send((
                 last_time,
                 measured_end_time,
                 io_diff,
@@ -247,9 +248,6 @@ def _collect(pipe, poll_interval):
         warnings.warn("_collect failed: %s" % e)
 
     finally:
-        for entry in data:
-            pipe.send(entry)
-
         for pid, create_time, end_time, cmd, ppid in processes:
             if len(cmd) > 0:
                 cmd[0] = os.path.basename(cmd[0])
@@ -373,6 +371,7 @@ class SystemResourceMonitor:
         self.events = []
         self.markers = []
         self.processes = []
+        self.measurements = []
         self.phases = OrderedDict()
 
         self._active_phases = {}
@@ -381,6 +380,9 @@ class SystemResourceMonitor:
         self._running = False
         self._stopped = False
         self._process = None
+        self._stream_file = None
+        self._drain_timer = None
+        self._pipe_lock = threading.Lock()
 
         if psutil is None:
             return
@@ -458,6 +460,7 @@ class SystemResourceMonitor:
         self._running = True
         self.start_time = time.monotonic()
         SystemResourceMonitor.instance = self
+        self._schedule_drain_timer()
 
     def stop(self, upload_dir=None):
         """Stop measuring system-wide CPU resource utilization.
@@ -483,7 +486,7 @@ class SystemResourceMonitor:
             pass
         self._stopped = True
 
-        self.measurements = []
+        self._cancel_drain_timer()
 
         # Drain remaining data from the child process, including the
         # "done" sentinel and any process entries.
@@ -500,6 +503,10 @@ class SystemResourceMonitor:
         self._running = False
         SystemResourceUsage.instance = None
         self.end_time = time.monotonic()
+
+        if self._stream_file:
+            self._stream_file.close()
+            self._stream_file = None
 
         # Add event markers for files in upload directory
         if upload_dir is None:
@@ -526,6 +533,39 @@ class SystemResourceMonitor:
             except Exception as e:
                 warnings.warn(f"Failed to scan upload directory: {e}")
 
+    def start_streaming(self, path):
+        """Start streaming profile data to a file as JSON lines.
+
+        The first line contains the meta object, then a thread object,
+        then one line per marker. The file is meant to be replaced with
+        the full serialized profile on normal shutdown.
+        """
+        self._stream_file = open(path, "w", encoding="utf-8", newline="\n")
+        meta = {"type": "meta"}
+        meta.update(self._build_meta())
+        self._stream_file.write(json.dumps(meta, separators=(",", ":")) + "\n")
+        thread = {"type": "thread"}
+        thread.update(self._build_thread())
+        thread["processName"] = meta.get("product", "mach")
+        self._stream_file.write(json.dumps(thread, separators=(",", ":")) + "\n")
+
+        for name, start, end, data, category in self.markers:
+            markerData = (
+                data if isinstance(data, dict) else {"type": "Text", "text": str(data)}
+            )
+            self._stream_marker(name, start, end, markerData, category)
+        for event in self.events:
+            if len(event) == 3:
+                timestamp, name, data = event
+                self._stream_marker(name, timestamp, None, data)
+            else:
+                timestamp, name = event
+                self._stream_marker(
+                    name, timestamp, None, {"type": "Text", "text": name}
+                )
+
+        self._drain_pipe()
+
     def _drain_pipe(self, until_done=False):
         """Read available measurement data from the child process pipe.
 
@@ -535,6 +575,10 @@ class SystemResourceMonitor:
         if not self._pipe:
             return
 
+        with self._pipe_lock:
+            self._drain_pipe_locked(until_done)
+
+    def _drain_pipe_locked(self, until_done):
         poll_interval = 0.1 if until_done else 0
         while _poll(self._pipe, poll_interval=poll_interval):
             try:
@@ -549,7 +593,8 @@ class SystemResourceMonitor:
                     swap_mem,
                 ) = self._pipe.recv()
             except Exception as e:
-                warnings.warn("failed to receive data: %s" % e)
+                if not self._stopped:
+                    warnings.warn("failed to receive data: %s" % e)
                 break
 
             if start_time == "process":
@@ -571,18 +616,11 @@ class SystemResourceMonitor:
                 swap = self._swap_type(*swap_mem)
                 cpu_times = [self._cpu_times_type(*v) for v in cpu_diff]
 
-                self.measurements.append(
-                    SystemResourceUsage(
-                        start_time,
-                        end_time,
-                        cpu_times,
-                        cpu_percent,
-                        io,
-                        net_io,
-                        virt,
-                        swap,
-                    )
+                m = SystemResourceUsage(
+                    start_time, end_time, cpu_times, cpu_percent, io, net_io, virt, swap
                 )
+                self.measurements.append(m)
+                self._stream_measurement(m)
             except Exception:
                 warnings.warn(
                     "failed to read the received data: %s"
@@ -597,6 +635,50 @@ class SystemResourceMonitor:
                     ))
                 )
                 break
+
+    def _stream_measurement(self, m):
+        if not self._stream_file:
+            return
+        if m.end - m.start < self.poll_interval / 10:
+            return
+        for name, start, end, data in self._measurement_markers(m):
+            self._stream_marker(name, start, end, data)
+
+    def _schedule_drain_timer(self):
+        if self._running:
+            self._drain_timer = threading.Timer(
+                self.poll_interval * 10, self._on_drain_timer
+            )
+            self._drain_timer.daemon = True
+            self._drain_timer.start()
+
+    def _cancel_drain_timer(self):
+        if self._drain_timer:
+            self._drain_timer.cancel()
+            self._drain_timer = None
+
+    def _on_drain_timer(self):
+        self._drain_pipe()
+        self._schedule_drain_timer()
+
+    def _stream_marker(self, name, start, end, data, category=0):
+        if not self._stream_file:
+            return
+
+        start_ms = round((start - self.start_time) * 1000, 3)
+        end_ms = round((end - self.start_time) * 1000, 3) if end is not None else None
+        obj = {
+            "type": "marker",
+            "name": name,
+            "startTime": start_ms,
+            "endTime": end_ms,
+            "data": data,
+        }
+        if category != 0:
+            obj["category"] = category
+        line = json.dumps(obj, separators=(",", ":"))
+        self._stream_file.write(line + "\n")
+        self._stream_file.flush()
 
     def _parse_sccache_log(self, filepath):
         """Parse sccache.log and add profiler markers for cache hits and misses."""
@@ -699,6 +781,7 @@ class SystemResourceMonitor:
                     data["start_time"],
                     data["end_time"],
                     marker_data,
+                    self.TASK_CATEGORY,
                 ))
 
         except Exception as e:
@@ -717,9 +800,25 @@ class SystemResourceMonitor:
                         "type": "Text",
                         "text": f"Parsed {num_markers} sccache entries from log",
                     },
+                    self.TASK_CATEGORY,
                 ))
 
     # Methods to record events alongside the monitored data.
+
+    def _add_event(self, name, timestamp, data=None):
+        if data:
+            self.events.append((timestamp, name, data))
+            self._stream_marker(name, timestamp, None, data)
+        else:
+            self.events.append((timestamp, name))
+            self._stream_marker(name, timestamp, None, {"type": "Text", "text": name})
+
+    def _add_marker(self, name, start, end, data, category=TASK_CATEGORY):
+        self.markers.append((name, start, end, data, category))
+        markerData = (
+            data if isinstance(data, dict) else {"type": "Text", "text": str(data)}
+        )
+        self._stream_marker(name, start, end, markerData, category)
 
     @staticmethod
     def record_event(name, timestamp=None, data=None):
@@ -736,10 +835,7 @@ class SystemResourceMonitor:
         if SystemResourceMonitor.instance:
             if timestamp is None:
                 timestamp = time.monotonic()
-            if data:
-                SystemResourceMonitor.instance.events.append((timestamp, name, data))
-            else:
-                SystemResourceMonitor.instance.events.append((timestamp, name))
+            SystemResourceMonitor.instance._add_event(name, timestamp, data)
 
     @staticmethod
     def record_marker(name, start, end, data):
@@ -753,7 +849,7 @@ class SystemResourceMonitor:
         payload (e.g., {"type": "Text", "text": "description"}) or a string.
         """
         if SystemResourceMonitor.instance:
-            SystemResourceMonitor.instance.markers.append((name, start, end, data))
+            SystemResourceMonitor.instance._add_marker(name, start, end, data)
 
     @staticmethod
     def begin_marker(name, text, disambiguator=None, timestamp=None):
@@ -921,7 +1017,7 @@ class SystemResourceMonitor:
             # Find the corresponding test marker and mark it as failed due to leak
             # if it hasn't already failed for another reason
             for marker in SystemResourceMonitor.instance.markers:
-                marker_name_type, marker_start, marker_end, marker_data = marker
+                marker_name_type, marker_start, marker_end, marker_data, _ = marker
                 if (
                     marker_name_type == "test"
                     and marker_data.get("test") == test_name
@@ -1003,6 +1099,14 @@ class SystemResourceMonitor:
         phase = (self._active_phases[name], time.monotonic())
         self.phases[name] = phase
         del self._active_phases[name]
+
+        self._stream_marker(
+            "Phase",
+            phase[0],
+            phase[1],
+            {"type": "Phase", "phase": name},
+            self.PHASE_CATEGORY,
+        )
 
         return phase[1] - phase[0]
 
@@ -1186,6 +1290,41 @@ class SystemResourceMonitor:
 
         return max(values)
 
+    def _build_cpu_schema(self):
+        cpu_times = psutil.cpu_times(False)
+        schema = {
+            "name": "CPU",
+            "tooltipLabel": "{marker.name}",
+            "display": [],
+            "data": [
+                {"key": "cpuPercent", "label": "CPU Percent", "format": "string"},
+            ],
+            "graphs": [],
+        }
+        for field, label in {
+            "user": "User %",
+            "iowait": "IO Wait %",
+            "system": "System %",
+            "nice": "Nice %",
+            "idle": "Idle %",
+        }.items():
+            if hasattr(cpu_times, field):
+                schema["data"].append({
+                    "key": field + "_pct",
+                    "label": label,
+                    "format": "string",
+                })
+        for field, color in {
+            "softirq": "orange",
+            "iowait": "red",
+            "system": "grey",
+            "user": "yellow",
+            "nice": "blue",
+        }.items():
+            if hasattr(cpu_times, field):
+                schema["graphs"].append({"key": field, "color": color, "type": "bar"})
+        return schema
+
     def _build_meta(self):
         """Build the profile metadata dict."""
         meta = {
@@ -1219,6 +1358,7 @@ class SystemResourceMonitor:
                 },
             ],
             "markerSchema": [
+                self._build_cpu_schema(),
                 {
                     "name": "Phase",
                     "tooltipLabel": "{marker.data.phase}",
@@ -2016,52 +2156,11 @@ class SystemResourceMonitor:
             markers["stack"].append(stack_index)
             markers["length"] = markers["length"] + 1
 
-        valid_cpu_fields = set()
         for m in self.measurements:
             if m.end - m.start < self.poll_interval / 10:
                 continue
             for name, start, end, markerData in self._measurement_markers(m):
-                if markerData["type"] == "CPU":
-                    for field in ["nice", "user", "system", "iowait", "softirq"]:
-                        if field in markerData and markerData[field] > 0:
-                            valid_cpu_fields.add(field)
                 add_marker(get_string_index(name), start, end, markerData)
-
-        # The marker schema for CPU markers should only contain graph
-        # definitions for fields we actually have, or the profiler front-end
-        # will detect missing data and skip drawing the track entirely.
-        cpuSchema = {
-            "name": "CPU",
-            "tooltipLabel": "{marker.name}",
-            "display": [],
-            "data": [{"key": "cpuPercent", "label": "CPU Percent", "format": "string"}],
-            "graphs": [],
-        }
-        cpuData = cpuSchema["data"]
-        for field, label in {
-            "user": "User %",
-            "iowait": "IO Wait %",
-            "system": "System %",
-            "nice": "Nice %",
-            "idle": "Idle %",
-        }.items():
-            if field in valid_cpu_fields or field == "idle":
-                cpuData.append({
-                    "key": field + "_pct",
-                    "label": label,
-                    "format": "string",
-                })
-        cpuGraphs = cpuSchema["graphs"]
-        for field, color in {
-            "softirq": "orange",
-            "iowait": "red",
-            "system": "grey",
-            "user": "yellow",
-            "nice": "blue",
-        }.items():
-            if field in valid_cpu_fields:
-                cpuGraphs.append({"key": field, "color": color, "type": "bar"})
-        profile["meta"]["markerSchema"].insert(0, cpuSchema)
 
         # Create markers for phases
         phase_string_index = get_string_index("Phase")
@@ -2091,14 +2190,12 @@ class SystemResourceMonitor:
             markerData = {"type": "Process", "pid": pid, "ppid": ppid, "cmd": cmd}
             add_marker(process_string_index, start, end, markerData)
         # Add generic markers
-        for name, start, end, data in self.markers:
+        for name, start, end, data, category in self.markers:
             # data can be a dictionary containing the marker payload or a plain text value
             markerData = (
                 data if isinstance(data, dict) else {"type": "Text", "text": str(data)}
             )
-            add_marker(
-                get_string_index(name), start, end, markerData, self.TASK_CATEGORY, 3
-            )
+            add_marker(get_string_index(name), start, end, markerData, category, 3)
         if self.events:
             event_string_index = get_string_index("Event")
             for event in self.events:
