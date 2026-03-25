@@ -86,6 +86,8 @@ const lazy = XPCOMUtils.declareLazy({
     default: false,
   },
   logger: () => lazy.UrlbarUtils.getLogger({ prefix: "SmartbarInput" }),
+  getCurrentTabUrl:
+    "moz-src:///browser/components/aiwindow/ui/modules/ChatUtils.sys.mjs",
 });
 
 const UNLIMITED_MAX_RESULTS = 99;
@@ -100,7 +102,7 @@ let px = number => number.toFixed(2) + "px";
  *
  * @typedef {object} ContextWebsite
  * @property {string} type
- *   The source kind; currently always "tab".
+ *   The source kind; tab|currentTab
  * @property {string} url
  *   URL of the website.
  * @property {string} label
@@ -5798,7 +5800,8 @@ export class SmartbarInput extends HTMLElement {
     if (
       this.#isSidebarMode &&
       event.target == this.window.gBrowser.selectedTab &&
-      event.detail.changed.includes("image")
+      (event.detail.changed.includes("image") ||
+        event.detail.changed.includes("label"))
     ) {
       this.#updateContextChips();
     }
@@ -6232,21 +6235,34 @@ export class SmartbarInput extends HTMLElement {
   }
 
   /**
+   * Provides the current page url and context sites for current
+   * smartbar state. Used for when a starter prompt is clicked
+   * which lives outside of Smartbar.
+   *
+   * @returns {{ pageUrl: ?URL, contextWebsites: Array<ContextWebsite>}}
+   */
+  getCurrentContextData() {
+    return {
+      pageUrl: this.#getContextPageUrl(),
+      contextWebsites: this.#getResolvedContextWebsites(),
+    };
+  }
+
+  /**
    * Returns the page URL to associate with the next submitted message, or null
    * if the implicit current-tab chip has been removed.
    *
-   * @returns {?string}
+   * @returns {?URL}
    */
   #getContextPageUrl() {
     if (!this.#isSidebarMode) {
       return null;
     }
-    const currentTabUrl =
-      this.window.gBrowser?.selectedTab?.linkedBrowser.currentURI?.spec;
-    if (currentTabUrl == this.#removedImplicitTabUrl) {
+    const currentTabUrl = lazy.getCurrentTabUrl(this.window);
+    if (currentTabUrl?.spec == this.#removedImplicitTabUrl) {
       return null;
     }
-    return currentTabUrl ?? null;
+    return URL.parse(currentTabUrl?.spec) ?? null;
   }
 
   /**
@@ -6267,7 +6283,7 @@ export class SmartbarInput extends HTMLElement {
       const url = tab?.linkedBrowser.currentURI?.spec;
       if (url && url != this.#removedImplicitTabUrl) {
         candidates.unshift({
-          type: "tab",
+          type: "currentTab",
           url,
           label: tab.label || url,
           iconSrc: this.#resolveTabIconSrc(tab.image, url),
