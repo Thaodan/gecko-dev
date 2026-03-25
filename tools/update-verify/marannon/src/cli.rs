@@ -13,7 +13,7 @@ use crate::updater::CertOverride;
 pub struct FromBuild {
     pub id: String,
     pub installer: String,
-    pub partial_mar: Option<String>,
+    pub partial_mar: Option<PathBuf>,
 }
 
 impl std::str::FromStr for FromBuild {
@@ -28,7 +28,7 @@ impl std::str::FromStr for FromBuild {
         Ok(FromBuild {
             id: parts[0].to_string(),
             installer: parts[1].to_string(),
-            partial_mar: parts.get(2).map(|s| s.to_string()),
+            partial_mar: parts.get(2).map(|s| PathBuf::from(s)),
         })
     }
 }
@@ -41,7 +41,7 @@ pub struct Args {
     pub target_platform: String,
     /// Path to the installer of the `to` build. Updated `from` builds are compared against this to
     /// look for differences.
-    pub to_installer: String,
+    pub to_installer: PathBuf,
     /// Complete MAR to test against each `from` build.
     pub complete_mar: PathBuf,
     /// Directory containing any partials referenced in a `--from` argument
