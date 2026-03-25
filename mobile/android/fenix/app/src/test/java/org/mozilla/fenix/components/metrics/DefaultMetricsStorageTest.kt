@@ -14,6 +14,7 @@ import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import mozilla.components.support.utils.DateTimeProvider
 import mozilla.components.support.utils.FakeDateTimeProvider
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -23,6 +24,7 @@ import org.junit.Test
 import org.mozilla.fenix.utils.Settings
 import java.text.SimpleDateFormat
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.Calendar
 import java.util.Locale
@@ -252,7 +254,7 @@ class DefaultMetricsStorageTest {
 
     @Test
     fun `GIVEN usage time has not passed threshold and has not been sent WHEN checking to track THEN event will not be sent`() = runTest(dispatcher) {
-        every { settings.usageTimeGrowthData } returns usageThresholdMillis - 1
+        every { settings.firstDayUsageTimeGrowthData } returns usageThresholdMillis - 1
         every { settings.usageTimeGrowthSent } returns false
 
         val result = storage.shouldTrack(Event.GrowthData.ConversionEvent6)
@@ -262,7 +264,7 @@ class DefaultMetricsStorageTest {
 
     @Test
     fun `GIVEN usage time has passed threshold and has not been sent WHEN checking to track THEN event will be sent`() = runTest(dispatcher) {
-        every { settings.usageTimeGrowthData } returns usageThresholdMillis + 1
+        every { settings.firstDayUsageTimeGrowthData } returns usageThresholdMillis + 1
         every { settings.usageTimeGrowthSent } returns false
 
         val result = storage.shouldTrack(Event.GrowthData.ConversionEvent6)
@@ -307,8 +309,8 @@ class DefaultMetricsStorageTest {
         val initial = 10L
         val update = 15L
         val slot = slot<Long>()
-        every { settings.usageTimeGrowthData } returns initial
-        every { settings.usageTimeGrowthData = capture(slot) } just Runs
+        every { settings.firstDayUsageTimeGrowthData } returns initial
+        every { settings.firstDayUsageTimeGrowthData = capture(slot) } just Runs
 
         storage.updateUsageState(update)
 
@@ -323,14 +325,47 @@ class DefaultMetricsStorageTest {
         every { storage.updateUsageState(capture(slot)) } just Runs
         every { activity.componentName } returns mockk()
 
-        val usageRecorder = DefaultMetricsStorage.UsageRecorder(storage)
-        val startTime = System.currentTimeMillis()
+        var currentTimeMillis = 0L
+
+        val dateTimeProvider = object : DateTimeProvider {
+            override fun currentLocalDate(): LocalDate =
+                LocalDate.of(2025, 5, 31)
+
+            override fun currentZoneId(): ZoneId = ZoneOffset.UTC
+
+            override fun currentTimeMillis(): Long = currentTimeMillis
+        }
+
+        val usageRecorder = DefaultMetricsStorage.FirstDayUsageRecorder(
+            storage,
+            duringFirstDay = { true },
+            dateTimeProvider,
+        )
+
+        usageRecorder.onActivityResumed(activity)
+        currentTimeMillis = 10L
+        usageRecorder.onActivityPaused(activity)
+
+        assertTrue(slot.captured > 0)
+    }
+
+    @Test
+    fun `WHEN first day usage recorder receives onResume and onPause callbacks after the first day THEN it will not store usage length`() {
+        val storage = mockk<MetricsStorage>()
+        val activity = mockk<Activity>()
+        val slot = slot<Long>()
+        every { storage.updateUsageState(capture(slot)) } just Runs
+        every { activity.componentName } returns mockk()
+
+        val usageRecorder = DefaultMetricsStorage.FirstDayUsageRecorder(
+            storage,
+            duringFirstDay = { false },
+        )
 
         usageRecorder.onActivityResumed(activity)
         usageRecorder.onActivityPaused(activity)
-        val stopTime = System.currentTimeMillis()
 
-        assertTrue(slot.captured < stopTime - startTime)
+        assertFalse(slot.isCaptured)
     }
 
     @Test

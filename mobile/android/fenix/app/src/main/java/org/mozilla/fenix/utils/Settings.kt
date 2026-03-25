@@ -2308,7 +2308,7 @@ class Settings(
         default = false,
     )
 
-    var usageTimeGrowthData by longPreference(
+    var firstDayUsageTimeGrowthData by longPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_growth_usage_time),
         default = -1,
     )

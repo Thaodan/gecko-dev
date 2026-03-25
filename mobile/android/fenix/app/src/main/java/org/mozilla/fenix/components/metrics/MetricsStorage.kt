@@ -105,7 +105,7 @@ internal class DefaultMetricsStorage(
 
                 Event.GrowthData.ConversionEvent6 -> {
                     !settings.usageTimeGrowthSent &&
-                            settings.usageTimeGrowthData > USAGE_THRESHOLD_MILLIS
+                            settings.firstDayUsageTimeGrowthData > USAGE_THRESHOLD_MILLIS
                 }
 
                 is Event.GrowthData.ConversionEvent7 -> {
@@ -200,12 +200,17 @@ internal class DefaultMetricsStorage(
     override fun tryRegisterAsUsageRecorder(application: Application) {
         // Currently there is only interest in measuring usage during the first day of install.
         if (!settings.usageTimeGrowthSent && System.currentTimeMillis().duringFirstDay()) {
-            application.registerActivityLifecycleCallbacks(UsageRecorder(this))
+            application.registerActivityLifecycleCallbacks(
+                FirstDayUsageRecorder(
+                    this,
+                    duringFirstDay = { duringFirstDay() },
+                ),
+            )
         }
     }
 
     override fun updateUsageState(usageLength: Long) {
-        settings.usageTimeGrowthData += usageLength
+        settings.firstDayUsageTimeGrowthData += usageLength
     }
 
     private fun updateDaysOfUse() {
@@ -378,21 +383,28 @@ internal class DefaultMetricsStorage(
      * This will store app usage time to disk, based on Resume and Pause lifecycle events. Currently,
      * there is only interest in usage during the first day after install.
      */
-    internal class UsageRecorder(
+    internal class FirstDayUsageRecorder(
         private val metricsStorage: MetricsStorage,
+        private val duringFirstDay: Long.() -> Boolean,
+        private val dateTimeProvider: DateTimeProvider = DefaultDateTimeProvider(),
     ) : DefaultActivityLifecycleCallbacks {
         private val activityStartTimes: MutableMap<String, Long?> = mutableMapOf()
+        private var resumedDuringFirstDay: Boolean = false
 
         override fun onActivityResumed(activity: Activity) {
             super.onActivityResumed(activity)
-            activityStartTimes[activity.componentName.toString()] = System.currentTimeMillis()
+            val currentTime = dateTimeProvider.currentTimeMillis()
+            activityStartTimes[activity.componentName.toString()] = currentTime
+            resumedDuringFirstDay = currentTime.duringFirstDay()
         }
 
         override fun onActivityPaused(activity: Activity) {
             super.onActivityPaused(activity)
             val startTime = activityStartTimes[activity.componentName.toString()] ?: return
-            val elapsedTimeMillis = System.currentTimeMillis() - startTime
-            metricsStorage.updateUsageState(elapsedTimeMillis)
+            val elapsedTimeMillis = dateTimeProvider.currentTimeMillis() - startTime
+            if (resumedDuringFirstDay) {
+                metricsStorage.updateUsageState(elapsedTimeMillis)
+            }
         }
     }
 
