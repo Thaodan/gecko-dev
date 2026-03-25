@@ -16,7 +16,6 @@ UNIFIED_SOURCES = [
     "TestDeinterlacingFilter.cpp",
     "TestDownscalingFilter.cpp",
     "TestFrameAnimator.cpp",
-    "TestHDRPNGEncoder.cpp",
     "TestLoader.cpp",
     "TestMetadata.cpp",
     "TestRemoveFrameRectFilter.cpp",

@@ -84,13 +84,6 @@ nsJPEGEncoder::~nsJPEGEncoder() {
   }
 }
 
-NS_IMETHODIMP
-nsJPEGEncoder::SetColorSpaceInfo(imgIEncoder::CICPColourPrimaries,
-                                 imgIEncoder::CICPTransferCharacteristics,
-                                 imgIEncoder::CICPMatrixCoefficients, bool) {
-  return NS_OK;
-}
-
 // nsJPEGEncoder::InitFromData
 //
 //    One output option is supported: "quality=X" where X is an integer in the
