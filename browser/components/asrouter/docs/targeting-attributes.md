@@ -534,22 +534,13 @@ declare const region: string;
 
 ### `searchEngines`
 
-Information about the user's default search engine, available appProvided config engines, and whether
-each engine has entered search mode. If the user’s default engine is a third-party engine,
-``current`` is ``null``.
+Information about the current and available search engines. If the user's engine
+is a third party engine, then the value will be ``null``.
 
 #### Examples
 * Is the current default search engine set to google?
 ```java
 searchEngines.current == "google"
-```
-* Is google in the list of appProvided config engines?
-```java
-"google" in searchEngines.installed
-```
-* Has google been entered in search mode.
-```java
-searchEngines.hasEnteredSearchMode.google
 ```
 
 #### Definition
@@ -557,9 +548,8 @@ searchEngines.hasEnteredSearchMode.google
 ```ts
 declare const searchEngines: Promise<SearchEnginesResponse>;
 interface SearchEnginesResponse: {
-  current: SearchEngineId | null;
+  current: SearchEngineId;
   installed: Array<SearchEngineId>;
-  hasEnteredSearchMode: Record<SearchEngineId, boolean>;
 }
 // This is an identifier for a search engine such as "google" or "ddg"
 type SearchEngineId = string;

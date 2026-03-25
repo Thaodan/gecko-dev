@@ -138,11 +138,11 @@ export class SearchModeSwitcher {
     if (this.#isEnabled()) {
       this.updateSearchIcon();
 
-      let engine = lazy.UrlbarSearchUtils.getEngineByName(
-        this.#input.searchMode?.engineName
-      );
-      if (engine && !engine.hasBeenUsed) {
-        engine.markAsUsed();
+      if (
+        this.#input.searchMode?.engineName == "Perplexity" &&
+        !lazy.UrlbarPrefs.get("perplexity.hasBeenInSearchMode")
+      ) {
+        lazy.UrlbarPrefs.set("perplexity.hasBeenInSearchMode", true);
       }
     }
   }
