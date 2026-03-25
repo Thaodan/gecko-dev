@@ -2372,7 +2372,8 @@ def add_github_checks_route(config, tasks):
     for task in tasks:
         if task.get("attributes", {}).get("code-review"):
             routes = task.setdefault("routes", [])
-            routes.append("checks")
+            if "checks" not in routes:
+                routes.append("checks")
 
         yield task
 
