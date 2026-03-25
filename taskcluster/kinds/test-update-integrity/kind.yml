@@ -6,8 +6,8 @@ loader: taskgraph.loader.transform:loader
 
 transforms:
     - taskgraph.transforms.from_deps
-    - gecko_taskgraph.transforms.update_integrity
     - gecko_taskgraph.transforms.release:run_on_releases
+    - gecko_taskgraph.transforms.update_integrity
     - gecko_taskgraph.transforms.job
     - gecko_taskgraph.transforms.task
 
