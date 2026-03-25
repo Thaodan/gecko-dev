@@ -29,6 +29,7 @@ const { AppConstants } = ChromeUtils.importESModule(
  * @import { SearchEngine } from "moz-src:///toolkit/components/search/SearchEngine.sys.mjs"
  * @import { SmartbarAction } from "moz-src:///browser/components/aiwindow/ui/components/input-cta/input-cta.mjs"
  * @import { WebsiteChipContainer } from "chrome://browser/content/aiwindow/components/website-chip-container.mjs"
+ * @import { AIWindow } from "moz-src:///browser/components/aiwindow/ui/components/ai-window/ai-window.mjs"
  */
 
 /**
@@ -404,6 +405,7 @@ export class SmartbarInput extends HTMLElement {
         this
       );
       this._inputCta.addEventListener("aiwindow-input-cta:on-action", this);
+      this._inputCta.addEventListener("shown", this);
       this.addEventListener("ai-website-chip:remove", this);
       this.#findWebsiteContextChipsContainer();
       this.#updateContextChips();
@@ -622,6 +624,7 @@ export class SmartbarInput extends HTMLElement {
         this
       );
       this._inputCta.removeEventListener("aiwindow-input-cta:on-action", this);
+      this._inputCta.removeEventListener("shown", this);
       this.removeEventListener("ai-website-chip:remove", this);
     }
 
@@ -727,6 +730,44 @@ export class SmartbarInput extends HTMLElement {
    */
   get sapLocation() {
     return this.#isSidebarMode ? "sidebar" : "fullpage";
+  }
+
+  /**
+   * Gets the AI Window if available.
+   */
+  get #aiWindow() {
+    const root = /** @type {ShadowRoot} */ (this.getRootNode());
+    return /** @type {AIWindow | null} */ (root.host?.closest("ai-window"));
+  }
+
+  /**
+   * Gets conversation telemetry info from the parent ai-window.
+   *
+   * @returns {{chat_id: string, message_seq: number}} The conversation info
+   */
+  get conversationTelemetryInfo() {
+    return {
+      chat_id: this.#aiWindow?.conversationId ?? "",
+      message_seq: this.#aiWindow?.conversationMessageCount ?? 0,
+    };
+  }
+
+  /**
+   * Gets the model name from the parent ai-window.
+   *
+   * @returns {string} The model name
+   */
+  get modelName() {
+    return this.#aiWindow?.modelName ?? "";
+  }
+
+  /**
+   * Gets the count of context tabs currently selected.
+   *
+   * @returns {number} The number of context websites
+   */
+  get contextWebsitesCount() {
+    return this.#contextWebsites.length;
   }
 
   /**
@@ -1249,6 +1290,17 @@ export class SmartbarInput extends HTMLElement {
    * @param {Event} event The event to handle.
    */
   handleEvent(event) {
+    if (event.type === "shown") {
+      const { chat_id, message_seq } = this.conversationTelemetryInfo;
+      Glean.smartWindow.intentChangePreview.record({
+        chat_id,
+        current_intent: this.smartbarAction,
+        location: this.sapLocation,
+        message_seq: String(message_seq),
+      });
+      return;
+    }
+
     // Forward custom input CTA events.
     if (event.type.startsWith("aiwindow-input-cta:")) {
       this.handleCtaInputEvent(/** @type {CustomEvent} */ (event));
@@ -1259,6 +1311,13 @@ export class SmartbarInput extends HTMLElement {
     if (event.type === "ai-website-chip:remove") {
       const { url } = /** @type {CustomEvent} */ (event).detail;
       this.removeContextMention(url);
+      const { chat_id, message_seq } = this.conversationTelemetryInfo;
+      Glean.smartWindow.removeTab.record({
+        chat_id,
+        location: this.sapLocation,
+        message_seq: String(message_seq),
+        tabs_selected: String(this.#contextWebsites.length),
+      });
       return;
     }
 
@@ -1370,6 +1429,16 @@ export class SmartbarInput extends HTMLElement {
         selType: "search_button",
         result: null,
       });
+      const { chat_id, message_seq } = this.conversationTelemetryInfo;
+      Glean.smartWindow.searchSubmit.record({
+        chat_id,
+        detected_intent: this.#smartbarAction,
+        length: String(committedValue.length),
+        location: this.sapLocation,
+        message_seq: String(message_seq),
+        model: this.modelName,
+        provider: engine.name,
+      });
       this._loadURL(url, event, this._whereToOpen(event), {
         triggeringPrincipal,
         postData,
@@ -1393,6 +1462,15 @@ export class SmartbarInput extends HTMLElement {
         searchSource: this.getSearchSource(event),
         selType: "navigate_button",
         result: null,
+      });
+      const { chat_id, message_seq } = this.conversationTelemetryInfo;
+      Glean.smartWindow.navigateSubmit.record({
+        chat_id,
+        detected_intent: this.#smartbarAction,
+        location: this.sapLocation,
+        message_seq: String(message_seq),
+        model: this.modelName,
+        submit_type: event?.type === "click" ? "button" : "enter",
       });
       this._loadURL(
         fixupInfo.preferredURI.spec,
@@ -6415,6 +6493,7 @@ export class SmartbarInput extends HTMLElement {
    * @param {string} mention.type - The type of context
    * @param {string} mention.url - The mention URL
    * @param {string} mention.label - The mention label
+   * @param {string} [mention.iconSrc] - The mention icon source
    */
   addContextMention(mention) {
     const hasMention = this.#contextWebsites.some(
