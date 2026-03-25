@@ -127,7 +127,8 @@ void gfxFontEntry::InitializeFrom(fontlist::Face* aFace,
 bool gfxFontEntry::TrySetShmemCharacterMap() {
   MOZ_ASSERT(mShmemFace);
   auto* list = gfxPlatformFontList::PlatformFontList()->SharedFontList();
-  const auto* shmemCmap = mShmemFace->mCharacterMap.ToPtr<const SharedBitSet>(list);
+  const auto* shmemCmap =
+      mShmemFace->mCharacterMap.ToPtr<const SharedBitSet>(list);
   mShmemCharacterMap.exchange(shmemCmap);
   return shmemCmap != nullptr;
 }
@@ -395,17 +396,18 @@ already_AddRefed<gfxCharacterMap> gfxFontEntry::GetCMAPFromFontInfo(
 }
 
 gfxFontEntry::FontTableBlob::FontTableBlob(nsTArray<uint8_t>&& aData)
-  : mData(std::move(aData)) {
+    : mData(std::move(aData)) {
   if (!mData.IsEmpty()) {
     mBlob = hb_blob_create(reinterpret_cast<const char*>(mData.Elements()),
-        mData.Length(), HB_MEMORY_MODE_READONLY, nullptr, nullptr);
+                           mData.Length(), HB_MEMORY_MODE_READONLY, nullptr,
+                           nullptr);
   }
 }
 
 size_t gfxFontEntry::FontTableBlob::SizeOfExcludingThis(
     MallocSizeOf aMallocSizeOf) const {
   return mData.ShallowSizeOfExcludingThis(aMallocSizeOf) +
-    ((mBlob && mBlob != hb_blob_get_empty()) ? aMallocSizeOf(mBlob) : 0);
+         ((mBlob && mBlob != hb_blob_get_empty()) ? aMallocSizeOf(mBlob) : 0);
 }
 
 hb_blob_t* gfxFontEntry::GetFontTable(uint32_t aTag) {
@@ -426,9 +428,13 @@ hb_blob_t* gfxFontEntry::GetFontTable(uint32_t aTag) {
   bool haveTable = NS_SUCCEEDED(CopyFontTable(aTag, buffer));
 
   AutoWriteLock lock(mLock);
-  return cache->LookupOrInsertWith(aTag, [&] {
-    return haveTable ? FontTableBlob(std::move(buffer)) :FontTableBlob();
-  }).GetBlob();
+  return cache
+      ->LookupOrInsertWith(aTag,
+                           [&] {
+                             return haveTable ? FontTableBlob(std::move(buffer))
+                                              : FontTableBlob();
+                           })
+      .GetBlob();
 }
 
 // callback for HarfBuzz to get a font table (in hb_blob_t form)
@@ -954,7 +960,8 @@ bool gfxFontEntry::ParseTrakTable() {
   if (horizOffset > len - sizeof(TrackData)) {
     return false;
   }
-  const auto* trackData = reinterpret_cast<const TrackData*>(data + horizOffset);
+  const auto* trackData =
+      reinterpret_cast<const TrackData*>(data + horizOffset);
   uint16_t nTracks = trackData->nTracks;
   mNumTrakSizes = trackData->nSizes;
   if (nTracks == 0 || mNumTrakSizes < 2) {

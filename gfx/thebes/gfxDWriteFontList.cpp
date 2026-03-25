@@ -512,7 +512,8 @@ hb_blob_t* gfxDWriteFontEntry::GetFontTable(uint32_t aTag) {
   return nullptr;
 }
 
-gfxFontEntry::FontTableCache* gfxDWriteFontEntry::GetFontTableCache(bool aCreate) {
+gfxFontEntry::FontTableCache* gfxDWriteFontEntry::GetFontTableCache(
+    bool aCreate) {
   // Create the cache if it does not yet exist.
   if (!mFontTableCache && aCreate) {
     auto* cache = new FontTableCache();

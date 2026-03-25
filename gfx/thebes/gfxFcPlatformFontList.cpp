@@ -32,7 +32,6 @@
 #undef StandardFonts
 #include "mozilla/intl/Locale.h"
 
-
 #include <cairo-ft.h>
 #include <fontconfig/fcfreetype.h>
 #include <fontconfig/fontconfig.h>
@@ -441,10 +440,9 @@ gfxFontconfigFontEntry::AutoHBFace gfxFontconfigFontEntry::GetHBFace() {
       if (mFTFaceInitialized) {
         if (const FTUserFontData* ufd = GetUserFontData()) {
           if (ufd->FontData()) {
-            hb_blob_t* blob = hb_blob_create((const char*)ufd->FontData(),
-                                             ufd->FontDataLength(),
-                                             HB_MEMORY_MODE_READONLY, nullptr,
-                                             nullptr);
+            hb_blob_t* blob = hb_blob_create(
+                (const char*)ufd->FontData(), ufd->FontDataLength(),
+                HB_MEMORY_MODE_READONLY, nullptr, nullptr);
             // Currently the face index is always zero, as we don't support
             // collections as webfonts.
             face = hb_face_create(blob, 0);
@@ -458,7 +456,8 @@ gfxFontconfigFontEntry::AutoHBFace gfxFontconfigFontEntry::GetHBFace() {
       // Failed to create a face directly; fall back to gfxFontEntry::GetHBFace,
       // which will use hb_face_create_for_tables and the font table cache.
       NS_WARNING(nsPrintfCString("fallback to gfxFontEntry::GetHBFace for %s",
-                                 Name().get()).get());
+                                 Name().get())
+                     .get());
       face = hb_face_reference(gfxFontEntry::GetHBFace());
       useTableCache = true;
     }

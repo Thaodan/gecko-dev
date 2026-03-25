@@ -806,8 +806,7 @@ class gfxFontEntry {
     explicit FontTableBlob(nsTArray<uint8_t>&& aData);
     FontTableBlob(const FontTableBlob& aOther) = delete;
     FontTableBlob(FontTableBlob&& aOther)
-      : mData(std::move(aOther.mData)),
-        mBlob(std::move(aOther.mBlob)) {
+        : mData(std::move(aOther.mData)), mBlob(std::move(aOther.mBlob)) {
       aOther.mBlob = nullptr;
     }
 

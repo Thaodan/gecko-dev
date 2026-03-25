@@ -503,8 +503,8 @@ hb_face_t* FT2FontEntry::CreateHBFace() {
       MOZ_ASSERT(length == item->RealSize(), "error reading font");
       if (length == item->RealSize()) {
         gfxFontUtils::AutoHBBlob blob(
-            hb_blob_create((const char*)buffer, length,
-                           HB_MEMORY_MODE_READONLY, buffer, free));
+            hb_blob_create((const char*)buffer, length, HB_MEMORY_MODE_READONLY,
+                           buffer, free));
         // We don't retain this face; the caller will own the only reference.
         return hb_face_create(blob, mFTFontIndex);
       }
