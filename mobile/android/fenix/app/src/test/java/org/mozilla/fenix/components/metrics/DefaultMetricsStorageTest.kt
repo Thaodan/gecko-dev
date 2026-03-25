@@ -76,7 +76,7 @@ class DefaultMetricsStorageTest {
         checkDefaultBrowser = true
         every { settings.setAsDefaultGrowthSent } returns false
 
-        val result = storage.shouldTrack(Event.GrowthData.SetAsDefault)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent1)
 
         assertFalse(result)
     }
@@ -86,7 +86,7 @@ class DefaultMetricsStorageTest {
         every { settings.setAsDefaultGrowthSent } returns false
         checkDefaultBrowser = false
 
-        val result = storage.shouldTrack(Event.GrowthData.SetAsDefault)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent1)
 
         assertFalse(result)
     }
@@ -96,7 +96,7 @@ class DefaultMetricsStorageTest {
         every { settings.setAsDefaultGrowthSent } returns false
         checkDefaultBrowser = true
 
-        val result = storage.shouldTrack(Event.GrowthData.SetAsDefault)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent1)
 
         assertTrue(result)
     }
@@ -106,7 +106,7 @@ class DefaultMetricsStorageTest {
         every { settings.setAsDefaultGrowthSent } returns true
         checkDefaultBrowser = true
 
-        val result = storage.shouldTrack(Event.GrowthData.SetAsDefault)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent1)
 
         assertFalse(result)
     }
@@ -116,7 +116,7 @@ class DefaultMetricsStorageTest {
         val updateSlot = slot<Boolean>()
         every { settings.setAsDefaultGrowthSent = capture(updateSlot) } just Runs
 
-        storage.updateSentState(Event.GrowthData.SetAsDefault)
+        storage.updateSentState(Event.GrowthData.ConversionEvent1)
 
         assertTrue(updateSlot.captured)
     }
@@ -128,7 +128,7 @@ class DefaultMetricsStorageTest {
         every { settings.firstWeekDaysOfUseGrowthData } returns setOf(calendarStart, tomorrow).toStrings()
         every { settings.firstWeekSeriesGrowthSent } returns false
 
-        val result = storage.shouldTrack(Event.GrowthData.FirstWeekSeriesActivity)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent4)
 
         assertFalse(result)
     }
@@ -140,7 +140,7 @@ class DefaultMetricsStorageTest {
         every { settings.firstWeekDaysOfUseGrowthData } returns setOf(calendarStart, tomorrow, thirdDay).toStrings()
         every { settings.firstWeekSeriesGrowthSent } returns false
 
-        val result = storage.shouldTrack(Event.GrowthData.FirstWeekSeriesActivity)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent4)
 
         assertTrue(result)
     }
@@ -153,7 +153,7 @@ class DefaultMetricsStorageTest {
         every { settings.firstWeekDaysOfUseGrowthData } returns setOf(calendarStart, tomorrow, fourDaysFromNow).toStrings()
         every { settings.firstWeekSeriesGrowthSent } returns false
 
-        val result = storage.shouldTrack(Event.GrowthData.FirstWeekSeriesActivity)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent4)
 
         assertFalse(result)
     }
@@ -167,7 +167,7 @@ class DefaultMetricsStorageTest {
         every { settings.firstWeekSeriesGrowthSent } returns false
         installTime = installTime9DaysEarlier
 
-        val result = storage.shouldTrack(Event.GrowthData.FirstWeekSeriesActivity)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent4)
 
         assertFalse(result)
     }
@@ -179,7 +179,7 @@ class DefaultMetricsStorageTest {
         every { settings.firstWeekDaysOfUseGrowthData } returns setOf(calendarStart, tomorrow, thirdDay).toStrings()
         every { settings.firstWeekSeriesGrowthSent } returns true
 
-        val result = storage.shouldTrack(Event.GrowthData.FirstWeekSeriesActivity)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent4)
 
         assertFalse(result)
     }
@@ -192,7 +192,7 @@ class DefaultMetricsStorageTest {
         every { settings.firstWeekDaysOfUseGrowthData = capture(captureRolling) } just Runs
         every { settings.firstWeekSeriesGrowthSent } returns false
 
-        storage.shouldTrack(Event.GrowthData.FirstWeekSeriesActivity)
+        storage.shouldTrack(Event.GrowthData.ConversionEvent4)
 
         assertTrue(captureRolling.captured.contains(formatter.format(calendarStart.time)))
     }
@@ -203,7 +203,7 @@ class DefaultMetricsStorageTest {
         every { settings.firstWeekSeriesGrowthSent } returns false
         every { settings.firstWeekSeriesGrowthSent = capture(captureSent) } just Runs
 
-        storage.updateSentState(Event.GrowthData.FirstWeekSeriesActivity)
+        storage.updateSentState(Event.GrowthData.ConversionEvent4)
 
         assertTrue(captureSent.captured)
     }
@@ -215,7 +215,7 @@ class DefaultMetricsStorageTest {
         every { settings.firstWeekDaysOfUseGrowthData } returns setOf()
         every { settings.firstWeekDaysOfUseGrowthData = capture(captureSlot) } just Runs
 
-        storage.shouldTrack(Event.GrowthData.FirstWeekSeriesActivity)
+        storage.shouldTrack(Event.GrowthData.ConversionEvent4)
 
         assertTrue(captureSlot.captured.isNotEmpty())
     }
@@ -227,7 +227,7 @@ class DefaultMetricsStorageTest {
         every { settings.firstWeekDaysOfUseGrowthData = capture(captureSlot) } just Runs
         installTime = calendarStart.timeInMillis - (dayMillis * 9)
 
-        storage.shouldTrack(Event.GrowthData.FirstWeekSeriesActivity)
+        storage.shouldTrack(Event.GrowthData.ConversionEvent4)
 
         assertFalse(captureSlot.isCaptured)
     }
@@ -236,7 +236,7 @@ class DefaultMetricsStorageTest {
     fun `GIVEN serp ad clicked event already sent WHEN checking to track serp ad clicked THEN event will not be sent`() = runTest(dispatcher) {
         every { settings.adClickGrowthSent } returns true
 
-        val result = storage.shouldTrack(Event.GrowthData.SerpAdClicked)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent5)
 
         assertFalse(result)
     }
@@ -245,7 +245,7 @@ class DefaultMetricsStorageTest {
     fun `GIVEN serp ad clicked event not sent WHEN checking to track serp ad clicked THEN event will be sent`() = runTest(dispatcher) {
         every { settings.adClickGrowthSent } returns false
 
-        val result = storage.shouldTrack(Event.GrowthData.SerpAdClicked)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent5)
 
         assertTrue(result)
     }
@@ -255,7 +255,7 @@ class DefaultMetricsStorageTest {
         every { settings.usageTimeGrowthData } returns usageThresholdMillis - 1
         every { settings.usageTimeGrowthSent } returns false
 
-        val result = storage.shouldTrack(Event.GrowthData.UsageThreshold)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent6)
 
         assertFalse(result)
     }
@@ -265,7 +265,7 @@ class DefaultMetricsStorageTest {
         every { settings.usageTimeGrowthData } returns usageThresholdMillis + 1
         every { settings.usageTimeGrowthSent } returns false
 
-        val result = storage.shouldTrack(Event.GrowthData.UsageThreshold)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent6)
 
         assertTrue(result)
     }
@@ -338,7 +338,7 @@ class DefaultMetricsStorageTest {
         val currentTime = System.currentTimeMillis()
         every { settings.resumeGrowthLastSent } returns currentTime
 
-        val result = storage.shouldTrack(Event.GrowthData.FirstAppOpenForDay)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent2)
 
         assertFalse(result)
     }
@@ -349,7 +349,7 @@ class DefaultMetricsStorageTest {
         installTime = currentTime - (dayMillis + 1)
         every { settings.resumeGrowthLastSent } returns currentTime - 1000 * 60 * 60 * 24 * 2
 
-        val result = storage.shouldTrack(Event.GrowthData.FirstAppOpenForDay)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent2)
 
         assertTrue(result)
     }
@@ -360,7 +360,7 @@ class DefaultMetricsStorageTest {
         every { settings.resumeGrowthLastSent } returns 0
         every { settings.resumeGrowthLastSent = capture(updateSlot) } just Runs
 
-        storage.updateSentState(Event.GrowthData.FirstAppOpenForDay)
+        storage.updateSentState(Event.GrowthData.ConversionEvent2)
 
         assertTrue(updateSlot.captured > 0)
     }
@@ -370,7 +370,7 @@ class DefaultMetricsStorageTest {
         val currentTime = System.currentTimeMillis()
         every { settings.uriLoadGrowthLastSent } returns currentTime
 
-        val result = storage.shouldTrack(Event.GrowthData.FirstUriLoadForDay)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent3)
 
         assertFalse(result)
     }
@@ -381,7 +381,7 @@ class DefaultMetricsStorageTest {
         installTime = currentTime - (dayMillis + 1)
         every { settings.uriLoadGrowthLastSent } returns currentTime - 1000 * 60 * 60 * 24 * 2
 
-        val result = storage.shouldTrack(Event.GrowthData.FirstUriLoadForDay)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent3)
 
         assertTrue(result)
     }
@@ -392,7 +392,7 @@ class DefaultMetricsStorageTest {
         every { settings.uriLoadGrowthLastSent } returns 0
         every { settings.uriLoadGrowthLastSent = capture(updateSlot) } just Runs
 
-        storage.updateSentState(Event.GrowthData.FirstUriLoadForDay)
+        storage.updateSentState(Event.GrowthData.ConversionEvent3)
 
         assertTrue(updateSlot.captured > 0)
     }
@@ -405,7 +405,7 @@ class DefaultMetricsStorageTest {
         every { settings.growthEarlySearchUsed } returns true
         every { settings.growthUserActivatedSent } returns false
 
-        val result = storage.shouldTrack(Event.GrowthData.UserActivated(fromSearch = false))
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent7(fromSearch = false))
 
         assertTrue(result)
     }
@@ -418,7 +418,7 @@ class DefaultMetricsStorageTest {
         every { settings.growthEarlySearchUsed } returns true
         every { settings.growthUserActivatedSent } returns false
 
-        val result = storage.shouldTrack(Event.GrowthData.UserActivated(fromSearch = false))
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent7(fromSearch = false))
 
         assertFalse(result)
     }
@@ -431,7 +431,7 @@ class DefaultMetricsStorageTest {
         every { settings.growthEarlySearchUsed } returns false
         every { settings.growthUserActivatedSent } returns false
 
-        val result = storage.shouldTrack(Event.GrowthData.UserActivated(fromSearch = false))
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent7(fromSearch = false))
 
         assertFalse(result)
     }
@@ -444,7 +444,7 @@ class DefaultMetricsStorageTest {
         every { settings.growthEarlySearchUsed } returns true
         every { settings.growthUserActivatedSent } returns true
 
-        val result = storage.shouldTrack(Event.GrowthData.UserActivated(fromSearch = false))
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent7(fromSearch = false))
 
         assertFalse(result)
     }
@@ -459,7 +459,7 @@ class DefaultMetricsStorageTest {
         every { settings.growthEarlyUseCountLastIncrement } returns 0L
         every { settings.growthEarlyUseCountLastIncrement = capture(captureSent) } just Runs
 
-        storage.updatePersistentState(Event.GrowthData.UserActivated(fromSearch = false))
+        storage.updatePersistentState(Event.GrowthData.ConversionEvent7(fromSearch = false))
 
         assertTrue(captureSent.captured > 0L)
     }
@@ -474,7 +474,7 @@ class DefaultMetricsStorageTest {
         every { settings.growthEarlyUseCountLastIncrement } returns lastUsageIncrementTime
         every { settings.growthEarlyUseCountLastIncrement = capture(captureSent) } just Runs
 
-        storage.updatePersistentState(Event.GrowthData.UserActivated(fromSearch = false))
+        storage.updatePersistentState(Event.GrowthData.ConversionEvent7(fromSearch = false))
 
         assertFalse(captureSent.isCaptured)
     }
@@ -487,7 +487,7 @@ class DefaultMetricsStorageTest {
         every { settings.growthEarlySearchUsed } returns false
         every { settings.growthEarlySearchUsed = capture(captureSent) } just Runs
 
-        storage.updatePersistentState(Event.GrowthData.UserActivated(fromSearch = true))
+        storage.updatePersistentState(Event.GrowthData.ConversionEvent7(fromSearch = true))
 
         assertTrue(captureSent.captured)
     }
@@ -500,7 +500,7 @@ class DefaultMetricsStorageTest {
         every { settings.growthEarlySearchUsed } returns false
         every { settings.growthEarlySearchUsed = capture(captureSent) } just Runs
 
-        storage.updatePersistentState(Event.GrowthData.UserActivated(fromSearch = true))
+        storage.updatePersistentState(Event.GrowthData.ConversionEvent7(fromSearch = true))
 
         assertFalse(captureSent.isCaptured)
     }

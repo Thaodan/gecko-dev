@@ -77,53 +77,62 @@ internal class DefaultMetricsStorage(
             updateDaysOfUse()
             val currentTime = System.currentTimeMillis()
             shouldSendGenerally() && when (event) {
-                Event.GrowthData.SetAsDefault -> {
+                Event.GrowthData.ConversionEvent1 -> {
                     currentTime.duringFirstMonth() &&
-                        !settings.setAsDefaultGrowthSent &&
-                        checkDefaultBrowser()
+                            !settings.setAsDefaultGrowthSent &&
+                            checkDefaultBrowser()
                 }
-                Event.GrowthData.FirstWeekSeriesActivity -> {
+
+                Event.GrowthData.ConversionEvent2 -> {
+                    currentTime.afterFirstDay() &&
+                            currentTime.duringFirstMonth() &&
+                            settings.resumeGrowthLastSent.hasBeenMoreThanDaySince()
+                }
+
+                Event.GrowthData.ConversionEvent3 -> {
+                    currentTime.afterFirstDay() &&
+                            currentTime.duringFirstMonth() &&
+                            settings.uriLoadGrowthLastSent.hasBeenMoreThanDaySince()
+                }
+
+                Event.GrowthData.ConversionEvent4 -> {
                     currentTime.duringFirstMonth() && shouldTrackFirstWeekActivity()
                 }
-                Event.GrowthData.SerpAdClicked -> {
+
+                Event.GrowthData.ConversionEvent5 -> {
                     currentTime.duringFirstMonth() && !settings.adClickGrowthSent
                 }
-                Event.GrowthData.UsageThreshold -> {
+
+                Event.GrowthData.ConversionEvent6 -> {
                     !settings.usageTimeGrowthSent &&
-                        settings.usageTimeGrowthData > USAGE_THRESHOLD_MILLIS
+                            settings.usageTimeGrowthData > USAGE_THRESHOLD_MILLIS
                 }
-                Event.GrowthData.FirstAppOpenForDay -> {
-                    currentTime.afterFirstDay() &&
-                        currentTime.duringFirstMonth() &&
-                        settings.resumeGrowthLastSent.hasBeenMoreThanDaySince()
-                }
-                Event.GrowthData.FirstUriLoadForDay -> {
-                    currentTime.afterFirstDay() &&
-                        currentTime.duringFirstMonth() &&
-                        settings.uriLoadGrowthLastSent.hasBeenMoreThanDaySince()
-                }
-                is Event.GrowthData.UserActivated -> {
+
+                is Event.GrowthData.ConversionEvent7 -> {
                     hasUserReachedActivatedThreshold()
                 }
-                is Event.FirstWeekPostInstall.LastThreeDaysActivity -> {
-                    shouldTrackFirstWeekLastDaysActivity(
-                        currentTime = dateTimeProvider.currentTimeMillis(),
-                        firstWeekDaysOfUse = settings.firstWeekDaysOfUseGrowthData,
-                        eventSent = settings.firstWeekPostInstallLastThreeDaysActivitySent,
-                    )
-                }
-                is Event.FirstWeekPostInstall.RecurrentActivity -> {
+
+                is Event.FirstWeekPostInstall.ConversionEvent8 -> {
                     shouldTrackFirstWeekRecurrentlyActivity(
                         currentTime = dateTimeProvider.currentTimeMillis(),
                         firstWeekDaysOfUse = settings.firstWeekDaysOfUseGrowthData,
                         eventSent = settings.firstWeekPostInstallRecurrentActivitySent,
                     )
                 }
-                is Event.FirstWeekPostInstall.EverydayActivityAndSetToDefault -> {
+
+                is Event.FirstWeekPostInstall.ConversionEvent9 -> {
                     shouldTrackFirstWeekFullActivityDefault(
                         currentTime = dateTimeProvider.currentTimeMillis(),
                         firstWeekDaysOfUse = settings.firstWeekDaysOfUseGrowthData,
                         eventSent = settings.firstWeekPostInstallEverydayActivityAndSetToDefaultSent,
+                    )
+                }
+
+                is Event.FirstWeekPostInstall.ConversionEvent10 -> {
+                    shouldTrackFirstWeekLastDaysActivity(
+                        currentTime = dateTimeProvider.currentTimeMillis(),
+                        firstWeekDaysOfUse = settings.firstWeekDaysOfUseGrowthData,
+                        eventSent = settings.firstWeekPostInstallLastThreeDaysActivitySent,
                     )
                 }
             }
@@ -131,42 +140,51 @@ internal class DefaultMetricsStorage(
 
     override suspend fun updateSentState(event: Event) = withContext(dispatcher) {
         when (event) {
-            Event.GrowthData.SetAsDefault -> {
+            Event.GrowthData.ConversionEvent1 -> {
                 settings.setAsDefaultGrowthSent = true
             }
-            Event.GrowthData.FirstWeekSeriesActivity -> {
-                settings.firstWeekSeriesGrowthSent = true
-            }
-            Event.GrowthData.SerpAdClicked -> {
-                settings.adClickGrowthSent = true
-            }
-            Event.GrowthData.UsageThreshold -> {
-                settings.usageTimeGrowthSent = true
-            }
-            Event.GrowthData.FirstAppOpenForDay -> {
+
+            Event.GrowthData.ConversionEvent2 -> {
                 settings.resumeGrowthLastSent = System.currentTimeMillis()
             }
-            Event.GrowthData.FirstUriLoadForDay -> {
+
+            Event.GrowthData.ConversionEvent3 -> {
                 settings.uriLoadGrowthLastSent = System.currentTimeMillis()
             }
-            is Event.GrowthData.UserActivated -> {
+
+            Event.GrowthData.ConversionEvent4 -> {
+                settings.firstWeekSeriesGrowthSent = true
+            }
+
+            Event.GrowthData.ConversionEvent5 -> {
+                settings.adClickGrowthSent = true
+            }
+
+            Event.GrowthData.ConversionEvent6 -> {
+                settings.usageTimeGrowthSent = true
+            }
+
+            is Event.GrowthData.ConversionEvent7 -> {
                 settings.growthUserActivatedSent = true
             }
-            is Event.FirstWeekPostInstall.LastThreeDaysActivity -> {
-                settings.firstWeekPostInstallLastThreeDaysActivitySent = true
-            }
-            is Event.FirstWeekPostInstall.RecurrentActivity -> {
+
+            is Event.FirstWeekPostInstall.ConversionEvent8 -> {
                 settings.firstWeekPostInstallRecurrentActivitySent = true
             }
-            is Event.FirstWeekPostInstall.EverydayActivityAndSetToDefault -> {
+
+            is Event.FirstWeekPostInstall.ConversionEvent9 -> {
                 settings.firstWeekPostInstallEverydayActivityAndSetToDefaultSent = true
+            }
+
+            is Event.FirstWeekPostInstall.ConversionEvent10 -> {
+                settings.firstWeekPostInstallLastThreeDaysActivitySent = true
             }
         }
     }
 
     override suspend fun updatePersistentState(event: Event) {
         when (event) {
-            is Event.GrowthData.UserActivated -> {
+            is Event.GrowthData.ConversionEvent7 -> {
                 if (event.fromSearch && shouldUpdateSearchUsage()) {
                     settings.growthEarlySearchUsed = true
                 } else if (!event.fromSearch && shouldUpdateUsageCount()) {
@@ -174,6 +192,7 @@ internal class DefaultMetricsStorage(
                     settings.growthEarlyUseCountLastIncrement = System.currentTimeMillis()
                 }
             }
+
             else -> Unit
         }
     }
@@ -252,7 +271,9 @@ internal class DefaultMetricsStorage(
             return false
         }
 
-        return activeInFirstPartOfTheWeek(firstWeekDaysOfUse) && activeInLastPartOfTheWeek(firstWeekDaysOfUse)
+        return activeInFirstPartOfTheWeek(firstWeekDaysOfUse) && activeInLastPartOfTheWeek(
+            firstWeekDaysOfUse,
+        )
     }.getOrDefault(false)
 
     @VisibleForTesting
@@ -296,8 +317,8 @@ internal class DefaultMetricsStorage(
         isDefaultBrowser: Boolean = checkDefaultBrowser(),
     ) {
         val shouldUpdate = !isDefaultBrowserDuringFirstFourDay &&
-            isDefaultBrowser &&
-            currentTime.duringFirstFourDays()
+                isDefaultBrowser &&
+                currentTime.duringFirstFourDays()
 
         if (shouldUpdate) {
             settings.firstWeekPostInstallIsBrowserSetToDefaultDuringFirstFourDays = true
@@ -347,21 +368,21 @@ internal class DefaultMetricsStorage(
 
     private fun hasUserReachedActivatedThreshold(): Boolean {
         return !settings.growthUserActivatedSent &&
-            settings.growthEarlyUseCount.value >= DAYS_ACTIVATED_THREASHOLD &&
-            settings.growthEarlySearchUsed
+                settings.growthEarlyUseCount.value >= DAYS_ACTIVATED_THREASHOLD &&
+                settings.growthEarlySearchUsed
     }
 
     private fun shouldUpdateUsageCount(): Boolean {
         val currentTime = System.currentTimeMillis()
         return currentTime.afterFirstDay() &&
-            currentTime.duringFirstWeek() &&
-            settings.growthEarlyUseCountLastIncrement.hasBeenMoreThanDaySince()
+                currentTime.duringFirstWeek() &&
+                settings.growthEarlyUseCountLastIncrement.hasBeenMoreThanDaySince()
     }
 
     private fun shouldUpdateSearchUsage(): Boolean {
         val currentTime = System.currentTimeMillis()
         return currentTime.afterThirdDay() &&
-            currentTime.duringFirstWeek()
+                currentTime.duringFirstWeek()
     }
 
     /**
