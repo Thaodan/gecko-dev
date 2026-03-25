@@ -329,7 +329,7 @@ class CssRuleView extends EventEmitter {
 
   // The element that we're inspecting.
   // (Used from RuleViewTool class)
-  viewedElement = null;
+  selectedNodeFront = null;
 
   // Used for cancelling timeouts in the style filter.
   #filterChangedTimeout = null;
@@ -380,8 +380,8 @@ class CssRuleView extends EventEmitter {
   #refreshDummyElement() {
     // Only update the dummy element if the selected element's tag is different.
     if (
-      !this.viewedElement ||
-      this.#dummyElement?.tagName === this.viewedElement.tagName
+      !this.selectedNodeFront ||
+      this.#dummyElement?.tagName === this.selectedNodeFront.tagName
     ) {
       return;
     }
@@ -392,11 +392,11 @@ class CssRuleView extends EventEmitter {
     try {
       // ::before and ::after do not have a namespaceURI
       const namespaceURI =
-        this.viewedElement.namespaceURI ||
+        this.selectedNodeFront.namespaceURI ||
         this.styleDocument.documentElement.namespaceURI;
       this.#dummyElement = this.styleDocument.createElementNS(
         namespaceURI,
-        this.viewedElement.tagName
+        this.selectedNodeFront.tagName
       );
     } catch (e) {
       console.error("Error while creating dummy element", e);
@@ -835,8 +835,8 @@ class CssRuleView extends EventEmitter {
 
     this.#focusNextUserAddedRule = true;
     this.pageStyle.addNewRule(
-      this.viewedElement,
-      this.viewedElement.pseudoClassLocks
+      this.selectedNodeFront,
+      this.selectedNodeFront.pseudoClassLocks
     );
   }
 
@@ -847,7 +847,7 @@ class CssRuleView extends EventEmitter {
    * @returns {boolean}
    */
   canAddNewRuleForSelectedNode() {
-    return this.viewedElement && this.inspector.selection.isElementNode();
+    return this.selectedNodeFront && this.inspector.selection.isElementNode();
   }
 
   /**
@@ -896,8 +896,8 @@ class CssRuleView extends EventEmitter {
       PREF_DEFAULT_COLOR_UNIT,
       PREF_INPLACE_EDITOR_FOCUS_NEXT_ON_ENTER,
     ];
-    if (this.viewedElement && refreshOnPrefs.includes(pref)) {
-      this.selectElement(this.viewedElement, true);
+    if (this.selectedNodeFront && refreshOnPrefs.includes(pref)) {
+      this.selectElement(this.selectedNodeFront, true);
     }
   }
 
@@ -1030,7 +1030,7 @@ class CssRuleView extends EventEmitter {
   destroy() {
     this.isDestroyed = true;
 
-    this.viewedElement = null;
+    this.selectedNodeFront = null;
 
     if (this.elementStyle) {
       this.elementStyle.destroy();
@@ -1135,7 +1135,7 @@ class CssRuleView extends EventEmitter {
    * Update pageStyle reference and listen for stylesheet updates.
    */
   #refreshPageStyle() {
-    const newPageStyle = this.viewedElement?.inspectorFront.pageStyle;
+    const newPageStyle = this.selectedNodeFront?.inspectorFront.pageStyle;
     if (this.pageStyle == newPageStyle) {
       return;
     }
@@ -1158,12 +1158,12 @@ class CssRuleView extends EventEmitter {
    *
    * @param {NodeActor} element
    *        The node whose style rules we'll inspect.
-   * @param {boolean} allowRefresh
+   * @param {boolean} forceRefresh
    *        Update the view even if the element is the same as last time.
    */
-  async selectElement(element, allowRefresh = false) {
-    const refresh = this.viewedElement === element;
-    if (refresh && !allowRefresh) {
+  async selectElement(element, forceRefresh = false) {
+    const sameElementSelected = this.selectedNodeFront === element;
+    if (sameElementSelected && !forceRefresh) {
       return;
     }
 
@@ -1178,7 +1178,7 @@ class CssRuleView extends EventEmitter {
     }
 
     // 2/3 Important step: actually switch to a new or empty element
-    this.viewedElement = element;
+    this.selectedNodeFront = element;
 
     // 3/3 Now update based on the newly selected element
 
@@ -1222,7 +1222,7 @@ class CssRuleView extends EventEmitter {
       if (this.elementStyle !== elementStyle) {
         return;
       }
-      if (!refresh) {
+      if (!sameElementSelected) {
         this.element.scrollTop = 0;
       }
       this.#stopSelectingElement();
@@ -1306,11 +1306,11 @@ class CssRuleView extends EventEmitter {
    * @returns {Array} Array of pseudo-classes that apply to the current element
    */
   #getApplicableElementSpecificPseudoClasses() {
-    if (!this.viewedElement) {
+    if (!this.selectedNodeFront) {
       return [];
     }
 
-    const tagName = this.viewedElement.tagName?.toLowerCase();
+    const tagName = this.selectedNodeFront.tagName?.toLowerCase();
     const applicablePseudoClasses = [];
 
     for (const [pseudo, elementTypes] of Object.entries(
@@ -1329,7 +1329,7 @@ class CssRuleView extends EventEmitter {
    */
   #refreshPseudoClassPanel() {
     if (
-      !this.viewedElement ||
+      !this.selectedNodeFront ||
       !this.inspector.canTogglePseudoClassForSelectedNode()
     ) {
       for (const checkbox of [
@@ -1342,7 +1342,7 @@ class CssRuleView extends EventEmitter {
       return;
     }
 
-    const pseudoClassLocks = this.viewedElement.pseudoClassLocks;
+    const pseudoClassLocks = this.selectedNodeFront.pseudoClassLocks;
     for (const checkbox of this.pseudoClassCheckboxes) {
       checkbox.disabled = false;
       checkbox.checked = pseudoClassLocks.includes(checkbox.value);
@@ -1402,9 +1402,9 @@ class CssRuleView extends EventEmitter {
     const emptyNotice = this.styleDocument.getElementById(
       "ruleview-no-results"
     );
-    if (this.viewedElement && emptyNotice) {
+    if (this.selectedNodeFront && emptyNotice) {
       emptyNotice.remove();
-    } else if (!this.viewedElement && !emptyNotice) {
+    } else if (!this.selectedNodeFront && !emptyNotice) {
       createChild(this.element, "div", {
         id: "ruleview-no-results",
         class: "devtools-sidepanel-no-result",
@@ -2967,7 +2967,7 @@ class RuleViewTool {
   }
 
   onPanelSelected() {
-    if (this.inspector.selection.nodeFront === this.view.viewedElement) {
+    if (this.inspector.selection.nodeFront === this.view.selectedNodeFront) {
       this.refresh();
     } else {
       this.onSelected();
