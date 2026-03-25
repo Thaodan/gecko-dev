@@ -10,9 +10,7 @@ task-defaults:
         by-test-platform:
             windows.*/.*: win11-64-25h2
             default: default
-    virtualization:
-        by-test-platform:
-            default: virtual
+    virtualization: virtual
     allow-software-gl-layers: false
     mozharness:
         script: awsy_script.py
