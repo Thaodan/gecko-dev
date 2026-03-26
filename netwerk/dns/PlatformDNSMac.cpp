@@ -46,8 +46,14 @@ void QueryCallback(DNSServiceRef aSDRef, DNSServiceFlags aFlags,
     return;
   }
 
+  // Skip intermediate records (e.g. CNAMEs) returned when
+  // kDNSServiceFlagsReturnIntermediates is set.
+  if (aRRType != TRRTYPE_HTTPSSVC) {
+    return;
+  }
+
   // Process the rdata for HTTPS records (type 65)
-  if (aRRType != TRRTYPE_HTTPSSVC || aRDLen == 0) {
+  if (aRDLen == 0) {
     context->mRv = NS_ERROR_UNKNOWN_HOST;
     return;
   }
@@ -118,7 +124,7 @@ nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
   DNSServiceErrorType err;
 
   err = DNSServiceQueryRecord(&sdRef,
-                              0,  // No flags
+                              kDNSServiceFlagsReturnIntermediates,
                               0,  // All interfaces
                               host.get(), TRRTYPE_HTTPSSVC, kDNSServiceClass_IN,
                               QueryCallback, &context);
