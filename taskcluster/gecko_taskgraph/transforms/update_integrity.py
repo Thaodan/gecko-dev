@@ -22,12 +22,16 @@ def skip_for_non_nightly(config, jobs):
 @transforms.add
 def resolve_keys(config, jobs):
     for job in jobs:
-        resolve_keyed_by(
-            job,
-            "cert-overrides",
-            job["name"],
-            project=config.params["project"],
-        )
+        for key in ("cert-overrides", "fetches.toolchain"):
+            resolve_keyed_by(
+                job,
+                key,
+                job["name"],
+                **{
+                    "build-platform": job["attributes"]["build_platform"],
+                    "project": config.params["project"],
+                },
+            )
 
         yield job
 
@@ -52,6 +56,8 @@ def add_to_installer(config, jobs):
             job["fetches"]["build-signing"] = [
                 {"artifact": "target.tar.xz", "extract": False}
             ]
+        elif "mac" in job["attributes"]["build_platform"]:
+            job["fetches"]["repackage"] = [{"artifact": "target.dmg"}]
 
         yield job
 
@@ -70,6 +76,10 @@ def add_additional_fetches_and_command(config, jobs):
             platform = "linux"
             build_target = "Linux_x86_64-gcc3"
             installer_suffix = "tar.xz"
+        elif job["attributes"]["build_platform"].startswith("mac"):
+            platform = "mac"
+            build_target = "Darwin_x86_64-gcc3-u-i386-x86_64"
+            installer_suffix = "dmg"
         else:
             raise Exception("couldn't detect build target")
 
