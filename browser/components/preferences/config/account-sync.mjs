@@ -511,18 +511,24 @@ SYNC_ENGINE_SETTINGS.forEach(({ id, pref }) => {
 });
 
 Preferences.addSetting({
-  id: "syncEnginesList",
+  id: "syncEngines",
   deps: SYNC_ENGINE_SETTINGS.map(({ id }) => id),
-  getControlConfig(config, deps) {
-    const engines = SYNC_ENGINE_SETTINGS.filter(
-      ({ id }) => deps[id]?.value
-    ).map(({ type }) => type);
+  get(_, deps) {
+    return SYNC_ENGINE_SETTINGS.filter(({ id }) => deps[id]?.value).map(
+      ({ type }) => type
+    );
+  },
+});
 
+Preferences.addSetting({
+  id: "syncEnginesList",
+  deps: ["syncEngines"],
+  getControlConfig(config, { syncEngines }) {
     return {
       ...config,
       controlAttrs: {
         ...config.controlAttrs,
-        ".engines": engines,
+        ".engines": syncEngines.value,
       },
     };
   },
@@ -530,8 +536,19 @@ Preferences.addSetting({
 
 Preferences.addSetting({
   id: "syncChangeOptions",
+  deps: ["syncEngines"],
   onUserClick: () => {
     SyncHelpers._chooseWhatToSync(true, "manageSyncSettings");
+  },
+  visible: ({ syncEngines }) => {
+    return syncEngines.value && syncEngines.value.length;
+  },
+});
+
+Preferences.addSetting({
+  id: "syncDisconnect",
+  onUserClick: () => {
+    SyncHelpers.disconnectSync();
   },
 });
 
@@ -752,8 +769,9 @@ SettingGroupManager.registerGroups({
   }),
   account: {
     inProgress: true,
-    l10nId: "account-group-label",
+    l10nId: "account-group-label2",
     headingLevel: 2,
+    iconSrc: "chrome://browser/skin/preferences/mozilla-logo.svg",
     items: [
       {
         id: "noFxaAccountGroup",
@@ -762,10 +780,7 @@ SettingGroupManager.registerGroups({
           {
             id: "noFxaAccount",
             control: "placeholder-message",
-            l10nId: "account-placeholder",
-            controlAttrs: {
-              imagesrc: "chrome://global/skin/illustrations/security-error.svg",
-            },
+            l10nId: "account-placeholder2",
           },
           {
             id: "noFxaSignIn",
@@ -812,9 +827,6 @@ SettingGroupManager.registerGroups({
             control: "placeholder-message",
             l10nId: "sync-signedin-unverified2",
             l10nArgs: { email: "" },
-            controlAttrs: {
-              imagesrc: "chrome://global/skin/illustrations/security-error.svg",
-            },
           },
           {
             id: "verifyFxaAccount",
@@ -837,9 +849,6 @@ SettingGroupManager.registerGroups({
             control: "placeholder-message",
             l10nId: "sync-signedin-login-failure2",
             l10nArgs: { email: "" },
-            controlAttrs: {
-              imagesrc: "chrome://global/skin/illustrations/security-error.svg",
-            },
           },
           {
             id: "rejectReSignIn",
@@ -859,6 +868,7 @@ SettingGroupManager.registerGroups({
     inProgress: true,
     l10nId: "sync-group-label",
     headingLevel: 2,
+    iconSrc: "chrome://browser/skin/sync.svg",
     items: [
       {
         id: "syncNoFxaSignIn",
@@ -901,6 +911,11 @@ SettingGroupManager.registerGroups({
             id: "syncChangeOptions",
             control: "moz-box-button",
             l10nId: "sync-manage-options-2",
+          },
+          {
+            id: "syncDisconnect",
+            control: "moz-box-button",
+            l10nId: "settings-sync-disconnect-button",
           },
         ],
       },
@@ -1022,7 +1037,7 @@ SettingGroupManager.registerGroups({
     l10nId: "settings-data-backup-header2",
     headingLevel: 2,
     supportPage: "firefox-backup",
-
+    iconSrc: "chrome://global/skin/icons/reload.svg",
     items: [
       {
         id: "backupSettings",
