@@ -85,7 +85,7 @@ def transform(monkeypatch, config):
 @pytest.mark.parametrize(
     "task",
     [
-        {"worker-type": "b-linux"},
+        {"worker-type": "b-linux-gcp"},
         {"worker-type": "t-win10-64-hw"},
     ],
     ids=lambda t: t["worker-type"],
@@ -114,7 +114,7 @@ def test_worker_caches(task, transform):
     "task",
     (
         {
-            "worker-type": "b-linux",
+            "worker-type": "b-linux-gcp",
             "run": {
                 "checkout": True,
                 "comm-checkout": False,

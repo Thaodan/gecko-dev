@@ -474,11 +474,31 @@ taskgraph:
 
 workers:
     aliases:
-        b-linux.*:
+        b-linux-gcp:
             provisioner: '{trust-domain}-{level}'
             implementation: docker-worker
             os: linux
-            worker-type: '{alias}'
+            worker-type: b-linux
+        b-linux-kvm-gcp:
+            provisioner: '{trust-domain}-{level}'
+            implementation: docker-worker
+            os: linux
+            worker-type: b-linux-kvm
+        b-linux-medium-gcp:
+            provisioner: '{trust-domain}-{level}'
+            implementation: docker-worker
+            os: linux
+            worker-type: b-linux-medium
+        b-linux-large-gcp:
+            provisioner: '{trust-domain}-{level}'
+            implementation: docker-worker
+            os: linux
+            worker-type: b-linux-large
+        b-linux-xlarge-gcp:
+            provisioner: '{trust-domain}-{level}'
+            implementation: docker-worker
+            os: linux
+            worker-type: b-linux-xlarge
         b-win2012:
             provisioner: '{trust-domain}-{level}'
             implementation: generic-worker
@@ -503,7 +523,7 @@ workers:
             provisioner: '{trust-domain}-{level}'
             implementation: docker-worker
             os: linux
-            worker-type: '{alias}'
+            worker-type: images
         addon:
             provisioner: scriptworker-k8s
             implementation: push-addons
@@ -608,17 +628,17 @@ workers:
             provisioner: '{trust-domain}-t'
             implementation: docker-worker
             os: linux
-            worker-type: '{alias}-gcp'
+            worker-type: t-linux-docker
         t-linux(-large|-xlarge|-xlarge-source)-noscratch:
             provisioner: '{trust-domain}-t'
             implementation: docker-worker
             os: linux
-            worker-type: '{alias}-gcp'
+            worker-type: t-linux-docker-noscratch
         t-linux-kvm:
             provisioner: '{trust-domain}-t'
             implementation: docker-worker
             os: linux
-            worker-type: 't-linux-kvm-noscratch-gcp'
+            worker-type: 't-linux-kvm-noscratch'
         t-linux-kvm-aws:
             provisioner: '{trust-domain}-t'
             implementation: docker-worker
@@ -711,7 +731,7 @@ workers:
             provisioner: '{trust-domain}-t'
             implementation: docker-worker
             os: linux
-            worker-type: misc-gcp
+            worker-type: misc
 
 
 mac-notarization:

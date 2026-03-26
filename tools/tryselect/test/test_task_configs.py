@@ -66,8 +66,8 @@ TASK_CONFIG_TESTS = {
             SystemExit,
         ),
         (
-            ["--worker-suffix", "b-linux=-dev"],
-            {"worker-overrides": {"b-linux": "gecko-1/b-linux-dev"}},
+            ["--worker-suffix", "b-linux-gcp=-dev"],
+            {"worker-overrides": {"b-linux-gcp": "gecko-1/b-linux-dev"}},
         ),
         (
             [
