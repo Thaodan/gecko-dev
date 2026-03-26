@@ -1227,7 +1227,7 @@ SettingGroupManager.registerGroups({
         supportPage: "ai-chatbot",
         controlAttrs: {
           headinglevel: 2,
-          iconsrc: "chrome://browser/skin/sidebars.svg",
+          iconsrc: "chrome://browser/skin/sidebar-collapsed.svg",
         },
         items: [
           {
