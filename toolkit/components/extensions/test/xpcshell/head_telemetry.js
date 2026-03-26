@@ -2,7 +2,7 @@
 /* vim: set sts=2 sw=2 et tw=80: */
 "use strict";
 
-/* exported IS_OOP, valueSum, clearHistograms, getSnapshots, promiseTelemetryRecorded,
+/* exported IS_OOP, GLEAN_EVENTPAGE_IDLE_RESULT_CATEGORIES, valueSum, clearHistograms, getSnapshots, promiseTelemetryRecorded,
             assertDNRTelemetryMetricsDefined, assertDNRTelemetryMetricsNoSamples, assertDNRTelemetryMetricsGetValueEq,
             assertDNRTelemetryMetricsSamplesCount, resetTelemetryData, setupTelemetryForTests */
 
@@ -21,18 +21,10 @@ Services.prefs.setBoolPref(
 
 const IS_OOP = Services.prefs.getBoolPref("extensions.webextensions.remote");
 
-const WEBEXT_EVENTPAGE_RUNNING_TIME_MS = "WEBEXT_EVENTPAGE_RUNNING_TIME_MS";
-const WEBEXT_EVENTPAGE_RUNNING_TIME_MS_BY_ADDONID =
-  "WEBEXT_EVENTPAGE_RUNNING_TIME_MS_BY_ADDONID";
-const WEBEXT_EVENTPAGE_IDLE_RESULT_COUNT = "WEBEXT_EVENTPAGE_IDLE_RESULT_COUNT";
-const WEBEXT_EVENTPAGE_IDLE_RESULT_COUNT_BY_ADDONID =
-  "WEBEXT_EVENTPAGE_IDLE_RESULT_COUNT_BY_ADDONID";
-
-// Keep this in sync with the order in Histograms.json for "WEBEXT_EVENTPAGE_IDLE_RESULT_COUNT":
-// the position of the category string determines the index of the values collected in the categorial
-// histogram and so the existing labels should be kept in the exact same order and any new category
-// to be added in the future should be appended to the existing ones.
-const HISTOGRAM_EVENTPAGE_IDLE_RESULT_CATEGORIES = [
+// Keep these labels in the same order as "eventpage_idle_result" Glean metric
+// definition in toolkit/components/extensions/metrics.yaml to make it easier
+// to keep them in sync (while keeping `__other__` as the last entry).
+const GLEAN_EVENTPAGE_IDLE_RESULT_CATEGORIES = [
   "suspend",
   "reset_other",
   "reset_event",
@@ -40,10 +32,6 @@ const HISTOGRAM_EVENTPAGE_IDLE_RESULT_CATEGORIES = [
   "reset_nativeapp",
   "reset_streamfilter",
   "reset_parentapicall",
-];
-
-const GLEAN_EVENTPAGE_IDLE_RESULT_CATEGORIES = [
-  ...HISTOGRAM_EVENTPAGE_IDLE_RESULT_CATEGORIES,
   "__other__",
 ];
 
