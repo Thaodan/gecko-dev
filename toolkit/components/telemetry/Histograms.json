@@ -1926,62 +1926,6 @@
     "bug_numbers": [1866739, 1858256],
     "description": "The upload throughput for http/3 requests larger than 100MB. Measured in megabits per second, Mbps."
   },
-  "NETWORK_RACE_CACHE_WITH_NETWORK_SAVED_TIME": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "alert_emails": ["necko@mozilla.com", "mnovotny@mozilla.com"],
-    "bug_numbers": [1354407],
-    "kind": "exponential",
-    "high": 60000,
-    "n_buckets": 100,
-    "description": "Time in milliseconds that we saved when we race cache with network."
-  },
-  "NETWORK_RACE_CACHE_WITH_NETWORK_OCEC_ON_START_DIFF": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "alert_emails": ["necko@mozilla.com", "mnovotny@mozilla.com"],
-    "bug_numbers": [1354407],
-    "kind": "linear",
-    "high": 1000,
-    "n_buckets": 100,
-    "description": "Time in milliseconds between onStartRequest from the cache and onCacheEntryCheck. Report only when net wins and OCEC is before onStartRequest from net."
-  },
-  "NETWORK_RACE_CACHE_BANDWIDTH_RACE_NETWORK_WIN": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "low": 32,
-    "high": 16777216,
-    "n_buckets": 100,
-    "description": "Amount of bytes received when we decide to race cache with network and network wins.",
-    "alert_emails": ["necko@mozilla.com", "mnovotny@mozilla.com"],
-    "bug_numbers": [1354405]
-  },
-  "NETWORK_RACE_CACHE_BANDWIDTH_RACE_CACHE_WIN": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "low": 32,
-    "high": 16777216,
-    "n_buckets": 100,
-    "description": "Amount of bytes received when we decide to race cache with network and cache wins.",
-    "alert_emails": ["necko@mozilla.com", "mnovotny@mozilla.com"],
-    "bug_numbers": [1354405]
-  },
-  "NETWORK_RACE_CACHE_VALIDATION": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "alert_emails": ["necko@mozilla.com", "mnovotny@mozilla.com"],
-    "bug_numbers": [1377223],
-    "kind": "categorical",
-    "labels": ["NotSent", "CachedContentUsed", "CachedContentNotUsed"],
-    "description": "Stats for validation requests when cache won the race."
-  },
   "NETWORK_BACK_PRESSURE_SUSPENSION_RATE_V2": {
     "record_in_processes": ["main"],
     "products": ["firefox", "fennec"],
