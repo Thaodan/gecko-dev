@@ -6301,15 +6301,18 @@ mozilla::ipc::IPCResult ContentParent::RecvRecordPageLoadEvent(
   const nsDependentCSubstring remoteTypePrefix =
       RemoteTypePrefix(GetRemoteType());
 
+  using namespace mozilla::performance::pageload_event;
+  AndroidIsolationCategory isolationCategory;
   if (remoteTypePrefix == WEB_REMOTE_TYPE) {
-    aPageloadEventData.set_androidIsolationCategory("shared_web"_ns);
+    isolationCategory = AndroidIsolationCategory::SHARED_WEB;
   } else if (remoteTypePrefix == FISSION_WEB_REMOTE_TYPE) {
-    aPageloadEventData.set_androidIsolationCategory("site_isolated"_ns);
+    isolationCategory = AndroidIsolationCategory::SITE_ISOLATED;
   } else if (remoteTypePrefix == WITH_COOP_COEP_REMOTE_TYPE) {
-    aPageloadEventData.set_androidIsolationCategory("coop_isolated"_ns);
+    isolationCategory = AndroidIsolationCategory::COOP_ISOLATED;
   } else {
-    aPageloadEventData.set_androidIsolationCategory("other"_ns);
+    isolationCategory = AndroidIsolationCategory::OTHER;
   }
+  aPageloadEventData.set_androidIsolationCategory(isolationCategory);
 #endif
 
   // If the domain information exists, then we need to send it using a special
