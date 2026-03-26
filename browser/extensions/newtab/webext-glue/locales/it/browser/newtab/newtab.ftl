@@ -313,9 +313,22 @@ newtab-error-fallback-refresh-link = Aggiornare la pagina per riprovare.
 
 newtab-custom-shortcuts-title = Scorciatoie
 newtab-custom-shortcuts-subtitle = Siti che hai salvato oppure visitato
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Scorciatoie
     .description = Siti che hai salvato oppure visitato
+newtab-custom-shortcuts-toggle-rows =
+    .label = Scorciatoie
+    .description = Numero di righe
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } riga
+           *[other] { $num } righe
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -364,6 +377,8 @@ newtab-wallpaper-title = Sfondi
 newtab-wallpaper-reset = Ripristina predefinito
 newtab-wallpaper-upload-image = Carica immagine
 newtab-wallpaper-custom-color = Scegli un colore
+newtab-wallpaper-toggle-title =
+    .label = Sfondi
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = L’immagine eccede la dimensione massima consentita ({ $file_size } MB). Prova a caricare un file più piccolo.
