@@ -348,8 +348,8 @@ uint32_t Histogram::Crc32(uint32_t sum, Histogram::Sample range) {
       unsigned char bytes[sizeof(Histogram::Sample)];
     } converter;
     converter.range = range;
-    for (size_t i = 0; i < sizeof(converter); ++i)
-      sum = kCrcTable[(sum & 0xff) ^ converter.bytes[i]] ^ (sum >> 8);
+    for (unsigned char byte : converter.bytes)
+      sum = kCrcTable[(sum & 0xff) ^ byte] ^ (sum >> 8);
   } else {
     // Use hash techniques provided in ReallyFastHash, except we don't care
     // about "avalanching" (which would worsten the hash, and add collisions),

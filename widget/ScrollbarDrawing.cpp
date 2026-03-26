@@ -374,8 +374,8 @@ bool ScrollbarDrawing::PaintScrollbarButton(
     case StyleAppearance::ScrollbarbuttonUp:
       break;
     case StyleAppearance::ScrollbarbuttonDown:
-      for (int32_t i = 0; i < arrowNumPoints; i++) {
-        arrowPolygonY[i] *= -1;
+      for (float& y : arrowPolygonY) {
+        y *= -1;
       }
       break;
     case StyleAppearance::ScrollbarbuttonLeft:

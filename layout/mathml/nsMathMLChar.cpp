@@ -933,17 +933,15 @@ bool nsMathMLChar::StretchEnumContext::TryParts(
   // come from the same font.
   if (aGlyphTable->IsUnicodeTable()) {
     gfxFont* unicodeFont = nullptr;
-    for (int32_t i = 0; i < 4; i++) {
-      if (!textRun[i]) {
+    for (const auto& i : textRun) {
+      if (!i) {
         continue;
       }
-      if (textRun[i]->GetLength() != 1 ||
-          textRun[i]->GetCharacterGlyphs()[0].IsMissing()) {
+      if (i->GetLength() != 1 || i->GetCharacterGlyphs()[0].IsMissing()) {
         return false;
       }
       uint32_t numGlyphRuns;
-      const gfxTextRun::GlyphRun* glyphRuns =
-          textRun[i]->GetGlyphRuns(&numGlyphRuns);
+      const gfxTextRun::GlyphRun* glyphRuns = i->GetGlyphRuns(&numGlyphRuns);
       if (numGlyphRuns != 1) {
         return false;
       }
