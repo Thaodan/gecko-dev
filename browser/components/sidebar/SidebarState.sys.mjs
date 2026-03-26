@@ -215,7 +215,7 @@ export class SidebarState {
    * @param {SidebarStateProps} props
    *   New properties to overwrite the default state with.
    */
-  loadInitialState(props) {
+  loadCurrentState(props) {
     // Override any initial launcher visible state when the new sidebar has not been
     // made visible yet
     let hasPreviousVisibleState = false;

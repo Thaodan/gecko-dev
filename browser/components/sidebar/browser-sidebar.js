@@ -531,7 +531,7 @@ var SidebarController = {
         (this.sidebarRevampEnabled || windowPrivacyMatches)
       ) {
         const backupState = this.SidebarManager.getBackupState();
-        this.initializeUIState(backupState);
+        this.updateUIState(backupState);
       }
     });
     this._initDeferred.resolve();
@@ -617,7 +617,7 @@ var SidebarController = {
    *
    * @param {SidebarStateProps} state
    */
-  async initializeUIState(state) {
+  async updateUIState(state) {
     if (!state) {
       return;
     }
@@ -639,7 +639,7 @@ var SidebarController = {
     }
     await this.promiseInitialized;
     await this.waitUntilStable(); // Finish currently scheduled tasks.
-    await this._state.loadInitialState(state);
+    await this._state.loadCurrentState(state);
     await this.waitUntilStable(); // Finish newly scheduled tasks.
     this.updateToolbarButton();
     if (this.sidebarRevampVisibility === "expand-on-hover") {
@@ -909,7 +909,7 @@ var SidebarController = {
     const sourceState = sourceController.inPopup
       ? null
       : sourceController._state?.getProperties();
-    await this.initializeUIState(sourceState);
+    await this.updateUIState(sourceState);
 
     return true;
   },
