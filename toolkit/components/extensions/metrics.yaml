@@ -96,13 +96,15 @@ extensions:
       - lgreco@mozilla.com
     bugs:
       - https://bugzilla.mozilla.org/1767336/
+      - https://bugzilla.mozilla.org/1912170/
+      - https://bugzilla.mozilla.org/1958168/
+      - https://bugzilla.mozilla.org/1994581/
+      - https://bugzilla.mozilla.org/2018311/
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1767336#c7
+      - https://bugzilla.mozilla.org/2018311/
     data_sensitivity:
       - technical
-    telemetry_mirror: EXTENSIONS_STARTUPCACHE_LOAD_TIME
-    no_lint:
-      - GIFFT_NON_PING_LIFETIME
 
   startup_cache_read_errors:
     type: labeled_counter
@@ -115,13 +117,16 @@ extensions:
       - addons-dev-internal@mozilla.com
     bugs:
       - https://bugzilla.mozilla.org/1767336/
+      - https://bugzilla.mozilla.org/1892151/
+      - https://bugzilla.mozilla.org/1928258/
+      - https://bugzilla.mozilla.org/1958168/
+      - https://bugzilla.mozilla.org/1994581/
+      - https://bugzilla.mozilla.org/2018311/
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1767336#c7
+      - https://bugzilla.mozilla.org/2018311/
     data_sensitivity:
       - technical
-    telemetry_mirror: EXTENSIONS_STARTUPCACHE_READ_ERRORS
-    no_lint:
-      - GIFFT_NON_PING_LIFETIME
 
   startup_cache_write_bytelength:
     type: quantity
@@ -134,13 +139,16 @@ extensions:
       - addons-dev-internal@mozilla.com
     bugs:
       - https://bugzilla.mozilla.org/1767336/
+      - https://bugzilla.mozilla.org/1892151/
+      - https://bugzilla.mozilla.org/1928258/
+      - https://bugzilla.mozilla.org/1958168/
+      - https://bugzilla.mozilla.org/1994581/
+      - https://bugzilla.mozilla.org/2018311/
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1767336#c7
+      - https://bugzilla.mozilla.org/2018311/
     data_sensitivity:
       - technical
-    telemetry_mirror: EXTENSIONS_STARTUPCACHE_WRITE_BYTELENGTH
-    no_lint:
-      - GIFFT_NON_PING_LIFETIME
 
   process_event:
     type: labeled_counter
