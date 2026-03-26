@@ -705,7 +705,11 @@ class JSTerm extends Component {
 
     if (nextProps.editorMode !== this.props.editorMode) {
       if (this.editor) {
-        if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+        if (Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+          nextProps.editorMode
+            ? this.editor.enableGutter()
+            : this.editor.disableGutter();
+        } else {
           this.editor.setOption("lineNumbers", nextProps.editorMode);
           this.editor.setOption("enableCodeFolding", nextProps.editorMode);
         }
