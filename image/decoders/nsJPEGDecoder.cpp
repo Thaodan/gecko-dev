@@ -21,11 +21,18 @@
 #include "jerror.h"
 
 #include "gfxPlatform.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/gfx/Types.h"
 
 extern "C" {
 #include "iccjpeg.h"
 }
+
+#if MOZ_BIG_ENDIAN()
+#  define MOZ_JCS_EXT_NATIVE_ENDIAN_XRGB JCS_EXT_XRGB
+#else
+#  define MOZ_JCS_EXT_NATIVE_ENDIAN_XRGB JCS_EXT_BGRX
+#endif
 
 static void cmyk_convert_bgra(uint32_t* aInput, uint32_t* aOutput,
                               int32_t aWidth, bool aIsInverted);

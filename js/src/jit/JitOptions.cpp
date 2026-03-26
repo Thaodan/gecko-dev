@@ -6,7 +6,6 @@
 
 #include "jit/JitOptions.h"
 
-#include <bit>
 #include <cstdlib>
 #include <type_traits>
 
@@ -410,9 +409,12 @@ DefaultJitOptions::DefaultJitOptions() {
   // example, if a regexp is too long - so we might as well turn these
   // flags on unconditionally.
   SET_DEFAULT(regexp_optimization, true);
-  // peephole optimization only supported for little endian
-  SET_DEFAULT(regexp_peephole_optimization,
-              std::endian::native == std::endian::little);
+#if MOZ_BIG_ENDIAN()
+  // peephole optimization not supported on big endian
+  SET_DEFAULT(regexp_peephole_optimization, false);
+#else
+  SET_DEFAULT(regexp_peephole_optimization, true);
+#endif
 }
 
 bool DefaultJitOptions::isSmallFunction(JSScript* script) const {

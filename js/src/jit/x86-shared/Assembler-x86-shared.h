@@ -7,7 +7,6 @@
 #ifndef jit_x86_shared_Assembler_x86_shared_h
 #define jit_x86_shared_Assembler_x86_shared_h
 
-#include "mozilla/EndianUtils.h"
 #include "mozilla/MathAlgorithms.h"
 
 #include <cstddef>

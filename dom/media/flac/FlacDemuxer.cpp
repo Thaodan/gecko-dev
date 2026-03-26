@@ -8,7 +8,6 @@
 #include "FlacFrameParser.h"
 #include "TimeUnits.h"
 #include "VideoUtils.h"
-#include "mozilla/EndianUtils.h"
 #include "mozilla/Maybe.h"
 #include "prenv.h"
 

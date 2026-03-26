@@ -7,6 +7,7 @@
 #include "jit/Lowering.h"
 
 #include "mozilla/DebugOnly.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/MathAlgorithms.h"
 
@@ -65,13 +66,13 @@ void LIRGenerator::visitParameter(MParameter* param) {
 
   offset *= sizeof(Value);
 #if defined(JS_NUNBOX32)
-  if constexpr (std::endian::native == std::endian::big) {
-    ins->getDef(0)->setOutput(LArgument(offset));
-    ins->getDef(1)->setOutput(LArgument(offset + 4));
-  } else {
-    ins->getDef(0)->setOutput(LArgument(offset + 4));
-    ins->getDef(1)->setOutput(LArgument(offset));
-  }
+#  if MOZ_BIG_ENDIAN()
+  ins->getDef(0)->setOutput(LArgument(offset));
+  ins->getDef(1)->setOutput(LArgument(offset + 4));
+#  else
+  ins->getDef(0)->setOutput(LArgument(offset + 4));
+  ins->getDef(1)->setOutput(LArgument(offset));
+#  endif
 #elif defined(JS_PUNBOX64)
   ins->getDef(0)->setOutput(LArgument(offset));
 #endif

@@ -8,7 +8,6 @@
 #include "IndexedDatabaseInlines.h"
 #include "MainThreadUtils.h"
 #include "jsapi.h"
-#include "mozilla/EndianUtils.h"
 #include "mozilla/dom/FileBlobImpl.h"
 #include "mozilla/dom/FileList.h"
 #include "mozilla/dom/StructuredCloneTags.h"

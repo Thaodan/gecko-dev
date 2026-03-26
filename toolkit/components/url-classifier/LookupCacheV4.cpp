@@ -5,7 +5,6 @@
 
 #include "LookupCacheV4.h"
 #include "HashStore.h"
-#include "mozilla/EndianUtils.h"
 #include "mozilla/glean/UrlClassifierMetrics.h"
 #include "nsCheckSummedOutputStream.h"
 #include "nsUrlClassifierDBService.h"

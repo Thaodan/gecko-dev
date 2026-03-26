@@ -14,7 +14,6 @@
 #include "MP4Decoder.h"
 #include "MediaInfo.h"
 #include "MediaResult.h"
-#include "mozilla/EndianUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Result.h"
 #include "mozilla/UniquePtr.h"
