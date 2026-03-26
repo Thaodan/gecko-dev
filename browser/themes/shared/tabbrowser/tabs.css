@@ -1309,6 +1309,13 @@ tab-group > tab-split-view-wrapper {
     outline: 1px solid var(--tab-dragover-outline-color);
   }
 
+  /* show outline when split view wrapper is about to be grouped */
+  #tabbrowser-tabs[movingtab-group] &[dragover-groupTarget] {
+    background-color: light-dark(var(--dragover-tab-group-color-pale), var(--dragover-tab-group-color));
+    color: light-dark(var(--dragover-tab-group-color), var(--dragover-tab-group-color-pale));
+    outline-color: light-dark(var(--dragover-tab-group-color), var(--dragover-tab-group-color-pale));
+  }
+
   .tabbrowser-tab {
     padding-block: 0 !important;
 
