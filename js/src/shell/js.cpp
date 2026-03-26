@@ -5694,9 +5694,12 @@ static bool ParseModule(JSContext* cx, unsigned argc, Value* vp) {
         moduleType = JS::ModuleType::JSON;
       } else if (JS_LinearStringEqualsLiteral(linearStr, "bytes")) {
         moduleType = JS::ModuleType::Bytes;
+      } else if (JS_LinearStringEqualsLiteral(linearStr, "text")) {
+        moduleType = JS::ModuleType::Text;
       } else if (!JS_LinearStringEqualsLiteral(linearStr, "js")) {
         JS_ReportErrorASCII(
-            cx, "moduleType string ('js' or 'json' or 'bytes') expected");
+            cx,
+            "moduleType string ('js' or 'json' or 'bytes' or 'text') expected");
         return false;
       }
     }
@@ -5744,6 +5747,17 @@ static bool ParseModule(JSContext* cx, unsigned argc, Value* vp) {
         JS_ReportErrorASCII(
             cx, "expected immutable Uint8Array for bytes module, got %s",
             typeName);
+        return false;
+      }
+
+      module = JS::CreateDefaultExportSyntheticModule(cx, args[0]);
+      break;
+    }
+
+    case JS::ModuleType::Text: {
+      if (!args[0].isString()) {
+        const char* typeName = InformalValueTypeName(args[0]);
+        JS_ReportErrorASCII(cx, "expected text string, got %s", typeName);
         return false;
       }
 
@@ -10183,9 +10197,10 @@ static const JSFunctionSpecWithHelp shell_functions[] = {
 "  Sleep for dt seconds."),
 
     JS_FN_HELP("parseModule", ParseModule, 3, 0,
-"parseModule(code, 'filename', 'js' | 'json' | 'bytes')",
-"  Parses source text as a JS module ('js', this is the default) or a JSON"
-" module ('json') or bytes module ('bytes') and returns a ModuleObject wrapper object."),
+"parseModule(code, 'filename', 'js' | 'json' | 'bytes' | 'text')",
+"  Parses source text as a JS module ('js', this is the default),\n"
+"  a JSON module ('json'), a bytes module ('bytes'), or a text module ('text'),\n"
+"  and returns a ModuleObject wrapper object."),
 
     JS_FN_HELP("instantiateModuleStencil", InstantiateModuleStencil, 1, 0,
 "instantiateModuleStencil(stencil, [options])",
