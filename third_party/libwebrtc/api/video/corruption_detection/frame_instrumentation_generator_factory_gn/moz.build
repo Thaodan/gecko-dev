@@ -34,7 +34,7 @@ LOCAL_INCLUDES += [
 ]
 
 UNIFIED_SOURCES += [
-    "/third_party/libwebrtc/api/video/corruption_detection/frame_instrumentation_generator.cc"
+    "/third_party/libwebrtc/api/video/corruption_detection/frame_instrumentation_generator_factory.cc"
 ]
 
 if not CONFIG["MOZ_DEBUG"]:
@@ -219,4 +219,4 @@ if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "x86_64":
 
     DEFINES["_GNU_SOURCE"] = True
 
-Library("frame_instrumentation_generator_gn")
+Library("frame_instrumentation_generator_factory_gn")
