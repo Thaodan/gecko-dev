@@ -470,6 +470,9 @@ struct arena_t {
       MOZ_REQUIRES(mLock);
 #endif
 
+  // Split an unallocated run into two parts, allocate the first part and
+  // make the 2nd part available for future allocations.
+  //
   // Before calling:
   //   aRun must not be allocated or available for allocation in mAvailRuns,
   //   it may be fresh, decommitted, dirty etc.
@@ -483,8 +486,9 @@ struct arena_t {
   //
   // This can only fail if committing memory failed.
   //
-  [[nodiscard]] bool SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge,
-                              bool aZero) MOZ_REQUIRES(mLock);
+  [[nodiscard]] bool SplitAndAllocRun(arena_run_t* aRun, size_t aSize,
+                                      bool aLarge, bool aZero)
+      MOZ_REQUIRES(mLock);
 
   void TrimRunHead(arena_chunk_t* aChunk, arena_run_t* aRun, size_t aOldSize,
                    size_t aNewSize) MOZ_REQUIRES(mLock);

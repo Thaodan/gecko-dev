@@ -832,8 +832,8 @@ void arena_t::TouchMadvisedPage(arena_chunk_t* aChunk, size_t page) {
 }
 #endif
 
-bool arena_t::SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge,
-                       bool aZero) {
+bool arena_t::SplitAndAllocRun(arena_run_t* aRun, size_t aSize, bool aLarge,
+                               bool aZero) {
   arena_chunk_t* chunk = GetChunkForPtr(aRun);
   size_t old_ndirty = chunk->mNumDirty;
   size_t run_ind =
@@ -1053,8 +1053,8 @@ void arena_t::InitChunk(arena_chunk_t* aChunk, size_t aMinCommittedPages) {
       gChunkNumPages - gPagesPerRealPage - gChunkHeaderNumPages;
 #endif
 
-  // The committed pages are marked as Fresh.  Our caller, SplitRun will update
-  // this when it uses them.
+  // The committed pages are marked as Fresh.  Our caller, SplitAndAllocRun will
+  // update this when it uses them.
   for (size_t j = 0; j < n_fresh_pages; j++) {
     aChunk->mPageMap[i + j].bits = CHUNK_MAP_ZEROED | CHUNK_MAP_FRESH;
   }
@@ -1197,7 +1197,7 @@ arena_run_t* arena_t::AllocRun(size_t aSize, bool aLarge, bool aZero) {
     mapelm = &chunk->mPageMap[gChunkHeaderNumPages];
   }
   // Update page map.
-  if (!SplitRun(run, aSize, aLarge, aZero)) {
+  if (!SplitAndAllocRun(run, aSize, aLarge, aZero)) {
     mRunsAvail.Insert(mapelm);
     return nullptr;
   }
@@ -2857,9 +2857,10 @@ bool arena_t::RallocGrowLarge(arena_chunk_t* aChunk, void* aPtr, size_t aSize,
       // following run, then merge the first part with the existing
       // allocation.
       mRunsAvail.Remove(&aChunk->mPageMap[pageind + npages]);
-      if (!SplitRun((arena_run_t*)(uintptr_t(aChunk) +
-                                   ((pageind + npages) << gPageSize2Pow)),
-                    aSize - aOldSize, true, false)) {
+      if (!SplitAndAllocRun(
+              (arena_run_t*)(uintptr_t(aChunk) +
+                             ((pageind + npages) << gPageSize2Pow)),
+              aSize - aOldSize, true, false)) {
         mRunsAvail.Insert(&aChunk->mPageMap[pageind + npages]);
         return false;
       }
