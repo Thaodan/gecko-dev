@@ -58,6 +58,12 @@ def add_to_installer(config, jobs):
             ]
         elif "mac" in job["attributes"]["build_platform"]:
             job["fetches"]["repackage"] = [{"artifact": "target.dmg"}]
+        elif "win" in job["attributes"]["build_platform"]:
+            job["fetches"]["repackage"] = [{"artifact": "target.installer.exe"}]
+        else:
+            raise Exception(
+                "unsupported platform: {job['attributes']['build_platform']}!"
+            )
 
         yield job
 
@@ -80,6 +86,20 @@ def add_additional_fetches_and_command(config, jobs):
             platform = "mac"
             build_target = "Darwin_x86_64-gcc3-u-i386-x86_64"
             installer_suffix = "dmg"
+        elif job["attributes"]["build_platform"].startswith("win32"):
+            platform = "win"
+            build_target = "WINNT_x86-msvc"
+            installer_suffix = "installer.exe"
+        # checked before `win64` to avoid `win64-aarch64` ending up with
+        # `win64` information
+        elif job["attributes"]["build_platform"].startswith("win64-aarch64"):
+            platform = "win"
+            build_target = "WINNT_aarch64-msvc-aarch64"
+            installer_suffix = "installer.exe"
+        elif job["attributes"]["build_platform"].startswith("win64"):
+            platform = "win"
+            build_target = "WINNT_x86_64-msvc"
+            installer_suffix = "installer.exe"
         else:
             raise Exception("couldn't detect build target")
 
