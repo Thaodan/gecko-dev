@@ -103,7 +103,7 @@ add_setup(async () => {
 });
 
 add_task(async function test_dnr_startup_cache_save_and_load() {
-  resetTelemetryData();
+  Services.fog.testResetFOG();
 
   const rule_resources = [
     {
@@ -266,7 +266,7 @@ add_task(async function test_dnr_startup_cache_save_and_load() {
       "scheduleCacheDataSave"
     );
 
-    resetTelemetryData();
+    Services.fog.testResetFOG();
     await AddonTestUtils.promiseStartupManager();
     await extension.awaitStartup();
     await ExtensionDNR.ensureInitialized(extension.extension);

@@ -7,7 +7,7 @@ add_task(async function test_telemetry() {
   let extension1 = ExtensionTestUtils.loadExtension({});
   let extension2 = ExtensionTestUtils.loadExtension({});
 
-  resetTelemetryData();
+  Services.fog.testResetFOG();
 
   assertGleanMetricsNoSamples({
     metricId: "extensionStartup",

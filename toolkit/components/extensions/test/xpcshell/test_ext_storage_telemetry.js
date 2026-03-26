@@ -133,7 +133,7 @@ async function test_telemetry_background() {
   // Make sure to force flushing glean fog data from child processes before
   // resetting the already collected data.
   await Services.fog.testFlushAllChildren();
-  resetTelemetryData();
+  Services.fog.testResetFOG();
   assertNoStorageLocalGleanData();
 
   await extension1.startup();
@@ -170,7 +170,7 @@ async function test_telemetry_background() {
   await extension2.unload();
 
   await Services.fog.testFlushAllChildren();
-  resetTelemetryData();
+  Services.fog.testResetFOG();
 
   // Run a content script.
   let contentPage = await ExtensionTestUtils.loadContentPage(
@@ -192,7 +192,7 @@ async function test_telemetry_background() {
   });
 
   await Services.fog.testFlushAllChildren();
-  resetTelemetryData();
+  Services.fog.testResetFOG();
 
   await extension1.unload();
   await contentPage.close();

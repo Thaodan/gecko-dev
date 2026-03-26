@@ -17,7 +17,7 @@ add_task(async function test_telemetry() {
     },
   });
 
-  resetTelemetryData();
+  Services.fog.testResetFOG();
 
   assertGleanMetricsNoSamples({
     metricId: "backgroundPageLoad",

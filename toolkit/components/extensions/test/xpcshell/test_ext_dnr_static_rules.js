@@ -1150,7 +1150,7 @@ add_task(async function test_dnr_all_rules_disabled_allowed() {
 });
 
 add_task(async function test_static_rules_telemetry() {
-  resetTelemetryData();
+  Services.fog.testResetFOG();
 
   const ruleset1 = [
     getDNRRule({

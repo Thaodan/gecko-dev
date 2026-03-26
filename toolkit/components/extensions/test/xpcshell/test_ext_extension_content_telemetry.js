@@ -51,7 +51,7 @@ add_task(async function test_telemetry() {
   // Make sure to force flushing glean fog data from child processes before
   // resetting the already collected data.
   await Services.fog.testFlushAllChildren();
-  resetTelemetryData();
+  Services.fog.testResetFOG();
 
   assertGleanMetricsNoSamples({
     metricId: GLEAN_METRIC_ID,

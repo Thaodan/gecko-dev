@@ -2,9 +2,9 @@
 /* vim: set sts=2 sw=2 et tw=80: */
 "use strict";
 
-/* exported IS_OOP, GLEAN_EVENTPAGE_IDLE_RESULT_CATEGORIES, valueSum, clearHistograms, getSnapshots, promiseTelemetryRecorded,
+/* exported IS_OOP, GLEAN_EVENTPAGE_IDLE_RESULT_CATEGORIES, valueSum,
             assertDNRTelemetryMetricsDefined, assertDNRTelemetryMetricsNoSamples, assertDNRTelemetryMetricsGetValueEq,
-            assertDNRTelemetryMetricsSamplesCount, resetTelemetryData, setupTelemetryForTests */
+            assertDNRTelemetryMetricsSamplesCount, setupTelemetryForTests */
 
 ChromeUtils.defineESModuleGetters(this, {
   ContentTaskUtils: "resource://testing-common/ContentTaskUtils.sys.mjs",
@@ -39,156 +39,11 @@ function valueSum(arr) {
   return Object.values(arr).reduce((a, b) => a + b, 0);
 }
 
-function clearHistograms() {
-  Services.telemetry.getSnapshotForHistograms("main", true /* clear */);
-  Services.telemetry.getSnapshotForKeyedHistograms("main", true /* clear */);
-}
-
-function clearScalars() {
-  Services.telemetry.getSnapshotForScalars("main", true /* clear */);
-  Services.telemetry.getSnapshotForKeyedScalars("main", true /* clear */);
-}
-
-function getSnapshots(process) {
-  return Services.telemetry.getSnapshotForHistograms("main", false /* clear */)[
-    process
-  ];
-}
-
-function getKeyedSnapshots(process) {
-  return Services.telemetry.getSnapshotForKeyedHistograms(
-    "main",
-    false /* clear */
-  )[process];
-}
-
-// TODO Bug 1357509: There is no good way to make sure that the parent received
-// the histogram entries from the extension and content processes.  Let's stick
-// to the ugly, spinning the event loop until we have a good approach.
-function promiseTelemetryRecorded(id, process, expectedCount) {
-  let condition = () => {
-    let snapshot = Services.telemetry.getSnapshotForHistograms(
-      "main",
-      false /* clear */
-    )[process][id];
-    return snapshot && valueSum(snapshot.values) >= expectedCount;
-  };
-  return ContentTaskUtils.waitForCondition(condition);
-}
-
-function promiseKeyedTelemetryRecorded(
-  id,
-  process,
-  expectedKey,
-  expectedCount
-) {
-  let condition = () => {
-    let snapshot = Services.telemetry.getSnapshotForKeyedHistograms(
-      "main",
-      false /* clear */
-    )[process][id];
-    return (
-      snapshot &&
-      snapshot[expectedKey] &&
-      valueSum(snapshot[expectedKey].values) >= expectedCount
-    );
-  };
-  return ContentTaskUtils.waitForCondition(condition);
-}
-
-function assertHistogramSnapshot(
-  histogramId,
-  { keyed, processSnapshot, expectedValue },
-  msg
-) {
-  let histogram;
-
-  if (keyed) {
-    histogram = Services.telemetry.getKeyedHistogramById(histogramId);
-  } else {
-    histogram = Services.telemetry.getHistogramById(histogramId);
-  }
-
-  let res = processSnapshot(histogram.snapshot());
-  Assert.deepEqual(res, expectedValue, msg);
-  return res;
-}
-
-function assertHistogramEmpty(histogramId) {
-  assertHistogramSnapshot(
-    histogramId,
-    {
-      processSnapshot: snapshot => snapshot.sum,
-      expectedValue: 0,
-    },
-    `No data recorded for histogram: ${histogramId}.`
-  );
-}
-
-function assertKeyedHistogramEmpty(histogramId) {
-  assertHistogramSnapshot(
-    histogramId,
-    {
-      keyed: true,
-      processSnapshot: snapshot => Object.keys(snapshot).length,
-      expectedValue: 0,
-    },
-    `No data recorded for histogram: ${histogramId}.`
-  );
-}
-
-function assertHistogramCategoryNotEmpty(
-  histogramId,
-  { category, categories, keyed, key },
-  msg
-) {
-  let message = msg;
-
-  if (!msg) {
-    message = `Data recorded for histogram: ${histogramId}, category "${category}"`;
-    if (keyed) {
-      message += `, key "${key}"`;
-    }
-  }
-
-  assertHistogramSnapshot(
-    histogramId,
-    {
-      keyed,
-      processSnapshot: snapshot => {
-        const categoryIndex = categories.indexOf(category);
-        if (keyed) {
-          return {
-            [key]: snapshot[key]
-              ? snapshot[key].values[categoryIndex] > 0
-              : null,
-          };
-        }
-        return snapshot.values[categoryIndex] > 0;
-      },
-      expectedValue: keyed ? { [key]: true } : true,
-    },
-    message
-  );
-}
-
 function setupTelemetryForTests() {
   // FOG needs a profile directory to put its data in.
   do_get_profile();
   // FOG needs to be initialized in order for data to flow.
   Services.fog.initializeFOG();
-}
-
-function resetTelemetryData() {
-  Services.fog.testResetFOG();
-
-  // Clear histograms data recorded in the unified telemetry
-  // (needed to make sure we can keep asserting that the same
-  // amount of samples collected by Glean should also be found
-  // in the related mirrored unified telemetry probe after we
-  // have reset Glean metrics data using testResetFOG).
-  clearHistograms();
-  clearScalars();
 }
 
 function assertValidGleanMetric({

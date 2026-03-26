@@ -32,7 +32,7 @@ add_setup(async () => {
 add_task(async function test_eventpage_idle() {
   const { GleanCustomDistribution } = globalThis;
 
-  resetTelemetryData();
+  Services.fog.testResetFOG();
 
   assertGleanMetricsNoSamples({
     metricId: "eventPageRunningTime",
@@ -155,7 +155,7 @@ add_task(async function test_eventpage_idle() {
 add_task(
   { pref_set: [["extensions.background.idle.timeout", 500]] },
   async function test_eventpage_runtime_parentApiCall_resets_timeout() {
-    resetTelemetryData();
+    Services.fog.testResetFOG();
 
     assertGleanLabeledMetricEmpty({
       metricId: "eventPageIdleResult",
@@ -380,7 +380,7 @@ add_task(
 add_task(
   { pref_set: [["extensions.webextensions.runtime.timeout", 1000]] },
   async function test_eventpage_runtime_onSuspend_canceled() {
-    resetTelemetryData();
+    Services.fog.testResetFOG();
 
     assertGleanLabeledMetricEmpty({
       metricId: "eventPageIdleResult",
@@ -601,7 +601,7 @@ function createPendingListenerTestExtension() {
 add_task(
   { pref_set: [["extensions.background.idle.timeout", 500]] },
   async function test_eventpage_idle_reset_on_async_listener_unresolved() {
-    resetTelemetryData();
+    Services.fog.testResetFOG();
 
     assertGleanLabeledMetricEmpty({
       metricId: "eventPageIdleResult",

@@ -1118,7 +1118,7 @@ add_task(async function test_register_dynamic_rules_after_restart() {
 });
 
 add_task(async function test_dynamic_rules_telemetry() {
-  resetTelemetryData();
+  Services.fog.testResetFOG();
 
   let { extension } = await runAsDNRExtension({
     unloadTestAtEnd: false,
