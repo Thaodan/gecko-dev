@@ -18,7 +18,9 @@ support-files = [
   "test_smartwindow_panel_list_page.html",
   "test_smartwindow_panel_list.mjs",
   "test_website_chip_page.html",
-  "test_website_chip.mjs"
+  "test_website_chip.mjs",
+  "test_context_url_page.html",
+  "test_context_url_page2.html"
 ]
 
 ["browser_actor_user_prompt.js"]
@@ -102,6 +104,8 @@ support-files = [
 ["browser_smartwindow_beta_badge.js"]
 
 ["browser_smartwindow_content.js"]
+
+["browser_smartwindow_context_url.js"]
 
 ["browser_smartwindow_conversation_state.js"]
 

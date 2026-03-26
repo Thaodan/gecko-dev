@@ -408,7 +408,7 @@ export class ChatConversation extends EventEmitter {
    * adding new user prompt to messages.
    *
    * @param {string} prompt - new user prompt
-   * @param {URL} pageUrl - The URL of the page when prompt was submitted
+   * @param {?URL} pageUrl - The URL of the page when prompt was submitted
    * @param {openAIEngine} engineInstance
    * @param {UserRoleOpts} [userOpts]
    * @param {boolean} [skipUserDispatch=false] - If true, do not emit the
@@ -544,7 +544,7 @@ export class ChatConversation extends EventEmitter {
    * returns content.
    *
    * @typedef {
-   *   (depsOverride?: object) => Promise<{url, title, description, locale, timezone, isoTimestamp, todayDate, hasTabInfo}>
+   *   (contextMentions: Array<ContextWebsite>) => Promise<{url, title, description, locale, timezone, isoTimestamp, todayDate, hasTabInfo}>
    * } RealTimeApiFunction
    *
    * @param {openAIEngine} engineInstance - The initialized engine instance
@@ -564,7 +564,7 @@ export class ChatConversation extends EventEmitter {
       securityProperties,
     } = {}
   ) {
-    const realTimeInfoMapping = await getRealTimeMapping();
+    const realTimeInfoMapping = await getRealTimeMapping(contextMentions);
     if (realTimeInfoMapping) {
       let realTimePromptRaw = await engineInstance.loadPrompt(
         MODEL_FEATURES.REAL_TIME_CONTEXT_DATE
