@@ -123,8 +123,7 @@ nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
   DNSServiceRef sdRef;
   DNSServiceErrorType err;
 
-  err = DNSServiceQueryRecord(&sdRef,
-                              kDNSServiceFlagsReturnIntermediates,
+  err = DNSServiceQueryRecord(&sdRef, kDNSServiceFlagsReturnIntermediates,
                               0,  // All interfaces
                               host.get(), TRRTYPE_HTTPSSVC, kDNSServiceClass_IN,
                               QueryCallback, &context);
@@ -142,8 +141,8 @@ nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
   // If the domain queried results in NXDOMAIN, then QueryCallback will
   // never get called, and poll will hang forever. We need to use a
   // timeout so that poll() eventually returns.
-  int result = poll(&pfd, 1,
-                    StaticPrefs::network_dns_native_https_timeout_mac_msec());
+  int result =
+      poll(&pfd, 1, StaticPrefs::network_dns_native_https_timeout_mac_msec());
   if (result > 0 && (pfd.revents & POLLIN)) {
     // Process the result
     DNSServiceProcessResult(sdRef);
