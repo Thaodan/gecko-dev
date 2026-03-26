@@ -72,15 +72,13 @@ export default class MozBoxItem extends MozBoxBase {
   handleKeydown(event) {
     let isHandleEvent = event.originalTarget === this.handleEl;
 
-    if (
-      !isHandleEvent &&
-      event.target?.slot !== "actions" &&
-      event.target?.slot !== "actions-start"
-    ) {
+    // Find which action element the event came from
+    let target = isHandleEvent
+      ? this.handleEl
+      : this.#actionEls.find(el => el.contains(event.target));
+    if (!target) {
       return;
     }
-
-    let target = isHandleEvent ? event.originalTarget : event.target;
 
     let directions = this.getNavigationDirections();
     switch (event.key) {
