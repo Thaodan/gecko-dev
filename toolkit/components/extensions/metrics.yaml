@@ -898,11 +898,12 @@ extensions.timing:
         - https://bugzilla.mozilla.org/1356323
         - https://bugzilla.mozilla.org/1489524
         - https://bugzilla.mozilla.org/1820158
+        - https://bugzilla.mozilla.org/2018311/
       data_reviews:
         - https://bugzilla.mozilla.org/show_bug.cgi?id=1820158#c8
+        - https://bugzilla.mozilla.org/2018311/
       data_sensitivity:
         - technical
-      telemetry_mirror: WEBEXT_CONTENT_SCRIPT_INJECTION_MS
 
     content_script_injection_by_addonid:
       type: labeled_timing_distribution
@@ -926,7 +927,9 @@ extensions.timing:
         - https://bugzilla.mozilla.org/show_bug.cgi?id=1861303
         - https://bugzilla.mozilla.org/show_bug.cgi?id=1912170
         - https://bugzilla.mozilla.org/show_bug.cgi?id=1958154
+        - https://bugzilla.mozilla.org/show_bug.cgi?id=1994581
         - https://bugzilla.mozilla.org/show_bug.cgi?id=1994599
+        - https://bugzilla.mozilla.org/2018311/
       data_reviews:
         - https://bugzilla.mozilla.org/show_bug.cgi?id=1483002
         - https://bugzilla.mozilla.org/show_bug.cgi?id=1513556
@@ -939,11 +942,11 @@ extensions.timing:
         - https://bugzilla.mozilla.org/show_bug.cgi?id=1811155
         - https://bugzilla.mozilla.org/show_bug.cgi?id=1861303
         - https://bugzilla.mozilla.org/show_bug.cgi?id=1912170
+        - https://bugzilla.mozilla.org/2018311/
       notification_emails:
         - addons-dev-internal@mozilla.com
         - lgreco@mozilla.com
       expires: 154
-      telemetry_mirror: WEBEXT_CONTENT_SCRIPT_INJECTION_MS_BY_ADDONID
 
     event_page_running_time:
       type: custom_distribution
