@@ -68,6 +68,13 @@ object MainMenuSelectors {
         groups = listOf("requiredForPage"),
     )
 
+    val BOOKMARK_THIS_PAGE_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+        value = getStringResource(R.string.browser_menu_bookmark_this_page_2),
+        description = "Bookmark this page button",
+        groups = listOf("bookmarkActions"),
+    )
+
     val all = listOf(
         NEW_PRIVATE_TAB_BUTTON,
         EXTENSIONS_BUTTON,
