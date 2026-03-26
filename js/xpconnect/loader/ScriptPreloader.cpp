@@ -15,6 +15,7 @@
 
 #include "mozilla/Components.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/FileUtils.h"
 #include "mozilla/IOBuffers.h"
 #include "mozilla/Logging.h"
