@@ -1083,6 +1083,7 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     }, /*#__PURE__*/external_React_default().createElement("moz-toggle", {
       id: "inferred-personalization-overrides",
       pressed: overridesEnabled || null,
+      ontoggle: this.handleDebugOverridesToggle,
       onToggle: this.handleDebugOverridesToggle,
       label: "Enable overrides"
     })))), /*#__PURE__*/external_React_default().createElement(Row, {
@@ -1232,6 +1233,7 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       disabled: !unifiedAdsSpocsEnabled || null,
       pressed: allizomEnabled || null,
       ontoggle: this.handleAllizomToggle,
+      onToggle: this.handleAllizomToggle,
       label: "Toggle allizom"
     }))), /*#__PURE__*/external_React_default().createElement(Row, null, /*#__PURE__*/external_React_default().createElement("td", {
       className: "min"
@@ -1328,6 +1330,7 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       id: "sections-toggle",
       pressed: sectionsEnabled || null,
       ontoggle: this.handleSectionsToggle,
+      onToggle: this.handleSectionsToggle,
       label: "Toggle DS Sections"
     })), /*#__PURE__*/external_React_default().createElement("details", {
       className: "details-section"
@@ -1337,6 +1340,7 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       id: "newtab_leaderboard",
       pressed: leaderboardPressed || null,
       ontoggle: this.toggleIABBanners,
+      onToggle: this.toggleIABBanners,
       label: "Enable IAB Leaderboard"
     })), /*#__PURE__*/external_React_default().createElement("div", {
       className: "toggle-wrapper"
@@ -1344,6 +1348,7 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       id: "newtab_billboard",
       pressed: billboardPressed || null,
       ontoggle: this.toggleIABBanners,
+      onToggle: this.toggleIABBanners,
       label: "Enable IAB Billboard"
     })), /*#__PURE__*/external_React_default().createElement("div", {
       className: "toggle-wrapper"
@@ -1351,6 +1356,7 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       id: "newtab_rectangle",
       pressed: mediumRectangleEnabledPressed || null,
       ontoggle: this.toggleIABBanners,
+      onToggle: this.toggleIABBanners,
       label: "Enable IAB Medium Rectangle (MREC)"
     }))), /*#__PURE__*/external_React_default().createElement("button", {
       className: "button",
@@ -15264,6 +15270,7 @@ function WidgetsManagementPanel({
     id: "weather-toggle",
     pressed: weatherEnabled || null,
     ontoggle: onToggleWidget,
+    onToggle: onToggleWidget,
     "data-preference": "showWeather",
     "data-event-source": "WEATHER",
     "data-l10n-id": "newtab-custom-widget-weather-toggle"
@@ -15274,6 +15281,7 @@ function WidgetsManagementPanel({
     id: "timer-toggle",
     pressed: timerEnabled || null,
     ontoggle: onToggleWidget,
+    onToggle: onToggleWidget,
     "data-preference": "widgets.focusTimer.enabled",
     "data-event-source": "WIDGET_TIMER",
     "data-l10n-id": "newtab-custom-widget-timer-toggle"
@@ -15284,6 +15292,7 @@ function WidgetsManagementPanel({
     id: "lists-toggle",
     pressed: listsEnabled || null,
     ontoggle: onToggleWidget,
+    onToggle: onToggleWidget,
     "data-preference": "widgets.lists.enabled",
     "data-event-source": "WIDGET_LISTS",
     "data-l10n-id": "newtab-custom-widget-lists-toggle"
@@ -15465,6 +15474,7 @@ class ContentSection extends (external_React_default()).PureComponent {
       id: "wallpapers-toggle",
       pressed: wallpapersEnabled || null,
       ontoggle: this.onPreferenceSelect,
+      onToggle: this.onPreferenceSelect,
       "data-preference": "newtabWallpapers.enabled",
       "data-event-source": "WALLPAPERS",
       "data-l10n-id": "newtab-wallpaper-toggle-title"
@@ -15488,6 +15498,7 @@ class ContentSection extends (external_React_default()).PureComponent {
       id: "weather-toggle",
       pressed: weatherEnabled || null,
       ontoggle: this.onPreferenceSelect,
+      onToggle: this.onPreferenceSelect,
       "data-preference": "showWeather",
       "data-event-source": "WEATHER",
       "data-l10n-id": "newtab-custom-widget-weather-toggle"
@@ -15498,6 +15509,7 @@ class ContentSection extends (external_React_default()).PureComponent {
       id: "lists-toggle",
       pressed: listsEnabled || null,
       ontoggle: this.onPreferenceSelect,
+      onToggle: this.onPreferenceSelect,
       "data-preference": "widgets.lists.enabled",
       "data-event-source": "WIDGET_LISTS",
       "data-l10n-id": "newtab-custom-widget-lists-toggle"
@@ -15508,6 +15520,7 @@ class ContentSection extends (external_React_default()).PureComponent {
       id: "timer-toggle",
       pressed: timerEnabled || null,
       ontoggle: this.onPreferenceSelect,
+      onToggle: this.onPreferenceSelect,
       "data-preference": "widgets.focusTimer.enabled",
       "data-event-source": "WIDGET_TIMER",
       "data-l10n-id": "newtab-custom-widget-timer-toggle"
@@ -15520,6 +15533,7 @@ class ContentSection extends (external_React_default()).PureComponent {
       id: "weather-toggle",
       pressed: weatherEnabled || null,
       ontoggle: this.onPreferenceSelect,
+      onToggle: this.onPreferenceSelect,
       "data-preference": "showWeather",
       "data-event-source": "WEATHER",
       "data-l10n-id": "newtab-custom-weather-toggle"
@@ -15533,6 +15547,7 @@ class ContentSection extends (external_React_default()).PureComponent {
       id: "shortcuts-toggle",
       pressed: topSitesEnabled || null,
       ontoggle: this.onPreferenceSelect,
+      onToggle: this.onPreferenceSelect,
       "data-preference": "feeds.topsites",
       "data-event-source": "TOP_SITES",
       "data-l10n-id": novaEnabled ? "newtab-custom-shortcuts-toggle-rows" : "newtab-custom-shortcuts-toggle"
@@ -15595,6 +15610,7 @@ class ContentSection extends (external_React_default()).PureComponent {
       id: "pocket-toggle",
       pressed: pocketEnabled || null,
       ontoggle: this.onPreferenceSelect,
+      onToggle: this.onPreferenceSelect,
       "aria-describedby": "custom-pocket-subtitle",
       "data-preference": "feeds.section.topstories",
       "data-event-source": "TOP_STORIES"
