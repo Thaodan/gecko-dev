@@ -242,7 +242,7 @@ export default class IPProtectionContentElement extends MozLitElement {
     let messageLinkL10nArgs;
     let messageType = "info";
 
-    if (this.state.bandwidthWarning) {
+    if (this.state.bandwidthWarning && this.state.bandwidthUsage) {
       messageId = "ipprotection-message-bandwidth-warning";
       messageType = "warning";
       const bandwidthRemaining =
@@ -456,7 +456,8 @@ export default class IPProtectionContentElement extends MozLitElement {
   render() {
     if (
       (this.state.onboardingMessage || this.state.bandwidthWarning) &&
-      !this._messageDismissed
+      !this._messageDismissed &&
+      !this.state.unauthenticated
     ) {
       this._showMessageBar = true;
     } else if (!this.state.onboardingMessage && !this.state.bandwidthWarning) {
