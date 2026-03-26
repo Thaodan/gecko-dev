@@ -314,8 +314,11 @@ class WebConsoleUI extends EventEmitter {
     this.networkDataProvider = new FirefoxDataProvider({
       commands,
       actions: {
-        updateRequest: (id, data) =>
-          this.wrapper.batchedRequestUpdates({ id, data }),
+        updateRequest: (id, data) => {
+          if (this.wrapper) {
+            this.wrapper.batchedRequestUpdates({ id, data });
+          }
+        },
       },
       owner: this,
     });
