@@ -631,6 +631,7 @@ if (!build_with_chromium) {
       # Added when we removed deps in other places to avoid building
       # unreachable sources.  See Bug 1820869.
       deps += [
+        "api/audio:aec3_factory",
         "api/video_codecs:video_codecs_api",
         "api/video_codecs:rtc_software_fallback_wrappers",
         "media:rtc_simulcast_encoder_adapter",
