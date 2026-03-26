@@ -1073,10 +1073,6 @@
       "enum": ["allowed", "disallowed", "enabled", "force_enabled"]
     },
 
-    "IPProtectionAvailable": {
-      "type": "boolean"
-    },
-
     "InstallAddonsPermission": {
       "type": "object",
       "properties": {
