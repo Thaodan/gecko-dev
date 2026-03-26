@@ -133,6 +133,15 @@ describe("Smart Window model settings", () => {
       "Waiting for custom fields to be visible"
     );
 
+    Assert.equal(
+      Services.prefs.getStringPref(
+        "browser.smartwindow.firstrun.modelChoice",
+        ""
+      ),
+      "",
+      "Custom radio click does not prematurely write firstrun.modelChoice"
+    );
+
     const customModelName = doc.getElementById("customModelName");
     const customModelEndpoint = doc.getElementById("customModelEndpoint");
     const customModelAuthToken = doc.getElementById("customModelAuthToken");
@@ -337,6 +346,11 @@ describe("Smart Window model settings", () => {
       "Waiting for model to be saved via mouse"
     );
 
+    Assert.equal(
+      Services.prefs.getStringPref("browser.smartwindow.firstrun.modelChoice"),
+      "0",
+      "firstrun.modelChoice is written to '0' when save button is clicked"
+    );
     Assert.equal(
       Services.prefs.getStringPref("browser.smartwindow.model"),
       "my-custom-model",
