@@ -6252,10 +6252,19 @@
         "issue": "firefox-blocked-completely",
         "matches": ["*://app.bchydro.com/*"]
       }
+    }
+  },
+  "2024684": {
+    "label": "gueval2.digimoolyankan.com",
+    "bugs": {
+      "2024684": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://gueval2.digimoolyankan.com/*"]
+      }
     },
     "interventions": [
       {
-        "platforms": ["android"],
+        "platforms": ["all"],
         "ua_string": ["add_Chrome"]
       }
     ]
