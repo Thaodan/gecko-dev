@@ -94,7 +94,7 @@ jobs:
             job-name: android-x86-profile
         treeherder:
             platform: android-5-0-x86/pgo
-        worker-type: t-linux-xlarge-pgo
+        worker-type: b-linux-kvm-gcp
         worker:
             chain-of-trust: true
             max-run-time: 2700
@@ -133,7 +133,7 @@ jobs:
             job-name: android-x86_64-profile
         treeherder:
             platform: android-5-0-x86_64/pgo
-        worker-type: t-linux-xlarge-pgo
+        worker-type: b-linux-kvm-gcp
         worker:
             chain-of-trust: true
             max-run-time: 2700
