@@ -3031,16 +3031,17 @@ void CanvasRenderingContext2D::Stroke() {
     return;
   }
 
+  const bool needBounds = NeedToCalculateBounds();
+  if (!IsTargetValid()) {
+    return;
+  }
+
   const ContextState* state = &CurrentState();
   StrokeOptions strokeOptions(state->lineWidth, state->lineJoin, state->lineCap,
                               state->miterLimit, state->dash.Length(),
                               state->dash.Elements(), state->dashOffset);
   state = nullptr;
 
-  const bool needBounds = NeedToCalculateBounds();
-  if (!IsTargetValid()) {
-    return;
-  }
   gfx::Rect bounds;
   if (needBounds) {
     bounds = mPath->GetStrokedBounds(strokeOptions, mTarget->GetTransform());
@@ -3074,16 +3075,17 @@ void CanvasRenderingContext2D::Stroke(const CanvasPath& aPath) {
     return;
   }
 
+  const bool needBounds = NeedToCalculateBounds();
+  if (!IsTargetValid()) {
+    return;
+  }
+
   const ContextState* state = &CurrentState();
   StrokeOptions strokeOptions(state->lineWidth, state->lineJoin, state->lineCap,
                               state->miterLimit, state->dash.Length(),
                               state->dash.Elements(), state->dashOffset);
   state = nullptr;
 
-  const bool needBounds = NeedToCalculateBounds();
-  if (!IsTargetValid()) {
-    return;
-  }
   gfx::Rect bounds;
   if (needBounds) {
     bounds = gfxpath->GetStrokedBounds(strokeOptions, mTarget->GetTransform());
