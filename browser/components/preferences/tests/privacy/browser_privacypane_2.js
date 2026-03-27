@@ -4,16 +4,16 @@ if (jar) {
   let tmpdir = extractJarToTmp(jar);
   rootDir = "file://" + tmpdir.path + "/";
 }
-/* import-globals-from privacypane_tests_perwindow.js */
 Services.scriptloader.loadSubScript(
+  /* import-globals-from privacypane_tests_perwindow.js */
   rootDir + "privacypane_tests_perwindow.js",
   this
 );
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.history2.enabled", true]],
-  });
-});
-
-run_test_subset([test_dependent_elements_redesigned]);
+run_test_subset([
+  test_pane_visibility,
+  test_dependent_elements,
+  test_dependent_cookie_elements,
+  test_dependent_clearonclose_elements,
+  test_dependent_prefs,
+]);

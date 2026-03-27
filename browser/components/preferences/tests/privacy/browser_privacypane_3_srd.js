@@ -4,8 +4,8 @@ if (jar) {
   let tmpdir = extractJarToTmp(jar);
   rootDir = "file://" + tmpdir.path + "/";
 }
-/* import-globals-from privacypane_tests_perwindow.js */
 Services.scriptloader.loadSubScript(
+  /* import-globals-from privacypane_tests_perwindow.js */
   rootDir + "privacypane_tests_perwindow.js",
   this
 );
