@@ -1930,6 +1930,14 @@ export var Policies = {
     },
   },
 
+  IPProtectionAvailable: {
+    onBeforeAddons(manager, param) {
+      if (!param) {
+        setAndLockPref("browser.ipProtection.enabled", false);
+      }
+    },
+  },
+
   LegacyProfiles: {
     // Handled in nsToolkitProfileService.cpp (Windows only)
   },
