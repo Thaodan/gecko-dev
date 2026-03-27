@@ -3,7 +3,7 @@ Limit the amount of comments you put in the code to a strict minimum. You should
 
 Do not remove existing comments unless they are directly related to what you are changing.
 
-The Firefox repository is very big and so it isn't advised to blindly run grep or rg commands without specifying a narrow set of directories to search. There are tools available to help, see next section.
+The Firefox repository is very big and so it isn't advised to blindly run rg or grep commands without specifying a narrow set of directories to search. When local text search via shell is necessary, prefer `rg` over `grep` as it is faster. There are tools available to help, see next section.
 
 ## Tooling for Firefox work
 - Some tools useful for Firefox work are available in the `moz` MCP server
