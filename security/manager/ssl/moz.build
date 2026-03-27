@@ -33,7 +33,6 @@ XPIDL_SOURCES += [
     "nsISiteIntegrityService.idl",
     "nsISiteSecurityService.idl",
     "nsITLSSocketControl.idl",
-    "nsITokenPasswordDialogs.idl",
     "nsITransportSecurityInfo.idl",
     "nsIX509Cert.idl",
     "nsIX509CertDB.idl",
