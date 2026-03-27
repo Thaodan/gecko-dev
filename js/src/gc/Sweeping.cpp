@@ -211,7 +211,7 @@ static inline bool FinalizeTypedArenas(JS::GCContext* gcx, ArenaList& src,
   size_t markCount = 0;
   size_t emptyCount = 0;
 
-  GCRuntime* gc = &gcx->runtimeFromAnyThread()->gc;
+  GCRuntime* gc = gcx->gcRuntimeFromAnyThread();
   auto updateMarkCount = mozilla::MakeScopeExit(
       [&] { gc->stats().addCount(gcstats::COUNT_CELLS_MARKED, markCount); });
 
@@ -325,7 +325,7 @@ void ArenaLists::backgroundFinalize(JS::GCContext* gcx, AllocKind kind,
   // that sweeping has finished.
   ArenaList sweptArenas = finalizedSorted.convertToArenaList();
 
-  AutoLockGC lock(gcx->runtimeFromAnyThread());
+  AutoLockGC lock(gcx->gcRuntimeFromAnyThread());
   collectingArenaList(kind) = std::move(sweptArenas);
   concurrentUse(kind) = ConcurrentUse::BackgroundFinalizeFinished;
 }
