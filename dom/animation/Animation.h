@@ -548,7 +548,6 @@ class Animation : public DOMEventTargetHelper,
   void DoFinishNotificationImmediately(MicroTaskRunnable* aAsync = nullptr);
   void QueuePlaybackEvent(const nsAString& aName,
                           TimeStamp&& aScheduledEventTime);
-  void MaybeResolvePromiseWithThis(Promise*);
 
   /**
    * Remove this animation from the pending animation tracker and reset
