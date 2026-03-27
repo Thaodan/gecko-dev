@@ -11,34 +11,37 @@ origin:
   url: "http://www.libpng.org/pub/png/libpng.html"
   license: libpng
 
-  release: commit v1.6.39 (2022-11-20T23:53:23+02:00).
+  release: v1.6.56 (2026-03-25T22:47:06+02:00).
 
-  revision: "v1.6.39"
+  revision: "v1.6.56"
 
   license-file: LICENSE
 
 updatebot:
-  maintainer-phab: aosmond
-  maintainer-bz: aosmond@mozilla.com
+  maintainer-phab: tnikkel
+  maintainer-bz: tnikkel@gmail.com
   tasks:
     - type: vendoring
       enabled: True
 
 vendoring:
-  url: https://github.com/glennrp/libpng
+  url: https://github.com/pnggroup/libpng
   source-hosting: github
   tracking: tag
 
   exclude:
     - "**"
     - ".*"
+    - "*/.editorconfig"
 
   include:
     - arm
     - contrib/arm-neon/linux.c
     - intel
+    - loongarch
     - mips
     - powerpc
+    - riscv
     - ANNOUNCE
     - AUTHORS
     - CHANGES
