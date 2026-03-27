@@ -138,6 +138,7 @@ class JSTerm extends Component {
 
   // AbortController to cancel all event listener on destroy.
   #abortController = null;
+  #destroyed = false;
 
   constructor(props) {
     super(props);
@@ -1069,6 +1070,13 @@ class JSTerm extends Component {
           (this.props.autocomplete || this.hasAutocompletionSuggestion())
         ) {
           const variables = await this.editor.getExpressionVariables();
+
+          // If JSTerm was destroyed during the async operation, bail out
+          // immediately before triggering additional actions.
+          if (this.#destroyed) {
+            return;
+          }
+
           this.autocompleteUpdate(false, null, variables);
         }
       }
@@ -1583,6 +1591,7 @@ class JSTerm extends Component {
     }
 
     this.webConsoleUI = null;
+    this.#destroyed = true;
   }
 
   renderOpenEditorButton() {
