@@ -1045,9 +1045,6 @@ struct JSRuntime {
    */
   js::MainThreadData<mozilla::MallocSizeOf> debuggerMallocSizeOf;
 
-  /* Last time at which an animation was played for this runtime. */
-  js::MainThreadData<mozilla::TimeStamp> lastAnimationTime;
-
  private:
   /* The stack format for the current runtime.  Only valid on non-child
    * runtimes. */

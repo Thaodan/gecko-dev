@@ -1919,7 +1919,7 @@ bool GCRuntime::shouldCompact() {
   }
 
   return !isIncremental ||
-         !IsCurrentlyAnimating(rt->lastAnimationTime, TimeStamp::Now());
+         !IsCurrentlyAnimating(lastAnimationTime(), TimeStamp::Now());
 }
 
 bool GCRuntime::isCompactingGCEnabled() const {
