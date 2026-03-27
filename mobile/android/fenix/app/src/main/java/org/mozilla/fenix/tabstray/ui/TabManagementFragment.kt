@@ -467,7 +467,8 @@ class TabManagementFragment : DialogFragment() {
                     inactiveTabs = TabsTrayState.InactiveTabsState(
                         isExpanded = initialInactiveExpanded,
                         showCFR = requireContext().settings().shouldShowInactiveTabsOnboardingPopup &&
-                            requireContext().settings().canShowCfr,
+                            requireContext().settings().canShowCfr &&
+                            requireContext().settings().cfrPopupsEnabled,
                         showAutoCloseDialog = requireContext().settings()
                             .shouldShowInactiveTabsAutoCloseDialog(
                                 requireComponents.core.store.state.actualInactiveTabs(
@@ -495,7 +496,8 @@ class TabManagementFragment : DialogFragment() {
                         isInDebugMode = Config.channel.isDebug ||
                             requireComponents.settings.showSecretDebugMenuThisSession,
                         showTabAutoCloseBanner = requireContext().settings().shouldShowAutoCloseTabsBanner &&
-                            requireContext().settings().canShowCfr,
+                            requireContext().settings().canShowCfr &&
+                            requireContext().settings().cfrPopupsEnabled,
                         tabSearchEnabled = requireComponents.settings.tabSearchEnabled,
                     ),
                 ),
