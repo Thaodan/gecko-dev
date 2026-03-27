@@ -1948,6 +1948,10 @@ tab-group {
   --panel-width: 300px;
   font: menu;
 
+  > .panel-header[hidden] {
+    display: none;
+  }
+
   > toolbarseparator {
     padding-inline: var(--panel-padding);
   }
@@ -1960,8 +1964,13 @@ tab-group {
   > .panel-action-row {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     gap: var(--space-large);
   }
+}
+
+#tab-note-editor-button-delete {
+  color: var(--icon-color-critical);
 }
 
 #tab-note-text {
