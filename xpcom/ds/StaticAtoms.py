@@ -672,6 +672,7 @@ STATIC_ATOMS = [
     Atom("mark", "mark"),
     Atom("marquee", "marquee"),
     Atom("match", "match"),
+    Atom("match_element", "match-element"),
     Atom("max", "max"),
     Atom("maxheight", "maxheight"),
     Atom("maximum_scale", "maximum-scale"),

@@ -2155,7 +2155,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUIReset {
   uint32_t mViewTimelineInsetCount;
 
   bool HasViewTransitionName() const {
-    return !mViewTransitionName.value.IsNone();
+    return mViewTransitionName.value.AsAtom() != nsGkAtoms::none;
   }
 
   mozilla::StyleViewTransitionName mViewTransitionName;

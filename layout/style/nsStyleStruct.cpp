@@ -2297,8 +2297,7 @@ nsStyleDisplay::nsStyleDisplay()
       mBaselineSource(StyleBaselineSource::Auto),
       mWebkitLineClamp(0),
       mShapeMargin(LengthPercentage::Zero()),
-      mShapeOutside(StyleShapeOutside::None()),
-      mAnchorScope(StyleScopedNameKeyword::None()) {
+      mShapeOutside(StyleShapeOutside::None()) {
   MOZ_COUNT_CTOR(nsStyleDisplay);
 }
 
@@ -3332,8 +3331,7 @@ nsStyleUIReset::nsStyleUIReset()
       mViewTimelineNameCount(1),
       mViewTimelineAxisCount(1),
       mViewTimelineInsetCount(1),
-      mViewTransitionName(StyleViewTransitionNameKeyword::None()),
-      mTimelineScope(StyleScopedNameKeyword::None()) {
+      mViewTransitionName(StyleAtom{nsGkAtoms::none}) {
   MOZ_COUNT_CTOR(nsStyleUIReset);
 }
 
