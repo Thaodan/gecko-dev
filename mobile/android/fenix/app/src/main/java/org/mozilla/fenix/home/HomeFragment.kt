@@ -1247,6 +1247,11 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
     override fun onStart() {
         super.onStart()
 
+        val settings = requireContext().settings()
+        if (settings.privateModeAndStoriesEntryPointEnabled) {
+            settings.incrementNewsButtonForegroundCount()
+        }
+
         findNavController().addOnDestinationChangedListener(destinationChangedListener)
 
         subscribeToTabCollections()
