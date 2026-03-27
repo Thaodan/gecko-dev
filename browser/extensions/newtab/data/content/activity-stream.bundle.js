@@ -1503,15 +1503,17 @@ class _ConfirmDialog extends (external_React_default()).PureComponent {
     if (!message_body) {
       return null;
     }
-    return /*#__PURE__*/external_React_default().createElement("span", null, message_body.map(msg => /*#__PURE__*/external_React_default().createElement("p", {
+    return /*#__PURE__*/external_React_default().createElement("span", null, message_body.map((msg, index) => /*#__PURE__*/external_React_default().createElement("p", {
       key: msg,
-      "data-l10n-id": msg
+      "data-l10n-id": msg,
+      id: index === 0 ? "confirmation-dialog-title" : undefined
     })));
   }
   render() {
     return /*#__PURE__*/external_React_default().createElement("dialog", {
       ref: this.dialogRef,
       className: "confirmation-dialog",
+      "aria-labelledby": "confirmation-dialog-title",
       onClick: e => {
         // Close modal when clicking on the backdrop pseudo element (the background of the modal)
         if (e.target === this.dialogRef.current) {
