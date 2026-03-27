@@ -3386,8 +3386,6 @@ nsresult nsHttpChannel::ContinueProcessResponse3(nsresult rv) {
         // auth header if cached credentials should be attempted.
         rv = NS_ERROR_FAILURE;
       } else if (httpStatus == 401 &&
-                 StaticPrefs::
-                     network_auth_supress_auth_prompt_for_XFO_failures() &&
                  !nsContentSecurityUtils::CheckCSPFrameAncestorAndXFO(this)) {
         // CSP Frame Ancestor and X-Frame-Options check has failed
         // Do not prompt http auth - Bug 1629307

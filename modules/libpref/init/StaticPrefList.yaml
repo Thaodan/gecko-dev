@@ -13666,13 +13666,6 @@
   value: false
   mirror: always
 
-# Whether to display auth prompts if X-Frame-Options header will block loading
-# page
-- name: network.auth.supress_auth_prompt_for_XFO_failures
-  type: bool
-  value: true
-  mirror: always
-
 # whether to redirect the channel for auth redirects. See Bug 1820807
 - name: network.auth.use_redirect_for_retries
   type: RelaxedAtomicBool
