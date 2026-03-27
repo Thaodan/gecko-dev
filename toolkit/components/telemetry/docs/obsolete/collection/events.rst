@@ -1,8 +1,13 @@
 .. _eventtelemetry:
 
-======
-Events
-======
+===================
+Events (deprecated)
+===================
+
+.. important::
+
+    Legacy Telemetry collection APIs are now deprecated.
+    Please use Glean instead.
 
 Across the different Firefox initiatives, there is a common need for a mechanism for recording, storing, sending & analysing application usage in an event-oriented format.
 *Event Telemetry* specifies a common events data format, which allows for broader, shared usage of data processing tools.
@@ -19,7 +24,7 @@ For events recorded into Firefox Telemetry we also provide an API that opaquely 
 Serialization format
 ====================
 
-Events are submitted in an :doc:`../data/event-ping` as an array, e.g.:
+Events are submitted in an :doc:`../../data/event-ping` as an array, e.g.:
 
 .. code-block:: js
 
@@ -146,7 +151,7 @@ Public JS API
 
 Since Firefox 132 (see `bug 1863031 <https://bugzilla.mozilla.org/show_bug.cgi?id=1863031>`__),
 events in Firefox Desktop are
-:doc:`recorded using the Glean API <../../glean/user/glean_for_legacy_events>`.
+:doc:`recorded using the Glean API <../../../glean/user/glean_for_legacy_events>`.
 
 .. note::
   Events can be expensive to store, submit, and query.

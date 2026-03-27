@@ -1,8 +1,13 @@
 .. _submitting-customping:
 
-=======================
-Submitting custom pings
-=======================
+====================================
+Submitting custom pings (deprecated)
+====================================
+
+.. important::
+
+    Legacy Telemetry collection APIs are now deprecated.
+    Please use Glean instead.
 
 Custom pings can be submitted from JavaScript using:
 

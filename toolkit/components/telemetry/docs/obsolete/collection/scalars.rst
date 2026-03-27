@@ -1,6 +1,11 @@
-=======
-Scalars
-=======
+====================
+Scalars (deprecated)
+====================
+
+.. important::
+
+    Legacy Telemetry collection APIs are now deprecated.
+    Please use Glean instead.
 
 A *scalar* metric can be used to track a single value. Unlike
 histograms, which collect every measurement taken, a scalar only
@@ -10,7 +15,7 @@ ones.
 Historically we started to overload our histogram mechanism to also collect scalar data,
 such as flag values, counts, labels and others.
 The scalar measurement types are the suggested way to collect that kind of scalar data.
-The serialized scalar data is submitted with the :doc:`main pings <../data/main-ping>`. Adding scalars is supported in artifact builds and build faster workflows.
+The serialized scalar data is submitted with the :doc:`main pings <../../data/main-ping>`. Adding scalars is supported in artifact builds and build faster workflows.
 
 .. important::
 

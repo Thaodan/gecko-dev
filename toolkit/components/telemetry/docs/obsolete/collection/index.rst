@@ -1,6 +1,11 @@
-===============
-Data collection
-===============
+============================
+Data collection (deprecated)
+============================
+
+.. important::
+
+    Legacy Telemetry collection APIs are now deprecated.
+    Please use Glean instead.
 
 There are different APIs and formats to collect data in Firefox, all suiting different use cases.
 

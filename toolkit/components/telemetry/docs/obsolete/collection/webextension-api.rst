@@ -1,8 +1,13 @@
 .. _webextension-telemetry:
 
-==============================
-WebExtension API for Telemetry
-==============================
+===========================================
+WebExtension API for Telemetry (deprecated)
+===========================================
+
+.. important::
+
+    Legacy Telemetry collection APIs are now deprecated.
+    Please use Glean instead.
 
 Use the ``browser.telemetry`` API to send telemetry data to the Mozilla Telemetry service. Restricted to Mozilla privileged webextensions.
 
@@ -79,7 +84,7 @@ Checks if Telemetry upload is enabled.
 
 As of Firefox 134, this method is a no-op. See Bug 1930196.
 
-Instead, use :doc:`Glean APIs <../../glean/user/glean_for_legacy_scalars>` to record scalars.
+Instead, use :doc:`Glean APIs <../../../glean/user/glean_for_legacy_scalars>` to record scalars.
 
 ``scalarSet``
 ~~~~~~~~~~~~~
@@ -90,7 +95,7 @@ Instead, use :doc:`Glean APIs <../../glean/user/glean_for_legacy_scalars>` to re
 
 As of Firefox 134, this method is a no-op. See Bug 1930196.
 
-Instead, use :doc:`Glean APIs <../../glean/user/glean_for_legacy_scalars>` to record scalars.
+Instead, use :doc:`Glean APIs <../../../glean/user/glean_for_legacy_scalars>` to record scalars.
 
 ``scalarSetMaximum``
 ~~~~~~~~~~~~~~~~~~~~
@@ -101,14 +106,14 @@ Instead, use :doc:`Glean APIs <../../glean/user/glean_for_legacy_scalars>` to re
 
 As of Firefox 134, this method is a no-op. See Bug 1930196.
 
-Instead, use :doc:`Glean APIs <../../glean/user/glean_for_legacy_scalars>` to record scalars.
+Instead, use :doc:`Glean APIs <../../../glean/user/glean_for_legacy_scalars>` to record scalars.
 
 ``recordEvent``
 ~~~~~~~~~~~~~~~
 
 As of Firefox 132, this method is a no-op. See Bug 1894533.
 
-Instead, use :doc:`Glean APIs <../../glean/user/glean_for_legacy_events>` to record events.
+Instead, use :doc:`Glean APIs <../../../glean/user/glean_for_legacy_events>` to record events.
 
 ``registerScalars``
 ~~~~~~~~~~~~~~~~~~~
@@ -119,18 +124,18 @@ Instead, use :doc:`Glean APIs <../../glean/user/glean_for_legacy_events>` to rec
 
 As of Firefox 134, this method is a no-op. See Bug 1930196.
 
-Instead, use :doc:`Glean APIs <../../glean/user/glean_for_legacy_scalars>` to record scalars.
+Instead, use :doc:`Glean APIs <../../../glean/user/glean_for_legacy_scalars>` to record scalars.
 
 ``registerEvents``
 ~~~~~~~~~~~~~~~~~~
 
 As of Firefox 132, this method is a no-op. See Bug 1894533.
 
-Instead, use :doc:`Glean event definitions <../../glean/user/glean_for_legacy_events>` for your extension's events.
+Instead, use :doc:`Glean event definitions <../../../glean/user/glean_for_legacy_events>` for your extension's events.
 
 ``setEventRecordingEnabled``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 As of Firefox 133, this method is a no-op. Event recording is enabled by default unconditionally. See Bug 1920562.
 
-Instead, use :doc:`Glean event definitions <../../glean/user/glean_for_legacy_events>` for your extension's events.
+Instead, use :doc:`Glean event definitions <../../../glean/user/glean_for_legacy_events>` for your extension's events.

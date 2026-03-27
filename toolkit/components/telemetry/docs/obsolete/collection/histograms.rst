@@ -1,6 +1,11 @@
-==========
-Histograms
-==========
+=======================
+Histograms (deprecated)
+=======================
+
+.. important::
+
+    Legacy Telemetry collection APIs are now deprecated.
+    Please use Glean instead.
 
 In Firefox, the Telemetry system collects various measures of Firefox performance, hardware, usage and customizations and submits it to Mozilla. The Telemetry data collected by a single client can be examined from the integrated ``about:telemetry`` browser page, while the aggregated reports across entire user populations are publicly available at `telemetry.mozilla.org <https://telemetry.mozilla.org>`_.
 
@@ -14,7 +19,7 @@ Overview
 ========
 
 Telemetry histograms are an efficient way to collect numeric measurements like multiple counts or timings.
-They are collected through a common API and automatically submitted with the :doc:`main ping <../data/main-ping>`.
+They are collected through a common API and automatically submitted with the :doc:`main ping <../../data/main-ping>`.
 
 .. hint::
 
