@@ -494,4 +494,7 @@ def push_to_lando_try(
     if duration > 30:
         build.notify(success_msg)
 
-    return job_id
+    return {
+        "lando_instance": lando_config_section,
+        "lando_job_id": job_id,
+    }
