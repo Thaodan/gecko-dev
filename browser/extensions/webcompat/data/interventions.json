@@ -3161,7 +3161,14 @@
         "ua_string": ["Safari_with_FxQuantum"]
       },
       {
-        "platforms": ["linux", "windows"],
+        "platforms": ["windows"],
+        "content_scripts": {
+          "js": ["bug1902520-keisan.nta.go.jp-ua-override.js"]
+        }
+      },
+      {
+        "platforms": ["linux"],
+        "only_channels": ["nightly"],
         "content_scripts": {
           "js": ["bug1902520-keisan.nta.go.jp-ua-override.js"]
         }
@@ -6245,19 +6252,10 @@
         "issue": "firefox-blocked-completely",
         "matches": ["*://app.bchydro.com/*"]
       }
-    }
-  },
-  "2024684": {
-    "label": "gueval2.digimoolyankan.com",
-    "bugs": {
-      "2024684": {
-        "issue": "firefox-blocked-completely",
-        "matches": ["*://gueval2.digimoolyankan.com/*"]
-      }
     },
     "interventions": [
       {
-        "platforms": ["all"],
+        "platforms": ["android"],
         "ua_string": ["add_Chrome"]
       }
     ]
