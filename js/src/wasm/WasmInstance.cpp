@@ -2120,7 +2120,7 @@ int32_t Instance::stringCharCodeAt(Instance* instance, void* stringArg,
   char16_t c;
   if (!string->getChar(cx, index, &c)) {
     MOZ_ASSERT(cx->isThrowingOutOfMemory());
-    return false;
+    return -1;
   }
   return c;
 }
@@ -2144,7 +2144,7 @@ int32_t Instance::stringCodePointAt(Instance* instance, void* stringArg,
   char32_t c;
   if (!string->getCodePoint(cx, index, &c)) {
     MOZ_ASSERT(cx->isThrowingOutOfMemory());
-    return false;
+    return -1;
   }
   return c;
 }
