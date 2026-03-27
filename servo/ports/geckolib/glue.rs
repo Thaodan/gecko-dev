@@ -3461,7 +3461,7 @@ pub extern "C" fn Servo_ContainerRule_GetContainerQuery(
     rule: &ContainerRule,
     result: &mut nsACString,
 ) {
-    if let Some(condition) = rule.query_condition() {
+    if let Some(condition) = rule.conditions.0.first().and_then(|c| c.query_condition()){
         condition.to_css(&mut CssWriter::new(result)).unwrap();
     }
 }
@@ -3472,7 +3472,8 @@ pub extern "C" fn Servo_ContainerRule_QueryContainerFor(
     element: &RawGeckoElement,
 ) -> *const RawGeckoElement {
     debug_assert_eq!(rule.conditions.0.len(), 1);
-    rule.conditions.0[0]
+    let condition = rule.conditions.0.first().unwrap();
+    condition
         .find_container(GeckoElement(element), None)
         .map_or(ptr::null(), |result| result.element.0)
 }
@@ -3482,9 +3483,11 @@ pub extern "C" fn Servo_ContainerRule_GetContainerName(
     rule: &ContainerRule,
     result: &mut nsACString,
 ) {
-    let name = rule.container_name();
-    if !name.is_none() {
-        name.to_css(&mut CssWriter::new(result)).unwrap();
+    if let Some(condition) = rule.conditions.0.first() {
+        let name = condition.name();
+        if !name.is_none() {
+            name.to_css(&mut CssWriter::new(result)).unwrap();
+        }
     }
 }
 
