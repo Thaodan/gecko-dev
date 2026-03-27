@@ -10,7 +10,6 @@ import android.content.Context
 import android.media.MediaPlayer
 import androidx.annotation.RawRes
 
-@Suppress("unused")
 class SoundEffectsPlayer(private val context: Context) {
 
     private val activePlayers = mutableSetOf<MediaPlayer>()

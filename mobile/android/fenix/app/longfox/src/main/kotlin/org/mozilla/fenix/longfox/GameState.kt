@@ -45,6 +45,7 @@ data class GameState(
 
     companion object {
         const val CELL_SIZE_DP = 20f
+        const val GAME_INTERVAL_TIME_MS = 100L
     }
 
     val numCellsWide = numCells
@@ -62,6 +63,11 @@ data class GameState(
         fox.size < 3 -> direction
         else -> fox[fox.size - 2].directionTo(fox[fox.size - 3])
     }
+
+    /**
+     * Audio state machine: beep boop beep boop....
+     */
+    fun toggleBeepNext(): GameState = copy(beepNext = !beepNext)
 
     /**
      * This function moves the fox in its current direction.
