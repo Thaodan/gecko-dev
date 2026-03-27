@@ -11,6 +11,7 @@ import {
 import {
   constructRelevantMemoriesContextMessage,
   constructRealTimeInfoInjectionMessage,
+  sanitizeUntrustedContent,
 } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
 
 import { getRoleLabel } from "./ChatUtils.sys.mjs";
@@ -569,7 +570,10 @@ export class ChatConversation extends EventEmitter {
 
       if (contextMentions?.length) {
         const contextUrls = contextMentions
-          .map(mention => `- ${mention.label} (${mention.url})`)
+          .map(
+            mention =>
+              `- URL: ${mention.url}\n  Title: ${sanitizeUntrustedContent(mention.label)}`
+          )
           .join("\n");
         realTimeInfoMapping.contextUrls = contextUrls;
         const contextMentionsPrompt = await engineInstance.loadPrompt(
