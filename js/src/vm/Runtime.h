@@ -444,12 +444,6 @@ struct JSRuntime {
    */
   js::MainThreadData<bool> allowRelazificationForTesting;
 
-  /* Zone destroy callback. */
-  js::MainThreadData<JSDestroyZoneCallback> destroyZoneCallback;
-
-  /* Compartment destroy callback. */
-  js::MainThreadData<JSDestroyCompartmentCallback> destroyCompartmentCallback;
-
   /* Compartment memory reporting callback. */
   js::MainThreadData<JSSizeOfIncludingThisCompartmentCallback>
       sizeOfIncludingThisCompartmentCallback;
@@ -462,9 +456,6 @@ struct JSRuntime {
    * js/public/UbiNode.h.
    */
   void (*constructUbiNodeForDOMObjectCallback)(void*, JSObject*) = nullptr;
-
-  /* Realm destroy callback. */
-  js::MainThreadData<JS::DestroyRealmCallback> destroyRealmCallback;
 
   /* Call this to get the name of a realm. */
   js::MainThreadData<JS::RealmNameCallback> realmNameCallback;

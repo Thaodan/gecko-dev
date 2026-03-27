@@ -441,12 +441,12 @@ JS_PUBLIC_API const char* JS_GetImplementationVersion(void) {
 
 JS_PUBLIC_API void JS_SetDestroyZoneCallback(JSContext* cx,
                                              JSDestroyZoneCallback callback) {
-  cx->runtime()->destroyZoneCallback = callback;
+  cx->runtime()->gc.setDestroyZoneCallback(callback);
 }
 
 JS_PUBLIC_API void JS_SetDestroyCompartmentCallback(
     JSContext* cx, JSDestroyCompartmentCallback callback) {
-  cx->runtime()->destroyCompartmentCallback = callback;
+  cx->runtime()->gc.setDestroyCompartmentCallback(callback);
 }
 
 JS_PUBLIC_API void JS_SetSizeOfIncludingThisCompartmentCallback(

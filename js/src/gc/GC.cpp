@@ -505,6 +505,9 @@ GCRuntime::GCRuntime(JSRuntime* rt)
       rootsRemoved(false),
       fullCompartmentChecks(false),
       gcCallbackDepth(0),
+      destroyZoneCallback(nullptr),
+      destroyCompartmentCallback(nullptr),
+      destroyRealmCallback(nullptr),
       alwaysPreserveCode(false),
       lowMemoryState(false),
       lock(mutexid::GCLock),
@@ -1852,6 +1855,40 @@ void GCRuntime::callNurseryCollectionCallbacks(JS::GCNurseryProgress progress,
   }
 }
 
+void GCRuntime::setDestroyZoneCallback(JSDestroyZoneCallback callback) {
+  destroyZoneCallback = callback;
+}
+
+void GCRuntime::callDestroyZoneCallback(JS::GCContext* gcx,
+                                        JS::Zone* zone) const {
+  if (JSDestroyZoneCallback callback = destroyZoneCallback) {
+    callback(gcx, zone);
+  }
+}
+
+void GCRuntime::setDestroyCompartmentCallback(
+    JSDestroyCompartmentCallback callback) {
+  destroyCompartmentCallback = callback;
+}
+
+void GCRuntime::callDestroyCompartmentCallback(
+    JS::GCContext* gcx, JS::Compartment* compartment) const {
+  if (JSDestroyCompartmentCallback callback = destroyCompartmentCallback) {
+    callback(gcx, compartment);
+  }
+}
+
+void GCRuntime::setDestroyRealmCallback(JS::DestroyRealmCallback callback) {
+  destroyRealmCallback = callback;
+}
+
+void GCRuntime::callDestroyRealmCallback(JS::GCContext* gcx,
+                                         JS::Realm* realm) const {
+  if (JS::DestroyRealmCallback callback = destroyRealmCallback) {
+    callback(gcx, realm);
+  }
+}
+
 JS::DoCycleCollectionCallback GCRuntime::setDoCycleCollectionCallback(
     JS::DoCycleCollectionCallback callback) {
   const auto prior = gcDoCycleCollectionCallback.ref();
@@ -2416,9 +2453,7 @@ void GCRuntime::queueBuffersForFreeAfterMinorGC(
 
 void Realm::destroy(JS::GCContext* gcx) {
   JSRuntime* rt = gcx->runtime();
-  if (auto callback = rt->destroyRealmCallback) {
-    callback(gcx, this);
-  }
+  rt->gc.callDestroyRealmCallback(gcx, this);
   if (principals()) {
     JS_DropPrincipals(rt->mainContextFromOwnThread(), principals());
   }
@@ -2429,9 +2464,7 @@ void Realm::destroy(JS::GCContext* gcx) {
 
 void Compartment::destroy(JS::GCContext* gcx) {
   JSRuntime* rt = gcx->runtime();
-  if (auto callback = rt->destroyCompartmentCallback) {
-    callback(gcx, this);
-  }
+  rt->gc.callDestroyCompartmentCallback(gcx, this);
   // Bug 1560019: Malloc memory associated with a zone but not with a specific
   // GC thing is not currently tracked.
   gcx->deleteUntracked(this);
@@ -2441,9 +2474,7 @@ void Compartment::destroy(JS::GCContext* gcx) {
 void Zone::destroy(JS::GCContext* gcx) {
   MOZ_ASSERT(compartments().empty());
   JSRuntime* rt = gcx->runtime();
-  if (auto callback = rt->destroyZoneCallback) {
-    callback(gcx, this);
-  }
+  rt->gc.callDestroyZoneCallback(gcx, this);
   // Bug 1560019: Malloc memory associated with a zone but not with a specific
   // GC thing is not currently tracked.
   gcx->deleteUntracked(this);

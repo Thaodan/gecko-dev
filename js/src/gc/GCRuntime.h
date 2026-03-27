@@ -26,8 +26,10 @@
 #include "gc/StoreBuffer.h"
 #include "js/friend/PerformanceHint.h"
 #include "js/GCAnnotations.h"
+#include "js/Realm.h"
 #include "js/RootingAPI.h"
 #include "js/UniquePtr.h"
+#include "js/Zone.h"
 #include "vm/AtomsTable.h"
 
 namespace js {
@@ -540,6 +542,14 @@ class GCRuntime {
       JS::DoCycleCollectionCallback callback);
   void callNurseryCollectionCallbacks(JS::GCNurseryProgress progress,
                                       JS::GCReason reason);
+
+  void setDestroyZoneCallback(JSDestroyZoneCallback callback);
+  void callDestroyZoneCallback(JS::GCContext* gcx, JS::Zone* zone) const;
+  void setDestroyCompartmentCallback(JSDestroyCompartmentCallback callback);
+  void callDestroyCompartmentCallback(JS::GCContext* gcx,
+                                      JS::Compartment* compartment) const;
+  void setDestroyRealmCallback(JS::DestroyRealmCallback callback);
+  void callDestroyRealmCallback(JS::GCContext* gcx, JS::Realm* realm) const;
 
   bool addFinalizationRegistry(JSContext* cx,
                                Handle<FinalizationRegistryObject*> registry);
@@ -1441,6 +1451,11 @@ class GCRuntime {
       updateWeakPointerCompartmentCallbacks;
   MainThreadData<CallbackVector<JS::GCNurseryCollectionCallback>>
       nurseryCollectionCallbacks;
+
+  /* Zone compartment and realm destroy callbacks. */
+  MainThreadData<JSDestroyZoneCallback> destroyZoneCallback;
+  MainThreadData<JSDestroyCompartmentCallback> destroyCompartmentCallback;
+  MainThreadData<JS::DestroyRealmCallback> destroyRealmCallback;
 
   /*
    * The trace operations to trace embedding-specific GC roots. One is for
