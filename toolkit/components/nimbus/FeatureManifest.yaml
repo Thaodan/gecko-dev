@@ -3068,6 +3068,12 @@ networkingConnections:
       setPref:
         branch: default
         pref: "network.http.speculative-parallel-limit"
+    happyEyeballsEnabled:
+      description: Whether to enable the Happy Eyeballs v3 algorithm for connection establishment
+      type: boolean
+      setPref:
+        branch: default
+        pref: "network.http.happy_eyeballs_enabled"
 
 
 networkingSendOnDataFinished:
