@@ -164,12 +164,18 @@ var SidebarController = {
         this.makeSidebar({
           name: "bookmarks",
           elementId: "sidebar-switcher-bookmarks",
-          url: "chrome://browser/content/places/bookmarksSidebar.xhtml",
+          url:
+            this.sidebarRevampEnabled && this.updatedBookmarksPanelEnabled
+              ? "chrome://browser/content/sidebar/sidebar-bookmarks.html"
+              : "chrome://browser/content/places/bookmarksSidebar.xhtml",
           menuId: "menu_bookmarksSidebar",
           keyId: "viewBookmarksSidebarKb",
           menuL10nId: "menu-view-bookmarks",
           revampL10nId: "sidebar-menu-bookmarks-label",
           iconUrl: "chrome://browser/skin/bookmark-hollow.svg",
+          contextMenuId: this.sidebarRevampEnabled
+            ? "sidebar-bookmarks-context-menu"
+            : undefined,
           disabled: true,
           gleanEvent: Glean.bookmarks.sidebarToggle,
           gleanClickEvent: Glean.sidebar.bookmarksIconClick,
@@ -2504,6 +2510,28 @@ XPCOMUtils.defineLazyPreferenceGetter(
     if (!SidebarController.uninitializing) {
       SidebarController.toggleRevampSidebar();
       SidebarController._state.revampEnabled = newValue;
+    }
+  }
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  SidebarController,
+  "updatedBookmarksPanelEnabled",
+  "sidebar.updatedBookmarks.enabled",
+  false,
+  (_aPreference, _previousValue, newValue) => {
+    if (!SidebarController.uninitializing) {
+      const bookmarksSidebar = SidebarController.sidebars.get(
+        "viewBookmarksSidebar"
+      );
+      if (bookmarksSidebar) {
+        bookmarksSidebar.url =
+          SidebarController.sidebarRevampEnabled && newValue
+            ? "chrome://browser/content/sidebar/sidebar-bookmarks.html"
+            : "chrome://browser/content/places/bookmarksSidebar.xhtml";
+        if (SidebarController.currentID === "viewBookmarksSidebar") {
+          SidebarController.show("viewBookmarksSidebar");
+        }
+      }
     }
   }
 );

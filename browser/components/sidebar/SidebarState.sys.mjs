@@ -76,6 +76,7 @@ export class SidebarState {
     ...SidebarState.defaultProperties,
   };
   #launcherEverVisible = false;
+  bookmarksExpandedFolders = [];
 
   /** @type {SidebarStateProps} */
   static defaultProperties = Object.freeze({
@@ -314,6 +315,7 @@ export class SidebarState {
       command: this.command,
       panelOpen: this.panelOpen,
       panelWidth: this.panelWidth,
+      bookmarksExpandedFolders: this.bookmarksExpandedFolders,
       launcherWidth: convertToInt(this.launcherWidth),
       expandedLauncherWidth: convertToInt(this.expandedLauncherWidth),
       launcherExpanded: this.launcherExpanded,
