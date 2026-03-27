@@ -2669,8 +2669,9 @@ export class SmartbarInput extends HTMLElement {
    * @param {string} value
    * @param {object} options
    * @param {SearchEngine} options.searchEngine
+   * @param {string} [options.where]
    */
-  openEngineHomePage(value, { searchEngine }) {
+  openEngineHomePage(value, { searchEngine, where = "current" }) {
     if (!searchEngine) {
       console.warn("No searchEngine parameter");
       return;
@@ -2687,12 +2688,12 @@ export class SmartbarInput extends HTMLElement {
     }
 
     this._lastSearchString = "";
-    if (this.#isAddressbar) {
+    if (this.#isAddressbar && where == "current") {
       this.#setInputValue(url);
     }
     this.selectionStart = -1;
 
-    this.window.openTrustedLinkIn(url, "current");
+    this.window.openTrustedLinkIn(url, where, { inBackground: true });
   }
 
   /**
