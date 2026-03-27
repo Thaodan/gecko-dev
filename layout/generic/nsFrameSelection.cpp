@@ -1964,6 +1964,7 @@ nsresult nsFrameSelection::PageMove(bool aForward, bool aExtend,
 
   // Get the scrollable frame.  If aFrame is not scrollable, this is nullptr.
   nsIScrollableFrame* scrollableFrame = aFrame->GetScrollTargetFrame();
+  const AutoWeakFrame scrollableFrameWeak(scrollableFrame);
   // Get the scrolled frame.  If aFrame is not scrollable, this is aFrame
   // itself.
   nsIFrame* scrolledFrame =
@@ -2057,7 +2058,7 @@ nsresult nsFrameSelection::PageMove(bool aForward, bool aExtend,
       aSelectionIntoView == SelectionIntoView::IfChanged && !selectionChanged);
 
   // Then, scroll the given frame one page.
-  if (scrollableFrame) {
+  if (scrollableFrameWeak.IsAlive()) {
     // If we'll call ScrollSelectionIntoView later and selection wasn't
     // changed and we scroll outside of selection limiter, we shouldn't use
     // smooth scroll here because nsIScrollableFrame uses normal runnable,
