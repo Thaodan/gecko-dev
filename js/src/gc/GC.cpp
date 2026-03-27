@@ -518,7 +518,7 @@ GCRuntime::GCRuntime(JSRuntime* rt)
       freeTask(this),
       decommitTask(this),
       nursery_(this),
-      storeBuffer_(rt),
+      storeBuffer_(this),
       lastAllocRateUpdateTime(TimeStamp::Now())
 #ifdef JS_GC_ZEAL
       ,
