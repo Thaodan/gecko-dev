@@ -6260,6 +6260,21 @@
       }
     ]
   },
+  "2024684": {
+    "label": "gueval2.digimoolyankan.com",
+    "bugs": {
+      "2024684": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://gueval2.digimoolyankan.com/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "ua_string": ["add_Chrome"]
+      }
+    ]
+  },
   "2015962": {
     "label": "usbank.com",
     "bugs": {
