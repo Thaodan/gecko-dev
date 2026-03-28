@@ -284,18 +284,17 @@ already_AddRefed<TextureHost> CreateBackendIndependentTextureHost(
       switch (data.type()) {
         case MemoryOrShmem::TShmem: {
           const ipc::Shmem& shmem = data.get_Shmem();
+          const BufferDescriptor& desc = bufferDesc.desc();
           if (!shmem.IsReadable()) {
-            // We failed to map the shmem so we can't verify its size.
-            // Attempting to construct a ShmemTextureHost with it will succeed,
-            // but the resulting object will have a null shmem and can't ever be
-            // locked or mapped -- it's not useful at all. We just return
-            // nullptr instead.
-            gfxCriticalError() << "Failed texture host with unmappable shmem.";
-            return nullptr;
+            // We failed to map the shmem so we can't verify its size. This
+            // should not be a fatal error, so just create the texture with
+            // nothing backing it.
+            result = new ShmemTextureHost(shmem, desc, aDeallocator, aFlags);
+            break;
           }
 
           size_t bufSize = shmem.Size<char>();
-          const BufferDescriptor& desc = bufferDesc.desc();
+          size_t reqSize = SIZE_MAX;
           switch (desc.type()) {
             case BufferDescriptor::TYCbCrDescriptor: {
               const YCbCrDescriptor& ycbcr = desc.get_YCbCrDescriptor();
@@ -676,11 +675,7 @@ already_AddRefed<gfx::DataSourceSurface> BufferTextureHost::GetAsSurface() {
   if (mFormat == gfx::SurfaceFormat::UNKNOWN) {
     NS_WARNING("BufferTextureHost: unsupported format!");
     return nullptr;
-  }
-  if (!GetBuffer()) {
-    return nullptr;
-  }
-  if (mFormat == gfx::SurfaceFormat::YUV) {
+  } else if (mFormat == gfx::SurfaceFormat::YUV) {
     result = ImageDataSerializer::DataSourceSurfaceFromYCbCrDescriptor(
         GetBuffer(), mDescriptor.get_YCbCrDescriptor());
     if (NS_WARN_IF(!result)) {
