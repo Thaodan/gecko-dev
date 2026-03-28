@@ -1964,7 +1964,7 @@ nsresult nsFrameSelection::PageMove(bool aForward, bool aExtend,
 
   // Get the scrollable frame.  If aFrame is not scrollable, this is nullptr.
   nsIScrollableFrame* scrollableFrame = aFrame->GetScrollTargetFrame();
-  const AutoWeakFrame scrollableFrameWeak(scrollableFrame);
+  const AutoWeakFrame scrollableFrameWeak(do_QueryFrame(scrollableFrame));
   // Get the scrolled frame.  If aFrame is not scrollable, this is aFrame
   // itself.
   nsIFrame* scrolledFrame =
