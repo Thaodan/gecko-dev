@@ -1367,7 +1367,6 @@ class GeneratedFile(ContextDerived):
                 for f in self.outputs
                 if f.endswith((".java", ".kt"))
                 or mozpath.match(f, "**/AndroidManifest*.xml")
-                or mozpath.match(f, "**/webcompat_addon_run.js")
             ]
         else:
             self.required_before_export = False
