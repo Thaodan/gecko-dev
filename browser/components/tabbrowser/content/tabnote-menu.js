@@ -31,15 +31,16 @@
         role="dialog"
         ignorekeys="true"
         norolluponanchor="true"
+        aria-labelledby="tab-note-editor-title"
         consumeoutsideclicks="false">
 
-        <html:div class="panel-header" id="tab-note-editor-header" >
+        <html:div class="panel-header" >
           <html:h1
             id="tab-note-editor-title">
           </html:h1>
         </html:div>
 
-        <toolbarseparator id="tab-note-editor-separator" />
+        <toolbarseparator />
 
         <html:div
           class="panel-subview-body
@@ -55,16 +56,11 @@
 
         <html:div
           class="panel-action-row panel-footer">
-          <html:moz-button
-              id="tab-note-editor-button-delete"
-              type="icon ghost"
-              iconsrc="chrome://global/skin/icons/delete.svg"
-              data-l10n-id="tab-note-editor-button-delete">
-          </html:moz-button>
           <html:div
             id="tab-note-overflow-indicator">
           </html:div>
           <html:moz-button-group
+              class="tab-note-create-actions tab-note-create-mode-only"
               id="tab-note-default-actions">
               <html:moz-button
                   id="tab-note-editor-button-cancel"
@@ -84,16 +80,13 @@
     #initialized = false;
     #panel;
     #noteField;
-    #headerEl;
-    #separatorEl;
     #titleNode;
     /** @type {MozTabbrowserTab} */
     #currentTab = null;
-    /** @type {boolean|null} */
-    #createMode = null;
+    /** @type {boolean} */
+    #createMode;
     #cancelButton;
     #saveButton;
-    #deleteButton;
     #overflowIndicator;
     /** @type {TabNoteTelemetrySource|null} */
     #telemetrySource = null;
@@ -109,12 +102,9 @@
 
       this.#panel = this.querySelector("panel");
       this.#noteField = document.getElementById("tab-note-text");
-      this.#headerEl = this.querySelector("#tab-note-editor-header");
-      this.#separatorEl = this.querySelector("#tab-note-editor-separator");
-      this.#titleNode = this.querySelector("#tab-note-editor-title");
+      this.#titleNode = document.getElementById("tab-note-editor-title");
       this.#cancelButton = this.querySelector("#tab-note-editor-button-cancel");
       this.#saveButton = this.querySelector("#tab-note-editor-button-save");
-      this.#deleteButton = this.querySelector("#tab-note-editor-button-delete");
       this.#overflowIndicator = this.querySelector(
         "#tab-note-overflow-indicator"
       );
@@ -124,9 +114,6 @@
       });
       this.#saveButton.addEventListener("click", () => {
         this.saveNote();
-      });
-      this.#deleteButton.addEventListener("click", () => {
-        this.#deleteNote();
       });
       this.#panel.addEventListener("keypress", this);
       this.#panel.addEventListener("popuphidden", this);
@@ -176,14 +163,6 @@
         : "tab-note-editor-title-edit";
       this.#titleNode.innerText =
         gBrowser.tabLocalization.formatValueSync(headerL10nId);
-      this.#headerEl.hidden = !createModeEnabled;
-      this.#separatorEl.hidden = !createModeEnabled;
-      this.#deleteButton.hidden = createModeEnabled;
-      this.#panel.setAttribute(
-        "aria-label",
-        gBrowser.tabLocalization.formatValueSync(headerL10nId)
-      );
-
       this.#createMode = createModeEnabled;
     }
 
@@ -285,15 +264,6 @@
         });
       }
 
-      this.#panel.hidePopup();
-    }
-
-    #deleteNote() {
-      if (TabNotes.isEligible(this.#currentTab)) {
-        TabNotes.delete(this.#currentTab, {
-          telemetrySource: this.#telemetrySource,
-        });
-      }
       this.#panel.hidePopup();
     }
   }
