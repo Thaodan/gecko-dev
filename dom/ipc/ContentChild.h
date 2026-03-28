@@ -839,6 +839,8 @@ class ContentChild final : public PContentChild,
 
   void ConfigureThreadPerformanceHints(const hal::ProcessPriority& aPriority);
 
+  void MaybeSendStartLoadingUntrusted(nsIURI* aURI);
+
   RefPtr<ConsoleListener> mConsoleListener;
 
   nsTHashSet<nsIObserver*> mIdleObservers;
@@ -858,6 +860,7 @@ class ContentChild final : public PContentChild,
 
   bool mIsForBrowser;
   bool mIsAlive;
+  bool mHasStartedLoadingUntrusted = false;
   nsCString mRemoteType = NOT_REMOTE_TYPE;
   nsCString mProcessName;
 
