@@ -773,7 +773,8 @@
   result_type: Object
   guard: true
   congruent_to: if_operands_equal
-  alias_set: none
+  alias_set:
+    load: ObjectFields
   generate_lir: true
 
 #ifdef JS_PUNBOX64
@@ -2604,7 +2605,8 @@
   guard: true
   movable: true
   congruent_to: if_operands_equal
-  alias_set: none
+  alias_set:
+    load: ObjectFields
   generate_lir: true
   lir_result_type: none
   lir_temps: 1
@@ -2629,7 +2631,8 @@
   guard: true
   movable: true
   congruent_to: if_operands_equal
-  alias_set: none
+  alias_set:
+    load: ObjectFields
   generate_lir: true
   lir_result_type: none
   lir_temps: 1
@@ -2641,7 +2644,8 @@
   guard: true
   movable: true
   congruent_to: if_operands_equal
-  alias_set: none
+  alias_set:
+    load: ObjectFields
   generate_lir: true
   lir_result_type: none
   lir_temps: 1
@@ -2654,7 +2658,8 @@
   movable: true
   congruent_to: if_operands_equal
   folds_to: custom
-  alias_set: none
+  alias_set:
+    load: ObjectFields
   generate_lir: true
   lir_result_type: none
   lir_temps: 1
@@ -2909,7 +2914,8 @@
   guard: true
   movable: true
   congruent_to: if_operands_and_arguments_equal
-  alias_set: none
+  alias_set:
+    load: ObjectFields
   generate_lir: true
   lir_result_type: none
 
@@ -3601,7 +3607,8 @@
   result_type: Boolean
   movable: true
   congruent_to: if_operands_equal
-  alias_set: none
+  alias_set:
+    load: ObjectFields
   generate_lir: true
 
 - name: IsCrossRealmArrayConstructor
