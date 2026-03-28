@@ -1,8 +1,13 @@
 .. _userinteractionstelemetry:
 
-=================
-User Interactions
-=================
+==============================
+User Interactions (deprecated)
+==============================
+
+.. important::
+
+    Legacy Telemetry collection APIs are now deprecated.
+    Please use Glean instead.
 
 The Background Hang Reporter is a tool that collects stacks during hangs on pre-release channels.
 User Interactions are a way of annotating Background Hang Reports with additional information about what the user was doing when a hang occurs.
@@ -20,7 +25,7 @@ User Interactions also will add profiler markers for each recording.
 Serialization format
 ====================
 
-User Interactions are submitted in a :doc:`../data/backgroundhangmonitor-ping` as a property under the `annotations` for a hang, e.g.:
+User Interactions are submitted in a :doc:`../../data/backgroundhangmonitor-ping` as a property under the `annotations` for a hang, e.g.:
 
 .. code-block:: js
 

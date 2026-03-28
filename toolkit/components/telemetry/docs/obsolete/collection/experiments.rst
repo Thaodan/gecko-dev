@@ -1,9 +1,15 @@
-=====================
-Experiment Annotation
-=====================
-This API allows privileged JavaScript to annotate the :doc:`../data/environment` with any experiments a client is participating in.
+==================================
+Experiment Annotation (deprecated)
+==================================
 
-The experiment annotations are sent with any ping that includes the :doc:`../data/environment` data.
+.. important::
+
+    Legacy Telemetry collection APIs are now deprecated.
+    Please use Glean instead.
+
+This API allows privileged JavaScript to annotate the :doc:`../../data/environment` with any experiments a client is participating in.
+
+The experiment annotations are sent with any ping that includes the :doc:`../../data/environment` data.
 
 The JS API
 ==========

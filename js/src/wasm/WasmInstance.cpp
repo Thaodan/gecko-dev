@@ -2120,7 +2120,7 @@ int32_t Instance::stringCharCodeAt(Instance* instance, void* stringArg,
   char16_t c;
   if (!string->getChar(cx, index, &c)) {
     MOZ_ASSERT(cx->isThrowingOutOfMemory());
-    return false;
+    return -1;
   }
   return c;
 }
@@ -2144,7 +2144,7 @@ int32_t Instance::stringCodePointAt(Instance* instance, void* stringArg,
   char32_t c;
   if (!string->getCodePoint(cx, index, &c)) {
     MOZ_ASSERT(cx->isThrowingOutOfMemory());
-    return false;
+    return -1;
   }
   return c;
 }
@@ -2223,15 +2223,14 @@ int32_t Instance::stringEquals(Instance* instance, void* firstStringArg,
   AnyRef firstStringRef = AnyRef::fromCompiledCode(firstStringArg);
   AnyRef secondStringRef = AnyRef::fromCompiledCode(secondStringArg);
 
-  // Null strings are considered equals
-  if (firstStringRef.isNull() || secondStringRef.isNull()) {
-    return firstStringRef.isNull() == secondStringRef.isNull();
-  }
-
-  // Otherwise, rule out any other kind of reference value
-  if (!firstStringRef.isJSString() || !secondStringRef.isJSString()) {
+  if ((!firstStringRef.isNull() && !firstStringRef.isJSString()) ||
+      (!secondStringRef.isNull() && !secondStringRef.isJSString())) {
     ReportTrapError(cx, JSMSG_WASM_BAD_CAST);
     return -1;
+  }
+
+  if (firstStringRef.isNull() || secondStringRef.isNull()) {
+    return firstStringRef.isNull() == secondStringRef.isNull() ? 1 : 0;
   }
 
   bool equals;

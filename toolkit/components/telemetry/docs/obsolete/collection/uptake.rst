@@ -1,8 +1,13 @@
 .. _telemetry/collection/uptake:
 
-================
-Uptake Telemetry
-================
+=============================
+Uptake Telemetry (deprecated)
+=============================
+
+.. important::
+
+    Legacy Telemetry collection APIs are now deprecated.
+    Please use Glean instead.
 
 Firefox continuously pulls data from different remote sources (eg. settings, system add-ons, …). In order to have consistent insights about the *uptake rate* of these *update sources*, our clients can use a unified Telemetry helper to report their *update status*.
 
