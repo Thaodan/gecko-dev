@@ -377,6 +377,11 @@ nsresult nsPNGEncoder::MaybeAddCustomMetadata(
       aRandomizationKey, mImageBufferHash, hex);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  if (setjmp(png_jmpbuf(mPNG))) {
+    png_destroy_write_struct(&mPNG, &mPNGinfo);
+    return NS_ERROR_FAILURE;
+  }
+
   png_size_t chunkLength = 16;
   png_unknown_chunk chunk;
   chunk.name[0] = 'd';
