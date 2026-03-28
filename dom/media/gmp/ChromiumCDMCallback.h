@@ -25,7 +25,7 @@ class ChromiumCDMCallback {
                                          bool aSuccessful) = 0;
 
   virtual void ResolvePromiseWithKeyStatus(uint32_t aPromiseId,
-                                           cdm::KeyStatus aKeyStatus) = 0;
+                                           uint32_t aKeyStatus) = 0;
 
   virtual void ResolvePromise(uint32_t aPromiseId) = 0;
 
@@ -33,7 +33,7 @@ class ChromiumCDMCallback {
                              const nsCString& aErrorMessage) = 0;
 
   virtual void SessionMessage(const nsACString& aSessionId,
-                              cdm::MessageType aMessageType,
+                              uint32_t aMessageType,
                               nsTArray<uint8_t>&& aMessage) = 0;
 
   virtual void SessionKeysChange(
