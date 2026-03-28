@@ -1550,7 +1550,6 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookupLocked(
             newRRSet->GetTrrFetchDurationNetworkOnly());
 
         addrRec->addr_info = builder.Finish();
-        addrRec->addr_info_gencnt++;
       }
       old_addr_info = std::move(newRRSet);
     }
