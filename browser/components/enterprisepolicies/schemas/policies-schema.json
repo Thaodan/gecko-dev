@@ -999,6 +999,10 @@
       }
     },
 
+    "IPProtectionAvailable": {
+      "type": "boolean"
+    },
+
     "LegacyProfiles": {
       "type": "boolean"
     },
