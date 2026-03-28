@@ -911,9 +911,9 @@ bool RemoteTextureMap::WaitRemoteTextureReady(const RemoteTextureInfo& aInfo) {
 
     remoteTexture = it->second->mAsyncRemoteTextureHost;
     if (!remoteTexture) {
-      owner = GetTextureOwner(lock, aInfo.mOwnerId, aInfo.mForPid);
-      // When owner is already unregistered, remote texture will not be pushed.
-      if (!owner || owner->mIsContextLost) {
+      auto* owner = GetTextureOwner(lock, aInfo.mOwnerId, aInfo.mForPid);
+      // When owner is alreay unregistered, remote texture will not be pushed.
+      if (!owner) {
         // This could happen with IPC abnormal shutdown
         return false;
       }
