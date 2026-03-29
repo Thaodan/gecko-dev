@@ -101,22 +101,10 @@ class AndroidProfileRun(TestingMixin, BaseScript, MozbaseMixin, AndroidMixin):
         dirs = {}
 
         dirs["abs_test_install_dir"] = os.path.join(abs_dirs["abs_src_dir"], "testing")
-        # On macOS, use checkout dir; on Linux, use /builds/worker
-        if sys.platform == "darwin":
-            base_dir = abs_dirs["abs_src_dir"]
-        else:
-            base_dir = "/builds/worker"
-        dirs["abs_artifacts_dir"] = os.path.join(base_dir, "artifacts")
-        dirs["abs_blob_upload_dir"] = os.path.join(
-            dirs["abs_artifacts_dir"], "blobber_upload_dir"
-        )
-        dirs["abs_workspace_dir"] = os.path.join(base_dir, "workspace")
+        dirs["abs_blob_upload_dir"] = "/builds/worker/artifacts/blobber_upload_dir"
         work_dir = os.environ.get("MOZ_FETCHES_DIR") or abs_dirs["abs_work_dir"]
         dirs["abs_xre_dir"] = os.path.join(work_dir, "hostutils")
-        sdk_dirname = (
-            "android-sdk-macosx" if sys.platform == "darwin" else "android-sdk-linux"
-        )
-        dirs["abs_sdk_dir"] = os.path.join(work_dir, sdk_dirname)
+        dirs["abs_sdk_dir"] = os.path.join(work_dir, "android-sdk-linux")
         dirs["abs_avds_dir"] = os.path.join(work_dir, "android-device")
         dirs["abs_bundletool_path"] = os.path.join(work_dir, "bundletool.jar")
 
@@ -149,15 +137,6 @@ class AndroidProfileRun(TestingMixin, BaseScript, MozbaseMixin, AndroidMixin):
         dirs = self.query_abs_dirs()
         self.xre_path = dirs["abs_xre_dir"]
 
-        # Fix JAVA_HOME if it contains unexpanded variable
-        java_home = os.environ.get("JAVA_HOME", "")
-        if "$MOZ_FETCHES_DIR" in java_home:
-            moz_fetches_dir = os.environ.get("MOZ_FETCHES_DIR", "")
-            if moz_fetches_dir:
-                java_home = java_home.replace("$MOZ_FETCHES_DIR", moz_fetches_dir)
-                os.environ["JAVA_HOME"] = java_home
-                self.info(f"Fixed JAVA_HOME to: {java_home}")
-
     def install(self):
         """
         Install APKs on the device.
@@ -167,41 +146,6 @@ class AndroidProfileRun(TestingMixin, BaseScript, MozbaseMixin, AndroidMixin):
         )
         self.install_android_app(self.installer_path)
         self.info("Finished installing apps for %s" % self.device_serial)
-
-    def _wait_for_process(self, adbdevice, process_name, running, timeout=10):
-        deadline = time.monotonic() + timeout
-        while time.monotonic() < deadline:
-            try:
-                output = adbdevice.shell_output(f"pgrep {process_name}").strip()
-                found = bool(output)
-            except Exception:
-                found = False
-            if found == running:
-                return True
-            time.sleep(0.5)
-        return False
-
-    def _stop_and_pull_recording(self, adbdevice, recording_path, video_filename):
-        try:
-            self.info("Stopping screen recording...")
-            try:
-                adbdevice.shell_output("pkill -SIGINT screenrecord", timeout=30)
-            except Exception:
-                # pkill exits with 1 if no process was found; ignore and still pull
-                pass
-            if not self._wait_for_process(
-                adbdevice, "screenrecord", running=False, timeout=15
-            ):
-                self.warning("Timed out waiting for screenrecord to stop")
-            dirs = self.query_abs_dirs()
-            blob_dir = dirs["abs_blob_upload_dir"]
-            os.makedirs(blob_dir, exist_ok=True)
-            video_dest = os.path.join(blob_dir, video_filename)
-            adbdevice.pull(recording_path, video_dest)
-            self.info(f"Screen recording saved to {video_dest}")
-            adbdevice.shell_output(f"rm {recording_path}")
-        except Exception as e:
-            self.warning(f"Failed to stop/pull screen recording: {e}")
 
     def run_tests(self):
         """
@@ -274,32 +218,6 @@ class AndroidProfileRun(TestingMixin, BaseScript, MozbaseMixin, AndroidMixin):
 
         adbdevice.mkdir(outputdir, parents=True)
 
-        # Start screen recording of PGO training
-        recording_path = "/sdcard/pgo-training.mp4"
-        recording_started = False
-        try:
-            self.info("Starting screen recording of PGO training session...")
-            sdk = int(
-                adbdevice.shell_output(
-                    "getprop ro.build.version.sdk", timeout=5
-                ).strip()
-            )
-            # --time-limit > 180 is only supported on Android 14 (API 34) and above
-            time_limit_arg = "--time-limit 900 " if sdk >= 34 else ""
-            adbdevice.shell_output(
-                f"sh -c 'screenrecord --verbose {time_limit_arg}{recording_path} > /dev/null 2>&1 &'",
-                timeout=10,
-            )
-            if self._wait_for_process(
-                adbdevice, "screenrecord", running=True, timeout=10
-            ):
-                recording_started = True
-                self.info("Screen recording started")
-            else:
-                self.warning("screenrecord did not start within timeout")
-        except Exception as e:
-            self.warning(f"Failed to start screen recording: {e}")
-
         try:
             # Run Fennec a first time to initialize its profile
             driver = Marionette(
@@ -329,41 +247,26 @@ class AndroidProfileRun(TestingMixin, BaseScript, MozbaseMixin, AndroidMixin):
 
             driver.quit(in_app=True)
 
-            if recording_started:
-                self._stop_and_pull_recording(
-                    adbdevice, recording_path, "pgo-training.mp4"
-                )
-
             # Pull all the profraw files and en-US.log
-            dirs = self.query_abs_dirs()
-            workspace_dir = dirs["abs_workspace_dir"]
-            os.makedirs(workspace_dir, exist_ok=True)
-            adbdevice.pull(outputdir, workspace_dir)
+            adbdevice.pull(outputdir, "/builds/worker/workspace/")
         except ADBTimeoutError:
-            if recording_started:
-                self._stop_and_pull_recording(
-                    adbdevice, recording_path, "pgo-training-partial.mp4"
-                )
             self.fatal(
                 "INFRA-ERROR: Failed with an ADBTimeoutError",
                 EXIT_STATUS_DICT[TBPL_RETRY],
             )
 
-        dirs = self.query_abs_dirs()
-        workspace_dir = dirs["abs_workspace_dir"]
-        profraw_files = glob.glob(os.path.join(workspace_dir, "*.profraw"))
+        profraw_files = glob.glob("/builds/worker/workspace/*.profraw")
         if not profraw_files:
-            self.fatal(f"Could not find any profraw files in {workspace_dir}")
+            self.fatal("Could not find any profraw files in /builds/worker/workspace")
         elif len(profraw_files) == 1:
             self.fatal(
                 "Only found 1 profraw file. Did child processes terminate early?"
             )
-        merged_profdata = os.path.join(workspace_dir, "merged.profdata")
         merge_cmd = [
             os.path.join(os.environ["MOZ_FETCHES_DIR"], "clang/bin/llvm-profdata"),
             "merge",
             "-o",
-            merged_profdata,
+            "/builds/worker/workspace/merged.profdata",
         ] + profraw_files
         rc = subprocess.call(merge_cmd)
         if rc != 0:
@@ -373,14 +276,12 @@ class AndroidProfileRun(TestingMixin, BaseScript, MozbaseMixin, AndroidMixin):
             )
 
         # tarfile doesn't support xz in this version of Python
-        artifacts_dir = dirs["abs_artifacts_dir"]
-        os.makedirs(artifacts_dir, exist_ok=True)
         tar_cmd = [
             "tar",
             "-acvf",
-            os.path.join(artifacts_dir, "profdata.tar.xz"),
+            "/builds/worker/artifacts/profdata.tar.xz",
             "-C",
-            workspace_dir,
+            "/builds/worker/workspace",
             "merged.profdata",
             "en-US.log",
         ]
