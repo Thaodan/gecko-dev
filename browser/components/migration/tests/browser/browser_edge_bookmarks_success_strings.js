@@ -3,20 +3,13 @@
 
 "use strict";
 
-add_setup(async () => {
-  // The IE migrator is disabled by default.
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.migrate.ie.enabled", true]],
-  });
-});
-
 /**
  * Tests that the progress strings that the Migration Wizard shows
- * during migrations for IE and Edge uses the term "Favorites" rather
+ * during migrations for Edge uses the term "Favorites" rather
  * then "Bookmarks".
  */
-add_task(async function test_ie_edge_bookmarks_success_strings() {
-  for (let key of ["ie", "edge", "internal-testing"]) {
+add_task(async function test_edge_bookmarks_success_strings() {
+  for (let key of ["edge", "internal-testing"]) {
     let sandbox = sinon.createSandbox();
 
     sandbox.stub(InternalTestingProfileMigrator, "key").get(() => {
@@ -55,7 +48,7 @@ add_task(async function test_ie_edge_bookmarks_success_strings() {
       let dialog = prefsWin.document.querySelector("#migrationWizardDialog");
       let shadow = wizard.openOrClosedShadowRoot;
 
-      // If we were using IE or Edge (EdgeHTLM), then the success message should
+      // If we were using Edge (EdgeHTLM), then the success message should
       // include the word "favorites". Otherwise, we expect it to include
       // the word "bookmarks".
       let bookmarksProgressGroup = shadow.querySelector(
