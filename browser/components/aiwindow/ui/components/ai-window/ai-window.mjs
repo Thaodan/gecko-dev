@@ -1140,9 +1140,10 @@ export class AIWindow extends MozLitElement {
   /**
    * Generates and sets a title for the conversation if one doesn't exist.
    *
+   * @param {string} [assistantResponse] - The first assistant response text
    * @private
    */
-  async #addConversationTitle() {
+  async #addConversationTitle(assistantResponse) {
     if (this.#conversation.title || this.#conversation.titlePromise) {
       return;
     }
@@ -1157,7 +1158,8 @@ export class AIWindow extends MozLitElement {
         url: firstUserMessage?.pageUrl?.href || "",
         title: this.#conversation.pageMeta?.title || "",
         description: this.#conversation.pageMeta?.description || "",
-      }
+      },
+      assistantResponse
     );
     const title = await this.#conversation.titlePromise;
     delete this.#conversation.titlePromise;
@@ -1258,8 +1260,6 @@ export class AIWindow extends MozLitElement {
         this.#sendModelRequestTelemetryEvent();
       }
 
-      this.#addConversationTitle();
-
       await lazy.Chat.fetchWithHistory(this.#conversation, engineInstance, {
         inputText,
         browsingContext: this.#getBrowsingContext(),
@@ -1283,6 +1283,7 @@ export class AIWindow extends MozLitElement {
   };
 
   #onMessageComplete = (_event, msg) => {
+    this.#addConversationTitle(msg?.content?.body);
     const followupCount = msg?.tokens?.followup?.length;
     if (followupCount) {
       this.onQuickPromptDisplayed(followupCount);
