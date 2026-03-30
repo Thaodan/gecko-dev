@@ -79,10 +79,10 @@ class SwipeTracker final : public nsARefreshObserver {
   void StartAnimating(double aStartValue, double aTargetValue);
   void SwipeFinished(const TimeStamp& aTimeStamp);
   void UnregisterFromRefreshDriver();
-  void SendSwipeEvent(EventMessage aMsg, uint32_t aDirection, double aDelta,
+  bool SendSwipeEvent(EventMessage aMsg, uint32_t aDirection, double aDelta,
                       const TimeStamp& aTimeStamp);
 
-  nsWeakPtr mWidget;
+  nsIWidget& mWidget;
   RefPtr<nsRefreshDriver> mRefreshDriver;
   layers::AxisPhysicsMSDModel mAxis;
   const LayoutDeviceIntPoint mEventPosition;

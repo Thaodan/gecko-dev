@@ -38,8 +38,8 @@ SwipeTracker::SwipeTracker(nsIWidget& aWidget,
                            const PanGestureInput& aSwipeStartEvent,
                            uint32_t aAllowedDirections,
                            uint32_t aSwipeDirection)
-    : mWidget(do_GetWeakReference(&aWidget)),
-      mRefreshDriver(GetRefreshDriver(aWidget)),
+    : mWidget(aWidget),
+      mRefreshDriver(GetRefreshDriver(mWidget)),
       mAxis(0.0, 0.0, 0.0, kSpringForce, 1.0),
       mEventPosition(RoundedToInt(ViewAs<LayoutDevicePixel>(
           aSwipeStartEvent.mPanStartPoint,
@@ -111,16 +111,12 @@ nsEventStatus SwipeTracker::ProcessEvent(
                                         : nsEventStatus_eConsumeNoDefault;
   }
 
-  nsCOMPtr<nsIWidget> widget = do_QueryReferent(mWidget);
-  if (!widget) {
-    return nsEventStatus_eIgnore;
-  }
   mDeltaTypeIsPage = aEvent.mDeltaType == PanGestureInput::PANDELTA_PAGE;
   double delta = [&]() -> double {
     if (mDeltaTypeIsPage) {
       return -aEvent.mPanDisplacement.x / StaticPrefs::widget_swipe_page_size();
     }
-    return -aEvent.mPanDisplacement.x / widget->GetDefaultScaleInternal() /
+    return -aEvent.mPanDisplacement.x / mWidget.GetDefaultScaleInternal() /
            StaticPrefs::widget_swipe_pixel_size();
   }();
 
@@ -222,11 +218,7 @@ void SwipeTracker::CancelSwipe(const TimeStamp& aTimeStamp) {
 
 void SwipeTracker::SwipeFinished(const TimeStamp& aTimeStamp) {
   SendSwipeEvent(eSwipeGestureEnd, 0, 0.0, aTimeStamp);
-  nsCOMPtr<nsIWidget> widget = do_QueryReferent(mWidget);
-  if (!widget) {
-    return;
-  }
-  widget->SwipeFinished();
+  mWidget.SwipeFinished();
 }
 
 void SwipeTracker::UnregisterFromRefreshDriver() {
@@ -250,18 +242,14 @@ void SwipeTracker::UnregisterFromRefreshDriver() {
   return geckoEvent;
 }
 
-void SwipeTracker::SendSwipeEvent(EventMessage aMsg, uint32_t aDirection,
+bool SwipeTracker::SendSwipeEvent(EventMessage aMsg, uint32_t aDirection,
                                   double aDelta, const TimeStamp& aTimeStamp) {
-  nsCOMPtr<nsIWidget> widget = do_QueryReferent(mWidget);
-  if (!widget) {
-    return;
-  }
   WidgetSimpleGestureEvent geckoEvent =
-      CreateSwipeGestureEvent(aMsg, widget, mEventPosition, aTimeStamp);
+      CreateSwipeGestureEvent(aMsg, &mWidget, mEventPosition, aTimeStamp);
   geckoEvent.mDirection = aDirection;
   geckoEvent.mDelta = aDelta;
   geckoEvent.mAllowedDirections = mAllowedDirections;
-  widget->DispatchWindowEvent(geckoEvent);
+  return mWidget.DispatchWindowEvent(geckoEvent);
 }
 
 // static
