@@ -664,7 +664,7 @@ class HomeFragment : Fragment() {
             true -> {
                 val toolbarStore by buildToolbarStore(activity)
 
-                if (homepageEdgeToEdgeFeature.get() == null) {
+                if (isEdgeToEdgeBackgroundEnabled() && homepageEdgeToEdgeFeature.get() == null) {
                     homepageEdgeToEdgeFeature.set(
                         feature = HomepageEdgeToEdgeFeature(
                             appStore = requireComponents.appStore,
@@ -1374,8 +1374,11 @@ class HomeFragment : Fragment() {
     internal fun shouldEnableWallpaper() =
         (activity as? HomeActivity)?.themeManager?.currentTheme?.isPrivate?.not() ?: false
 
-    internal fun isEdgeToEdgeBackgroundEnabled(): Boolean =
-        requireContext().settings().currentWallpaperName == Wallpaper.EDGE_TO_EDGE
+    internal fun isEdgeToEdgeBackgroundEnabled(): Boolean {
+        val settings = requireContext().settings()
+        return settings.enableHomepageEdgeToEdgeBackgroundFeature &&
+                settings.currentWallpaperName == Wallpaper.EDGE_TO_EDGE
+    }
 
     private fun applyWallpaper(wallpaperName: String, orientationChange: Boolean, orientation: Int) {
         when {
