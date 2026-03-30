@@ -296,7 +296,6 @@ struct SimplePayloadMarkerTemplate
 
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
                                                MS::Location::MarkerTable};
-
 };
 }  // namespace geckoprofiler::markers
 
