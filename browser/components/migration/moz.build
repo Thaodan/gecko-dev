@@ -55,7 +55,6 @@ if CONFIG["OS_ARCH"] == "WINNT":
         "ChromeWindowsLoginCrypto.sys.mjs",
         "EdgeProfileMigrator.sys.mjs",
         "ESEDBReader.sys.mjs",
-        "IEProfileMigrator.sys.mjs",
         "MSMigrationUtils.sys.mjs",
     ]
 
