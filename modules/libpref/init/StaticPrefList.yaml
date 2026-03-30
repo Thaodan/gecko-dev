@@ -9360,6 +9360,12 @@
   value: false
   mirror: always
   set_spidermonkey_pref: startup
+  # Enable support for <module source> module used in test262
+- name: javascript.options.experimental.source_phase_imports.test262_module_source
+  type: bool
+  value: false
+  mirror: always
+  set_spidermonkey_pref: startup
 #endif
 
 - name: javascript.options.experimental.error_capture_stack_trace

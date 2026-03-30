@@ -786,18 +786,36 @@ static bool AbstractModuleSource_toStringTagGetter(JSContext* cx, unsigned argc,
                                                    Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
-  // Step 1. Let O be the this value.
   // Step 2. If O is not an Object, return undefined.
   if (!args.thisv().isObject()) {
     args.rval().setUndefined();
     return true;
   }
 
+  // Step 1. Let O be the this value.
+  JSObject* obj = &args.thisv().toObject();
+
   // Step 3. Let module be HostGetModuleSourceModuleRecord(O).
   // Step 4. If module is not-a-source, return undefined.
-  // NOTE: All current modules are `not-a-source`, so we can
-  // unconditionally return undefined here.
-  args.rval().setUndefined();
+  // NOTE: All current modules are `not-a-source`, with the
+  // exception of the `<module source>` module used in test262,
+  // which is an instance of <ModuleSourceObject>.
+  if (!obj->is<ModuleSourceObject>()) {
+    args.rval().setUndefined();
+    return true;
+  }
+
+  MOZ_ASSERT(
+      JS::Prefs::experimental_source_phase_imports_test262_module_source());
+
+  // Step 5. Let name be module.GetModuleSourceKind().
+  JSAtom* name = cx->names().Module;
+
+  // Step 6. Assert: name is a String.
+  // (not applicable in our implementation)
+
+  // Step 7. Return name.
+  args.rval().setString(name);
   return true;
 }
 
