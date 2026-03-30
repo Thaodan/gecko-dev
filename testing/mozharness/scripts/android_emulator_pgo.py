@@ -101,10 +101,22 @@ class AndroidProfileRun(TestingMixin, BaseScript, MozbaseMixin, AndroidMixin):
         dirs = {}
 
         dirs["abs_test_install_dir"] = os.path.join(abs_dirs["abs_src_dir"], "testing")
-        dirs["abs_blob_upload_dir"] = "/builds/worker/artifacts/blobber_upload_dir"
+        # On macOS, use checkout dir; on Linux, use /builds/worker
+        if sys.platform == "darwin":
+            base_dir = abs_dirs["abs_src_dir"]
+        else:
+            base_dir = "/builds/worker"
+        dirs["abs_artifacts_dir"] = os.path.join(base_dir, "artifacts")
+        dirs["abs_blob_upload_dir"] = os.path.join(
+            dirs["abs_artifacts_dir"], "blobber_upload_dir"
+        )
+        dirs["abs_workspace_dir"] = os.path.join(base_dir, "workspace")
         work_dir = os.environ.get("MOZ_FETCHES_DIR") or abs_dirs["abs_work_dir"]
         dirs["abs_xre_dir"] = os.path.join(work_dir, "hostutils")
-        dirs["abs_sdk_dir"] = os.path.join(work_dir, "android-sdk-linux")
+        sdk_dirname = (
+            "android-sdk-macosx" if sys.platform == "darwin" else "android-sdk-linux"
+        )
+        dirs["abs_sdk_dir"] = os.path.join(work_dir, sdk_dirname)
         dirs["abs_avds_dir"] = os.path.join(work_dir, "android-device")
         dirs["abs_bundletool_path"] = os.path.join(work_dir, "bundletool.jar")
 
@@ -248,25 +260,31 @@ class AndroidProfileRun(TestingMixin, BaseScript, MozbaseMixin, AndroidMixin):
             driver.quit(in_app=True)
 
             # Pull all the profraw files and en-US.log
-            adbdevice.pull(outputdir, "/builds/worker/workspace/")
+            dirs = self.query_abs_dirs()
+            workspace_dir = dirs["abs_workspace_dir"]
+            os.makedirs(workspace_dir, exist_ok=True)
+            adbdevice.pull(outputdir, workspace_dir)
         except ADBTimeoutError:
             self.fatal(
                 "INFRA-ERROR: Failed with an ADBTimeoutError",
                 EXIT_STATUS_DICT[TBPL_RETRY],
             )
 
-        profraw_files = glob.glob("/builds/worker/workspace/*.profraw")
+        dirs = self.query_abs_dirs()
+        workspace_dir = dirs["abs_workspace_dir"]
+        profraw_files = glob.glob(os.path.join(workspace_dir, "*.profraw"))
         if not profraw_files:
-            self.fatal("Could not find any profraw files in /builds/worker/workspace")
+            self.fatal(f"Could not find any profraw files in {workspace_dir}")
         elif len(profraw_files) == 1:
             self.fatal(
                 "Only found 1 profraw file. Did child processes terminate early?"
             )
+        merged_profdata = os.path.join(workspace_dir, "merged.profdata")
         merge_cmd = [
             os.path.join(os.environ["MOZ_FETCHES_DIR"], "clang/bin/llvm-profdata"),
             "merge",
             "-o",
-            "/builds/worker/workspace/merged.profdata",
+            merged_profdata,
         ] + profraw_files
         rc = subprocess.call(merge_cmd)
         if rc != 0:
@@ -276,12 +294,14 @@ class AndroidProfileRun(TestingMixin, BaseScript, MozbaseMixin, AndroidMixin):
             )
 
         # tarfile doesn't support xz in this version of Python
+        artifacts_dir = dirs["abs_artifacts_dir"]
+        os.makedirs(artifacts_dir, exist_ok=True)
         tar_cmd = [
             "tar",
             "-acvf",
-            "/builds/worker/artifacts/profdata.tar.xz",
+            os.path.join(artifacts_dir, "profdata.tar.xz"),
             "-C",
-            "/builds/worker/workspace",
+            workspace_dir,
             "merged.profdata",
             "en-US.log",
         ]
