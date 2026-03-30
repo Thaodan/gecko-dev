@@ -5290,9 +5290,19 @@ GeneralParser<ParseHandler, Unit>::importDeclaration() {
 
           importSourceBinding = MOZ_TRY(newName(bindingAtom));
 
-          if (!noteDeclaredName(bindingAtom, DeclarationKind::Import, pos())) {
+          // We handle import source like namespace imports.
+          // It's not an indirect binding, but instead a lexical definition,
+          // that's treated like a const variable.
+          if (!noteDeclaredName(bindingAtom, DeclarationKind::Const, pos())) {
             return errorResult();
           }
+
+          // The source phase import name is currently required to live on the
+          // environment.
+          pc_->varScope()
+              .lookupDeclaredName(bindingAtom)
+              ->value()
+              ->setClosedOver();
         }
       }
       if (!isSourcePhaseImport)
