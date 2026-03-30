@@ -884,6 +884,11 @@ bool WebRenderBridgeParent::AddSharedExternalImage(
     return true;
   }
 
+  if (!GetCompositorBridge()->OwnsExternalImageId(aExtId)) {
+    gfxCriticalNote << "We do not own extId:" << wr::AsUint64(aExtId);
+    return false;
+  }
+
   auto key = wr::AsUint64(aKey);
   auto it = mSharedSurfaceIds.find(key);
   if (it != mSharedSurfaceIds.end()) {
@@ -1660,6 +1665,12 @@ bool WebRenderBridgeParent::ProcessWebRenderParentCommands(
       case WebRenderParentCommand::TOpAddPipelineIdForCompositable: {
         const OpAddPipelineIdForCompositable& op =
             cmd.get_OpAddPipelineIdForCompositable();
+        if (wr::AsUint64(op.pipelineId()) >> 32 !=
+            mLateInit->mIdNamespace.mHandle) {
+          success = false;
+          continue;
+        }
+
         AddPipelineIdForCompositable(op.pipelineId(), op.handle(), op.owner(),
                                      aTxn, txnForImageBridge);
         break;
@@ -1667,6 +1678,12 @@ bool WebRenderBridgeParent::ProcessWebRenderParentCommands(
       case WebRenderParentCommand::TOpRemovePipelineIdForCompositable: {
         const OpRemovePipelineIdForCompositable& op =
             cmd.get_OpRemovePipelineIdForCompositable();
+        if (wr::AsUint64(op.pipelineId()) >> 32 !=
+            mLateInit->mIdNamespace.mHandle) {
+          success = false;
+          continue;
+        }
+
         auto* pendingOps =
             mLateInit->mApi->GetPendingAsyncImagePipelineOps(aTxn);
 
@@ -1681,6 +1698,11 @@ bool WebRenderBridgeParent::ProcessWebRenderParentCommands(
       case WebRenderParentCommand::TOpUpdateAsyncImagePipeline: {
         const OpUpdateAsyncImagePipeline& op =
             cmd.get_OpUpdateAsyncImagePipeline();
+        if (wr::AsUint64(op.pipelineId()) >> 32 !=
+            mLateInit->mIdNamespace.mHandle) {
+          success = false;
+          continue;
+        }
 
         auto* pendingOps =
             mLateInit->mApi->GetPendingAsyncImagePipelineOps(aTxn);
@@ -1699,6 +1721,12 @@ bool WebRenderBridgeParent::ProcessWebRenderParentCommands(
       case WebRenderParentCommand::TOpUpdatedAsyncImagePipeline: {
         const OpUpdatedAsyncImagePipeline& op =
             cmd.get_OpUpdatedAsyncImagePipeline();
+        if (wr::AsUint64(op.pipelineId()) >> 32 !=
+            mLateInit->mIdNamespace.mHandle) {
+          success = false;
+          continue;
+        }
+
         aTxn.InvalidateRenderedFrame(wr::RenderReasons::ASYNC_IMAGE);
 
         auto* pendingOps =
