@@ -49,6 +49,7 @@
 #include "nsINavHistoryService.h"
 #include "nsIObserverService.h"
 #include "nsIPrefBranch.h"
+#include "nsISupportsPrimitives.h"
 #include "nsIPrincipal.h"
 #include "nsIURIMutator.h"
 #include "nsIWritablePropertyBag2.h"
@@ -4507,6 +4508,264 @@ void PermissionManager::NotifyBrowserObservers(
     observerService->NotifyObservers(
         aPermission, kBrowserPermissionChangeNotification, aData.Data());
   }
+
+  if (XRE_IsParentProcess()) {
+    nsCOMPtr<nsIPrincipal> principal;
+    aPermission->GetPrincipal(getter_AddRefs(principal));
+    if (NS_WARN_IF(!principal)) {
+      return;
+    }
+    nsAutoCString type;
+    aPermission->GetType(type);
+    uint32_t action;
+    aPermission->GetCapability(&action);
+    uint64_t browserId;
+    aPermission->GetBrowserId(&browserId);
+    bool isRemoval = aData.EqualsLiteral("deleted");
+    ForwardBrowserPermissionToChild(principal, type, action, browserId,
+                                    isRemoval);
+  }
+}
+
+void PermissionManager::ForwardBrowserPermissionToChild(
+    nsIPrincipal* aPrincipal, const nsACString& aType, uint32_t aAction,
+    uint64_t aBrowserId, bool aIsRemoval) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  RefPtr<dom::BrowsingContext> bc =
+      dom::BrowsingContext::GetCurrentTopByBrowserId(aBrowserId);
+  if (!bc) {
+    return;
+  }
+
+  dom::ContentParent* cp = bc->Canonical()->GetContentParent();
+  if (!cp) {
+    return;
+  }
+
+  nsAutoCString origin;
+  nsresult rv = aPrincipal->GetOrigin(origin);
+  if (NS_FAILED(rv)) {
+    return;
+  }
+
+  if (!cp->SendSetBrowserPermission(origin, nsCString(aType), aAction,
+                                    aBrowserId, aIsRemoval)) {
+    NS_WARNING("Failed to send SetBrowserPermission to child");
+  }
+}
+
+void PermissionManager::SetBrowserPermissionFromIPC(nsIPrincipal* aPrincipal,
+                                                    const nsACString& aType,
+                                                    uint32_t aAction,
+                                                    uint64_t aBrowserId,
+                                                    bool aIsRemoval) {
+  MOZ_ASSERT(XRE_IsContentProcess());
+  if (aIsRemoval) {
+    RemoveBrowserPermissionInternal(aPrincipal, aType, aBrowserId);
+  } else {
+    AddBrowserPermissionInternal(aPrincipal, aType, aAction, aBrowserId, 0);
+  }
+}
+
+void PermissionManager::ClearBrowserPermissionsFromIPC(uint64_t aBrowserId,
+                                                       uint32_t aActionFilter) {
+  MOZ_ASSERT(XRE_IsContentProcess());
+  ClearBrowserPermissionsInternal(aBrowserId, aActionFilter);
+}
+
+nsresult PermissionManager::AddBrowserPermissionInternal(
+    nsIPrincipal* aPrincipal, const nsACString& aType, uint32_t aPermission,
+    uint64_t aBrowserId, int64_t aExpireTimeMS) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  // DENY_ACTION is site-scoped so that blocking applies to the entire site
+  // (baseDomain) to prevent sites from nagging users with permission requests.
+  // All other actions (e.g. ALLOW) are origin-scoped for finer granularity.
+  bool siteScoped = (aPermission == DENY_ACTION);
+  nsCString compositeKey = BrowserCompositeKey(aPrincipal, aType, siteScoped);
+  if (compositeKey.IsEmpty()) {
+    return NS_ERROR_FAILURE;
+  }
+
+  // Look up or create the map for this BC.
+  UniquePtr<BrowserPermissionMap>& mapPtr =
+      mBrowserPermissionTable.LookupOrInsert(
+          aBrowserId, MakeUnique<BrowserPermissionMap>());
+  BrowserPermissionMap* map = mapPtr.get();
+
+  // If switching between DENY and non-DENY for the same type, remove old entry
+  // under the other key style.
+  bool isOverwrite = false;
+  bool otherSiteScoped = !siteScoped;
+  nsCString otherKey = BrowserCompositeKey(aPrincipal, aType, otherSiteScoped);
+  if (!otherKey.IsEmpty()) {
+    auto otherEntry = map->Lookup(otherKey);
+    if (otherEntry) {
+      isOverwrite = true;
+      if (otherEntry->mTimer) {
+        otherEntry->mTimer->Cancel();
+      }
+      otherEntry.Remove();
+    }
+  }
+
+  // Check if overwriting an existing entry under the same key.
+  auto existingEntry = map->Lookup(compositeKey);
+  if (existingEntry) {
+    isOverwrite = true;
+    if (existingEntry->mTimer) {
+      existingEntry->mTimer->Cancel();
+    }
+  }
+
+  // Compute absolute expiry timestamp. Expiry timers are only scheduled in
+  // the parent process; the child receives removal via IPC when they fire.
+  int64_t expireTime = 0;
+  nsCOMPtr<nsITimer> timer;
+  if (aExpireTimeMS > 0) {
+    MOZ_ASSERT(XRE_IsParentProcess());
+    NS_ENSURE_TRUE(XRE_IsParentProcess(), NS_ERROR_UNEXPECTED);
+    expireTime = PR_Now() / PR_USEC_PER_MSEC + aExpireTimeMS;
+    timer =
+        ScheduleBrowserPermissionExpiry(aBrowserId, compositeKey, aPrincipal,
+                                        aType, aPermission, aExpireTimeMS);
+  }
+
+  // Resolve type index.
+  int32_t typeIndex;
+  {
+    MonitorAutoLock lock{mMonitor};
+    typeIndex = GetTypeIndex(aType, true);
+  }
+
+  BrowserPermissionEntry entry;
+  entry.mPermission = aPermission;
+  entry.mExpireTime = expireTime;
+  entry.mTimer = timer;
+  entry.mTypeIndex = typeIndex;
+  entry.mSiteScoped = siteScoped;
+
+  map->InsertOrUpdate(compositeKey, std::move(entry));
+
+  // Fire notification.
+  nsCOMPtr<nsIPermission> permission =
+      Permission::Create(aPrincipal, aType, aPermission, EXPIRE_SESSION_TAB,
+                         expireTime, 0, aBrowserId);
+  if (permission) {
+    NotifyBrowserObservers(permission,
+                           isOverwrite ? u"changed"_ns : u"added"_ns);
+  }
+
+  return NS_OK;
+}
+
+void PermissionManager::RemoveBrowserPermissionInternal(
+    nsIPrincipal* aPrincipal, const nsACString& aType, uint64_t aBrowserId) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  auto bcMapEntry = mBrowserPermissionTable.Lookup(aBrowserId);
+  if (!bcMapEntry) {
+    return;
+  }
+  BrowserPermissionMap* map = bcMapEntry->get();
+
+  for (bool siteScoped : {false, true}) {
+    nsCString compositeKey = BrowserCompositeKey(aPrincipal, aType, siteScoped);
+    if (compositeKey.IsEmpty()) {
+      continue;
+    }
+    auto entry = map->Lookup(compositeKey);
+    if (entry) {
+      if (entry->mTimer) {
+        entry->mTimer->Cancel();
+      }
+      entry.Remove();
+
+      nsCOMPtr<nsIPermission> permission =
+          Permission::Create(aPrincipal, aType, UNKNOWN_ACTION,
+                             EXPIRE_SESSION_TAB, 0, 0, aBrowserId);
+      if (permission) {
+        NotifyBrowserObservers(permission, u"deleted"_ns);
+      }
+      break;
+    }
+  }
+
+  if (map->IsEmpty()) {
+    bcMapEntry.Remove();
+  }
+}
+
+bool PermissionManager::ClearBrowserPermissionsInternal(
+    uint64_t aBrowserId, uint32_t aActionFilter) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  auto bcMapEntry = mBrowserPermissionTable.Lookup(aBrowserId);
+  if (!bcMapEntry) {
+    return false;
+  }
+  BrowserPermissionMap* map = bcMapEntry->get();
+
+  bool removed = false;
+  if (aActionFilter) {
+    for (auto iter = map->Iter(); !iter.Done(); iter.Next()) {
+      if (iter.Data().mPermission == aActionFilter) {
+        if (iter.Data().mTimer) {
+          iter.Data().mTimer->Cancel();
+        }
+        iter.Remove();
+        removed = true;
+      }
+    }
+    if (map->IsEmpty()) {
+      bcMapEntry.Remove();
+    }
+  } else {
+    for (auto iter = map->Iter(); !iter.Done(); iter.Next()) {
+      if (iter.Data().mTimer) {
+        iter.Data().mTimer->Cancel();
+      }
+    }
+    bcMapEntry.Remove();
+    removed = true;
+  }
+
+  if (removed) {
+    nsCOMPtr<nsIObserverService> observerService =
+        services::GetObserverService();
+    if (observerService) {
+      nsCOMPtr<nsISupportsPRUint64> wrapper =
+          do_CreateInstance(NS_SUPPORTS_PRUINT64_CONTRACTID);
+      if (wrapper) {
+        wrapper->SetData(aBrowserId);
+      }
+      observerService->NotifyObservers(
+          wrapper, kBrowserPermissionChangeNotification, u"cleared");
+    }
+  }
+
+  return removed;
+}
+
+void PermissionManager::ForwardClearBrowserPermissionsToChild(
+    uint64_t aBrowserId, uint32_t aActionFilter) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  RefPtr<dom::BrowsingContext> bc =
+      dom::BrowsingContext::GetCurrentTopByBrowserId(aBrowserId);
+  if (!bc) {
+    return;
+  }
+
+  dom::ContentParent* cp = bc->Canonical()->GetContentParent();
+  if (!cp) {
+    return;
+  }
+
+  if (!cp->SendClearBrowserPermissions(aBrowserId, aActionFilter)) {
+    NS_WARNING("Failed to send ClearBrowserPermissions to child");
+  }
 }
 
 nsCOMPtr<nsITimer> PermissionManager::ScheduleBrowserPermissionExpiry(
@@ -4557,88 +4816,13 @@ PermissionManager::AddFromPrincipalForBrowser(nsIPrincipal* aPrincipal,
                                               uint32_t aPermission,
                                               uint64_t aBrowserId,
                                               int64_t aExpireTimeMS) {
-  MOZ_ASSERT(NS_IsMainThread());
   ENSURE_NOT_CHILD_PROCESS;
   NS_ENSURE_ARG_POINTER(aPrincipal);
   NS_ENSURE_TRUE(aBrowserId, NS_ERROR_INVALID_ARG);
   NS_ENSURE_TRUE(aExpireTimeMS >= 0, NS_ERROR_INVALID_ARG);
 
-  // DENY_ACTION is site-scoped so that blocking applies to the entire site
-  // (baseDomain) to prevent sites from nagging users with permission requests.
-  // All other actions (e.g. ALLOW) are origin-scoped for finer granularity.
-  bool siteScoped = (aPermission == DENY_ACTION);
-  nsCString compositeKey = BrowserCompositeKey(aPrincipal, aType, siteScoped);
-  if (compositeKey.IsEmpty()) {
-    return NS_ERROR_FAILURE;
-  }
-
-  // Look up or create the map for this BC.
-  UniquePtr<BrowserPermissionMap>& mapPtr =
-      mBrowserPermissionTable.LookupOrInsert(
-          aBrowserId, MakeUnique<BrowserPermissionMap>());
-  BrowserPermissionMap* map = mapPtr.get();
-
-  // If switching between DENY and non-DENY for the same type, remove old entry
-  // under the other key style.
-  bool isOverwrite = false;
-  bool otherSiteScoped = !siteScoped;
-  nsCString otherKey = BrowserCompositeKey(aPrincipal, aType, otherSiteScoped);
-  if (!otherKey.IsEmpty()) {
-    auto otherEntry = map->Lookup(otherKey);
-    if (otherEntry) {
-      isOverwrite = true;
-      if (otherEntry->mTimer) {
-        otherEntry->mTimer->Cancel();
-      }
-      otherEntry.Remove();
-    }
-  }
-
-  // Check if overwriting an existing entry under the same key.
-  auto existingEntry = map->Lookup(compositeKey);
-  if (existingEntry) {
-    isOverwrite = true;
-    if (existingEntry->mTimer) {
-      existingEntry->mTimer->Cancel();
-    }
-  }
-
-  // Compute absolute expiry timestamp.
-  int64_t expireTime = 0;
-  nsCOMPtr<nsITimer> timer;
-  if (aExpireTimeMS > 0) {
-    expireTime = PR_Now() / PR_USEC_PER_MSEC + aExpireTimeMS;
-    timer =
-        ScheduleBrowserPermissionExpiry(aBrowserId, compositeKey, aPrincipal,
-                                        aType, aPermission, aExpireTimeMS);
-  }
-
-  // Resolve type index.
-  int32_t typeIndex;
-  {
-    MonitorAutoLock lock{mMonitor};
-    typeIndex = GetTypeIndex(aType, true);
-  }
-
-  BrowserPermissionEntry entry;
-  entry.mPermission = aPermission;
-  entry.mExpireTime = expireTime;
-  entry.mTimer = timer;
-  entry.mTypeIndex = typeIndex;
-  entry.mSiteScoped = siteScoped;
-
-  map->InsertOrUpdate(compositeKey, std::move(entry));
-
-  // Fire notification.
-  nsCOMPtr<nsIPermission> permission =
-      Permission::Create(aPrincipal, aType, aPermission, EXPIRE_SESSION_TAB,
-                         expireTime, 0, aBrowserId);
-  if (permission) {
-    NotifyBrowserObservers(permission,
-                           isOverwrite ? u"changed"_ns : u"added"_ns);
-  }
-
-  return NS_OK;
+  return AddBrowserPermissionInternal(aPrincipal, aType, aPermission,
+                                      aBrowserId, aExpireTimeMS);
 }
 
 NS_IMETHODIMP
@@ -4903,96 +5087,34 @@ NS_IMETHODIMP
 PermissionManager::RemoveFromPrincipalForBrowser(nsIPrincipal* aPrincipal,
                                                  const nsACString& aType,
                                                  uint64_t aBrowserId) {
-  MOZ_ASSERT(NS_IsMainThread());
   ENSURE_NOT_CHILD_PROCESS;
   NS_ENSURE_ARG_POINTER(aPrincipal);
   NS_ENSURE_TRUE(aBrowserId, NS_ERROR_INVALID_ARG);
 
-  auto bcMapEntry = mBrowserPermissionTable.Lookup(aBrowserId);
-  if (!bcMapEntry) {
-    return NS_OK;
-  }
-  BrowserPermissionMap* map = bcMapEntry->get();
-
-  // Try both site-scoped and origin-scoped keys.
-  for (bool siteScoped : {false, true}) {
-    nsCString compositeKey = BrowserCompositeKey(aPrincipal, aType, siteScoped);
-    if (compositeKey.IsEmpty()) {
-      continue;
-    }
-    auto entry = map->Lookup(compositeKey);
-    if (entry) {
-      if (entry->mTimer) {
-        entry->mTimer->Cancel();
-      }
-      entry.Remove();
-
-      nsCOMPtr<nsIPermission> permission =
-          Permission::Create(aPrincipal, aType, UNKNOWN_ACTION,
-                             EXPIRE_SESSION_TAB, 0, 0, aBrowserId);
-      if (permission) {
-        NotifyBrowserObservers(permission, u"deleted"_ns);
-      }
-      break;
-    }
-  }
-
-  if (map->IsEmpty()) {
-    bcMapEntry.Remove();
-  }
-
+  RemoveBrowserPermissionInternal(aPrincipal, aType, aBrowserId);
   return NS_OK;
 }
 
 NS_IMETHODIMP
 PermissionManager::RemoveAllForBrowser(uint64_t aBrowserId) {
-  MOZ_ASSERT(NS_IsMainThread());
   ENSURE_NOT_CHILD_PROCESS;
   NS_ENSURE_TRUE(aBrowserId, NS_ERROR_INVALID_ARG);
 
-  auto bcMapEntry = mBrowserPermissionTable.Lookup(aBrowserId);
-  if (!bcMapEntry) {
-    return NS_OK;
+  if (ClearBrowserPermissionsInternal(aBrowserId, 0)) {
+    ForwardClearBrowserPermissionsToChild(aBrowserId, 0);
   }
-  BrowserPermissionMap* map = bcMapEntry->get();
-
-  for (auto iter = map->Iter(); !iter.Done(); iter.Next()) {
-    if (iter.Data().mTimer) {
-      iter.Data().mTimer->Cancel();
-    }
-  }
-
-  bcMapEntry.Remove();
   return NS_OK;
 }
 
 NS_IMETHODIMP
 PermissionManager::RemoveByActionForBrowser(uint64_t aBrowserId,
                                             uint32_t aPermission) {
-  MOZ_ASSERT(NS_IsMainThread());
   ENSURE_NOT_CHILD_PROCESS;
   NS_ENSURE_TRUE(aBrowserId, NS_ERROR_INVALID_ARG);
 
-  auto bcMapEntry = mBrowserPermissionTable.Lookup(aBrowserId);
-  if (!bcMapEntry) {
-    return NS_OK;
+  if (ClearBrowserPermissionsInternal(aBrowserId, aPermission)) {
+    ForwardClearBrowserPermissionsToChild(aBrowserId, aPermission);
   }
-  BrowserPermissionMap* map = bcMapEntry->get();
-
-  for (auto iter = map->Iter(); !iter.Done(); iter.Next()) {
-    BrowserPermissionEntry& permEntry = iter.Data();
-    if (permEntry.mPermission == aPermission) {
-      if (permEntry.mTimer) {
-        permEntry.mTimer->Cancel();
-      }
-      iter.Remove();
-    }
-  }
-
-  if (map->IsEmpty()) {
-    bcMapEntry.Remove();
-  }
-
   return NS_OK;
 }
 

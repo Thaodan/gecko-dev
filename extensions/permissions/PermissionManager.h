@@ -758,6 +758,38 @@ class PermissionManager final : public nsIPermissionManager,
   void NotifyBrowserObservers(const nsCOMPtr<nsIPermission>& aPermission,
                               const nsString& aData);
 
+  void ForwardBrowserPermissionToChild(nsIPrincipal* aPrincipal,
+                                       const nsACString& aType,
+                                       uint32_t aAction, uint64_t aBrowserId,
+                                       bool aIsRemoval);
+
+  void ForwardClearBrowserPermissionsToChild(uint64_t aBrowserId,
+                                             uint32_t aActionFilter);
+
+ public:
+  // Called from ContentChild IPC handlers. These are thin wrappers around
+  // the internal methods, asserting we are in the content process.
+  void SetBrowserPermissionFromIPC(nsIPrincipal* aPrincipal,
+                                   const nsACString& aType, uint32_t aAction,
+                                   uint64_t aBrowserId, bool aIsRemoval);
+  void ClearBrowserPermissionsFromIPC(uint64_t aBrowserId,
+                                      uint32_t aActionFilter);
+
+ private:
+  // Core browser permission operations. These work in any process and are
+  // shared between the XPCOM (parent-only) and IPC (child-only) entry points.
+  nsresult AddBrowserPermissionInternal(nsIPrincipal* aPrincipal,
+                                        const nsACString& aType,
+                                        uint32_t aPermission,
+                                        uint64_t aBrowserId,
+                                        int64_t aExpireTimeMS);
+  void RemoveBrowserPermissionInternal(nsIPrincipal* aPrincipal,
+                                       const nsACString& aType,
+                                       uint64_t aBrowserId);
+  // Returns true if any entries were removed.
+  bool ClearBrowserPermissionsInternal(uint64_t aBrowserId,
+                                       uint32_t aActionFilter);
+
   nsCString BrowserCompositeKey(nsIPrincipal* aPrincipal,
                                 const nsACString& aType, bool aSiteScoped);
 
