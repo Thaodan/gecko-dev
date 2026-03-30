@@ -2224,6 +2224,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
   }
 
   if (aOverflowAreas) {
-    aOverflowAreas->UnionWith(aKidFrame->GetOverflowAreasRelativeToParent());
+    aOverflowAreas->UnionWithAbsoluteOverflowAreas(
+        aKidFrame->GetOverflowAreasRelativeToParent());
   }
 }
