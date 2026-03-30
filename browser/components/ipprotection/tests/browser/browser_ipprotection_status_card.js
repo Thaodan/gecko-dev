@@ -46,7 +46,8 @@ async function setupStatusCardTest(
     },
     usageInfo: null,
   });
-  await IPPEnrollAndEntitleManager.refetchEntitlement();
+  IPProtectionService.updateState();
+  await waitForProxyState(IPPProxyStates.READY);
 
   await SpecialPowers.pushPrefEnv({
     set: [
