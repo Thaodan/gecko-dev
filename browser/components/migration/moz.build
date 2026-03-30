@@ -48,7 +48,6 @@ if CONFIG["OS_ARCH"] == "WINNT":
     ]
     UNIFIED_SOURCES += [
         "nsEdgeMigrationUtils.cpp",
-        "nsIEHistoryEnumerator.cpp",
     ]
     EXTRA_JS_MODULES += [
         "360seMigrationUtils.sys.mjs",
