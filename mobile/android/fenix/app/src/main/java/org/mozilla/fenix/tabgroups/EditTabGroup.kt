@@ -63,6 +63,7 @@ import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.base.theme.layout.AcornWindowSize.Companion.isLargeWindow
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.BottomSheetHandle
+import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.TabsTrayTestTag.BOTTOM_SHEET_COLOR_LIST
 import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.redux.action.TabGroupAction
@@ -180,6 +181,7 @@ private fun EditTabGroupContent(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
+                    .testTag(TabsTrayTestTag.GROUP_NAME)
                     .padding(horizontal = 24.dp, vertical = 16.dp),
             )
         }

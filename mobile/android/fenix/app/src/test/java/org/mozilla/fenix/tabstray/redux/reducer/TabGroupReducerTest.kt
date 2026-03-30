@@ -8,6 +8,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 import org.mozilla.fenix.tabstray.data.TabGroupTheme
+import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.data.createTabGroup
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination.AddToTabGroup
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination.CreateTabGroup
@@ -141,8 +142,8 @@ class TabGroupReducerTest {
         val initialFormState = TabGroupFormState(tabGroupId = "123", name = "123", theme = TabGroupTheme.Blue)
 
         val resultState = TabGroupActionReducer.reduce(
-            TabsTrayState(tabGroupFormState = initialFormState),
-            TabGroupAction.ThemeChanged(theme = TabGroupTheme.Pink),
+            state = TabsTrayState(tabGroupFormState = initialFormState),
+            action = TabGroupAction.ThemeChanged(theme = TabGroupTheme.Pink),
         )
 
         assertEquals(resultState.tabGroupFormState!!.theme, TabGroupTheme.Pink)
@@ -151,10 +152,56 @@ class TabGroupReducerTest {
     @Test(expected = IllegalArgumentException::class)
     fun `WHEN ThemeChanged is called with null form THEN exception is thrown`() {
         val resultState = TabGroupActionReducer.reduce(
-            TabsTrayState(tabGroupFormState = null),
-            TabGroupAction.ThemeChanged(theme = TabGroupTheme.Pink),
+            state = TabsTrayState(tabGroupFormState = null),
+            action = TabGroupAction.ThemeChanged(theme = TabGroupTheme.Pink),
         )
 
         assertEquals(resultState.tabGroupFormState!!.theme, TabGroupTheme.Pink)
+    }
+
+    @Test
+    fun `WHEN no groups exist the default next number is 1`() {
+        val resultState = TabGroupActionReducer.reduce(
+            state = TabsTrayState(tabGroups = emptyList()),
+            action = TabGroupAction.AddToNewTabGroup,
+        )
+
+        assertEquals(1, resultState.tabGroupFormState!!.nextTabGroupNumber)
+    }
+
+    @Test
+    fun `WHEN 1 group exists the default next number is 2`() {
+        val resultState = TabGroupActionReducer.reduce(
+            state = TabsTrayState(
+                tabGroups = listOf(
+                    TabsTrayItem.TabGroup(
+                        title = "Group 1",
+                        theme = TabGroupTheme.Yellow,
+                        tabs = mutableListOf(),
+                    ),
+                ),
+            ),
+            action = TabGroupAction.AddToNewTabGroup,
+        )
+
+        assertEquals(2, resultState.tabGroupFormState!!.nextTabGroupNumber)
+    }
+
+    @Test
+    fun `WHEN 99 groups exist the default next number is 100`() {
+        val resultState = TabGroupActionReducer.reduce(
+            state = TabsTrayState(
+                tabGroups = List(99) {
+                    TabsTrayItem.TabGroup(
+                        title = "Group $it",
+                        theme = TabGroupTheme.Yellow,
+                        tabs = mutableListOf(),
+                    )
+                },
+            ),
+            action = TabGroupAction.AddToNewTabGroup,
+        )
+
+        assertEquals(100, resultState.tabGroupFormState!!.nextTabGroupNumber)
     }
 }
