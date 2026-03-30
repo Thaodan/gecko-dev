@@ -1402,7 +1402,7 @@ already_AddRefed<DataSourceSurface> SharedContextWebgl::ReadSnapshotFromPBO(
   Range<uint8_t> range = {dstMap.GetData(), bufSize};
   bool success = mWebgl->AsWebGL2()->GetBufferSubData(
       LOCAL_GL_PIXEL_PACK_BUFFER, 0, range, aSize.height,
-      BytesPerPixel(aFormat) * aSize.height, pboStride.value(),
+      BytesPerPixel(aFormat) * aSize.width, pboStride.value(),
       dstMap.GetStride());
   mWebgl->BindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, 0);
   if (success) {
