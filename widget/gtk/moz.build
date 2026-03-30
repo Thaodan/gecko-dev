@@ -108,6 +108,7 @@ SOURCES += [
     "MediaKeysEventSourceFactory.cpp",
     "nsNativeThemeGTK.cpp",  # conflicts with X11 headers
     "nsWindow.cpp",  # conflicts with X11 headers
+    "WaylandVsyncSource.cpp",  # conflicts with X11 headers
 ]
 
 if CONFIG["MOZ_WAYLAND"]:
@@ -119,10 +120,6 @@ if CONFIG["MOZ_WAYLAND"]:
         "WaylandSurface.cpp",
         "WindowSurfaceCairo.cpp",
         "WindowSurfaceWaylandMultiBuffer.cpp",
-    ]
-    SOURCES += [
-        "nsWindowWayland.cpp",  # conflicts with X11 headers
-        "WaylandVsyncSource.cpp",  # conflicts with X11 headers
     ]
     EXPORTS.mozilla.widget += [
         "MozContainerWayland.h",
@@ -138,9 +135,6 @@ if CONFIG["MOZ_X11"]:
         "WindowSurfaceX11.cpp",
         "WindowSurfaceX11Image.cpp",
         "WindowSurfaceX11SHM.cpp",
-    ]
-    SOURCES += [
-        "nsWindowX11.cpp",  # conflicts with X11 headers
     ]
 
 if CONFIG["NS_PRINTING"]:
