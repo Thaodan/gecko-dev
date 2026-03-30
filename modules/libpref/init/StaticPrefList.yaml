@@ -19558,9 +19558,9 @@
   value: true
   mirror: always
 
-- name: widget.macos.native-anchored-select
+- name: widget.macos.allow-native-select
   type: bool
-  value: false
+  value: true
   mirror: always
 
 - name: widget.macos.native-context-menus
