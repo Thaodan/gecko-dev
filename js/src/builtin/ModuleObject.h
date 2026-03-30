@@ -311,6 +311,14 @@ class ModuleNamespaceObject : public ProxyObject {
   static const ProxyHandler proxyHandler;
 };
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+// https://tc39.es/proposal-source-phase-imports/#sec-properties-of-the-%abstractmodulesource%-intrinsic-object
+class AbstractModuleSourceObject : public NativeObject {
+ public:
+  static const JSClass class_;
+};
+#endif
+
 // Value types of [[Status]] in a Cyclic Module Record
 // https://tc39.es/ecma262/#table-cyclic-module-fields
 enum class ModuleStatus : int8_t {
