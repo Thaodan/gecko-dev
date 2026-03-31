@@ -1975,6 +1975,24 @@
   mirror: once
   do_not_use_directly: true
 
+# Whether to show an about:blank window as early as possible for quick startup feedback.
+# Held to nightly on Linux due to bug 1450626.
+# Disabled on Mac because the bouncing dock icon already provides feedback.
+- name: browser.startup.blankWindow
+  type: bool
+#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK) && defined(NIGHTLY_BUILD)
+  value: true
+#else
+  value: false
+#endif
+  mirror: always
+
+# Whether to attempt to use the skeleton UI when starting up.
+- name: browser.startup.preXulSkeletonUI
+  type: bool
+  value: false
+  mirror: always
+
 #if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION) || defined(DEBUG)
 - name: browser.startup.record
   type: bool
