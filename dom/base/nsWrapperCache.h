@@ -174,6 +174,8 @@ class JS_HAZ_ROOTED nsWrapperCache {
     }
   }
 
+  void ClearWrapperOnWrapFailure();
+
   /**
    * Update the wrapper when the object moves between globals.
    */
