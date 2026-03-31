@@ -535,6 +535,7 @@ taskgraph:
     repositories:
         gecko:
             name: 'Mozilla Firefox'
+    decision-parameters: 'gecko_taskgraph.parameters:get_decision_parameters'
 
 workers:
     aliases:

@@ -29,6 +29,7 @@ optimize_target_tasks: true
 owner: user@example.com
 phabricator_diff: null
 project: firefox
+pull_request_number: 123
 pushdate: 0
 pushlog_id: '0'
 release_enable_emefree: false
