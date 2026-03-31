@@ -1076,9 +1076,6 @@ export let BrowserUsageTelemetry = {
 
     if (item && source) {
       this.recordInteractionEvent(item, source);
-      if (isAboutPreferences) {
-        node.ownerGlobal.recordSettingChangeTelemetry?.(item);
-      }
       let name = source
         .replace(/-/g, "_")
         .replace(/_([a-z])/g, (m, p) => p.toUpperCase());
