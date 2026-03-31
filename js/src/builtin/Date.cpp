@@ -2276,8 +2276,9 @@ void DateObject::fillLocalTimeSlots() {
   setReservedSlot(TIME_ZONE_CACHE_KEY_SLOT, Int32Value(timeZoneCacheKey));
 
   double utcTime = UTCTime().toDouble();
+  MOZ_ASSERT(IsTimeValue(utcTime));
 
-  if (!std::isfinite(utcTime)) {
+  if (std::isnan(utcTime)) {
     for (size_t ind = COMPONENTS_START_SLOT; ind < RESERVED_SLOTS; ind++) {
       setReservedSlot(ind, DoubleValue(utcTime));
     }
@@ -3942,7 +3943,7 @@ static bool date_toISOString(JSContext* cx, unsigned argc, Value* vp) {
   MOZ_ASSERT(IsTimeValue(utctime));
 
   // Step 4.
-  if (!std::isfinite(utctime)) {
+  if (std::isnan(utctime)) {
     JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
                               JSMSG_INVALID_DATE);
     return false;
@@ -4120,7 +4121,7 @@ static bool FormatDate(JSContext* cx, DateTimeInfo* dtInfo, LanguageId locale,
                        MutableHandleValue rval) {
   MOZ_ASSERT(IsTimeValue(utcTime));
 
-  if (!std::isfinite(utcTime)) {
+  if (std::isnan(utcTime)) {
     rval.setString(cx->names().Invalid_Date_);
     return true;
   }
@@ -4225,7 +4226,7 @@ static bool ToLocaleFormatHelper(JSContext* cx, DateObject* unwrapped,
   double utcTime = unwrapped->UTCTime().toDouble();
   MOZ_ASSERT(IsTimeValue(utcTime));
 
-  if (!std::isfinite(utcTime)) {
+  if (std::isnan(utcTime)) {
     rval.setString(cx->names().Invalid_Date_);
     return true;
   }
@@ -4241,13 +4242,12 @@ static bool ToLocaleFormatHelper(JSContext* cx, DateObject* unwrapped,
 static bool ToLocaleFormatHelper(JSContext* cx, DateObject* unwrapped,
                                  const char* format, MutableHandleValue rval) {
   double utcTime = unwrapped->UTCTime().toDouble();
+  MOZ_ASSERT(IsTimeValue(utcTime));
 
   char buf[100];
-  if (!std::isfinite(utcTime)) {
+  if (std::isnan(utcTime)) {
     strcpy(buf, "InvalidDate");
   } else {
-    MOZ_ASSERT(IsTimeValue(utcTime));
-
     int64_t epochMilliseconds = static_cast<int64_t>(utcTime);
     int64_t localTime = static_cast<int64_t>(LocalTime(nullptr, utcTime));
 
