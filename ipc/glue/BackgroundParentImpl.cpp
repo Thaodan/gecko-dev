@@ -511,6 +511,9 @@ BackgroundParentImpl::AllocPIdleSchedulerParent() {
 already_AddRefed<dom::PRemoteWorkerControllerParent>
 BackgroundParentImpl::AllocPRemoteWorkerControllerParent(
     const dom::RemoteWorkerData& aRemoteWorkerData) {
+  if (BackgroundParent::IsOtherProcessActor(this)) {
+    return IPC_FAIL_NO_REASON(this);
+  }
   RefPtr<dom::RemoteWorkerControllerParent> actor =
       new dom::RemoteWorkerControllerParent(aRemoteWorkerData);
   return actor.forget();
