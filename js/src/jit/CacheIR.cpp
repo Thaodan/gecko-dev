@@ -6986,7 +6986,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDataViewGet(
   if (type == Scalar::Uint32) {
     bool isLittleEndian = argsLength() > 1 && arg(1).toBoolean();
     uint32_t res = dv->read<uint32_t>(offsetInt64, byteLength, isLittleEndian);
-    forceDoubleForUint32 = res >= INT32_MAX;
+    forceDoubleForUint32 = res > INT32_MAX;
   }
 
   // Initialize the input operand.
