@@ -106,6 +106,8 @@ add_task(async function test_select_text_link() {
     "test-image-link",
     "svg-with-link",
     "svg-with-relative-link",
+    "mathml-with-link",
+    "deprecated-mathml-with-link",
   ]) {
     for (let where of ["tab", "window", "privatewindow"]) {
       await activateContextAndWaitFor("#" + elementID, where);

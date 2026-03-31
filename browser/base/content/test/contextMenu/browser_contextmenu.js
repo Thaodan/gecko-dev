@@ -2412,6 +2412,35 @@ add_task(async function test_svg_relative_link() {
   );
 });
 
+add_task(async function test_mathml_link() {
+  await test_contextmenu(
+    "#mathml-with-link > a",
+    [
+      ...kLinkItems,
+      ...(hasSelectTranslations ? ["context-translate-selection", true] : []),
+      ...askChatMenu,
+    ],
+    {
+      awaitOnMenuBuilt: {
+        id: "context-ask-chat",
+      },
+    }
+  );
+  await test_contextmenu(
+    "#deprecated-mathml-with-link > mrow",
+    [
+      ...kLinkItems,
+      ...(hasSelectTranslations ? ["context-translate-selection", true] : []),
+      ...askChatMenu,
+    ],
+    {
+      awaitOnMenuBuilt: {
+        id: "context-ask-chat",
+      },
+    }
+  );
+});
+
 add_task(async function test_background_image() {
   let bgImageItems = [
     "context-viewimage",
