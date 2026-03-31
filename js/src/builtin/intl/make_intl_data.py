@@ -1940,6 +1940,7 @@ def writeAllLocalesSupportedTest(topsrcdir):
     unsupported_all = [
         ("ach", "Acoli"),
         ("an", "Aragonese"),
+        ("bqi", "Bakhtiari"),
         ("cak", "Cakchiquel; Kaqchikel"),
         ("gn", "Guarani"),
         ("hye", "Armenian (Eastern)"),
