@@ -3615,13 +3615,6 @@ def writeSanctionedSimpleUnitIdentifiersFiles(all_units, sanctioned_units):
         js_src_builtin_intl_dir, "../../../../intl/components/src"
     )
 
-    def find_unit_type(unit):
-        result = [
-            unit_type for (unit_type, unit_name) in all_units if unit_name == unit
-        ]
-        assert result and len(result) == 1
-        return result[0]
-
     sanctioned_h_file = os.path.join(intl_components_src_dir, "MeasureUnitGenerated.h")
     with open(sanctioned_h_file, mode="w", encoding="utf-8", newline="") as f:
         println = partial(print, file=f)
@@ -3636,21 +3629,20 @@ def writeSanctionedSimpleUnitIdentifiersFiles(all_units, sanctioned_units):
 namespace mozilla::intl {
 
 struct SimpleMeasureUnit {
-  const char* const type;
   const char* const name;
 };
 
 /**
  * The list of currently supported simple unit identifiers.
  *
- * The list must be kept in alphabetical order of |name|.
+ * The list must be kept in alphabetical order.
  */
 inline constexpr SimpleMeasureUnit simpleMeasureUnits[] = {
     // clang-format off"""
         )
 
         for unit_name in sorted(sanctioned_units):
-            println(f'  {{"{find_unit_type(unit_name)}", "{unit_name}"}},')
+            println(f'  {{"{unit_name}"}},')
 
         println(
             """
