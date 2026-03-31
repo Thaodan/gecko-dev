@@ -82,8 +82,9 @@ inline void EnqueueValueWithSize(QueueContainingClass aContainer,
 
 // https://streams.spec.whatwg.org/#dequeue-value
 template <class QueueContainingClass>
-inline void DequeueValue(QueueContainingClass aContainer,
-                         JS::MutableHandle<JS::Value> aResultValue) {
+inline void DequeueValue(JSContext* aCx, QueueContainingClass aContainer,
+                         JS::MutableHandle<JS::Value> aResultValue,
+                         ErrorResult& aRv) {
   // Step 1. Implicit via template instantiation.
   // Step 2.
   MOZ_ASSERT(!aContainer->Queue().isEmpty());
@@ -103,12 +104,17 @@ inline void DequeueValue(QueueContainingClass aContainer,
 
   // Step 7.
   aResultValue.set(valueWithSize->mValue);
+  if (!JS_WrapValue(aCx, aResultValue)) {
+    aResultValue.setUndefined();
+    aRv.StealExceptionFromJSContext(aCx);
+  }
 }
 
 // https://streams.spec.whatwg.org/#peek-queue-value
 template <class QueueContainingClass>
-inline void PeekQueueValue(QueueContainingClass aContainer,
-                           JS::MutableHandle<JS::Value> aResultValue) {
+inline void PeekQueueValue(JSContext* aCx, QueueContainingClass aContainer,
+                           JS::MutableHandle<JS::Value> aResultValue,
+                           ErrorResult& aRv) {
   // Step 1. Assert: container has [[queue]] and [[queueTotalSize]] internal
   // slots.
   // Step 2. Assert: container.[[queue]] is not empty.
@@ -119,6 +125,10 @@ inline void PeekQueueValue(QueueContainingClass aContainer,
 
   // Step 4. Return valueWithSize’s value.
   aResultValue.set(valueWithSize->mValue);
+  if (!JS_WrapValue(aCx, aResultValue)) {
+    aResultValue.setUndefined();
+    aRv.StealExceptionFromJSContext(aCx);
+  }
 }
 
 // https://streams.spec.whatwg.org/#reset-queue
