@@ -295,9 +295,7 @@ add_task(async function test_IPPProxyStates_error() {
 add_task(async function test_IPPProxyManager_activation_failure() {
   let sandbox = sinon.createSandbox();
   sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => true);
-  sandbox
-    .stub(IPPEnrollAndEntitleManager, "isLinkedToGuardian")
-    .resolves(true);
+  sandbox.stub(IPPEnrollAndEntitleManager, "isLinkedToGuardian").resolves(true);
   sandbox.stub(IPProtectionService.guardian, "fetchUserInfo").resolves({
     status: 200,
     error: undefined,
@@ -335,9 +333,7 @@ add_task(async function test_IPPProxyManager_quota_exceeded() {
   let sandbox = sinon.createSandbox();
 
   sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => true);
-  sandbox
-    .stub(IPPEnrollAndEntitleManager, "isLinkedToGuardian")
-    .resolves(true);
+  sandbox.stub(IPPEnrollAndEntitleManager, "isLinkedToGuardian").resolves(true);
   sandbox.stub(IPProtectionService.guardian, "fetchUserInfo").resolves({
     status: 200,
     error: undefined,
@@ -442,9 +438,7 @@ add_task(async function test_IPPProxyManager_quota_exceeded() {
 add_task(async function test_IPPProxytates_active() {
   let sandbox = sinon.createSandbox();
   sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => true);
-  sandbox
-    .stub(IPPEnrollAndEntitleManager, "isLinkedToGuardian")
-    .resolves(true);
+  sandbox.stub(IPPEnrollAndEntitleManager, "isLinkedToGuardian").resolves(true);
   sandbox.stub(IPProtectionService.guardian, "fetchUserInfo").resolves({
     status: 200,
     error: undefined,
@@ -521,9 +515,7 @@ add_task(async function test_IPPProxytates_active() {
 add_task(async function test_IPPProxytates_start_stop() {
   let sandbox = sinon.createSandbox();
   sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => true);
-  sandbox
-    .stub(IPPEnrollAndEntitleManager, "isLinkedToGuardian")
-    .resolves(true);
+  sandbox.stub(IPPEnrollAndEntitleManager, "isLinkedToGuardian").resolves(true);
   sandbox.stub(IPProtectionService.guardian, "fetchUserInfo").resolves({
     status: 200,
     error: undefined,

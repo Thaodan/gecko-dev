@@ -164,7 +164,8 @@ export class GuardianClient {
    * - 5xx: Internal guardian error.
    */
   async fetchProxyPass(abortSignal = null) {
-    using tokenHandle = await lazy.IPProtectionService.authProvider.getToken(abortSignal);
+    using tokenHandle =
+      await lazy.IPProtectionService.authProvider.getToken(abortSignal);
     const response = await fetch(this.#tokenURL, {
       method: "GET",
       cache: "no-cache",
@@ -222,7 +223,8 @@ export class GuardianClient {
    * - 401: The auth token was rejected, probably a guardian/auth provider environment mismatch.
    */
   async fetchUserInfo(abortSignal = null) {
-    using tokenHandle = await lazy.IPProtectionService.authProvider.getToken(abortSignal);
+    using tokenHandle =
+      await lazy.IPProtectionService.authProvider.getToken(abortSignal);
     const response = await fetch(this.#statusURL, {
       method: "GET",
       headers: {
@@ -257,7 +259,8 @@ export class GuardianClient {
    * @returns {ProxyUsage | null}
    */
   async fetchProxyUsage(abortSignal) {
-    using tokenHandle = await lazy.IPProtectionService.authProvider.getToken(abortSignal);
+    using tokenHandle =
+      await lazy.IPProtectionService.authProvider.getToken(abortSignal);
     const response = await fetch(this.#tokenURL, {
       method: "HEAD",
       signal: abortSignal,
@@ -662,4 +665,3 @@ async function waitUntilURL(browser, predicate) {
   const url = await prom.promise;
   return url;
 }
-

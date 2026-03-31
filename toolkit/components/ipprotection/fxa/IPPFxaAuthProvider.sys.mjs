@@ -18,6 +18,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/ipprotection/fxa/IPPSignInWatcher.sys.mjs",
 });
 
+/**
+ * FxA implementation of IPPAuthProvider. Handles OAuth token retrieval,
+ * enrollment via Guardian, and FxA-specific proxy bypass rules.
+ */
 class IPPFxaAuthProviderSingleton extends IPPAuthProvider {
   get helpers() {
     return [lazy.IPPSignInWatcher, lazy.IPPEnrollAndEntitleManager];

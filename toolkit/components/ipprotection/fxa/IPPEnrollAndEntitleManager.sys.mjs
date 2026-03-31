@@ -423,7 +423,6 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
   resetEntitlement() {
     this.#setEntitlement(null);
   }
-
 }
 
 const IPPEnrollAndEntitleManager = new IPPEnrollAndEntitleManagerSingleton();

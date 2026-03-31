@@ -165,6 +165,7 @@ add_task(async function test_fetchUserInfo() {
     .map(({ name, sends, expects }) => {
       return async () => {
         using serverWrapper = makeGuardianServer({ status: sends });
+        // eslint-disable-next-line no-unused-vars
         using _setup = setupGuardianClient(serverWrapper);
         const client = new GuardianClient();
 
@@ -307,6 +308,7 @@ add_task(async function test_fetchProxyPass() {
     .map(({ name, sends, expects }) => {
       return async () => {
         using serverWrapper = makeGuardianServer({ token: sends });
+        // eslint-disable-next-line no-unused-vars
         using _setup = setupGuardianClient(serverWrapper);
         const client = new GuardianClient();
 
@@ -550,6 +552,7 @@ add_task(async function test_fetchProxyPass_quotaExceeded() {
     .map(({ name, sends, expects }) => {
       return async () => {
         using serverWrapper = makeGuardianServer({ token: sends });
+        // eslint-disable-next-line no-unused-vars
         using _setup = setupGuardianClient(serverWrapper);
         const client = new GuardianClient();
 
@@ -655,6 +658,7 @@ add_task(async function test_fetchProxyUsage() {
     .map(({ name, sends, expects }) => {
       return async () => {
         using serverWrapper = makeGuardianServer({ token: sends });
+        // eslint-disable-next-line no-unused-vars
         using _setup = setupGuardianClient(serverWrapper);
         const client = new GuardianClient();
 
@@ -847,6 +851,7 @@ add_task(async function test_fetchProxyPass_abort() {
   using tokenHandler = makeStallHandler();
   using serverWrapper = makeGuardianServer({ token: tokenHandler.handler });
 
+  // eslint-disable-next-line no-unused-vars
   using _setup = setupGuardianClient(serverWrapper);
   const client = new GuardianClient();
   const controller = new AbortController();
@@ -865,6 +870,7 @@ add_task(async function test_fetchUserInfo_abort() {
   using statusHandler = makeStallHandler();
   using serverWrapper = makeGuardianServer({ status: statusHandler.handler });
 
+  // eslint-disable-next-line no-unused-vars
   using _setup = setupGuardianClient(serverWrapper);
   const client = new GuardianClient();
   const controller = new AbortController();
@@ -883,6 +889,7 @@ add_task(async function test_fetchProxyUsage_abort() {
   using tokenHandler = makeStallHandler();
   using serverWrapper = makeGuardianServer({ token: tokenHandler.handler });
 
+  // eslint-disable-next-line no-unused-vars
   using _setup = setupGuardianClient(serverWrapper);
   const client = new GuardianClient();
   const controller = new AbortController();
@@ -907,6 +914,7 @@ add_task(async function test_abort_before_fetch() {
     },
   });
 
+  // eslint-disable-next-line no-unused-vars
   using _setup = setupGuardianClient(serverWrapper);
   const client = new GuardianClient();
   const controller = new AbortController();

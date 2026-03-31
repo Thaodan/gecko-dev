@@ -137,9 +137,7 @@ add_task(async function test_IPProtectionPanel_signedIn() {
   sandbox
     .stub(IPPEnrollAndEntitleManager, "isEnrolledAndEntitled")
     .get(() => true);
-  sandbox
-    .stub(IPPEnrollAndEntitleManager, "isLinkedToGuardian")
-    .resolves(true);
+  sandbox.stub(IPPEnrollAndEntitleManager, "isLinkedToGuardian").resolves(true);
   sandbox.stub(IPProtectionService.guardian, "fetchUserInfo").resolves({
     status: 200,
     error: null,
@@ -226,9 +224,7 @@ add_task(async function test_IPProtectionPanel_started_stopped() {
   sandbox
     .stub(IPPEnrollAndEntitleManager, "isEnrolledAndEntitled")
     .get(() => true);
-  sandbox
-    .stub(IPPEnrollAndEntitleManager, "isLinkedToGuardian")
-    .resolves(true);
+  sandbox.stub(IPPEnrollAndEntitleManager, "isLinkedToGuardian").resolves(true);
   sandbox.stub(IPProtectionService.guardian, "fetchUserInfo").resolves({
     status: 200,
     error: null,
@@ -244,7 +240,9 @@ add_task(async function test_IPProtectionPanel_started_stopped() {
       "2026-02-01T00:00:00.000Z"
     ),
   });
-  sandbox.stub(IPProtectionService.guardian, "enrollWithFxa").resolves({ ok: true });
+  sandbox
+    .stub(IPProtectionService.guardian, "enrollWithFxa")
+    .resolves({ ok: true });
 
   IPProtectionService.updateState();
 
