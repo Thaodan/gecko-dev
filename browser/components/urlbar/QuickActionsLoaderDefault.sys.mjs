@@ -155,6 +155,14 @@ const DEFAULT_ACTIONS = {
       openInspector(controller.browserWindow);
     },
   },
+  library: {
+    l10nCommands: ["quickactions-cmd-library"],
+    icon: "chrome://browser/skin/library.svg",
+    label: "quickactions-library",
+    onPick: (_queryContext, controller) => {
+      controller.browserWindow.top.PlacesCommandHook.showPlacesOrganizer();
+    },
+  },
   logins: {
     l10nCommands: ["quickactions-cmd-logins"],
     label: "quickactions-logins2",
