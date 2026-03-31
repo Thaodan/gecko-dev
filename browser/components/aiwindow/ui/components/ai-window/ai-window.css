@@ -10,6 +10,7 @@
   align-items: center;
   justify-items: center;
   width: 100%;
+  --smartbar-width: 100%;
 }
 
 /* Fullpage: browser collapsed (0 height) until chat starts, showing prompts and smartbar */
@@ -34,6 +35,7 @@
     "smartbar"
     "disclaimer";
   grid-template-rows: auto 1fr auto auto auto;
+  --smartbar-width: calc(100% - var(--space-large));
 }
 
 /* Expands browser to full height and removes prompts from grid when chat starts */
@@ -72,7 +74,7 @@
   /* smartbar max width must be the same as the child context (ai-window-content.css) container */
   max-width: var(--smartwindow-content-max-width);
   position: relative;
-  width: calc(100% - var(--space-large));
+  width: var(--smartbar-width);
 }
 
 #ai-window-smartbar {
