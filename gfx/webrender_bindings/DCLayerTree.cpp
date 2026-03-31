@@ -2099,6 +2099,10 @@ void DCLayerCompositionSurface::Bind(const wr::DeviceIntRect* aDirtyRects,
                                       &offset);
 
   if (FAILED(hr)) {
+    LayoutDeviceIntRect rect = widget::WinUtils::ToIntRect(updateRect);
+
+    gfxCriticalNote << "DCLayerCompositionSurface::Bind failed: "
+                    << gfx::hexa(hr) << " " << rect;
     RenderThread::Get()->HandleWebRenderError(WebRenderError::BEGIN_DRAW);
     return;
   }
