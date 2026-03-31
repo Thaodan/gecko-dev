@@ -10921,6 +10921,8 @@ const PREF_INFERRED_PERSONALIZATION_USER = "discoverystream.sections.personaliza
 const PREF_DAILY_BRIEF_SECTIONID = "discoverystream.dailyBrief.sectionId";
 const PREF_DAILY_BRIEF_ENABLED = "discoverystream.dailyBrief.enabled";
 const CardSections_PREF_SPOCS_STARTUPCACHE_ENABLED = "discoverystream.spocs.startupCache.enabled";
+// @nova-cleanup(remove-pref): Remove PREF_NOVA_ENABLED
+const CardSections_PREF_NOVA_ENABLED = "nova.enabled";
 
 // Feed URL
 const CURATED_RECOMMENDATIONS_FEED_URL = "https://merino.services.mozilla.com/api/v1/curated-recommendations";
@@ -11000,7 +11002,8 @@ function CardSection({
   anySectionsFollowed,
   placeholder,
   activeColumnLayout,
-  syncLayoutOnFocus
+  syncLayoutOnFocus,
+  gridRef
 }) {
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const {
@@ -11015,9 +11018,7 @@ function CardSection({
   } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.App);
   const [focusedPosition, setFocusedPosition] = (0,external_React_namespaceObject.useState)(0);
   const onCardFocus = position => {
-    if (Number.isInteger(position)) {
-      setFocusedPosition(position);
-    }
+    setFocusedPosition(position);
   };
   const handleCardKeyDown = e => {
     if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
@@ -11354,6 +11355,7 @@ function CardSection({
   }, title), subtitle && /*#__PURE__*/external_React_default().createElement("p", {
     className: "section-subtitle"
   }, subtitle)), mayHaveSectionsPersonalization ? sectionContextWrapper : null), /*#__PURE__*/external_React_default().createElement("div", {
+    ref: gridRef,
     className: `ds-section-grid ds-card-grid`,
     onFocusCapture: syncLayoutOnFocus,
     onKeyDown: handleCardKeyDown
@@ -11379,11 +11381,29 @@ function CardSections({
   } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Messages);
   const personalizationEnabled = prefs[PREF_SECTIONS_PERSONALIZATION_ENABLED];
   const interestPickerEnabled = prefs[PREF_INTEREST_PICKER_ENABLED];
+  // @nova-cleanup(remove-conditional): Remove novaEnabled check once classic path is gone
+  const novaEnabled = prefs[CardSections_PREF_NOVA_ENABLED];
+  const gridRef = (0,external_React_namespaceObject.useRef)(null);
   const [activeColumnLayout, setActiveColumnLayout] = (0,external_React_namespaceObject.useState)(() => getActiveColumnLayout(window.innerWidth));
-  const syncLayoutOnFocus = (0,external_React_namespaceObject.useCallback)(() => {
-    const nextLayout = getActiveColumnLayout(window.innerWidth);
+  (0,external_React_namespaceObject.useLayoutEffect)(() => {
+    if (!novaEnabled || !gridRef.current) {
+      return;
+    }
+    const val = parseInt(getComputedStyle(gridRef.current).getPropertyValue("--sections-col-count"), 10);
+    if (Number.isInteger(val)) {
+      setActiveColumnLayout(`col-${val}`);
+    }
+  }, [novaEnabled]);
+  const syncLayoutOnFocus = (0,external_React_namespaceObject.useCallback)(e => {
+    let nextLayout = getActiveColumnLayout(window.innerWidth);
+    if (novaEnabled) {
+      const val = parseInt(getComputedStyle(e.currentTarget).getPropertyValue("--sections-col-count"), 10);
+      if (Number.isInteger(val)) {
+        nextLayout = `col-${val}`;
+      }
+    }
     setActiveColumnLayout(currLayout => currLayout === nextLayout ? currLayout : nextLayout);
-  }, []);
+  }, [novaEnabled]);
 
   // Handle a render before feed has been fetched by displaying nothing
   if (!data) {
@@ -11433,7 +11453,8 @@ function CardSections({
     anySectionsFollowed: anySectionsFollowed,
     placeholder: placeholder,
     activeColumnLayout: activeColumnLayout,
-    syncLayoutOnFocus: syncLayoutOnFocus
+    syncLayoutOnFocus: syncLayoutOnFocus,
+    gridRef: sectionPosition === 0 ? gridRef : undefined
   }));
 
   // Add a billboard/leaderboard IAB ad to the sectionsToRender array (if enabled/possible).

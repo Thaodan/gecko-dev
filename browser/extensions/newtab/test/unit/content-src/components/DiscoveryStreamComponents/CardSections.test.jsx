@@ -716,7 +716,12 @@ describe("<CardSections />", () => {
       wrapper
         .find(".ds-section-grid.ds-card-grid")
         .first()
-        .prop("onFocusCapture")();
+        .prop("onFocusCapture")({
+        currentTarget: wrapper
+          .find(".ds-section-grid.ds-card-grid")
+          .first()
+          .getDOMNode(),
+      });
       wrapper.update();
 
       assert.equal(wrapper.find(DSCard).at(0).prop("tabIndex"), 0);
@@ -819,7 +824,12 @@ describe("<CardSections />", () => {
       wrapper
         .find(".ds-section-grid.ds-card-grid")
         .first()
-        .prop("onFocusCapture")();
+        .prop("onFocusCapture")({
+        currentTarget: wrapper
+          .find(".ds-section-grid.ds-card-grid")
+          .first()
+          .getDOMNode(),
+      });
       wrapper.update();
 
       assert.equal(wrapper.find(DSCard).at(0).prop("tabIndex"), -1);
