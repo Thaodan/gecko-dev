@@ -195,6 +195,8 @@ class FontFaceImpl final {
   void InitializeSourceURL(const nsACString& aURL);
   void InitializeSourceBuffer(uint8_t* aBuffer, uint32_t aLength);
 
+  void UpdateOwnerKeepAlive();
+
   /**
    * Sets all of the descriptor values in mDescriptors using values passed
    * to the JS constructor.
@@ -209,6 +211,7 @@ class FontFaceImpl final {
   // Helper function for Load.
   void DoLoad();
   void UpdateOwnerPromise();
+  void UpdateOwnerPromiseSync();
 
   // Helper function for the descriptor setter methods.
   // Returns true if the descriptor was modified, false if descriptor is
@@ -295,6 +298,9 @@ class FontFaceImpl final {
 
   // Whether this FontFace appears in mFontFaceSet.
   bool mInFontFaceSet;
+
+  // Whether we're artificially keeping mOwner alive while we load.
+  bool mKeepingOwnerAlive = false;
 };
 
 }  // namespace mozilla::dom
