@@ -215,8 +215,8 @@ def test_partial_input(session, rect, is_wayland_headful):
 
     # Wayland forbids programmatic window movement in headful mode.
     if is_wayland_headful:
-        assert value["x"] == original["x"]
-        assert value["y"] == original["y"]
+        assert value["x"] == rect.get("x", original["x"])
+        assert value["y"] == rect.get("y", original["y"])
     else:
         assert value["x"] == rect.get("x", original["x"])
         assert value["y"] == rect.get("y", original["y"])
