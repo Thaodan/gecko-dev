@@ -43,14 +43,11 @@ class RTCRtpScriptTransformer;
 class RTCEncodedFrameBase : public nsISupports, public nsWrapperCache {
  public:
   explicit RTCEncodedFrameBase(nsIGlobalObject* aGlobal,
-                               RTCEncodedFrameState& aState,
-                               RTCRtpScriptTransformer* aOwner);
+                               RTCEncodedFrameState& aState);
 
   // nsISupports
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(RTCEncodedFrameBase)
-
-  nsIGlobalObject* GetParentObject() const;
 
   // Common webidl for RTCEncodedVideoFrame/RTCEncodedAudioFrame
   unsigned long Timestamp() const;
@@ -78,7 +75,6 @@ class RTCEncodedFrameBase : public nsISupports, public nsWrapperCache {
   RTCEncodedFrameBase& operator=(RTCEncodedFrameBase&&) = delete;
 
   RefPtr<nsIGlobalObject> mGlobal;
-  RefPtr<RTCRtpScriptTransformer> mOwner;
 
   // Keep serializable state separate in this base and its subclasses
   // in a manner that avoids diamond inheritance. Subclasses must pass
