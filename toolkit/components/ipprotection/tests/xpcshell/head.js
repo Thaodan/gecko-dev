@@ -25,6 +25,9 @@ const { IPProtectionActivator } = ChromeUtils.importESModule(
 const { IPPFxaAuthProvider } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/fxa/IPPFxaAuthProvider.sys.mjs"
 );
+const { IPPEnrollAndEntitleManager } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/ipprotection/fxa/IPPEnrollAndEntitleManager.sys.mjs"
+);
 
 IPProtectionActivator.addHelpers(IPPFxaAuthProvider.helpers);
 IPProtectionActivator.setupHelpers();
@@ -95,16 +98,14 @@ function setupStubs(
   const options = { ...defaultStubOptions, ...aOptions };
   sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => options.signedIn);
   sandbox
-    .stub(IPProtectionService.guardian, "isLinkedToGuardian")
+    .stub(IPPEnrollAndEntitleManager, "isLinkedToGuardian")
     .resolves(options.isLinkedToGuardian);
   sandbox.stub(IPProtectionService.guardian, "fetchUserInfo").resolves({
     status: 200,
     error: null,
     entitlement: options.entitlement,
   });
-  sandbox.stub(IPProtectionService.guardian, "enroll").resolves({
-    status: 200,
-    error: null,
+  sandbox.stub(IPProtectionService.guardian, "enrollWithFxa").resolves({
     ok: true,
   });
   sandbox.stub(IPProtectionService.guardian, "fetchProxyPass").resolves({

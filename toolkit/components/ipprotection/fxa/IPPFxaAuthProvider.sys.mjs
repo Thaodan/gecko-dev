@@ -86,6 +86,13 @@ class IPPFxaAuthProviderSingleton extends IPPAuthProvider {
     }
     return null;
   }
+
+  get excludedUrlPrefs() {
+    return [
+      "identity.fxaccounts.remote.profile.uri",
+      "identity.fxaccounts.auth.uri",
+    ];
+  }
 }
 
 const IPPFxaAuthProvider = new IPPFxaAuthProviderSingleton();

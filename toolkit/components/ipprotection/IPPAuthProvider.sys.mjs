@@ -35,4 +35,14 @@ export class IPPAuthProvider {
   async aboutToStart() {
     return { error: "no_auth_provider" };
   }
+
+  /**
+   * Preference names whose values are URLs that should bypass the proxy.
+   * Subclasses should override this to add auth-provider-specific exclusions.
+   *
+   * @returns {string[]}
+   */
+  get excludedUrlPrefs() {
+    return [];
+  }
 }

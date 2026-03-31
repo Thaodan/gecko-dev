@@ -20,6 +20,19 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/ipprotection/fxa/IPPSignInWatcher.sys.mjs",
 });
 
+const GUARDIAN_ENDPOINT_PREF = "browser.ipProtection.guardian.endpoint";
+const GUARDIAN_ENDPOINT_DEFAULT = "https://vpn.mozilla.com";
+
+const CLIENT_ID_MAP = {
+  "http://localhost:3000": "6089c54fdc970aed",
+  "https://guardian-dev.herokuapp.com": "64ef9b544a31bca8",
+  "https://dev.vpn.nonprod.webservices.mozgcp.net": "64ef9b544a31bca8",
+  "https://stage.guardian.nonprod.cloudops.mozgcp.net": "e6eb0d1e856335fc",
+  "https://stage.vpn.nonprod.webservices.mozgcp.net": "e6eb0d1e856335fc",
+  "https://fpn.firefox.com": "e6eb0d1e856335fc",
+  "https://vpn.mozilla.org": "e6eb0d1e856335fc",
+};
+
 const LOG_PREF = "browser.ipProtection.log";
 
 ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
@@ -30,7 +43,9 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
 });
 
 /**
- * This class manages the enrolling and entitlement.
+ * Manages enrollment and entitlement for the IP Protection proxy service.
+ * Enrollment links the user's FxA account to Guardian via a hidden browser sign-in flow.
+ * Entitlement is an FxA-account-scoped grant that allows access to the proxy service.
  */
 class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
   #entitlement = null;
@@ -224,10 +239,7 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
 
     // Linked does not mean enrolled: it could be that the link comes from a
     // previous MozillaVPN subscription.
-    let isLinked =
-      await IPPEnrollAndEntitleManagerSingleton.#isLinkedToGuardian(
-        !forceRefetch
-      );
+    let isLinked = await this.isLinkedToGuardian(!forceRefetch);
 
     if (!isLinked) {
       this.#setEntitlement(null);
@@ -255,7 +267,7 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
   // of the singleton.
 
   /**
-   * Enrolls the current Firefox account with Guardian.
+   * Enrolls the current FxA account with Guardian.
    *
    * Static to avoid changing internal state of the singleton.
    *
@@ -266,7 +278,7 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
    */
   static async #enroll(abortSignal = null) {
     try {
-      const enrollment = await lazy.IPProtectionService.guardian.enroll(
+      const enrollment = await lazy.IPProtectionService.guardian.enrollWithFxa(
         "alpha",
         abortSignal
       );
@@ -280,20 +292,31 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
   }
 
   /**
-   * Checks if the current Firefox account is linked to Guardian.
+   * Checks if the current FxA account is linked to Guardian by inspecting
+   * the list of attached FxA OAuth clients for a matching Guardian client ID.
    *
-   * Static to avoid changing internal state of the singleton.
-   *
-   * @param {boolean} useCache - If true, will use cached value if available.
+   * @param {boolean} useCache - If true, will use the cached client list if available.
    * @returns {Promise<boolean>} - True if linked, false otherwise.
    */
-  static async #isLinkedToGuardian(useCache = true) {
+  async isLinkedToGuardian(useCache = true) {
     try {
-      let isLinked = await lazy.IPProtectionService.guardian.isLinkedToGuardian(
-        /* only cache: */ useCache
+      const endpoint = Services.prefs.getCharPref(
+        GUARDIAN_ENDPOINT_PREF,
+        GUARDIAN_ENDPOINT_DEFAULT
       );
-
-      return isLinked;
+      const clientId = CLIENT_ID_MAP[new URL(endpoint).origin];
+      if (!clientId) {
+        return false;
+      }
+      const cached = await lazy.fxAccounts.listAttachedOAuthClients();
+      if (cached.some(c => c.id === clientId)) {
+        return true;
+      }
+      if (useCache) {
+        return false;
+      }
+      const refreshed = await lazy.fxAccounts.listAttachedOAuthClients(true);
+      return refreshed.some(c => c.id === clientId);
     } catch (_) {
       return false;
     }

@@ -98,7 +98,7 @@ testcases
       const client = new GuardianClient();
 
       try {
-        const result = await client.enroll(experimentType);
+        const result = await client.enrollWithFxa(experimentType);
 
         Assert.equal(
           result.ok,

@@ -6,9 +6,6 @@ https://creativecommons.org/publicdomain/zero/1.0/ */
 const { IPProtectionPanel } = ChromeUtils.importESModule(
   "moz-src:///browser/components/ipprotection/IPProtectionPanel.sys.mjs"
 );
-const { IPPEnrollAndEntitleManager } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/ipprotection/fxa/IPPEnrollAndEntitleManager.sys.mjs"
-);
 
 /**
  * A class that mocks the IP Protection panel.
@@ -141,7 +138,7 @@ add_task(async function test_IPProtectionPanel_signedIn() {
     .stub(IPPEnrollAndEntitleManager, "isEnrolledAndEntitled")
     .get(() => true);
   sandbox
-    .stub(IPProtectionService.guardian, "isLinkedToGuardian")
+    .stub(IPPEnrollAndEntitleManager, "isLinkedToGuardian")
     .resolves(true);
   sandbox.stub(IPProtectionService.guardian, "fetchUserInfo").resolves({
     status: 200,
@@ -230,7 +227,7 @@ add_task(async function test_IPProtectionPanel_started_stopped() {
     .stub(IPPEnrollAndEntitleManager, "isEnrolledAndEntitled")
     .get(() => true);
   sandbox
-    .stub(IPProtectionService.guardian, "isLinkedToGuardian")
+    .stub(IPPEnrollAndEntitleManager, "isLinkedToGuardian")
     .resolves(true);
   sandbox.stub(IPProtectionService.guardian, "fetchUserInfo").resolves({
     status: 200,
@@ -247,7 +244,7 @@ add_task(async function test_IPProtectionPanel_started_stopped() {
       "2026-02-01T00:00:00.000Z"
     ),
   });
-  sandbox.stub(IPProtectionService.guardian, "enroll").resolves({ ok: true });
+  sandbox.stub(IPProtectionService.guardian, "enrollWithFxa").resolves({ ok: true });
 
   IPProtectionService.updateState();
 

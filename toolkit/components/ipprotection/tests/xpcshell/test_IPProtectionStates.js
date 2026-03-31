@@ -6,9 +6,6 @@ https://creativecommons.org/publicdomain/zero/1.0/ */
 const { IPPNimbusHelper } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/IPPNimbusHelper.sys.mjs"
 );
-const { IPPEnrollAndEntitleManager } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/ipprotection/fxa/IPPEnrollAndEntitleManager.sys.mjs"
-);
 
 do_get_profile();
 
@@ -55,7 +52,7 @@ add_task(async function test_IPProtectionStates_uninitialized() {
   let sandbox = sinon.createSandbox();
   sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => false);
   sandbox
-    .stub(IPProtectionService.guardian, "isLinkedToGuardian")
+    .stub(IPPEnrollAndEntitleManager, "isLinkedToGuardian")
     .resolves(false);
   sandbox.stub(IPPNimbusHelper, "isEligible").get(() => false);
 
@@ -88,9 +85,9 @@ add_task(async function test_IPProtectionStates_unauthenticated() {
   let sandbox = sinon.createSandbox();
   sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => true);
   sandbox
-    .stub(IPProtectionService.guardian, "isLinkedToGuardian")
+    .stub(IPPEnrollAndEntitleManager, "isLinkedToGuardian")
     .resolves(false);
-  sandbox.stub(IPProtectionService.guardian, "enroll").resolves({ ok: true });
+  sandbox.stub(IPProtectionService.guardian, "enrollWithFxa").resolves({ ok: true });
   sandbox.stub(IPPNimbusHelper, "isEligible").get(() => false);
 
   await IPProtectionService.init();
@@ -135,10 +132,10 @@ add_task(async function test_IPProtectionStates_enrolling() {
   let sandbox = sinon.createSandbox();
   sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => true);
   sandbox
-    .stub(IPProtectionService.guardian, "isLinkedToGuardian")
+    .stub(IPPEnrollAndEntitleManager, "isLinkedToGuardian")
     .resolves(false);
   sandbox.stub(IPPNimbusHelper, "isEligible").get(() => true);
-  sandbox.stub(IPProtectionService.guardian, "enroll").resolves({ ok: true });
+  sandbox.stub(IPProtectionService.guardian, "enrollWithFxa").resolves({ ok: true });
   sandbox.stub(IPProtectionService.guardian, "fetchUserInfo").resolves({
     status: 200,
     error: null,
@@ -153,7 +150,7 @@ add_task(async function test_IPProtectionStates_enrolling() {
     "IP Protection service should be unauthenticated"
   );
 
-  IPProtectionService.guardian.isLinkedToGuardian.resolves(true);
+  IPPEnrollAndEntitleManager.isLinkedToGuardian.resolves(true);
 
   const enrollData = await IPPEnrollAndEntitleManager.maybeEnrollAndEntitle();
   Assert.ok(enrollData.isEnrolledAndEntitled, "Fully enrolled and entitled");
@@ -175,7 +172,7 @@ add_task(async function test_IPProtectionStates_ready() {
   let sandbox = sinon.createSandbox();
   sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => true);
   sandbox
-    .stub(IPProtectionService.guardian, "isLinkedToGuardian")
+    .stub(IPPEnrollAndEntitleManager, "isLinkedToGuardian")
     .resolves(true);
   sandbox.stub(IPProtectionService.guardian, "fetchUserInfo").resolves({
     status: 200,
