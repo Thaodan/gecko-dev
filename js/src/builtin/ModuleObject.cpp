@@ -92,16 +92,6 @@ static ImportPhase ValueToImportPhase(const Value& value) {
     return &value.toString()->asAtom();                      \
   }
 
-#define DEFINE_UINT32_ACCESSOR_METHOD(cls, name, slot) \
-  uint32_t cls::name() const {                         \
-    Value value = getReservedSlot(slot);               \
-    MOZ_ASSERT(value.toNumber() >= 0);                 \
-    if (value.isInt32()) {                             \
-      return value.toInt32();                          \
-    }                                                  \
-    return JS::ToUint32(value.toDouble());             \
-  }
-
 ///////////////////////////////////////////////////////////////////////////
 // ImportEntry
 
@@ -158,7 +148,7 @@ RequestedModule::RequestedModule(Handle<ModuleRequestObject*> moduleRequest,
       columnNumber_(columnNumber) {}
 
 void RequestedModule::trace(JSTracer* trc) {
-  TraceEdge(trc, &moduleRequest_, "ExportEntry::moduleRequest_");
+  TraceEdge(trc, &moduleRequest_, "RequestedModule::moduleRequest_");
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -2100,14 +2090,10 @@ bool frontend::StencilModuleMetadata::initModule(
                            localExportEntries, &exportEntriesVector)) {
     return false;
   }
-
-  Rooted<ExportEntryVector> indirectExportEntriesVector(cx);
   if (!createExportEntries(cx, atomCache, moduleRequestsVector,
                            indirectExportEntries, &exportEntriesVector)) {
     return false;
   }
-
-  Rooted<ExportEntryVector> starExportEntriesVector(cx);
   if (!createExportEntries(cx, atomCache, moduleRequestsVector,
                            starExportEntries, &exportEntriesVector)) {
     return false;
@@ -2654,15 +2640,13 @@ JSObject* js::GetOrCreateModuleMetaObject(JSContext* cx,
 bool ModuleObject::topLevelCapabilityResolve(JSContext* cx,
                                              Handle<ModuleObject*> module) {
   RootedValue rval(cx);
-  Rooted<PromiseObject*> promise(
-      cx, &module->topLevelCapability()->as<PromiseObject>());
+  Rooted<PromiseObject*> promise(cx, module->topLevelCapability());
   return AsyncFunctionReturned(cx, promise, rval);
 }
 
 bool ModuleObject::topLevelCapabilityReject(JSContext* cx,
                                             Handle<ModuleObject*> module,
                                             HandleValue error) {
-  Rooted<PromiseObject*> promise(
-      cx, &module->topLevelCapability()->as<PromiseObject>());
+  Rooted<PromiseObject*> promise(cx, module->topLevelCapability());
   return AsyncFunctionThrown(cx, promise, error);
 }

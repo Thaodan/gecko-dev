@@ -593,16 +593,6 @@ class StencilModuleRequest {
   {
   }
 
-  StencilModuleRequest& operator=(StencilModuleRequest& other) {
-    specifier = other.specifier;
-    firstUnsupportedAttributeKey = other.firstUnsupportedAttributeKey;
-    attributes = std::move(other.attributes);
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-    phase = other.phase;
-#endif
-    return *this;
-  }
-
   StencilModuleRequest& operator=(StencilModuleRequest&& other) noexcept {
     specifier = other.specifier;
     firstUnsupportedAttributeKey = other.firstUnsupportedAttributeKey;
