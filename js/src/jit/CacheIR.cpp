@@ -8725,7 +8725,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringToLocaleLowerCase() {
   return AttachDecision::Attach;
 #else
   // No inlining when Intl support is disabled.
-  return AttachDecision::Attach;
+  return AttachDecision::NoAction;
 #endif
 }
 
@@ -8775,7 +8775,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringToLocaleUpperCase() {
   return AttachDecision::Attach;
 #else
   // No inlining when Intl support is disabled.
-  return AttachDecision::Attach;
+  return AttachDecision::NoAction;
 #endif
 }
 
