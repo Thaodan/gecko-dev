@@ -4,13 +4,9 @@
 #include "NumberFormatterSkeleton.h"
 #include "NumberFormat.h"
 
-#include "MeasureUnitGenerated.h"
-
 #include "mozilla/RangedPtr.h"
 
-#include <algorithm>
 #include <limits>
-#include <string>
 #include <tuple>
 #include <utility>
 
@@ -149,16 +145,7 @@ bool NumberFormatterSkeleton::currencyDisplay(
   return false;
 }
 
-static constexpr size_t MaxUnitLength() {
-  size_t length = 0;
-  for (const auto& unit : simpleMeasureUnits) {
-    length = std::max(length, std::char_traits<char>::length(unit.name));
-  }
-  return length * 2 + std::char_traits<char>::length("-per-");
-}
-
 bool NumberFormatterSkeleton::unit(std::string_view unit) {
-  MOZ_RELEASE_ASSERT(unit.length() <= MaxUnitLength());
   return append(u"unit/") && append(unit.data(), unit.length()) && append(' ');
 }
 

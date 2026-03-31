@@ -3611,11 +3611,8 @@ def readICUDataFilterForUnits(data_filter_file):
 
 def writeSanctionedSimpleUnitIdentifiersFiles(all_units, sanctioned_units):
     js_src_builtin_intl_dir = os.path.dirname(os.path.abspath(__file__))
-    intl_components_src_dir = os.path.join(
-        js_src_builtin_intl_dir, "../../../../intl/components/src"
-    )
 
-    sanctioned_h_file = os.path.join(intl_components_src_dir, "MeasureUnitGenerated.h")
+    sanctioned_h_file = os.path.join(js_src_builtin_intl_dir, "MeasureUnitGenerated.h")
     with open(sanctioned_h_file, mode="w", encoding="utf-8", newline="") as f:
         println = partial(print, file=f)
 
@@ -3623,10 +3620,10 @@ def writeSanctionedSimpleUnitIdentifiersFiles(all_units, sanctioned_units):
 
         println(
             """
-#ifndef intl_components_MeasureUnitGenerated_h
-#define intl_components_MeasureUnitGenerated_h
+#ifndef builtin_intl_MeasureUnitGenerated_h
+#define builtin_intl_MeasureUnitGenerated_h
 
-namespace mozilla::intl {
+namespace js::intl {
 
 struct SimpleMeasureUnit {
   const char* const name;
@@ -3649,7 +3646,7 @@ inline constexpr SimpleMeasureUnit simpleMeasureUnits[] = {
     // clang-format on
 };
 
-}  // namespace mozilla::intl
+}  // namespace js::intl
 
 #endif
 """.strip("\n")
