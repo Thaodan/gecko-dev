@@ -4505,8 +4505,8 @@
       "resource://devtools/client/webconsole/utils/id-generator.js": [
         "devtools/client/webconsole/utils/id-generator.js"
       ],
-      "resource://devtools/client/webconsole/utils/l10n.js": [
-        "devtools/client/webconsole/utils/l10n.js"
+      "resource://devtools/shared/webconsole/l10n.js": [
+        "devtools/shared/webconsole/l10n.js"
       ],
       "resource://devtools/client/webconsole/utils/messages.js": [
         "devtools/client/webconsole/utils/messages.js"

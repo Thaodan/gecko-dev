@@ -6,7 +6,7 @@
 
 const { LocalizationHelper } = require("resource://devtools/shared/l10n.js");
 const helper = new LocalizationHelper(
-  "devtools/client/locales/webconsole.properties"
+  "devtools/shared/locales/webconsole.properties"
 );
 
 let dateFormatter;
