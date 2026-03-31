@@ -149,6 +149,10 @@ extern JS_PUBLIC_API JSObject* NewDateObject(JSContext* cx, ClippedTime time);
  *                MakeTime(hour, min, sec, 0.0))))
  *
  * where each function/operation is as specified in ECMAScript.
+ *
+ * Assert that mon < 12 to help catch off-by-one user errors, which are common
+ * due to the 0-based month numbering copied into JS from Java (java.util.Date
+ * in 1995).
  */
 extern JS_PUBLIC_API JSObject* NewDateObject(JSContext* cx, int year, int mon,
                                              int mday, int hour, int min,

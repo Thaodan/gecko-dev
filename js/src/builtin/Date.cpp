@@ -4935,16 +4935,6 @@ JS_PUBLIC_API JSObject* JS::NewDateObject(JSContext* cx, ClippedTime time) {
   return NewDateObjectMsec(cx, time);
 }
 
-JS_PUBLIC_API JSObject* js::NewDateObject(JSContext* cx, int year, int mon,
-                                          int mday, int hour, int min,
-                                          int sec) {
-  MOZ_ASSERT(mon < 12);
-  double msec_time =
-      MakeDate(MakeDay(year, mon, mday), MakeTime(hour, min, sec, 0.0));
-  return NewDateObjectMsec(
-      cx, TimeClip(UTC(cx->realm()->getDateTimeInfo(), msec_time)));
-}
-
 JS_PUBLIC_API bool js::DateIsValid(JSContext* cx, HandleObject obj,
                                    bool* isValid) {
   ESClass cls;
@@ -4971,7 +4961,12 @@ JS_PUBLIC_API JSObject* JS::NewDateObject(JSContext* cx, int year, int mon,
                                           int sec) {
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
-  return js::NewDateObject(cx, year, mon, mday, hour, min, sec);
+  MOZ_ASSERT(mon < 12);
+
+  double msec_time =
+      ::MakeDate(::MakeDay(year, mon, mday), ::MakeTime(hour, min, sec, 0.0));
+  return NewDateObjectMsec(
+      cx, TimeClip(UTC(cx->realm()->getDateTimeInfo(), msec_time)));
 }
 
 JS_PUBLIC_API bool JS::ObjectIsDate(JSContext* cx, Handle<JSObject*> obj,
