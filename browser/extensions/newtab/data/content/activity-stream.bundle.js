@@ -6174,6 +6174,7 @@ class MoreRecommendations extends (external_React_default()).PureComponent {
   }
 }
 ;// CONCATENATED MODULE: ./content-src/components/ModalOverlay/ModalOverlay.jsx
+function ModalOverlay_extends() { return ModalOverlay_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, ModalOverlay_extends.apply(null, arguments); }
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -6209,7 +6210,7 @@ function ModalOverlayWrapper({
       }
     };
   }, [onClose]);
-  return /*#__PURE__*/external_React_default().createElement("dialog", {
+  return /*#__PURE__*/external_React_default().createElement("dialog", ModalOverlay_extends({
     ref: dialogRef,
     className: "modalOverlayOuter",
     onClick: e => {
@@ -6217,9 +6218,10 @@ function ModalOverlayWrapper({
         onClose(e);
       }
     }
-  }, /*#__PURE__*/external_React_default().createElement("div", {
+  }, headerId ? {
+    "aria-labelledby": headerId
+  } : {}), /*#__PURE__*/external_React_default().createElement("div", {
     className: className,
-    "aria-labelledby": headerId,
     id: id
   }, children));
 }
@@ -9300,6 +9302,7 @@ class TopSiteForm extends (external_React_default()).PureComponent {
       className: "form-input-container"
     }, /*#__PURE__*/external_React_default().createElement("h3", {
       className: "section-title grey-title",
+      id: "top-site-form-title",
       "data-l10n-id": showAsAdd ? addTopsitesHeaderL10nId : editTopsitesHeaderL10nId
     }), /*#__PURE__*/external_React_default().createElement("div", {
       className: "fields-and-preview"
@@ -9517,7 +9520,8 @@ class _TopSites extends (external_React_default()).PureComponent {
     }, /*#__PURE__*/external_React_default().createElement(ModalOverlayWrapper, {
       unstyled: true,
       onClose: this.onEditFormClose,
-      innerClassName: "modal"
+      innerClassName: "modal",
+      headerId: "top-site-form-title"
     }, /*#__PURE__*/external_React_default().createElement(TopSiteForm, TopSites_extends({
       site: props.TopSites.rows[editForm.index],
       onClose: this.onEditFormClose,
@@ -16887,7 +16891,8 @@ function TopicSelection({
   }
   return /*#__PURE__*/external_React_default().createElement(ModalOverlayWrapper, {
     onClose: handleUserClose,
-    innerClassName: "topic-selection-container"
+    innerClassName: "topic-selection-container",
+    headerId: "topic-selection-title"
   }, /*#__PURE__*/external_React_default().createElement("div", {
     className: "topic-selection-form",
     ref: modalRef
@@ -16897,6 +16902,7 @@ function TopicSelection({
     onClick: handleUserClose
   }), /*#__PURE__*/external_React_default().createElement("h1", {
     className: "title",
+    id: "topic-selection-title",
     "data-l10n-id": "newtab-topic-selection-title"
   }), /*#__PURE__*/external_React_default().createElement("p", {
     className: "subtitle",
