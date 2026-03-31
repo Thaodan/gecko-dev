@@ -102,8 +102,11 @@ class ClippedTime {
 // ECMAScript TimeClip algorithm.
 inline ClippedTime TimeClip(double time) {
   // Steps 1-2.
+  //
+  // NB: Not written as `Abs(time) > MaxTimeMagnitude` to handle NaN cheaply.
+  //     NaN compared to any other number always returns false.
   constexpr double MaxTimeMagnitude = 8.64e15;
-  if (!std::isfinite(time) || mozilla::Abs(time) > MaxTimeMagnitude) {
+  if (!(mozilla::Abs(time) <= MaxTimeMagnitude)) {
     return ClippedTime(mozilla::UnspecifiedNaN<double>());
   }
 
