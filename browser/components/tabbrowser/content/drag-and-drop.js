@@ -644,11 +644,10 @@
             Services.prefs.getIntPref("browser.tabs.maxOpenBeforeWarn")
           ) {
             // Sync dialog cannot be used inside drop event handler.
-            let answer =
-              await gBrowser.OpenInTabsUtils.promiseConfirmOpenInTabs(
-                urls.length,
-                window
-              );
+            let answer = await OpenInTabsUtils.promiseConfirmOpenInTabs(
+              urls.length,
+              window
+            );
             if (!answer) {
               return;
             }
