@@ -31,7 +31,9 @@ class VideoStreamTrack : public MediaStreamTrack {
   VideoStreamTrack* AsVideoStreamTrack() override { return this; }
   const VideoStreamTrack* AsVideoStreamTrack() const override { return this; }
 
+  void AddVideoOutput(VideoFrameContainer* aSink);
   void AddVideoOutput(VideoOutput* aOutput);
+  void RemoveVideoOutput(VideoFrameContainer* aSink);
   void RemoveVideoOutput(VideoOutput* aOutput);
 
   /**
