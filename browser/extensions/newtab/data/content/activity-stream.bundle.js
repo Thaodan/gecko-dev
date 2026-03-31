@@ -710,7 +710,8 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     this.state = {
       toggledStories: {},
       weatherQuery: "",
-      pendingOverrides: {}
+      pendingOverrides: {},
+      overridesTogglePressed: null
     };
   }
   componentDidMount() {
@@ -793,7 +794,8 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       this.setState({
         pendingOverrides: {
           ...currentOverrides
-        }
+        },
+        overridesTogglePressed: false
       });
       this.setDebugOverrides(null);
       return;
@@ -801,6 +803,9 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     const overrides = Object.keys(this.state.pendingOverrides).length ? {
       ...this.state.pendingOverrides
     } : currentOverrides;
+    this.setState({
+      overridesTogglePressed: true
+    });
     this.setDebugOverrides(overrides);
   }
   handleDebugOverrideChange(featureName, value) {
@@ -1052,7 +1057,8 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       return null;
     }
     const overrides = this.getOverrideValues(features);
-    const overridesEnabled = Object.keys(overrides).length;
+    const storeOverridesEnabled = !!Object.keys(overrides).length;
+    const overridesEnabled = this.state.overridesTogglePressed !== null ? this.state.overridesTogglePressed : storeOverridesEnabled;
     const hasAnyNonZeroOverride = Object.values(overrides).some(value => Number.isFinite(value) && value > 0);
     return /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("div", {
       className: "inferred-overrides-header"
