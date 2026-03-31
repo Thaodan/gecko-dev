@@ -1114,8 +1114,7 @@ class CDMStorageTest {
     SchedulerGroup::Dispatch(TaskCategory::Other, task.forget());
   }
 
-  void SessionMessage(const nsACString& aSessionId,
-                      cdm::MessageType aMessageType,
+  void SessionMessage(const nsACString& aSessionId, uint32_t aMessageType,
                       const nsTArray<uint8_t>& aMessage) {
     MonitorAutoLock mon(mMonitor);
 
@@ -1168,15 +1167,14 @@ class CDMStorageTest {
                                    bool aSuccessful) override {}
 
     void ResolvePromiseWithKeyStatus(uint32_t aPromiseId,
-                                     cdm::KeyStatus aKeyStatus) override {}
+                                     uint32_t aKeyStatus) override {}
 
     void ResolvePromise(uint32_t aPromiseId) override {}
 
     void RejectPromise(uint32_t aPromiseId, ErrorResult&& aError,
                        const nsCString& aErrorMessage) override {}
 
-    void SessionMessage(const nsACString& aSessionId,
-                        cdm::MessageType aMessageType,
+    void SessionMessage(const nsACString& aSessionId, uint32_t aMessageType,
                         nsTArray<uint8_t>&& aMessage) override {
       mRunner->SessionMessage(aSessionId, aMessageType, std::move(aMessage));
     }
