@@ -153,6 +153,7 @@ export class UrlbarInput extends HTMLElement {
         <moz-urlbar-slot name="revert-button"> </moz-urlbar-slot>
         <image class="urlbar-icon urlbar-go-button"
                role="button"
+               keyNav="false"
                data-l10n-id="urlbar-go-button"/>
         <moz-urlbar-slot name="page-actions" hidden=""> </moz-urlbar-slot>
       </hbox>
