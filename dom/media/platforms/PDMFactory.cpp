@@ -70,7 +70,8 @@ namespace mozilla {
 
 extern already_AddRefed<PlatformDecoderModule> CreateNullDecoderModule();
 
-constinit static StaticDataMutex<StaticRefPtr<PlatformDecoderModule>>
+MOZ_RELEASE_CONSTINIT static StaticDataMutex<
+    StaticRefPtr<PlatformDecoderModule>>
     sForcedPDM("Forced PDM");
 
 class PDMInitializer final {
