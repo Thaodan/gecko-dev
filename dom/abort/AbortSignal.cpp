@@ -79,7 +79,7 @@ void AbortSignalImpl::RunAbortSteps() {
   // https://dom.spec.whatwg.org/#abortsignal-remove could be invoked in an
   // earlier algorithm to remove a later algorithm, so |mFollowers| must be a
   // |nsTObserverArray| to defend against mutation.
-  for (RefPtr<AbortFollower>& follower : mFollowers.ForwardRange()) {
+  for (RefPtr<AbortFollower> follower : mFollowers.ForwardRange()) {
     MOZ_ASSERT(follower->mFollowingSignal == this);
     follower->RunAbortAlgorithm();
   }
@@ -484,12 +484,11 @@ void AbortFollower::Follow(AbortSignalImpl* aSignal) {
 
 // https://dom.spec.whatwg.org/#abortsignal-remove
 void AbortFollower::Unfollow() {
-  if (mFollowingSignal) {
+  if (WeakPtr<AbortSignalImpl> followingSignal = std::move(mFollowingSignal)) {
     // |Unfollow| is called by cycle-collection unlink code that runs in no
     // guaranteed order.  So we can't, symmetric with |Follow| above, assert
     // that |this| will be found in |mFollowingSignal->mFollowers|.
-    mFollowingSignal->mFollowers.RemoveElement(this);
-    mFollowingSignal = nullptr;
+    followingSignal->mFollowers.RemoveElement(this);
   }
 }
 
