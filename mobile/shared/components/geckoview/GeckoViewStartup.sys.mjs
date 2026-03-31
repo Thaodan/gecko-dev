@@ -213,7 +213,7 @@ export class GeckoViewStartup {
           ged: [
             "GeckoView:AIFeature:ListFeatures",
             "GeckoView:AIFeature:SetEnabled",
-            "GeckoView:AIFeature:Reset",
+            "GeckoView:AIFeature:MakeAvailable",
           ],
         });
 

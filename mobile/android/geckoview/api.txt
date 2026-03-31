@@ -148,8 +148,8 @@ package org.mozilla.geckoview {
 
   public static class AIFeaturesController.AIFeaturesException extends Exception {
     ctor public AIFeaturesException(int);
+    field public static final int ERROR_COULD_NOT_MAKE_AVAILABLE = -5;
     field public static final int ERROR_COULD_NOT_PARSE = -2;
-    field public static final int ERROR_COULD_NOT_RESET = -5;
     field public static final int ERROR_COULD_NOT_SET = -4;
     field public static final int ERROR_UNKNOWN = -1;
     field public static final int ERROR_UNKNOWN_FEATURE = -3;
@@ -162,7 +162,7 @@ package org.mozilla.geckoview {
   public static class AIFeaturesController.RuntimeAIFeatures {
     ctor public RuntimeAIFeatures();
     method @HandlerThread @NonNull public static GeckoResult<Map<String,AIFeaturesController.AIFeature>> listFeatures();
-    method @HandlerThread @NonNull public static GeckoResult<Void> resetFeature(@NonNull String);
+    method @HandlerThread @NonNull public static GeckoResult<Void> makeFeatureAvailable(@NonNull String);
     method @HandlerThread @NonNull public static GeckoResult<Void> setFeatureEnablement(@NonNull String, boolean);
   }
 
