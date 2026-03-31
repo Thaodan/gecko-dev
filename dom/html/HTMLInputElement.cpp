@@ -2973,10 +2973,14 @@ nsresult HTMLInputElement::SetValueInternal(
         nsColorControlFrame* colorControlFrame =
             do_QueryFrame(GetPrimaryFrame());
         if (colorControlFrame) {
+          AutoWeakFrame weakFrame(colorControlFrame);
           colorControlFrame->UpdateColor();
 #ifdef ACCESSIBILITY
-          if (nsAccessibilityService* accService = GetAccService()) {
-            accService->ColorValueChanged(colorControlFrame->PresShell(), this);
+          if (weakFrame.IsAlive()) {
+            if (nsAccessibilityService* accService = GetAccService()) {
+              accService->ColorValueChanged(colorControlFrame->PresShell(),
+                                            this);
+            }
           }
 #endif
         }
