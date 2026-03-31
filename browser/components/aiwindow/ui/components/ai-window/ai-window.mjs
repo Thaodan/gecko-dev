@@ -1326,6 +1326,17 @@ export class AIWindow extends MozLitElement {
   #sendModelResponseTelemetryEvent(error, { duration, latency }) {
     const { lastMessage: lastAssistantMessage, messageCount } =
       this.#getConversationLastMessageAndCount(lazy.MESSAGE_ROLE.ASSISTANT);
+    const ERROR_CODE_TEXT = {
+      1: "Budget exceeded",
+      2: "Rate limit exceeded",
+      3: "Chat maximum length hit",
+      4: "Account error",
+    };
+    let errorText = "";
+
+    if (error) {
+      errorText = ERROR_CODE_TEXT[error] ?? "Generic error";
+    }
 
     Glean.smartWindow.modelResponse.record({
       location: this.mode === MODE.FULLPAGE ? "home" : MODE.SIDEBAR,
@@ -1337,7 +1348,7 @@ export class AIWindow extends MozLitElement {
       memories: lastAssistantMessage?.memoriesApplied?.length ?? 0,
       latency,
       duration,
-      error: error ?? "",
+      error: errorText,
       model: this.modelName,
     });
   }
@@ -1368,19 +1379,15 @@ export class AIWindow extends MozLitElement {
   }
 
   #handleError(error, { latency, duration }) {
-    let errorMessage = error.error ?? error.metadata?.errorMessage;
+    let errorCode = error.error ?? error.metadata?.errorMessage;
     const newErrorMessage = {
       role: "",
       content: {
         isError: true,
-        error: errorMessage,
+        error: errorCode,
       },
     };
-
-    if (typeof errorMessage != "number") {
-      errorMessage = "Generic error";
-    }
-    this.#sendModelResponseTelemetryEvent(String(errorMessage), {
+    this.#sendModelResponseTelemetryEvent(errorCode ?? true, {
       latency,
       duration,
     });
