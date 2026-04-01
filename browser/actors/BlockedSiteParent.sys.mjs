@@ -177,8 +177,11 @@ export class BlockedSiteParent extends EscapablePageParent {
     // site, so that they don't lose track after, e.g., tab switching.
     // We can't use browser.contentPrincipal which is principal of about:blocked
     // Create one from uri with current principal origin attributes
+
+    // Remove the query to avoid leaking sensitive data
+    let uri = browsingContext.currentURI.mutate().setQuery("").finalize();
     let principal = Services.scriptSecurityManager.createContentPrincipal(
-      Services.io.newURI(blockedInfo.uri),
+      uri,
       browsingContext.currentWindowGlobal.documentPrincipal.originAttributes
     );
     Services.perms.addFromPrincipal(
@@ -281,16 +284,15 @@ export class BlockedSiteParent extends EscapablePageParent {
       buttons
     );
 
-    // Allow users to override and continue through to the site.
-    // Note that we have to use the passed URI info and can't just
-    // rely on the document URI, because the latter contains
-    // additional query parameters that should be stripped.
-    let triggeringPrincipal =
-      blockedInfo.triggeringPrincipal ||
-      Services.scriptSecurityManager.createNullPrincipal({});
+    let activeSHEntry = browsingContext.activeSessionHistoryEntry;
+    if (!activeSHEntry) {
+      console.error("No active session history entry found");
+      return;
+    }
 
-    browsingContext.fixupAndLoadURIString(blockedInfo.uri, {
-      triggeringPrincipal,
+    // Allow users to override and continue through to the site.
+    browsingContext.loadURI(uri, {
+      triggeringPrincipal: activeSHEntry.triggeringPrincipal,
       loadFlags: Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CLASSIFIER,
     });
   }
