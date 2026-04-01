@@ -2112,17 +2112,23 @@ main section {
   height: var(--toggle-row-height);
 }
 .home-section .section .more-info-top-wrapper,
-.home-section .section .more-info-pocket-wrapper {
+.home-section .section .more-info-pocket-wrapper,
+.home-section .section .more-info-widgets-wrapper {
   margin-inline-start: calc(var(--space-xxsmall) * -1);
   overflow: hidden;
 }
 .home-section .section .more-info-top-wrapper .more-information,
-.home-section .section .more-info-pocket-wrapper .more-information {
+.home-section .section .more-info-pocket-wrapper .more-information,
+.home-section .section .more-info-widgets-wrapper .more-information {
   position: relative;
   transition: margin-block-start 250ms cubic-bezier(0.82, 0.085, 0.395, 0.895);
 }
-.home-section .section .more-info-pocket-wrapper .more-information {
+.home-section .section .more-info-pocket-wrapper .more-information,
+.home-section .section .more-info-widgets-wrapper .more-information {
   position: static;
+}
+.home-section .section .more-info-pocket-wrapper .more-information {
+  padding-block: var(--space-medium);
 }
 .home-section .section .more-info-pocket-wrapper .check-wrapper {
   margin-block-end: var(--space-small);
@@ -2352,7 +2358,7 @@ main section {
 }
 
 .widgets-mgmt-panel-container {
-  margin-block: var(--space-medium);
+  padding-block: var(--space-medium);
 }
 
 .nova-enabled #shortcuts-section {
