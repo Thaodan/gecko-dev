@@ -141,6 +141,8 @@ support-files = [
 
 ["browser_autoFill_backspaced.js"]
 
+["browser_autoFill_backspace_dismissal.js"]
+
 ["browser_autoFill_canonize.js"]
 https_first_disabled = true
 
