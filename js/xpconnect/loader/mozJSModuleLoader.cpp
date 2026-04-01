@@ -29,7 +29,8 @@
 #include "js/friend/JSMEnvironment.h"  // JS::ExecuteInJSMEnvironment, JS::GetJSMEnvironmentOfScriptedCaller, JS::NewJSMEnvironment
 #include "js/friend/ErrorMessages.h"   // JSMSG_*
 #include "js/loader/ModuleLoadRequest.h"
-#include "js/Object.h"  // JS::GetCompartment
+#include "js/Modules.h"  // JS::CompileJsonModule
+#include "js/Object.h"   // JS::GetCompartment
 #include "js/Printf.h"
 #include "js/PropertyAndElement.h"  // JS_DefineFunctions, JS_DefineProperty, JS_Enumerate, JS_GetElement, JS_GetProperty, JS_GetPropertyById, JS_HasOwnProperty, JS_HasOwnPropertyById, JS_SetProperty, JS_SetPropertyById
 #include "js/PropertySpec.h"
@@ -595,6 +596,31 @@ nsresult mozJSModuleLoader::ReadScriptOnMainThread(JSContext* aCx,
   return NS_OK;
 }
 
+static mozilla::Result<nsCString, nsresult> ReadScript(ModuleLoaderInfo& aInfo);
+
+/* static */
+nsresult mozJSModuleLoader::CompileJsonModuleFromSource(
+    JSContext* aCx, const nsACString& aSource, const nsACString& aLocation,
+    JS::MutableHandle<JSObject*> aModuleOut) {
+  CompileOptions options(aCx);
+  options.setFileAndLine(PromiseFlatCString(aLocation).get(), 1);
+  SetModuleOptions(options);
+
+  JS::SourceText<mozilla::Utf8Unit> srcBuf;
+  if (!srcBuf.init(aCx, aSource.Data(), aSource.Length(),
+                   JS::SourceOwnership::Borrowed)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  JSObject* module = JS::CompileJsonModule(aCx, options, srcBuf);
+  if (!module) {
+    return NS_ERROR_FAILURE;
+  }
+
+  aModuleOut.set(module);
+  return NS_OK;
+}
+
 /* static */
 nsresult mozJSModuleLoader::LoadSingleModuleOnWorker(
     SyncModuleLoader* aModuleLoader, JSContext* aCx,
@@ -608,38 +634,53 @@ nsresult mozJSModuleLoader::LoadSingleModuleOnWorker(
   rv = ReadScriptOnMainThread(aCx, location, data);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  CompileOptions options(aCx);
-  // NOTE: ScriptPreloader::FillCompileOptionsForCachedStencil shouldn't be
-  //       used here because the module is put into the worker global's
-  //       module map, instead of the shared global's module map, where the
-  //       worker module loader doesn't support lazy source.
-  //       Accessing the source requires the synchronous communication with the
-  //       main thread, and supporting it requires too much complexity compared
-  //       to the benefit.
-  options.setNoScriptRval(true);
-  options.setFileAndLine(location.get(), 1);
-  SetModuleOptions(options);
+  switch (aRequest->mModuleType) {
+    case JS::ModuleType::JavaScriptOrWasm: {
+      CompileOptions options(aCx);
+      // NOTE: ScriptPreloader::FillCompileOptionsForCachedStencil shouldn't be
+      //       used here because the module is put into the worker global's
+      //       module map, instead of the shared global's module map, where the
+      //       worker module loader doesn't support lazy source.
+      //       Accessing the source requires the synchronous communication with
+      //       the main thread, and supporting it requires too much complexity
+      //       compared to the benefit.
+      options.setNoScriptRval(true);
+      options.setFileAndLine(location.get(), 1);
+      SetModuleOptions(options);
 
-  // Worker global doesn't have the source hook.
-  MOZ_ASSERT(!options.sourceIsLazy);
+      // Worker global doesn't have the source hook.
+      MOZ_ASSERT(!options.sourceIsLazy);
 
-  JS::SourceText<mozilla::Utf8Unit> srcBuf;
-  if (!srcBuf.init(aCx, data.get(), data.Length(),
-                   JS::SourceOwnership::Borrowed)) {
-    return NS_ERROR_FAILURE;
-  }
+      JS::SourceText<mozilla::Utf8Unit> srcBuf;
+      if (!srcBuf.init(aCx, data.get(), data.Length(),
+                       JS::SourceOwnership::Borrowed)) {
+        return NS_ERROR_FAILURE;
+      }
 
-  RefPtr<JS::Stencil> stencil =
-      CompileModuleScriptToStencil(aCx, options, srcBuf);
-  if (!stencil) {
-    return NS_ERROR_FAILURE;
-  }
+      RefPtr<JS::Stencil> stencil =
+          CompileModuleScriptToStencil(aCx, options, srcBuf);
+      if (!stencil) {
+        return NS_ERROR_FAILURE;
+      }
 
-  JS::InstantiateOptions instantiateOptions;
-  aModuleOut.set(
-      JS::InstantiateModuleStencil(aCx, instantiateOptions, stencil));
-  if (!aModuleOut) {
-    return NS_ERROR_FAILURE;
+      JS::InstantiateOptions instantiateOptions;
+      aModuleOut.set(
+          JS::InstantiateModuleStencil(aCx, instantiateOptions, stencil));
+      if (!aModuleOut) {
+        return NS_ERROR_FAILURE;
+      }
+      break;
+    }
+    case JS::ModuleType::JSON:
+      rv = CompileJsonModuleFromSource(aCx, data, location, aModuleOut);
+      NS_ENSURE_SUCCESS(rv, rv);
+      break;
+    case JS::ModuleType::Unknown:
+    case JS::ModuleType::CSS:
+    case JS::ModuleType::Bytes:
+    case JS::ModuleType::Text:
+      JS_ReportErrorASCII(aCx, "Unsupported module type");
+      return NS_ERROR_FAILURE;
   }
 
   return NS_OK;
@@ -660,18 +701,39 @@ nsresult mozJSModuleLoader::LoadSingleModule(
     return LoadSingleModuleOnWorker(aModuleLoader, aCx, aRequest, aModuleOut);
   }
 
-  ModuleLoaderInfo info(aRequest);
-  nsresult rv = info.EnsureResolvedURI();
-  NS_ENSURE_SUCCESS(rv, rv);
+  switch (aRequest->mModuleType) {
+    case JS::ModuleType::JavaScriptOrWasm: {
+      ModuleLoaderInfo info(aRequest);
+      nsresult rv = info.EnsureResolvedURI();
+      NS_ENSURE_SUCCESS(rv, rv);
 
-  nsCOMPtr<nsIFile> sourceFile;
-  rv = GetSourceFile(info.ResolvedURI(), getter_AddRefs(sourceFile));
-  NS_ENSURE_SUCCESS(rv, rv);
+      nsCOMPtr<nsIFile> sourceFile;
+      rv = GetSourceFile(info.ResolvedURI(), getter_AddRefs(sourceFile));
+      NS_ENSURE_SUCCESS(rv, rv);
 
-  bool realFile = LocationIsRealFile(aRequest->URI());
+      bool realFile = LocationIsRealFile(aRequest->URI());
 
-  rv = GetScriptForLocation(aCx, info, sourceFile, realFile, aModuleOut);
-  NS_ENSURE_SUCCESS(rv, rv);
+      rv = GetScriptForLocation(aCx, info, sourceFile, realFile, aModuleOut);
+      NS_ENSURE_SUCCESS(rv, rv);
+      break;
+    }
+    case JS::ModuleType::JSON: {
+      ModuleLoaderInfo info(aRequest);
+      nsAutoCString location;
+      nsresult rv = aRequest->URI()->GetSpec(location);
+      NS_ENSURE_SUCCESS(rv, rv);
+      nsCString source = MOZ_TRY(ReadScript(info));
+      rv = CompileJsonModuleFromSource(aCx, source, location, aModuleOut);
+      NS_ENSURE_SUCCESS(rv, rv);
+      break;
+    }
+    case JS::ModuleType::Unknown:
+    case JS::ModuleType::CSS:
+    case JS::ModuleType::Bytes:
+    case JS::ModuleType::Text:
+      JS_ReportErrorASCII(aCx, "Unsupported module type");
+      return NS_ERROR_FAILURE;
+  }
 
 #ifdef STARTUP_RECORDER_ENABLED
   if (aModuleLoader == sSelf->mModuleLoader) {

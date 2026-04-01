@@ -78,6 +78,9 @@ support-files = [
   "lazy_non_shared_in_worker.js",
   "lazy_shared_in_worker.js",
   "error_twice.mjs",
+  "import_attributes.mjs",
+  "import_attributes_data.json",
+  "import_attributes_worker.js",
 ]
 
 ["test_Cu_reportError_column.js"]
@@ -222,6 +225,8 @@ skip-if = [
 ["test_getCallerLocation.js"]
 
 ["test_getObjectPrincipal.js"]
+
+["test_import_attributes.js"]
 
 ["test_import_data.js"]
 
