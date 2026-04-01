@@ -1106,7 +1106,7 @@ export class ContextMenuChild extends JSWindowActorChild {
         if (
           !context.onLink &&
           // Be consistent with what hrefAndLinkNodeForClickEvent
-          // does in browser.js
+          // does in BrowserUtils.sys.msj
           (this._isXULTextLinkLabel(elem) ||
             (this.contentWindow.HTMLAnchorElement.isInstance(elem) &&
               elem.href) ||
