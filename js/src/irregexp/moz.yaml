@@ -21,7 +21,6 @@ vendoring:
   vendor-directory: js/src/irregexp/
   skip-vendoring-steps: ['fetch', 'move-contents']
   patches:
-    - patches/trace-constiterator-operator-not-equal.patch
     - patches/public-regexp-destructor.patch
     - patches/icu4x.patch
 
