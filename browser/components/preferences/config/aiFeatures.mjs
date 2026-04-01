@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { html, nothing } from "chrome://global/content/vendor/lit.all.mjs";
+import { html } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import { Preferences } from "chrome://global/content/preferences/Preferences.mjs";
 import { SettingGroupManager } from "chrome://browser/content/preferences/config/SettingGroupManager.mjs";
@@ -23,8 +23,6 @@ const XPCOMUtils = ChromeUtils.importESModule(
 const lazy = XPCOMUtils.declareLazy({
   AIWindow:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
-  ChatStore:
-    "moz-src:///browser/components/aiwindow/ui/modules/ChatStore.sys.mjs",
   GenAI: "resource:///modules/GenAI.sys.mjs",
   MemoryStore:
     "moz-src:///browser/components/aiwindow/services/MemoryStore.sys.mjs",
@@ -128,20 +126,6 @@ function updateAiControlDefault(state) {
 }
 
 class BlockAiConfirmationDialog extends MozLitElement {
-  static properties = {
-    headingL10nId: { type: String },
-    descriptionL10nId: { type: String },
-    isGlobal: { type: Boolean },
-  };
-
-  #resolvers = Promise.withResolvers();
-  #confirmed = false;
-
-  constructor() {
-    super();
-    this.isGlobal = true;
-  }
-
   get dialog() {
     return this.renderRoot.querySelector("dialog");
   }
@@ -154,77 +138,18 @@ class BlockAiConfirmationDialog extends MozLitElement {
     return this.renderRoot.querySelector('moz-button:not([type="primary"])');
   }
 
-  /**
-   * @param {object} options
-   * @param {boolean} options.all - Show the global block dialog with all features listed
-   * @param {string} [options.headingL10nId] - Custom heading l10n ID for feature-specific dialogs
-   * @param {string} [options.descriptionL10nId] - Custom description l10n ID for feature-specific dialogs
-   * @returns {Promise<boolean>} - Resolves true if the user confirmed, false if cancelled
-   */
-  showModal({ all, headingL10nId, descriptionL10nId }) {
-    this.#resolvers = Promise.withResolvers();
-    this.#confirmed = false;
-    this.isGlobal = !!all;
-    this.headingL10nId = headingL10nId;
-    this.descriptionL10nId = descriptionL10nId;
-    this.updateComplete.then(() => this.dialog.showModal());
-    return this.#resolvers.promise;
+  async showModal() {
+    await this.updateComplete;
+    this.dialog.showModal();
   }
 
   handleCancel() {
-    this.#confirmed = false;
     this.dialog.close();
   }
 
   handleConfirm() {
-    this.#confirmed = true;
     this.dialog.close();
-  }
-
-  globalTemplate() {
-    return html`
-      <p
-        data-l10n-id="preferences-ai-controls-block-confirmation-description"
-      ></p>
-      <p
-        class="ul-prefix-p"
-        data-l10n-id="preferences-ai-controls-block-confirmation-features-start"
-      ></p>
-      <ul>
-        <li
-          data-l10n-id="preferences-ai-controls-block-confirmation-translations"
-        ></li>
-        <li
-          data-l10n-id="preferences-ai-controls-block-confirmation-pdfjs"
-        ></li>
-        <li
-          data-l10n-id="preferences-ai-controls-block-confirmation-tab-group-suggestions"
-        ></li>
-        <li
-          data-l10n-id="preferences-ai-controls-block-confirmation-key-points"
-        ></li>
-        <li
-          data-l10n-id="preferences-ai-controls-block-confirmation-smart-window"
-        ></li>
-        <li
-          data-l10n-id="preferences-ai-controls-block-confirmation-sidebar-chatbot"
-        ></li>
-      </ul>
-      <p
-        data-l10n-id="preferences-ai-controls-block-confirmation-features-after"
-      ></p>
-      <a is="moz-support-link" support-page="firefox-ai-controls"></a>
-    `;
-  }
-
-  descriptionTemplate() {
-    return html`<p data-l10n-id=${this.descriptionL10nId}></p>`;
-  }
-
-  onToggle() {
-    if (!this.dialog.open) {
-      this.#resolvers.resolve(this.#confirmed);
-    }
+    updateAiControlDefault(AiControlGlobalStates.blocked);
   }
 
   render() {
@@ -241,29 +166,51 @@ class BlockAiConfirmationDialog extends MozLitElement {
         rel="stylesheet"
         href="chrome://browser/content/preferences/config/block-ai-confirmation-dialog.css"
       />
-      <dialog
-        aria-labelledby="heading"
-        aria-describedby="content"
-        @toggle=${this.onToggle}
-      >
+      <dialog aria-labelledby="heading" aria-describedby="content">
         <div class="dialog-header">
-          ${this.isGlobal
-            ? html`<img
-                class="dialog-header-icon"
-                src="chrome://global/skin/icons/block.svg"
-                alt=""
-              />`
-            : nothing}
+          <img
+            class="dialog-header-icon"
+            src="chrome://global/skin/icons/block.svg"
+            alt=""
+          />
           <h2
             id="heading"
             class="text-box-trim-start"
-            data-l10n-id=${this.isGlobal
-              ? "preferences-ai-controls-block-confirmation-heading"
-              : this.headingL10nId}
+            data-l10n-id="preferences-ai-controls-block-confirmation-heading"
           ></h2>
         </div>
         <div id="content" class="dialog-body">
-          ${this.isGlobal ? this.globalTemplate() : this.descriptionTemplate()}
+          <p
+            data-l10n-id="preferences-ai-controls-block-confirmation-description"
+          ></p>
+          <p
+            class="ul-prefix-p"
+            data-l10n-id="preferences-ai-controls-block-confirmation-features-start"
+          ></p>
+          <ul>
+            <li
+              data-l10n-id="preferences-ai-controls-block-confirmation-translations"
+            ></li>
+            <li
+              data-l10n-id="preferences-ai-controls-block-confirmation-pdfjs"
+            ></li>
+            <li
+              data-l10n-id="preferences-ai-controls-block-confirmation-tab-group-suggestions"
+            ></li>
+            <li
+              data-l10n-id="preferences-ai-controls-block-confirmation-key-points"
+            ></li>
+            <li
+              data-l10n-id="preferences-ai-controls-block-confirmation-smart-window"
+            ></li>
+            <li
+              data-l10n-id="preferences-ai-controls-block-confirmation-sidebar-chatbot"
+            ></li>
+          </ul>
+          <p
+            data-l10n-id="preferences-ai-controls-block-confirmation-features-after"
+          ></p>
+          <a is="moz-support-link" support-page="firefox-ai-controls"></a>
         </div>
         <moz-button-group>
           <moz-button
@@ -342,11 +289,7 @@ Preferences.addSetting({
       let dialog = /** @type {BlockAiConfirmationDialog} */ (
         document.querySelector("block-ai-confirmation-dialog")
       );
-      dialog.showModal({ all: true }).then(confirmed => {
-        if (confirmed) {
-          updateAiControlDefault(AiControlGlobalStates.blocked);
-        }
-      });
+      dialog.showModal();
     } else {
       updateAiControlDefault(AiControlGlobalStates.available);
     }
@@ -361,7 +304,6 @@ Preferences.addSetting({
  * @param {OnDeviceModelFeaturesEnum} options.feature Feature id for removing models
  * @param {boolean} [options.supportsEnabled] If the feature supports the "enabled" state
  * @param {SettingConfig['getControlConfig']} [options.getControlConfig] A getControlConfig implementation.
- * @param {() => Promise<boolean>} [options.onBeforeBlock] Optional async callback to show a modal before blocking
  */
 function makeAiControlSetting({
   id,
@@ -369,12 +311,7 @@ function makeAiControlSetting({
   feature,
   supportsEnabled = true,
   getControlConfig,
-  onBeforeBlock,
 }) {
-  function recordTelemetry(selection) {
-    Glean.browser.aiControlChanged.record({ feature, selection });
-  }
-
   Preferences.addSetting({
     id,
     pref,
@@ -415,19 +352,7 @@ function makeAiControlSetting({
       }
       return AiControlStates.available;
     },
-    set(prefVal, _, setting) {
-      if (prefVal == AiControlStates.blocked && onBeforeBlock) {
-        setting.onChange();
-        onBeforeBlock().then(confirmed => {
-          if (confirmed) {
-            OnDeviceModelManager.block(feature);
-            recordTelemetry(AiControlStates.blocked);
-          }
-        });
-
-        return setting.value;
-      }
-
+    set(prefVal) {
       if (prefVal == AiControlStates.available) {
         OnDeviceModelManager.makeAvailable(feature);
       } else if (prefVal == AiControlStates.enabled) {
@@ -446,12 +371,8 @@ function makeAiControlSetting({
         deps.aiControlsShowUnavailable.value
       );
     },
-    onUserChange(selection, _, setting) {
-      // Only record telemetry if the selection was actually saved
-      // since selecting "blocked" shows a block confirmation dialog that the user may cancel
-      if (selection === setting.value) {
-        recordTelemetry(selection);
-      }
+    onUserChange(selection) {
+      Glean.browser.aiControlChanged.record({ feature, selection });
     },
     getControlConfig,
   });
@@ -613,33 +534,6 @@ makeAiControlSetting({
   id: "aiControlSmartWindowSelect",
   pref: "browser.ai.control.smartWindow",
   feature: OnDeviceModelManager.features.SmartWindow,
-  async onBeforeBlock() {
-    const hasChats = !!(await lazy.ChatStore.findRecentConversations(1)).length;
-    const hasMemories = !!(await lazy.MemoryStore.getMemories()).length;
-
-    // if no data, skip modal
-    if (!hasChats && !hasMemories) {
-      return true;
-    }
-
-    const dialog = /** @type {BlockAiConfirmationDialog} */ (
-      document.querySelector("block-ai-confirmation-dialog")
-    );
-    let descriptionL10nId;
-
-    if (hasChats && hasMemories) {
-      descriptionL10nId = "smart-window-block-description-both";
-    } else if (hasChats) {
-      descriptionL10nId = "smart-window-block-description-chats";
-    } else {
-      descriptionL10nId = "smart-window-block-description-memories";
-    }
-    return dialog.showModal({
-      all: false,
-      headingL10nId: "smart-window-block-title",
-      descriptionL10nId,
-    });
-  },
   getControlConfig(config) {
     let isEnabled = OnDeviceModelManager.isEnabled(
       OnDeviceModelManager.features.SmartWindow

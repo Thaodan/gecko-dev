@@ -25,6 +25,14 @@ describe("settings ai features", () => {
     return new Promise(r => win.requestAnimationFrame(r));
   }
 
+  async function openAiFeaturePanel() {
+    const paneLoaded = waitForPaneChange("ai");
+    const categoryButton = doc.getElementById("category-ai-features");
+    categoryButton.scrollIntoView();
+    EventUtils.synthesizeMouseAtCenter(categoryButton, {}, win);
+    await paneLoaded;
+  }
+
   describe("block AI confirmation dialog", () => {
     it("closes dialog and does nothing on cancel", async () => {
       await SpecialPowers.pushPrefEnv({
@@ -34,7 +42,7 @@ describe("settings ai features", () => {
         ],
       });
 
-      await openAiFeaturePanel(doc, win);
+      await openAiFeaturePanel();
 
       const toggle = doc.getElementById("aiControlDefaultToggle");
       const dialogEl = doc.querySelector("block-ai-confirmation-dialog");
@@ -76,7 +84,7 @@ describe("settings ai features", () => {
       });
       Services.fog.testResetFOG();
 
-      await openAiFeaturePanel(doc, win);
+      await openAiFeaturePanel();
 
       // Flip the toggle to show confirmation dialog.
       const toggle = doc.getElementById("aiControlDefaultToggle");

@@ -6,7 +6,6 @@
 /* global
   openPreferencesViaOpenPreferencesAPI,
   waitForPaneChange,
-  openAiFeaturePanel,
 */
 
 /* exported
@@ -14,9 +13,6 @@
   openSmartWindowPanel,
   openManageMemoriesPanel,
   populateMemories,
-  addMemory,
-  addChat,
-  triggerBlockAndWaitForDialog,
 */
 
 async function openSmartWindowPreferencesPage() {
@@ -31,7 +27,11 @@ async function openSmartWindowPanel(doc, win) {
     ({ doc, win } = await openSmartWindowPreferencesPage());
   }
 
-  await openAiFeaturePanel(doc, win);
+  const paneLoaded = waitForPaneChange("ai");
+  const categoryButton = doc.getElementById("category-ai-features");
+  categoryButton.scrollIntoView();
+  EventUtils.synthesizeMouseAtCenter(categoryButton, {}, win);
+  await paneLoaded;
 
   const personalizeButton = doc.getElementById("personalizeSmartWindowButton");
   personalizeButton.scrollIntoView();
@@ -56,29 +56,21 @@ async function openManageMemoriesPanel(doc, win) {
   return { doc, win };
 }
 
-async function addMemory(data = {}) {
+async function populateMemories() {
   const { MemoryStore } = ChromeUtils.importESModule(
     "moz-src:///browser/components/aiwindow/services/MemoryStore.sys.mjs"
   );
-  const memory = await MemoryStore.addMemory({
-    memory_summary: "Test memory",
+
+  let memoryOne = await MemoryStore.addMemory({
+    memory_summary: "Lorem ipsum dolor sit amet 1",
     category: "interests",
     intent: "general",
     score: 5,
-    ...data,
   });
-  return { MemoryStore, memory };
-}
-
-async function populateMemories() {
-  const { MemoryStore, memory: memoryOne } = await addMemory({
-    memory_summary: "Lorem ipsum dolor sit amet 1",
-    category: "interests",
-    score: 5,
-  });
-  const { memory: memoryTwo } = await addMemory({
+  let memoryTwo = await MemoryStore.addMemory({
     memory_summary: "Lorem ipsum dolor sit amet 2",
     category: "habits",
+    intent: "general",
     score: 4,
   });
 
@@ -93,37 +85,4 @@ async function populateMemories() {
   });
 
   return { MemoryStore, memories: [memoryOne, memoryTwo] };
-}
-
-async function addChat() {
-  const { ChatStore, ChatConversation, ChatMessage, MESSAGE_ROLE } =
-    ChromeUtils.importESModule(
-      "moz-src:///browser/components/aiwindow/ui/modules/ChatStore.sys.mjs"
-    );
-  const convo = new ChatConversation({ title: "Test", description: "" });
-  convo.messages = [
-    new ChatMessage({
-      ordinal: 0,
-      role: MESSAGE_ROLE.USER,
-      content: { body: "test" },
-      turnIndex: 0,
-    }),
-  ];
-  await ChatStore.updateConversation(convo);
-  return { ChatStore, convo };
-}
-
-async function triggerBlockAndWaitForDialog(doc, win) {
-  const setting = win.Preferences.getSetting("aiControlSmartWindowSelect");
-  const dialogEl = doc.querySelector("block-ai-confirmation-dialog");
-  await dialogEl.updateComplete;
-
-  const dialogShown = BrowserTestUtils.waitForEvent(
-    dialogEl.shadowRoot.querySelector("dialog"),
-    "toggle"
-  );
-  setting.userChange("blocked");
-  await dialogShown;
-  await dialogEl.updateComplete;
-  return { setting, dialogEl };
 }

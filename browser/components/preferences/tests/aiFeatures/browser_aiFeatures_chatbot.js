@@ -32,6 +32,14 @@ describe("settings ai features", () => {
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
   });
 
+  async function openAiFeaturePanel() {
+    const paneLoaded = waitForPaneChange("ai");
+    const categoryButton = doc.getElementById("category-ai-features");
+    categoryButton.scrollIntoView();
+    EventUtils.synthesizeMouseAtCenter(categoryButton, {}, win);
+    await paneLoaded;
+  }
+
   it("can change the chatbot provider value", async () => {
     await SpecialPowers.pushPrefEnv({
       set: [
@@ -48,7 +56,7 @@ describe("settings ai features", () => {
       "category is visible"
     );
 
-    await openAiFeaturePanel(doc, win);
+    await openAiFeaturePanel();
 
     const providerControl = doc.getElementById("aiControlSidebarChatbotSelect");
     mockSidebarChatbotUrls(providerControl);
@@ -121,7 +129,7 @@ describe("settings ai features", () => {
       "category is visible"
     );
 
-    await openAiFeaturePanel(doc, win);
+    await openAiFeaturePanel();
 
     let providerControl = doc.getElementById("aiControlSidebarChatbotSelect");
     Assert.ok(providerControl, "control exists");
@@ -237,7 +245,7 @@ describe("settings ai features", () => {
       "category is visible"
     );
 
-    await openAiFeaturePanel(doc, win);
+    await openAiFeaturePanel();
 
     const providerControl = doc.getElementById("aiControlSidebarChatbotSelect");
     mockSidebarChatbotUrls(providerControl);

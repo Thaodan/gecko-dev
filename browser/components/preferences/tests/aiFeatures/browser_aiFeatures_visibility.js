@@ -25,6 +25,14 @@ describe("settings ai features", () => {
     return new Promise(r => win.requestAnimationFrame(r));
   }
 
+  async function openAiFeaturePanel() {
+    const paneLoaded = waitForPaneChange("ai");
+    const categoryButton = doc.getElementById("category-ai-features");
+    categoryButton.scrollIntoView();
+    EventUtils.synthesizeMouseAtCenter(categoryButton, {}, win);
+    await paneLoaded;
+  }
+
   describe("AI Controls visibility on General pane", () => {
     it("hides Link Preview setting when globally blocked via AI Controls toggle", async () => {
       await SpecialPowers.pushPrefEnv({
@@ -36,7 +44,7 @@ describe("settings ai features", () => {
       });
 
       let aiControlsTab = gBrowser.selectedTab;
-      await openAiFeaturePanel(doc, win);
+      await openAiFeaturePanel();
 
       await new Promise(resolve => open_preferences(resolve));
       let generalTab = gBrowser.selectedTab;
@@ -121,7 +129,7 @@ describe("settings ai features", () => {
       }
 
       let aiControlsTab = gBrowser.selectedTab;
-      await openAiFeaturePanel(doc, win);
+      await openAiFeaturePanel();
 
       await new Promise(resolve => open_preferences(resolve));
       let generalTab = gBrowser.selectedTab;
@@ -172,7 +180,7 @@ describe("settings ai features", () => {
       });
 
       let aiControlsTab = gBrowser.selectedTab;
-      await openAiFeaturePanel(doc, win);
+      await openAiFeaturePanel();
 
       await new Promise(resolve => open_preferences(resolve));
       let generalTab = gBrowser.selectedTab;
@@ -251,7 +259,7 @@ describe("settings ai features", () => {
       });
 
       let aiControlsTab = gBrowser.selectedTab;
-      await openAiFeaturePanel(doc, win);
+      await openAiFeaturePanel();
 
       await new Promise(resolve => open_preferences(resolve));
       let generalTab = gBrowser.selectedTab;
@@ -311,7 +319,7 @@ describe("settings ai features", () => {
       );
       aiControlsShowUnavailable.onChange();
 
-      await openAiFeaturePanel(doc, win);
+      await openAiFeaturePanel();
 
       let linkPreviewControl = doc.getElementById(
         "aiControlLinkPreviewKeyPointsSelect"

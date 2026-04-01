@@ -367,7 +367,6 @@ export let StartupTelemetry = {
       "browser.ai.control.smartTabGroups": "smartTabGroups",
       "browser.ai.control.linkPreviewKeyPoints": "linkPreviewKeyPoints",
       "browser.ai.control.sidebarChatbot": "sidebarChatbot",
-      "browser.ai.control.smartWindow": "smartWindow",
     };
     const _checkAiControlPrefs = async () => {
       const globalIsBlocked =
