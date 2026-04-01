@@ -2620,8 +2620,7 @@ Maybe<GdkWindowEdge> nsWindow::CheckResizerEdge(
 
 template <typename Event>
 static LayoutDeviceIntPoint GetRefPoint(nsWindow* aWindow, Event* aEvent) {
-  return aWindow->GdkEventCoordsToDevicePixels(aEvent->x_root, aEvent->y_root) -
-         aWindow->WidgetToScreenOffset();
+  return aWindow->GdkEventCoordsToDevicePixels(aEvent->x, aEvent->y);
 }
 
 void nsWindow::EmulateResizeDrag(GdkEventMotion* aEvent) {
