@@ -183,6 +183,12 @@ class RadioSearchEngineListPreference @JvmOverloads constructor(
 
         if (isForPrivateBrowsing && searchEngineId == USE_DEFAULT_TAG) {
             context.components.useCases.searchUseCases.clearPrivateSearchEngine()
+            Events.defaultEngineSelected.record(
+                Events.DefaultEngineSelectedExtra(
+                    engine = "default",
+                    isPrivateDefault = true,
+                ),
+            )
             return
         }
 
@@ -198,7 +204,12 @@ class RadioSearchEngineListPreference @JvmOverloads constructor(
             context.components.useCases.searchUseCases.selectSearchEngine(engine)
         }
 
-        Events.defaultEngineSelected.record(Events.DefaultEngineSelectedExtra(engine.telemetryName()))
+        Events.defaultEngineSelected.record(
+            Events.DefaultEngineSelectedExtra(
+                engine = engine.telemetryName(),
+                isPrivateDefault = isForPrivateBrowsing,
+            ),
+        )
     }
 
     private fun editCustomSearchEngine(view: View, engine: SearchEngine) {
