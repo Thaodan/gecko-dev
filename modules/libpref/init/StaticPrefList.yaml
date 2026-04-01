@@ -8083,11 +8083,6 @@
 #endif
   mirror: once
 
-- name: gfx.webrender.enable-item-cache
-  type: bool
-  value: false
-  mirror: once
-
 # Whether or not to fallback from WebRender to Software WebRender.
 - name: gfx.webrender.fallback.software
   type: bool
