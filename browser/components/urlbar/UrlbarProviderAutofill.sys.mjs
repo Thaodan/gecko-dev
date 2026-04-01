@@ -487,9 +487,7 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
       case RESULT_MENU_COMMANDS.DISMISS_AUTOFILL: {
         let blockUntilMs =
           Date.now() +
-          lazy.UrlbarPrefs.get(
-            "autoFillAdaptiveHistoryDismissalBlockDurationMs"
-          );
+          lazy.UrlbarPrefs.get("autoFill.dismissalBlockDurationMs");
         await UrlbarUtils.blockAutofill(result.payload.url, blockUntilMs).catch(
           console.error
         );

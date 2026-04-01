@@ -245,6 +245,7 @@ export class UrlbarInput extends HTMLElement {
 
   /** @type {AutofillPlaceholder|null} */
   _autofillPlaceholder = null;
+  _autofillBackspaceState = null;
 
   _resultForCurrentValue = null;
   _untrimmedValue = "";
@@ -3295,6 +3296,7 @@ export class UrlbarInput extends HTMLElement {
   _resetSearchState() {
     this._lastSearchString = this.value;
     this._autofillPlaceholder = null;
+    this._autofillBackspaceState = null;
   }
 
   /**
@@ -4956,6 +4958,8 @@ export class UrlbarInput extends HTMLElement {
     this._isKeyDownWithMeta = false;
     this._isKeyDownWithMetaAndLeft = false;
 
+    this._autofillBackspaceState = null;
+
     Services.obs.notifyObservers(null, "urlbar-blur");
   }
 
@@ -5161,6 +5165,41 @@ export class UrlbarInput extends HTMLElement {
     ) {
       // Take a telemetry if user deleted whole autofilled value.
       Glean.urlbar.autofillDeletion.add(1);
+    }
+
+    if (
+      lazy.UrlbarPrefs.get("autoFillAdaptiveHistoryEnabled") &&
+      event.inputType === "deleteContentBackward"
+    ) {
+      if (!this._autofillBackspaceState && this._autofillPlaceholder) {
+        this._autofillBackspaceState = {
+          url: this._resultForCurrentValue?.payload?.url,
+          count: 0,
+        };
+      }
+      if (this._autofillBackspaceState) {
+        this._autofillBackspaceState.count++;
+        if (
+          this._autofillBackspaceState.count >=
+          lazy.UrlbarPrefs.get("autoFill.backspaceThreshold")
+        ) {
+          if (!this.isPrivate) {
+            let { url } = this._autofillBackspaceState;
+            if (url) {
+              let blockUntil =
+                Date.now() +
+                lazy.UrlbarPrefs.get("autoFill.backspaceBlockDurationMs");
+              lazy.UrlbarUtils.blockAutofill(url, blockUntil).catch(
+                console.error
+              );
+            }
+          }
+          this._autofillBackspaceState = null;
+        }
+      }
+    } else if (this._autofillBackspaceState) {
+      // Any non-backspace input resets the state.
+      this._autofillBackspaceState = null;
     }
 
     let value = this.value;
