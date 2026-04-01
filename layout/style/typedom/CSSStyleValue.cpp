@@ -33,11 +33,11 @@ CSSStyleValue::CSSStyleValue(nsCOMPtr<nsISupports> aParent,
 // static
 void CSSStyleValue::Create(nsCOMPtr<nsISupports> aParent,
                            const CSSPropertyId& aPropertyId,
-                           StylePropertyTypedValue&& aTypedValue,
+                           StylePropertyTypedValueList&& aTypedValueList,
                            nsTArray<RefPtr<CSSStyleValue>>& aRetVal) {
-  switch (aTypedValue.tag) {
-    case StylePropertyTypedValue::Tag::Typed: {
-      const auto& typedValueList = aTypedValue.AsTyped();
+  switch (aTypedValueList.tag) {
+    case StylePropertyTypedValueList::Tag::Typed: {
+      const auto& typedValueList = aTypedValueList.AsTyped();
 
       aRetVal.SetCapacity(typedValueList.values.Length());
 
@@ -68,8 +68,8 @@ void CSSStyleValue::Create(nsCOMPtr<nsISupports> aParent,
       break;
     }
 
-    case StylePropertyTypedValue::Tag::Unsupported: {
-      auto unsupportedValue = std::move(aTypedValue).ExtractUnsupported();
+    case StylePropertyTypedValueList::Tag::Unsupported: {
+      auto unsupportedValue = std::move(aTypedValueList).ExtractUnsupported();
 
       RefPtr<CSSStyleValue> styleValue = CSSUnsupportedValue::Create(
           std::move(aParent), aPropertyId, std::move(unsupportedValue));
@@ -79,7 +79,7 @@ void CSSStyleValue::Create(nsCOMPtr<nsISupports> aParent,
       break;
     }
 
-    case StylePropertyTypedValue::Tag::None:
+    case StylePropertyTypedValueList::Tag::None:
       break;
   }
 }

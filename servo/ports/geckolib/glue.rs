@@ -5293,7 +5293,7 @@ impl From<Arc<Locked<PropertyDeclarationBlock>>> for UnsupportedValue {
 #[repr(C)]
 /// cbindgen:derive-tagged-enum-copy-constructor=false
 /// cbindgen:derive-tagged-enum-copy-assignment=false
-pub enum PropertyTypedValue {
+pub enum PropertyTypedValueList {
     /// The property is not present in the declaration block.
     None,
 
@@ -5309,10 +5309,10 @@ pub enum PropertyTypedValue {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Servo_DeclarationBlock_GetPropertyTypedValue(
+pub unsafe extern "C" fn Servo_DeclarationBlock_GetPropertyTypedValueList(
     declarations: &LockedDeclarationBlock,
     property_id: &structs::CSSPropertyId,
-    result: *mut PropertyTypedValue,
+    result: *mut PropertyTypedValueList,
 ) -> bool {
     let property_id = get_property_id_from_csspropertyid!(property_id, false);
 
@@ -5320,16 +5320,16 @@ pub unsafe extern "C" fn Servo_DeclarationBlock_GetPropertyTypedValue(
         let typed_value_list = decls.property_value_to_typed_value_list(&property_id);
 
         match typed_value_list {
-            Err(()) => PropertyTypedValue::None,
+            Err(()) => PropertyTypedValueList::None,
 
             Ok(None) => {
                 let global_style_data = &*GLOBAL_STYLE_DATA;
-                PropertyTypedValue::Unsupported(
+                PropertyTypedValueList::Unsupported(
                     Arc::new(global_style_data.shared_lock.wrap(decls.clone())).into(),
                 )
             },
 
-            Ok(Some(typed_value_list)) => PropertyTypedValue::Typed(typed_value_list),
+            Ok(Some(typed_value_list)) => PropertyTypedValueList::Typed(typed_value_list),
         }
     });
 
@@ -8472,10 +8472,10 @@ pub unsafe extern "C" fn Servo_GetResolvedValue(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Servo_ComputedValues_GetPropertyTypedValue(
+pub unsafe extern "C" fn Servo_ComputedValues_GetPropertyTypedValueList(
     style: &ComputedValues,
     property_id: &structs::CSSPropertyId,
-    result: *mut PropertyTypedValue,
+    result: *mut PropertyTypedValueList,
 ) -> bool {
     let property_id = get_property_id_from_csspropertyid!(property_id, false);
 
@@ -8483,7 +8483,7 @@ pub unsafe extern "C" fn Servo_ComputedValues_GetPropertyTypedValue(
         Some(id) => id,
         // XXX Handle custom properties here. Tracked in bug 1990426.
         None => {
-            *result = PropertyTypedValue::None;
+            *result = PropertyTypedValueList::None;
             return true;
         },
     };
@@ -8517,12 +8517,12 @@ pub unsafe extern "C" fn Servo_ComputedValues_GetPropertyTypedValue(
                 },
             };
 
-            PropertyTypedValue::Unsupported(
+            PropertyTypedValueList::Unsupported(
                 Arc::new(global_style_data.shared_lock.wrap(block)).into(),
             )
         },
 
-        Some(typed_value_list) => PropertyTypedValue::Typed(typed_value_list),
+        Some(typed_value_list) => PropertyTypedValueList::Typed(typed_value_list),
     };
 
     true

@@ -20,7 +20,7 @@ namespace mozilla {
 
 struct CSSPropertyId;
 class ErrorResult;
-struct StylePropertyTypedValue;
+struct StylePropertyTypedValueList;
 
 namespace dom {
 
@@ -46,7 +46,7 @@ class CSSStyleValue : public nsISupports, public nsWrapperCache {
 
   static void Create(nsCOMPtr<nsISupports> aParent,
                      const CSSPropertyId& aPropertyId,
-                     StylePropertyTypedValue&& aTypedValue,
+                     StylePropertyTypedValueList&& aTypedValueList,
                      nsTArray<RefPtr<CSSStyleValue>>& aRetVal);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
