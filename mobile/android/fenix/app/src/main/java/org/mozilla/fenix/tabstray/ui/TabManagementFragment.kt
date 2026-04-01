@@ -5,6 +5,7 @@
 package org.mozilla.fenix.tabstray.ui
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -240,6 +241,10 @@ class TabManagementFragment : DialogFragment() {
                 }
 
                 LaunchedEffect(state.selectedPage) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        dialog?.window?.isNavigationBarContrastEnforced = false
+                    }
+
                     dialog?.window?.setSystemBarsBackground(
                         statusBarColor = statusBarColor,
                         navigationBarColor = navBarColor,
