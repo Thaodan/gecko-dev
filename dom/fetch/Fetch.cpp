@@ -63,17 +63,21 @@ namespace {
 // https://fetch.spec.whatwg.org/#concept-http-network-fetch
 // If stream is readable, then error stream with ...
 void AbortStream(JSContext* aCx, ReadableStream* aReadableStream,
-                 AbortSignalImpl* aSignal, ErrorResult& aRv) {
-  MOZ_ASSERT(aSignal->Aborted());
-
+                 ErrorResult& aRv, JS::Handle<JS::Value> aReasonDetails) {
   if (aReadableStream->State() != ReadableStream::ReaderState::Readable) {
     return;
   }
 
-  JS::Rooted<JS::Value> reason(aCx);
-  aSignal->GetReason(aCx, &reason);
+  JS::Rooted<JS::Value> value(aCx, aReasonDetails);
 
-  aReadableStream->ErrorNative(aCx, reason, aRv);
+  if (aReasonDetails.isUndefined()) {
+    RefPtr<DOMException> e = DOMException::Create(NS_ERROR_DOM_ABORT_ERR);
+    if (!GetOrCreateDOMReflector(aCx, e, &value)) {
+      return;
+    }
+  }
+
+  aReadableStream->ErrorNative(aCx, value, aRv);
 }
 
 }  // namespace
@@ -525,8 +529,12 @@ already_AddRefed<Promise> FetchRequest(nsIGlobalObject* aGlobal,
 
   if (signalImpl && signalImpl->Aborted()) {
     // Already aborted signal rejects immediately.
-    JS::Rooted<JS::Value> reason(cx);
-    signalImpl->GetReason(cx, &reason);
+    JS::Rooted<JS::Value> reason(cx, signalImpl->RawReason());
+    if (reason.get().isUndefined()) {
+      aRv.Throw(NS_ERROR_DOM_ABORT_ERR);
+      return nullptr;
+    }
+
     p->MaybeReject(reason);
     return p.forget();
   }
@@ -1276,15 +1284,16 @@ already_AddRefed<Promise> FetchBody<Derived>::ConsumeBody(
       DerivedClass()->GetSignalImplToConsumeBody();
 
   if (signalImpl && signalImpl->Aborted()) {
-    JS::Rooted<JS::Value> abortReason(aCx);
-    signalImpl->GetReason(aCx, &abortReason);
+    JS::Rooted<JS::Value> abortReason(aCx, signalImpl->RawReason());
 
-    nsCOMPtr<nsIGlobalObject> global = DerivedClass()->GetParentObject();
-    RefPtr<Promise> promise = Promise::Create(global, aRv);
-    if (aRv.Failed()) {
+    if (abortReason.get().isUndefined()) {
+      aRv.Throw(NS_ERROR_DOM_ABORT_ERR);
       return nullptr;
     }
 
+    nsCOMPtr<nsIGlobalObject> go = DerivedClass()->GetParentObject();
+
+    RefPtr<Promise> promise = Promise::Create(go, aRv);
     promise->MaybeReject(abortReason);
     return promise.forget();
   }
@@ -1424,9 +1433,11 @@ void FetchBody<Derived>::SetReadableStreamBody(JSContext* aCx,
     return;
   }
 
-  if (signalImpl->Aborted()) {
+  bool aborted = signalImpl->Aborted();
+  if (aborted) {
     IgnoredErrorResult result;
-    AbortStream(aCx, mReadableStreamBody, signalImpl, result);
+    JS::Rooted<JS::Value> abortReason(aCx, signalImpl->RawReason());
+    AbortStream(aCx, mReadableStreamBody, result, abortReason);
     if (NS_WARN_IF(result.Failed())) {
       return;
     }
@@ -1482,7 +1493,8 @@ already_AddRefed<ReadableStream> FetchBody<Derived>::GetBody(JSContext* aCx,
   RefPtr<AbortSignalImpl> signalImpl = DerivedClass()->GetSignalImpl();
   if (signalImpl) {
     if (signalImpl->Aborted()) {
-      AbortStream(aCx, body, signalImpl, aRv);
+      JS::Rooted<JS::Value> abortReason(aCx, signalImpl->RawReason());
+      AbortStream(aCx, body, aRv, abortReason);
       if (NS_WARN_IF(aRv.Failed())) {
         return nullptr;
       }
@@ -1582,7 +1594,16 @@ void FetchBody<Derived>::RunAbortAlgorithm() {
   JSContext* cx = jsapi.cx();
 
   RefPtr<ReadableStream> body(mReadableStreamBody);
-  AbortStream(cx, body, Signal(), IgnoredErrorResult());
+  IgnoredErrorResult result;
+
+  JS::Rooted<JS::Value> abortReason(cx);
+
+  AbortSignalImpl* signalImpl = Signal();
+  if (signalImpl) {
+    abortReason.set(signalImpl->RawReason());
+  }
+
+  AbortStream(cx, body, result, abortReason);
 }
 
 template void FetchBody<Request>::RunAbortAlgorithm();
