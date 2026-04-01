@@ -135,11 +135,18 @@ add_task(async function test_alt_click_shadow_dom() {
 add_task(async function test_alt_click_on_xlinks() {
   await setup();
 
+  const deprecatedMathMLhrefDisabled = Services.prefs.getBoolPref(
+    "mathml.href_link_on_non_anchor_element.disabled"
+  );
   let downloadList = await Downloads.getList(Downloads.ALL);
   let downloads = [];
   let downloadView;
   // When all downloads have been attempted then resolve the promise.
-  const expectedDownloadCount = 4;
+  let expectedDownloadCount = 3;
+  if (!deprecatedMathMLhrefDisabled) {
+    expectedDownloadCount++;
+  }
+
   let finishedAllDownloads = new Promise(resolve => {
     downloadView = {
       onDownloadAdded(aDownload) {
@@ -163,11 +170,6 @@ add_task(async function test_alt_click_on_xlinks() {
     gBrowser.selectedBrowser
   );
   await BrowserTestUtils.synthesizeMouseAtCenter(
-    "#deprecated_mathlink",
-    { altKey: true },
-    gBrowser.selectedBrowser
-  );
-  await BrowserTestUtils.synthesizeMouseAtCenter(
     "#svgxlink",
     { altKey: true },
     gBrowser.selectedBrowser
@@ -182,6 +184,13 @@ add_task(async function test_alt_click_on_xlinks() {
     { altKey: true },
     gBrowser.selectedBrowser
   );
+  if (!deprecatedMathMLhrefDisabled) {
+    await BrowserTestUtils.synthesizeMouseAtCenter(
+      "#deprecated_mathlink",
+      { altKey: true },
+      gBrowser.selectedBrowser
+    );
+  }
 
   // Wait for all downloads to be added to the download list.
   await finishedAllDownloads;
@@ -194,24 +203,26 @@ add_task(async function test_alt_click_on_xlinks() {
   );
   is(
     downloads[0].source.url,
-    "http://mochi.test/moz/?deprecated_mathlink",
-    "Downloaded #deprecated_mathlink element"
-  );
-  is(
-    downloads[1].source.url,
     "http://mochi.test/moz/?svgxlink",
     "Downloaded #svgxlink element"
   );
   is(
-    downloads[2].source.url,
+    downloads[1].source.url,
     "http://mochi.test/moz/?mathlink",
     "Downloaded #mathlink element"
   );
   is(
-    downloads[3].source.url,
+    downloads[2].source.url,
     "http://mochi.test/moz/?svglink",
     "Downloaded #svglink element"
   );
+  if (!deprecatedMathMLhrefDisabled) {
+    is(
+      downloads[3].source.url,
+      "http://mochi.test/moz/?deprecated_mathlink",
+      "Downloaded #deprecated_mathlink element"
+    );
+  }
 
   await clean_up();
 });

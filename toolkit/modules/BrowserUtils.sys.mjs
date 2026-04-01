@@ -468,7 +468,10 @@ export var BrowserUtils = {
     function hrefAndLinkNodeForNonHTMLink(aElement) {
       if (
         aElement.localName == "a" ||
-        content.MathMLElement.isInstance(aElement)
+        (content.MathMLElement.isInstance(aElement) &&
+          !Services.prefs.getBoolPref(
+            "mathml.href_link_on_non_anchor_element.disabled"
+          ))
       ) {
         let href =
           aElement.getAttribute("href") ||

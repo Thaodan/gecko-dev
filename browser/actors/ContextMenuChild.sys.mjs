@@ -1115,6 +1115,10 @@ export class ContextMenuChild extends JSWindowActorChild {
             (this.contentWindow.SVGAElement.isInstance(elem) &&
               (elem.href || elem.hasAttributeNS(XLINK_NS, "href"))) ||
             (this.contentWindow.MathMLElement.isInstance(elem) &&
+              (elem.localName == "a" ||
+                !Services.prefs.getBoolPref(
+                  "mathml.href_link_on_non_anchor_element.disabled"
+                )) &&
               elem.hasAttribute("href")) ||
             elem.getAttributeNS(XLINK_NS, "type") == "simple" ||
             this._isXULTextLinkLabel(elem))
