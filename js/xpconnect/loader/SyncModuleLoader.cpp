@@ -143,12 +143,11 @@ nsresult SyncModuleLoader::StartFetch(ModuleLoadRequest* aRequest) {
   }
 
   JSContext* cx = jsapi.cx();
-
-  JS::RootedObject module(cx);
+  JS::RootedScript script(cx);
   nsresult rv =
-      mozJSModuleLoader::LoadSingleModule(this, cx, aRequest, &module);
+      mozJSModuleLoader::LoadSingleModuleScript(this, cx, aRequest, &script);
   MOZ_ASSERT_IF(jsapi.HasException(), NS_FAILED(rv));
-  MOZ_ASSERT(bool(module) == NS_SUCCEEDED(rv));
+  MOZ_ASSERT(bool(script) == NS_SUCCEEDED(rv));
 
   // Check for failure to load script source and abort.
   bool threwException = jsapi.HasException();
@@ -190,9 +189,9 @@ nsresult SyncModuleLoader::StartFetch(ModuleLoadRequest* aRequest) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
   }
-  if (module) {
-    context->mModule.init(cx);
-    context->mModule = module;
+  if (script) {
+    context->mScript.init(cx);
+    context->mScript = script;
   }
 
   if (!aRequest->IsDynamicImport()) {
@@ -209,9 +208,9 @@ nsresult SyncModuleLoader::CompileFetchedModule(
   // Compilation already happened in StartFetch. Report the result here.
   SyncLoadContext* context = aRequest->GetSyncLoadContext();
   nsresult rv = context->mRv;
-  if (context->mModule) {
-    aModuleOut.set(context->mModule);
-    context->mModule = nullptr;
+  if (context->mScript) {
+    aModuleOut.set(JS::GetModuleObject(context->mScript));
+    context->mScript = nullptr;
   }
   if (NS_FAILED(rv)) {
     JS_SetPendingException(aCx, context->mExceptionValue);

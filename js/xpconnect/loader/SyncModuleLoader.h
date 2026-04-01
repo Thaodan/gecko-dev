@@ -94,7 +94,7 @@ class SyncLoadContext : public JS::loader::LoadContextBase {
   // used temporarily before being passed to the module loader.
   JS::PersistentRooted<JS::Value> mExceptionValue;
 
-  JS::PersistentRooted<JSObject*> mModule;
+  JS::PersistentRooted<JSScript*> mScript;
 };
 
 }  // namespace loader
