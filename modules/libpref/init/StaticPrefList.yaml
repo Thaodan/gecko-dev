@@ -11549,6 +11549,13 @@
   mirror: always
   rust: true
 
+# Whether to disable legacy support for the href attribute on MathML elements
+# other than the <a> tag.
+- name: mathml.href_link_on_non_anchor_element.disabled
+  type: RelaxedAtomicBool
+  value: @IS_NIGHTLY_BUILD@
+  mirror: always
+
 #---------------------------------------------------------------------------
 # Prefs starting with "media."
 #---------------------------------------------------------------------------
