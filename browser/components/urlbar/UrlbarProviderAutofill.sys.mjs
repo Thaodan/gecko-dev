@@ -130,6 +130,7 @@ function originQuery(where, { preferHttps = false } = {}) {
       WHERE prefix NOT IN ('about:', 'place:')
         AND ((host BETWEEN :searchString AND :searchString || X'FFFF')
           OR (host BETWEEN 'www.' || :searchString AND 'www.' || :searchString || X'FFFF'))
+        AND (:blockingEnabled = 0 OR o.block_until_ms IS NULL OR o.block_until_ms <= :nowMs)
     ),
     matched_origin(host_fixed, url) AS (
       SELECT iif(instr(host, :searchString) = 1, host, fixed) || '/',
@@ -557,6 +558,10 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
     let opts = {
       query_type: QUERYTYPE.AUTOFILL_ORIGIN,
       searchString: searchStr.toLowerCase(),
+      nowMs: Date.now(),
+      blockingEnabled: lazy.UrlbarPrefs.get("autoFillAdaptiveHistoryEnabled")
+        ? 1
+        : 0,
     };
     if (this._strippedPrefix) {
       opts.prefix = this._strippedPrefix;
@@ -706,6 +711,10 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
       useCountThreshold: lazy.UrlbarPrefs.get(
         "autoFillAdaptiveHistoryUseCountThreshold"
       ),
+      nowMs: Date.now(),
+      blockingEnabled: lazy.UrlbarPrefs.get("autoFillAdaptiveHistoryEnabled")
+        ? 1
+        : 0,
     });
 
     const query = `
@@ -720,6 +729,7 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
           h.id AS id
         FROM moz_places h
         JOIN moz_inputhistory i ON i.place_id = h.id
+        JOIN moz_origins o ON o.id = h.origin_id
         WHERE LENGTH(i.input) != 0
           AND :fullSearchString BETWEEN i.input AND i.input || X'FFFF'
           AND ${sourceCondition}
@@ -729,6 +739,10 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
             starts_with OR
             (stripped_url COLLATE NOCASE BETWEEN 'www.' || :searchString AND 'www.' || :searchString || X'FFFF')
           )
+          AND (:blockingEnabled = 0 OR o.block_until_ms IS NULL OR o.block_until_ms <= :nowMs
+            OR strip_prefix_and_userinfo(h.url) != fixup_url(o.host) || '/')
+          AND (:blockingEnabled = 0 OR o.block_pages_until_ms IS NULL OR o.block_pages_until_ms <= :nowMs
+            OR strip_prefix_and_userinfo(h.url) = fixup_url(o.host) || '/')
         ORDER BY is_exact_match DESC, i.use_count DESC, h.frecency DESC, h.id DESC
         LIMIT 1
       )
