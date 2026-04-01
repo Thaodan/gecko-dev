@@ -3350,65 +3350,6 @@ const DynamicShortcutTooltip = {
  */
 
 /**
- * Extracts linkNode and href for the current click target.
- *
- * Note: linkNode will be null if the click wasn't on an anchor
- * element (or XLink).
- *
- * @param event
- *        The click event.
- * @return [href, linkNode].
- */
-function hrefAndLinkNodeForClickEvent(event) {
-  // We should get a window off the event, and bail if not:
-  let content = event.view || event.composedTarget?.ownerGlobal;
-  if (!content?.HTMLAnchorElement) {
-    return null;
-  }
-  function isHTMLLink(aNode) {
-    // Be consistent with what nsContextMenu.js does.
-    return (
-      (content.HTMLAnchorElement.isInstance(aNode) && aNode.href) ||
-      (content.HTMLAreaElement.isInstance(aNode) && aNode.href) ||
-      content.HTMLLinkElement.isInstance(aNode)
-    );
-  }
-
-  let node = event.composedTarget;
-  while (node && !isHTMLLink(node)) {
-    node = node.flattenedTreeParentNode;
-  }
-
-  if (node) {
-    return [node.href, node];
-  }
-
-  // If there is no linkNode, try simple XLink.
-  let href, baseURI;
-  node = event.composedTarget;
-  while (node && !href) {
-    if (
-      node.nodeType == content.Node.ELEMENT_NODE &&
-      (node.localName == "a" || content.MathMLElement.isInstance(node))
-    ) {
-      href =
-        node.getAttribute("href") ||
-        node.getAttributeNS("http://www.w3.org/1999/xlink", "href");
-
-      if (href) {
-        baseURI = node.ownerDocument.baseURIObject;
-        break;
-      }
-    }
-    node = node.flattenedTreeParentNode;
-  }
-
-  // In case of XLink, we don't return the node we got href from since
-  // callers expect <a>-like elements.
-  return [URL.parse(href, baseURI?.spec)?.href ?? null];
-}
-
-/**
  * Called whenever the user clicks in the content area.
  *
  * Note: the default event is prevented if the click is handled.
@@ -3423,7 +3364,7 @@ function contentAreaClick(event, isPanelClick) {
     return;
   }
 
-  let [href, linkNode] = hrefAndLinkNodeForClickEvent(event);
+  let [href, linkNode] = BrowserUtils.hrefAndLinkNodeForClickEvent(event);
   if (!href) {
     // Not a link, handle middle mouse navigation.
     if (
