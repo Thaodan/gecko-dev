@@ -69,6 +69,7 @@ class RadioSearchEngineListPreference @JvmOverloads constructor(
     private fun refreshSearchEngineViews(view: View, state: SearchState) {
         val searchEngineGroup = view.findViewById<RadioGroup>(R.id.search_engine_group)
         searchEngineGroup!!.removeAllViews()
+        searchEngineGroup.tag = key
 
         val layoutInflater = LayoutInflater.from(context)
         val layoutParams = ViewGroup.LayoutParams(
