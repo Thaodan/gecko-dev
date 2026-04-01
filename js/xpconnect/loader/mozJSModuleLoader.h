@@ -113,6 +113,10 @@ class mozJSModuleLoader final {
       JS::loader::ModuleLoadRequest* aRequest,
       JS::MutableHandle<JSObject*> aModuleOut);
 
+  static nsresult CompileJsonModuleFromSource(
+      JSContext* aCx, const nsACString& aSource, const nsACString& aLocation,
+      JS::MutableHandle<JSObject*> aModuleOut);
+
  public:
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 
