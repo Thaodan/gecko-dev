@@ -2184,14 +2184,14 @@ void DCLayerCompositionSurface::Bind(const wr::DeviceIntRect* aDirtyRects,
   }
 
   mFirstDraw = false;
+  LayoutDeviceIntRect rect = widget::WinUtils::ToIntRect(updateRect);
+  MOZ_ASSERT(!rect.IsEmpty());
 
   hr = mCompositionSurface->BeginDraw(&updateRect, __uuidof(ID3D11Texture2D),
                                       (void**)getter_AddRefs(backBuffer),
                                       &offset);
 
   if (FAILED(hr)) {
-    LayoutDeviceIntRect rect = widget::WinUtils::ToIntRect(updateRect);
-
     gfxCriticalNote << "DCLayerCompositionSurface::Bind failed: "
                     << gfx::hexa(hr) << " " << rect;
     RenderThread::Get()->HandleWebRenderError(WebRenderError::BEGIN_DRAW);
