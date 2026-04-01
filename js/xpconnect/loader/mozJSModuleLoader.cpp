@@ -596,9 +596,10 @@ nsresult mozJSModuleLoader::ReadScriptOnMainThread(JSContext* aCx,
 }
 
 /* static */
-nsresult mozJSModuleLoader::LoadSingleModuleScriptOnWorker(
+nsresult mozJSModuleLoader::LoadSingleModuleOnWorker(
     SyncModuleLoader* aModuleLoader, JSContext* aCx,
-    JS::loader::ModuleLoadRequest* aRequest, MutableHandleScript aScriptOut) {
+    JS::loader::ModuleLoadRequest* aRequest,
+    JS::MutableHandle<JSObject*> aModuleOut) {
   nsAutoCString location;
   nsresult rv = aRequest->URI()->GetSpec(location);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -634,15 +635,21 @@ nsresult mozJSModuleLoader::LoadSingleModuleScriptOnWorker(
     return NS_ERROR_FAILURE;
   }
 
-  aScriptOut.set(InstantiateStencil(aCx, stencil));
+  JS::InstantiateOptions instantiateOptions;
+  aModuleOut.set(
+      JS::InstantiateModuleStencil(aCx, instantiateOptions, stencil));
+  if (!aModuleOut) {
+    return NS_ERROR_FAILURE;
+  }
 
   return NS_OK;
 }
 
 /* static */
-nsresult mozJSModuleLoader::LoadSingleModuleScript(
+nsresult mozJSModuleLoader::LoadSingleModule(
     SyncModuleLoader* aModuleLoader, JSContext* aCx,
-    JS::loader::ModuleLoadRequest* aRequest, MutableHandleScript aScriptOut) {
+    JS::loader::ModuleLoadRequest* aRequest,
+    JS::MutableHandle<JSObject*> aModuleOut) {
   AUTO_PROFILER_MARKER_TEXT(
       "ChromeUtils.importESModule static import", JS,
       MarkerOptions(MarkerStack::Capture(),
@@ -650,8 +657,7 @@ nsresult mozJSModuleLoader::LoadSingleModuleScript(
       nsContentUtils::TruncatedURLForDisplay(aRequest->URI()));
 
   if (!NS_IsMainThread()) {
-    return LoadSingleModuleScriptOnWorker(aModuleLoader, aCx, aRequest,
-                                          aScriptOut);
+    return LoadSingleModuleOnWorker(aModuleLoader, aCx, aRequest, aModuleOut);
   }
 
   ModuleLoaderInfo info(aRequest);
@@ -664,8 +670,7 @@ nsresult mozJSModuleLoader::LoadSingleModuleScript(
 
   bool realFile = LocationIsRealFile(aRequest->URI());
 
-  RootedScript script(aCx);
-  rv = GetScriptForLocation(aCx, info, sourceFile, realFile, aScriptOut);
+  rv = GetScriptForLocation(aCx, info, sourceFile, realFile, aModuleOut);
   NS_ENSURE_SUCCESS(rv, rv);
 
 #ifdef STARTUP_RECORDER_ENABLED
@@ -763,11 +768,12 @@ void mozJSModuleLoader::SetModuleOptions(CompileOptions& aOptions) {
 /* static */
 nsresult mozJSModuleLoader::GetScriptForLocation(
     JSContext* aCx, ModuleLoaderInfo& aInfo, nsIFile* aModuleFile,
-    bool aUseMemMap, MutableHandleScript aScriptOut, char** aLocationOut) {
+    bool aUseMemMap, JS::MutableHandle<JSObject*> aModuleOut,
+    char** aLocationOut) {
   // JS compilation errors are returned via an exception on the context.
   MOZ_ASSERT(!JS_IsExceptionPending(aCx));
 
-  aScriptOut.set(nullptr);
+  aModuleOut.set(nullptr);
 
   nsAutoCString nativePath;
   nsresult rv = aInfo.URI()->GetSpec(nativePath);
@@ -878,8 +884,10 @@ nsresult mozJSModuleLoader::GetScriptForLocation(
     }
   }
 
-  aScriptOut.set(InstantiateStencil(aCx, stencil));
-  if (!aScriptOut) {
+  JS::InstantiateOptions instantiateOptions;
+  aModuleOut.set(
+      JS::InstantiateModuleStencil(aCx, instantiateOptions, stencil));
+  if (!aModuleOut) {
     return NS_ERROR_FAILURE;
   }
 
@@ -937,20 +945,6 @@ void mozJSModuleLoader::UnloadModules() {
 #ifdef STARTUP_RECORDER_ENABLED
   mImportStacks.Clear();
 #endif
-}
-
-/* static */
-JSScript* mozJSModuleLoader::InstantiateStencil(JSContext* aCx,
-                                                JS::Stencil* aStencil) {
-  JS::InstantiateOptions instantiateOptions;
-
-  RootedObject module(aCx);
-  module = JS::InstantiateModuleStencil(aCx, instantiateOptions, aStencil);
-  if (!module) {
-    return nullptr;
-  }
-
-  return JS::GetModuleScript(module);
 }
 
 nsresult mozJSModuleLoader::IsESModuleLoaded(const nsACString& aLocation,
