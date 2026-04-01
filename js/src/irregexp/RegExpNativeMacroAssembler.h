@@ -83,10 +83,11 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
   virtual void CheckBitInTable(Handle<ByteArray> table, Label* on_bit_set);
   virtual void SkipUntilBitInTable(int cp_offset, Handle<ByteArray> table,
                                    Handle<ByteArray> nibble_table,
-                                   int advance_by);
+                                   int advance_by, Label* on_match,
+                                   Label* on_no_match);
   virtual bool SkipUntilBitInTableUseSimd(int advance_by);
-  virtual bool CheckSpecialCharacterClass(StandardCharacterSet type,
-                                          Label* on_no_match);
+  virtual void CheckSpecialClassRanges(StandardCharacterSet type,
+                                       Label* on_no_match);
   virtual void CheckNotBackReference(int start_reg, bool read_backward,
                                      Label* on_no_match);
   virtual void CheckNotBackReferenceIgnoreCase(int start_reg,
@@ -110,6 +111,9 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
   virtual void WriteStackPointerToRegister(int reg);
   virtual void SetRegister(int register_index, int to);
   virtual void ClearRegisters(int reg_from, int reg_to);
+
+  virtual void RecordComment(std::string_view comment) {}
+  virtual MacroAssembler* masm() { return &masm_; }
 
   virtual Handle<HeapObject> GetCode(Handle<String> source, RegExpFlags flags);
 
