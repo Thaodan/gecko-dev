@@ -143,7 +143,6 @@ export class UrlbarInput extends HTMLElement {
           <html:input id="urlbar-scheme"
                       required="required"/>
           <html:input class="urlbar-input textbox-input"
-                      aria-controls="urlbar-results"
                       role="combobox"
                       aria-autocomplete="both"
                       inputmode="mozAwesomebar"
@@ -162,8 +161,7 @@ export class UrlbarInput extends HTMLElement {
             tooltip="aHTMLTooltip">
         <html:div class="urlbarView-body-outer">
           <html:div class="urlbarView-body-inner">
-            <html:div id="urlbar-results"
-                      class="urlbarView-results"
+            <html:div class="urlbarView-results"
                       role="listbox"/>
           </html:div>
         </html:div>
@@ -330,9 +328,15 @@ export class UrlbarInput extends HTMLElement {
     }
 
     this.panel = this.querySelector(".urlbarView");
+    this._inputContainer = this.querySelector(".urlbar-input-container");
     this.inputField = /** @type {HTMLInputElement} */ (
       this.querySelector(".urlbar-input")
     );
+
+    let resultListboxId = this.#sapName + "-results";
+    this.querySelector(".urlbarView-results").id = resultListboxId;
+    this.inputField.setAttribute("aria-controls", resultListboxId);
+
     if (this.#isAddressbar) {
       this.inputField.id = "urlbar-input";
     }
@@ -340,7 +344,6 @@ export class UrlbarInput extends HTMLElement {
       // This adds a native clear button.
       this.inputField.setAttribute("type", "search");
     }
-    this._inputContainer = this.querySelector(".urlbar-input-container");
 
     this.controller = new lazy.UrlbarController({ input: this });
     this.view = new lazy.UrlbarView(this);

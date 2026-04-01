@@ -16,6 +16,8 @@ support-files = [
   "!/toolkit/components/ml/tests/browser/head.js",
 ]
 
+["browser_UrlbarInput_a11y.js"]
+
 ["browser_UrlbarInput_formatValue.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1968567
