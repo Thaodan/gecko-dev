@@ -12,6 +12,8 @@
 
 #include "mozilla/MemoryReporting.h"
 
+#include <iostream>
+
 #include "irregexp/imported/regexp-macro-assembler.h"
 #include "irregexp/imported/regexp-stack.h"
 
@@ -34,6 +36,15 @@ void PrintF(FILE* out, const char* format, ...) {
   va_end(arguments);
 }
 
+StdoutStream::operator std::ostream&() const { return std::cerr; }
+
+template <typename T>
+std::ostream& StdoutStream::operator<<(T t) {
+  return std::cerr << t;
+}
+
+template std::ostream& StdoutStream::operator<<(char const* c);
+
 // Origin:
 // https://github.com/v8/v8/blob/855591a54d160303349a5f0a32fab15825c708d1/src/utils/ostreams.cc#L120-L169
 // (This is a hand-simplified version.)
@@ -54,16 +65,6 @@ std::ostream& operator<<(std::ostream& os, const AsUC32& c) {
   }
   char buf[13];
   SprintfLiteral(buf, "\\u{%06x}", v);
-  return os << buf;
-}
-std::ostream& operator<<(std::ostream& os, const AsHex& hex) {
-  // Each byte uses up to two characters. Plus two characters for the prefix,
-  // plus null terminator.
-  MOZ_ASSERT(sizeof(hex.value) * 2 >= hex.min_width);
-  static constexpr size_t kMaxHexLength = 3 + sizeof(hex.value) * 2;
-  char buf[kMaxHexLength];
-  SprintfLiteral(buf, "%s%.*" PRIx64, hex.with_prefix ? "0x" : "",
-                 hex.min_width, hex.value);
   return os << buf;
 }
 
@@ -194,7 +195,7 @@ std::unique_ptr<char[]> String::ToCString() {
 }
 
 bool Isolate::init() {
-  regexpStack_ = js_new<regexp::Stack>();
+  regexpStack_ = js_new<RegExpStack>();
   if (!regexpStack_) {
     return false;
   }
@@ -215,7 +216,7 @@ const void* ExternalReference::TopOfRegexpStack(Isolate* isolate) {
 
 /* static */
 size_t ExternalReference::SizeOfExcludingThis(
-    mozilla::MallocSizeOf mallocSizeOf, regexp::Stack* regexpStack) {
+    mozilla::MallocSizeOf mallocSizeOf, RegExpStack* regexpStack) {
   if (regexpStack->thread_local_.owns_memory_) {
     return mallocSizeOf(regexpStack->thread_local_.memory_);
   }
@@ -307,8 +308,6 @@ template Handle<String> Isolate::InternalizeString(
 template Handle<String> Isolate::InternalizeString(
     const base::Vector<const char16_t>& str);
 
-namespace regexp {
-
 static_assert(JSRegExp::RegistersForCaptureCount(JSRegExp::kMaxCaptures) <=
               RegExpMacroAssembler::kMaxRegisterCount);
 
@@ -318,8 +317,8 @@ static_assert(JSRegExp::RegistersForCaptureCount(JSRegExp::kMaxCaptures) <=
 // The semantics are to advance 2 code units for properly paired
 // surrogates in unicode mode, and 1 code unit otherwise
 // (non-surrogates, unpaired surrogates, or non-unicode mode).
-uint64_t Utils::AdvanceStringIndex(Tagged<String> wrappedString, uint64_t index,
-                                   bool unicode) {
+uint64_t RegExpUtils::AdvanceStringIndex(Tagged<String> wrappedString,
+                                         uint64_t index, bool unicode) {
   MOZ_ASSERT(index < kMaxSafeIntegerUint64);
   MOZ_ASSERT(wrappedString->IsFlat());
   JSLinearString* string = &wrappedString->str()->asLinear();
@@ -336,13 +335,11 @@ uint64_t Utils::AdvanceStringIndex(Tagged<String> wrappedString, uint64_t index,
 
   return index + 1;
 }
-}  // namespace regexp
 
 // RegexpMacroAssemblerTracer::GetCode dumps the flags by first converting to
 // a String, then into a C string. To avoid allocating while assembling,
 // we just return a handle to the well-known atom "flags".
-Handle<String> JSRegExp::StringFromFlags(Isolate* isolate,
-                                         regexp::Flags flags) {
+Handle<String> JSRegExp::StringFromFlags(Isolate* isolate, RegExpFlags flags) {
   return Handle<String>(String(isolate->cx()->names().flags), isolate);
 }
 

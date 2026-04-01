@@ -37,7 +37,6 @@ def copy_and_update_includes(src_path, dst_path):
     need_shim = [
         "property-sequences.h",
         "regexp-ast.h",
-        "regexp-bytecode-analysis.h",
         "regexp-bytecode-peephole.h",
         "regexp-bytecodes.h",
         "regexp-dotprinter.h",
@@ -45,7 +44,6 @@ def copy_and_update_includes(src_path, dst_path):
         "regexp.h",
         "regexp-macro-assembler.h",
         "regexp-parser.h",
-        "regexp-printer.h",
         "regexp-stack.h",
         "special-case.h",
     ]

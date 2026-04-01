@@ -57,11 +57,8 @@ class ByteArrayData {
 };
 
 class Isolate;
-
-namespace regexp {
-
-class Stack;
-class StackScope;
+class RegExpStack;
+class RegExpStackScope;
 
 struct InputOutputData {
   const void* inputStart;
@@ -96,7 +93,6 @@ struct InputOutputData {
   }
 };
 
-}  // namespace regexp
 }  // namespace internal
 }  // namespace v8
 
@@ -104,11 +100,11 @@ namespace js {
 namespace irregexp {
 
 using Isolate = v8::internal::Isolate;
-using RegExpStack = v8::internal::regexp::Stack;
-using RegExpStackScope = v8::internal::regexp::StackScope;
+using RegExpStack = v8::internal::RegExpStack;
+using RegExpStackScope = v8::internal::RegExpStackScope;
 using ByteArrayData = v8::internal::ByteArrayData;
 using ByteArray = js::UniquePtr<v8::internal::ByteArrayData, JS::FreePolicy>;
-using InputOutputData = v8::internal::regexp::InputOutputData;
+using InputOutputData = v8::internal::InputOutputData;
 
 }  // namespace irregexp
 }  // namespace js

@@ -20,7 +20,6 @@
 
 namespace v8 {
 namespace internal {
-namespace regexp {
 
 struct FrameData {
   // Character position at the start of the input, stored as a
@@ -84,11 +83,10 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
   virtual void CheckBitInTable(Handle<ByteArray> table, Label* on_bit_set);
   virtual void SkipUntilBitInTable(int cp_offset, Handle<ByteArray> table,
                                    Handle<ByteArray> nibble_table,
-                                   int advance_by, Label* on_match,
-                                   Label* on_no_match);
+                                   int advance_by);
   virtual bool SkipUntilBitInTableUseSimd(int advance_by);
-  virtual void CheckSpecialClassRanges(StandardCharacterSet type,
-                                       Label* on_no_match);
+  virtual bool CheckSpecialCharacterClass(StandardCharacterSet type,
+                                          Label* on_no_match);
   virtual void CheckNotBackReference(int start_reg, bool read_backward,
                                      Label* on_no_match);
   virtual void CheckNotBackReferenceIgnoreCase(int start_reg,
@@ -113,10 +111,7 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
   virtual void SetRegister(int register_index, int to);
   virtual void ClearRegisters(int reg_from, int reg_to);
 
-  virtual void RecordComment(std::string_view comment) {}
-  virtual MacroAssembler* masm() { return &masm_; }
-
-  virtual Handle<HeapObject> GetCode(Handle<RegExpData> data, Flags flags);
+  virtual Handle<HeapObject> GetCode(Handle<String> source, RegExpFlags flags);
 
   virtual bool CanReadUnaligned() const;
 
@@ -164,7 +159,7 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
   void CheckBacktrackStackLimit();
 
  public:
-  static bool GrowBacktrackStack(Stack* regexp_stack);
+  static bool GrowBacktrackStack(RegExpStack* regexp_stack);
 
   static uint32_t CaseInsensitiveCompareNonUnicode(const char16_t* substring1,
                                                    const char16_t* substring2,
@@ -323,7 +318,6 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
   }
 };
 
-}  // namespace regexp
 }  // namespace internal
 }  // namespace v8
 
