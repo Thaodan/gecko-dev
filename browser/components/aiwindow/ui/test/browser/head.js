@@ -636,6 +636,35 @@ async function getSmartbarContextChips(browser) {
 }
 
 /**
+ * Returns the chat messages currently displayed in the sidebar.
+ *
+ * @param {MozBrowser} sidebarBrowser - The sidebar browser element
+ * @returns {Promise<Array<{role: string, message: string}>>}
+ */
+async function getSidebarChatMessages(sidebarBrowser) {
+  const aiWindow = await TestUtils.waitForCondition(
+    () => sidebarBrowser.contentDocument?.querySelector("ai-window"),
+    "Wait for ai-window element"
+  );
+  const aichatBrowser = await TestUtils.waitForCondition(
+    () => aiWindow.shadowRoot?.querySelector("#aichat-browser"),
+    "Wait for #aichat-browser element"
+  );
+  return SpecialPowers.spawn(aichatBrowser, [], async () => {
+    const contentEl = await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector("ai-chat-content"),
+      "Wait for ai-chat-content element"
+    );
+    await contentEl.updateComplete;
+    const messageEls = contentEl.shadowRoot.querySelectorAll("ai-chat-message");
+    return Array.from(messageEls, el => ({
+      role: el.role,
+      message: el.message,
+    }));
+  });
+}
+
+/**
  * Mock OpenAI server helpers
  */
 
