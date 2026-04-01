@@ -368,8 +368,6 @@ const Space = {
   allow: ["0", "1px", "auto"],
   tokenTypes: ["space"],
   aliasTokenTypes: ["dimension"],
-  allowUnits: true,
-  allowedUnits: ["ch", "lh"],
   customFixes: {
     "2px": "var(--space-xxsmall)",
     "4px": "var(--space-xsmall)",
@@ -396,7 +394,7 @@ const Size = {
   tokenTypes: ["size", "icon-size"],
   aliasTokenTypes: ["dimension"],
   allowUnits: true,
-  allowedUnits: ["%", "ch", "em", "vh", "vw"],
+  allowedUnits: ["em", "ch", "%", "vh", "vw"],
   customFixes: {
     ...createRawValuesObject(["size", "icon-size"]),
     "0.75rem": "var(--size-item-xsmall)",
