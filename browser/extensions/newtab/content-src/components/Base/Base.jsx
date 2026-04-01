@@ -959,6 +959,7 @@ export class BaseContent extends React.PureComponent {
               widgetsEnabled={prefs["widgets.enabled"]}
             />
           </menu>
+          <ConfirmDialog />
         </div>
       );
     }

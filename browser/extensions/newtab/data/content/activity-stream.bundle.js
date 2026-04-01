@@ -14418,6 +14418,7 @@ function SectionsMgmtPanel({
     return /*#__PURE__*/external_React_default().createElement("li", {
       key: sectionKey
     }, /*#__PURE__*/external_React_default().createElement("label", {
+      id: `follow-topic-label-${sectionKey}`,
       htmlFor: `follow-topic-${sectionKey}`
     }, title), /*#__PURE__*/external_React_default().createElement("div", {
       className: following ? "section-follow following" : "section-follow"
@@ -14427,10 +14428,14 @@ function SectionsMgmtPanel({
       index: receivedRank,
       section: sectionKey,
       id: `follow-topic-${sectionKey}`
+      // Compose accessible label from the localized "Following" span and the topic title label.
+      ,
+      "aria-labelledby": `follow-state-${sectionKey} follow-topic-label-${sectionKey}`
     }, /*#__PURE__*/external_React_default().createElement("span", {
       className: "section-button-follow-text",
       "data-l10n-id": "newtab-section-follow-button"
     }), /*#__PURE__*/external_React_default().createElement("span", {
+      id: `follow-state-${sectionKey}`,
       className: "section-button-following-text",
       "data-l10n-id": "newtab-section-following-button"
     }), /*#__PURE__*/external_React_default().createElement("span", {
@@ -14447,6 +14452,7 @@ function SectionsMgmtPanel({
     return /*#__PURE__*/external_React_default().createElement("li", {
       key: sectionKey
     }, /*#__PURE__*/external_React_default().createElement("label", {
+      id: `blocked-topic-label-${sectionKey}`,
       htmlFor: `blocked-topic-${sectionKey}`
     }, title), /*#__PURE__*/external_React_default().createElement("div", {
       className: blocked ? "section-block blocked" : "section-block"
@@ -14456,10 +14462,14 @@ function SectionsMgmtPanel({
       index: receivedRank,
       section: sectionKey,
       id: `blocked-topic-${sectionKey}`
+      // Compose accessible label from the localized "Blocked" span and the topic title label.
+      ,
+      "aria-labelledby": `blocked-state-${sectionKey} blocked-topic-label-${sectionKey}`
     }, /*#__PURE__*/external_React_default().createElement("span", {
       className: "section-button-block-text",
       "data-l10n-id": "newtab-section-block-button"
     }), /*#__PURE__*/external_React_default().createElement("span", {
+      id: `blocked-state-${sectionKey}`,
       className: "section-button-blocked-text",
       "data-l10n-id": "newtab-section-blocked-button"
     }), /*#__PURE__*/external_React_default().createElement("span", {
@@ -18013,7 +18023,7 @@ class BaseContent extends (external_React_default()).PureComponent {
         showWidgetsManagementPanel: this.state.showWidgetsManagementPanel,
         toggleWidgetsManagementPanel: this.toggleWidgetsManagementPanel,
         widgetsEnabled: prefs["widgets.enabled"]
-      })));
+      })), /*#__PURE__*/external_React_default().createElement(ConfirmDialog, null));
     }
 
     // @nova-cleanup(remove-conditional): Delete this entire classic return block along with all variables only used here
