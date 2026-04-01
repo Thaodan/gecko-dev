@@ -3360,12 +3360,17 @@ const DynamicShortcutTooltip = {
  * @return [href, linkNode].
  */
 function hrefAndLinkNodeForClickEvent(event) {
+  // We should get a window off the event, and bail if not:
+  let content = event.view || event.composedTarget?.ownerGlobal;
+  if (!content?.HTMLAnchorElement) {
+    return null;
+  }
   function isHTMLLink(aNode) {
     // Be consistent with what nsContextMenu.js does.
     return (
-      (HTMLAnchorElement.isInstance(aNode) && aNode.href) ||
-      (HTMLAreaElement.isInstance(aNode) && aNode.href) ||
-      HTMLLinkElement.isInstance(aNode)
+      (content.HTMLAnchorElement.isInstance(aNode) && aNode.href) ||
+      (content.HTMLAreaElement.isInstance(aNode) && aNode.href) ||
+      content.HTMLLinkElement.isInstance(aNode)
     );
   }
 
@@ -3383,16 +3388,15 @@ function hrefAndLinkNodeForClickEvent(event) {
   node = event.composedTarget;
   while (node && !href) {
     if (
-      node.nodeType == Node.ELEMENT_NODE &&
-      (node.localName == "a" ||
-        node.namespaceURI == "http://www.w3.org/1998/Math/MathML")
+      node.nodeType == content.Node.ELEMENT_NODE &&
+      (node.localName == "a" || content.MathMLElement.isInstance(node))
     ) {
       href =
         node.getAttribute("href") ||
         node.getAttributeNS("http://www.w3.org/1999/xlink", "href");
 
       if (href) {
-        baseURI = node.baseURI;
+        baseURI = node.ownerDocument.baseURIObject;
         break;
       }
     }
@@ -3401,7 +3405,7 @@ function hrefAndLinkNodeForClickEvent(event) {
 
   // In case of XLink, we don't return the node we got href from since
   // callers expect <a>-like elements.
-  return [href ? makeURLAbsolute(baseURI, href) : null, null];
+  return [URL.parse(href, baseURI?.spec)?.href ?? null];
 }
 
 /**

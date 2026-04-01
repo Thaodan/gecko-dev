@@ -475,8 +475,7 @@ export var BrowserUtils = {
     while (node && !href) {
       if (
         node.nodeType == content.Node.ELEMENT_NODE &&
-        (node.localName == "a" ||
-          node.namespaceURI == "http://www.w3.org/1998/Math/MathML")
+        (node.localName == "a" || content.MathMLElement.isInstance(node))
       ) {
         href =
           node.getAttribute("href") ||
@@ -491,9 +490,8 @@ export var BrowserUtils = {
 
     // In case of XLink, we don't return the node we got href from since
     // callers expect <a>-like elements.
-    // Note: makeURI() will throw if aUri is not a valid URI.
     return [
-      href ? Services.io.newURI(href, null, baseURI).spec : null,
+      URL.parse(href, baseURI?.spec)?.href ?? null,
       null,
       node && node.ownerDocument.nodePrincipal,
     ];

@@ -24,6 +24,7 @@ function setup() {
     '<p><a id="commonlink" href="http://mochi.test/moz/">Common link</a></p>' +
     '<p><math id="mathlink" xmlns="http://www.w3.org/1998/Math/MathML" href="http://mochi.test/moz/"><mtext>MathML XLink</mtext></math></p>' +
     '<p><svg id="svgxlink" xmlns="http://www.w3.org/2000/svg" width="100px" height="50px" version="1.1"><a xlink:type="simple" xlink:href="http://mochi.test/moz/"><text transform="translate(10, 25)">SVG XLink</text></a></svg></p><br>' +
+    '<p><svg id="invalidsvgxlink" xmlns="http://www.w3.org/2000/svg" width="100px" height="50px" version="1.1"><a xlink:type="simple" xlink:href="http://make:invalid/"><text transform="translate(10, 25)">Invalid SVG XLink</text></a></svg></p><br>' +
     '<span id="host"></span><script>document.getElementById("host").attachShadow({mode: "closed"}).appendChild(document.getElementById("commonlink").cloneNode(true));</script>' +
     '<iframe id="frame" src="https://test2.example.com:443/browser/browser/base/content/test/general/file_with_link_to_http.html"></iframe>';
 
@@ -141,6 +142,12 @@ add_task(async function test_alt_click_on_xlinks() {
     };
   });
   await downloadList.addView(downloadView);
+  // Click an invalid link, this should neither throw nor trigger a download.
+  await BrowserTestUtils.synthesizeMouseAtCenter(
+    "#invalidsvgxlink",
+    { altKey: true },
+    gBrowser.selectedBrowser
+  );
   await BrowserTestUtils.synthesizeMouseAtCenter(
     "#mathlink",
     { altKey: true },
