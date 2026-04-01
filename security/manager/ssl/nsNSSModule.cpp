@@ -6,6 +6,7 @@
 #include "nsNSSModule.h"
 
 #include "ContentSignatureVerifier.h"
+#include "OSKeyStore.h"
 #include "OSReauthenticator.h"
 #include "PKCS11ModuleDB.h"
 #include "SecretDecoderRing.h"
@@ -93,6 +94,8 @@ IMPL(nsNSSCertificateDB, nullptr)
 IMPL(nsCertTree, nullptr)
 IMPL(ContentSignatureVerifier, nullptr)
 IMPL(nsRandomGenerator, nullptr, ProcessRestriction::AnyProcess)
+IMPL(OSKeyStore, nullptr, ProcessRestriction::ParentProcessOnly,
+     ThreadRestriction::MainThreadOnly)
 IMPL(OSReauthenticator, nullptr, ProcessRestriction::ParentProcessOnly,
      ThreadRestriction::MainThreadOnly)
 #undef IMPL
