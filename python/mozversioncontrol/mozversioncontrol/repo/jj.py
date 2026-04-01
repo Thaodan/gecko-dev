@@ -505,6 +505,18 @@ class JujutsuRepository(Repository):
         function that can be called to restore the repository to its original
         state prior to this function having been run.
         """
+        print("Pushing changes:")
+        print(
+            self._run(
+                "log",
+                "-G",
+                "-r",
+                "trunk()..@ ~ description(exact:'')",
+                "-T",
+                "'  ' ++ description.first_line() ++ '\n'",
+            ),
+            end="",
+        )
         self._snapshot("prepare_try_push")
         # Redundant with the snapshot from the next command, but the semantics
         # of this operation depend on a snapshot happening (and it will eat
