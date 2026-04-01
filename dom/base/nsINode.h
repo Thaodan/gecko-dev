@@ -1575,7 +1575,7 @@ class nsINode : public mozilla::dom::EventTarget {
     }
   }
 
-  inline bool IsEditable() const { return HasFlag(NODE_IS_EDITABLE); }
+  inline bool IsEditable() const;
 
   /**
    * Check if this node is an editing host. For avoiding confusion, this always

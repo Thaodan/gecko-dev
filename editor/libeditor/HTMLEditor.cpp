@@ -7128,18 +7128,18 @@ Element* HTMLEditor::ComputeEditingHostInternal(
     if (aLimitInBodyElement != LimitInBodyElement::Yes) {
       return const_cast<Element*>(aCandidateEditingHost);
     }
-    auto* body = document->GetBodyElement();
     // By default, we should limit editing host to the <body> element for
     // avoiding deleting or creating unexpected elements outside the <body>.
     // However, this is incompatible with Chrome so that we should stop
     // doing this with adding safety checks more.
-    if (body && nsContentUtils::ContentIsFlattenedTreeDescendantOf(
-                    aCandidateEditingHost, body)) {
+    if (document->GetBodyElement() &&
+        nsContentUtils::ContentIsFlattenedTreeDescendantOf(
+            aCandidateEditingHost, document->GetBodyElement())) {
       return const_cast<Element*>(aCandidateEditingHost);
     }
     // XXX If aContent is an editing host and has no parent node, we reach here,
     //     but returning the <body> which is not connected to aContent is odd.
-    return body && body->IsEditable() ? body : nullptr;
+    return document->GetBodyElement();
   };
 
   // We're HTML editor for contenteditable
@@ -7197,19 +7197,16 @@ Element* HTMLEditor::ComputeEditingHostInternal(
     // If there is no focused element and the document is in the design mode,
     // let's return the <body>.
     if (document->IsInDesignMode()) {
-      auto* body = document->GetBodyElement();
-      // return null if body has contenteditable=false
-      return body && body->IsEditable() ? body : nullptr;
+      return document->GetBodyElement();
     }
     // Otherwise, we cannot find the editing host...
     return nullptr;
   }();
-  if (!content && document->IsInDesignMode()) {
+  if ((content && content->IsInDesignMode()) ||
+      (!content && document->IsInDesignMode())) {
     // FIXME: There may be no <body>.  In such case and aLimitInBodyElement is
     // "No", we should use root element instead.
-    auto* body = document->GetBodyElement();
-    // return null if body has contenteditable=false
-    return body && body->IsEditable() ? body : nullptr;
+    return document->GetBodyElement();
   }
 
   if (NS_WARN_IF(!content)) {
