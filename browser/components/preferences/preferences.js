@@ -216,6 +216,10 @@ const CONFIG_PANES = Object.freeze({
     l10nId: "preferences-etp-customize-header",
     groupIds: ["etpCustomize", "etpReset"],
   },
+  general: {
+    l10nId: "pane-general-title",
+    groupIds: [],
+  },
   history: {
     parent: "privacy",
     l10nId: "history-header2",
@@ -247,7 +251,7 @@ const CONFIG_PANES = Object.freeze({
     groupIds: ["managePayments"],
     iconSrc: "chrome://browser/skin/payment-methods-16.svg",
   },
-  paneProfiles: {
+  profiles: {
     parent: srdSectionEnabled("sync") ? "sync" : "general",
     l10nId: "preferences-profiles-group-header",
     groupIds: ["profilePane"],
@@ -273,6 +277,10 @@ const CONFIG_PANES = Object.freeze({
     ],
     module: "chrome://browser/content/preferences/config/account-sync.mjs",
     replaces: "sync",
+  },
+  privacy: {
+    l10nId: "privacy-header",
+    groupIds: [],
   },
   translations: {
     parent: "general",
