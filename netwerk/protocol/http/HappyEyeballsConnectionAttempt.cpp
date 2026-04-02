@@ -7,6 +7,8 @@
 
 #include "HappyEyeballsConnectionAttempt.h"
 #include "ConnectionEntry.h"
+#include "mozilla/net/NeckoChannelParams.h"
+#include "nsIHttpActivityObserver.h"
 #include "PendingTransactionInfo.h"
 #include "nsHttpTransaction.h"
 #include "HttpConnectionUDP.h"
@@ -31,6 +33,16 @@ using happy_eyeballs::happy_eyeballs_process_dns_response_aaaa;
 using happy_eyeballs::happy_eyeballs_process_dns_response_https;
 using happy_eyeballs::happy_eyeballs_process_output;
 
+static void NotifyConnectionActivity(nsHttpConnectionInfo* aConnInfo,
+                                     uint32_t aSubtype) {
+  HttpConnectionActivity activity(
+      aConnInfo->HashKey(), aConnInfo->GetOrigin(), aConnInfo->OriginPort(),
+      aConnInfo->EndToEndSSL(), !aConnInfo->GetEchConfig().IsEmpty(),
+      aConnInfo->IsHttp3());
+  gHttpHandler->ObserveHttpActivityWithArgs(
+      activity, NS_ACTIVITY_TYPE_HTTP_CONNECTION, aSubtype, PR_Now(), 0, ""_ns);
+}
+
 NS_IMPL_ADDREF_INHERITED(HappyEyeballsConnectionAttempt, ConnectionAttempt)
 NS_IMPL_RELEASE_INHERITED(HappyEyeballsConnectionAttempt, ConnectionAttempt)
 
@@ -51,6 +63,11 @@ HappyEyeballsConnectionAttempt::HappyEyeballsConnectionAttempt(
   } else {
     mHost = mConnInfo->GetRoutedHost();
   }
+
+  NotifyConnectionActivity(
+      mConnInfo, mSpeculative
+                     ? NS_HTTP_ACTIVITY_SUBTYPE_SPECULATIVE_DNSANDSOCKET_CREATED
+                     : NS_HTTP_ACTIVITY_SUBTYPE_DNSANDSOCKET_CREATED);
 }
 
 HappyEyeballsConnectionAttempt::~HappyEyeballsConnectionAttempt() {
@@ -497,7 +514,9 @@ nsresult HappyEyeballsConnectionAttempt::EstablishTCPConnection(
   if (!aEchConfig.IsEmpty()) {
     info->SetEchConfig(
         nsCString((const char*)aEchConfig.Elements(), aEchConfig.Length()));
+    NotifyConnectionActivity(info, NS_HTTP_ACTIVITY_SUBTYPE_ECH_SET);
   }
+  NotifyConnectionActivity(info, NS_HTTP_ACTIVITY_SUBTYPE_CONNECTION_CREATED);
   RefPtr<TCPConnectionEstablisher> establisher = new TCPConnectionEstablisher(
       info, aAddr, mCaps, mSpeculative, mAllow1918);
   establisher->SetDnsMetadata(mDnsMetadata);
@@ -534,7 +553,9 @@ nsresult HappyEyeballsConnectionAttempt::EstablishUDPConnection(
   if (!aEchConfig.IsEmpty()) {
     info->SetEchConfig(
         nsCString((const char*)aEchConfig.Elements(), aEchConfig.Length()));
+    NotifyConnectionActivity(info, NS_HTTP_ACTIVITY_SUBTYPE_ECH_SET);
   }
+  NotifyConnectionActivity(info, NS_HTTP_ACTIVITY_SUBTYPE_CONNECTION_CREATED);
   RefPtr<UDPConnectionEstablisher> establisher =
       new UDPConnectionEstablisher(info, aAddr, mCaps);
   establisher->SetDnsMetadata(mDnsMetadata);

@@ -265,8 +265,10 @@ nsresult ConnectionEstablisher::ActivateConnectionWithTransaction(
         }));
   };
 
-  RefPtr<SpeculativeTransaction> trans =
-      new SpeculativeTransaction(mConnInfo, this, mCaps, std::move(callback));
+  // For SpeculativeTransaction used in connection racing, do not report its
+  // activity.
+  RefPtr<SpeculativeTransaction> trans = new SpeculativeTransaction(
+      mConnInfo, this, mCaps, std::move(callback), false);
 
   LOG(("speculative transaction %p will be used to finish handshake on conn %p",
        trans.get(), aConn.get()));
