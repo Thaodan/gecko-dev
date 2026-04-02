@@ -147,7 +147,6 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
 
   DnsMetadata mDnsMetadata;
 
-
   TimeStamp mDomainLookupStart;
   TimeStamp mDomainLookupEnd;
   TimeStamp mFirstConnectionStart;

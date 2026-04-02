@@ -43,8 +43,7 @@ class ConnectionEstablisher : public nsITransportEventSink,
       std::function<void(Result<RefPtr<HttpConnectionBase>, nsresult>)>;
   using TransportStatusCallback =
       std::function<void(nsITransport*, nsresult, int64_t)>;
-  using LnaCheckCallback =
-      std::function<nsresult(nsISocketTransport*)>;
+  using LnaCheckCallback = std::function<nsresult(nsISocketTransport*)>;
 
   ConnectionEstablisher(nsHttpConnectionInfo* aConnInfo, const NetAddr& aAddr,
                         uint32_t aCaps);
