@@ -897,11 +897,11 @@ async function StartCurrentURI(aURLTargetType) {
   }
 
   if (g.windowUtils.isWindowFullyOccluded || g.windowUtils.isCompositorPaused) {
-    logger.error(
+    logger.warning(
       "g.windowUtils.isWindowFullyOccluded " +
         g.windowUtils.isWindowFullyOccluded
     );
-    logger.error(
+    logger.warning(
       "g.windowUtils.isCompositorPaused " + g.windowUtils.isCompositorPaused
     );
   }
