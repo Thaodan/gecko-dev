@@ -61,7 +61,7 @@ pub extern "C" fn happy_eyeballs_create(
         .iter()
         .map(|a| happy_eyeballs::AltSvc {
             host: None,
-            port: None,
+            port: if a.port != 0 { Some(a.port) } else { None },
             http_version: a.http_version.into(),
         })
         .collect();
@@ -435,10 +435,11 @@ impl HappyEyeballs {
     }
 }
 
-// TODO: Expose ip and port.
+// TODO: Expose host.
 #[repr(C)]
 pub struct AltSvc {
     pub http_version: HttpVersion,
+    pub port: u16,
 }
 
 #[repr(C)]
@@ -526,6 +527,15 @@ impl From<happy_eyeballs::HttpVersion> for ConnectionAttemptHttpVersions {
     }
 }
 
+impl From<happy_eyeballs::FailureReason> for FailureReason {
+    fn from(v: happy_eyeballs::FailureReason) -> Self {
+        match v {
+            happy_eyeballs::FailureReason::DnsResolution => Self::DnsResolution,
+            happy_eyeballs::FailureReason::Connection => Self::Connection,
+        }
+    }
+}
+
 #[repr(C)]
 pub struct ServiceInfo {
     pub priority: u16,
@@ -550,6 +560,12 @@ impl From<std::net::IpAddr> for IpAddr {
             std::net::IpAddr::V6(ipv6) => IpAddr::V6(ipv6.octets()),
         }
     }
+}
+
+#[repr(C)]
+pub enum FailureReason {
+    DnsResolution = 0,
+    Connection = 1,
 }
 
 #[repr(C)]

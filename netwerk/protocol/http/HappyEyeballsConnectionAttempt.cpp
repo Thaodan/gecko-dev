@@ -77,9 +77,10 @@ nsresult HappyEyeballsConnectionAttempt::CreateHappyEyeballs(
     nsTArray<happy_eyeballs::AltSvc> altSvcArray;
     happy_eyeballs::AltSvc altsvc{};
     altsvc.http_version = happy_eyeballs::HttpVersion::H3;
+    altsvc.port = static_cast<uint16_t>(mConnInfo->RoutedPort());
     altSvcArray.AppendElement(altsvc);
     return HappyEyeballs::Init(getter_AddRefs(mHappyEyeballs), mHost,
-                               static_cast<uint16_t>(mConnInfo->RoutedPort()),
+                               static_cast<uint16_t>(mConnInfo->OriginPort()),
                                &altSvcArray, ipPref);
   }
 
@@ -129,6 +130,10 @@ nsresult HappyEyeballsConnectionAttempt::ProcessConnectionResult(
       ("HappyEyeballsConnectionAttempt::ProcessConnectionResult %p addr=[%s] "
        "id=%" PRIu64,
        this, aAddr.ToString().get(), aId));
+
+  if (NS_FAILED(aStatus)) {
+    mLastConnectionError = aStatus;
+  }
 
   nsresult rv =
       happy_eyeballs_process_connection_result(mHappyEyeballs, aId, aStatus);
@@ -226,7 +231,8 @@ nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
         return NS_OK;
 
       case happy_eyeballs::Output::Tag::Failed: {
-        LOG(("happy_eyeballs::Output::Tag::Failed"));
+        LOG(("happy_eyeballs::Output::Tag::Failed reason=%d",
+             static_cast<uint32_t>(event.failed.reason)));
         RefPtr<HappyEyeballsConnectionAttempt> self(this);
         RefPtr<ConnectionEntry> entry(mEntry);
 
@@ -236,13 +242,13 @@ nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
           }
         }
 
-        CloseHttpTransaction(NS_ERROR_CONNECTION_REFUSED);
+        CloseHttpTransaction(event.failed.reason);
 
         Abandon();
         if (entry) {
           entry->RemoveConnectionAttempt(this, false);
         }
-        return NS_ERROR_CONNECTION_REFUSED;
+        return NS_OK;
       }
 
       case happy_eyeballs::Output::Tag::None:
@@ -598,17 +604,32 @@ void HappyEyeballsConnectionAttempt::CancelConnection(uint64_t aId) {
   }
 }
 
-void HappyEyeballsConnectionAttempt::CloseHttpTransaction(nsresult aReason) {
-  LOG(("HappyEyeballsConnectionAttempt::CloseHttpTransaction %p reason=%x",
+void HappyEyeballsConnectionAttempt::CloseHttpTransaction(
+    happy_eyeballs::FailureReason aReason) {
+  LOG(("HappyEyeballsConnectionAttempt::CloseHttpTransaction %p reason=%d",
        this, static_cast<uint32_t>(aReason)));
   mHttpTransEstablisherId.reset();
 
-  // Detach the proxy so it won't re-queue the transaction on Close().
   if (mProxyTransaction) {
     mProxyTransaction->Detach();
     mProxyTransaction = nullptr;
   }
-  mTransaction->Close(aReason);
+  nsresult reason = NS_ERROR_ABORT;
+  switch (aReason) {
+    case happy_eyeballs::FailureReason::DnsResolution:
+      reason = NS_ERROR_UNKNOWN_HOST;
+      break;
+    case happy_eyeballs::FailureReason::Connection:
+      reason = (NS_FAILED(mLastConnectionError) &&
+                mLastConnectionError != NS_ERROR_NET_RESET)
+                   ? mLastConnectionError
+                   : NS_ERROR_CONNECTION_REFUSED;
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unknown FailureReason");
+      break;
+  }
+  mTransaction->Close(reason);
 }
 
 void HappyEyeballsConnectionAttempt::Abandon() {

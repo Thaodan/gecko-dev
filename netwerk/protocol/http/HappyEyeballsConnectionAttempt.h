@@ -118,7 +118,7 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
                       bool aTransactionAlreadyOnConn);
   void ProcessUDPConn(HttpConnectionUDP* aConn, ConnectionEntry* aEntry,
                       bool aTransactionAlreadyOnConn);
-  void CloseHttpTransaction(nsresult aReason);
+  void CloseHttpTransaction(happy_eyeballs::FailureReason aReason);
 
   RefPtr<HappyEyeballs> mHappyEyeballs;
 
@@ -136,6 +136,7 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   nsCOMPtr<nsITimer> mTimer;
   WeakPtr<ConnectionEntry> mEntry;
   bool mDone = false;
+  nsresult mLastConnectionError = NS_OK;
   bool mFirstAttempt = true;
   Maybe<uint64_t> mHttpTransEstablisherId;
   RefPtr<HappyEyeballsTransaction> mProxyTransaction;
