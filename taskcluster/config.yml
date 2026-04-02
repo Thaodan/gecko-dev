@@ -262,6 +262,7 @@ treeherder:
         'feature-contextmenu': 'feature-contextmenu'
         'feature-customtabs': 'feature-customtabs'
         'feature-downloads': 'feature-downloads'
+        'feature-example': 'feature-example'
         'feature-findinpage': 'feature-findinpage'
         'feature-fxsuggest': 'feature-fxsuggest'
         'feature-intent': 'feature-intent'
