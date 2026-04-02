@@ -99,6 +99,8 @@
   "space/large": "{Primitives$dimension/relative/100}",
   "space/xlarge": "{Primitives$dimension/relative/150}",
   "space/xxlarge": "{Primitives$dimension/relative/200}",
+  "badge/border/radius": "{Primitives$border/radius/small}",
+  "badge/border/width": 1,
   "button/border/radius": "{Primitives$border/radius/medium}",
   "button/min/height": "{Primitives$size/item/large}",
   "button/min/height/small": "{Primitives$size/item/medium}",
