@@ -135,14 +135,8 @@ static wasm::RefType WasmRefTestOrCastDestType(MDefinition* refTestOrCast) {
 }
 
 static void TryOptimizeWasmCast(MDefinition* cast, MIRGraph& graph) {
-  MDefinition* ref = WasmRefCastOrTestSourceRef(cast);
-
-  if (ref->wasmRefType().isSome() &&
-      !ref->wasmRefType().value().isInhabitable()) {
-    return;
-  }
-
   // Find all uses of the ref we are casting
+  MDefinition* ref = WasmRefCastOrTestSourceRef(cast);
   for (MUseIterator refUse(ref->usesBegin()); refUse != ref->usesEnd();
        refUse++) {
     // If the ref we are casting is used in a ref.test instruction...
@@ -160,13 +154,6 @@ static void TryOptimizeWasmCast(MDefinition* cast, MIRGraph& graph) {
             // the current cast...
             wasm::RefType refTestDestType = WasmRefTestOrCastDestType(refTest);
             wasm::RefType refCastDestType = WasmRefTestOrCastDestType(cast);
-
-            // (And neither type is uninhabitable...)
-            if (!refTestDestType.isInhabitable() ||
-                !refCastDestType.isInhabitable()) {
-              continue;
-            }
-
             if (wasm::RefType::isSubTypeOf(refTestDestType, refCastDestType)) {
               // Then the cast is redundant because it is dominated by a
               // tighter ref.test. Replace it with a dummy cast at the top of
@@ -197,13 +184,6 @@ static void TryOptimizeWasmCast(MDefinition* cast, MIRGraph& graph) {
         // current cast...
         wasm::RefType dominatingDestType = WasmRefTestOrCastDestType(otherCast);
         wasm::RefType currentDestType = WasmRefTestOrCastDestType(cast);
-
-        // (And neither type is uninhabitable...)
-        if (!dominatingDestType.isInhabitable() ||
-            !currentDestType.isInhabitable()) {
-          continue;
-        }
-
         if (wasm::RefType::isSubTypeOf(dominatingDestType, currentDestType)) {
           // Then the cast is redundant because it is dominated by a tighter
           // ref.cast. Discard the cast and fall back on the other.
@@ -217,9 +197,8 @@ static void TryOptimizeWasmCast(MDefinition* cast, MIRGraph& graph) {
 }
 
 static void TryOptimizeWasmTest(MDefinition* refTest, MIRGraph& graph) {
-  MDefinition* ref = WasmRefCastOrTestSourceRef(refTest);
-
   // Find all uses of the ref we are testing
+  MDefinition* ref = WasmRefCastOrTestSourceRef(refTest);
   for (MUseIterator refUse(ref->usesBegin()); refUse != ref->usesEnd();
        refUse++) {
     // If the ref we are testing is used in a different ref.test instruction...
@@ -234,12 +213,6 @@ static void TryOptimizeWasmTest(MDefinition* refTest, MIRGraph& graph) {
 
           wasm::RefType otherDestType = WasmRefTestOrCastDestType(otherRefTest);
           wasm::RefType currentDestType = WasmRefTestOrCastDestType(refTest);
-
-          // (And neither type is uninhabitable...)
-          if (!otherDestType.isInhabitable() ||
-              !currentDestType.isInhabitable()) {
-            continue;
-          }
 
           MInstruction* replacement = nullptr;
 
@@ -291,13 +264,6 @@ static void TryOptimizeWasmTest(MDefinition* refTest, MIRGraph& graph) {
         // current ref.test...
         wasm::RefType dominatingDestType = WasmRefTestOrCastDestType(refCast);
         wasm::RefType currentDestType = WasmRefTestOrCastDestType(refTest);
-
-        // (And neither type is uninhabitable...)
-        if (!dominatingDestType.isInhabitable() ||
-            !currentDestType.isInhabitable()) {
-          continue;
-        }
-
         if (wasm::RefType::isSubTypeOf(dominatingDestType, currentDestType)) {
           // Then the ref.test is redundant because it is dominated by a
           // tighter ref.cast. Replace with a constant 1.

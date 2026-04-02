@@ -438,7 +438,6 @@ class RefType {
   inline bool isExternHierarchy() const;
   inline bool isAnyHierarchy() const;
   inline bool isExnHierarchy() const;
-  inline bool isInhabitable() const;
   static bool isSubTypeOf(RefType subType, RefType superType);
   static bool castPossible(RefType sourceType, RefType destType);
 

@@ -159,11 +159,13 @@ RefType RefType::greatestLowerBound(RefType a, RefType b) {
 
   // If one type is a subtype of the other, the lower type is the GLB. The
   // nullability should already match what we expect.
-  if (RefType::isSubTypeOf(a.asNonNullable(), b.asNonNullable())) {
-    return a.withIsNullable(nullable);
+  if (RefType::isSubTypeOf(a, b)) {
+    MOZ_RELEASE_ASSERT(a.isNullable() == nullable);
+    return a;
   }
-  if (RefType::isSubTypeOf(b.asNonNullable(), a.asNonNullable())) {
-    return b.withIsNullable(nullable);
+  if (RefType::isSubTypeOf(b, a)) {
+    MOZ_RELEASE_ASSERT(b.isNullable() == nullable);
+    return b;
   }
 
   // The only possible common type now is the hierarchy's bottom type.
