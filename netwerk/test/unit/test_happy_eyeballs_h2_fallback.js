@@ -4,6 +4,10 @@
 
 "use strict";
 
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
+
 var { setTimeout } = ChromeUtils.importESModule(
   "resource://gre/modules/Timer.sys.mjs"
 );
@@ -289,12 +293,19 @@ async function do_test_first_attempt_slow(host) {
   await server.stop();
 }
 
-add_task(async function test_first_attempt_slow_no_speculative() {
-  Services.prefs.setIntPref("network.http.speculative-parallel-limit", 0);
-  await do_test_first_attempt_slow("alt2.example.com");
-});
+// pauseTCPConnect does not work on Linux, so skip these tests there.
+add_task(
+  { skip_if: () => AppConstants.platform == "linux" },
+  async function test_first_attempt_slow_no_speculative() {
+    Services.prefs.setIntPref("network.http.speculative-parallel-limit", 0);
+    await do_test_first_attempt_slow("alt2.example.com");
+  }
+);
 
-add_task(async function test_first_attempt_slow_with_speculative() {
-  Services.prefs.setIntPref("network.http.speculative-parallel-limit", 6);
-  await do_test_first_attempt_slow("alt2.example.com");
-});
+add_task(
+  { skip_if: () => AppConstants.platform == "linux" },
+  async function test_first_attempt_slow_with_speculative() {
+    Services.prefs.setIntPref("network.http.speculative-parallel-limit", 6);
+    await do_test_first_attempt_slow("alt2.example.com");
+  }
+);
