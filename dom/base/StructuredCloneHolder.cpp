@@ -1031,6 +1031,11 @@ JSObject* ReadInputStream(JSContext* aCx, uint32_t aIndex,
   }
 #endif
   MOZ_ASSERT(aIndex < aHolder->InputStreams().Length());
+
+  if (NS_WARN_IF(!aHolder->SupportsTransferring())) {
+    return nullptr;
+  }
+
   JS::Rooted<JS::Value> result(aCx);
   {
     nsCOMPtr<nsIInputStream> inputStream =
@@ -1052,6 +1057,10 @@ bool WriteInputStream(JSStructuredCloneWriter* aWriter,
   MOZ_ASSERT(aWriter);
   MOZ_ASSERT(aInputStream);
   MOZ_ASSERT(aHolder);
+
+  if (NS_WARN_IF(!aHolder->SupportsTransferring())) {
+    return false;
+  }
 
   // We store the position of the inputStream in the array as index.
   if (JS_WriteUint32Pair(aWriter, SCTAG_DOM_INPUTSTREAM,
