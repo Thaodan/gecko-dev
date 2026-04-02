@@ -131,13 +131,13 @@ private val clickRipple: Indication
 
 /**
  * The width to height ratio of the tab grid item. In landscape mode, the width to height ratio is
- * 2:1 and in portrait mode, the width to height ratio is 4:5.
+ * 1:1 and in portrait mode, the width to height ratio is 4:5.
  */
 val gridItemAspectRatio: Float
     @Composable
     @ReadOnlyComposable
     get() = if (LocalContext.current.isLandscape()) {
-        2f
+        1f
     } else {
         0.8f
     }

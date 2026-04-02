@@ -157,7 +157,7 @@ private fun TabContent(
                 },
             ),
         ) {
-            Column {
+            Column(modifier = Modifier.aspectRatio(gridItemAspectRatio)) {
                 Header(
                     tab = tab,
                     selectionState = selectionState,
@@ -168,8 +168,11 @@ private fun TabContent(
 
                 Card(
                     modifier = Modifier
-                        .aspectRatio(gridItemAspectRatio)
-                        .padding(horizontal = FirefoxTheme.layout.space.static50),
+                        .padding(
+                            start = FirefoxTheme.layout.space.static50,
+                            end = FirefoxTheme.layout.space.static50,
+                            bottom = FirefoxTheme.layout.space.static50,
+                        ),
                     shape = ThumbnailShape,
                 ) {
                     Thumbnail(

@@ -79,7 +79,6 @@ import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.ThemedValue
 import org.mozilla.fenix.theme.ThemedValueProvider
 import kotlin.math.max
-import kotlin.math.roundToInt
 
 // Key for the span item at the bottom of the tray, used to make the item not reorderable.
 const val SPAN_ITEM_KEY = "span"
@@ -98,8 +97,9 @@ private const val NUM_COLUMNS_TAB_GRID_PORTRAIT_THRESHOLD_1 = 2
 private const val NUM_COLUMNS_TAB_GRID_PORTRAIT_THRESHOLD_2 = 3
 private const val NUM_COLUMNS_TAB_GRID_PORTRAIT_THRESHOLD_3 = 4
 
-private const val NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_1 = 3
-private const val NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_2 = 4
+private const val NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_1 = 4
+private const val NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_2 = 5
+
 private val TabListPadding = 16.dp
 private val TabListItemCornerRadius = 12.dp
 private val TabListLastItemShape = RoundedCornerShape(
@@ -263,7 +263,6 @@ private fun TabGrid(
                     tabsTrayItem = tab,
                     index = index,
                     thumbnailSizePx = thumbnailSizePx,
-                    groupThumbnailSizePx = groupThumbnailSizePx,
                     hasHeader = header != null,
                     isSelected = tab.id == selectedTabId,
                     isInMultiSelectMode = isInMultiSelectMode,
@@ -288,7 +287,6 @@ private fun LazyGridItemScope.TabGridItemContent(
     tabsTrayItem: TabsTrayItem,
     index: Int,
     thumbnailSizePx: Int,
-    groupThumbnailSizePx: Int,
     hasHeader: Boolean,
     isSelected: Boolean,
     isInMultiSelectMode: Boolean,
@@ -342,7 +340,6 @@ private fun LazyGridItemScope.TabGridItemContent(
                     group = tabsTrayItem,
                     selectionState = selectionState,
                     clickHandler = TabsTrayItemClickHandler(onClick = onItemClick),
-                    thumbnailSizePx = groupThumbnailSizePx,
                 )
             }
         }
@@ -364,13 +361,6 @@ private val BoxWithConstraintsScope.thumbnailSizePx: Int
         val thumbnailWidth = constraints.maxWidth - with(density) { totalSpacing.roundToPx() }
         val thumbnailHeight = (thumbnailWidth / gridItemAspectRatio).toInt()
         return max(thumbnailWidth, thumbnailHeight)
-    }
-
-private val BoxWithConstraintsScope.groupThumbnailSizePx: Int
-    @ReadOnlyComposable
-    @Composable
-    get() {
-        return (thumbnailSizePx / 4.0).roundToInt()
     }
 
 @Suppress("LongParameterList", "LongMethod", "CognitiveComplexMethod")
