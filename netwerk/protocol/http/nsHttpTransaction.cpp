@@ -2788,6 +2788,10 @@ void nsHttpTransaction::DisableHttp3(bool aAllowRetryHTTPSRR) {
   }
 }
 
+void nsHttpTransaction::RemoveAltSvcUsedHeader() {
+  RemoveAlternateServiceUsedHeader(mRequestHead);
+}
+
 void nsHttpTransaction::Deactivate() {
   MOZ_ASSERT(OnSocketThread());
   if (mActivated) {

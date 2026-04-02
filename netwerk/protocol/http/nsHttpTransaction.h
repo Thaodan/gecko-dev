@@ -141,6 +141,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
     mDoNotResetIPFamilyPreference = true;
   }
   void DisableHttp3(bool aAllowRetryHTTPSRR) override;
+  void RemoveAltSvcUsedHeader();
   void Deactivate();
 
   nsHttpTransaction* QueryHttpTransaction() override { return this; }
