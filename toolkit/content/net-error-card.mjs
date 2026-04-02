@@ -87,6 +87,18 @@ export class NetErrorCard extends MozLitElement {
     return defaultCode;
   }
 
+  static getEffectiveErrorId(errorCodeString) {
+    const specificId = NetErrorCard.getCustomErrorID(errorCodeString);
+    if (errorCodeString && isFeltPrivacySupported(specificId)) {
+      return specificId;
+    }
+    if (!errorCodeString || gErrorCode === "nssFailure2") {
+      const fallbackId = NetErrorCard.getCustomErrorID(gErrorCode);
+      return isFeltPrivacySupported(fallbackId) ? fallbackId : null;
+    }
+    return null;
+  }
+
   static isSupported() {
     if (!FELT_PRIVACY_REFRESH) {
       return false;
@@ -101,10 +113,7 @@ export class NetErrorCard extends MozLitElement {
         : document.getNetErrorInfo();
     } catch {}
 
-    const id = NetErrorCard.getCustomErrorID(
-      errorInfo.errorCodeString || gErrorCode
-    );
-    return isFeltPrivacySupported(id);
+    return NetErrorCard.getEffectiveErrorId(errorInfo.errorCodeString) !== null;
   }
 
   constructor() {
@@ -353,9 +362,10 @@ export class NetErrorCard extends MozLitElement {
   }
 
   getErrorConfig() {
-    const id = NetErrorCard.getCustomErrorID(
-      this.errorInfo.errorCodeString || gErrorCode
-    );
+    const id = NetErrorCard.getEffectiveErrorId(this.errorInfo.errorCodeString);
+    if (!id) {
+      return {};
+    }
     const errorConfig = getResolvedErrorConfig(id, {
       hostname: this.hostname,
       errorInfo: this.errorInfo,
