@@ -524,7 +524,8 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
       return undefined;
     }
     if (
-      result.autofill.type === "adaptive" ||
+      result.autofill.type === "adaptive_url" ||
+      result.autofill.type === "adaptive_origin" ||
       result.autofill.type === "origin"
     ) {
       let isOrigin = UrlbarUtils.isOriginUrl(result.payload.url);
@@ -937,7 +938,9 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
         adaptiveHistoryInput = row.getResultByName("input");
         fixedURL = row.getResultByName("url_fixed");
         finalCompleteValue = row.getResultByName("url");
-        autofilledType = "adaptive";
+        autofilledType = UrlbarUtils.isOriginUrl(finalCompleteValue)
+          ? "adaptive_origin"
+          : "adaptive_url";
         break;
       }
     }

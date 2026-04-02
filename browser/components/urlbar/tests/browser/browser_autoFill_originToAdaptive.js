@@ -87,8 +87,8 @@ add_task(async function origin_becomes_adaptive_after_pick() {
     let newType = await getAutofillType(input);
     Assert.equal(
       newType,
-      "adaptive",
-      "Should be adaptive autofill after picking origin autofill"
+      "adaptive_origin",
+      "Should be adaptive origin autofill after picking origin autofill"
     );
   });
 
@@ -115,7 +115,7 @@ add_task(async function origin_adaptive_does_not_affect_other_origins() {
     let exampleType = await getAutofillType("exam");
     Assert.equal(
       exampleType,
-      "adaptive",
+      "adaptive_origin",
       "Picked origin should become adaptive"
     );
 
@@ -228,7 +228,7 @@ add_task(async function origin_without_visit_becomes_adaptive() {
     let newType = await getAutofillType(input);
     Assert.equal(
       newType,
-      "adaptive",
+      "adaptive_origin",
       "Should be adaptive autofill after picking origin autofill without prior visit"
     );
   });
@@ -260,7 +260,7 @@ add_task(async function repeated_picks_stay_adaptive() {
     let type = await getAutofillType(input);
     Assert.equal(
       type,
-      "adaptive",
+      "adaptive_origin",
       "Should still be adaptive after multiple picks"
     );
   });

@@ -68,8 +68,8 @@ add_task(async function deep_url_shows_origin_fallback() {
   Assert.ok(details.autofill, "First result should be autofill");
   Assert.equal(
     details.result.autofill.type,
-    "adaptive",
-    "Autofill type should be adaptive"
+    "adaptive_url",
+    "Autofill type should be adaptive url"
   );
   Assert.equal(gURLBar.value, "example.com/path", "Autofilled value");
 
@@ -143,8 +143,8 @@ add_task(async function no_fallback_without_origin_visit() {
   Assert.ok(details.autofill, "First result should be autofill");
   Assert.equal(
     details.result.autofill.type,
-    "adaptive",
-    "Autofill type should be adaptive"
+    "adaptive_url",
+    "Autofill type should be adaptive url"
   );
   Assert.equal(gURLBar.value, "example.com/path", "Autofilled value");
 
@@ -222,8 +222,8 @@ add_task(async function remove_fallback_origin_from_history() {
   Assert.ok(details.autofill, "First result should be autofill");
   Assert.equal(
     details.result.autofill.type,
-    "adaptive",
-    "Autofill type should be adaptive"
+    "adaptive_url",
+    "Autofill type should be adaptive url"
   );
 
   let resultCount = UrlbarTestUtils.getResultCount(window);
