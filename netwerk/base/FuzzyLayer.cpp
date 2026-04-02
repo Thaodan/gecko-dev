@@ -38,11 +38,11 @@ typedef struct {
 } NetworkFuzzingBuffer;
 
 // This holds all connections we have currently open.
-constinit static nsTHashMap<nsPtrHashKey<PRFileDesc>, NetworkFuzzingBuffer*>
+MOZ_RUNINIT static nsTHashMap<nsPtrHashKey<PRFileDesc>, NetworkFuzzingBuffer*>
     gConnectedNetworkFuzzingBuffers;
 
 // This holds all buffers for connections we can still open.
-constinit static nsDeque<NetworkFuzzingBuffer> gNetworkFuzzingBuffers;
+MOZ_RUNINIT static nsDeque<NetworkFuzzingBuffer> gNetworkFuzzingBuffers;
 
 // This is `true` once all connections are closed and either there are
 // no buffers left to be used or all remaining buffers are marked optional.

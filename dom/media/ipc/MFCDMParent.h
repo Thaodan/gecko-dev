@@ -148,7 +148,7 @@ class MFCDMParent final : public PMFCDMParent {
 
   Maybe<MFCDMInitParamsIPDL> mInitParams;
 
-  constinit static inline nsTHashMap<nsUint64HashKey, MFCDMParent*>
+  MOZ_RUNINIT static inline nsTHashMap<nsUint64HashKey, MFCDMParent*>
       sRegisteredCDMs;
 
   static inline uint64_t sNextId = 1;

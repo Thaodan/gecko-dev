@@ -17,7 +17,7 @@
 using namespace mozilla;
 using namespace mozilla::a11y;
 
-constinit static nsTHashMap<nsStringHashKey, nsString> sLocalizedStrings;
+MOZ_RUNINIT static nsTHashMap<nsStringHashKey, nsString> sLocalizedStrings;
 
 void a11y::PlatformInit() {
   nsresult rv = NS_OK;

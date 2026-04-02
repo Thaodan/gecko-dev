@@ -324,7 +324,7 @@ bool gTelemetryEventCanRecordExtended;
 MOZ_RUNINIT nsTHashMap<nsCStringHashKey, EventKey> gEventNameIDMap(kEventCount);
 
 // The CategoryName set.
-constinit nsTHashSet<nsCString> gCategoryNames;
+MOZ_RUNINIT nsTHashSet<nsCString> gCategoryNames;
 
 // The main event storage. Events are inserted here, keyed by process id and
 // in recording order.
@@ -333,7 +333,7 @@ typedef nsTArray<EventRecord> EventRecordArray;
 typedef nsClassHashtable<ProcessIDHashKey, EventRecordArray>
     EventRecordsMapType;
 
-constinit EventRecordsMapType gEventRecords;
+MOZ_RUNINIT EventRecordsMapType gEventRecords;
 
 // The details on dynamic events that are recorded from addons are registered
 // here.

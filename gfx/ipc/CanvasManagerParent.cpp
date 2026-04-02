@@ -21,7 +21,7 @@
 
 namespace mozilla::gfx {
 
-constinit CanvasManagerParent::ManagerSet CanvasManagerParent::sManagers;
+MOZ_RUNINIT CanvasManagerParent::ManagerSet CanvasManagerParent::sManagers;
 
 /* static */ void CanvasManagerParent::Init(
     Endpoint<PCanvasManagerParent>&& aEndpoint,
