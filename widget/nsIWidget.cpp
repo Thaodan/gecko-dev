@@ -1508,8 +1508,6 @@ already_AddRefed<WebRenderLayerManager> nsIWidget::CreateCompositorSession(
     options.SetInitiallyPaused(CompositorInitiallyPaused());
 #endif
 
-    RefPtr<WebRenderLayerManager> lm = new WebRenderLayerManager(this);
-
     uint64_t innerWindowId = 0;
     if (Document* doc = GetDocument()) {
       innerWindowId = doc->InnerWindowID();
@@ -1517,15 +1515,18 @@ already_AddRefed<WebRenderLayerManager> nsIWidget::CreateCompositorSession(
 
     bool retry = false;
     mCompositorSession = gpm->CreateTopLevelCompositor(
-        this, lm, GetDefaultScale(), options, UseExternalCompositingSurface(),
+        this, GetDefaultScale(), options, UseExternalCompositingSurface(),
         gfx::IntSize(aWidth, aHeight), innerWindowId, &retry);
 
+    RefPtr<WebRenderLayerManager> lm;
     if (mCompositorSession) {
-      TextureFactoryIdentifier textureFactoryIdentifier;
       nsCString error;
-      lm->Initialize(mCompositorSession->GetCompositorBridgeChild(),
-                     wr::AsPipelineId(mCompositorSession->RootLayerTreeId()),
-                     &textureFactoryIdentifier, error);
+      TextureFactoryIdentifier textureFactoryIdentifier;
+      lm = mCompositorSession->GetCompositorBridgeChild()->CreateLayerManager(
+          this, wr::AsPipelineId(mCompositorSession->RootLayerTreeId()), error);
+      if (lm) {
+        lm->Initialize(&textureFactoryIdentifier, error);
+      }
       if (textureFactoryIdentifier.mParentBackend != LayersBackend::LAYERS_WR) {
         retry = true;
         DestroyCompositor();
