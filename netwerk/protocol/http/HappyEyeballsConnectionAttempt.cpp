@@ -150,7 +150,9 @@ nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
   while (!mDone) {
     happy_eyeballs::Output event{};
     nsTArray<uint8_t> echConfig;
-    rv = happy_eyeballs_process_output(mHappyEyeballs, &event, &echConfig);
+    nsCString dnsHostname;
+    rv = happy_eyeballs_process_output(mHappyEyeballs, &event, &echConfig,
+                                       &dnsHostname);
     if (NS_FAILED(rv)) {
       LOG(("process_output failed rv=%x", static_cast<uint32_t>(rv)));
       return rv;
@@ -158,12 +160,12 @@ nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
 
     switch (event.tag) {
       case happy_eyeballs::Output::Tag::SendDnsQuery: {
-        LOG(("HappyEyeballsEvent::Tag::SendDnsQuery id=%" PRIu64,
-             event.send_dns_query.id));
+        LOG(("HappyEyeballsEvent::Tag::SendDnsQuery id=%" PRIu64 " hostname=%s",
+             event.send_dns_query.id, dnsHostname.get()));
         auto dnsFlags = SetupDnsFlags(event.send_dns_query.record_type);
         if (dnsFlags.isOk()) {
           rv = DNSLookup(event.send_dns_query.record_type, dnsFlags.unwrap(),
-                         event.send_dns_query.id);
+                         event.send_dns_query.id, dnsHostname);
           if (NS_FAILED(rv)) {
             Abandon();
             return rv;
@@ -333,7 +335,7 @@ void HappyEyeballsConnectionAttempt::MaybeSendTransportStatus(
 
 nsresult HappyEyeballsConnectionAttempt::DNSLookup(
     happy_eyeballs::DnsRecordType aType, nsIDNSService::DNSFlags aFlags,
-    uint64_t aId) {
+    uint64_t aId, const nsACString& aHostname) {
   nsCOMPtr<nsIDNSService> dns = GetOrInitDNSService();
   if (!dns) {
     return NS_ERROR_UNEXPECTED;
@@ -360,7 +362,7 @@ nsresult HappyEyeballsConnectionAttempt::DNSLookup(
                                  getter_AddRefs(info));
         }
         rv = dns->AsyncResolveNative(
-            mHost, nsIDNSService::RESOLVE_TYPE_HTTPSSVC,
+            aHostname, nsIDNSService::RESOLVE_TYPE_HTTPSSVC,
             aFlags | nsIDNSService::RESOLVE_WANT_RECORD_ON_ERROR, info, this,
             gSocketTransportService, mConnInfo->GetOriginAttributes(),
             getter_AddRefs(request));
@@ -369,14 +371,14 @@ nsresult HappyEyeballsConnectionAttempt::DNSLookup(
     }
     case happy_eyeballs::DnsRecordType::Aaaa:
       rv = dns->AsyncResolveNative(
-          mHost, nsIDNSService::RESOLVE_TYPE_DEFAULT,
+          aHostname, nsIDNSService::RESOLVE_TYPE_DEFAULT,
           aFlags | nsIDNSService::RESOLVE_WANT_RECORD_ON_ERROR, nullptr, this,
           gSocketTransportService, mConnInfo->GetOriginAttributes(),
           getter_AddRefs(request));
       break;
     case happy_eyeballs::DnsRecordType::A:
       rv = dns->AsyncResolveNative(
-          mHost, nsIDNSService::RESOLVE_TYPE_DEFAULT,
+          aHostname, nsIDNSService::RESOLVE_TYPE_DEFAULT,
           aFlags | nsIDNSService::RESOLVE_WANT_RECORD_ON_ERROR, nullptr, this,
           gSocketTransportService, mConnInfo->GetOriginAttributes(),
           getter_AddRefs(request));

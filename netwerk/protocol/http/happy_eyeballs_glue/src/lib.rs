@@ -175,6 +175,7 @@ pub extern "C" fn happy_eyeballs_process_output(
     he: *mut HappyEyeballs,
     ret_event: *mut Output,
     ech_config: *mut ThinVec<u8>,
+    dns_hostname: *mut nsACString,
 ) -> nsresult {
     let Some(he) = (unsafe { he.as_mut() }) else {
         debug_assert!(false, "unexpected null he pointer");
@@ -191,7 +192,12 @@ pub extern "C" fn happy_eyeballs_process_output(
         return NS_ERROR_INVALID_ARG;
     };
 
-    he.process_output(ret_event, ech_config)
+    let Some(dns_hostname) = (unsafe { dns_hostname.as_mut() }) else {
+        debug_assert!(false, "unexpected null dns_hostname pointer");
+        return NS_ERROR_INVALID_ARG;
+    };
+
+    he.process_output(ret_event, ech_config, dns_hostname)
 }
 
 #[repr(C)]
@@ -359,17 +365,25 @@ impl HappyEyeballs {
         NS_OK
     }
 
-    fn process_output(&mut self, ret_event: &mut Output, ech_config: &mut ThinVec<u8>) -> nsresult {
+    fn process_output(
+        &mut self,
+        ret_event: &mut Output,
+        ech_config: &mut ThinVec<u8>,
+        dns_hostname: &mut nsACString,
+    ) -> nsresult {
         let out = self.inner.process_output(std::time::Instant::now());
         ech_config.clear();
+        dns_hostname.truncate();
         match out {
             Some(happy_eyeballs::Output::SendDnsQuery {
                 id,
-                hostname: _hostname,
+                hostname,
                 record_type,
             }) => {
                 self.profiler.dns_query_started(id, record_type);
                 self.metrics.dns_query_started(id, record_type);
+                let hostname: String = hostname.into();
+                dns_hostname.assign(hostname.as_bytes());
                 *ret_event = Output::SendDnsQuery {
                     id: id.into(),
                     record_type: record_type.into(),

@@ -87,7 +87,8 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   Result<nsIDNSService::DNSFlags, nsresult> SetupDnsFlags(
       happy_eyeballs::DnsRecordType aType);
   nsresult DNSLookup(happy_eyeballs::DnsRecordType aType,
-                     nsIDNSService::DNSFlags aFlags, uint64_t aId);
+                     nsIDNSService::DNSFlags aFlags, uint64_t aId,
+                     const nsACString& aHostname);
 
   // DNS answers
   nsresult OnARecord(nsIDNSRecord* aRecord, nsresult status, uint64_t aId);
