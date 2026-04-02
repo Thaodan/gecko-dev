@@ -13,6 +13,7 @@ import mozilla.components.concept.engine.Engine
 import mozilla.components.feature.awesomebar.provider.BookmarksStorageSuggestionProvider
 import mozilla.components.feature.awesomebar.provider.CombinedHistorySuggestionProvider
 import mozilla.components.feature.awesomebar.provider.DEFAULT_RECENT_SEARCH_SUGGESTION_LIMIT
+import mozilla.components.feature.awesomebar.provider.FlightsOnlineSuggestionProvider
 import mozilla.components.feature.awesomebar.provider.HistoryStorageSuggestionProvider
 import mozilla.components.feature.awesomebar.provider.RecentSearchSuggestionsProvider
 import mozilla.components.feature.awesomebar.provider.SearchActionProvider
@@ -24,6 +25,7 @@ import mozilla.components.feature.awesomebar.provider.SportsOnlineSuggestionProv
 import mozilla.components.feature.awesomebar.provider.StocksOnlineSuggestionProvider
 import mozilla.components.feature.awesomebar.provider.TrendingSearchProvider
 import mozilla.components.feature.fxsuggest.FxSuggestSuggestionProvider
+import mozilla.components.feature.fxsuggest.MockedFlightsSuggestionDataSource
 import mozilla.components.feature.fxsuggest.MockedSportsSuggestionDataSource
 import mozilla.components.feature.fxsuggest.MockedStocksSuggestionDataSource
 import mozilla.components.feature.search.SearchUseCases
@@ -286,6 +288,15 @@ class SearchSuggestionsProvidersBuilder(
             )
         }
 
+        if (state.showFlightsSuggestions) {
+            providersToAdd.add(
+                FlightsOnlineSuggestionProvider(
+                    dataSource = MockedFlightsSuggestionDataSource(),
+                    suggestionsHeader = suggestionsStringsProvider.firefoxSuggestOnlineHeader,
+                ),
+            )
+        }
+
         providersToAdd.add(requireNotNull(searchEngineSuggestionProvider))
 
         if (state.showTrendingSearches) {
@@ -542,7 +553,8 @@ class SearchSuggestionsProvidersBuilder(
      * @property showSponsoredSuggestions Whether to show sponsored suggestions.
      * @property showNonSponsoredSuggestions Whether to show non-sponsored suggestions.
      * @property showStocksSuggestions Whether to show optimized search suggestion stock cards.
-     * @property showSportsSuggestions Whether to show optimized search suggestion sports cards.
+     * @property showSportsSuggestions Whether to show optimized search suggestion sport cards.
+     * @property showFlightsSuggestions Whether to show optimized search suggestion flight cards.
      * @property showTrendingSearches Whether to show trending searches.
      * @property showRecentSearches Whether to show recent searches.
      * @property searchEngineSource Hoe the current search engine was selected.
@@ -563,6 +575,7 @@ class SearchSuggestionsProvidersBuilder(
         val showNonSponsoredSuggestions: Boolean,
         val showStocksSuggestions: Boolean,
         val showSportsSuggestions: Boolean,
+        val showFlightsSuggestions: Boolean,
         val showTrendingSearches: Boolean,
         val showRecentSearches: Boolean,
         val searchEngineSource: SearchEngineSource,

@@ -26,6 +26,7 @@ fun SearchFragmentState.toSearchProviderState() = SearchProviderState(
     showNonSponsoredSuggestions = showNonSponsoredSuggestions,
     showStocksSuggestions = showStocksSuggestions,
     showSportsSuggestions = showSportsSuggestions,
+    showFlightsSuggestions = showFlightsSuggestions,
     showTrendingSearches = showTrendingSearches,
     showRecentSearches = showRecentSearches,
     searchEngineSource = searchEngineSource,

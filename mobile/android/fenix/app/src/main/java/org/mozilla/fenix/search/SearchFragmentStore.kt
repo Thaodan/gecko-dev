@@ -152,6 +152,8 @@ sealed class SearchEngineSource {
  * in the AwesomeBar.
  * @property showSportsSuggestions Whether or not to show the optimized search suggestion sports cards
  * in the AwesomeBar.
+ * @property showFlightsSuggestions Whether or not to show the optimized search suggestion flight cards
+ * in the AwesomeBar.
  * @property showTrendingSearches Whether the setting for showing trending searches is enabled or disabled.
  * @property showRecentSearches Whether the setting for showing recent searches is enabled or disabled.
  * @property showQrButton Whether or not to show the QR button.
@@ -190,6 +192,7 @@ data class SearchFragmentState(
     val showNonSponsoredSuggestions: Boolean,
     val showStocksSuggestions: Boolean,
     val showSportsSuggestions: Boolean,
+    val showFlightsSuggestions: Boolean,
     val showTrendingSearches: Boolean,
     val showRecentSearches: Boolean,
     val showQrButton: Boolean,
@@ -235,6 +238,7 @@ data class SearchFragmentState(
             showNonSponsoredSuggestions = false,
             showStocksSuggestions = false,
             showSportsSuggestions = false,
+            showFlightsSuggestions = false,
             showTrendingSearches = false,
             showRecentSearches = false,
             showQrButton = false,
@@ -306,6 +310,8 @@ fun createInitialSearchFragmentState(
                 settings.shouldShowSearchOptimizationStockCard,
         showSportsSuggestions = shouldShowCardSuggestions(settings) &&
                 settings.shouldShowSearchOptimizationSportCard,
+        showFlightsSuggestions = shouldShowCardSuggestions(settings) &&
+                settings.shouldShowSearchOptimizationFlightCard,
         showTrendingSearches = shouldShowTrendingSearchSuggestions(
             browsingMode = browsingMode,
             settings = settings,
@@ -503,6 +509,8 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
                         action.settings.shouldShowSearchOptimizationStockCard,
                 showSportsSuggestions = shouldShowCardSuggestions(action.settings) &&
                         action.settings.shouldShowSearchOptimizationSportCard,
+                showFlightsSuggestions = shouldShowCardSuggestions(action.settings) &&
+                        action.settings.shouldShowSearchOptimizationFlightCard,
                 showAllSessionSuggestions = true,
                 showTrendingSearches = shouldShowTrendingSearchSuggestions(
                     browsingMode = action.browsingMode,
@@ -551,6 +559,7 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
                 showNonSponsoredSuggestions = false,
                 showStocksSuggestions = false,
                 showSportsSuggestions = false,
+                showFlightsSuggestions = false,
                 showTrendingSearches = shouldShowTrendingSearchSuggestions(
                     browsingMode = action.browsingMode,
                     settings = action.settings,
@@ -577,6 +586,7 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
                 showNonSponsoredSuggestions = false,
                 showStocksSuggestions = false,
                 showSportsSuggestions = false,
+                showFlightsSuggestions = false,
                 showTrendingSearches = false,
                 showRecentSearches = false,
             )
@@ -599,6 +609,7 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
                 showNonSponsoredSuggestions = false,
                 showStocksSuggestions = false,
                 showSportsSuggestions = false,
+                showFlightsSuggestions = false,
                 showTrendingSearches = false,
                 showRecentSearches = false,
             )
@@ -621,6 +632,7 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
                 showNonSponsoredSuggestions = false,
                 showStocksSuggestions = false,
                 showSportsSuggestions = false,
+                showFlightsSuggestions = false,
                 showTrendingSearches = false,
                 showRecentSearches = false,
             )

@@ -11,6 +11,7 @@ import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.search.SearchEngineProvider
 import mozilla.components.feature.awesomebar.provider.BookmarksStorageSuggestionProvider
 import mozilla.components.feature.awesomebar.provider.CombinedHistorySuggestionProvider
+import mozilla.components.feature.awesomebar.provider.FlightsOnlineSuggestionProvider
 import mozilla.components.feature.awesomebar.provider.HistoryStorageSuggestionProvider
 import mozilla.components.feature.awesomebar.provider.RecentSearchSuggestionsProvider
 import mozilla.components.feature.awesomebar.provider.SearchActionProvider
@@ -1507,6 +1508,34 @@ class SearchSuggestionsProvidersBuilderTest {
 
         assertEquals(0, result.filterIsInstance<SportsOnlineSuggestionProvider>().size)
     }
+
+    @Test
+    fun `GIVEN should show flight cards WHEN configuring providers THEN add the flights online suggestion provider`() {
+        val settings: Settings = mockk(relaxed = true)
+        every { components.settings } returns settings
+        val state = getSearchProviderState(
+            searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
+            showFlightsSuggestions = true,
+        )
+
+        val result = builder.getProvidersToAdd(state)
+
+        assertEquals(1, result.filterIsInstance<FlightsOnlineSuggestionProvider>().size)
+    }
+
+    @Test
+    fun `GIVEN should not show flight cards WHEN configuring providers THEN don't add the flights online suggestion provider`() {
+        val settings: Settings = mockk(relaxed = true)
+        every { components.settings } returns settings
+        val state = getSearchProviderState(
+            searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
+            showFlightsSuggestions = false,
+        )
+
+        val result = builder.getProvidersToAdd(state)
+
+        assertEquals(0, result.filterIsInstance<FlightsOnlineSuggestionProvider>().size)
+    }
 }
 
 /**
@@ -1529,6 +1558,7 @@ private fun getSearchProviderState(
     showNonSponsoredSuggestions: Boolean = true,
     showStocksSuggestions: Boolean = true,
     showSportsSuggestions: Boolean = true,
+    showFlightsSuggestions: Boolean = true,
     showTrendingSearches: Boolean = true,
     showRecentSearches: Boolean = true,
 ) = SearchProviderState(
@@ -1547,6 +1577,7 @@ private fun getSearchProviderState(
     showNonSponsoredSuggestions = showNonSponsoredSuggestions,
     showStocksSuggestions = showStocksSuggestions,
     showSportsSuggestions = showSportsSuggestions,
+    showFlightsSuggestions = showFlightsSuggestions,
     showTrendingSearches = showTrendingSearches,
     showRecentSearches = showRecentSearches,
     searchEngineSource = searchEngineSource,
