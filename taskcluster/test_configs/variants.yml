@@ -184,6 +184,7 @@ standalone:
     component: "Testing::General"
     expiration: "never"
     suffix: "standalone"
+    mozinfo: "standalone"
     replace:
         optimization:
             skip-unless-backstop: null
