@@ -283,9 +283,13 @@ public class WebAuthnCredentialManager {
 
             @Override
             public void onError(final GetCredentialException exception) {
+              final String errorType = exception.getType();
               if (DEBUG) {
-                final String errorType = exception.getType();
                 Log.d(LOGTAG, "Couldn't get credential. errorType=" + errorType);
+              }
+              if (errorType.equals(GetCredentialException.TYPE_NO_CREDENTIAL)) {
+                result.complete(null);
+                return;
               }
               result.completeExceptionally(new WebAuthnUtils.Exception("UNKNOWN_ERR"));
             }
