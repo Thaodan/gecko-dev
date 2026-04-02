@@ -183,6 +183,12 @@ class MenuTelemetryMiddleware(
                 )
             }
 
+            MenuAction.MoveToNonPrivateTab -> Events.browserMenuAction.record(
+                Events.BrowserMenuActionExtra(
+                    item = "move_to_non_private_tab",
+                ),
+            )
+
             MenuAction.DeleteBrowsingDataAndQuit -> Events.browserMenuAction.record(
                 Events.BrowserMenuActionExtra(
                     item = "quit",
@@ -294,7 +300,6 @@ class MenuTelemetryMiddleware(
             is MenuAction.OnSummarizationMenuExposed,
             is MenuAction.InitializeSummarizationMenuState,
             is MenuAction.OnMoreMenuClicked,
-            is MenuAction.MoveToNonPrivateTab,
             -> Unit
         }
     }
