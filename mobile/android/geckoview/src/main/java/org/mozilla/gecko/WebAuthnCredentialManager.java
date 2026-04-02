@@ -233,7 +233,6 @@ public class WebAuthnCredentialManager {
     final CredentialOption credentialOption =
         new CredentialOption.Builder(TYPE_PUBLIC_KEY_CREDENTIAL, requestBundle, requestBundle)
             .build();
-    final Bundle bundle = new Bundle();
     final GetCredentialRequest request =
         new GetCredentialRequest.Builder(requestBundle)
             .addCredentialOption(credentialOption)
