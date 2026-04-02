@@ -927,6 +927,10 @@ MWasmShuffleSimd128* jit::BuildWasmShuffleSimd128(TempAllocator& alloc,
 static MDefinition* FoldTrivialWasmTests(TempAllocator& alloc,
                                          wasm::RefType sourceType,
                                          wasm::RefType destType) {
+  if (!sourceType.isInhabitable() || !destType.isInhabitable()) {
+    return nullptr;
+  }
+
   // Upcasts are trivially valid.
   if (wasm::RefType::isSubTypeOf(sourceType, destType)) {
     return MConstant::NewInt32(alloc, 1);
@@ -944,6 +948,10 @@ static MDefinition* FoldTrivialWasmTests(TempAllocator& alloc,
 static MDefinition* FoldTrivialWasmCasts(MDefinition* ref,
                                          wasm::RefType sourceType,
                                          wasm::RefType destType) {
+  if (!sourceType.isInhabitable() || !destType.isInhabitable()) {
+    return nullptr;
+  }
+
   // Upcasts are trivially valid.
   if (wasm::RefType::isSubTypeOf(sourceType, destType)) {
     return ref;
