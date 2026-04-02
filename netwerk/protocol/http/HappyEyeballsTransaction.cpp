@@ -26,6 +26,10 @@ HappyEyeballsTransaction::HappyEyeballsTransaction(nsHttpTransaction* aTrans)
   LOG(("HappyEyeballsTransaction ctor %p trans=%p", this, mTransaction.get()));
 }
 
+HappyEyeballsTransaction::~HappyEyeballsTransaction() {
+  LOG(("HappyEyeballsTransaction dtor %p", this));
+}
+
 void HappyEyeballsTransaction::SetConnection(nsAHttpConnection* conn) {
   if (mTransaction) {
     mTransaction->SetConnection(conn);
@@ -118,8 +122,8 @@ nsresult HappyEyeballsTransaction::WriteSegments(nsAHttpSegmentWriter* writer,
 }
 
 void HappyEyeballsTransaction::Close(nsresult reason) {
-  LOG(("HappyEyeballsTransaction::Close %p reason=%x trans=%p", this,
-       static_cast<uint32_t>(reason), mTransaction.get()));
+  LOG(("HappyEyeballsTransaction::Close %p reason=%x trans=%p cancelled=%d",
+       this, static_cast<uint32_t>(reason), mTransaction.get(), mCancelled));
 
   RefPtr<nsHttpTransaction> trans = mTransaction;
   mTransaction = nullptr;
@@ -128,15 +132,25 @@ void HappyEyeballsTransaction::Close(nsresult reason) {
     return;
   }
 
-  if (NS_SUCCEEDED(reason)) {
-    trans->Close(reason);
+  trans->SetHappyEyeballsProxy(nullptr);
+
+  if (NS_SUCCEEDED(reason) || mConnectedCallbackInvoked ||
+      reason == NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED) {
+    trans->Close(mCancelled ? mCancelReason : reason);
     return;
   }
 
-  MaybeInvokeConnectedCallback(reason);
-
+  // Clear the inner transaction's connection reference to avoid leaking the
+  // Http3Session. The connection was set by Http3Stream to point to the
+  // Http3Session, and if we don't clear it here, the transaction will keep
+  // the session alive indefinitely.
   trans->SetConnection(nullptr);
-  (void)gHttpHandler->InitiateTransaction(trans, trans->Priority());
+
+  // Notify the ConnectionEstablisher about the failure. The
+  // HappyEyeballsConnectionAttempt still holds a reference to the inner
+  // transaction and will either retry on another connection or close it
+  // when all attempts have failed.
+  MaybeInvokeConnectedCallback(mCancelled ? mCancelReason : reason);
 }
 
 void HappyEyeballsTransaction::SetConnectedCallback(
@@ -291,6 +305,9 @@ bool HappyEyeballsTransaction::AllowedToConnectToIpAddressSpace(
 void HappyEyeballsTransaction::Detach() {
   LOG(("HappyEyeballsTransaction::Detach %p trans=%p", this,
        mTransaction.get()));
+  if (mTransaction) {
+    mTransaction->SetHappyEyeballsProxy(nullptr);
+  }
   mTransaction = nullptr;
   mConnectedCallback = nullptr;
 }

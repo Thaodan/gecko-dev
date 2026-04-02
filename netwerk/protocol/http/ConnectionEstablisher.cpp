@@ -206,7 +206,7 @@ nsresult ConnectionEstablisher::ActivateConnectionWithTransaction(
   mResultConn = aConn;
   mHandle = new ConnectionHandle(aConn);
 
-  if (mProxyTransaction) {
+  if (mProxyTransaction && !mProxyTransaction->IsDetached()) {
     LOG(("proxy transaction %p will drive first attempt on conn %p",
          mProxyTransaction.get(), aConn.get()));
 
@@ -293,6 +293,11 @@ void ConnectionEstablisher::FinishInternal(nsresult aResult) {
       mHandle->Reset();
     }
 
+    // Clear mHandle to break the ref cycle: the establisher holds mHandle
+    // (which refs the connection), while the connection holds mCallbacks
+    // (which refs the establisher).
+    mHandle = nullptr;
+
     if (NS_SUCCEEDED(aResult) && mResultConn) {
       if (!mConnectStart.IsNull()) {
         mResultConn->SetConnectBootstrapTimings(mConnectStart, mTcpConnectEnd);
@@ -372,9 +377,23 @@ void TCPConnectionEstablisher::Close(nsresult aReason) {
 
   mHandle = nullptr;
   if (mResultConn) {
-    LOG(("TCPConnectionEstablisher::Close closing connection %p",
-         mResultConn.get()));
-    mResultConn->Close(aReason);
+    if (mHasConnected && mProxyTransaction &&
+        !mProxyTransaction->IsDetached()) {
+      LOG(
+          ("TCPConnectionEstablisher::Close DontReuse connection %p "
+           "(has active HappyEyeballsTransaction)",
+           mResultConn.get()));
+      mResultConn->DontReuse();
+    } else {
+      LOG(("TCPConnectionEstablisher::Close closing connection %p",
+           mResultConn.get()));
+      // Use CloseTransaction instead of Close to properly clean up the SPDY
+      // session and transaction. If we only call Close, the Http2Session in
+      // mSpdySession/mTransaction is never released, keeping the connection
+      // alive indefinitely when no pending socket read triggers
+      // CloseTransaction naturally.
+      mResultConn->CloseTransaction(mResultConn->Transaction(), aReason);
+    }
     mResultConn = nullptr;
   }
 

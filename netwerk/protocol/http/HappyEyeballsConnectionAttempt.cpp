@@ -474,6 +474,7 @@ void HappyEyeballsConnectionAttempt::MaybePassHttpTransToEstablisher(
        "trans=%p id=%" PRIu64,
        trans, aId));
   mProxyTransaction = new HappyEyeballsTransaction(trans);
+  trans->SetHappyEyeballsProxy(mProxyTransaction);
   aEstablisher->SetProxyTransaction(mProxyTransaction);
   mHttpTransEstablisherId = Some(aId);
 }
@@ -716,7 +717,12 @@ void HappyEyeballsConnectionAttempt::ProcessUDPConn(
         mTransaction->Close(rv);
       }
     } else {
-      rv = aConn->Activate(mTransaction, mCaps, 0);
+      nsHttpTransaction* trans = mTransaction->QueryHttpTransaction();
+      if (trans && trans->IsDone()) {
+        LOG(("ProcessUDPConn transaction already done, not activating"));
+      } else {
+        rv = aConn->Activate(mTransaction, mCaps, 0);
+      }
     }
   }
 
@@ -756,19 +762,33 @@ void HappyEyeballsConnectionAttempt::OnSucceeded() {
            mProxyTransaction ? mProxyTransaction->IsDetached() : -1));
       mHttpTransEstablisherId.reset();
       if (mProxyTransaction) {
+        bool needsRequeue = false;
         if (!mProxyTransaction->IsDetached()) {
-          // The proxy's connection hasn't been closed yet. Detach the proxy
-          // and re-queue the real transaction.
-          mProxyTransaction->Detach();
           nsHttpTransaction* trans = mTransaction->QueryHttpTransaction();
-          if (trans) {
-            trans->SetConnection(nullptr);
-            (void)gHttpHandler->InitiateTransaction(trans, trans->Priority());
+          if (trans && trans->Connected()) {
+            // The losing connection is already established and serving the
+            // transaction. Let it finish — don't re-queue.
+            LOG(("  losing conn already connected, letting it serve trans"));
+          } else {
+          mProxyTransaction->Detach();
+            needsRequeue = true;
+          }
+        } else {
+          // The proxy was already detached (e.g. connection failure closed
+          // the HET). The transaction was removed from the pending queue by
+          // PassProxyTransactionToEstablisher, so we still need to re-queue.
+          needsRequeue = true;
+        }
+        mProxyTransaction = nullptr;
+        if (needsRequeue) {
+        nsHttpTransaction* trans = mTransaction->QueryHttpTransaction();
+          if (trans && !trans->IsDone() && !trans->Connected()) {
+          trans->SetConnection(nullptr);
+            RefPtr<PendingTransactionInfo> pendingTransInfo =
+                new PendingTransactionInfo(trans);
+            entry->InsertTransaction(pendingTransInfo);
           }
         }
-        // If IsDetached(), the proxy's Close() already re-queued the
-        // transaction.
-        mProxyTransaction = nullptr;
       }
     }
   } else {
@@ -814,6 +834,12 @@ uint32_t HappyEyeballsConnectionAttempt::UnconnectedUDPConnsLength() const {
        iter.Next()) {
     if (iter.Data()->IsUDP()) {
       len++;
+    }
+  }
+
+  if (len == 0) {
+    if (mConnInfo->IsHttp3()) {
+      return 1;
     }
   }
   return len;

@@ -251,6 +251,67 @@ async function do_test_h3_failed_fallback(host) {
   mockController.clearFailedUDPAddr();
 }
 
+async function do_test_cancel_during_connection(host) {
+  await resetConnections();
+  mockController.clearBlockedUDPAddr();
+  mockController.clearBlockedTCPConnect();
+  mockController.clearPausedTCPConnect();
+
+  override.addIPOverride(host, "::1");
+  override.addIPOverride(host, "127.0.0.1");
+  Services.prefs.setCharPref(
+    "network.http.http3.alt-svc-mapping-for-testing",
+    `${host};h3=:${h3Port}`
+  );
+  Services.prefs.setBoolPref("network.http.http3.use_nspr_for_io", true);
+
+  // Block UDP on both addresses so H3 hangs.
+  let blockedUDP6 = mockController.createScriptableNetAddr("::1", h3Port);
+  mockController.blockUDPAddrIO(blockedUDP6);
+  let blockedUDP4 = mockController.createScriptableNetAddr("127.0.0.1", h3Port);
+  mockController.blockUDPAddrIO(blockedUDP4);
+
+  // Pause TCP on both addresses so TCP fallback hangs.
+  let h2Port = h2Server.port();
+  let pausedTCP6 = mockController.createScriptableNetAddr("::1", h2Port);
+  mockController.pauseTCPConnect(pausedTCP6);
+  let pausedTCP4 = mockController.createScriptableNetAddr("127.0.0.1", h2Port);
+  mockController.pauseTCPConnect(pausedTCP4);
+
+  let chan = NetUtil.newChannel({
+    uri: `https://${host}:${h2Port}/`,
+    loadUsingSystemPrincipal: true,
+  }).QueryInterface(Ci.nsIHttpChannel);
+  chan.loadFlags = Ci.nsIChannel.LOAD_INITIAL_DOCUMENT_URI;
+
+  let openPromise = new Promise(resolve => {
+    chan.asyncOpen(
+      new ChannelListener(() => resolve(), null, CL_EXPECT_FAILURE)
+    );
+  });
+
+  // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  chan.cancel(Cr.NS_BINDING_ABORTED);
+
+  await openPromise;
+
+  Assert.equal(chan.status, Cr.NS_BINDING_ABORTED, "Should be cancelled");
+
+  mockController.clearBlockedUDPAddr();
+  mockController.clearPausedTCPConnect();
+}
+
+add_task(async function test_cancel_during_connection_no_speculative() {
+  Services.prefs.setIntPref("network.http.speculative-parallel-limit", 0);
+  await do_test_cancel_during_connection("alt2.example.com");
+});
+
+add_task(async function test_cancel_during_connection_with_speculative() {
+  Services.prefs.setIntPref("network.http.speculative-parallel-limit", 6);
+  await do_test_cancel_during_connection("alt2.example.com");
+});
+
 add_task(async function test_h3_failed_no_speculative() {
   Services.prefs.setIntPref("network.http.speculative-parallel-limit", 0);
   await do_test_h3_failed_fallback("alt2.example.com");

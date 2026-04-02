@@ -2788,6 +2788,14 @@ void nsHttpTransaction::DisableHttp3(bool aAllowRetryHTTPSRR) {
   }
 }
 
+void nsHttpTransaction::Deactivate() {
+  MOZ_ASSERT(OnSocketThread());
+  if (mActivated) {
+    gHttpHandler->ConnMgr()->RemoveActiveTransaction(this);
+    mActivated = false;
+  }
+}
+
 void nsHttpTransaction::CheckForStickyAuthScheme() {
   LOG(("nsHttpTransaction::CheckForStickyAuthScheme this=%p", this));
 

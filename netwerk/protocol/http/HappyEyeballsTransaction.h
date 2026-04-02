@@ -60,14 +60,21 @@ class HappyEyeballsTransaction final : public nsAHttpTransaction {
   void Detach();
   bool IsDetached() const { return !mTransaction; }
 
+  void Cancel(nsresult aReason) override {
+    mCancelled = true;
+    mCancelReason = aReason;
+  }
+
  private:
-  ~HappyEyeballsTransaction() = default;
+  ~HappyEyeballsTransaction();
 
   void MaybeInvokeConnectedCallback(nsresult aStatus);
 
   RefPtr<nsHttpTransaction> mTransaction;
   std::function<void(nsresult)> mConnectedCallback;
   bool mConnectedCallbackInvoked = false;
+  bool mCancelled = false;
+  nsresult mCancelReason = NS_OK;
 };
 
 }  // namespace net

@@ -206,6 +206,59 @@ add_task(async function test_all_attempts_fail_with_speculative() {
   await do_test_all_attempts_fail("alt1.example.com");
 });
 
+async function do_test_cancel_during_connection(host) {
+  await resetConnections();
+
+  let server = new NodeHTTP2Server();
+  await server.start();
+  await server.registerPathHandler("/test", (_req, resp) => {
+    resp.writeHead(200, { "Content-Type": "text/plain" });
+    resp.end("ok");
+  });
+
+  let port = server.port();
+
+  override.addIPOverride(host, "::1");
+  override.addIPOverride(host, "127.0.0.1");
+
+  let pausedAddr6 = mockController.createScriptableNetAddr("::1", port);
+  mockController.pauseTCPConnect(pausedAddr6);
+  let pausedAddr4 = mockController.createScriptableNetAddr("127.0.0.1", port);
+  mockController.pauseTCPConnect(pausedAddr4);
+
+  let chan = NetUtil.newChannel({
+    uri: `https://${host}:${port}/test`,
+    loadUsingSystemPrincipal: true,
+  }).QueryInterface(Ci.nsIHttpChannel);
+  chan.loadFlags = Ci.nsIChannel.LOAD_INITIAL_DOCUMENT_URI;
+
+  let openPromise = new Promise(resolve => {
+    chan.asyncOpen(
+      new ChannelListener(() => resolve(), null, CL_EXPECT_FAILURE)
+    );
+  });
+
+  // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+  await new Promise(resolve => setTimeout(resolve, 100));
+  chan.cancel(Cr.NS_BINDING_ABORTED);
+
+  await openPromise;
+
+  Assert.equal(chan.status, Cr.NS_BINDING_ABORTED, "Should be cancelled");
+
+  await server.stop();
+}
+
+add_task(async function test_cancel_during_connection_no_speculative() {
+  Services.prefs.setIntPref("network.http.speculative-parallel-limit", 0);
+  await do_test_cancel_during_connection("alt2.example.com");
+});
+
+add_task(async function test_cancel_during_connection_with_speculative() {
+  Services.prefs.setIntPref("network.http.speculative-parallel-limit", 6);
+  await do_test_cancel_during_connection("alt2.example.com");
+});
+
 async function do_test_first_attempt_slow(host) {
   await resetConnections();
 
