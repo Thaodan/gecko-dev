@@ -116,6 +116,7 @@ module.exports = [
       "browser/extensions/newtab/content-src/components/DiscoveryStreamComponents/CardGrid/_CardGrid.scss",
       "browser/extensions/newtab/content-src/components/DiscoveryStreamComponents/CardSections/_CardSections.scss",
       "browser/extensions/newtab/content-src/components/DiscoveryStreamComponents/DSCard/_DSCard.scss",
+      "browser/extensions/newtab/content-src/components/DiscoveryStreamComponents/DSCard/nova/_DSCard.scss",
       "browser/extensions/newtab/content-src/components/DiscoveryStreamComponents/DSContextFooter/_DSContextFooter.scss",
       "browser/extensions/newtab/content-src/components/DiscoveryStreamComponents/DSEmptyState/_DSEmptyState.scss",
       "browser/extensions/newtab/content-src/components/DiscoveryStreamComponents/DSImage/_DSImage.scss",
