@@ -294,6 +294,7 @@ class MenuTelemetryMiddleware(
             is MenuAction.OnSummarizationMenuExposed,
             is MenuAction.InitializeSummarizationMenuState,
             is MenuAction.OnMoreMenuClicked,
+            is MenuAction.MoveToNonPrivateTab,
             -> Unit
         }
     }
