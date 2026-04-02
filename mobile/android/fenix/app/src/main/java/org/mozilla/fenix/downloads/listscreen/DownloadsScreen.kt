@@ -69,6 +69,7 @@ import mozilla.components.compose.base.text.Text
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.button.RadioButton
 import org.mozilla.fenix.compose.list.ExpandableListHeader
+import org.mozilla.fenix.downloads.DownloadsScreenTestTag
 import org.mozilla.fenix.downloads.listscreen.store.DownloadListItem
 import org.mozilla.fenix.downloads.listscreen.store.DownloadUIAction
 import org.mozilla.fenix.downloads.listscreen.store.DownloadUIState
@@ -655,12 +656,14 @@ private fun DeleteConfirmationDialog(
             TextButton(
                 text = stringResource(R.string.download_delete_dialog_confirm),
                 onClick = { onConfirm(deleteFromDevice) },
+                modifier = Modifier.testTag(DownloadsScreenTestTag.DELETE_DIALOG_CONFIRM_BUTTON),
             )
         },
         dismissButton = {
             TextButton(
                 text = stringResource(R.string.download_delete_dialog_cancel),
                 onClick = onDismiss,
+                modifier = Modifier.testTag(DownloadsScreenTestTag.DELETE_DIALOG_CANCEL_BUTTON),
             )
         },
     )
