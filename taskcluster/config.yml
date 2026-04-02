@@ -67,6 +67,8 @@ treeherder:
         'M': 'Mochitests'
         'M-f': 'Mochitest failures'
         'M-ioi': 'Mochitests tagged with inc-origin-init'
+        'M-standalone': 'Mochitest with a browser restart between every test'
+        'M-standalone-cf': 'Mochitest with a browser restart between every test for confirm failure'
         'M-ioi-cf': 'Mochitests tagged with inc-origin-init for confirm failure'
         'Mn': 'Marionette tests'
         'Mn-ioi': 'Marionette tests tagged with inc-origin-init'

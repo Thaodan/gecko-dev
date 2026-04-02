@@ -291,6 +291,7 @@ tasks:
             - webrender-sw
             - webrender-sw+a11y-checks
             - msix
+            - standalone
             - vertical-tabs
             - inc-origin-init
             - trainhop-beta
@@ -331,6 +332,11 @@ tasks:
                     by-test-platform:
                         windows11-64.*: built-projects
                         default: []
+                standalone:
+                    by-test-platform:
+                        linux.*-64/(opt|debug): ['autoland', 'mozilla-central']
+                        windows.*-64-[^-/]+/(opt|debug): ['autoland', 'mozilla-central']
+                        default: []
                 vertical-tabs:
                     by-test-platform:
                         .*-asan.*: []
@@ -366,6 +372,10 @@ tasks:
                     by-test-platform:
                         .*/debug: 16
                         default: 7
+                standalone:
+                    by-test-platform:
+                        windows.*/debug: 60
+                        default: 40
                 default:
                     by-test-platform:
                         linux.*/debug: 16
@@ -380,6 +390,7 @@ tasks:
         max-run-time:
             by-variant:
                 msix: 5400
+                standalone: 5400
                 default:
                     by-test-platform:
                         linux.*64-ccov/opt: 9000
