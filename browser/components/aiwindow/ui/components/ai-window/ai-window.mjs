@@ -1059,7 +1059,7 @@ export class AIWindow extends MozLitElement {
     this.#recordChatInteraction();
     this.#fetchAIResponse(trimmed, {
       ...this.#createUserRoleOpts(contextMentions),
-      contextPageUrl,
+      pageUrl: contextPageUrl,
     });
     this.#dispatchChromeEvent(
       "ai-window:smartbar-input",
