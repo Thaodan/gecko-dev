@@ -593,20 +593,6 @@ pub enum Output {
     None,
 }
 
-#[repr(C)]
-pub enum FailureReason {
-    DnsResolution = 0,
-    Connection = 1,
-}
-
-impl From<happy_eyeballs::FailureReason> for FailureReason {
-    fn from(v: happy_eyeballs::FailureReason) -> Self {
-        match v {
-            happy_eyeballs::FailureReason::DnsResolution => Self::DnsResolution,
-            happy_eyeballs::FailureReason::Connection => Self::Connection,
-        }
-    }
-}
 
 #[no_mangle]
 pub unsafe extern "C" fn happy_eyeballs_release(happy_eyeballs: *const HappyEyeballs) {

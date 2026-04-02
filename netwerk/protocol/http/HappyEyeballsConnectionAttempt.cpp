@@ -500,6 +500,7 @@ nsresult HappyEyeballsConnectionAttempt::EstablishTCPConnection(
   }
   RefPtr<TCPConnectionEstablisher> establisher = new TCPConnectionEstablisher(
       info, aAddr, mCaps, mSpeculative, mAllow1918);
+  establisher->SetDnsMetadata(mDnsMetadata);
   nsCOMPtr<nsIInterfaceRequestor> callbacks;
   mTransaction->GetSecurityCallbacks(getter_AddRefs(callbacks));
   establisher->SetSecurityCallbacks(callbacks);
@@ -536,6 +537,7 @@ nsresult HappyEyeballsConnectionAttempt::EstablishUDPConnection(
   }
   RefPtr<UDPConnectionEstablisher> establisher =
       new UDPConnectionEstablisher(info, aAddr, mCaps);
+  establisher->SetDnsMetadata(mDnsMetadata);
   establisher->SetTransportStatusCallback(
       [self = RefPtr{this}](nsITransport* trans, nsresult status,
                             int64_t progress) {
@@ -614,6 +616,7 @@ void HappyEyeballsConnectionAttempt::CloseHttpTransaction(
     mProxyTransaction->Detach();
     mProxyTransaction = nullptr;
   }
+
   nsresult reason = NS_ERROR_ABORT;
   switch (aReason) {
     case happy_eyeballs::FailureReason::DnsResolution:
@@ -942,6 +945,14 @@ nsresult HappyEyeballsConnectionAttempt::OnARecord(nsIDNSRecord* aRecord,
   // TODO: use NS_ERROR_UNKNOWN_PROXY_HOST if stasus is failed and proxy is used
 
   nsCOMPtr<nsIDNSAddrRecord> addrRecord = do_QueryInterface(aRecord);
+  if (addrRecord) {
+    mDnsMetadata.Fill(addrRecord);
+    if (mTransaction) {
+      mTransaction->SetTRRInfo(mDnsMetadata.mEffectiveTRRMode,
+                               mDnsMetadata.mTrrSkipReason);
+    }
+  }
+
   nsresult rv;
   if (NS_FAILED(status) || !addrRecord) {
     nsTArray<NetAddr> emptyArray;
@@ -987,6 +998,7 @@ nsresult HappyEyeballsConnectionAttempt::OnAAAARecord(nsIDNSRecord* aRecord,
   // TODO: use NS_ERROR_UNKNOWN_PROXY_HOST if stasus is failed and proxy is used
 
   nsCOMPtr<nsIDNSAddrRecord> addrRecord = do_QueryInterface(aRecord);
+
   nsresult rv;
   if (NS_FAILED(status) || !addrRecord) {
     nsTArray<NetAddr> emptyArray;

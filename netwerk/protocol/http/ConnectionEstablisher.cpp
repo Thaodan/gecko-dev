@@ -25,26 +25,34 @@ namespace mozilla::net {
 
 // -------------------- SingleDNSAddrRecord --------------------
 
+void DnsMetadata::Fill(nsIDNSAddrRecord* aRecord) {
+  if (!aRecord) {
+    return;
+  }
+  aRecord->IsTRR(&mIsTRR);
+  aRecord->ResolvedInSocketProcess(&mResolvedInSocketProcess);
+  aRecord->GetTrrFetchDuration(&mTrrFetchDuration);
+  aRecord->GetTrrFetchDurationNetworkOnly(&mTrrFetchDurationNetworkOnly);
+  aRecord->GetEffectiveTRRMode(&mEffectiveTRRMode);
+  aRecord->GetTrrSkipReason(&mTrrSkipReason);
+}
+
 class SingleDNSAddrRecord final : public nsIDNSAddrRecord {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIDNSRECORD
   NS_DECL_NSIDNSADDRRECORD
 
-  SingleDNSAddrRecord(NetAddr aAddr, nsIDNSAddrRecord* aRecord)
-      : mAddress(aAddr) {
-    LOG(("SingleDNSAddrRecord ctor:%p", this));
-    if (aRecord) {
-      aRecord->GetCanonicalName(mCanonicalName);
-      aRecord->IsTRR(&mIsTRR);
-      aRecord->ResolvedInSocketProcess(&mResolvedInSocketProcess);
-      aRecord->GetTrrFetchDuration(&mTrrFetchDuration);
-      aRecord->GetTrrFetchDurationNetworkOnly(&mTrrFetchDurationNetworkOnly);
-      aRecord->GetEffectiveTRRMode(&mEffectiveTRRMode);
-      aRecord->GetTrrSkipReason(&mTrrSkipReason);
-      aRecord->GetTtl(&mTTL);
-      aRecord->GetLastUpdate(&mLastUpdate);
-    }
+  SingleDNSAddrRecord(NetAddr aAddr, const DnsMetadata& aMetadata)
+      : mAddress(aAddr),
+        mIsTRR(aMetadata.mIsTRR),
+        mResolvedInSocketProcess(aMetadata.mResolvedInSocketProcess),
+        mTrrFetchDuration(aMetadata.mTrrFetchDuration),
+        mTrrFetchDurationNetworkOnly(aMetadata.mTrrFetchDurationNetworkOnly),
+        mEffectiveTRRMode(aMetadata.mEffectiveTRRMode),
+        mTrrSkipReason(aMetadata.mTrrSkipReason) {
+    LOG(("SingleDNSAddrRecord ctor:%p mIsTRR=%d mEffectiveTRRMode=%d", this,
+         mIsTRR, static_cast<uint32_t>(mEffectiveTRRMode)));
   }
 
  private:
@@ -151,6 +159,14 @@ SingleDNSAddrRecord::GetNextAddr(uint16_t aPort, NetAddr* aAddr) {
 
   *aAddr = mAddress;
   mDone = true;
+
+  uint16_t port = htons(aPort);
+  if (aAddr->raw.family == AF_INET) {
+    aAddr->inet.port = port;
+  } else if (aAddr->raw.family == AF_INET6) {
+    aAddr->inet6.port = port;
+  }
+
   return NS_OK;
 }
 
@@ -349,7 +365,7 @@ TCPConnectionEstablisher::~TCPConnectionEstablisher() = default;
 
 bool TCPConnectionEstablisher::Start(DoneCallback&& aCallback) {
   mCallback = std::move(aCallback);
-  mAddrRecord = new SingleDNSAddrRecord(mAddr, nullptr);
+  mAddrRecord = new SingleDNSAddrRecord(mAddr, mDnsMetadata);
 
   nsresult rv = CreateAndConfigureSocketTransport();
   if (NS_FAILED(rv)) {
@@ -635,7 +651,7 @@ UDPConnectionEstablisher::~UDPConnectionEstablisher() {
 bool UDPConnectionEstablisher::Start(DoneCallback&& aCallback) {
   LOG(("UDPConnectionEstablisher::Start %p", this));
   mCallback = std::move(aCallback);
-  mAddrRecord = new SingleDNSAddrRecord(mAddr, nullptr);
+  mAddrRecord = new SingleDNSAddrRecord(mAddr, mDnsMetadata);
 
   nsresult rv = CreateAndConfigureUDPConn();
   if (NS_FAILED(rv)) {

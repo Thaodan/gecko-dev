@@ -19,6 +19,17 @@ class nsIDNSAddrRecord;
 namespace mozilla {
 namespace net {
 
+struct DnsMetadata {
+  bool mIsTRR = false;
+  bool mResolvedInSocketProcess = false;
+  double mTrrFetchDuration = 0.0;
+  double mTrrFetchDurationNetworkOnly = 0.0;
+  nsIRequest::TRRMode mEffectiveTRRMode = nsIRequest::TRR_DEFAULT_MODE;
+  nsITRRSkipReason::value mTrrSkipReason = nsITRRSkipReason::TRR_UNSET;
+
+  void Fill(nsIDNSAddrRecord* aRecord);
+};
+
 class ConnectionEstablisher : public nsITransportEventSink,
                               public nsIInterfaceRequestor {
  public:
@@ -41,6 +52,9 @@ class ConnectionEstablisher : public nsITransportEventSink,
   }
   void SetTransportStatusCallback(TransportStatusCallback&& aCallback) {
     mTransportStatusCallback = std::move(aCallback);
+  }
+  void SetDnsMetadata(const DnsMetadata& aMetadata) {
+    mDnsMetadata = aMetadata;
   }
 
   virtual void Close(nsresult aReason) = 0;
@@ -86,6 +100,7 @@ class ConnectionEstablisher : public nsITransportEventSink,
   RefPtr<ConnectionHandle> mHandle;
   RefPtr<HttpConnectionBase> mResultConn;
   RefPtr<HappyEyeballsTransaction> mProxyTransaction;
+  DnsMetadata mDnsMetadata;
 };
 
 class TCPConnectionEstablisher : public ConnectionEstablisher,

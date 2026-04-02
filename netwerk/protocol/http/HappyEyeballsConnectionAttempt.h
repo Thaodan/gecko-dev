@@ -142,6 +142,9 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   RefPtr<HappyEyeballsTransaction> mProxyTransaction;
   nsTHashSet<uint32_t> mSentTransportStatuses;
 
+  DnsMetadata mDnsMetadata;
+
+
   TimeStamp mDomainLookupStart;
   TimeStamp mDomainLookupEnd;
   TimeStamp mFirstConnectionStart;
