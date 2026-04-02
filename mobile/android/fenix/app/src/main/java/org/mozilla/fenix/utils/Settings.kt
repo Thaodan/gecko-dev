@@ -47,7 +47,6 @@ import org.mozilla.fenix.autofill.address.RegionAddressFeatureGate
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.settings.counterPreference
 import org.mozilla.fenix.components.settings.featureFlagBooleanPreference
-import org.mozilla.fenix.components.settings.lazyBooleanPreference
 import org.mozilla.fenix.components.settings.lazyFeatureFlagBooleanPreference
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.debugsettings.addresses.EmptyAddressesDebugRegionRepository
@@ -200,6 +199,7 @@ class Settings(
     /**
      * Indicates if the stories homescreen section should be shown.
      */
+    @Suppress("DEPRECATION")
     var showPocketRecommendationsFeature by lazyFeatureFlagBooleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_pocket_homescreen_recommendations),
         featureFlag = ContentRecommendationsFeatureHelper.isContentRecommendationsFeatureEnabled(appContext),
@@ -241,6 +241,7 @@ class Settings(
     /**
      * Indicates if the Pocket recommendations homescreen section should also show sponsored stories.
      */
+    @Suppress("DEPRECATION")
     val showPocketSponsoredStories by lazyFeatureFlagBooleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_pocket_sponsored_stories),
         defaultValue = { homescreenSections[HomeScreenSection.POCKET_SPONSORED_STORIES] == true },
@@ -758,9 +759,9 @@ class Settings(
      * Rollouts are completely decoupled from telemetry and experiments, so users
      * can receive feature updates regardless of their telemetry or experiment settings.
      */
-    var isRolloutsEnabled by lazyBooleanPreference(
+    var isRolloutsEnabled by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_rollouts),
-        defaultValue = { appContext.components.nimbus.sdk.rolloutParticipation },
+        default = { appContext.components.nimbus.sdk.rolloutParticipation },
     )
 
     /**
@@ -2124,12 +2125,14 @@ class Settings(
     /**
      * Address Sync feature.
      */
+    @Suppress("DEPRECATION")
     var isAddressSyncEnabled by featureFlagBooleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_address_sync),
         defaultValue = true,
         featureFlag = isAddressFeatureEnabled(appContext),
     )
 
+    @Suppress("DEPRECATION")
     var addressFeature by featureFlagBooleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_show_address_feature),
         defaultValue = true,
@@ -2545,6 +2548,7 @@ class Settings(
     /**
      * Indicates if Firefox Suggest is enabled.
      */
+    @Suppress("DEPRECATION")
     var enableFxSuggest by lazyFeatureFlagBooleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_fxsuggest),
         defaultValue = { FxNimbus.features.fxSuggest.value().enabled },
@@ -2569,6 +2573,7 @@ class Settings(
      * Indicates if the user has chosen to show sponsored search suggestions in the awesomebar.
      * The default value is computed lazily, and based on whether Firefox Suggest is enabled.
      */
+    @Suppress("DEPRECATION")
     var showSponsoredSuggestions by lazyFeatureFlagBooleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_show_sponsored_suggestions),
         defaultValue = { enableFxSuggest },
@@ -2580,6 +2585,7 @@ class Settings(
      * awesomebar. The default value is computed lazily, and based on whether Firefox Suggest
      * is enabled.
      */
+    @Suppress("DEPRECATION")
     var showNonSponsoredSuggestions by lazyFeatureFlagBooleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_show_nonsponsored_suggestions),
         defaultValue = { enableFxSuggest },
