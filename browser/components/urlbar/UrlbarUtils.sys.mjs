@@ -2011,6 +2011,9 @@ export var UrlbarUtils = {
         if (result.providerName === "UrlbarProviderClipboard") {
           return "clipboard";
         }
+        if (result.payload.isAutofillFallback) {
+          return "history_autofill_fallback_origin";
+        }
         if (result.source === this.RESULT_SOURCE.BOOKMARKS) {
           return checkForSubType("bookmark", result);
         }
@@ -2447,6 +2450,9 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
       },
       iconBlob: {
         type: "object",
+      },
+      isAutofillFallback: {
+        type: "boolean",
       },
       isBlockable: {
         type: "boolean",

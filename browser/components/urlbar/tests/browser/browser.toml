@@ -141,6 +141,8 @@ support-files = [
   "add_search_engine_two.html",
 ]
 
+["browser_autoFill_adaptive_origin_fallback.js"]
+
 ["browser_autoFill_backspaced.js"]
 
 ["browser_autoFill_backspace_dismissal.js"]
