@@ -530,7 +530,7 @@ struct NavigationWaitForAllScope final : public nsISupports,
   RefPtr<NavigationDestination> mDestination;
 
  private:
-  ~NavigationWaitForAllScope() {}
+  ~NavigationWaitForAllScope() = default;
 
  public:
   // https://html.spec.whatwg.org/#process-navigate-event-handler-failure
