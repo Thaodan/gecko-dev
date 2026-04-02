@@ -72,7 +72,7 @@ pub extern "C" fn happy_eyeballs_create(
         ..Default::default()
     };
 
-    let profiler = profiler::Profiler::new(0, &origin_str, &network_config);
+    let profiler = profiler::Profiler::new(0u64.into(), &origin_str, &network_config);
 
     let raw_ptr = match happy_eyeballs::HappyEyeballs::new_with_network_config(
         origin_str.as_str(),
@@ -88,7 +88,7 @@ pub extern "C" fn happy_eyeballs_create(
             });
             boxed
                 .profiler
-                .set_flow_id(std::ptr::from_ref(&boxed.refcnt) as u64);
+                .set_flow_id(std::ptr::from_ref(&boxed.refcnt).into());
             Box::into_raw(boxed)
         }
         Err(_) => return NS_ERROR_UNEXPECTED,
