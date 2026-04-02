@@ -170,25 +170,15 @@ void HttpChannelChild::ReleaseMainThreadOnlyReferences() {
 NS_IMPL_ADDREF(HttpChannelChild)
 
 NS_IMETHODIMP_(MozExternalRefCountType) HttpChannelChild::Release() {
-  // Fast path for off-main-thread releases: decrement atomically when count >
-  // 2, staying clear of the mKeptAlive (count==1) and revival (count==0) paths
-  // which access non-atomic state and must run on the main thread.
   if (!NS_IsMainThread()) {
-    auto [ok, count] = mRefCnt.DecrementWithLimit<2>();
-    if (ok) {
-      NS_LOG_RELEASE(this, count, "HttpChannelChild");
-      return count;
-    }
-    // count <= 2: proxy to main thread for mKeptAlive/revival handling.
+    nsrefcnt count = mRefCnt;
     nsresult rv = NS_DispatchToMainThread(NewNonOwningRunnableMethod(
         "HttpChannelChild::Release", this, &HttpChannelChild::Release));
-    if (NS_SUCCEEDED(rv)) {
-      return count;
+
+    // Continue Release procedure if failed to dispatch to main thread.
+    if (!NS_WARN_IF(NS_FAILED(rv))) {
+      return count - 1;
     }
-    // Dispatch failed (event loop is shutting down). Crash rather than
-    // run main-thread-only logic off-thread.
-    MOZ_CRASH("Failed to dispatch Release to main thread");
-    return count;
   }
 
   nsrefcnt count = --mRefCnt;
