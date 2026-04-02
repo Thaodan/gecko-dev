@@ -252,7 +252,6 @@ export const AIWindowUI = {
           detail: {
             tab: win.gBrowser?.selectedTab,
             isOpen: false,
-            source: "toggle",
           },
         })
       );

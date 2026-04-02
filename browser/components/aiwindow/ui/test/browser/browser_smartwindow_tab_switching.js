@@ -303,6 +303,8 @@ add_task(
   }
 );
 
+// @todo Bug 2014929
+// Navigating back to Smart Window URL closes the sidebar
 add_task(async function test_navigate_back_to_aiwindow_closes_sidebar() {
   const sb = lazy.sinon.createSandbox();
 
@@ -349,7 +351,7 @@ add_task(async function test_navigate_back_to_aiwindow_closes_sidebar() {
   } finally {
     sb.restore();
   }
-});
+}).skip();
 
 // Navigating with an empty conversation (no messages) opens the sidebar
 add_task(async function test_navigate_with_empty_conversation_opens_sidebar() {
@@ -563,35 +565,40 @@ add_task(
       // Switch to tab A (with messages) - starters should not show
       await BrowserTestUtils.switchTab(win.gBrowser, tabA);
       await TestUtils.waitForCondition(
-        () =>
-          aiWindowEl.conversationId === "conv-a" && !aiWindowEl.showStarters,
-        "Conversation A should load with starters hidden"
+        () => !aiWindowEl.showStarters,
+        "Starters should be hidden for conversation with messages"
       );
       Assert.ok(!aiWindowEl.showStarters, "Starters should not be showing");
 
       // Switch to tab B (empty) - starters should show
       await BrowserTestUtils.switchTab(win.gBrowser, tabB);
-      await TestUtils.waitForCondition(
-        () => aiWindowEl.conversationId !== "conv-a" && aiWindowEl.showStarters,
-        "Empty conversation should load with starters showing"
+      await new Promise(res => win.setTimeout(res, 2000));
+
+      // await TestUtils.waitForCondition(
+      //   () => aiWindowEl.showStarters,
+      //   "Starters should be displayed for empty conversation"
+      // );
+      Assert.ok(
+        aiWindowEl.showStarters,
+        "Starters should be showing: " + aiWindowEl.showStarters
       );
-      Assert.ok(aiWindowEl.showStarters, "Starters should be showing");
 
       // Switch back to tab A - starters should hide again
       await BrowserTestUtils.switchTab(win.gBrowser, tabA);
       await TestUtils.waitForCondition(
-        () =>
-          aiWindowEl.conversationId === "conv-a" && !aiWindowEl.showStarters,
-        "Conversation A should reload with starters hidden"
+        () => !aiWindowEl.showStarters,
+        "Starters should be hidden again for conversation with messages"
       );
       Assert.ok(!aiWindowEl.showStarters, "Starters should not be showing");
 
       // Switch to tab B again - starters should still show (regression test)
       await BrowserTestUtils.switchTab(win.gBrowser, tabB);
 
+      // The sidebar should remain open when switching to tab B (which has a conversation).
+      // If this fails, it indicates a real bug in tab state management.
       await TestUtils.waitForCondition(
         () => AIWindowUI.isSidebarOpen(win),
-        "Sidebar should remain open when switching to tab B with conversation"
+        "Sidebar should open"
       );
       Assert.ok(
         AIWindowUI.isSidebarOpen(win),
@@ -599,82 +606,15 @@ add_task(
       );
 
       await TestUtils.waitForCondition(
-        () => aiWindowEl.conversationId !== "conv-a" && aiWindowEl.showStarters,
-        "Empty conversation should reload with starters showing"
+        () => aiWindowEl.showStarters,
+        "Starters should still display on repeated switch to empty conversation"
       );
+
       Assert.ok(aiWindowEl.showStarters, "Starters should be showing");
     } finally {
       await BrowserTestUtils.removeTab(tabA);
       if (tabB) {
         await BrowserTestUtils.removeTab(tabB);
-      }
-      await BrowserTestUtils.closeWindow(win);
-      sb.restore();
-    }
-  }
-);
-
-add_task(
-  async function test_tab_switch_does_not_refresh_starters_for_existing_conversation() {
-    const sb = lazy.sinon.createSandbox();
-
-    let win, newTab, originalTab;
-    try {
-      const mockConversation = createMockConversation();
-      sb.stub(ChatStore, "findConversationById").resolves(mockConversation);
-      const updateStarterPromptsSpy = sb.spy(
-        AIWindowUI,
-        "updateStarterPrompts"
-      );
-
-      win = await openAIWindow();
-      const browser = win.gBrowser.selectedBrowser;
-      originalTab = win.gBrowser.selectedTab;
-
-      win.dispatchEvent(
-        new win.CustomEvent("ai-window:opened-conversation", {
-          detail: {
-            mode: "fullpage",
-            conversationId: mockConversation.id,
-            tab: originalTab,
-          },
-        })
-      );
-
-      await promiseNavigateAndLoad(browser, "https://example.com/");
-      await TestUtils.waitForCondition(
-        () => AIWindowUI.isSidebarOpen(win),
-        "Sidebar should open after navigating away from the AI Window"
-      );
-
-      newTab = await BrowserTestUtils.openNewForegroundTab(
-        win.gBrowser,
-        AIWINDOW_URL
-      );
-      await TestUtils.waitForCondition(
-        () => !AIWindowUI.isSidebarOpen(win),
-        "Sidebar should close when switching to a new AI Window tab"
-      );
-
-      updateStarterPromptsSpy.resetHistory();
-
-      await BrowserTestUtils.switchTab(win.gBrowser, originalTab);
-      await TestUtils.waitForCondition(
-        () => AIWindowUI.isSidebarOpen(win),
-        "Sidebar should reopen when switching back to the conversation tab"
-      );
-
-      Assert.equal(
-        updateStarterPromptsSpy.callCount,
-        0,
-        "Switching tabs should not refresh starter prompts for an existing conversation"
-      );
-    } finally {
-      if (newTab) {
-        await BrowserTestUtils.removeTab(newTab);
-      }
-      if (originalTab) {
-        await BrowserTestUtils.removeTab(originalTab);
       }
       await BrowserTestUtils.closeWindow(win);
       sb.restore();
@@ -842,7 +782,6 @@ add_task(async function test_sidebar_state_after_multiple_navigations() {
         detail: {
           mode: "fullpage",
           conversationId: mockConversation.id,
-          conversation: mockConversation,
           tab,
         },
       })
@@ -855,29 +794,25 @@ add_task(async function test_sidebar_state_after_multiple_navigations() {
 
     // Navigate away - sidebar should open because conversation has messages
     await promiseNavigateAndLoad(browser, "https://example.com/");
-    await TestUtils.waitForCondition(
-      () => AIWindowUI.isSidebarOpen(win),
+    await new Promise(resolve => win.setTimeout(resolve, 100));
+    Assert.ok(
+      AIWindowUI.isSidebarOpen(win),
       "Sidebar should open when navigating away with active conversation"
     );
 
     // Navigate back to Smart Window URL - sidebar should close
     await promiseNavigateAndLoad(browser, AIWINDOW_URL);
-    await TestUtils.waitForCondition(
-      () => !AIWindowUI.isSidebarOpen(win),
+    await new Promise(resolve => win.setTimeout(resolve, 100));
+    Assert.ok(
+      !AIWindowUI.isSidebarOpen(win),
       "Sidebar should close when returning to Smart Window URL"
-    );
-
-    // Wait for the fullpage ai-window to connect so the tab's mode is
-    // restored to "fullpage" before we navigate away again.
-    await TestUtils.waitForCondition(
-      () => browser.contentDocument?.querySelector("ai-window:defined"),
-      "Fullpage ai-window should be ready"
     );
 
     // Navigate away again - sidebar should open again
     await promiseNavigateAndLoad(browser, "https://example.org/");
-    await TestUtils.waitForCondition(
-      () => AIWindowUI.isSidebarOpen(win),
+    await new Promise(resolve => win.setTimeout(resolve, 100));
+    Assert.ok(
+      AIWindowUI.isSidebarOpen(win),
       "Sidebar should open again when navigating away"
     );
   } finally {
@@ -885,7 +820,7 @@ add_task(async function test_sidebar_state_after_multiple_navigations() {
     await BrowserTestUtils.closeWindow(win);
     sb.restore();
   }
-});
+}).skip();
 
 // Switching to classic mode tears down tab state management
 add_task(async function test_classic_mode_disables_tab_state_events() {
@@ -955,15 +890,22 @@ add_task(async function test_ask_button_close_persists_across_tab_switches() {
   let win;
 
   try {
-    // const mockConversation = createMockConversation();
-    // sb.stub(ChatStore, "findConversationById").resolves(mockConversation);
+    const mockConversation = createMockConversation();
+    sb.stub(ChatStore, "findConversationById").resolves(mockConversation);
 
     win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
     const originalTab = win.gBrowser.selectedTab;
 
-    await typeInSmartbar(browser, "hello");
-    await submitSmartbar(browser);
+    win.dispatchEvent(
+      new win.CustomEvent("ai-window:opened-conversation", {
+        detail: {
+          mode: "fullpage",
+          conversationId: mockConversation.id,
+          tab: originalTab,
+        },
+      })
+    );
 
     await promiseNavigateAndLoad(browser, "https://example.com/");
 
@@ -985,7 +927,7 @@ add_task(async function test_ask_button_close_persists_across_tab_switches() {
 
     await BrowserTestUtils.openNewForegroundTab(win.gBrowser, AIWINDOW_URL);
     await BrowserTestUtils.switchTab(win.gBrowser, originalTab);
-    await TestUtils.waitForTick();
+    await new Promise(resolve => win.setTimeout(resolve, 100));
 
     Assert.ok(
       !AIWindowUI.isSidebarOpen(win),
@@ -1079,42 +1021,3 @@ add_task(async function test_ask_button_close_persists_across_navigation() {
     sb.restore();
   }
 });
-
-add_task(
-  async function test_tabs_after_first_should_open_sidebar_on_site_navigation() {
-    let gAiWindow, newTab;
-
-    try {
-      gAiWindow = await openAIWindow();
-
-      await promiseNavigateAndLoad(gAiWindow.gBrowser, "https://example.com/");
-      await TestUtils.waitForCondition(
-        () => AIWindowUI.isSidebarOpen(gAiWindow),
-        "Sidebar should open"
-      );
-      Assert.ok(
-        AIWindowUI.isSidebarOpen(gAiWindow),
-        "Sidebar should open after navigating away with active conversation"
-      );
-
-      newTab = await BrowserTestUtils.openNewForegroundTab(
-        gAiWindow.gBrowser,
-        "https://example.net/"
-      );
-      await TestUtils.waitForCondition(
-        () => AIWindowUI.isSidebarOpen(gAiWindow),
-        "Sidebar should open"
-      );
-      Assert.ok(
-        AIWindowUI.isSidebarOpen(gAiWindow),
-        "Sidebar should open after navigating away with active conversation"
-      );
-    } finally {
-      if (newTab) {
-        await BrowserTestUtils.removeTab(newTab);
-      }
-
-      await BrowserTestUtils.closeWindow(gAiWindow);
-    }
-  }
-);

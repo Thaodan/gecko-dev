@@ -771,7 +771,7 @@ export class AIWindow extends MozLitElement {
     }
 
     this.#starters = this.#conversation?.messages?.length ? [] : starters;
-    this.showStarters = !!this.#starters.length;
+    this.showStarters = !!starters.length;
 
     if (this.showStarters) {
       this.onQuickPromptDisplayed(this.#starters.length);
