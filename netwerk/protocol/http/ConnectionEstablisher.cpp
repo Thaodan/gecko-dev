@@ -6,11 +6,13 @@
 #include "HttpLog.h"
 
 #include "ConnectionEstablisher.h"
+#include "HappyEyeballsConnectionAttempt.h"
 #include "mozilla/Components.h"
 #include "nsSocketTransportService2.h"
 #include "nsHttpConnectionMgr.h"
 #include "nsHttpHandler.h"
 #include "nsIDNSRecord.h"
+#include "nsHttpTransaction.h"
 #include "HttpConnectionUDP.h"
 
 // Log on level :5, instead of default :4.
@@ -193,13 +195,45 @@ void ConnectionEstablisher::ClearResultConnection() { mResultConn = nullptr; }
 nsresult ConnectionEstablisher::ActivateConnectionWithTransaction(
     RefPtr<HttpConnectionBase> aConn,
     std::function<void(nsresult)> aOnActivated) {
-  LOG(("ConnectionEstablisher::ActivateConnectionWithTransaction %p conn=%p",
-       this, aConn.get()));
+  LOG(
+      ("ConnectionEstablisher::ActivateConnectionWithTransaction %p conn=%p "
+       "proxyTrans=%p",
+       this, aConn.get(), mProxyTransaction.get()));
 
   aConn->SetIsRacing(true);
 
   mHasConnected = true;
   mResultConn = aConn;
+  mHandle = new ConnectionHandle(aConn);
+
+  if (mProxyTransaction) {
+    LOG(("proxy transaction %p will drive first attempt on conn %p",
+         mProxyTransaction.get(), aConn.get()));
+
+    mProxyTransaction->SetConnectedCallback(
+        [self = RefPtr{this},
+         onActivated = std::move(aOnActivated)](nsresult aResult) {
+          NS_DispatchToCurrentThread(NS_NewRunnableFunction(
+              "ConnectionEstablisher::ActivateCallback",
+              [self, aResult, onActivated = std::move(onActivated)]() {
+                if (NS_FAILED(aResult)) {
+                  self->Finish(aResult);
+                  return;
+                }
+
+                onActivated(NS_OK);
+              }));
+        });
+
+    mProxyTransaction->SetConnection(mHandle);
+    nsresult rv = aConn->Activate(mProxyTransaction, mCaps, 0);
+    if (NS_FAILED(rv)) {
+      Finish(rv);
+      return rv;
+    }
+
+    return NS_OK;
+  }
 
   auto callback = [self = RefPtr{this},
                    onActivated = std::move(aOnActivated)](nsresult aResult) {
@@ -221,7 +255,6 @@ nsresult ConnectionEstablisher::ActivateConnectionWithTransaction(
   LOG(("speculative transaction %p will be used to finish handshake on conn %p",
        trans.get(), aConn.get()));
 
-  mHandle = new ConnectionHandle(aConn);
   trans->SetConnection(mHandle);
 
   nsresult rv = aConn->Activate(trans, mCaps, 0);
@@ -246,11 +279,17 @@ void ConnectionEstablisher::FinishInternal(nsresult aResult) {
   mTransportStatusCallback = nullptr;
   mAddrRecord = nullptr;
 
+  bool hadProxyTransaction = !!mProxyTransaction;
+  if (mProxyTransaction) {
+    mProxyTransaction->SetConnectedCallback(nullptr);
+    mProxyTransaction = nullptr;
+  }
+
   if (mCallback) {
     auto cb = std::move(mCallback);
     mCallback = nullptr;
-    if (mHandle && mHandle->Conn() && !mHandle->Conn()->UsingSpdy() &&
-        !mHandle->Conn()->UsingHttp3()) {
+    if (!hadProxyTransaction && mHandle && mHandle->Conn() &&
+        !mHandle->Conn()->UsingSpdy() && !mHandle->Conn()->UsingHttp3()) {
       mHandle->Reset();
     }
 

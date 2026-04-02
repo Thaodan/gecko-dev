@@ -163,6 +163,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   // restart - this indicates that state for dev tools
   void Refused0RTT();
 
+  bool Connected() const { return mConnected; }
   uint64_t BrowserId() override { return mBrowserId; }
 
   void SetHttpTrailers(nsCString& aTrailers);
@@ -299,6 +300,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
     TRANSACTION_RESTART_POSSIBLE_0RTT_ERROR
   };
   void SetRestartReason(TRANSACTION_RESTART_REASON aReason);
+  bool MaybeForceRestart(const char* aLogMessage);
 
   bool HandleWebTransportResponse(uint16_t aStatus);
 

@@ -9,16 +9,19 @@
 #include "nsAHttpConnection.h"
 #include "nsICancelable.h"
 #include "nsIDNSListener.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
 #include "nsTHashSet.h"
 #include "happy_eyeballs_glue/HappyEyeballs.h"
 #include "ConnectionEstablisher.h"
+#include "HappyEyeballsTransaction.h"
 
 namespace mozilla {
 namespace net {
 
 class HttpConnectionUDP;
 class nsHttpConnection;
+class PendingTransactionInfo;
 
 class DnsRequestInfo final {
  public:
@@ -92,6 +95,8 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   nsresult OnHTTPSRecord(nsIDNSRecord* aRecord, nsresult status, uint64_t aId);
 
   // Connection Attempt
+  void MaybePassHttpTransToEstablisher(ConnectionEstablisher* aEstablisher,
+                                       uint64_t aId);
   nsresult EstablishTCPConnection(NetAddr aAddr, uint16_t aPort,
                                   nsTArray<uint8_t>&& aEchConfig, uint64_t aId);
   void HandleTCPConnectionResult(
@@ -108,8 +113,11 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   void SetupTimer(uint64_t aTimeout);
 
   void OnSucceeded();
-  void ProcessTCPConn(nsHttpConnection* aConn, ConnectionEntry* aEntry);
-  void ProcessUDPConn(HttpConnectionUDP* aConn, ConnectionEntry* aEntry);
+  void ProcessTCPConn(nsHttpConnection* aConn, ConnectionEntry* aEntry,
+                      bool aTransactionAlreadyOnConn);
+  void ProcessUDPConn(HttpConnectionUDP* aConn, ConnectionEntry* aEntry,
+                      bool aTransactionAlreadyOnConn);
+  void CloseHttpTransaction(nsresult aReason);
 
   RefPtr<HappyEyeballs> mHappyEyeballs;
 
@@ -121,11 +129,15 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   nsRefPtrHashtable<nsUint64HashKey, ConnectionEstablisher>
       mConnectionEstablisherTable;
   RefPtr<HttpConnectionBase> mOutputConn;
+  uint64_t mOutputConnId{0};
   uint16_t mAddrFamily{0};
 
   nsCOMPtr<nsITimer> mTimer;
   WeakPtr<ConnectionEntry> mEntry;
   bool mDone = false;
+  bool mFirstAttempt = true;
+  Maybe<uint64_t> mHttpTransEstablisherId;
+  RefPtr<HappyEyeballsTransaction> mProxyTransaction;
   nsTHashSet<uint32_t> mSentTransportStatuses;
 
   TimeStamp mDomainLookupStart;

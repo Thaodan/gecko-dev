@@ -12,6 +12,7 @@
 #include "nsAHttpConnection.h"
 #include "nsHttpConnection.h"
 #include "nsIAsyncOutputStream.h"
+#include "HappyEyeballsTransaction.h"
 
 class nsIDNSAddrRecord;
 
@@ -44,9 +45,13 @@ class ConnectionEstablisher : public nsITransportEventSink,
 
   virtual void Close(nsresult aReason) = 0;
   virtual void ResetSpeculativeFlags() = 0;
+  void SetProxyTransaction(HappyEyeballsTransaction* aProxy) {
+    mProxyTransaction = aProxy;
+  }
   const NetAddr& Addr() const { return mAddr; }
   void ClearResultConnection();
   virtual bool IsUDP() const { return false; }
+  bool HasConnected() const { return mHasConnected; }
 
  protected:
   virtual ~ConnectionEstablisher();
@@ -80,6 +85,7 @@ class ConnectionEstablisher : public nsITransportEventSink,
   nsCOMPtr<nsIInterfaceRequestor> mSecurityCallbacks;
   RefPtr<ConnectionHandle> mHandle;
   RefPtr<HttpConnectionBase> mResultConn;
+  RefPtr<HappyEyeballsTransaction> mProxyTransaction;
 };
 
 class TCPConnectionEstablisher : public ConnectionEstablisher,

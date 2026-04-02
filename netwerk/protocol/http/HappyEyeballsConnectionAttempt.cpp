@@ -7,6 +7,8 @@
 
 #include "HappyEyeballsConnectionAttempt.h"
 #include "ConnectionEntry.h"
+#include "PendingTransactionInfo.h"
+#include "nsHttpTransaction.h"
 #include "HttpConnectionUDP.h"
 #include "nsIDNSAdditionalInfo.h"
 #include "nsDNSService2.h"
@@ -231,7 +233,8 @@ nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
             entry->RemoveTransFromPendingQ(trans);
           }
         }
-        mTransaction->Close(NS_ERROR_CONNECTION_REFUSED);
+
+        CloseHttpTransaction(NS_ERROR_CONNECTION_REFUSED);
 
         Abandon();
         if (entry) {
@@ -424,17 +427,55 @@ void HappyEyeballsConnectionAttempt::HandleTCPConnectionResult(
   }
 
   if (mDone) {
+    MOZ_ASSERT(mHttpTransEstablisherId.isNothing());
     establisher->Close(NS_BASE_STREAM_CLOSED);
     ProcessConnectionResult(addr, NS_BASE_STREAM_CLOSED, aId);
     return;
   }
 
   mOutputConn = aResult.unwrap();
+  mOutputConnId = aId;
   mAddrFamily = addr.raw.family;
   // The ownership of connection is moved to HappyEyeballsConnectionAttempt now.
   establisher->ClearResultConnection();
 
   ProcessConnectionResult(addr, NS_OK, aId);
+}
+
+void HappyEyeballsConnectionAttempt::MaybePassHttpTransToEstablisher(
+    ConnectionEstablisher* aEstablisher, uint64_t aId) {
+  if (!mFirstAttempt) {
+    return;
+  }
+  mFirstAttempt = false;
+
+  if (mSpeculative) {
+    return;
+  }
+
+  nsHttpTransaction* trans = mTransaction->QueryHttpTransaction();
+  if (!trans) {
+    return;
+  }
+
+  RefPtr<ConnectionEntry> entry(mEntry);
+  if (!entry) {
+    return;
+  }
+
+  RefPtr<PendingTransactionInfo> pendingInfo =
+      gHttpHandler->ConnMgr()->FindTransactionHelper(true, entry, mTransaction);
+  if (!pendingInfo) {
+    return;
+  }
+
+  LOG(
+      ("Passing proxy transaction to establisher for first attempt, "
+       "trans=%p id=%" PRIu64,
+       trans, aId));
+  mProxyTransaction = new HappyEyeballsTransaction(trans);
+  aEstablisher->SetProxyTransaction(mProxyTransaction);
+  mHttpTransEstablisherId = Some(aId);
 }
 
 nsresult HappyEyeballsConnectionAttempt::EstablishTCPConnection(
@@ -458,6 +499,9 @@ nsresult HappyEyeballsConnectionAttempt::EstablishTCPConnection(
                             int64_t progress) {
         self->MaybeSendTransportStatus(status, trans, progress);
       });
+
+  MaybePassHttpTransToEstablisher(establisher, aId);
+
   auto callback = [self = RefPtr{this}, establisher,
                    aId](Result<RefPtr<HttpConnectionBase>, nsresult> aResult) {
     self->HandleTCPConnectionResult(std::move(aResult), establisher, aId);
@@ -488,6 +532,9 @@ nsresult HappyEyeballsConnectionAttempt::EstablishUDPConnection(
                             int64_t progress) {
         self->MaybeSendTransportStatus(status, trans, progress);
       });
+
+  MaybePassHttpTransToEstablisher(establisher, aId);
+
   auto callback = [self = RefPtr{this}, establisher,
                    aId](Result<RefPtr<HttpConnectionBase>, nsresult> aResult) {
     self->HandleUDPConnectionResult(std::move(aResult), establisher, aId);
@@ -521,12 +568,14 @@ void HappyEyeballsConnectionAttempt::HandleUDPConnectionResult(
   }
 
   if (mDone) {
+    MOZ_ASSERT(mHttpTransEstablisherId.isNothing());
     establisher->Close(NS_BASE_STREAM_CLOSED);
     ProcessConnectionResult(addr, NS_BASE_STREAM_CLOSED, aId);
     return;
   }
 
   mOutputConn = aResult.unwrap();
+  mOutputConnId = aId;
   mAddrFamily = addr.raw.family;
   // The ownership of connection is moved to HappyEyeballsConnectionAttempt now.
   establisher->ClearResultConnection();
@@ -544,6 +593,19 @@ void HappyEyeballsConnectionAttempt::CancelConnection(uint64_t aId) {
   } else {
     LOG(("No matching connection found for id=%" PRIu64, aId));
   }
+}
+
+void HappyEyeballsConnectionAttempt::CloseHttpTransaction(nsresult aReason) {
+  LOG(("HappyEyeballsConnectionAttempt::CloseHttpTransaction %p reason=%x",
+       this, static_cast<uint32_t>(aReason)));
+  mHttpTransEstablisherId.reset();
+
+  // Detach the proxy so it won't re-queue the transaction on Close().
+  if (mProxyTransaction) {
+    mProxyTransaction->Detach();
+    mProxyTransaction = nullptr;
+  }
+  mTransaction->Close(aReason);
 }
 
 void HappyEyeballsConnectionAttempt::Abandon() {
@@ -578,39 +640,45 @@ void HappyEyeballsConnectionAttempt::Abandon() {
   mEntry = nullptr;
 }
 
-void HappyEyeballsConnectionAttempt::ProcessTCPConn(nsHttpConnection* aConn,
-                                                    ConnectionEntry* aEntry) {
+void HappyEyeballsConnectionAttempt::ProcessTCPConn(
+    nsHttpConnection* aConn, ConnectionEntry* aEntry,
+    bool aTransactionAlreadyOnConn) {
   RefPtr<ConnectionEntry> entry(mEntry);
   if (!entry) {
     return;
   }
 
   RefPtr<nsHttpConnection> connTCP = aConn;
-  LOG(("Got connTCP:%p", connTCP.get()));
+  LOG(("Got connTCP:%p transactionAlreadyOnConn=%d", connTCP.get(),
+       aTransactionAlreadyOnConn));
 
   entry->InsertIntoActiveConns(connTCP);
 
-  RefPtr<PendingTransactionInfo> pendingTransInfo =
-      gHttpHandler->ConnMgr()->FindTransactionHelper(true, entry, mTransaction);
   bool isHttp2 = connTCP->UsingSpdy();
-  if (pendingTransInfo) {
-    MOZ_ASSERT(!mSpeculative, "Speculative Half Open found mTransaction");
-    nsresult rv = gHttpHandler->ConnMgr()->DispatchTransaction(
-        entry, pendingTransInfo->Transaction(), connTCP);
-    if (NS_FAILED(rv)) {
-      mTransaction->Close(rv);
-    }
-  } else if (!isHttp2) {
-    // After about 1 second allow for the possibility of restarting a
-    // transaction due to server close. Keep at sub 1 second as that is the
-    // minimum granularity we can expect a server to be timing out with.
-    connTCP->SetIsReusedAfter(950);
 
-    LOG(
-        ("ProcessTCPConn no transaction match "
-         "returning conn %p to pool\n",
-         connTCP.get()));
-    gHttpHandler->ConnMgr()->OnMsgReclaimConnection(connTCP);
+  if (!aTransactionAlreadyOnConn) {
+    RefPtr<PendingTransactionInfo> pendingTransInfo =
+        gHttpHandler->ConnMgr()->FindTransactionHelper(true, entry,
+                                                       mTransaction);
+    if (pendingTransInfo) {
+      MOZ_ASSERT(!mSpeculative, "Speculative Half Open found mTransaction");
+      nsresult rv = gHttpHandler->ConnMgr()->DispatchTransaction(
+          entry, pendingTransInfo->Transaction(), connTCP);
+      if (NS_FAILED(rv)) {
+        mTransaction->Close(rv);
+      }
+    } else if (!isHttp2) {
+      // After about 1 second allow for the possibility of restarting a
+      // transaction due to server close. Keep at sub 1 second as that is the
+      // minimum granularity we can expect a server to be timing out with.
+      connTCP->SetIsReusedAfter(950);
+
+      LOG(
+          ("ProcessTCPConn no transaction match "
+           "returning conn %p to pool\n",
+           connTCP.get()));
+      gHttpHandler->ConnMgr()->OnMsgReclaimConnection(connTCP);
+    }
   }
 
   connTCP->SetIsRacing(false);
@@ -622,29 +690,34 @@ void HappyEyeballsConnectionAttempt::ProcessTCPConn(nsHttpConnection* aConn,
   }
 }
 
-void HappyEyeballsConnectionAttempt::ProcessUDPConn(HttpConnectionUDP* aConn,
-                                                    ConnectionEntry* aEntry) {
+void HappyEyeballsConnectionAttempt::ProcessUDPConn(
+    HttpConnectionUDP* aConn, ConnectionEntry* aEntry,
+    bool aTransactionAlreadyOnConn) {
   RefPtr<ConnectionEntry> entry(mEntry);
   if (!entry) {
     return;
   }
 
-  LOG(("Got connUDP:%p", aConn));
+  LOG(("Got connUDP:%p transactionAlreadyOnConn=%d", aConn,
+       aTransactionAlreadyOnConn));
 
   entry->InsertIntoActiveConns(aConn);
 
-  RefPtr<PendingTransactionInfo> pendingTransInfo =
-      gHttpHandler->ConnMgr()->FindTransactionHelper(true, entry, mTransaction);
-  nsresult rv = NS_OK;
-  if (pendingTransInfo) {
-    MOZ_ASSERT(!mSpeculative, "Speculative Half Open found mTransaction");
-    rv = gHttpHandler->ConnMgr()->DispatchTransaction(
-        entry, pendingTransInfo->Transaction(), aConn);
-    if (NS_FAILED(rv)) {
-      mTransaction->Close(rv);
+  if (!aTransactionAlreadyOnConn) {
+    RefPtr<PendingTransactionInfo> pendingTransInfo =
+        gHttpHandler->ConnMgr()->FindTransactionHelper(true, entry,
+                                                       mTransaction);
+    nsresult rv = NS_OK;
+    if (pendingTransInfo) {
+      MOZ_ASSERT(!mSpeculative, "Speculative Half Open found mTransaction");
+      rv = gHttpHandler->ConnMgr()->DispatchTransaction(
+          entry, pendingTransInfo->Transaction(), aConn);
+      if (NS_FAILED(rv)) {
+        mTransaction->Close(rv);
+      }
+    } else {
+      rv = aConn->Activate(mTransaction, mCaps, 0);
     }
-  } else {
-    rv = aConn->Activate(mTransaction, mCaps, 0);
   }
 
   aConn->SetIsRacing(false);
@@ -667,12 +740,47 @@ void HappyEyeballsConnectionAttempt::OnSucceeded() {
     mOutputConn->SetDnsBootstrapTimings(mDomainLookupStart, mDomainLookupEnd);
   }
 
+  bool transactionAlreadyOnConn = false;
+  if (mHttpTransEstablisherId) {
+    if (*mHttpTransEstablisherId == mOutputConnId) {
+      // The winning connection already has the proxy transaction activated
+      // on it. The proxy keeps forwarding to the real transaction.
+      LOG(("  proxy transaction on winning conn id=%" PRIu64, mOutputConnId));
+      mHttpTransEstablisherId.reset();
+      transactionAlreadyOnConn = true;
+      mProxyTransaction = nullptr;
+    } else {
+      LOG(("  proxy transaction on losing conn id=%" PRIu64 " winner=%" PRIu64
+           " detached=%d",
+           *mHttpTransEstablisherId, mOutputConnId,
+           mProxyTransaction ? mProxyTransaction->IsDetached() : -1));
+      mHttpTransEstablisherId.reset();
+      if (mProxyTransaction) {
+        if (!mProxyTransaction->IsDetached()) {
+          // The proxy's connection hasn't been closed yet. Detach the proxy
+          // and re-queue the real transaction.
+          mProxyTransaction->Detach();
+          nsHttpTransaction* trans = mTransaction->QueryHttpTransaction();
+          if (trans) {
+            trans->SetConnection(nullptr);
+            (void)gHttpHandler->InitiateTransaction(trans, trans->Priority());
+          }
+        }
+        // If IsDetached(), the proxy's Close() already re-queued the
+        // transaction.
+        mProxyTransaction = nullptr;
+      }
+    }
+  } else {
+    LOG(("  no proxy transaction"));
+  }
+
   RefPtr<nsHttpConnection> connTCP = do_QueryObject(mOutputConn);
   if (connTCP) {
-    ProcessTCPConn(connTCP, entry);
+    ProcessTCPConn(connTCP, entry, transactionAlreadyOnConn);
   } else {
     RefPtr<HttpConnectionUDP> connUDP = do_QueryObject(mOutputConn);
-    ProcessUDPConn(connUDP, entry);
+    ProcessUDPConn(connUDP, entry, transactionAlreadyOnConn);
   }
 
   mOutputConn = nullptr;
