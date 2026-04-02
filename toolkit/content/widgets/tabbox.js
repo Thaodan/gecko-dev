@@ -427,7 +427,7 @@
         // frames width
         if (controlledPanel.hasAttribute("width")) {
           const storedWidth = Number(controlledPanel.getAttribute("width"));
-          if (storedWidth > maxWidth) {
+          if (storedWidth != currentWidth) {
             controlledPanel.setAttribute("width", currentWidth);
             controlledPanel.style.width = currentWidth + "px";
           }
