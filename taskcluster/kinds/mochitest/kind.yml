@@ -26,6 +26,12 @@ task-defaults:
         retrigger: true
     use-python: default
     use-uv: true
+    worker-type:
+        by-test-platform:
+            windows11-64-24h2-asan/.*: win11-64-25h2-large
+            windows11-(32|64)-24h2(-ccov|-devedition|-mingwclang|-shippable)?/.*: win11-64-25h2
+            windows11-aarch64-24h2(-devedition|-shippable)?/.*: win11-a64-25h2
+            default: default
     require-signed-extensions:
         by-release-type:
             release|esr.*: true
@@ -735,6 +741,10 @@ tasks:
         treeherder-symbol: M(gpu)
         schedules-component: mochitest-plain
         loopback-video: true
+        worker-type:
+            by-test-platform:
+                windows11-(32|64)-24h2(-asan|-ccov|-devedition|-mingwclang|-shippable)?/.*: win11-64-25h2-gpu
+                default: default
         variants:
             - no-fission
             - webrender-sw+no-fission
@@ -797,6 +807,10 @@ tasks:
         treeherder-symbol: M(gpu-c)
         loopback-video: true
         virtualization: virtual-with-gpu
+        worker-type:
+            by-test-platform:
+                windows11-(32|64)-24h2(-asan|-ccov|-devedition|-mingwclang|-shippable)?/.*: win11-64-25h2-gpu
+                default: default
         run-without-variant: false
         variants:
             - 1proc
@@ -991,7 +1005,12 @@ tasks:
                     by-test-platform:
                         linux.*: t-linux-talos-1804
                         default: default
-                default: default
+                default:
+                    by-test-platform:
+                        windows11-64-24h2-asan/.*: win11-64-25h2-large
+                        windows11-(32|64)-24h2(-ccov|-devedition|-mingwclang|-shippable)?/.*: win11-64-25h2
+                        windows11-aarch64-24h2(-devedition|-shippable)?/.*: win11-a64-25h2
+                        default: default
 
     mochitest-valgrind:
         description: "Mochitest plain Valgrind run"
@@ -1016,6 +1035,10 @@ tasks:
         treeherder-symbol: M(gl1c)
         schedules-component: mochitest-plain
         virtualization: virtual-with-gpu
+        worker-type:
+            by-test-platform:
+                windows11-(32|64)-24h2(-asan|-ccov|-devedition|-mingwclang|-shippable)?/.*: win11-64-25h2-gpu
+                default: default
         test-manifest-loader: null  # don't load tests in the taskgraph
         loopback-video: true
         max-run-time: 1800
@@ -1057,6 +1080,10 @@ tasks:
         treeherder-symbol: M(gl1e)
         schedules-component: mochitest-plain
         virtualization: virtual-with-gpu
+        worker-type:
+            by-test-platform:
+                windows11-(32|64)-24h2(-asan|-ccov|-devedition|-mingwclang|-shippable)?/.*: win11-64-25h2-gpu
+                default: default
         test-manifest-loader: null  # don't load tests in the taskgraph
         loopback-video: true
         max-run-time: 2700
@@ -1098,6 +1125,10 @@ tasks:
         treeherder-symbol: M(gl2c)
         schedules-component: mochitest-plain
         virtualization: virtual-with-gpu
+        worker-type:
+            by-test-platform:
+                windows11-(32|64)-24h2(-asan|-ccov|-devedition|-mingwclang|-shippable)?/.*: win11-64-25h2-gpu
+                default: default
         chunks:
             by-test-platform:
                 android.*: 2
@@ -1145,6 +1176,10 @@ tasks:
         treeherder-symbol: M(gl2e)
         schedules-component: mochitest-plain
         virtualization: virtual-with-gpu
+        worker-type:
+            by-test-platform:
+                windows11-(32|64)-24h2(-asan|-ccov|-devedition|-mingwclang|-shippable)?/.*: win11-64-25h2-gpu
+                default: default
         variants:
             - no-fission
             - webrender-sw+no-fission
@@ -1185,6 +1220,10 @@ tasks:
         treeherder-symbol: M(gl2d)
         schedules-component: mochitest-plain
         virtualization: virtual-with-gpu
+        worker-type:
+            by-test-platform:
+                windows11-(32|64)-24h2(-asan|-ccov|-devedition|-mingwclang|-shippable)?/.*: win11-64-25h2-gpu
+                default: default
         variants:
             - webrender-sw
         run-on-projects: []  # Don't run this for now.
@@ -1203,6 +1242,10 @@ tasks:
         treeherder-symbol: M(webgpu)
         schedules-component: mochitest-plain
         virtualization: virtual-with-gpu
+        worker-type:
+            by-test-platform:
+                windows11-(32|64)-24h2(-asan|-ccov|-devedition|-mingwclang|-shippable)?/.*: win11-64-25h2-gpu
+                default: default
         loopback-video: true
         variants:
             - no-fission
