@@ -216,7 +216,6 @@ class TypeCache:
         self.uintptr_t = gdb.lookup_type("uintptr_t")
         try:
             self.JSString_ptr_t = gdb.lookup_type("JSString").pointer()
-            self.StringFlags_ptr_t = gdb.lookup_type("js::StringFlags").pointer()
             self.JSSymbol_ptr_t = gdb.lookup_type("JS::Symbol").pointer()
             self.JSObject_ptr_t = gdb.lookup_type("JSObject").pointer()
         except gdb.error:
