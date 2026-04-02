@@ -110,6 +110,8 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
       Result<RefPtr<HttpConnectionBase>, nsresult> aResult,
       UDPConnectionEstablisher* aEstablisher, uint64_t aId);
 
+  nsresult CheckLNA(nsISocketTransport* aTransport);
+
   // Timer
   void SetupTimer(uint64_t aTimeout);
 

@@ -15,6 +15,7 @@
 #include "HappyEyeballsTransaction.h"
 
 class nsIDNSAddrRecord;
+class nsISocketTransport;
 
 namespace mozilla {
 namespace net {
@@ -42,6 +43,8 @@ class ConnectionEstablisher : public nsITransportEventSink,
       std::function<void(Result<RefPtr<HttpConnectionBase>, nsresult>)>;
   using TransportStatusCallback =
       std::function<void(nsITransport*, nsresult, int64_t)>;
+  using LnaCheckCallback =
+      std::function<nsresult(nsISocketTransport*)>;
 
   ConnectionEstablisher(nsHttpConnectionInfo* aConnInfo, const NetAddr& aAddr,
                         uint32_t aCaps);
@@ -52,6 +55,9 @@ class ConnectionEstablisher : public nsITransportEventSink,
   }
   void SetTransportStatusCallback(TransportStatusCallback&& aCallback) {
     mTransportStatusCallback = std::move(aCallback);
+  }
+  void SetLnaCheckCallback(LnaCheckCallback&& aCallback) {
+    mLnaCheckCallback = std::move(aCallback);
   }
   void SetDnsMetadata(const DnsMetadata& aMetadata) {
     mDnsMetadata = aMetadata;
@@ -96,6 +102,7 @@ class ConnectionEstablisher : public nsITransportEventSink,
 
   DoneCallback mCallback;
   TransportStatusCallback mTransportStatusCallback;
+  LnaCheckCallback mLnaCheckCallback;
   nsCOMPtr<nsIInterfaceRequestor> mSecurityCallbacks;
   RefPtr<ConnectionHandle> mHandle;
   RefPtr<HttpConnectionBase> mResultConn;

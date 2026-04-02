@@ -295,6 +295,7 @@ void ConnectionEstablisher::FinishInternal(nsresult aResult) {
 
   MaybeSetConnectingDone();
   mTransportStatusCallback = nullptr;
+  mLnaCheckCallback = nullptr;
   mAddrRecord = nullptr;
 
   bool hadProxyTransaction = !!mProxyTransaction;
@@ -604,6 +605,16 @@ TCPConnectionEstablisher::OnOutputStreamReady(nsIAsyncOutputStream* aOut) {
 
   if (mFinished) {
     return NS_OK;
+  }
+
+  // Early LNA check: reject the connection before TLS handshake can send SNI.
+  if (mLnaCheckCallback && mSocketTransport) {
+    nsresult rv = mLnaCheckCallback(mSocketTransport);
+    if (NS_FAILED(rv)) {
+      mSocketTransport->Close(rv);
+      Finish(rv);
+      return NS_OK;
+    }
   }
 
   // Create nsHttpConnection when the output stream is ready.

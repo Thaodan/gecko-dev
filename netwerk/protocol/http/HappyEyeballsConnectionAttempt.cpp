@@ -145,8 +145,8 @@ nsresult HappyEyeballsConnectionAttempt::ProcessConnectionResult(
     const NetAddr& aAddr, nsresult aStatus, uint64_t aId) {
   LOG(
       ("HappyEyeballsConnectionAttempt::ProcessConnectionResult %p addr=[%s] "
-       "id=%" PRIu64,
-       this, aAddr.ToString().get(), aId));
+       "id=%" PRIu64 " aStatus=%x",
+       this, aAddr.ToString().get(), aId, static_cast<uint32_t>(aStatus)));
 
   // For 0RTT errors, we should restart the transaction.
   if (PossibleZeroRTTRetryError(aStatus)) {
@@ -157,6 +157,24 @@ nsresult HappyEyeballsConnectionAttempt::ProcessConnectionResult(
     }
     if (mTransaction) {
       mTransaction->Close(aStatus);
+    }
+    return NS_OK;
+  }
+
+  // LNA error should stop all connection attempts immediately.
+  if (aStatus == NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED) {
+    if (mProxyTransaction) {
+      mProxyTransaction->Detach();
+      mProxyTransaction = nullptr;
+    }
+    if (mTransaction) {
+      mTransaction->Close(aStatus);
+    }
+    // Save entry before Abandon() clears mEntry.
+    RefPtr<ConnectionEntry> entry(mEntry);
+    Abandon();
+    if (entry) {
+      entry->RemoveConnectionAttempt(this, false);
     }
     return NS_OK;
   }
@@ -369,6 +387,40 @@ void HappyEyeballsConnectionAttempt::MaybeSendTransportStatus(
   mTransaction->OnTransportStatus(aTransport, aStatus, aProgress);
 }
 
+nsresult HappyEyeballsConnectionAttempt::CheckLNA(
+    nsISocketTransport* aTransport) {
+  if (!mConnInfo->FirstHopSSL() || mConnInfo->UsingProxy()) {
+    return NS_OK;
+  }
+
+  if (!aTransport) {
+    return NS_OK;
+  }
+
+  NetAddr peerAddr;
+  if (NS_FAILED(aTransport->GetPeerAddr(&peerAddr))) {
+    return NS_OK;
+  }
+
+  auto addrSpace = peerAddr.GetIpAddressSpace();
+  if (addrSpace != nsILoadInfo::IPAddressSpace::Local &&
+      addrSpace != nsILoadInfo::IPAddressSpace::Private) {
+    return NS_OK;
+  }
+
+  if (mTransaction &&
+      !mTransaction->AllowedToConnectToIpAddressSpace(addrSpace)) {
+    LOG((
+        "HappyEyeballsConnectionAttempt::CheckLNA %p "
+        "blocking connection to %s address space",
+        this,
+        addrSpace == nsILoadInfo::IPAddressSpace::Local ? "local" : "private"));
+    return NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED;
+  }
+
+  return NS_OK;
+}
+
 void HappyEyeballsConnectionAttempt::DNSLookup(
     happy_eyeballs::DnsRecordType aType,
     Result<nsIDNSService::DNSFlags, nsresult> aFlags, uint64_t aId,
@@ -540,6 +592,10 @@ nsresult HappyEyeballsConnectionAttempt::EstablishTCPConnection(
       [self = RefPtr{this}](nsITransport* trans, nsresult status,
                             int64_t progress) {
         self->MaybeSendTransportStatus(status, trans, progress);
+      });
+  establisher->SetLnaCheckCallback(
+      [self = RefPtr{this}](nsISocketTransport* aTransport) -> nsresult {
+        return self->CheckLNA(aTransport);
       });
 
   MaybePassHttpTransToEstablisher(establisher, aId);
