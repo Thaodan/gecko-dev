@@ -237,7 +237,6 @@ class AllocSite {
   Heap initialHeap() const {
     Heap heap = Heap(uint32_t(state()) & LONG_LIVED_BIT);
     MOZ_ASSERT_IF(isTenuring(), heap == Heap::Tenured);
-    MOZ_ASSERT_IF(!isTenuring() && !isNormal(), heap == Heap::Default);
     return heap;
   }
 

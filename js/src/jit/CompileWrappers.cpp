@@ -189,6 +189,8 @@ bool CompileZone::canNurseryAllocateBigInts() {
 gc::AllocSite* CompileZone::catchAllAllocSite(JS::TraceKind traceKind,
                                               gc::CatchAllAllocSite siteKind) {
   if (siteKind == gc::CatchAllAllocSite::Optimized) {
+    // This is assumed when counting allocations.
+    MOZ_ASSERT(traceKind == JS::TraceKind::Object);
     return zone()->optimizedAllocSite();
   }
   return zone()->unknownAllocSite(traceKind);
