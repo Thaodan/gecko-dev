@@ -220,10 +220,10 @@ class FinalizationObservers {
   void removeWeakRefTarget(Handle<Value> target,
                            Handle<WeakRefObject*> weakRef);
 
-  void traceWeakEdges(JSTracer* trc);
+  void traceWeakEdges(JSTracer* trc, JS::Zone* zone);
 
  private:
-  void traceWeakFinalizationRegistryEdges(JSTracer* trc);
+  void traceWeakFinalizationRegistryEdges(JSTracer* trc, JS::Zone* zone);
   void traceWeakWeakRefEdges(JSTracer* trc);
   void traceWeakWeakRefList(JSTracer* trc, ObserverList& weakRefs,
                             Value target);

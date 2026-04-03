@@ -54,7 +54,7 @@
  *  - zero or more FinalizationRecordObjects representing registered targets
  *  - a FinalizationQueue containing records for targets that have died, used to
  *    queue and call the cleanup callbacks
- *  - a weakmap tracking unregister tokens and their associated records
+ *  - a map tracking unregister tokens and their associated records
  *
  * Registering a target with a FinalizationRegistry creates a FinalizationRecord
  * containing a pointer to the queue and the heldValue. This is added to the
@@ -62,12 +62,12 @@
  * finalization observers which is used to actually track the target.
  *
  * When a target is registered an unregister token may be supplied. If so, this
- * is also recorded by the registry and is stored in a map of
- * registrations. They keys of this map are weakly held and do not keep the
- * unregister token alive.
+ * is also recorded by the registry and is stored in a map of registrations.
+ * They keys of this map are weakly held and do not keep the unregister token
+ * alive.
  *
- * When targets are unregistered, the registration is looked up in the weakmap
- * and the corresponding records are cleared.
+ * When targets are unregistered, the registration is looked up in the
+ * registrations map and the corresponding records are cleared.
 
  * The finalization observer lists are swept during GC to check for records
  * associated with dying targets. For such targets the associated record list is
@@ -80,7 +80,6 @@
 
 #include "gc/Barrier.h"
 #include "gc/FinalizationObservers.h"
-#include "gc/WeakMap.h"
 #include "js/GCVector.h"
 #include "vm/NativeObject.h"
 
@@ -168,7 +167,7 @@ class FinalizationRegistryObject : public NativeObject {
   RegistrationsMap* registrations() const;
   FinalizationRecordVector* recordsWithoutToken() const;
 
-  void traceWeak(JSTracer* trc);
+  void traceWeak(JSTracer* trc, bool* hasSymbolRegistrations);
 
   static bool unregisterRecord(FinalizationRecordObject* record);
 

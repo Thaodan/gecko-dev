@@ -268,10 +268,12 @@ void FinalizationRegistryObject::trace(JSTracer* trc, JSObject* obj) {
   }
 }
 
-void FinalizationRegistryObject::traceWeak(JSTracer* trc) {
+void FinalizationRegistryObject::traceWeak(JSTracer* trc,
+                                           bool* hasSymbolRegistrations) {
   // Trace and update the contents of the registrations map's keys, which
   // are weakly held.
   MOZ_ASSERT(registrations());
+  MOZ_ASSERT(hasSymbolRegistrations);
 
   for (auto iter = registrations()->modIter(); !iter.done(); iter.next()) {
     auto result = TraceWeakEdge(trc, &iter.getMutable().mutableKey(),
@@ -284,6 +286,8 @@ void FinalizationRegistryObject::traceWeak(JSTracer* trc) {
         oomUnsafe.crash("FinalizationRegistryObject::traceWeak");
       }
       iter.remove();
+    } else if (result.finalTarget().isSymbol()) {
+      *hasSymbolRegistrations = true;
     }
   }
 
@@ -468,6 +472,10 @@ bool FinalizationRegistryObject::addRegistration(
   if (!ptr->value().append(record)) {
     ReportOutOfMemory(cx);
     return false;
+  }
+
+  if (unregisterToken.isSymbol()) {
+    cx->zone()->setGCFinalizationRegistriesMayHaveSymbolRegistrations();
   }
 
   return true;

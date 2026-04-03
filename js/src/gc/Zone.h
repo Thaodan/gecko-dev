@@ -538,6 +538,10 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::MainThreadOrGCTaskData<bool> gcUserWeakMapsMayHaveKeyDelegates_;
   js::MainThreadOrGCTaskData<bool> gcWeakMapsMayHaveSymbolKeys_;
 
+  // Cached information about finalization registries in the zone.
+  js::MainThreadOrGCTaskData<bool>
+      gcFinalizationRegistriesMayHaveSymbolRegistrations_;
+
   js::MainThreadOrIonCompileData<JSObject**> preservedWrappers_;
   js::MainThreadOrIonCompileData<size_t> preservedWrappersCount_;
   js::MainThreadOrIonCompileData<size_t> preservedWrappersCapacity_;
@@ -809,6 +813,13 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   void clearGCCachedWeakMapKeyData() {
     gcUserWeakMapsMayHaveKeyDelegates_ = false;
     gcWeakMapsMayHaveSymbolKeys_ = false;
+  }
+
+  void setGCFinalizationRegistriesMayHaveSymbolRegistrations() {
+    gcFinalizationRegistriesMayHaveSymbolRegistrations_ = true;
+  }
+  void clearGCFinalizationRegistriesMayHaveSymbolRegistrations() {
+    gcFinalizationRegistriesMayHaveSymbolRegistrations_ = false;
   }
 
   CompartmentVector& compartments() { return compartments_.ref(); }

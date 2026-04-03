@@ -863,6 +863,11 @@ bool Zone::findSweepGroupEdges(Zone* atomsZone) {
     }
   }
 
+  if (gcFinalizationRegistriesMayHaveSymbolRegistrations_ &&
+      !atomsZone->addSweepGroupEdgeTo(this)) {
+    return false;
+  }
+
   return WeakMapBase::findSweepGroupEdgesForZone(atomsZone, this);
 }
 
