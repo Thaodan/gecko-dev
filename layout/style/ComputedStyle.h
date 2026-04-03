@@ -216,6 +216,10 @@ class ComputedStyle {
     return bool(Flags() & Flag::IS_IN_OPACITY_ZERO_SUBTREE);
   }
 
+  bool HasAuthorSpecifiedGridAutoFlow() const {
+    return bool(Flags() & Flag::HAS_AUTHOR_SPECIFIED_GRID_AUTO_FLOW);
+  }
+
   bool HasAnchorPosReference() const;
 
   bool MaybeAnchorPosReferencesDiffer(const ComputedStyle* aOther) const;
