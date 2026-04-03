@@ -444,6 +444,8 @@ class Animation : public DOMEventTargetHelper,
 
   void PostUpdate();
 
+  void AutoAlignStartTime();
+
  protected:
   void SilentlySetCurrentTime(const TimeDuration& aNewCurrentTime);
   void CancelNoUpdate();
@@ -624,6 +626,11 @@ class Animation : public DOMEventTargetHelper,
   // The id for this animation on the compositor.
   uint64_t mIdOnCompositor = 0;
   bool mIsPartialPrerendered = false;
+
+  // The flag to indicate that the animation’s start time cannot be reliably
+  // calculated until post layout since the start time is to align with the
+  // start or end of the animation range.
+  bool mAutoAlignStartTime = false;
 };
 
 }  // namespace dom
