@@ -475,9 +475,6 @@ support-files = ["bug444546.sjs"]
 ["test_bug454326.html"]
 
 ["test_bug455472.html"]
-skip-if = [
-  "debug", # Bug 2029094
-]
 
 ["test_bug455629.html"]
 skip-if = [
