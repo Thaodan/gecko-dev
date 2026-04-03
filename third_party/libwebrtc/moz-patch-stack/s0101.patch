@@ -75,7 +75,7 @@ index f771394703..5ef68516cf 100644
  # The python interpreter to use by default. On Windows, this will look
  # for vpython3.exe and vpython3.bat.
 diff --git a/BUILD.gn b/BUILD.gn
-index 7b4fa06253..52eb9e573c 100644
+index 7ed17d1899..bb93360a4e 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -21,15 +21,15 @@
@@ -98,7 +98,7 @@ index 7b4fa06253..52eb9e573c 100644
    import("//third_party/jni_zero/jni_zero.gni")
  }
  
-@@ -546,7 +546,7 @@ if (!build_with_chromium) {
+@@ -554,7 +554,7 @@ if (!build_with_chromium) {
      sources = []
  
      complete_static_lib = true
@@ -107,7 +107,7 @@ index 7b4fa06253..52eb9e573c 100644
      defines = []
  
      deps = [
-@@ -854,7 +854,7 @@ rtc_static_library("dcsctp") {
+@@ -862,7 +862,7 @@ rtc_static_library("dcsctp") {
    visibility = [ "//:default" ]
    sources = []
    complete_static_lib = true
@@ -116,7 +116,7 @@ index 7b4fa06253..52eb9e573c 100644
    defines = []
    deps = [
      "net/dcsctp/public:factory",
-@@ -892,7 +892,7 @@ group("poison_default_neural_residual_echo_estimator") {
+@@ -900,7 +900,7 @@ group("poison_default_neural_residual_echo_estimator") {
  if (!build_with_chromium) {
    # Write debug logs to gn_logs.txt.
    # This is also required for Siso builds.
@@ -126,7 +126,7 @@ index 7b4fa06253..52eb9e573c 100644
              "Generated during 'gn gen' by //BUILD.gn.",
              "",
 diff --git a/api/BUILD.gn b/api/BUILD.gn
-index 8304c64826..5e7b97ddf9 100644
+index f1f0484ba5..afc76608ba 100644
 --- a/api/BUILD.gn
 +++ b/api/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -601,7 +601,7 @@ index 4c74ff4465..f072067c4c 100644
  import("../../webrtc.gni")
  
 diff --git a/pc/BUILD.gn b/pc/BUILD.gn
-index b2f5f0b2d6..97f25c37c2 100644
+index 16949b7567..fe69d59aec 100644
 --- a/pc/BUILD.gn
 +++ b/pc/BUILD.gn
 @@ -30,8 +30,8 @@
@@ -804,7 +804,7 @@ index f05995da70..46ddb4f25e 100644
    }
  }
 diff --git a/webrtc.gni b/webrtc.gni
-index 7173dc8c22..a5ed4de3bb 100644
+index 70e3d6df94..bc8a2ee087 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -5,12 +5,12 @@
