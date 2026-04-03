@@ -478,7 +478,7 @@ index f643c81e4c..a9c6e11b1e 100644
  if (rtc_include_tests) {
    rtc_source_set("test_feedback_generator_interface") {
 diff --git a/call/BUILD.gn b/call/BUILD.gn
-index ecda5a73aa..8e38dff076 100644
+index 015a97be95..2216e2fc56 100644
 --- a/call/BUILD.gn
 +++ b/call/BUILD.gn
 @@ -48,7 +48,7 @@ rtc_library("call_interfaces") {
@@ -1259,7 +1259,7 @@ index dd72d3f215..16a6e163d8 100644
  rtc_library("call_config_utils") {
    testonly = true
 diff --git a/video/BUILD.gn b/video/BUILD.gn
-index 87b4022d30..a280fbd559 100644
+index f8f772f41f..18db3e4e4a 100644
 --- a/video/BUILD.gn
 +++ b/video/BUILD.gn
 @@ -17,7 +17,7 @@ rtc_library("video_stream_encoder_interface") {
@@ -1271,7 +1271,7 @@ index 87b4022d30..a280fbd559 100644
      "../api:scoped_refptr",
      "../api/adaptation:resource_adaptation_api",
      "../api/units:data_rate",
-@@ -443,7 +443,7 @@ rtc_library("video_stream_encoder_impl") {
+@@ -444,7 +444,7 @@ rtc_library("video_stream_encoder_impl") {
      "../api:rtc_error",
      "../api:rtp_packet_info",
      "../api:rtp_parameters",

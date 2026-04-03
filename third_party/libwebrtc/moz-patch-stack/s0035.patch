@@ -43,10 +43,10 @@ index 741f7e9f80..787d5694d3 100644
  }  // namespace
  
 diff --git a/audio/channel_receive.cc b/audio/channel_receive.cc
-index 42ccb62810..d2012fe29a 100644
+index 13a1203dea..492556d0f2 100644
 --- a/audio/channel_receive.cc
 +++ b/audio/channel_receive.cc
-@@ -129,7 +129,8 @@ class ChannelReceive : public ChannelReceiveInterface,
+@@ -130,7 +130,8 @@ class ChannelReceive : public ChannelReceiveInterface,
                   scoped_refptr<AudioDecoderFactory> decoder_factory,
                   scoped_refptr<FrameDecryptorInterface> frame_decryptor,
                   const CryptoOptions& crypto_options,
@@ -56,7 +56,7 @@ index 42ccb62810..d2012fe29a 100644
    ~ChannelReceive() override;
  
    void SetSink(AudioSinkInterface* sink) override;
-@@ -576,7 +577,8 @@ ChannelReceive::ChannelReceive(
+@@ -577,7 +578,8 @@ ChannelReceive::ChannelReceive(
      scoped_refptr<AudioDecoderFactory> decoder_factory,
      scoped_refptr<FrameDecryptorInterface> frame_decryptor,
      const CryptoOptions& crypto_options,
@@ -66,7 +66,7 @@ index 42ccb62810..d2012fe29a 100644
      : env_(env),
        worker_thread_(TaskQueueBase::Current()),
        rtp_receive_statistics_(ReceiveStatistics::Create(&env_.clock())),
-@@ -608,6 +610,7 @@ ChannelReceive::ChannelReceive(
+@@ -609,6 +611,7 @@ ChannelReceive::ChannelReceive(
    configuration.local_media_ssrc = local_ssrc;
    configuration.rtcp_packet_type_counter_observer = this;
    configuration.non_sender_rtt_measurement = enable_non_sender_rtt;
@@ -74,7 +74,7 @@ index 42ccb62810..d2012fe29a 100644
  
    if (frame_transformer)
      InitFrameTransformerDelegate(std::move(frame_transformer));
-@@ -1217,12 +1220,14 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
+@@ -1219,12 +1222,14 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
      scoped_refptr<AudioDecoderFactory> decoder_factory,
      scoped_refptr<FrameDecryptorInterface> frame_decryptor,
      const CryptoOptions& crypto_options,
@@ -262,10 +262,10 @@ index 7a178ea664..41c3d608ad 100644
  
      VideoBitrateAllocationObserver* bitrate_allocation_observer = nullptr;
 diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index 91a2375226..d6775793c7 100644
+index f6af70f553..5d6ba40322 100644
 --- a/video/rtp_video_stream_receiver2.cc
 +++ b/video/rtp_video_stream_receiver2.cc
-@@ -127,7 +127,8 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(
+@@ -128,7 +128,8 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(
      RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer,
      RtcpCnameCallback* rtcp_cname_callback,
      bool non_sender_rtt_measurement,
@@ -275,7 +275,7 @@ index 91a2375226..d6775793c7 100644
    RtpRtcpInterface::Configuration configuration;
    configuration.audio = false;
    configuration.receiver_only = true;
-@@ -138,6 +139,7 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(
+@@ -139,6 +140,7 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(
        rtcp_packet_type_counter_observer;
    configuration.rtcp_cname_callback = rtcp_cname_callback;
    configuration.local_media_ssrc = local_ssrc;
@@ -283,7 +283,7 @@ index 91a2375226..d6775793c7 100644
    configuration.non_sender_rtt_measurement = non_sender_rtt_measurement;
  
    auto rtp_rtcp = std::make_unique<ModuleRtpRtcpImpl2>(env, configuration);
-@@ -311,7 +313,8 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
+@@ -312,7 +314,8 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
            rtcp_packet_type_counter_observer,
            rtcp_cname_callback,
            config_.rtp.rtcp_xr.receiver_reference_time_report,
