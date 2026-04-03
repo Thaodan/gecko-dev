@@ -8697,7 +8697,7 @@ static bool GetTimeZone(JSContext* cx, unsigned argc, Value* vp) {
 #    else
     std::tm* localtm = std::localtime(now);
     if (localtm) {
-      *local = *localtm;
+      local = *localtm;
 #    endif /* HAVE_LOCALTIME_R */
 
 #    if defined(HAVE_TM_ZONE_TM_GMTOFF)
