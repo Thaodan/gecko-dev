@@ -678,11 +678,7 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
 
   if (![self isRoot]) {
     mozAccessible* parent = (mozAccessible*)[self moxUnignoredParent];
-    if (![parent isRoot] &&
-        [parent respondsToSelector:@selector(disableChild)]) {
-      // We may end up with an item in an NSChildView that we did not create.
-      // Verify `disableChild` is a valid dispatch, else this will throw an
-      // exception.
+    if (![parent isRoot]) {
       return @(![parent disableChild:self]);
     }
   }
