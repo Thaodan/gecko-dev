@@ -431,7 +431,7 @@ class gfxFontEntry {
     hb_face_t* mFace;
   };
 
-  virtual AutoHBFace GetHBFace() {
+  AutoHBFace GetHBFace() {
     return AutoHBFace(hb_face_create_for_tables(HBGetTable, this, nullptr));
   }
 
