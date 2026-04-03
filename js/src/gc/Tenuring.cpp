@@ -441,7 +441,7 @@ static inline void TraceWholeCell(TenuringTracer& mover,
 }
 
 template <typename T>
-bool TenuringTracer::traceBufferedCells(Arena* arena, ArenaCellSet* cells) {
+void TenuringTracer::traceBufferedCells(Arena* arena, ArenaCellSet* cells) {
   for (size_t i = 0; i < MaxArenaCellIndex; i += cells->BitsPerWord) {
     ArenaCellSet::WordT bitset = cells->getWord(i / cells->BitsPerWord);
     static_assert(std::is_same_v<ArenaCellSet::WordT, uint32_t> ||
@@ -464,11 +464,9 @@ bool TenuringTracer::traceBufferedCells(Arena* arena, ArenaCellSet* cells) {
       }
     }
   }
-
-  return false;
 }
 
-bool ArenaCellSet::trace(TenuringTracer& mover) {
+void ArenaCellSet::trace(TenuringTracer& mover) {
   check();
 
   arena->bufferedCells() = &ArenaCellSet::Empty;
@@ -476,13 +474,13 @@ bool ArenaCellSet::trace(TenuringTracer& mover) {
   JS::TraceKind kind = MapAllocToTraceKind(arena->getAllocKind());
   switch (kind) {
     case JS::TraceKind::Object:
-      return mover.traceBufferedCells<JSObject>(arena, this);
+      mover.traceBufferedCells<JSObject>(arena, this);
       break;
     case JS::TraceKind::String:
-      return mover.traceBufferedCells<JSString>(arena, this);
+      mover.traceBufferedCells<JSString>(arena, this);
       break;
     case JS::TraceKind::JitCode:
-      return mover.traceBufferedCells<jit::JitCode>(arena, this);
+      mover.traceBufferedCells<jit::JitCode>(arena, this);
       break;
     default:
       MOZ_CRASH("Unexpected trace kind");
@@ -493,16 +491,9 @@ void js::gc::StoreBuffer::WholeCellBuffer::trace(TenuringTracer& mover,
                                                  StoreBuffer* owner) {
   MOZ_ASSERT(owner->isEnabled());
 
-  ArenaCellSet** sweepListTail = &sweepHead_;
-
   for (LifoAlloc::Enum e(*storage_); !e.empty();) {
     ArenaCellSet* cellSet = e.read<ArenaCellSet>();
-    bool needsSweep = cellSet->trace(mover);
-    if (needsSweep) {
-      MOZ_ASSERT(!*sweepListTail);
-      *sweepListTail = cellSet;
-      sweepListTail = &cellSet->next;
-    }
+    cellSet->trace(mover);
   }
 }
 

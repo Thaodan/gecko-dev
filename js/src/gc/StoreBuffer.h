@@ -138,7 +138,6 @@ class StoreBuffer {
   struct WholeCellBuffer {
     UniquePtr<LifoAlloc> storage_;
     size_t maxSize_ = 0;
-    ArenaCellSet* sweepHead_ = nullptr;
     const Cell* last_ = nullptr;
 
     WholeCellBuffer() = default;
@@ -653,7 +652,7 @@ class ArenaCellSet {
   }
 
   // Sweep this set, returning whether it also needs to be swept later.
-  bool trace(TenuringTracer& mover);
+  void trace(TenuringTracer& mover);
 
   // Sentinel object used for all empty sets.
   //

@@ -71,9 +71,7 @@ size_t StoreBuffer::MonoTypeBuffer<T>::sizeOfExcludingThis(
 StoreBuffer::WholeCellBuffer::WholeCellBuffer(WholeCellBuffer&& other)
     : storage_(std::move(other.storage_)),
       maxSize_(other.maxSize_),
-      sweepHead_(other.sweepHead_),
       last_(other.last_) {
-  other.sweepHead_ = nullptr;
   other.last_ = nullptr;
 }
 StoreBuffer::WholeCellBuffer& StoreBuffer::WholeCellBuffer::operator=(
@@ -86,8 +84,6 @@ StoreBuffer::WholeCellBuffer& StoreBuffer::WholeCellBuffer::operator=(
 }
 
 bool StoreBuffer::WholeCellBuffer::init() {
-  MOZ_ASSERT(!sweepHead_);
-
   if (!storage_) {
     storage_ = MakeUnique<LifoAlloc>(LifoAllocBlockSize, js::MallocArena);
     if (!storage_) {
@@ -124,7 +120,6 @@ void StoreBuffer::WholeCellBuffer::clear() {
   }
 
   last_ = nullptr;
-  sweepHead_ = nullptr;
 }
 
 ArenaCellSet* StoreBuffer::WholeCellBuffer::allocateCellSet(Arena* arena) {
