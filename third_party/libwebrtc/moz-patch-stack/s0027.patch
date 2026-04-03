@@ -549,7 +549,7 @@ index 88890be798..c9aefc297b 100644
  #include "rtc_base/memory/aligned_malloc.h"
  
 diff --git a/media/BUILD.gn b/media/BUILD.gn
-index c0c248c1ba..7b1f0b48be 100644
+index fc483cb8ec..356061d07a 100644
 --- a/media/BUILD.gn
 +++ b/media/BUILD.gn
 @@ -77,7 +77,7 @@ rtc_library("rtc_media_base") {
@@ -690,15 +690,15 @@ index c0c248c1ba..7b1f0b48be 100644
  
  rtc_library("rtc_audio_video") {
 diff --git a/media/base/media_channel.h b/media/base/media_channel.h
-index 97e7deaada..207aa785ba 100644
+index 5e92a1c87f..c82ce8bf1d 100644
 --- a/media/base/media_channel.h
 +++ b/media/base/media_channel.h
 @@ -68,9 +68,6 @@ namespace webrtc {
  class VideoFrame;
  struct VideoFormat;
  
--webrtc::RTCError InvokeSetParametersCallback(SetParametersCallback& callback,
--                                             RTCError error);
+-RTCError InvokeSetParametersCallback(SetParametersCallback& callback,
+-                                     RTCError error);
 -
  class VideoMediaSendChannelInterface;
  class VideoMediaReceiveChannelInterface;

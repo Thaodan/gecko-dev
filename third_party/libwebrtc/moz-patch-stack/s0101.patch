@@ -427,7 +427,7 @@ index 9f5b865ba1..a2f5edb39b 100644
  
  group("logging") {
 diff --git a/media/BUILD.gn b/media/BUILD.gn
-index b84b1e4b54..8a8706f0d5 100644
+index 9167e6062d..433d5c8c4f 100644
 --- a/media/BUILD.gn
 +++ b/media/BUILD.gn
 @@ -6,7 +6,7 @@
