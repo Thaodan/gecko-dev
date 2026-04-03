@@ -15,6 +15,7 @@ import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination.ExpandedTa
 import org.mozilla.fenix.tabstray.redux.action.TabGroupAction
 import org.mozilla.fenix.tabstray.redux.state.TabGroupFormState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
+import org.mozilla.fenix.tabstray.redux.state.initializeTabGroupForm
 
 class TabGroupReducerTest {
     @Test
@@ -154,29 +155,10 @@ class TabGroupReducerTest {
     }
 
     @Test
-    fun `WHEN add to tab group is clicked THEN navigate to add to tab group destination`() {
-        val initialState = TabsTrayState()
-
-        val expectedBackStack = initialState.backStack + AddToTabGroup
-
-        val resultState = TabGroupActionReducer.reduce(
-            state = initialState,
-            action = TabGroupAction.AddToTabGroup,
-        )
-
-        assertEquals(expectedBackStack, resultState.backStack)
-    }
-
-    @Test
     fun `WHEN add to new tab group is clicked THEN navigate to create tab group destination`() {
         val initialState = TabsTrayState()
 
-        val expectedFormState = TabGroupFormState(
-            tabGroupId = null,
-            name = "",
-            nextTabGroupNumber = initialState.tabGroups.size + 1,
-            edited = false,
-        )
+        val expectedFormState = initialState.initializeTabGroupForm()
         val expectedBackStack = initialState.backStack + EditTabGroup
 
         val resultState = TabGroupActionReducer.reduce(
@@ -280,5 +262,36 @@ class TabGroupReducerTest {
             action = TabGroupAction.TabAddedToGroup(tabId = "54321", groupId = "12345"),
         )
         assertEquals(TabsTrayState(), resultState)
+    }
+
+    @Test
+    fun `GIVEN the user has at least 1 tab group WHEN the user clicks to add tabs to a group THEN navigate to the ADD TO GROUP flow`() {
+        val initialState = TabsTrayState(
+            tabGroups = listOf(createTabGroup()),
+        )
+        val resultState = TabGroupActionReducer.reduce(
+            state = initialState,
+            action = TabGroupAction.AddToTabGroup,
+        )
+        val expectedState = initialState.copy(
+            backStack = initialState.backStack + AddToTabGroup,
+        )
+
+        assertEquals(expectedState, resultState)
+    }
+
+    @Test
+    fun `GIVEN the user has no tab groups WHEN the user clicks to add tabs to a group THEN navigate to the EDIT_CREATE GROUP flow`() {
+        val initialState = TabsTrayState()
+        val resultState = TabGroupActionReducer.reduce(
+            state = initialState,
+            action = TabGroupAction.AddToTabGroup,
+        )
+        val expectedState = initialState.copy(
+            tabGroupFormState = initialState.initializeTabGroupForm(),
+            backStack = initialState.backStack + EditTabGroup,
+        )
+
+        assertEquals(expectedState, resultState)
     }
 }
