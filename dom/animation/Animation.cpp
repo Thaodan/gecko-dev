@@ -1032,9 +1032,12 @@ bool Animation::TryTriggerNow() {
   if (NS_WARN_IF(!mTimeline)) {
     return false;
   }
-  auto currentTime = mPendingReadyTime.IsNull()
-                         ? mTimeline->GetCurrentTimeAsDuration()
-                         : mTimeline->ToTimelineTime(mPendingReadyTime);
+  // FIXME: Bug 2017448. Force to use timeline current time for finite
+  // timelines. We may have to figure out a more suitable way to handle it.
+  auto currentTime =
+      mPendingReadyTime.IsNull() || !mTimeline->IsMonotonicallyIncreasing()
+          ? mTimeline->GetCurrentTimeAsDuration()
+          : mTimeline->ToTimelineTime(mPendingReadyTime);
   mPendingReadyTime = {};
   if (NS_WARN_IF(currentTime.IsNull())) {
     return false;
