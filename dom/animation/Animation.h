@@ -542,9 +542,6 @@ class Animation : public DOMEventTargetHelper,
     return mTimeline && !mTimeline->IsMonotonicallyIncreasing();
   }
 
-  void UpdateScrollTimelineAnimationTracker(AnimationTimeline* aOldTimeline,
-                                            AnimationTimeline* aNewTimeline);
-
   RefPtr<AnimationTimeline> mTimeline;
   RefPtr<AnimationEffect> mEffect;
   // The beginning of the delay period.
