@@ -16,10 +16,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/4527c41ef71d7683c
  4 files changed, 24 insertions(+), 12 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index d3d7826c0f..199b92397c 100644
+index a7bf507e5d..54cccdb98e 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -527,6 +527,9 @@ if (!rtc_build_ssl) {
+@@ -531,6 +531,9 @@ if (!rtc_build_ssl) {
        "crypto",
        "ssl",
      ]
@@ -29,7 +29,7 @@ index d3d7826c0f..199b92397c 100644
    }
  }
  
-@@ -620,6 +623,7 @@ if (!build_with_chromium) {
+@@ -624,6 +627,7 @@ if (!build_with_chromium) {
          "api/environment:environment_factory",
          "api/video:video_frame",
          "api/video:video_rtp_headers",
@@ -148,7 +148,7 @@ index 3d3238882b..1a46feb6ad 100644
  rtc_library("ssl") {
  if (!build_with_mozilla) {
 diff --git a/webrtc.gni b/webrtc.gni
-index f0eda1a3d8..25c9ac3fff 100644
+index 469ac6ec7d..f4095c8905 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -112,7 +112,7 @@ declare_args() {
@@ -160,7 +160,7 @@ index f0eda1a3d8..25c9ac3fff 100644
  
    # Enable when an external authentication mechanism is used for performing
    # packet authentication for RTP packets instead of libsrtp.
-@@ -340,7 +340,7 @@ declare_args() {
+@@ -343,7 +343,7 @@ declare_args() {
  }
  
  # Enable liboam only on non-mozilla builds.

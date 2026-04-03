@@ -75,7 +75,7 @@ index f771394703..5ef68516cf 100644
  # The python interpreter to use by default. On Windows, this will look
  # for vpython3.exe and vpython3.bat.
 diff --git a/BUILD.gn b/BUILD.gn
-index dbd1c2fa5e..3581eaf040 100644
+index 7b4fa06253..52eb9e573c 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -21,15 +21,15 @@
@@ -98,7 +98,7 @@ index dbd1c2fa5e..3581eaf040 100644
    import("//third_party/jni_zero/jni_zero.gni")
  }
  
-@@ -542,7 +542,7 @@ if (!build_with_chromium) {
+@@ -546,7 +546,7 @@ if (!build_with_chromium) {
      sources = []
  
      complete_static_lib = true
@@ -107,7 +107,7 @@ index dbd1c2fa5e..3581eaf040 100644
      defines = []
  
      deps = [
-@@ -850,7 +850,7 @@ rtc_static_library("dcsctp") {
+@@ -854,7 +854,7 @@ rtc_static_library("dcsctp") {
    visibility = [ "//:default" ]
    sources = []
    complete_static_lib = true
@@ -116,7 +116,7 @@ index dbd1c2fa5e..3581eaf040 100644
    defines = []
    deps = [
      "net/dcsctp/public:factory",
-@@ -888,7 +888,7 @@ group("poison_default_neural_residual_echo_estimator") {
+@@ -892,7 +892,7 @@ group("poison_default_neural_residual_echo_estimator") {
  if (!build_with_chromium) {
    # Write debug logs to gn_logs.txt.
    # This is also required for Siso builds.
@@ -601,7 +601,7 @@ index 4c74ff4465..f072067c4c 100644
  import("../../webrtc.gni")
  
 diff --git a/pc/BUILD.gn b/pc/BUILD.gn
-index a717af4025..654cedbb9b 100644
+index b2f5f0b2d6..97f25c37c2 100644
 --- a/pc/BUILD.gn
 +++ b/pc/BUILD.gn
 @@ -30,8 +30,8 @@
@@ -672,7 +672,7 @@ index 2a197152b9..4d5008874e 100644
  
  rtc_library("yield") {
 diff --git a/rtc_base/system/BUILD.gn b/rtc_base/system/BUILD.gn
-index 4a772795ed..de27f01bb0 100644
+index ad91b314f9..94280afb3d 100644
 --- a/rtc_base/system/BUILD.gn
 +++ b/rtc_base/system/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -804,7 +804,7 @@ index f05995da70..46ddb4f25e 100644
    }
  }
 diff --git a/webrtc.gni b/webrtc.gni
-index d7e9486c5f..1c188e9985 100644
+index 7173dc8c22..a5ed4de3bb 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -5,12 +5,12 @@
@@ -852,7 +852,7 @@ index d7e9486c5f..1c188e9985 100644
  }
  
  if (build_with_chromium) {
-@@ -372,8 +372,8 @@ rtc_common_configs = [ webrtc_root + ":common_config" ]
+@@ -375,8 +375,8 @@ rtc_common_configs = [ webrtc_root + ":common_config" ]
  
  if (is_mac || is_ios) {
    if (filter_include(default_compiler_configs,
@@ -863,7 +863,7 @@ index d7e9486c5f..1c188e9985 100644
    }
  }
  
-@@ -391,7 +391,7 @@ rtc_common_inherited_config = webrtc_root + ":common_inherited_config"
+@@ -394,7 +394,7 @@ rtc_common_inherited_config = webrtc_root + ":common_inherited_config"
  # Common configs to remove or add in all rtc targets.
  rtc_remove_configs = []
  if (!build_with_chromium && is_clang) {
