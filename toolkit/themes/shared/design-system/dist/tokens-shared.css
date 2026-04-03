@@ -533,6 +533,15 @@
   @layer tokens-foundation-nova {
     :root,
     :host(.anonymous-content-host) {
+      /** background-color **/
+      --background-color-box: light-dark(var(--color-white), var(--color-neutral-70));
+      --background-color-box-info: light-dark(var(--color-neutral-20), var(--color-neutral-80));
+      --background-color-canvas: light-dark(var(--color-violet-desaturated-0), var(--color-neutral-90));
+      --background-color-critical: light-dark(var(--color-red-0), var(--color-red-80));
+      --background-color-information: light-dark(var(--color-blue-0), var(--color-blue-80));
+      --background-color-success: light-dark(var(--color-green-0), var(--color-green-80));
+      --background-color-warning: light-dark(var(--color-yellow-0), var(--color-yellow-80));
+
       /** border **/
       --border-color: light-dark(var(--color-neutral-20), var(--color-neutral-50));
       --border-color-deemphasized: light-dark(var(--color-neutral-30), var(--color-neutral-70));
@@ -716,6 +725,13 @@
       /** table **/
       --table-row-background-color: var(--background-color-canvas);
       --table-row-background-color-alternate: light-dark(#f0f0f4, var(--color-neutral-80)); /* TODO Bug 1821203 - Gray use needs to be consolidated */
+
+      /** text-color **/
+      --text-color: light-dark(var(--color-violet-desaturated-90), var(--color-violet-desaturated-0));
+      --text-color-disabled: light-dark(rgba(21, 20, 26, 0.4), rgba(251, 251, 254, 0.4));
+      --text-color-accent-primary-selected: light-dark(var(--color-white), var(--color-neutral-90));
+      --text-color-deemphasized: light-dark(rgba(20, 9, 43, 0.7), rgba(242, 240, 248, 0.7));
+      --text-color-error: light-dark(var(--color-red-50), var(--color-red-20));
     }
   }
 
@@ -725,6 +741,15 @@
     @media (forced-colors) {
       :root,
       :host(.anonymous-content-host) {
+        /** background-color **/
+        --background-color-box: var(--background-color-canvas);
+        --background-color-box-info: var(--background-color-canvas);
+        --background-color-canvas: Canvas;
+        --background-color-critical: var(--background-color-canvas);
+        --background-color-information: var(--background-color-canvas);
+        --background-color-success: var(--background-color-canvas);
+        --background-color-warning: var(--background-color-canvas);
+
         /** border **/
         --border-color: CanvasText;
         --border-color-deemphasized: ButtonText;
@@ -782,6 +807,13 @@
 
         /** table **/
         --table-row-background-color-alternate: var(--background-color-canvas); /* TODO Bug 1821203 - Gray use needs to be consolidated */
+
+        /** text-color **/
+        --text-color: CanvasText;
+        --text-color-disabled: GrayText;
+        --text-color-accent-primary-selected: SelectedItemText;
+        --text-color-deemphasized: CanvasText;
+        --text-color-error: CanvasText;
       }
     }
   }
