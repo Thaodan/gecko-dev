@@ -756,8 +756,6 @@ class gfxUserFontEntry : public gfxFontEntry {
   // user font entry.
   void IncrementGeneration();
 
-  FontTableCache* GetFontTableCache(bool aCreate) override { return nullptr; }
-
   // general load state
   UserFontLoadState mUserFontLoadState;
 

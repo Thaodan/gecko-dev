@@ -94,8 +94,6 @@ enum gfxWindowsFontType {
 // This replaces FontEntry from gfxWindowsFonts.h/cpp.
 class GDIFontEntry final : public gfxFontEntry {
  public:
-  virtual ~GDIFontEntry();
-
   LPLOGFONTW GetLogFont() { return &mLogFont; }
 
   nsresult ReadCMAP(FontInfoData* aFontInfoData = nullptr) override;
@@ -165,8 +163,6 @@ class GDIFontEntry final : public gfxFontEntry {
                SlantStyleRange aStyle, WeightRange aWeight,
                StretchRange aStretch, gfxUserFontData* aUserFontData);
 
-  FontTableCache* GetFontTableCache(bool aCreate) override;
-
   void InitLogFont(const nsACString& aName, gfxWindowsFontType aFontType);
 
   gfxFont* CreateFontInstance(const gfxFontStyle* aFontStyle) override;
@@ -180,8 +176,6 @@ class GDIFontEntry final : public gfxFontEntry {
   LOGFONTW mLogFont;
 
   mozilla::ThreadSafeWeakPtr<mozilla::gfx::UnscaledFontGDI> mUnscaledFont;
-
-  mozilla::Atomic<FontTableCache*> mFontTableCache;
 };
 
 // a single font family, referencing one or more faces

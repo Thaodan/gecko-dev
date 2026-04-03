@@ -388,8 +388,6 @@ static void InitializeVarFuncs() {
 }
 
 gfxFontconfigFontEntry::~gfxFontconfigFontEntry() {
-  auto* cache = mFontTableCache.exchange(nullptr);
-  delete cache;
   auto* face = mHBFace.exchange(nullptr);
   hb_face_destroy(face);
   if (mMMVar) {
@@ -458,12 +456,7 @@ gfxFontconfigFontEntry::AutoHBFace gfxFontconfigFontEntry::GetHBFace() {
     }
     AutoWriteLock lock(mLock);
     if (mHBFace.compareExchange(nullptr, face)) {
-      if (useTableCache) {
-        auto* cache = new FontTableCache();
-        if (!mFontTableCache.compareExchange(nullptr, cache)) {
-          delete cache;
-        }
-      }
+      mUseTableCache = useTableCache;
     } else {
       // Lost a race to initialize mHBFace; discard our new one and use the
       // winner of the race.
@@ -583,8 +576,7 @@ hb_blob_t* gfxFontconfigFontEntry::GetFontTable(uint32_t aTableTag) {
     }
   }
 
-  // Use the cache only if it has already been created.
-  if (mFontTableCache) {
+  if (mUseTableCache) {
     return gfxFontEntry::GetFontTable(aTableTag);
   }
 
