@@ -1546,6 +1546,12 @@ void GCRuntime::sweepDebuggerOnMainThread(JS::GCContext* gcx) {
 
 void GCRuntime::sweepJitDataOnMainThread(JS::GCContext* gcx) {
   SweepingTracer trc(rt);
+
+  // Allow sweeping currently unmarked symbols that might be marked later by
+  // following a reference in another zone. We only really care about references
+  // in the current zone and anything swept here is not observable.
+  trc.setAllowSweepingSymbolsEarly(true);
+
   {
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::SWEEP_JIT_DATA);
 

@@ -2960,12 +2960,21 @@ inline void SweepingTracer::onEdge(T** thingp, const char* name) {
   }
 #endif
 
+  // Any zone can contain references to symbols so make sure we've finished
+  // marking them before we try and sweep them. If this fails then we missed
+  // adding a sweep group edge somewhere. This check can be disabled in places
+  // where we only care about references from the current zone.
+  MOZ_ASSERT_IF(cell->getTraceKind() == JS::TraceKind::Symbol &&
+                    !allowSweepingSymbolsEarly,
+                !zone->isGCMarking());
+
   // It would be nice if we could assert that the zone of the tenured cell is in
   // the Sweeping state, but that isn't always true for:
   //  - atoms
   //  - the jitcode map
   //  - the mark queue
-  if ((zone->isGCSweeping() || zone->isAtomsZone()) && !cell->isMarkedAny()) {
+  if ((zone->isGCSweeping() || (zone->isAtomsZone() && zone->isGCMarking())) &&
+      !cell->isMarkedAny()) {
     *thingp = nullptr;
   }
 }

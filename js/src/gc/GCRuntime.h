@@ -274,10 +274,20 @@ class WeakCacheSweepIterator {
 struct SweepingTracer final : public GenericTracerImpl<SweepingTracer> {
   explicit SweepingTracer(JSRuntime* rt);
 
+  void setAllowSweepingSymbolsEarly(bool value) {
+#ifdef DEBUG
+    allowSweepingSymbolsEarly = value;
+#endif
+  }
+
  private:
   template <typename T>
   void onEdge(T** thingp, const char* name);
   friend class GenericTracerImpl<SweepingTracer>;
+
+#ifdef DEBUG
+  bool allowSweepingSymbolsEarly = false;
+#endif
 };
 
 class GCRuntime {
