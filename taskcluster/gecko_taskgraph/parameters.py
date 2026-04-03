@@ -104,6 +104,7 @@ gecko_parameters_schema = {
     },
     Required("version"): str,
     Optional("head_git_rev"): str,
+    Optional("pull_request_number"): int,
 }
 
 
@@ -139,7 +140,6 @@ def get_defaults(repo_root=None):
         "optimize_strategies": None,
         "phabricator_diff": None,
         "project": "mozilla-central",
-        "pull_request_number": None,
         "release_enable_emefree": False,
         "release_enable_partner_repack": False,
         "release_enable_partner_attribution": False,
