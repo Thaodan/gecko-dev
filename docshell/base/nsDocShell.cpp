@@ -10933,7 +10933,7 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
 nsresult nsDocShell::UpdateURLAndHistory(
     Document* aDocument, nsIURI* aNewURI, nsIStructuredCloneContainer* aData,
     NavigationHistoryBehavior aHistoryHandling, nsIURI* aCurrentURI,
-    bool aEqualURIs) {
+    bool aEqualURIs, bool aFiredNavigateEvent) {
   MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug, "UpdateURLAndHistory {}",
               aHistoryHandling);
 
@@ -11078,7 +11078,8 @@ nsresult nsDocShell::UpdateURLAndHistory(
     // newEntry, and historyHandling.
     navigation->UpdateEntriesForSameDocumentNavigation(
         mActiveEntry.get(),
-        isReplace ? NavigationType::Replace : NavigationType::Push);
+        isReplace ? NavigationType::Replace : NavigationType::Push,
+        aFiredNavigateEvent);
   }
 
   return NS_OK;
