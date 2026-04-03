@@ -1653,49 +1653,68 @@ void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
   }
 }
 
-// https://drafts.csswg.org/web-animations/#pause-an-animation
+// Note: The module level 2 defines some replacements, so we have to take both
+// sections into account.
+// https://drafts.csswg.org/web-animations-1/#pausing-an-animation-section
+// https://drafts.csswg.org/web-animations-2/#pausing-an-animation-section
 void Animation::Pause(ErrorResult& aRv) {
+  // If animation has a pending pause task, abort these steps.
+  // If the play state of animation is paused, abort these steps.
   if (IsPausedOrPausing()) {
     return;
   }
 
   AutoMutationBatchForAnimation mb(*this);
 
-  Nullable<TimeDuration> seekTime;
-  // If we are transitioning from idle, fill in the current time
+  // Let has finite timeline be true if animation has an associated timeline
+  // that is not monotonically increasing.
+  const bool hasFiniteTimeline = HasFiniteTimeline();
+
   if (GetCurrentTimeAsDuration().IsNull()) {
-    if (PlaybackRateInternal() >= 0.0) {
-      seekTime.SetValue(TimeDuration(0));
-    } else {
-      if (EffectEnd() == TimeDuration::Forever()) {
-        return aRv.ThrowInvalidStateError("Can't seek to infinite effect end");
+    if (!hasFiniteTimeline) {
+      // If the animation’s current time is unresolved and has finite timeline
+      // is false, perform the steps according to the first matching condition
+      // below:
+      if (PlaybackRateInternal() >= 0.0) {
+        // If animation’s playback rate is ≥ 0, set hold time to zero.
+        mHoldTime.SetValue(TimeDuration(0));
+      } else {
+        if (EffectEnd() == TimeDuration::Forever()) {
+          // If associated effect end for animation is positive infinity, throw
+          // an "InvalidStateError" DOMException and abort these steps.
+          return aRv.ThrowInvalidStateError(
+              "Can't seek to infinite effect end");
+        }
+        // Otherwise, set hold time to animation’s associated effect end.
+        mHoldTime.SetValue(TimeDuration(EffectEnd()));
       }
-      seekTime.SetValue(TimeDuration(EffectEnd()));
-    }
-  }
-
-  if (!seekTime.IsNull()) {
-    if (HasFiniteTimeline()) {
-      mStartTime = seekTime;
     } else {
-      mHoldTime = seekTime;
+      // If has finite timeline is true, and the animation’s current time is
+      // unresolved, set the auto align start time flag to true.
+      mAutoAlignStartTime = true;
     }
   }
 
-  bool reuseReadyPromise = false;
+  // Let has pending ready promise be a boolean flag that is initially false.
+  bool hasPendingReadyPromise = false;
+
+  // If animation has a pending play task, cancel that task and let has pending
+  // ready promise be true.
   if (mPendingState == PendingState::PlayPending) {
     CancelPendingTasks();
-    reuseReadyPromise = true;
+    hasPendingReadyPromise = true;
   }
 
-  if (!reuseReadyPromise) {
+  // If has pending ready promise is false, set animation’s current ready
+  // promise to a new promise in the relevant Realm of animation.
+  if (!hasPendingReadyPromise) {
     // Clear ready promise. We'll create a new one lazily.
     mReady = nullptr;
   }
 
+  // Schedule the panding pause task. See Animation::PauseAt() for details.
   mPendingState = PendingState::PausePending;
   mPendingReadyTime = {};
-  // See the relevant PlayPending code for comments.
   if (Document* doc = GetRenderedDocument()) {
     if (HasFiniteTimeline()) {
       doc->GetOrCreateScrollTimelineAnimationTracker()->AddPending(*this);
@@ -1703,6 +1722,9 @@ void Animation::Pause(ErrorResult& aRv) {
     mPendingReadyTime = EnsurePaintIsScheduled(*doc);
   }
 
+  // Run the procedure to update an animation’s finished state for animation
+  // with the did seek flag set to false, and the synchronously notify flag set
+  // to false.
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
   if (IsRelevant()) {
     MutationObservers::NotifyAnimationChanged(this);
