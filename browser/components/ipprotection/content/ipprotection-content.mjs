@@ -336,7 +336,7 @@ export default class IPProtectionContentElement extends MozLitElement {
                 slot="icon"
                 role="presentation"
                 class="icon"
-                src="chrome://browser/content/ipprotection/assets/states/ipprotection-error.svg"
+                src="chrome://browser/content/ipprotection/assets/states/ipprotection-info.svg"
               />
             `
           : null}

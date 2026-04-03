@@ -51,11 +51,11 @@
 }
 
 .network-error {
-  background-color: var(--background-color-critical);
+  background-color: var(--background-color-information);
 
   ::slotted([slot="icon"]) {
     -moz-context-properties: fill;
-    fill: var(--icon-color-critical);
+    fill: var(--icon-color-information);
   }
 }
 
