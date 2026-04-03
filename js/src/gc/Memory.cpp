@@ -322,9 +322,15 @@ static inline void* MapMemoryAt(void* desired, size_t length) {
 
 #ifdef JS_64BIT
 
-/* Returns a random number in the given range. */
+/* Returns a random number in the range from |minNum| to |maxNum| inclusive. */
 static inline uint64_t GetNumberInRange(uint64_t minNum, uint64_t maxNum) {
   const uint64_t MaxRand = UINT64_C(0xffffffffffffffff);
+
+  MOZ_ASSERT(minNum <= maxNum);
+  if (minNum == maxNum) {
+    return minNum;
+  }
+
   maxNum -= minNum;
   uint64_t binSize = 1 + (MaxRand - maxNum) / (maxNum + 1);
 
@@ -565,12 +571,12 @@ void* MapAlignedPages(size_t length, size_t alignment,
   // Use the scattershot allocator if the address range is large enough.
   if (UsingScattershotAllocator()) {
     void* region = MapAlignedPagesRandom(length, alignment);
-
-    MOZ_RELEASE_ASSERT(!IsInvalidRegion(region, length));
-    MOZ_ASSERT(OffsetFromAligned(region, alignment) == 0);
-
-    RecordMemoryAlloc(length);
-    return region;
+    if (region) {
+      MOZ_RELEASE_ASSERT(!IsInvalidRegion(region, length));
+      MOZ_ASSERT(OffsetFromAligned(region, alignment) == 0);
+      RecordMemoryAlloc(length);
+      return region;
+    }
   }
 #  endif
 
@@ -652,6 +658,11 @@ void* MapAlignedPages(size_t length, size_t alignment,
  * and the other for regular (usually chunk sized) allocations.
  */
 static void* MapAlignedPagesRandom(size_t length, size_t alignment) {
+  MOZ_ASSERT(length != 0);
+  if (length - 1 > maxValidAddress) {
+    return nullptr;
+  }
+
   uint64_t minNum, maxNum;
   if (length < HugeAllocationSize) {
     // Use the lower half of the range.
@@ -661,6 +672,10 @@ static void* MapAlignedPagesRandom(size_t length, size_t alignment) {
     // Use the upper half of the range.
     minNum = (hugeSplit + 1 + alignment - 1) / alignment;
     maxNum = (maxValidAddress - (length - 1)) / alignment;
+  }
+
+  if (minNum > maxNum) {
+    return nullptr;
   }
 
   // Try to allocate in random aligned locations.
@@ -796,7 +811,7 @@ static void* MapAlignedPagesLastDitch(size_t length, size_t alignment,
       break;  // We ran out of memory, so give up.
     }
   }
-  if (OffsetFromAligned(region, alignment)) {
+  if (region && OffsetFromAligned(region, alignment) != 0) {
     UnmapInternal(region, length);
     region = nullptr;
   }
