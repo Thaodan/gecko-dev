@@ -62,10 +62,7 @@ void WeakMapBase::checkZoneUnmarked(JS::Zone* zone) {
 
 void Zone::traceWeakMaps(JSTracer* trc) {
   MOZ_ASSERT(trc->weakMapAction() != JS::WeakMapTraceAction::Skip);
-  ForAllWeakMapsInZone(this, [trc](WeakMapBase* map) {
-    map->trace(trc);
-    TraceNullableEdge(trc, &map->memberOf, "memberOf");
-  });
+  ForAllWeakMapsInZone(this, [trc](WeakMapBase* map) { map->trace(trc); });
 }
 
 mozilla::Maybe<CellColor> WeakMapBase::markMap(MarkColor markColor) {

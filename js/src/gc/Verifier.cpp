@@ -288,7 +288,9 @@ static bool IsMarkedOrAllocated(TenuredCell* cell) {
 struct CheckEdgeTracer final : public JS::CallbackTracer {
   VerifyNode* node;
   explicit CheckEdgeTracer(JSRuntime* rt)
-      : JS::CallbackTracer(rt), node(nullptr) {}
+      : JS::CallbackTracer(rt, JS::TracerKind::Callback,
+                           JS::WeakEdgeTraceAction::Skip),
+        node(nullptr) {}
   void onChild(JS::GCCellPtr thing, const char* name) override;
 };
 

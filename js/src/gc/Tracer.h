@@ -333,6 +333,9 @@ inline TraceWeakResult<T> TraceManuallyBarrieredWeakEdge(JSTracer* trc,
 template <typename T>
 void TraceRange(JSTracer* trc, size_t len, BarrieredBase<T>* vec,
                 const char* name) {
+  if (len == 0) {
+    return;
+  }
   gc::TraceRangeInternal(trc, len,
                          gc::ConvertToBase(vec[0].unbarrieredAddress()), name);
 }
