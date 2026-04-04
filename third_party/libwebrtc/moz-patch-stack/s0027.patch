@@ -116,7 +116,7 @@ index 3b92d0ad12..c0365bd7a4 100644
    # TODO(https://bugs.webrtc.org/14437):  Remove this section if general
    # Chromium fix resolves the problem.
 diff --git a/BUILD.gn b/BUILD.gn
-index b475251113..916fdfb625 100644
+index bf8a9bc43e..9a7d384e9e 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -33,7 +33,7 @@ if (is_android) {
@@ -457,10 +457,10 @@ index ebc6ec0177..d0c8e6d843 100644
  rtc_library("default_task_queue_factory") {
    visibility = [ "*" ]
 diff --git a/api/transport/BUILD.gn b/api/transport/BUILD.gn
-index f643c81e4c..a9c6e11b1e 100644
+index 136a8f937a..ba03201e69 100644
 --- a/api/transport/BUILD.gn
 +++ b/api/transport/BUILD.gn
-@@ -102,6 +102,7 @@ rtc_source_set("sctp_transport_factory_interface") {
+@@ -103,6 +103,7 @@ rtc_source_set("sctp_transport_factory_interface") {
  }
  
  rtc_library("stun_types") {
@@ -468,7 +468,7 @@ index f643c81e4c..a9c6e11b1e 100644
    visibility = [ "*" ]
    sources = [
      "stun.cc",
-@@ -124,6 +125,7 @@ rtc_library("stun_types") {
+@@ -125,6 +126,7 @@ rtc_library("stun_types") {
      "//third_party/abseil-cpp/absl/strings:string_view",
    ]
  }
