@@ -36,7 +36,6 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/a342f5eca8622c8b9
  media/BUILD.gn                                |  2 +-
  modules/audio_device/BUILD.gn                 |  4 +--
  modules/audio_processing/aec3/BUILD.gn        |  2 +-
- modules/audio_processing/aecm/BUILD.gn        |  2 +-
  modules/audio_processing/agc/BUILD.gn         |  2 +-
  modules/audio_processing/agc2/BUILD.gn        |  2 +-
  .../audio_processing/agc2/rnn_vad/BUILD.gn    |  8 +++---
@@ -55,7 +54,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/a342f5eca8622c8b9
  test/BUILD.gn                                 |  6 ++--
  test/fuzzers/BUILD.gn                         |  4 +--
  webrtc.gni                                    | 28 +++++++++----------
- 42 files changed, 105 insertions(+), 105 deletions(-)
+ 41 files changed, 104 insertions(+), 104 deletions(-)
 
 diff --git a/.gn b/.gn
 index f771394703..5ef68516cf 100644
@@ -467,19 +466,6 @@ index fd394efb8f..099a13b1ce 100644
      cflags = [ "-mfpu=neon" ]
    }
  
-diff --git a/modules/audio_processing/aecm/BUILD.gn b/modules/audio_processing/aecm/BUILD.gn
-index f01637f2da..d5bdc070be 100644
---- a/modules/audio_processing/aecm/BUILD.gn
-+++ b/modules/audio_processing/aecm/BUILD.gn
-@@ -30,7 +30,7 @@ rtc_library("aecm_core") {
- 
-     if (target_cpu != "arm64") {
-       # Enable compilation for the NEON instruction set.
--      suppressed_configs += [ "//build/config/compiler:compiler_arm_fpu" ]
-+      suppressed_configs += [ "//chromium/build/config/compiler:compiler_arm_fpu" ]
-       cflags += [ "-mfpu=neon" ]
-     }
-   }
 diff --git a/modules/audio_processing/agc/BUILD.gn b/modules/audio_processing/agc/BUILD.gn
 index 45d08ad066..2d6f3ca0b4 100644
 --- a/modules/audio_processing/agc/BUILD.gn

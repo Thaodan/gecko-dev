@@ -11,13 +11,12 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/58f47eacaf10d12e2
  common_audio/third_party/ooura/BUILD.gn          |  6 +++---
  common_audio/third_party/spl_sqrt_floor/BUILD.gn |  4 ++--
  modules/audio_processing/aec3/BUILD.gn           |  6 +++---
- modules/audio_processing/aecm/BUILD.gn           |  4 ++--
  modules/audio_processing/agc/BUILD.gn            |  2 +-
  modules/audio_processing/agc2/rnn_vad/BUILD.gn   |  2 +-
  modules/audio_processing/ns/BUILD.gn             |  2 +-
  modules/desktop_capture/BUILD.gn                 |  2 +-
  webrtc.gni                                       |  2 +-
- 11 files changed, 26 insertions(+), 26 deletions(-)
+ 10 files changed, 24 insertions(+), 24 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
 index 9a7d384e9e..6b6bb428d9 100644
@@ -202,27 +201,6 @@ index e5c2bb9714..fd394efb8f 100644
    rtc_library("aec3_avx2") {
      configs += [ "..:apm_debug_dump" ]
      sources = [
-diff --git a/modules/audio_processing/aecm/BUILD.gn b/modules/audio_processing/aecm/BUILD.gn
-index a945d0c58d..f01637f2da 100644
---- a/modules/audio_processing/aecm/BUILD.gn
-+++ b/modules/audio_processing/aecm/BUILD.gn
-@@ -28,14 +28,14 @@ rtc_library("aecm_core") {
-   if (rtc_build_with_neon) {
-     sources += [ "aecm_core_neon.cc" ]
- 
--    if (current_cpu != "arm64") {
-+    if (target_cpu != "arm64") {
-       # Enable compilation for the NEON instruction set.
-       suppressed_configs += [ "//build/config/compiler:compiler_arm_fpu" ]
-       cflags += [ "-mfpu=neon" ]
-     }
-   }
- 
--  if (current_cpu == "mipsel") {
-+  if (target_cpu == "mipsel") {
-     sources += [ "aecm_core_mips.cc" ]
-   } else {
-     sources += [ "aecm_core_c.cc" ]
 diff --git a/modules/audio_processing/agc/BUILD.gn b/modules/audio_processing/agc/BUILD.gn
 index 090fbd4604..45d08ad066 100644
 --- a/modules/audio_processing/agc/BUILD.gn
