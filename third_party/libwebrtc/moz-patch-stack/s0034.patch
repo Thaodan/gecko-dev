@@ -16,8 +16,8 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/58f47eacaf10d12e2
  modules/audio_processing/agc2/rnn_vad/BUILD.gn   |  2 +-
  modules/audio_processing/ns/BUILD.gn             |  2 +-
  modules/desktop_capture/BUILD.gn                 |  2 +-
- webrtc.gni                                       |  4 ++--
- 11 files changed, 27 insertions(+), 27 deletions(-)
+ webrtc.gni                                       |  2 +-
+ 11 files changed, 26 insertions(+), 26 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
 index 3f6421cfa5..72e5df1c80 100644
@@ -276,19 +276,10 @@ index 4157eacdd8..3a40b9c0a4 100644
  config("x11_config") {
    if (rtc_use_x11_extensions) {
 diff --git a/webrtc.gni b/webrtc.gni
-index bc07a99eb2..23b4c1f420 100644
+index d1b5565fdb..130e18cdaa 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
-@@ -156,7 +156,7 @@ declare_args() {
- 
-   # Selects fixed-point code where possible.
-   rtc_prefer_fixed_point = false
--  if (current_cpu == "arm" || current_cpu == "arm64") {
-+  if (target_cpu == "arm" || target_cpu == "arm64") {
-     rtc_prefer_fixed_point = true
-   }
- 
-@@ -165,7 +165,7 @@ declare_args() {
+@@ -159,7 +159,7 @@ declare_args() {
  
    # Determines whether NEON code will be built.
    rtc_build_with_neon =
