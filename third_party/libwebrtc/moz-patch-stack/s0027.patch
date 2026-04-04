@@ -1259,19 +1259,19 @@ index dd72d3f215..16a6e163d8 100644
  rtc_library("call_config_utils") {
    testonly = true
 diff --git a/video/BUILD.gn b/video/BUILD.gn
-index f8f772f41f..18db3e4e4a 100644
+index aa043e7410..a646b6a966 100644
 --- a/video/BUILD.gn
 +++ b/video/BUILD.gn
-@@ -17,7 +17,7 @@ rtc_library("video_stream_encoder_interface") {
+@@ -16,7 +16,7 @@ rtc_library("video_stream_encoder_interface") {
+   deps = [
      "../api:fec_controller_api",
-     "../api:rtc_error",
      "../api:rtp_parameters",
 -    "../api:rtp_sender_interface",
 +    "../api:rtp_sender_setparameters_callback",
      "../api:scoped_refptr",
      "../api/adaptation:resource_adaptation_api",
      "../api/units:data_rate",
-@@ -444,7 +444,7 @@ rtc_library("video_stream_encoder_impl") {
+@@ -421,7 +421,7 @@ rtc_library("video_stream_encoder_impl") {
      "../api:rtc_error",
      "../api:rtp_packet_info",
      "../api:rtp_parameters",
