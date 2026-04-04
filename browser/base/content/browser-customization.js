@@ -142,6 +142,9 @@ var AutoHideMenubar = {
         this._updateState();
         break;
       case "popupshowing":
+        if (self._node.hasAttribute("hidden")) {
+          break;
+        }
       // fall through
       case "DOMMenuBarActive":
         this._setActive();
