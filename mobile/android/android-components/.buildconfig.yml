@@ -994,6 +994,47 @@ projects:
     - components:ui-icons
     - components:ui-tabcounter
     - components:ui-widgets
+  components:feature-ipprotection:
+    description: Feature module bridging GeckoView IP protection proxy state into
+      an AC store.
+    path: components/feature/ipprotection
+    publish: false
+    upstream_dependencies:
+    - components:browser-errorpages
+    - components:browser-menu
+    - components:browser-menu2
+    - components:browser-session-storage
+    - components:browser-state
+    - components:browser-tabstray
+    - components:browser-thumbnails
+    - components:browser-toolbar
+    - components:compose-base
+    - components:concept-awesomebar
+    - components:concept-base
+    - components:concept-engine
+    - components:concept-fetch
+    - components:concept-menu
+    - components:concept-storage
+    - components:concept-sync
+    - components:concept-tabstray
+    - components:concept-toolbar
+    - components:feature-session
+    - components:feature-tabs
+    - components:lib-dataprotect
+    - components:lib-publicsuffixlist
+    - components:lib-state
+    - components:service-firefox-accounts
+    - components:support-base
+    - components:support-images
+    - components:support-ktx
+    - components:support-test
+    - components:support-utils
+    - components:tooling-lint
+    - components:ui-autocomplete
+    - components:ui-colors
+    - components:ui-icons
+    - components:ui-tabcounter
+    - components:ui-widgets
   components:feature-logins:
     description: Feature component for logins related features.
     path: components/feature/logins
