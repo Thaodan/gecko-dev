@@ -338,10 +338,10 @@ mozilla::UniquePtr<uint8_t[]> CanvasContext::GetImageBuffer(
 
   nsRFPService::PotentiallyDumpImage(PrincipalOrNull(), dataSurface);
   if (ShouldResistFingerprinting(RFPTarget::CanvasRandomization)) {
-    gfxUtils::GetImageBufferWithRandomNoise(dataSurface,
-                                            /* aIsAlphaPremultiplied */ true,
-                                            GetCookieJarSettings(),
-                                            PrincipalOrNull(), &*out_format);
+    return gfxUtils::GetImageBufferWithRandomNoise(
+        dataSurface,
+        /* aIsAlphaPremultiplied */ true, GetCookieJarSettings(),
+        PrincipalOrNull(), &*out_format);
   }
 
   return gfxUtils::GetImageBuffer(dataSurface, /* aIsAlphaPremultiplied */ true,
