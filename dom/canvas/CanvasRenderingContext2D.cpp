@@ -4889,6 +4889,7 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor final
     }
 
     mCtx->EnsureTarget();
+    const bool needBounds = mCtx->NeedToCalculateBounds();
     if (!mCtx->IsTargetValid()) {
       return;
     }
@@ -4903,7 +4904,7 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor final
     const ContextState& state = mCtx->CurrentState();
 
     gfx::Rect bounds;
-    if (mCtx->NeedToCalculateBounds()) {
+    if (needBounds) {
       bounds = ToRect(mBoundingBox);
       bounds.MoveBy(mPt / mAppUnitsPerDevPixel);
       if (style == Style::STROKE) {
