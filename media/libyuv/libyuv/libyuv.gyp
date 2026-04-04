@@ -26,12 +26,19 @@
     'clang%': 0,
     # Link-Time Optimizations.
     'use_lto%': 0,
+    'mips_msa%': 0,  # Default to msa off.
     'build_neon': 0,
+    'build_msa': 0,
     'conditions': [
        ['(target_arch == "armv7" or target_arch == "armv7s" or \
        (target_arch == "arm" and arm_version >= 7) or target_arch == "arm64")\
        and (arm_neon == 1 or arm_neon_optional == 1)', {
          'build_neon': 1,
+       }],
+       ['(target_arch == "mipsel" or target_arch == "mips64el")\
+       and (mips_msa == 1)',
+       {
+         'build_msa': 1,
        }],
     ],
   },
@@ -66,7 +73,6 @@
           'cflags_mozilla!': [
             '<@(moz_neon_cflags_block_list)',
           ],
-
           'conditions': [
             # Disable LTO in libyuv_neon target due to gcc 4.9 compiler bug.
             ['clang == 0 and use_lto == 1', {
@@ -75,6 +81,11 @@
                 '-ffat-lto-objects',
               ],
             }],
+          ],
+        }],
+        ['build_msa != 0', {
+          'defines': [
+            'LIBYUV_MSA',
           ],
         }],
         ['build_with_mozilla == 1', {
