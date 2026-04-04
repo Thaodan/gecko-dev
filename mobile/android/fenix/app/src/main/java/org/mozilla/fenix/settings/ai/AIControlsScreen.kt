@@ -75,6 +75,7 @@ internal fun AIControlsScreen(
         ) {
             if (showDialog) {
                 BlockAiDialog(
+                    registeredFeatures = registeredFeatures,
                     onDismiss = { onDialogDismiss() },
                     onConfirm = { onDialogConfirm() },
                 )
@@ -245,7 +246,11 @@ private fun BlockedInfoBanner(
 }
 
 @Composable
-private fun BlockAiDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
+private fun BlockAiDialog(
+    registeredFeatures: List<AIControllableFeature>,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -278,20 +283,12 @@ private fun BlockAiDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                IconListItem(
-                    label = stringResource(R.string.ai_controls_translations_title),
-                    beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_translate_24),
-                )
-
-                IconListItem(
-                    label = stringResource(R.string.ai_controls_page_summaries_title),
-                    beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_lightning_24),
-                )
-
-                IconListItem(
-                    label = stringResource(R.string.ai_controls_voice_search_title),
-                    beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_microphone_24),
-                )
+                for (feature in registeredFeatures) {
+                    IconListItem(
+                        label = stringResource(feature.description.titleRes),
+                        beforeIconPainter = painterResource(feature.description.iconRes),
+                    )
+                }
             }
         },
         dismissButton = {
@@ -367,6 +364,7 @@ private fun BlockAIDialogPreview(
 ) {
     FirefoxTheme(theme) {
         BlockAiDialog(
+            registeredFeatures = emptyList(),
             onDismiss = {},
             onConfirm = {},
         )

@@ -10,6 +10,7 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.ai.controls.AIControllableFeature
 import mozilla.components.concept.ai.controls.AIFeatureMetadata
 import org.mozilla.fenix.R
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * The definition of the translation feature for use in AI Controls.
@@ -30,6 +31,7 @@ class TranslationsAIControllableFeature(
         override val description = AIFeatureMetadata.Description(
             titleRes = R.string.ai_controls_translations_title,
             descriptionRes = R.string.ai_controls_translations_description,
+            iconRes = iconsR.drawable.mozac_ic_lightning_24,
         )
     }
 }
