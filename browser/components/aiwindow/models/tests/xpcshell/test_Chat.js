@@ -43,13 +43,6 @@ registerCleanupFunction(() => {
   }
 });
 
-function getLastAssistantResponse(conversation) {
-  return conversation.messages
-    .filter(m => m.role == MESSAGE_ROLE.ASSISTANT)
-    .filter(m => m.content.type === "text")
-    .at(-1);
-}
-
 function makeConversation(messages = []) {
   const conversation = new ChatConversation({
     title: "test",
@@ -61,6 +54,13 @@ function makeConversation(messages = []) {
     conversation.messages.push(msg);
   }
   return conversation;
+}
+
+function getLastAssistantResponse(conversation) {
+  return conversation.messages
+    .filter(m => m.role == MESSAGE_ROLE.ASSISTANT)
+    .filter(m => m.content.type === "text")
+    .at(-1);
 }
 
 add_task(async function test_Chat_real_tools_are_registered() {
@@ -576,7 +576,8 @@ add_task(
 
       const getPageContentStub = sb
         .stub(GetPageContent, "getPageContent")
-        .callsFake(async (_params, _allowedUrls, secProps = {}) => {
+        .callsFake(async (_params, _allowedUrls, conversation) => {
+          const secProps = conversation.securityProperties;
           if (secProps.untrustedInput && secProps.privateData) {
             return [
               `get_page_content is not available for ${_params?.url} when the conversation involves both untrusted input and private data.`,
