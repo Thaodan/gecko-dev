@@ -19,10 +19,8 @@
 
 namespace mozilla::dom {
 
-StylePropertyMap::StylePropertyMap(Element* aElement, bool aComputed)
-    : StylePropertyMapReadOnly(aElement, aComputed) {
-  MOZ_DIAGNOSTIC_ASSERT(!aComputed);
-}
+StylePropertyMap::StylePropertyMap(nsStyledElement* aStyledElement)
+    : StylePropertyMapReadOnly(aStyledElement) {}
 
 StylePropertyMap::StylePropertyMap(CSSStyleRule* aRule)
     : StylePropertyMapReadOnly(aRule) {}

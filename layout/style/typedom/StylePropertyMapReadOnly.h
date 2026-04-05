@@ -17,6 +17,7 @@
 #include "nsTArrayForwardDeclare.h"
 #include "nsWrapperCache.h"
 
+class nsStyledElement;
 template <class T>
 class RefPtr;
 
@@ -35,7 +36,10 @@ class OwningUndefinedOrCSSStyleValue;
 
 class StylePropertyMapReadOnly : public nsISupports, public nsWrapperCache {
  public:
-  StylePropertyMapReadOnly(Element* aElement, bool aComputed);
+  explicit StylePropertyMapReadOnly(nsStyledElement* aStyledElement);
+
+  explicit StylePropertyMapReadOnly(Element* aElement);
+
   explicit StylePropertyMapReadOnly(CSSStyleRule* aRule);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -81,9 +85,11 @@ class StylePropertyMapReadOnly : public nsISupports, public nsWrapperCache {
       Computed,
       Rule,
     };
-    Declarations(Element* aElement, bool aComputed)
-        : mElement(aElement),
-          mKind(aComputed ? Kind::Computed : Kind::Inline) {}
+    explicit Declarations(nsStyledElement* aStyledElement)
+        : mStyledElement(aStyledElement), mKind(Kind::Inline) {}
+
+    explicit Declarations(Element* aElement)
+        : mElement(aElement), mKind(Kind::Computed) {}
 
     explicit Declarations(CSSStyleRule* aRule)
         : mRule(aRule), mKind(Kind::Rule) {}
@@ -97,6 +103,7 @@ class StylePropertyMapReadOnly : public nsISupports, public nsWrapperCache {
 
    private:
     union {
+      nsStyledElement* mStyledElement;
       Element* mElement;
       CSSStyleRule* mRule;
     };
