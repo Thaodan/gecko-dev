@@ -8,6 +8,7 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/CSSStyleRule.h"
 #include "mozilla/dom/CSSStyleValue.h"
 #include "mozilla/dom/StylePropertyMapBinding.h"
 #include "nsCOMPtr.h"
@@ -34,6 +35,21 @@ struct DeclarationTraits<MutableInlineStyleDeclarations> {
     MOZ_ASSERT(aStyledElement);
 
     nsCOMPtr<nsDOMCSSDeclaration> declaration = aStyledElement->Style();
+
+    declaration->SetProperty(aProperty, aValue, ""_ns, aRv);
+  }
+};
+
+// Specialization for style rule
+struct MutableStyleRuleDeclarations {};
+
+template <>
+struct DeclarationTraits<MutableStyleRuleDeclarations> {
+  static void Set(CSSStyleRule* aRule, const nsACString& aProperty,
+                  const nsACString& aValue, ErrorResult& aRv) {
+    MOZ_ASSERT(aRule);
+
+    nsCOMPtr<nsDOMCSSDeclaration> declaration = aRule->Style();
 
     declaration->SetProperty(aProperty, aValue, ""_ns, aRv);
   }
@@ -149,7 +165,8 @@ void StylePropertyMapReadOnly::Declarations::Set(const nsACString& aProperty,
       return;
 
     case Kind::Rule:
-      aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+      DeclarationTraits<MutableStyleRuleDeclarations>::Set(mRule, aProperty,
+                                                           aValue, aRv);
       return;
   }
 }
