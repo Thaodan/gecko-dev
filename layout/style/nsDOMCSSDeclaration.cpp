@@ -277,10 +277,7 @@ nsresult nsDOMCSSDeclaration::ParsePropertyValue(
     const NonCustomCSSPropertyId aPropId, const nsACString& aPropValue,
     bool aIsImportant, nsIPrincipal* aSubjectPrincipal) {
   AUTO_PROFILER_LABEL_CATEGORY_PAIR_RELEVANT_FOR_JS(LAYOUT_CSSParsing);
-
-  if (IsReadOnly()) {
-    return NS_OK;
-  }
+  MOZ_ASSERT(!IsReadOnly());
 
   DeclarationBlockMutationClosure closure = {};
   MutationClosureData closureData;
@@ -300,10 +297,7 @@ nsresult nsDOMCSSDeclaration::ParseCustomPropertyValue(
     const nsACString& aPropertyName, const nsACString& aPropValue,
     bool aIsImportant, nsIPrincipal* aSubjectPrincipal) {
   MOZ_ASSERT(nsCSSProps::IsCustomPropertyName(aPropertyName));
-
-  if (IsReadOnly()) {
-    return NS_OK;
-  }
+  MOZ_ASSERT(!IsReadOnly());
 
   DeclarationBlockMutationClosure closure = {};
   MutationClosureData closureData;
