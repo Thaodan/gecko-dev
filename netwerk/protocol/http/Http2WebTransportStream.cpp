@@ -363,9 +363,9 @@ nsresult Http2WebTransportStream::HandleMaxStreamData(uint64_t aLimit) {
 
 void Http2WebTransportStream::OnStopSending() { mSendState = SEND_DONE; }
 
-nsresult Http2WebTransportStream::OnReset(uint64_t aSize) {
+void Http2WebTransportStream::OnReset(uint64_t aSize) {
   if (mReliableSize) {
-    return NS_OK;
+    return;
   }
 
   LOG(("Http2WebTransportStream::OnReset %p aSize=%" PRIu64
@@ -387,8 +387,6 @@ nsresult Http2WebTransportStream::OnReset(uint64_t aSize) {
   if (mTotalReceived == aSize) {
     mRecvState = RECV_DONE;
   }
-
-  return NS_OK;
 }
 
 void Http2WebTransportStream::OnStreamDataSent(size_t aCount) {

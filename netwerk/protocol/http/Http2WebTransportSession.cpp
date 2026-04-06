@@ -448,9 +448,7 @@ bool Http2WebTransportSessionImpl::HandleStreamResetCapsule(
   WebTransportResetStreamCapsule& reset =
       aCapsule.GetWebTransportResetStreamCapsule();
 
-  if (NS_FAILED(stream->OnReset(reset.mReliableSize))) {
-    return false;
-  }
+  stream->OnReset(reset.mReliableSize);
 
   uint8_t wtError = Http3ErrorToWebTransportError(reset.mErrorCode);
   nsresult rv = GetNSResultFromWebTransportError(wtError);
@@ -474,8 +472,7 @@ void Http2WebTransportSessionImpl::OnStreamDataSent(StreamId aId,
 void Http2WebTransportSessionImpl::OnError(uint64_t aError) {
   LOG(("Http2WebTransportSessionImpl::OnError %p aError=%" PRIu64, this,
        aError));
-  // XXX This should also tear down the HTTP/2 tunnel via mHandler.
-  Close(NS_ERROR_NET_RESET);
+  // To be implemented.
 }
 
 bool Http2WebTransportSessionImpl::ProcessIncomingStreamCapsule(
