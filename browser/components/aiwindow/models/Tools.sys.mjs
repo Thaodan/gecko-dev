@@ -271,6 +271,9 @@ export async function getOpenTabs(conversation) {
   // Tab titles are truncated to 100 characters and therefore not expected to
   // contain enough untrusted data for a prompt injection attack.
   conversation.securityProperties.setPrivateData();
+
+  conversation.addSeenUrls(recentTabs.map(({ url }) => url));
+
   return recentTabs;
 }
 
@@ -312,6 +315,8 @@ export async function searchBrowsingHistory(toolParams, conversation) {
     endTs,
     historyLimit: MAX_HISTORY_RESULTS,
   });
+
+  conversation.addSeenUrls(result.results.map(({ url }) => url));
   conversation.securityProperties.setPrivateData();
   return result;
 }
@@ -469,7 +474,7 @@ export class RunSearch {
     let result;
     try {
       await RunSearch.#performSearchAndWait(win, originalBrowser, query.trim());
-      result = RunSearch.#extractSerpContent(originalBrowser);
+      result = RunSearch.#extractSerpContent(originalBrowser, conversation);
     } catch (e) {
       console.error("[RunSearch] search failed:", e);
       result = `Error performing search for "${query}": ${e.message}`;
@@ -566,9 +571,10 @@ export class RunSearch {
    * Run PageExtractor on the search engine page.
    *
    * @param {MozBrowser} browser
+   * @param {ChatConversation} conversation
    * @returns {string}
    */
-  static async #extractSerpContent(browser) {
+  static async #extractSerpContent(browser, conversation) {
     const windowContext = browser.browsingContext?.currentWindowContext;
     if (!windowContext) {
       return "Error: could not access search results page content.";
@@ -588,6 +594,7 @@ export class RunSearch {
         return "No content could be extracted from the search results page.";
       }
       text = result.text;
+      conversation.addSeenUrls(result.links);
     } catch {
       return "Error: failed to extract search results content.";
     }
@@ -609,13 +616,12 @@ export class GetPageContent {
    *
    * @param {object} toolParams
    * @param {string[]} toolParams.url_list
-   * @param {Set<string>} mentionedUrls
    * @param {ChatConversation} conversation
    * @returns {Promise<Array<string>>}
    *  A promise resolving to a string containing the extracted page content
    *  with a descriptive header, or an error message if extraction fails.
    */
-  static async getPageContent({ url_list }, mentionedUrls, conversation) {
+  static async getPageContent({ url_list }, conversation) {
     // This is a decision table for allowing and blocking fetches on the configuration of the
     // SecurityProperties and the URLs. Tab URLs don't do any new page loads. Mention urls
     // have been added by the user so they should be allowed. And all other URLs are
@@ -631,6 +637,10 @@ export class GetPageContent {
     if (!Array.isArray(url_list)) {
       throw new Error("The url list must be an array of stirngs");
     }
+
+    // Collect these one time before the loop below since it must iterate through
+    // all of the conversations and collect a new Set of mentions.
+    const mentionedUrls = conversation.getAllMentionURLs();
 
     return Promise.all(
       url_list.map(async (url, index) => {
@@ -748,7 +758,8 @@ export class GetPageContent {
       return `get_page_content returned no content for ${label}.`;
     }
 
-    const { text } = extraction;
+    const { text, links } = extraction;
+    conversation.addSeenUrls(links);
 
     // If an extraction succeeds set the security properties.
     // The page content is private since it uses a web page load that has credentials.

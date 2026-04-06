@@ -100,9 +100,6 @@ Object.assign(Chat, {
       isVerbatimQuery = false;
     }
 
-    const openTabUrls = await this._getOpenTabUrls(conversation);
-    const mentionedUrls = conversation.getAllMentionURLs();
-
     const searchExecuted = conversation._searchExecutedTurn === currentTurn;
     let blockedSearchAttempts = 0;
 
@@ -250,10 +247,8 @@ Object.assign(Chat, {
           switch (toolName) {
             case GET_PAGE_CONTENT: {
               const startTime = new Date();
-              const seenUrls = openTabUrls.union(mentionedUrls);
               result = await GetPageContent.getPageContent(
                 toolParams,
-                seenUrls,
                 conversation
               );
               Glean.smartWindow.getPageContent.record({
@@ -353,20 +348,5 @@ Object.assign(Chat, {
       // no tool call can observe flags staged by a sibling call.
       conversation.securityProperties.commit();
     }
-  },
-
-  /**
-   * Get the list of URLs for the open tabs, limited to the MAX_TABS of the most recently
-   * accessed.
-   *
-   * @param {ChatConversation} conversation
-   * @returns {Set<string>}
-   */
-  async _getOpenTabUrls(conversation) {
-    const urls = new Set();
-    for (const { url } of await toolFns.getOpenTabs(conversation)) {
-      urls.add(url);
-    }
-    return urls;
   },
 });
