@@ -203,9 +203,7 @@ class Settings(
     var showPocketRecommendationsFeature by lazyFeatureFlagBooleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_pocket_homescreen_recommendations),
         featureFlag = ContentRecommendationsFeatureHelper.isContentRecommendationsFeatureEnabled(appContext),
-        defaultValue = {
-            homescreenSections[HomeScreenSection.POCKET] == true && !privateModeAndStoriesEntryPointEnabled
-        },
+        defaultValue = { homescreenSections[HomeScreenSection.POCKET] == true },
     )
 
     /**
