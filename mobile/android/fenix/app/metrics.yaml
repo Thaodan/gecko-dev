@@ -13743,6 +13743,8 @@ nimbus_system:
           type: string
         user_accepted_tou:
           type: boolean
+        user_disabled_ai:
+          type: boolean
         no_shortcuts_or_stories_opt_outs:
           type: boolean
         addon_ids:
@@ -13762,6 +13764,7 @@ nimbus_system:
       - 'https://bugzilla.mozilla.org/show_bug.cgi?id=1991528'
       - 'https://bugzilla.mozilla.org/show_bug.cgi?id=1993034'
       - 'https://bugzilla.mozilla.org/show_bug.cgi?id=1992306'
+      - 'https://bugzilla.mozilla.org/show_bug.cgi?id=2028993'
     data_reviews:
       - 'https://bugzilla.mozilla.org/show_bug.cgi?id=1898552#c3'
       - 'https://phabricator.services.mozilla.com/D258942'
@@ -13771,6 +13774,7 @@ nimbus_system:
       - 'https://phabricator.services.mozilla.com/D268391'
       - 'https://phabricator.services.mozilla.com/D268931'
       - 'https://phabricator.services.mozilla.com/D270859'
+      - 'https://phabricator.services.mozilla.com/D291861'
     data_sensitivity:
       - interaction
     notification_emails:
