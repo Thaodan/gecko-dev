@@ -2280,6 +2280,7 @@ pref("browser.smartwindow.firstrun.explainerURL", "https://www.firefox.com/en-US
 // Smart Window Logging
 pref("browser.smartwindow.chatHistory.loglevel", "Error");
 pref("browser.smartwindow.chatStore.loglevel", "Error");
+pref("browser.smartwindow.conversation.logLevel", "Error");
 pref("browser.smartwindow.smartbarMentions.loglevel", "Error");
 
 // Block insecure active content on https pages

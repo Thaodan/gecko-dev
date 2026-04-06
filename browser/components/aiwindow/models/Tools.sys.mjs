@@ -37,6 +37,13 @@ ChromeUtils.defineESModuleGetters(lazy, {
   //   "moz-src:///browser/components/pagedata/PageDataService.sys.mjs",
 });
 
+ChromeUtils.defineLazyGetter(lazy, "console", () =>
+  console.createInstance({
+    prefix: "Conversation",
+    maxLogLevelPref: "browser.smartwindow.conversation.logLevel",
+  })
+);
+
 // Important! Changing or removing this value requires a security review.
 //
 // Hard code a reasonable working limit for how many tabs that a language model can retrieve.
@@ -271,6 +278,7 @@ export async function getOpenTabs(conversation) {
   // Tab titles are truncated to 100 characters and therefore not expected to
   // contain enough untrusted data for a prompt injection attack.
   conversation.securityProperties.setPrivateData();
+  lazy.console.log("[Tool] getOpenTabs", recentTabs);
 
   conversation.addSeenUrls(recentTabs.map(({ url }) => url));
 
@@ -318,6 +326,7 @@ export async function searchBrowsingHistory(toolParams, conversation) {
 
   conversation.addSeenUrls(result.results.map(({ url }) => url));
   conversation.securityProperties.setPrivateData();
+  lazy.console.log("[Tool] searchBrowsingHistory", result);
   return result;
 }
 
@@ -485,6 +494,7 @@ export class RunSearch {
     conversation.securityProperties.setPrivateData();
     conversation.securityProperties.setUntrustedInput();
 
+    lazy.console.log("[Tool] runSearch", result);
     return result;
   }
 
@@ -642,7 +652,7 @@ export class GetPageContent {
     // all of the conversations and collect a new Set of mentions.
     const mentionedUrls = conversation.getAllMentionURLs();
 
-    return Promise.all(
+    const results = Promise.all(
       url_list.map(async (url, index) => {
         if (!isAllowedURL(url)) {
           return "This URL is not allowed: " + url;
@@ -660,6 +670,8 @@ export class GetPageContent {
         }
       })
     );
+    lazy.console.log("[Tool] getPageContent", results);
+    return results;
   }
 
   /**
@@ -785,6 +797,7 @@ export async function getUserMemories(conversation) {
   // Memory summaries are private user data. They are truncated to 100
   // characters, so they are not considered untrusted input.
   conversation.securityProperties.setPrivateData();
+  lazy.console.log("[Tool] getUserMemories", result);
   return result;
 }
 
