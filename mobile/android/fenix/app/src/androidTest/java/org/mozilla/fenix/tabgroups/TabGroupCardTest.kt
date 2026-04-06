@@ -29,6 +29,7 @@ import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.ui.tabitems.AlphaKey
+import org.mozilla.fenix.tabstray.ui.tabitems.ScaleKey
 import org.mozilla.fenix.tabstray.ui.tabitems.TabsTrayItemClickHandler
 import org.mozilla.fenix.tabstray.ui.tabitems.TabsTrayItemSelectionState
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -198,6 +199,32 @@ class TabGroupCardTest {
                 { "Width of thumbnail $i ${thumbnails[i].width} not within margin of error of {${first.width}" },
             )
         }
+    }
+
+    @Test
+    fun verifyDraggedItemScale() {
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            ComposableUnderTest(interactionState = TabItemInteractionState(isDragged = true))
+        }
+        composeTestRule.mainClock.advanceTimeBy(50L)
+
+        val draggedScale = composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_ITEM_ROOT).fetchSemanticsNode().config[ScaleKey]
+
+        assertEquals("Dragged item is scaled at 75%", 0.75f, draggedScale)
+    }
+
+    @Test
+    fun verifyUndraggedItemScale() {
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            ComposableUnderTest(interactionState = TabItemInteractionState(isDragged = false))
+        }
+        composeTestRule.mainClock.advanceTimeBy(50L)
+
+        val undraggedScale = composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_ITEM_ROOT).fetchSemanticsNode().config[ScaleKey]
+
+        assertEquals("Dragged item is scaled at 100%", 1f, undraggedScale)
     }
 
     @Test

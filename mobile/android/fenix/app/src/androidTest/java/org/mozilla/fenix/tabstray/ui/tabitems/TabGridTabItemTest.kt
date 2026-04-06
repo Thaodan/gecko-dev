@@ -25,6 +25,32 @@ class TabGridTabItemTest {
     val composeTestRule = createComposeRule()
 
     @Test
+    fun verifyDraggedItemScale() {
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            ComposableUnderTest(interactionState = TabItemInteractionState(isDragged = true))
+        }
+        composeTestRule.mainClock.advanceTimeBy(50L)
+
+        val draggedScale = composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_ITEM_ROOT).fetchSemanticsNode().config[ScaleKey]
+
+        Assert.assertEquals("Dragged item is scaled at 75%", 0.75f, draggedScale)
+    }
+
+    @Test
+    fun verifyUndraggedItemScale() {
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            ComposableUnderTest(interactionState = TabItemInteractionState(isDragged = false))
+        }
+        composeTestRule.mainClock.advanceTimeBy(50L)
+
+        val undraggedScale = composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_ITEM_ROOT).fetchSemanticsNode().config[ScaleKey]
+
+        Assert.assertEquals("Dragged item is scaled at 100%", 1f, undraggedScale)
+    }
+
+    @Test
     fun verifyDraggedItemAlpha() {
         composeTestRule.mainClock.autoAdvance = false
         composeTestRule.setContent {

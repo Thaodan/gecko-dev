@@ -265,7 +265,17 @@ private fun tabItemAnimatedAlpha(interactionState: TabItemInteractionState): Sta
 }
 
 /**
- * Renders an animated alpha transition for the tab item based on its interaction state.
+ * Animates the tab item's size to be slightly reduced when it is dragged.
+ */
+@Composable
+private fun tabItemAnimatedScale(interactionState: TabItemInteractionState): State<Float> {
+    return animateFloatAsState(
+        targetValue = if (interactionState.isDragged) 0.75f else 1f,
+    )
+}
+
+/**
+ * Renders an animated scale and alpha transition for the tab item based on its interaction state.
  * This happens at the graphics layer to avoid recomposition of the item.
  * The semantics properties are provided so that the state can be evaluated, as evaluating the composable will not
  * return the correct result, since these graphical animations occur at draw time.
@@ -273,16 +283,25 @@ private fun tabItemAnimatedAlpha(interactionState: TabItemInteractionState): Sta
 @Composable
 fun Modifier.tabItemInteractionAnimation(interactionState: TabItemInteractionState): Modifier {
     val tabItemAlpha: Float by tabItemAnimatedAlpha(interactionState)
+    val tabItemScale: Float by tabItemAnimatedScale(interactionState)
     return this
-        .graphicsLayer(alpha = tabItemAlpha)
+        .graphicsLayer(alpha = tabItemAlpha, scaleX = tabItemScale, scaleY = tabItemScale)
         .semantics {
+            scale = tabItemScale
             alpha = tabItemAlpha
         }
 }
 
 /**
+ * Semantic property for accessing a Composable item's current graphical scale property.
+ * This is intended to be applied evenly across X and Y and set and fetched as needed for verification.
+ */
+internal val ScaleKey = SemanticsPropertyKey<Float>("Scale")
+internal var SemanticsPropertyReceiver.scale by ScaleKey
+
+/**
  * Semantic property for accessing a Composable item's alpha property.
  * This is intended to be set and fetched as needed for verification.
  */
-val AlphaKey = SemanticsPropertyKey<Float>("Alpha")
-var SemanticsPropertyReceiver.alpha by AlphaKey
+internal val AlphaKey = SemanticsPropertyKey<Float>("Alpha")
+internal var SemanticsPropertyReceiver.alpha by AlphaKey
