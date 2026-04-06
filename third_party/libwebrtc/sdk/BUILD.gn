@@ -1823,6 +1823,7 @@ if (is_ios || is_mac) {
         "../rtc_base:checks",
         "../rtc_base:logging",
         "../rtc_base:timeutils",
+        "../system_wrappers",
         "//third_party/libyuv",
       ]
 
