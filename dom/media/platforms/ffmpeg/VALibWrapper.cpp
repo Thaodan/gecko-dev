@@ -18,7 +18,7 @@ static int (*vaInitialize)(void* dpy, int* major_version, int* minor_version);
 static int (*vaTerminate)(void* dpy);
 static void* (*vaGetDisplayDRM)(int fd);
 
-MOZ_RELEASE_CONSTINIT static StaticDataMutex<ThreadSafeWeakPtr<VADisplayHolder>>
+constinit static StaticDataMutex<ThreadSafeWeakPtr<VADisplayHolder>>
     sDisplayHolder("VADisplayHolder::sDisplayHolder");
 
 void VALibWrapper::Link() {
