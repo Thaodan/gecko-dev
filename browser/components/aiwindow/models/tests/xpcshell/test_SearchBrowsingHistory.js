@@ -8,10 +8,6 @@ const { searchBrowsingHistory } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/SearchBrowsingHistory.sys.mjs"
 );
 
-const { SecurityProperties } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/models/SecurityProperties.sys.mjs"
-);
-
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
