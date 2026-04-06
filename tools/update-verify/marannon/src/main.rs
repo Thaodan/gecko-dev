@@ -41,6 +41,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let tmppath = tmpdir.to_str().ok_or("Couldn't parse tmpdir")?;
     info!("Using tmpdir: {tmppath}");
 
+    let mut cache_dir = tmpdir.clone();
+    cache_dir.push("download_cache");
+    create_dir(&cache_dir)?;
+
     let downloader = UreqDownloader;
     let runner = RealRunner;
 
@@ -61,10 +65,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let ext =
             get_extension(&entry.installer).ok_or("Couldn't find from installer extension!")?;
         installer_dest_path.push(format!("{i}.{ext}"));
-        downloader.fetch(&entry.installer, &installer_dest_path)?;
+        downloader.fetch(&entry.installer, &installer_dest_path, &cache_dir)?;
         let mut updater_dest_path = download_dir.clone();
         updater_dest_path.push(format!("{i}.updater.tar.xz"));
-        downloader.fetch(&entry.updater_package, &updater_dest_path)?;
+        downloader.fetch(&entry.updater_package, &updater_dest_path, &cache_dir)?;
         tests.push(Test {
             id: entry.id.clone(),
             mar: args.complete_mar.to_path_buf(),
