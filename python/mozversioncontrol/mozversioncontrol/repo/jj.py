@@ -388,7 +388,7 @@ class JujutsuRepository(Repository):
         if ref:
             args.extend(["--revision", ref])
         if dest_branch:
-            args.extend(["-b", dest_branch])
+            args.extend(["--bookmark", dest_branch])
         self._run(*args)
 
     def push_to_try(
