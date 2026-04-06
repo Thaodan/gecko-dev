@@ -10,6 +10,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -69,29 +70,41 @@ fun ExperimentalHomepageHeader(
     onNewsAnimationShown: () -> Unit,
     onLogoClicked: () -> Unit,
 ) {
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .wrapContentHeight()
-            .padding(all = 16.dp),
-        verticalAlignment = Alignment.Top,
-        horizontalArrangement = Arrangement.SpaceBetween,
+            .padding(bottom = 16.dp),
     ) {
-        PrivateModeButton(onPrivateModeTapped)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .padding(all = 16.dp),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            PrivateModeButton(onPrivateModeTapped)
 
-        Column {
+            StoriesButton(
+                onClick = onStoriesTapped,
+                showNewsAnimation = showNewsAnimation,
+                onNewsAnimationShown = onNewsAnimationShown,
+            )
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .padding(all = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             Spacer(modifier = Modifier.height(28.dp))
             WordmarkAndLogo(
                 wordmarkTextColor = wordmarkTextColor,
                 onLogoClicked = onLogoClicked,
             )
         }
-
-        StoriesButton(
-            onClick = onStoriesTapped,
-            showNewsAnimation = showNewsAnimation,
-            onNewsAnimationShown = onNewsAnimationShown,
-        )
     }
 }
 
