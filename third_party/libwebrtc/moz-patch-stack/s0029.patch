@@ -15,10 +15,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/d380a43d59f4f7cbc
  4 files changed, 36 insertions(+)
 
 diff --git a/audio/audio_send_stream.cc b/audio/audio_send_stream.cc
-index cd91c1fe10..9edbd66bac 100644
+index 4c53757e74..d0fc8413ff 100644
 --- a/audio/audio_send_stream.cc
 +++ b/audio/audio_send_stream.cc
-@@ -438,6 +438,7 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats(
+@@ -441,6 +441,7 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats(
  
    webrtc::ChannelSendStatistics channel_stats =
        channel_send_->GetRTCPStatistics();
