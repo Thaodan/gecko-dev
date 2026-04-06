@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.tabstray.ui.tabitems
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Indication
 import androidx.compose.foundation.clickable
@@ -21,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,9 +31,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.SemanticsPropertyKey
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.RadioCheckmark
 import mozilla.components.compose.base.RadioCheckmarkColors
@@ -41,6 +47,7 @@ import mozilla.components.compose.base.text.Text
 import mozilla.components.support.utils.ext.isLandscape
 import mozilla.components.ui.colors.PhotonColors
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
+import org.mozilla.fenix.tabstray.browser.compose.TabItemInteractionState
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import mozilla.components.ui.icons.R as iconsR
 
@@ -246,3 +253,36 @@ fun tabItemConditionalBorder(selectionState: TabsTrayItemSelectionState): Border
 fun tabItemBorderFocused(): BorderStroke {
     return BorderStroke(width = 4.dp, color = MaterialTheme.colorScheme.tertiary)
 }
+
+/**
+ * Animates the tab item's alpha value to be slightly transparent when it is dragged.
+ */
+@Composable
+private fun tabItemAnimatedAlpha(interactionState: TabItemInteractionState): State<Float> {
+    return animateFloatAsState(
+        targetValue = if (interactionState.isDragged) { 0.7f } else { 1f },
+    )
+}
+
+/**
+ * Renders an animated alpha transition for the tab item based on its interaction state.
+ * This happens at the graphics layer to avoid recomposition of the item.
+ * The semantics properties are provided so that the state can be evaluated, as evaluating the composable will not
+ * return the correct result, since these graphical animations occur at draw time.
+ */
+@Composable
+fun Modifier.tabItemInteractionAnimation(interactionState: TabItemInteractionState): Modifier {
+    val tabItemAlpha: Float by tabItemAnimatedAlpha(interactionState)
+    return this
+        .graphicsLayer(alpha = tabItemAlpha)
+        .semantics {
+            alpha = tabItemAlpha
+        }
+}
+
+/**
+ * Semantic property for accessing a Composable item's alpha property.
+ * This is intended to be set and fetched as needed for verification.
+ */
+val AlphaKey = SemanticsPropertyKey<Float>("Alpha")
+var SemanticsPropertyReceiver.alpha by AlphaKey

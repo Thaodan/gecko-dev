@@ -5,6 +5,7 @@
 package org.mozilla.fenix.tabgroups
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.DeviceConfigurationOverride
 import androidx.compose.ui.test.ForcedSize
 import androidx.compose.ui.test.assertIsDisplayed
@@ -18,13 +19,16 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import org.junit.Assert
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
+import org.mozilla.fenix.tabstray.browser.compose.TabItemInteractionState
 import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.data.createTab
+import org.mozilla.fenix.tabstray.ui.tabitems.AlphaKey
 import org.mozilla.fenix.tabstray.ui.tabitems.TabsTrayItemClickHandler
 import org.mozilla.fenix.tabstray.ui.tabitems.TabsTrayItemSelectionState
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -196,10 +200,38 @@ class TabGroupCardTest {
         }
     }
 
+    @Test
+    fun verifyDraggedItemAlpha() {
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            ComposableUnderTest(interactionState = TabItemInteractionState(isDragged = true))
+        }
+        composeTestRule.mainClock.advanceTimeBy(50L)
+
+        val draggedAlpha = composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_ITEM_ROOT).fetchSemanticsNode().config[AlphaKey]
+
+        assertEquals("Dragged item opacity is 70%", 0.7f, draggedAlpha)
+    }
+
+    @Test
+    fun verifyUndraggedItemAlpha() {
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            ComposableUnderTest(interactionState = TabItemInteractionState(isDragged = false))
+        }
+        composeTestRule.mainClock.advanceTimeBy(50L)
+
+        val undraggedAlpha = composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_ITEM_ROOT).fetchSemanticsNode().config[AlphaKey]
+
+        assertEquals("Undragged item opacity is 100%", 1f, undraggedAlpha)
+    }
+
     @Composable
     private fun ComposableUnderTest(
+        modifier: Modifier = Modifier,
         onClick: (String) -> Unit = {},
         onLongClick: (String) -> Unit = {},
+        interactionState: TabItemInteractionState = TabItemInteractionState(),
     ) {
         TabGroupCard(
             group = TabsTrayItem.TabGroup(
@@ -217,6 +249,8 @@ class TabGroupCardTest {
                 onLongClick = { onLongClick("Test") },
                 onCloseClick = {}, // Not implemented yet
             ),
+            interactionState = interactionState,
+            modifier = modifier,
         )
     }
 }

@@ -316,7 +316,7 @@ private fun LazyGridItemScope.TabGridItemContent(
         position = index + if (hasHeader) 1 else 0,
         key = tabsTrayItem.id,
         swipingActive = swipingActive,
-    ) {
+    ) { interactionState ->
         val selectionState = TabsTrayItemSelectionState(
             isFocused = isSelected,
             isSelected = isMultiSelected,
@@ -332,6 +332,7 @@ private fun LazyGridItemScope.TabGridItemContent(
                     swipeState = swipeState,
                     onCloseClick = onTabClose,
                     onClick = onItemClick,
+                    interactionState = interactionState,
                 )
             }
 
@@ -340,6 +341,7 @@ private fun LazyGridItemScope.TabGridItemContent(
                     group = tabsTrayItem,
                     selectionState = selectionState,
                     clickHandler = TabsTrayItemClickHandler(onClick = onItemClick),
+                    interactionState = interactionState,
                 )
             }
         }
