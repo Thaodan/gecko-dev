@@ -16,7 +16,7 @@
 .connected {
   background-color: var(--background-color-success);
 
-  ::slotted([slot="icon"]) {
+  ::slotted([slot="image"]) {
     -moz-context-properties: fill;
     fill: var(--icon-color-success);
   }
@@ -25,7 +25,7 @@
 .excluded {
   background-color: var(--background-color-success);
 
-  ::slotted([slot="icon"]) {
+  ::slotted([slot="image"]) {
     -moz-context-properties: fill, stroke;
     fill: transparent;
     stroke: var(--icon-color-success);
@@ -35,7 +35,7 @@
 .paused {
   background-color: var(--background-color-box-info);
 
-  ::slotted([slot="icon"]) {
+  ::slotted([slot="image"]) {
     -moz-context-properties: fill;
     fill: var(--icon-color);
   }
@@ -44,7 +44,7 @@
 .connecting {
   background-color: var(--background-color-box-info);
 
-  ::slotted([slot="icon"]) {
+  ::slotted([slot="image"]) {
     -moz-context-properties: fill;
     fill: var(--icon-color);
   }
@@ -53,7 +53,7 @@
 .network-error {
   background-color: var(--background-color-information);
 
-  ::slotted([slot="icon"]) {
+  ::slotted([slot="image"]) {
     -moz-context-properties: fill;
     fill: var(--icon-color-information);
   }
@@ -107,9 +107,9 @@
   margin-top: var(--space-large);
 }
 
-::slotted([slot="icon"]) {
-  height: var(--size-item-xlarge);
-  width: var(--size-item-xlarge);
+::slotted([slot="image"]) {
+  height: var(--size-image-small);
+  width: var(--size-image-small);
 }
 
 ::slotted([slot="location-icon"]) {
