@@ -26,7 +26,7 @@ class AuthenticatorAttestationResponse final : public AuthenticatorResponse {
   explicit AuthenticatorAttestationResponse(nsPIDOMWindowInner* aParent);
 
  protected:
-  ~AuthenticatorAttestationResponse() override;
+  ~AuthenticatorAttestationResponse() override = default;
 
  public:
   virtual JSObject* WrapObject(JSContext* aCx,
@@ -39,7 +39,6 @@ class AuthenticatorAttestationResponse final : public AuthenticatorResponse {
 
  private:
   CryptoBuffer mAttestationObject;
-  JS::Heap<JSObject*> mAttestationObjectCachedObj;
 };
 
 }  // namespace mozilla::dom

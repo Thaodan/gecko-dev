@@ -26,7 +26,7 @@ class PublicKeyCredential final : public Credential {
   explicit PublicKeyCredential(nsPIDOMWindowInner* aParent);
 
  protected:
-  ~PublicKeyCredential() override;
+  ~PublicKeyCredential() override = default;
 
  public:
   virtual JSObject* WrapObject(JSContext* aCx,
@@ -57,7 +57,6 @@ class PublicKeyCredential final : public Credential {
 
  private:
   CryptoBuffer mRawId;
-  JS::Heap<JSObject*> mRawIdCachedObj;
   RefPtr<AuthenticatorResponse> mResponse;
   AuthenticationExtensionsClientOutputs mClientExtensionOutputs;
 };

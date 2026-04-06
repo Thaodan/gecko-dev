@@ -26,7 +26,7 @@ class AuthenticatorAssertionResponse final : public AuthenticatorResponse {
   explicit AuthenticatorAssertionResponse(nsPIDOMWindowInner* aParent);
 
  protected:
-  ~AuthenticatorAssertionResponse() override;
+  ~AuthenticatorAssertionResponse() override = default;
 
  public:
   virtual JSObject* WrapObject(JSContext* aCx,
@@ -49,11 +49,8 @@ class AuthenticatorAssertionResponse final : public AuthenticatorResponse {
 
  private:
   CryptoBuffer mAuthenticatorData;
-  JS::Heap<JSObject*> mAuthenticatorDataCachedObj;
   CryptoBuffer mSignature;
-  JS::Heap<JSObject*> mSignatureCachedObj;
   CryptoBuffer mUserHandle;
-  JS::Heap<JSObject*> mUserHandleCachedObj;
 };
 
 }  // namespace mozilla::dom

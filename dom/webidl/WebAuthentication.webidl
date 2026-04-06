@@ -12,8 +12,8 @@
 [SecureContext, Pref="security.webauth.webauthn",
  Exposed=Window]
 interface PublicKeyCredential : Credential {
-    [SameObject, Throws] readonly attribute ArrayBuffer      rawId;
-    [SameObject] readonly attribute AuthenticatorResponse    response;
+    [SameObject, Throws, Cached] readonly attribute ArrayBuffer rawId;
+    [SameObject] readonly attribute AuthenticatorResponse       response;
     AuthenticationExtensionsClientOutputs getClientExtensionResults();
 };
 
@@ -27,21 +27,21 @@ partial interface PublicKeyCredential {
 [SecureContext, Pref="security.webauth.webauthn",
  Exposed=Window]
 interface AuthenticatorResponse {
-    [SameObject, Throws] readonly attribute ArrayBuffer clientDataJSON;
+    [SameObject, Throws, Cached] readonly attribute ArrayBuffer clientDataJSON;
 };
 
 [SecureContext, Pref="security.webauth.webauthn",
  Exposed=Window]
 interface AuthenticatorAttestationResponse : AuthenticatorResponse {
-    [SameObject, Throws] readonly attribute ArrayBuffer attestationObject;
+    [SameObject, Throws, Cached] readonly attribute ArrayBuffer attestationObject;
 };
 
 [SecureContext, Pref="security.webauth.webauthn",
  Exposed=Window]
 interface AuthenticatorAssertionResponse : AuthenticatorResponse {
-    [SameObject, Throws] readonly attribute ArrayBuffer      authenticatorData;
-    [SameObject, Throws] readonly attribute ArrayBuffer      signature;
-    [SameObject, Throws] readonly attribute ArrayBuffer?     userHandle;
+    [SameObject, Throws, Cached] readonly attribute ArrayBuffer  authenticatorData;
+    [SameObject, Throws, Cached] readonly attribute ArrayBuffer  signature;
+    [SameObject, Throws, Cached] readonly attribute ArrayBuffer? userHandle;
 };
 
 dictionary PublicKeyCredentialParameters {

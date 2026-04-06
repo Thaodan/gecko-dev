@@ -9,7 +9,6 @@
 #include "mozilla/dom/WebAuthenticationBinding.h"
 #include "nsCycleCollectionParticipant.h"
 #include "mozilla/dom/AuthenticatorResponse.h"
-#include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/Preferences.h"
 
 #ifdef OS_WIN
@@ -24,12 +23,12 @@ namespace mozilla::dom {
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(PublicKeyCredential)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(PublicKeyCredential, Credential)
-  tmp->mRawIdCachedObj = nullptr;
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mAttestationResponse)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mAssertionResponse)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(PublicKeyCredential, Credential)
   NS_IMPL_CYCLE_COLLECTION_TRACE_PRESERVED_WRAPPER
-  NS_IMPL_CYCLE_COLLECTION_TRACE_JS_MEMBER_CALLBACK(mRawIdCachedObj)
 NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(PublicKeyCredential,
@@ -44,11 +43,7 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(PublicKeyCredential)
 NS_INTERFACE_MAP_END_INHERITING(Credential)
 
 PublicKeyCredential::PublicKeyCredential(nsPIDOMWindowInner* aParent)
-    : Credential(aParent), mRawIdCachedObj(nullptr) {
-  mozilla::HoldJSObjects(this);
-}
-
-PublicKeyCredential::~PublicKeyCredential() { mozilla::DropJSObjects(this); }
+    : Credential(aParent) {}
 
 JSObject* PublicKeyCredential::WrapObject(JSContext* aCx,
                                           JS::Handle<JSObject*> aGivenProto) {
@@ -58,14 +53,12 @@ JSObject* PublicKeyCredential::WrapObject(JSContext* aCx,
 void PublicKeyCredential::GetRawId(JSContext* aCx,
                                    JS::MutableHandle<JSObject*> aValue,
                                    ErrorResult& aRv) {
-  if (!mRawIdCachedObj) {
-    mRawIdCachedObj = mRawId.ToArrayBuffer(aCx);
-    if (!mRawIdCachedObj) {
-      aRv.NoteJSContextException(aCx);
-      return;
-    }
+  JSObject* value = mRawId.ToArrayBuffer(aCx);
+  if (!value) {
+    aRv.NoteJSContextException(aCx);
+    return;
   }
-  aValue.set(mRawIdCachedObj);
+  aValue.set(value);
 }
 
 already_AddRefed<AuthenticatorResponse> PublicKeyCredential::Response() const {
