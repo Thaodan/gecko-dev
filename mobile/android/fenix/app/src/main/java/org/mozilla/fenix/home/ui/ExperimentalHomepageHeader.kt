@@ -54,16 +54,18 @@ private const val NEWS_BUTTON_ANIMATION_DELAY = 500L
 /**
  * Homepage header for the entry points experiment.
  *
- * @param wordmarkTextColor color for the wordmark.
- * @param showNewsAnimation Whether to animate the news label on the stories button.
- * @param onPrivateModeTapped callback for when the private mode button is tapped.
- * @param onStoriesTapped callback for when the stories button is tapped.
- * @param onNewsAnimationShown callback invoked when the news button animation starts playing.
+ * @param wordmarkTextColor [Color] for the wordmark.
+ * @param showStoriesButton Whether to show the stories button or not.
+ * @param showButtonAnimation Whether to animate the news label on the stories button.
+ * @param onPrivateModeTapped Callback for when the private mode button is tapped.
+ * @param onStoriesTapped Callback for when the stories button is tapped.
+ * @param onNewsAnimationShown Callback invoked when the news button animation starts playing.
  */
 @Composable
 fun ExperimentalHomepageHeader(
     wordmarkTextColor: Color?,
-    showNewsAnimation: Boolean,
+    showStoriesButton: Boolean,
+    showButtonAnimation: Boolean,
     onPrivateModeTapped: () -> Unit,
     onStoriesTapped: () -> Unit,
     onNewsAnimationShown: () -> Unit,
@@ -84,12 +86,15 @@ fun ExperimentalHomepageHeader(
         ) {
             PrivateModeButton(onPrivateModeTapped)
 
-            StoriesButton(
-                onClick = onStoriesTapped,
-                showNewsAnimation = showNewsAnimation,
-                onNewsAnimationShown = onNewsAnimationShown,
-            )
+            if (showStoriesButton) {
+                StoriesButton(
+                    onClick = onStoriesTapped,
+                    showNewsAnimation = showButtonAnimation,
+                    onNewsAnimationShown = onNewsAnimationShown,
+                )
+            }
         }
+
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -214,7 +219,8 @@ private fun HomepageHeaderPreview(
         Surface {
             ExperimentalHomepageHeader(
                 wordmarkTextColor = null,
-                showNewsAnimation = false,
+                showStoriesButton = true,
+                showButtonAnimation = false,
                 onPrivateModeTapped = {},
                 onStoriesTapped = {},
                 onNewsAnimationShown = {},
