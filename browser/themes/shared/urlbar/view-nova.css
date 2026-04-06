@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-@import url("chrome://browser/skin/urlbar-dynamic-results.css");
+@import url("chrome://browser/skin/urlbar/dynamic-results.css");
 
 @namespace html url("http://www.w3.org/1999/xhtml");
 
@@ -672,10 +672,6 @@
     content: "·";
     margin: 0 0.4em;
     opacity: 0.6;
-    /* stylelint-disable-next-line media-query-no-invalid */
-    @media not -moz-pref("browser.urlbar.nova.featureGate") {
-      content: "\2014";
-    }
   }
 
   .urlbarView-title:empty + .urlbarView-tags:empty + &,
@@ -835,12 +831,6 @@
     /* -0.25em for the width of the "·" character. -.4em to offset the
        margin-inline-start already set on this element. */
     margin-inline-end: -0.65em;
-    /* stylelint-disable-next-line media-query-no-invalid */
-    @media not -moz-pref("browser.urlbar.nova.featureGate") {
-      /* -1em for the width of the \2014 character. -.4em to offset the
-         margin-inline-start already set on this element. */
-      margin-inline-end: -1.4em;
-    }
   }
 }
 
