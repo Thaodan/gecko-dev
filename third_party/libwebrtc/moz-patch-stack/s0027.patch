@@ -1199,7 +1199,7 @@ index 653466e5f1..ad91b314f9 100644
      deps += [
        "..:logging",
 diff --git a/test/BUILD.gn b/test/BUILD.gn
-index f002815a20..5db622120b 100644
+index df1eb6ec3a..96690da45b 100644
 --- a/test/BUILD.gn
 +++ b/test/BUILD.gn
 @@ -279,6 +279,7 @@ rtc_library("audio_test_common") {
@@ -1258,7 +1258,7 @@ index f002815a20..5db622120b 100644
  rtc_library("call_config_utils") {
    testonly = true
 diff --git a/video/BUILD.gn b/video/BUILD.gn
-index aa043e7410..a646b6a966 100644
+index 5c3217a8b7..65af9ff317 100644
 --- a/video/BUILD.gn
 +++ b/video/BUILD.gn
 @@ -16,7 +16,7 @@ rtc_library("video_stream_encoder_interface") {
@@ -1270,7 +1270,7 @@ index aa043e7410..a646b6a966 100644
      "../api:scoped_refptr",
      "../api/adaptation:resource_adaptation_api",
      "../api/units:data_rate",
-@@ -421,7 +421,7 @@ rtc_library("video_stream_encoder_impl") {
+@@ -419,7 +419,7 @@ rtc_library("video_stream_encoder_impl") {
      "../api:rtc_error",
      "../api:rtp_packet_info",
      "../api:rtp_parameters",
