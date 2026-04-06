@@ -615,6 +615,8 @@ export class AIWindow extends MozLitElement {
     browser.setAttribute("transparent", "true");
     browser.setAttribute("src", "about:aichatcontent");
 
+    const selectedTab = this.#getCurrentTab();
+
     const container = this.#getBrowserContainer();
     container.appendChild(browser);
 
@@ -626,7 +628,7 @@ export class AIWindow extends MozLitElement {
       this.#visibilityChangeHandler = () => {
         if (!doc.hidden && !this.#smartbar) {
           this.#getOrCreateSmartbar(doc, container);
-          this.loadStarterPrompts();
+          this.loadStarterPrompts(false, selectedTab);
         }
       };
       doc.addEventListener("visibilitychange", this.#visibilityChangeHandler, {
@@ -643,7 +645,7 @@ export class AIWindow extends MozLitElement {
     });
 
     if (!doc.hidden) {
-      this.loadStarterPrompts();
+      this.loadStarterPrompts(false, selectedTab);
     }
   }
 
@@ -665,19 +667,24 @@ export class AIWindow extends MozLitElement {
    * In sidebar mode, uses LLM-generated prompts based on tab context and memories.
    * In fullpage mode, uses static prompts based on tab count.
    *
-   * @param {boolean} [clear=false] Clear current starter prompts?
+   * @param {boolean} clear Clear current starter prompts?
+   * @param {MozTabbrowserTab} selectedTab The selected tab when loading
+   * starter prompts was triggered
    */
-  async loadStarterPrompts(clear = false) {
+  async loadStarterPrompts(clear, selectedTab) {
+    // If the tab switched by the time this function was invoked, or the node is
+    // not connected yet, or the conversation has already started then don't
+    // trigger loading more conversation starter prompts
+    if (
+      selectedTab !== this.#getCurrentTab() ||
+      !this.isConnected ||
+      this.#conversation?.messageCount
+    ) {
+      return;
+    }
+
     if (clear) {
       this.#renderStarterPrompts([]);
-    }
-
-    if (!this.isConnected) {
-      return;
-    }
-
-    if (this.#conversation?.messageCount) {
-      return;
     }
 
     let starters = [];
@@ -709,6 +716,12 @@ export class AIWindow extends MozLitElement {
             lazy.log.error("[Prompts] Failed to generate sidebar starters:", e);
             return null;
           });
+
+        // If tab switched while waiting for conversation starters
+        // return, do not render the starters meant for selectedTab
+        if (selectedTab !== this.#getCurrentTab()) {
+          return;
+        }
 
         if (sidebarStarters?.length) {
           starters = sidebarStarters;
@@ -1608,7 +1621,13 @@ export class AIWindow extends MozLitElement {
     );
   }
 
+  #getCurrentTab() {
+    return window.browsingContext.topChromeWindow.gBrowser.selectedTab;
+  }
+
   onCreateNewChatClick() {
+    const selectedTab = this.#getCurrentTab();
+
     // Clear conversation state. The new conversation's ID is persisted to the
     // host browser attribute and history.state so back navigation can restore it.
     this.#swapConversation(new lazy.ChatConversation({}));
@@ -1643,7 +1662,7 @@ export class AIWindow extends MozLitElement {
 
     this.showStarters = false;
 
-    this.loadStarterPrompts();
+    this.loadStarterPrompts(false, selectedTab);
   }
 
   showSearchingIndicator(isSearching, searchQuery) {
