@@ -214,7 +214,7 @@ index b72ed92160..82b5e54db2 100644
                                     int current_delay_ms,
                                     int target_delay_ms,
 diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index b1cf2065ea..2f84d0f6cd 100644
+index e01ecd6aa8..aeba0e43f7 100644
 --- a/video/rtp_video_stream_receiver2.cc
 +++ b/video/rtp_video_stream_receiver2.cc
 @@ -284,6 +284,7 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
@@ -272,10 +272,10 @@ index 1acb0ac70e..272f83ccba 100644
        RTC_GUARDED_BY(packet_sequence_checker_);
    // h26x_packet_buffer_ is applicable to H.264 and H.265. For H.265 it is
 diff --git a/video/video_receive_stream2.cc b/video/video_receive_stream2.cc
-index 4def0f6720..f84d1dec45 100644
+index 427b1cff11..7908ecb0ff 100644
 --- a/video/video_receive_stream2.cc
 +++ b/video/video_receive_stream2.cc
-@@ -256,6 +256,7 @@ VideoReceiveStream2::VideoReceiveStream2(
+@@ -255,6 +255,7 @@ VideoReceiveStream2::VideoReceiveStream2(
                                   &stats_proxy_,
                                   &stats_proxy_,
                                   nack_periodic_processor,

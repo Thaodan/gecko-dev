@@ -24,10 +24,10 @@ index 1ecf57911b..d1524cf580 100644
          deps += [ "sdk/android" ]
        }
 diff --git a/modules/video_coding/generic_decoder.cc b/modules/video_coding/generic_decoder.cc
-index 790d53a908..b607e78268 100644
+index 0cf98a40f8..00e520b72b 100644
 --- a/modules/video_coding/generic_decoder.cc
 +++ b/modules/video_coding/generic_decoder.cc
-@@ -120,9 +120,9 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
+@@ -119,9 +119,9 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
                                        std::optional<int32_t> decode_time_ms,
                                        std::optional<uint8_t> qp) {
    RTC_DCHECK(receive_callback_) << "Callback must not be null at this point";
@@ -40,7 +40,7 @@ index 790d53a908..b607e78268 100644
    // TODO(holmer): We should improve this so that we can handle multiple
    // callbacks from one call to Decode().
    std::optional<FrameInfo> frame_info;
-@@ -327,8 +327,8 @@ int32_t VCMGenericDecoder::Decode(
+@@ -326,8 +326,8 @@ int32_t VCMGenericDecoder::Decode(
      Timestamp now,
      int64_t render_time_ms,
      const std::optional<FrameInstrumentationData>& frame_instrumentation_data) {
