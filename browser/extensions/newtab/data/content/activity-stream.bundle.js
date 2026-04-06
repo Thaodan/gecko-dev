@@ -12514,6 +12514,7 @@ function FocusTimer_extends() { return FocusTimer_extends = Object.assign ? Obje
 
 
 const FocusTimer_USER_ACTION_TYPES = {
+  CHANGE_SIZE: "change_size",
   TIMER_SET: "timer_set",
   TIMER_PLAY: "timer_play",
   TIMER_PAUSE: "timer_pause",
@@ -12523,6 +12524,7 @@ const FocusTimer_USER_ACTION_TYPES = {
   TIMER_TOGGLE_BREAK: "timer_toggle_break"
 };
 const FocusTimer_PREF_NOVA_ENABLED = "nova.enabled";
+const PREF_FOCUS_TIMER_SIZE = "widgets.focusTimer.size";
 
 /**
  * Calculates the remaining time (in seconds) by subtracting elapsed time from the original duration
@@ -12628,7 +12630,16 @@ const FocusTimer = ({
     isRunning
   } = timerData[timerType];
   const initialTimerDuration = timerData[timerType].initialDuration;
-  const widgetSize = isMaximized ? "medium" : "small";
+  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
+  // @nova-cleanup(remove-pref): Remove novaEnabled and this check; always use prefs[PREF_FOCUS_TIMER_SIZE] directly after Nova ships
+  const novaEnabled = prefs[FocusTimer_PREF_NOVA_ENABLED];
+  const isSmallSize = novaEnabled ? false : !isMaximized && widgetsMayBeMaximized;
+  let widgetSize;
+  if (novaEnabled) {
+    widgetSize = prefs[PREF_FOCUS_TIMER_SIZE] || "large";
+  } else {
+    widgetSize = isSmallSize ? "small" : "medium";
+  }
   const handleTimerInteraction = (0,external_React_namespaceObject.useCallback)(() => handleUserInteraction("focusTimer"), [handleUserInteraction]);
   const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
     if (impressionFired.current) {
@@ -12641,14 +12652,14 @@ const FocusTimer = ({
       }));
       const telemetryData = {
         widget_name: "focus_timer",
-        widget_size: widgetsMayBeMaximized ? widgetSize : "medium"
+        widget_size: widgetSize
       };
       dispatch(actionCreators.AlsoToMain({
         type: actionTypes.WIDGETS_IMPRESSION,
         data: telemetryData
       }));
     });
-  }, [dispatch, widgetsMayBeMaximized, widgetSize]);
+  }, [dispatch, widgetSize]);
   const timerRef = useIntersectionObserver(handleIntersection);
   const resetProgressCircle = (0,external_React_namespaceObject.useCallback)(() => {
     if (arcRef?.current) {
@@ -12658,7 +12669,6 @@ const FocusTimer = ({
     setProgress(0);
     handleTimerInteraction();
   }, [arcRef, handleTimerInteraction]);
-  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const showSystemNotifications = prefs["widgets.focusTimer.showSystemNotifications"];
   (0,external_React_namespaceObject.useEffect)(() => {
     // resets default values after timer ends
@@ -12694,7 +12704,7 @@ const FocusTimer = ({
               widget_name: "focus_timer",
               widget_source: "widget",
               user_action: FocusTimer_USER_ACTION_TYPES.TIMER_END,
-              widget_size: widgetsMayBeMaximized ? widgetSize : "medium"
+              widget_size: widgetSize
             };
             dispatch(actionCreators.OnlyToMain({
               type: actionTypes.WIDGETS_USER_EVENT,
@@ -12732,7 +12742,7 @@ const FocusTimer = ({
                   widget_name: "focus_timer",
                   widget_source: "widget",
                   user_action: userAction,
-                  widget_size: widgetsMayBeMaximized ? widgetSize : "medium"
+                  widget_size: widgetSize
                 };
                 dispatch(actionCreators.OnlyToMain({
                   type: actionTypes.WIDGETS_USER_EVENT,
@@ -12760,7 +12770,7 @@ const FocusTimer = ({
       setProgress(0);
     }
     return () => clearInterval(interval);
-  }, [isRunning, startTime, duration, initialDuration, dispatch, resetProgressCircle, timerType, initialTimerDuration, widgetSize, widgetsMayBeMaximized]);
+  }, [isRunning, startTime, duration, initialDuration, dispatch, resetProgressCircle, timerType, initialTimerDuration, widgetSize]);
 
   // Update the clip-path of the gradient circle to match the current progress value
   (0,external_React_namespaceObject.useEffect)(() => {
@@ -12807,7 +12817,7 @@ const FocusTimer = ({
           widget_name: "focus_timer",
           widget_source: "widget",
           user_action: FocusTimer_USER_ACTION_TYPES.TIMER_SET,
-          widget_size: widgetsMayBeMaximized ? widgetSize : "medium"
+          widget_size: widgetSize
         };
         dispatch(actionCreators.OnlyToMain({
           type: actionTypes.WIDGETS_USER_EVENT,
@@ -12838,7 +12848,7 @@ const FocusTimer = ({
           widget_name: "focus_timer",
           widget_source: "widget",
           user_action: FocusTimer_USER_ACTION_TYPES.TIMER_PLAY,
-          widget_size: widgetsMayBeMaximized ? widgetSize : "medium"
+          widget_size: widgetSize
         };
         dispatch(actionCreators.OnlyToMain({
           type: actionTypes.WIDGETS_USER_EVENT,
@@ -12866,7 +12876,7 @@ const FocusTimer = ({
           widget_name: "focus_timer",
           widget_source: "widget",
           user_action: FocusTimer_USER_ACTION_TYPES.TIMER_PAUSE,
-          widget_size: widgetsMayBeMaximized ? widgetSize : "medium"
+          widget_size: widgetSize
         };
         dispatch(actionCreators.OnlyToMain({
           type: actionTypes.WIDGETS_USER_EVENT,
@@ -12898,7 +12908,7 @@ const FocusTimer = ({
         widget_name: "focus_timer",
         widget_source: "widget",
         user_action: FocusTimer_USER_ACTION_TYPES.TIMER_RESET,
-        widget_size: widgetsMayBeMaximized ? widgetSize : "medium"
+        widget_size: widgetSize
       };
       dispatch(actionCreators.OnlyToMain({
         type: actionTypes.WIDGETS_USER_EVENT,
@@ -12933,7 +12943,7 @@ const FocusTimer = ({
         widget_name: "focus_timer",
         widget_source: "widget",
         user_action: FocusTimer_USER_ACTION_TYPES.TIMER_PAUSE,
-        widget_size: widgetsMayBeMaximized ? widgetSize : "medium"
+        widget_size: widgetSize
       };
       dispatch(actionCreators.OnlyToMain({
         type: actionTypes.WIDGETS_USER_EVENT,
@@ -12958,7 +12968,7 @@ const FocusTimer = ({
         widget_name: "focus_timer",
         widget_source: "widget",
         user_action: toggleUserAction,
-        widget_size: widgetsMayBeMaximized ? widgetSize : "medium"
+        widget_size: widgetSize
       };
       dispatch(actionCreators.OnlyToMain({
         type: actionTypes.WIDGETS_USER_EVENT,
@@ -13033,7 +13043,7 @@ const FocusTimer = ({
           widget_name: "focus_timer",
           widget_source: "widget",
           user_action: FocusTimer_USER_ACTION_TYPES.TIMER_PAUSE,
-          widget_size: widgetsMayBeMaximized ? widgetSize : "medium"
+          widget_size: widgetSize
         };
         dispatch(actionCreators.OnlyToMain({
           type: actionTypes.WIDGETS_USER_EVENT,
@@ -13072,9 +13082,46 @@ const FocusTimer = ({
     }));
     handleTimerInteraction();
   }
-
-  // @nova-cleanup(remove-pref): Remove pref check, always apply col-4 class after Nova ships
-  const novaEnabled = prefs[FocusTimer_PREF_NOVA_ENABLED];
+  const handleChangeSize = (0,external_React_namespaceObject.useCallback)(size => {
+    (0,external_ReactRedux_namespaceObject.batch)(() => {
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.SET_PREF,
+        data: {
+          name: PREF_FOCUS_TIMER_SIZE,
+          value: size
+        }
+      }));
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.WIDGETS_USER_EVENT,
+        data: {
+          widget_name: "focus_timer",
+          widget_source: "context_menu",
+          user_action: FocusTimer_USER_ACTION_TYPES.CHANGE_SIZE,
+          action_value: size,
+          widget_size: size
+        }
+      }));
+    });
+  }, [dispatch]);
+  const sizeSubmenuRef = (0,external_React_namespaceObject.useRef)(null);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    const el = sizeSubmenuRef.current;
+    if (!el) {
+      return undefined;
+    }
+    // The size submenu panel-list is moved into the panel-item's shadow DOM by
+    // the panel-list custom element, so React's synthetic onClick doesn't reach
+    // inner items. We use composedPath() to find the clicked item across the
+    // shadow boundary via its data-size attribute.
+    const listener = e => {
+      const item = e.composedPath().find(node => node.dataset?.size);
+      if (item) {
+        handleChangeSize(item.dataset.size);
+      }
+    };
+    el.addEventListener("click", listener);
+    return () => el.removeEventListener("click", listener);
+  }, [handleChangeSize]);
   return timerData ? /*#__PURE__*/external_React_default().createElement("article", {
     className: `focus-timer widget ${novaEnabled ? "col-4" : ""} ${isMaximized ? "is-maximized" : ""}`,
     ref: el => {
@@ -13098,7 +13145,25 @@ const FocusTimer = ({
     onClick: () => {
       handlePrefUpdate("widgets.focusTimer.showSystemNotifications", !showSystemNotifications);
     }
-  }), /*#__PURE__*/external_React_default().createElement("panel-item", {
+  }),
+  // @nova-cleanup(remove-conditional): Remove the novaEnabled check; always
+  // render the size submenu after Nova ships
+  novaEnabled && /*#__PURE__*/external_React_default().createElement("panel-item", {
+    submenu: "focus-timer-size-submenu",
+    "data-l10n-id": "newtab-widget-menu-change-size"
+  }, /*#__PURE__*/external_React_default().createElement("panel-list", {
+    ref: sizeSubmenuRef,
+    slot: "submenu",
+    id: "focus-timer-size-submenu"
+  }, ["small", "medium", "large"].map(size => /*#__PURE__*/external_React_default().createElement("panel-item", FocusTimer_extends({
+    key: size,
+    type: "checkbox",
+    checked: widgetSize === size || undefined,
+    "data-size": size,
+    "data-l10n-id": `newtab-widget-size-${size}`
+  }, size === "small" ? {
+    disabled: true
+  } : {}))))), /*#__PURE__*/external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-widget-menu-hide",
     onClick: () => {
       (0,external_ReactRedux_namespaceObject.batch)(() => {
@@ -13107,7 +13172,7 @@ const FocusTimer = ({
           widget_name: "focus_timer",
           widget_source: "context_menu",
           enabled: false,
-          widget_size: widgetsMayBeMaximized ? widgetSize : "medium"
+          widget_size: widgetSize
         };
         dispatch(actionCreators.OnlyToMain({
           type: actionTypes.WIDGETS_ENABLED,

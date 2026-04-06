@@ -1194,6 +1194,13 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "widgets.focusTimer.size",
+    {
+      title: "Size of the focus timer widget (medium or large)",
+      value: "large",
+    },
+  ],
+  [
     "widgets.feedback.enabled",
     {
       title: "Enables the feedback link in the widgets container",
