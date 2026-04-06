@@ -97,7 +97,7 @@ export default class IPProtectionStatusBox extends MozLitElement {
             </div>
           </div>
           <div>
-            <slot name="icon"></slot>
+            <slot name="image"></slot>
           </div>
         </div>
 
