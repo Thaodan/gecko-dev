@@ -602,7 +602,7 @@ index 8f11dd9e9e..667bd9046e 100644
  
  if (rtc_build_libsrtp) {
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index a4d20d7279..1bba0f0841 100644
+index d21e7355fd..bb214ae154 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
 @@ -9,8 +9,8 @@
@@ -616,7 +616,7 @@ index a4d20d7279..1bba0f0841 100644
  }
  
  rtc_source_set("protobuf_utils") {
-@@ -1961,8 +1961,8 @@ if (!rtc_rusty_base64) {
+@@ -1966,8 +1966,8 @@ if (!rtc_rusty_base64) {
      ]
    }
  } else {
@@ -727,7 +727,7 @@ index 95ce062c7d..c48642cf1a 100644
            ]
          }
 diff --git a/system_wrappers/BUILD.gn b/system_wrappers/BUILD.gn
-index 656ff3b9ba..91f414f340 100644
+index 12a5a828f8..ebc7da741a 100644
 --- a/system_wrappers/BUILD.gn
 +++ b/system_wrappers/BUILD.gn
 @@ -7,8 +7,8 @@
@@ -742,7 +742,7 @@ index 656ff3b9ba..91f414f340 100644
  import("../webrtc.gni")
  
 diff --git a/test/BUILD.gn b/test/BUILD.gn
-index 001690e176..647974e281 100644
+index f08c8aa570..e43ceb9a8e 100644
 --- a/test/BUILD.gn
 +++ b/test/BUILD.gn
 @@ -6,10 +6,10 @@
