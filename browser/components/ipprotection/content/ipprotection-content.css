@@ -121,8 +121,8 @@ ipprotection-message-bar.vpn-top-content {
   }
 
   img {
-    height: var(--size-image-small);
-    width: var(--size-image-small);
+    height: var(--icon-size-large);
+    width: var(--icon-size-large);
     -moz-context-properties: fill;
     fill: var(--icon-color);
   }

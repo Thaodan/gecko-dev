@@ -333,7 +333,7 @@ export default class IPProtectionContentElement extends MozLitElement {
         ${isNetworkError
           ? html`
               <img
-                slot="image"
+                slot="icon"
                 role="presentation"
                 class="icon"
                 src="chrome://browser/content/ipprotection/assets/states/ipprotection-info.svg"
@@ -355,7 +355,7 @@ export default class IPProtectionContentElement extends MozLitElement {
         type="paused"
       >
         <img
-          slot="image"
+          slot="icon"
           role="presentation"
           class="icon"
           src="chrome://browser/content/ipprotection/assets/states/ipprotection-paused.svg"
@@ -419,7 +419,7 @@ export default class IPProtectionContentElement extends MozLitElement {
           </span>
           <img
             role="presentation"
-            src="chrome://browser/content/ipprotection/assets/states/ipprotection-loading.svg"
+            src="chrome://global/skin/icons/loading.svg"
           />
         </span>
         <div class="skeleton skeleton-line-thick"></div>

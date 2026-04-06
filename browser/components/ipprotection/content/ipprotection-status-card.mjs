@@ -87,7 +87,7 @@ export default class IPProtectionStatusCard extends MozLitElement {
       <ipprotection-status-box .headerL10nId=${headerL10nId} .type=${type}>
         ${iconSrc
           ? html`<img
-              slot="image"
+              slot="icon"
               role="presentation"
               class="icon"
               src=${iconSrc}
@@ -113,8 +113,7 @@ export default class IPProtectionStatusCard extends MozLitElement {
           type: "connecting",
           headerL10nId: "ipprotection-connection-status-connecting",
           buttonL10nId: "ipprotection-button-connecting",
-          iconSrc:
-            "chrome://browser/content/ipprotection/assets/states/ipprotection-loading.svg",
+          iconSrc: "chrome://global/skin/icons/loading.svg",
           buttonType: "primary",
           buttonDisabled: true,
         })}
