@@ -1578,7 +1578,6 @@ nsresult gfxUtils::GetInputStream(gfx::DataSourceSurface* aSurface,
                                   bool aIsAlphaPremultiplied,
                                   const char* aMimeType,
                                   const nsAString& aEncoderOptions,
-                                  const nsACString& aRandomizationKey,
                                   nsIInputStream** outStream) {
   nsCString enccid("@mozilla.org/image/encoder;2?type=");
   enccid += aMimeType;
@@ -1592,7 +1591,7 @@ nsresult gfxUtils::GetInputStream(gfx::DataSourceSurface* aSurface,
 
   return dom::ImageEncoder::GetInputStream(
       aSurface->GetSize().width, aSurface->GetSize().height, imageBuffer.get(),
-      format, encoder, aEncoderOptions, aRandomizationKey, outStream);
+      format, encoder, aEncoderOptions, VoidCString(), outStream);
 }
 
 /* static */

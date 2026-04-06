@@ -1411,14 +1411,14 @@ ClientWebGLContext::GetInputStream(
   const auto& premultAlpha = notLost->info.options.premultipliedAlpha;
 
   nsRFPService::PotentiallyDumpImage(PrincipalOrNull(), dataSurface);
-  if (extractionBehavior == CanvasUtils::ImageExtraction::Randomize) {
+  if (ShouldResistFingerprinting(RFPTarget::CanvasRandomization)) {
     return gfxUtils::GetInputStreamWithRandomNoise(
         dataSurface, premultAlpha, mimeType, encoderOptions,
         GetCookieJarSettings(), PrincipalOrNull(), out_stream);
   }
 
   return gfxUtils::GetInputStream(dataSurface, premultAlpha, mimeType,
-                                  encoderOptions, randomizationKey, out_stream);
+                                  encoderOptions, out_stream);
 }
 
 // ------------------------- Client WebGL Objects -------------------------

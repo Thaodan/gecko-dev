@@ -18,8 +18,6 @@ support-files = [
 
 ["browser_canvas_randomization.js"]
 
-["browser_canvas_randomization_offscreen_transfer.js"]
-
 ["browser_canvas_randomization_permission.js"]
 
 ["browser_canvas_randomization_permission_background_load.js"]
@@ -100,9 +98,7 @@ skip-if = [
 ["browser_usercharacteristics_gamepads.js"]
 
 ["browser_usercharacteristics_linux_distro.js"]
-skip-if = [
-  "os != 'linux'",
-]
+skip-if = ["os != 'linux'"]
 
 ["browser_usercharacteristics_math.js"]
 

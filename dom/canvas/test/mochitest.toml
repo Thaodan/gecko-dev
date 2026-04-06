@@ -361,9 +361,6 @@ skip-if = [
   "os == 'android' && debug",
 ]
 
-["test_offscreencanvas_transfer_readback.html"]
-tags = "offscreencanvas"
-
 ["test_strokeText_throw.html"]
 
 ["test_toBlob.html"]

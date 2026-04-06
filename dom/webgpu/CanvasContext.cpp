@@ -361,15 +361,14 @@ NS_IMETHODIMP CanvasContext::GetInputStream(
   RefPtr<gfx::DataSourceSurface> dataSurface = snapshot->GetDataSurface();
 
   nsRFPService::PotentiallyDumpImage(PrincipalOrNull(), dataSurface);
-  if (aExtractionBehavior == CanvasUtils::ImageExtraction::Randomize) {
+  if (ShouldResistFingerprinting(RFPTarget::CanvasRandomization)) {
     return gfxUtils::GetInputStreamWithRandomNoise(
         dataSurface, /* aIsAlphaPremultiplied */ true, aMimeType,
         aEncoderOptions, GetCookieJarSettings(), PrincipalOrNull(), aStream);
   }
 
   return gfxUtils::GetInputStream(dataSurface, /* aIsAlphaPremultiplied */ true,
-                                  aMimeType, aEncoderOptions, aRandomizationKey,
-                                  aStream);
+                                  aMimeType, aEncoderOptions, aStream);
 }
 
 bool CanvasContext::GetIsOpaque() {

@@ -199,7 +199,7 @@ mozilla::UniquePtr<uint8_t[]> ImageBitmapRenderingContext::GetImageBuffer(
         PrincipalOrNull(), ret.get(), data->GetSize().width,
         data->GetSize().height,
         data->GetSize().width * data->GetSize().height * 4);
-    if (aExtractionBehavior == CanvasUtils::ImageExtraction::Randomize) {
+    if (ShouldResistFingerprinting(RFPTarget::CanvasRandomization)) {
       nsRFPService::RandomizePixels(
           GetCookieJarSettings(), PrincipalOrNull(), ret.get(),
           data->GetSize().width, data->GetSize().height,
