@@ -5308,6 +5308,12 @@ void nsGridContainerFrame::Grid::PlaceGridItems(
   int32_t minRow = 1;
   aGridRI.mGridItems.ClearAndRetainStorage();
   aGridRI.mIter.Reset();
+
+  bool needToRecordAutoFlowCounter =
+      gridStyle->mGridTemplateColumns.IsNone() &&
+      !gridStyle->mGridTemplateRows.IsNone() &&
+      !aGridRI.mFrame->Style()->HasAuthorSpecifiedGridAutoFlow();
+
   for (; !aGridRI.mIter.AtEnd(); aGridRI.mIter.Next()) {
     nsIFrame* child = *aGridRI.mIter;
     GridItemInfo* info = aGridRI.mGridItems.AppendElement(GridItemInfo(
@@ -5315,6 +5321,14 @@ void nsGridContainerFrame::Grid::PlaceGridItems(
         PlaceDefinite(child, colLineNameMap, rowLineNameMap, gridStyle)));
     MOZ_ASSERT(aGridRI.mIter.ItemIndex() == aGridRI.mGridItems.Length() - 1,
                "ItemIndex() is broken");
+    if (needToRecordAutoFlowCounter &&
+        (info->mState[LogicalAxis::Inline] & ItemState::eAutoPlacement ||
+         info->mState[LogicalAxis::Block] & ItemState::eAutoPlacement)) {
+      aGridRI.mFrame->PresContext()->Document()->SetUseCounter(
+          eUseCounter_custom_GridAutoFlowInitialValueChange);
+      needToRecordAutoFlowCounter = false;
+    }
+
     GridArea& area = info->mArea;
     if (area.mCols.IsDefinite()) {
       minCol = std::min(minCol, area.mCols.mUntranslatedStart);
