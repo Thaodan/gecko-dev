@@ -163,10 +163,7 @@ fn run_test(
             path
         }
     };
-    info!(
-        "Using updater at: {}",
-        updater.to_str().unwrap_or("updater location")
-    );
+    info!("TEST-START: {}", test.full_id());
 
     let test_dir = setup_test_dir(&test.mar, tmpdir)?;
     let mut diff_file = artifact_dir.to_path_buf();
