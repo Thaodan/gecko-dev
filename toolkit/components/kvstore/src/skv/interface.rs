@@ -88,6 +88,14 @@ fn value_to_variant(value: &Value) -> Result<RefPtr<nsIVariant>, ValueError> {
     })
 }
 
+fn key_from_nscstring(s: &nsACString) -> Key {
+    Key::from(&*s.to_utf8())
+}
+
+fn key_to_nscstring(key: Key) -> nsCString {
+    nsCString::from(key.into_string())
+}
+
 #[xpcom(implement(nsIKeyValueService), atomic)]
 pub struct KeyValueService {
     client: CoordinatorClient<'static>,
@@ -306,7 +314,7 @@ impl KeyValueDatabase {
     ) -> Result<(), Infallible> {
         let inputs = || -> Result<_, InterfaceError> {
             let store = self.store()?;
-            let key = Key::from(key);
+            let key = key_from_nscstring(key);
             let value = value_from_variant(value)?;
             Ok((store, key, value))
         }();
@@ -354,7 +362,7 @@ impl KeyValueDatabase {
                     let mut key = nsCString::new();
                     unsafe { pair.GetKey(&mut *key) }.to_result()?;
                     let value = getter_addrefs(|p| unsafe { pair.GetValue(p) })?;
-                    Ok((Key::from(&*key), value_from_variant(value.coerce())?))
+                    Ok((key_from_nscstring(&key), value_from_variant(value.coerce())?))
                 })
                 .collect::<Result<Vec<_>, InterfaceError>>()?;
             Ok((store, pairs))
@@ -399,7 +407,7 @@ impl KeyValueDatabase {
     ) -> Result<(), Infallible> {
         let inputs = || -> Result<_, InterfaceError> {
             let store = self.store()?;
-            let key = Key::from(key);
+            let key = key_from_nscstring(key);
             Ok((store, key))
         }();
 
@@ -443,7 +451,7 @@ impl KeyValueDatabase {
     ) -> Result<(), Infallible> {
         let inputs = || -> Result<_, InterfaceError> {
             let store = self.store()?;
-            let key = Key::from(key);
+            let key = key_from_nscstring(key);
             Ok((store, key))
         }();
 
@@ -480,7 +488,7 @@ impl KeyValueDatabase {
     ) -> Result<(), Infallible> {
         let inputs = || -> Result<_, InterfaceError> {
             let store = self.store()?;
-            let key = Key::from(key);
+            let key = key_from_nscstring(key);
             Ok((store, key))
         }();
 
@@ -524,11 +532,11 @@ impl KeyValueDatabase {
             let store = self.store()?;
             let from_key = match from_key.is_empty() {
                 true => Bound::Unbounded,
-                false => Bound::Included(Key::from(from_key)),
+                false => Bound::Included(key_from_nscstring(from_key)),
             };
             let to_key = match to_key.is_empty() {
                 true => Bound::Unbounded,
-                false => Bound::Excluded(Key::from(to_key)),
+                false => Bound::Excluded(key_from_nscstring(to_key)),
             };
             Ok((store, from_key, to_key))
         }();
@@ -602,11 +610,11 @@ impl KeyValueDatabase {
             let store = self.store()?;
             let from_key = match from_key.is_empty() {
                 true => Bound::Unbounded,
-                false => Bound::Included(Key::from(from_key)),
+                false => Bound::Included(key_from_nscstring(from_key)),
             };
             let to_key = match to_key.is_empty() {
                 true => Bound::Unbounded,
-                false => Bound::Excluded(Key::from(to_key)),
+                false => Bound::Excluded(key_from_nscstring(to_key)),
             };
             Ok((store, from_key, to_key))
         }();
@@ -699,7 +707,7 @@ impl KeyValuePair {
 
     xpcom_method!(get_key => GetKey() -> nsACString);
     fn get_key(&self) -> Result<nsCString, Infallible> {
-        Ok(self.key.clone().into())
+        Ok(key_to_nscstring(self.key.clone()))
     }
 
     xpcom_method!(get_value => GetValue() -> *const nsIVariant);

@@ -4,7 +4,6 @@
 
 use std::borrow::Cow;
 
-use nsstring::{nsACString, nsCString};
 use rusqlite::{
     types::{FromSql, FromSqlResult, ToSqlOutput, ValueRef},
     ToSql,
@@ -12,12 +11,6 @@ use rusqlite::{
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Key(String);
-
-impl From<&nsACString> for Key {
-    fn from(key: &nsACString) -> Self {
-        Self::from(key.to_utf8())
-    }
-}
 
 impl<'a> From<Cow<'a, str>> for Key {
     fn from(key: Cow<'a, str>) -> Self {
@@ -31,9 +24,9 @@ impl<'a> From<&'a str> for Key {
     }
 }
 
-impl From<Key> for nsCString {
-    fn from(key: Key) -> Self {
-        key.0.into()
+impl Key {
+    pub fn as_str(&self) -> &str {
+        &self.0
     }
 }
 
