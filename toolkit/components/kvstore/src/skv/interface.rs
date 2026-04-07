@@ -17,7 +17,7 @@ use rkv::{
     backend::{SafeMode as RkvSafeMode, SafeModeEnvironment as RkvSafeModeEnvironment},
     Rkv,
 };
-use storage_variant::{HashPropertyBag, VariantType};
+use storage_variant::{DataType, HashPropertyBag, NsIVariantExt, VariantType};
 use thin_vec::ThinVec;
 use xpcom::{
     getter_addrefs,
@@ -45,6 +45,48 @@ use crate::{
         value::{Value, ValueError},
     },
 };
+
+fn value_from_variant(variant: &nsIVariant) -> Result<Option<Value>, InterfaceError> {
+    let raw_type = variant.get_data_type();
+    let result = || -> Result<Option<Value>, nsresult> {
+        Ok(Some(Value::from(match raw_type.try_into()? {
+            DataType::Bool => serde_json::Value::from(bool::from_variant(variant)?),
+            DataType::Int32 => serde_json::Value::from(i32::from_variant(variant)?),
+            DataType::Int64 => serde_json::Value::from(i64::from_variant(variant)?),
+            DataType::Double => serde_json::Value::from(f64::from_variant(variant)?),
+            DataType::AString | DataType::WCharStr | DataType::WStringSizeIs => {
+                serde_json::Value::from(nsString::from_variant(variant)?.to_string())
+            }
+            DataType::CString
+            | DataType::CharStr
+            | DataType::StringSizeIs
+            | DataType::Utf8String => {
+                serde_json::Value::from(nsCString::from_variant(variant)?.to_utf8().into_owned())
+            }
+            DataType::Void | DataType::EmptyArray | DataType::Empty => return Ok(None),
+        })))
+    }();
+    result.map_err(|code| InterfaceError::FromVariant(raw_type, code))
+}
+
+fn value_to_variant(value: &Value) -> Result<RefPtr<nsIVariant>, ValueError> {
+    Ok(match value.inner() {
+        serde_json::Value::Null => ().into_variant(),
+        serde_json::Value::Bool(v) => v.into_variant(),
+        serde_json::Value::Number(n) if n.is_i64() => n
+            .as_i64()
+            .map(i64::into_variant)
+            .ok_or(ValueError::ToVariant)?,
+        serde_json::Value::Number(n) if n.is_f64() => n
+            .as_f64()
+            .map(f64::into_variant)
+            .ok_or(ValueError::ToVariant)?,
+        serde_json::Value::String(s) => nsCString::from(s).into_variant(),
+        serde_json::Value::Number(_)
+        | serde_json::Value::Array(_)
+        | serde_json::Value::Object(_) => Err(ValueError::ToVariant)?,
+    })
+}
 
 #[xpcom(implement(nsIKeyValueService), atomic)]
 pub struct KeyValueService {
@@ -265,7 +307,7 @@ impl KeyValueDatabase {
         let inputs = || -> Result<_, InterfaceError> {
             let store = self.store()?;
             let key = Key::from(key);
-            let value = Value::from_variant(value)?;
+            let value = value_from_variant(value)?;
             Ok((store, key, value))
         }();
 
@@ -312,7 +354,7 @@ impl KeyValueDatabase {
                     let mut key = nsCString::new();
                     unsafe { pair.GetKey(&mut *key) }.to_result()?;
                     let value = getter_addrefs(|p| unsafe { pair.GetValue(p) })?;
-                    Ok((Key::from(&*key), Value::from_variant(value.coerce())?))
+                    Ok((Key::from(&*key), value_from_variant(value.coerce())?))
                 })
                 .collect::<Result<Vec<_>, InterfaceError>>()?;
             Ok((store, pairs))
@@ -374,7 +416,7 @@ impl KeyValueDatabase {
         moz_task::spawn_local("skv:KeyValueDatabase:Get:Response", async move {
             let result = signal.aborting(request).await.and_then(|value| {
                 Ok(match value {
-                    Some(value) => value.to_variant()?,
+                    Some(value) => value_to_variant(&value)?,
                     None => default_value,
                 })
             });
@@ -662,9 +704,7 @@ impl KeyValuePair {
 
     xpcom_method!(get_value => GetValue() -> *const nsIVariant);
     fn get_value(&self) -> Result<RefPtr<nsIVariant>, nsresult> {
-        self.value
-            .to_variant()
-            .map_err(|_| nserror::NS_ERROR_FAILURE)
+        value_to_variant(&self.value).map_err(|_| nserror::NS_ERROR_FAILURE)
     }
 }
 
@@ -1028,6 +1068,8 @@ pub enum InterfaceError {
     Store(#[from] StoreError),
     #[error("value: {0}")]
     Value(#[from] ValueError),
+    #[error("from variant of type {0}: {1}")]
+    FromVariant(u16, nsresult),
     #[error("rkv store: {0}")]
     RkvStore(#[from] rkv::StoreError),
     #[error("importer: {0}")]
