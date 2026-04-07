@@ -104,14 +104,14 @@ pub(crate) fn run_tests(
         match result {
             Ok(r) => {
                 if r == TestResult::Pass {
-                    println!("TEST-PASS: {}", test);
+                    info!("TEST-PASS: {}", test);
                 } else {
-                    println!("TEST-UNEXPECTED-FAIL: {}", test);
+                    info!("TEST-UNEXPECTED-FAIL: {}", test);
                 }
                 results.push(r);
             }
             Err(e) => {
-                println!("TEST-UNEXPECTED-FAIL: {}", test);
+                info!("TEST-UNEXPECTED-FAIL: {}", test);
                 results.push(TestResult::SetupErr(e.to_string()));
             }
         }
