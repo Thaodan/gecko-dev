@@ -2,12 +2,55 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-Function SendTelemetryPing
+!ifndef GenerateUUID ; mock out when testing
+!define GenerateUUID "Call GenerateUUID_dontcall"
+!endif
+
+; Generates a UUID. This is used to create custom IDs for each ping, and it's
+; factored out to make testing easier. Use the ${GenerateUUID} macro instead.
+Function GenerateUUID_dontcall
+  Push $0
+
   ; Create a GUID to use as the unique document ID.
   System::Call "rpcrt4::UuidCreate(g . r0)i"
+
   ; StringFromGUID2 (which is what System::Call uses internally to stringify
   ; GUIDs) includes braces in its output, and we don't want those.
   StrCpy $0 $0 -1 1
+
+  Exch $0
+FunctionEnd
+
+; Sends a ping to the telemetry server with the provided additional data. This
+; is used in the full and stub installers.
+;
+; Takes on the stack, an address (from GetFunctionAddress) that provides
+; additional information specific to the type of installer. The callback should
+; use lines like
+;
+;   nsJSON::Set /tree ping "Data" <key> /value <value>
+;
+; to set the additional data. It should keep registers intact!
+;
+; Note that this only runs from the full installer if the stub installer was
+; not used. It also isn't directly tested, since it sends the HTTP request;
+; prefer putting logic into a Prepare...Ping function.
+Function SendTelemetryPing
+  Call PrepareTelemetryPing
+
+  ; Send the ping request. This call will block until a response is received,
+  ; but we shouldn't have any windows still open, so we won't jank anything.
+  nsJSON::Set /http ping
+FunctionEnd
+
+; Fills in the telemetry ping with baseline values common to the full and stub
+; installers. Add new entries here if they're relevant for stub and full
+; installations.
+Function PrepareTelemetryPing
+  ClearErrors
+
+  ${GenerateUUID}
+  Exch $0 ; save $0 on the stack while we're at it
 
   ; Configure the HTTP request for the ping
   nsJSON::Set /tree ping /value "{}"
@@ -15,12 +58,11 @@ Function SendTelemetryPing
     '"${TELEMETRY_BASE_URL}/${TELEMETRY_NAMESPACE}/${TELEMETRY_INSTALL_PING_DOCTYPE}/${TELEMETRY_INSTALL_PING_VERSION}/$0"'
   nsJSON::Set /tree ping "Verb" /value '"POST"'
   nsJSON::Set /tree ping "DataType" /value '"JSON"'
+  ; If the user has a proxy set, use it. (The default is to bypass proxies.)
   nsJSON::Set /tree ping "AccessType" /value '"PreConfig"'
 
   ; Fill in the ping payload
   nsJSON::Set /tree ping "Data" /value "{}"
-  nsJSON::Set /tree ping "Data" "installer_type" /value '"full"'
-  nsJSON::Set /tree ping "Data" "installer_version" /value '"${AppVersion}"'
   nsJSON::Set /tree ping "Data" "build_channel" /value '"${Channel}"'
   nsJSON::Set /tree ping "Data" "update_channel" /value '"${UpdateChannel}"'
   nsJSON::Set /tree ping "Data" "locale" /value '"${AB_CD}"'
@@ -86,14 +128,6 @@ Function SendTelemetryPing
     nsJSON::Set /tree ping "Data" "admin_user" /value true
   ${EndIf}
 
-  ${If} $DefaultInstDir == $INSTDIR
-    nsJSON::Set /tree ping "Data" "default_path" /value true
-  ${Else}
-    nsJSON::Set /tree ping "Data" "default_path" /value false
-  ${EndIf}
-
-  nsJSON::Set /tree ping "Data" "set_default" /value "$SetAsDefault"
-
   nsJSON::Set /tree ping "Data" "new_default" /value false
   nsJSON::Set /tree ping "Data" "old_default" /value false
 
@@ -114,7 +148,53 @@ Function SendTelemetryPing
     ${EndIf}
   ${EndIf}
 
+  ; $PostSigningData should only be empty if we didn't try to copy the
+  ; postSigningData file at all. If we did try and the file was missing
+  ; or empty, this will be "0", and for consistency with the stub we will
+  ; still submit it.
+  ${If} $PostSigningData != ""
+    nsJSON::Quote /always $PostSigningData
+    Pop $0
+    nsJSON::Set /tree ping "Data" "attribution" /value $0
+  ${EndIf}
+
+  ${If} ${Silent}
+    nsJSON::Set /tree ping "Data" "silent" /value true
+  ${Else}
+    nsJSON::Set /tree ping "Data" "silent" /value false
+  ${EndIf}
+
+  Pop $0
+
+  ; Call the callback function, which is still on the stack.
+  Exch $0
+  Call $0
+  Pop $0
+FunctionEnd
+
+!ifdef TELEMETRY_FULL_INSTALLER
+; Telemetry values particular to the full installer. That means they either
+; don't make sense with the stub installer, or (more often) the values are
+; computed differently.
+;
+; This thematically should be in 'installer.nsi', but it's here to allow easier
+; testing.
+Function PrepareFullInstallPing
+  Push $0
+  Push $1
+
+  nsJSON::Set /tree ping "Data" "installer_type" /value '"full"'
+  nsJSON::Set /tree ping "Data" "installer_version" /value '"${AppVersion}"'
+
   nsJSON::Set /tree ping "Data" "had_old_install" /value "$HadOldInstall"
+
+  ${If} $DefaultInstDir == $INSTDIR
+    nsJSON::Set /tree ping "Data" "default_path" /value true
+  ${Else}
+    nsJSON::Set /tree ping "Data" "default_path" /value false
+  ${EndIf}
+
+  nsJSON::Set /tree ping "Data" "set_default" /value "$SetAsDefault"
 
   ${If} ${Silent}
     ; In silent mode, only the install phase is executed, and the GUI events
@@ -162,18 +242,6 @@ Function SendTelemetryPing
     nsJSON::Set /tree ping "Data" "finish_time" /value "$1"
   ${EndIf}
 
-  ; $PostSigningData should only be empty if we didn't try to copy the
-  ; postSigningData file at all. If we did try and the file was missing
-  ; or empty, this will be "0", and for consistency with the stub we will
-  ; still submit it.
-  ${If} $PostSigningData != ""
-    nsJSON::Quote /always $PostSigningData
-    Pop $0
-    nsJSON::Set /tree ping "Data" "attribution" /value $0
-  ${EndIf}
-
-  nsJSON::Set /tree ping "Data" "new_launched" /value "$LaunchedNewApp"
-
   nsJSON::Set /tree ping "Data" "succeeded" /value false
   ${If} $InstallResult == "cancel"
     nsJSON::Set /tree ping "Data" "user_cancelled" /value true
@@ -181,13 +249,9 @@ Function SendTelemetryPing
     nsJSON::Set /tree ping "Data" "succeeded" /value true
   ${EndIf}
 
-  ${If} ${Silent}
-    nsJSON::Set /tree ping "Data" "silent" /value true
-  ${Else}
-    nsJSON::Set /tree ping "Data" "silent" /value false
-  ${EndIf}
+  nsJSON::Set /tree ping "Data" "new_launched" /value "$LaunchedNewApp"
 
-  ; Send the ping request. This call will block until a response is received,
-  ; but we shouldn't have any windows still open, so we won't jank anything.
-  nsJSON::Set /http ping
+  Pop $1
+  Pop $0
 FunctionEnd
+!endif

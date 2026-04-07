@@ -142,6 +142,7 @@ VIAddVersionKey "OriginalFilename" "setup.exe"
 
 !include shared.nsh
 
+!define TELEMETRY_FULL_INSTALLER
 !include telemetry.nsh
 
 ; Helper macros for ui callbacks. Insert these after shared.nsh
@@ -1017,6 +1018,8 @@ Function SendPingIfApplicable
   ${GetParameters} $0
   ${GetOptions} $0 "/LaunchedFromStub" $0
   ${If} ${Errors}
+    GetFunctionAddress $0 PrepareFullInstallPing
+    Push $0
     Call SendTelemetryPing
   ${EndIf}
 FunctionEnd
