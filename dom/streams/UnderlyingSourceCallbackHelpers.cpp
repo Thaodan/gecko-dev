@@ -215,10 +215,10 @@ nsresult InputStreamHolder::AsyncWait(uint32_t aFlags, uint32_t aRequestedCount,
 NS_IMETHODIMP InputStreamHolder::OnInputStreamReady(
     nsIAsyncInputStream* aStream) {
   mAsyncWaitWorkerRef = nullptr;
-  mAsyncWaitAlgorithms = nullptr;
   // We may get called back after ::Shutdown()
-  if (mCallback) {
-    return mCallback->OnInputStreamReady(aStream);
+  if (RefPtr<InputToReadableStreamAlgorithms> callback =
+          mAsyncWaitAlgorithms.forget()) {
+    return callback->OnInputStreamReady(aStream);
   }
   return NS_ERROR_FAILURE;
 }
@@ -415,11 +415,12 @@ void InputToReadableStreamAlgorithms::EnqueueChunkWithSizeIntoStream(
 
   // Subscribe WAIT_CLOSURE_ONLY so that OnInputStreamReady can be called when
   // mInput is closed.
-  nsresult rv = mInput->AsyncWait(nsIAsyncInputStream::WAIT_CLOSURE_ONLY, 0,
-                                  mOwningEventTarget);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    aRv.Throw(rv);
-    return;
+  if (mInput) {
+    nsresult rv = mInput->AsyncWait(nsIAsyncInputStream::WAIT_CLOSURE_ONLY, 0,
+                                    mOwningEventTarget);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      aRv.Throw(rv);
+    }
   }
 }
 
