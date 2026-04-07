@@ -14,6 +14,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.DrawableRes
 import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.HorizontalDivider
@@ -29,6 +30,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat.getColor
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
@@ -41,6 +43,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import com.google.android.material.appbar.AppBarLayout
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
@@ -141,6 +144,9 @@ import org.mozilla.fenix.home.toolbar.FenixHomeToolbar
 import org.mozilla.fenix.home.toolbar.HomeNavigationBar
 import org.mozilla.fenix.home.toolbar.HomeToolbarComposable
 import org.mozilla.fenix.home.toolbar.HomeToolbarComposable.Companion.DirectToSearchConfig
+import org.mozilla.fenix.home.toolbar.HomeToolbarView
+import org.mozilla.fenix.home.toolbar.SearchSelectorBinding
+import org.mozilla.fenix.home.toolbar.SearchSelectorMenuBinding
 import org.mozilla.fenix.home.topsites.DefaultTopSitesView
 import org.mozilla.fenix.home.topsites.TopSitesBinding
 import org.mozilla.fenix.home.topsites.controller.DefaultTopSiteController
@@ -160,8 +166,10 @@ import org.mozilla.fenix.pbmlock.observePrivateModeLock
 import org.mozilla.fenix.perf.MarkersFragmentLifecycleCallbacks
 import org.mozilla.fenix.perf.StartupTimeline
 import org.mozilla.fenix.reviewprompt.ShowReviewPromptBinding
+import org.mozilla.fenix.search.SearchDialogFragment
 import org.mozilla.fenix.search.awesomebar.AwesomeBarComposable
 import org.mozilla.fenix.search.toolbar.DefaultSearchSelectorController
+import org.mozilla.fenix.search.toolbar.SearchSelectorMenu
 import org.mozilla.fenix.snackbar.FenixSnackbarDelegate
 import org.mozilla.fenix.snackbar.SnackbarBinding
 import org.mozilla.fenix.tabstray.redux.state.Page
@@ -206,6 +214,13 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
     private var awesomeBarComposable: AwesomeBarComposable? = null
 
     private var homeSwipeIntegration: HomeSwipeIntegration? = null
+
+    private val searchSelectorMenu by lazy {
+        SearchSelectorMenu(
+            context = requireContext(),
+            interactor = sessionControlInteractor,
+        )
+    }
 
     private val browsingModeManager get() = (activity as HomeActivity).browsingModeManager
 
@@ -266,6 +281,8 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
     private val bookmarksFeature = ViewBoundFeatureWrapper<BookmarksFeature>()
     private val historyMetadataFeature = ViewBoundFeatureWrapper<RecentVisitsFeature>()
     private val tabsCleanupFeature = ViewBoundFeatureWrapper<TabsCleanupFeature>()
+    private val searchSelectorBinding = ViewBoundFeatureWrapper<SearchSelectorBinding>()
+    private val searchSelectorMenuBinding = ViewBoundFeatureWrapper<SearchSelectorMenuBinding>()
     private val thumbnailsFeature = ViewBoundFeatureWrapper<HomepageThumbnailIntegration>()
     private val snackbarBinding = ViewBoundFeatureWrapper<SnackbarBinding>()
     private val showReviewPromptBinding = ViewBoundFeatureWrapper<ShowReviewPromptBinding>()
@@ -625,6 +642,11 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
             ),
             toolbarController = DefaultToolbarController(
                 appStore = components.appStore,
+                browserStore = components.core.store,
+                nimbusComponents = components.nimbus,
+                navController = findNavController(),
+                settings = components.settings,
+                fenixBrowserUseCases = components.useCases.fenixBrowserUseCases,
             ),
             homeSearchController = DefaultHomeSearchController(
                 appStore = components.appStore,
@@ -659,6 +681,8 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
 
         initComposeHomepage()
 
+        disableAppBarDragging()
+
         homeSwipeIntegration = HomeSwipeIntegration(
             components = requireContext().components,
             settings = requireContext().settings(),
@@ -680,56 +704,66 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
         return binding.root
     }
 
-    private fun buildToolbar(activity: HomeActivity): FenixHomeToolbar {
-        val toolbarStore by buildToolbarStore(activity)
+    private fun buildToolbar(activity: HomeActivity): FenixHomeToolbar =
+        when (activity.settings().shouldUseComposableToolbar) {
+            true -> {
+                val toolbarStore by buildToolbarStore(activity)
 
-        if (isEdgeToEdgeBackgroundEnabled() && homepageEdgeToEdgeFeature.get() == null) {
-            homepageEdgeToEdgeFeature.set(
-                feature = HomepageEdgeToEdgeFeature(
-                    appStore = requireComponents.appStore,
-                    activity = activity,
-                    settings = activity.settings(),
-                    browsingModeManager = browsingModeManager,
+                if (isEdgeToEdgeBackgroundEnabled() && homepageEdgeToEdgeFeature.get() == null) {
+                    homepageEdgeToEdgeFeature.set(
+                        feature = HomepageEdgeToEdgeFeature(
+                            appStore = requireComponents.appStore,
+                            activity = activity,
+                            settings = activity.settings(),
+                            browsingModeManager = browsingModeManager,
+                            toolbarStore = toolbarStore,
+                        ),
+                        owner = viewLifecycleOwner,
+                        view = binding.root,
+                    )
+                }
+
+                homeNavigationBar = HomeNavigationBar(
+                    context = activity,
+                    container = binding.navigationBarContainer,
                     toolbarStore = toolbarStore,
-                ),
-                owner = viewLifecycleOwner,
-                view = binding.root,
+                    settings = activity.settings(),
+                    hideWhenKeyboardShown = true,
+                )
+
+                HomeToolbarComposable(
+                    context = activity,
+                    homeBinding = binding,
+                    navController = findNavController(),
+                    toolbarStore = toolbarStore,
+                    appStore = activity.components.appStore,
+                    browserStore = activity.components.core.store,
+                    browsingModeManager = activity.browsingModeManager,
+                    settings = activity.settings(),
+                    directToSearchConfig = DirectToSearchConfig(
+                        startSearch = bundleArgs.getBoolean(FOCUS_ON_ADDRESS_BAR) ||
+                                FxNimbus.features.oneClickSearch.value().enabled,
+                        startVoiceSearch = bundleArgs.getBoolean(START_VOICE_SEARCH),
+                        sessionId = args.sessionToStartSearchFor,
+                        source = args.searchAccessPoint,
+                    ),
+                    coroutineScope = binding.homeLayout.toScope(),
+                    tabStripContent = { TabStrip(toolbarStore) },
+                    searchSuggestionsContent = { modifier ->
+                        (awesomeBarComposable ?: initializeAwesomeBarComposable(toolbarStore, modifier))
+                            ?.SearchSuggestions()
+                    },
+                    navigationBarContent = homeNavigationBar?.asComposable(),
+                )
+            }
+
+            false -> HomeToolbarView(
+                homeBinding = binding,
+                interactor = sessionControlInteractor,
+                homeFragment = this,
+                homeActivity = activity,
             )
         }
-
-        homeNavigationBar = HomeNavigationBar(
-            context = activity,
-            container = binding.navigationBarContainer,
-            toolbarStore = toolbarStore,
-            settings = activity.settings(),
-            hideWhenKeyboardShown = true,
-        )
-
-        return HomeToolbarComposable(
-            context = activity,
-            homeBinding = binding,
-            navController = findNavController(),
-            toolbarStore = toolbarStore,
-            appStore = activity.components.appStore,
-            browserStore = activity.components.core.store,
-            browsingModeManager = activity.browsingModeManager,
-            settings = activity.settings(),
-            directToSearchConfig = DirectToSearchConfig(
-                startSearch = bundleArgs.getBoolean(FOCUS_ON_ADDRESS_BAR) ||
-                        FxNimbus.features.oneClickSearch.value().enabled,
-                startVoiceSearch = bundleArgs.getBoolean(START_VOICE_SEARCH),
-                sessionId = args.sessionToStartSearchFor,
-                source = args.searchAccessPoint,
-            ),
-            coroutineScope = binding.homeLayout.toScope(),
-            tabStripContent = { TabStrip(toolbarStore) },
-            searchSuggestionsContent = { modifier ->
-                (awesomeBarComposable ?: initializeAwesomeBarComposable(toolbarStore, modifier))
-                    ?.SearchSuggestions()
-            },
-            navigationBarContent = homeNavigationBar?.asComposable(),
-        )
-    }
 
     private fun buildToolbarStore(activity: HomeActivity) = HomeToolbarStoreBuilder.build(
         context = activity,
@@ -873,7 +907,7 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
     }
 
     private fun updateToolbarViewUIForMicrosurveyPrompt() {
-        updateToolbarViewUI(false, 0.0f)
+        updateToolbarViewUI(R.drawable.home_bottom_bar_background_no_divider, false, 0.0f)
     }
 
     private fun resetToolbarViewUI() {
@@ -881,13 +915,19 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
         _binding?.homeLayout?.removeView(bottomToolbarContainerView.toolbarContainerView)
         val showDivider = requireContext().isToolbarAtBottom() || !requireContext().settings().enableHomepageSearchBar
 
-        updateToolbarViewUI(showDivider, elevation)
+        updateToolbarViewUI(
+            R.drawable.home_bottom_bar_background,
+            showDivider,
+            elevation,
+        )
     }
 
     private fun updateToolbarViewUI(
+        @DrawableRes id: Int,
         showDivider: Boolean,
         elevation: Float,
     ) {
+        (toolbarView as? HomeToolbarView)?.updateBackground(id)
         toolbarView.updateDividerVisibility(showDivider)
         toolbarView.layout.elevation = elevation
     }
@@ -914,6 +954,22 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
 
     private fun shouldShowMicrosurveyPrompt(context: Context) =
         context.components.settings.shouldShowMicrosurveyPrompt
+
+    private fun disableAppBarDragging() {
+        if (binding.homeAppBar.layoutParams != null) {
+            val appBarLayoutParams = binding.homeAppBar.layoutParams as CoordinatorLayout.LayoutParams
+            val appBarBehavior = AppBarLayout.Behavior()
+            appBarBehavior.setDragCallback(
+                object : AppBarLayout.Behavior.DragCallback() {
+                    override fun canDrag(appBarLayout: AppBarLayout): Boolean {
+                        return false
+                    }
+                },
+            )
+            appBarLayoutParams.behavior = appBarBehavior
+        }
+        binding.homeAppBar.setExpanded(true)
+    }
 
     @Suppress("LongMethod")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -943,6 +999,9 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
         }
 
         toolbarView.build(requireComponents.core.store.state, requireContext().settings().enableHomepageSearchBar)
+        if (requireContext().settings().isTabStripEnabled) {
+            initTabStrip()
+        }
 
         val showDivider = requireContext().isToolbarAtBottom() || !requireContext().settings().enableHomepageSearchBar
         toolbarView.updateDividerVisibility(showDivider)
@@ -958,8 +1017,48 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
 
         toolbarView.updateTabCounter(requireComponents.core.store.state)
 
-        qrScanFenixFeature = QrScanFenixFeature.register(this, qrScanLauncher)
-        voiceSearchFeature = VoiceSearchFeature.register(this, voiceSearchLauncher)
+        val focusOnAddressBar = bundleArgs.getBoolean(FOCUS_ON_ADDRESS_BAR) ||
+                FxNimbus.features.oneClickSearch.value().enabled
+
+        if (focusOnAddressBar && !requireContext().settings().shouldUseComposableToolbar) {
+            // If the fragment gets recreated by the activity, the search fragment might get recreated as well. Changing
+            // between browsing modes triggers activity recreation, so when changing modes goes together with navigating
+            // home, we should avoid navigating to search twice.
+            val searchFragmentAlreadyAdded = parentFragmentManager.fragments.any { it is SearchDialogFragment }
+            if (!searchFragmentAlreadyAdded) {
+                sessionControlInteractor.onNavigateSearch()
+            }
+        }
+
+        if (requireContext().settings().shouldUseComposableToolbar) {
+            qrScanFenixFeature = QrScanFenixFeature.register(this, qrScanLauncher)
+            voiceSearchFeature = VoiceSearchFeature.register(this, voiceSearchLauncher)
+        }
+
+        (toolbarView as? HomeToolbarView)?.let {
+            searchSelectorBinding.set(
+                feature = SearchSelectorBinding(
+                    context = view.context,
+                    toolbarView = it,
+                    searchSelectorMenu = searchSelectorMenu,
+                    browsingModeManager = browsingModeManager,
+                    browserStore = requireComponents.core.store,
+                ),
+                owner = viewLifecycleOwner,
+                view = binding.root,
+            )
+        }
+
+        searchSelectorMenuBinding.set(
+            feature = SearchSelectorMenuBinding(
+                context = view.context,
+                interactor = sessionControlInteractor,
+                searchSelectorMenu = searchSelectorMenu,
+                browserStore = requireComponents.core.store,
+            ),
+            owner = viewLifecycleOwner,
+            view = view,
+        )
 
         showReviewPromptBinding.set(
             feature = ShowReviewPromptBinding(
@@ -982,6 +1081,8 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
     }
 
     private fun initComposeHomepage() {
+        binding.homeAppBarContent.isVisible = false
+
         binding.homepageView.apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
 
@@ -1009,7 +1110,10 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
 
                     LaunchedEffect(isInPortrait, keyboardState) {
                         updateLayoutParams<ViewGroup.MarginLayoutParams> {
-                            topMargin = getTopToolbarHeight()
+                            topMargin = when (settings.shouldUseComposableToolbar) {
+                                true -> getTopToolbarHeight()
+                                else -> 0
+                            }
                             bottomMargin = getBottomToolbarHeight(keyboardState == KeyboardState.Closed)
                         }
                     }
@@ -1080,6 +1184,14 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
         appStore.dispatch(AppAction.UpdateFirstFrameDrawn(drawn = true))
     }
 
+    private fun initTabStrip() {
+        (toolbarView as? HomeToolbarView)?.configureTabStripView {
+            isVisible = true
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent { TabStrip() }
+        }
+    }
+
     @Composable
     private fun TabStrip(toolbarStore: BrowserToolbarStore? = null) {
         // Tabs will not be shown as selected on the homepage when Homepage as a New Tab is not
@@ -1090,7 +1202,9 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
         FirefoxTheme {
             TabStrip(
                 isSelectDisabled = isSelectDisabled,
-                showActionButtons = false,
+                // Show action buttons only if composable toolbar is not enabled.
+                showActionButtons =
+                    context?.settings()?.shouldUseComposableToolbar == false,
                 tabStripColors = TabStripColors.build(
                     toolbarState = toolbarState,
                     browsingModeManager = (requireActivity() as HomeActivity).browsingModeManager,

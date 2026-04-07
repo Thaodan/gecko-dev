@@ -5,6 +5,7 @@
 package org.mozilla.fenix.benchmark
 
 import android.content.Intent
+import android.net.Uri
 import androidx.benchmark.macro.BaselineProfileMode
 import androidx.benchmark.macro.CompilationMode
 import androidx.benchmark.macro.StartupMode
@@ -12,10 +13,13 @@ import androidx.benchmark.macro.StartupTimingMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 import org.mozilla.fenix.benchmark.utils.EXTRA_COMPOSABLE_TOOLBAR
 import org.mozilla.fenix.benchmark.utils.FENIX_HOME_DEEP_LINK
 import org.mozilla.fenix.benchmark.utils.HtmlAsset
 import org.mozilla.fenix.benchmark.utils.MockWebServerRule
+import org.mozilla.fenix.benchmark.utils.ParameterizedToolbarsTest
 import org.mozilla.fenix.benchmark.utils.TARGET_PACKAGE
 import org.mozilla.fenix.benchmark.utils.dismissWallpaperOnboarding
 import org.mozilla.fenix.benchmark.utils.enterSearchMode
@@ -48,8 +52,11 @@ import org.mozilla.fenix.benchmark.utils.url
  * For more information, see the [Macrobenchmark documentation](https://d.android.com/macrobenchmark#create-macrobenchmark)
  * and the [instrumentation arguments documentation](https://d.android.com/topic/performance/benchmarking/macrobenchmark-instrumentation-args).
  **/
+@RunWith(Parameterized::class)
 @BaselineProfileMacrobenchmark
-class BaselineProfilesNormalBrowsingBenchmark {
+class BaselineProfilesNormalBrowsingBenchmark(
+    private val useComposableToolbar: Boolean,
+): ParameterizedToolbarsTest() {
     @get:Rule
     val benchmarkRule = MacrobenchmarkRule()
 
@@ -77,7 +84,7 @@ class BaselineProfilesNormalBrowsingBenchmark {
             },
         ) {
             val intent = Intent(Intent.ACTION_VIEW, FENIX_HOME_DEEP_LINK)
-                .putExtra(EXTRA_COMPOSABLE_TOOLBAR, true)
+                .putExtra(EXTRA_COMPOSABLE_TOOLBAR, useComposableToolbar)
 
             startActivityAndWait(intent = intent)
 
@@ -85,8 +92,8 @@ class BaselineProfilesNormalBrowsingBenchmark {
                 device.dismissWallpaperOnboarding()
             }
 
-            device.enterSearchMode()
-            device.loadSite(url = mockRule.url(HtmlAsset.SIMPLE))
+            device.enterSearchMode(useComposableToolbar)
+            device.loadSite(url = mockRule.url(HtmlAsset.SIMPLE), useComposableToolbar)
 
             killProcess()
         }

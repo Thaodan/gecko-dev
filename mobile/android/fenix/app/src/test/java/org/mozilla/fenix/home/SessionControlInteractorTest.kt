@@ -142,6 +142,18 @@ class SessionControlInteractorTest {
     }
 
     @Test
+    fun onPaste() {
+        interactor.onPaste("text")
+        verify { toolbarController.handlePaste("text") }
+    }
+
+    @Test
+    fun onPasteAndGo() {
+        interactor.onPasteAndGo("text")
+        verify { toolbarController.handlePasteAndGo("text") }
+    }
+
+    @Test
     fun onNavigateSearch() {
         interactor.onNavigateSearch()
         verify { toolbarController.handleNavigateSearch() }

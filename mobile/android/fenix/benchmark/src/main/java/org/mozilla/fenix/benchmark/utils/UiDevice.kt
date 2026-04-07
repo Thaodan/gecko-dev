@@ -93,9 +93,9 @@ fun UiDevice.waitUntilPageLoaded() {
     refresh.waitForExists(WAITING_TIME_MS)
 }
 
-fun UiDevice.openTabsTray() {
+fun UiDevice.openTabsTray(useNewToolbar: Boolean) {
     val tabsTrayButton = findObject(
-        UiSelector().resourceId("TabCounterTestTags.tabCounter")
+        UiSelector().resourceId(getTabCounterId(useNewToolbar))
     )
     tabsTrayButton.waitForExists(WAITING_TIME_MS)
     tabsTrayButton.click()
@@ -182,17 +182,17 @@ fun UiDevice.closeAllTabs() {
     closeAllTabsButton.click()
 }
 
-fun UiDevice.enterSearchMode() {
+fun UiDevice.enterSearchMode(useNewToolbar: Boolean) {
     val urlBar = findObject(
-        UiSelector().resourceId("ADDRESSBAR_URL_BOX")
+        UiSelector().resourceId(getUrlBarId(useNewToolbar))
     )
     urlBar.waitForExists(WAITING_TIME_MS)
     urlBar.click()
 }
 
-fun UiDevice.loadSite(url: String) {
+fun UiDevice.loadSite(url: String, useNewToolbar: Boolean) {
     val urlBarEditField = findObject(
-        UiSelector().resourceId("ADDRESSBAR_SEARCH_BOX")
+        UiSelector().resourceId(getUrlBarEditField(useNewToolbar))
     )
     urlBarEditField.setText(url)
     pressEnter()
@@ -212,4 +212,19 @@ fun UiDevice.flingToBeginning(scrollableId: String, maxSwipes: Int) {
     val scrollable = UiScrollable(UiSelector().resourceId(scrollableId))
     scrollable.waitForExists(WAITING_TIME_MS)
     scrollable.flingToBeginning(maxSwipes)
+}
+
+private fun getUrlBarId(useNewToolbar: Boolean) = when (useNewToolbar) {
+    true -> "ADDRESSBAR_URL_BOX"
+    false -> "$TARGET_PACKAGE:id/toolbar"
+}
+
+private fun getUrlBarEditField(useNewToolbar: Boolean) = when (useNewToolbar) {
+    true -> "ADDRESSBAR_SEARCH_BOX"
+    false -> "$TARGET_PACKAGE:id/mozac_browser_toolbar_edit_url_view"
+}
+
+private fun getTabCounterId(useNewToolbar: Boolean) = when (useNewToolbar) {
+    true -> "TabCounterTestTags.tabCounter"
+    false -> "$TARGET_PACKAGE:id/counter_box"
 }

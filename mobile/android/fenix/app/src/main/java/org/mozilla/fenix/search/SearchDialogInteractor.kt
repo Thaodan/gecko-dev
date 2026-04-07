@@ -13,7 +13,7 @@ import org.mozilla.fenix.search.toolbar.ToolbarInteractor
 
 /**
  * Interactor for the search screen
- * Provides implementations for the AwesomeBarView.
+ * Provides implementations for the AwesomeBarView and HomeToolbarView.
  */
 @Suppress("TooManyFunctions")
 class SearchDialogInteractor(
