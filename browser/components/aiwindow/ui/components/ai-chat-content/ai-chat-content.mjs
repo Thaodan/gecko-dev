@@ -234,10 +234,10 @@ export class AIChatContent extends MozLitElement {
     }
 
     this.errorObj = null;
-    this.#checkConversationState(message);
 
     switch (message.role) {
       case "loading":
+        this.#checkConversationState(message);
         this.handleLoadingEvent(event);
         break;
       case "assistant":
@@ -248,10 +248,26 @@ export class AIChatContent extends MozLitElement {
         this.#checkConversationState(message);
         this.handleUserPromptEvent(event);
         break;
+      case "assistant-message-complete":
+        this.#setMessageCompleteAttr(message);
+        break;
       // Used to clear the conversation state via side effects ( new conv id )
       case "clear-conversation":
         this.#checkConversationState(message);
     }
+  }
+
+  #setMessageCompleteAttr(message) {
+    const assistantLastMessage = this.conversationState.findLast(
+      msg => msg?.messageId === message.content.id
+    );
+
+    if (!assistantLastMessage) {
+      return;
+    }
+
+    assistantLastMessage.isLastChunk = true;
+    this.requestUpdate();
   }
 
   /**
@@ -358,6 +374,7 @@ export class AIChatContent extends MozLitElement {
       showMemoriesCallout,
       webSearchQueries,
       followUpSuggestions = [],
+      isPreviousMessage,
     } = event.detail;
 
     if (typeof content.body !== "string" || !content.body) {
@@ -377,6 +394,7 @@ export class AIChatContent extends MozLitElement {
       appliedMemories: memoriesApplied ?? [],
       showCallout: showMemoriesCallout ?? false,
       searchTokens: webSearchQueries ?? [],
+      isLastChunk: !!isPreviousMessage,
     };
 
     this.requestUpdate();
@@ -503,7 +521,7 @@ export class AIChatContent extends MozLitElement {
           .conversationId=${this.conversationId}
           .seenUrls=${this.seenUrls}
         ></ai-chat-message>
-        ${msg.role === "assistant"
+        ${msg.role === "assistant" && msg.isLastChunk
           ? html`
               <assistant-message-footer
                 .messageId=${msg.messageId}
