@@ -92,19 +92,53 @@ pub(crate) fn run_tests(
     runner: &dyn CommandRunner,
 ) -> Result<Vec<TestResult>> {
     let mut results: Vec<TestResult> = vec![];
-    let mut prepared_updaters: HashMap<PathBuf, PathBuf> = HashMap::new();
+    let mut updater_binaries: HashMap<PathBuf, PathBuf> = HashMap::new();
+
+    // Prepare updater packages
+    // Find distinct updater packages (so we don't process repeated ones
+    // more than once).
+    let mut distinct_updater_packages: Vec<PathBuf> =
+        tests.iter().map(|t| t.updater_package.clone()).collect();
+    distinct_updater_packages.sort();
+    distinct_updater_packages.dedup();
+
+    // Decide on locations for them.
+    let updater_locations: HashMap<PathBuf, PathBuf> = distinct_updater_packages
+        .iter()
+        .map(|updater_package| -> Result<(PathBuf, PathBuf)> {
+            let unpack_dir = tempfile::Builder::new()
+                .prefix("updater_")
+                .tempdir_in(tmpdir)?
+                .keep();
+            return Ok((updater_package.clone(), unpack_dir));
+        })
+        .collect::<Result<HashMap<_, _>>>()?;
+
+    // Unpack into the desired locations.
+    for (updater_package, unpack_dir) in &updater_locations {
+        let updater = prepare_updater(
+            &updater_package,
+            appname,
+            cert_replace_script,
+            cert_dir,
+            cert_overrides,
+            &unpack_dir,
+            runner,
+        )?;
+
+        updater_binaries.insert(updater_package.clone(), updater);
+    }
+
     for test in tests {
+        let updater = updater_binaries[&test.updater_package].clone();
         let outcome = run_test(
             &test,
-            &mut prepared_updaters,
+            &updater,
             check_updates,
             target_platform,
             to_installer,
             channel,
             appname,
-            cert_replace_script,
-            cert_dir,
-            cert_overrides,
             tmpdir,
             artifact_dir,
             runner,
@@ -130,39 +164,16 @@ pub(crate) fn run_tests(
 
 fn run_test(
     test: &Test,
-    prepared_updaters: &mut HashMap<PathBuf, PathBuf>,
+    updater: &Path,
     check_updates: &Path,
     target_platform: &str,
     to_installer: &Path,
     channel: &str,
     appname: &str,
-    cert_replace_script: Option<&Path>,
-    cert_dir: Option<&Path>,
-    cert_overrides: &Vec<CertOverride>,
     tmpdir: &Path,
     artifact_dir: &Path,
     runner: &dyn CommandRunner,
 ) -> Result<TestOutcome> {
-    let updater = match prepared_updaters.get(&test.from_installer) {
-        Some(path) => path.clone(),
-        None => {
-            let unpack_dir = tempfile::Builder::new()
-                .prefix("updater_")
-                .tempdir_in(tmpdir)?
-                .keep();
-            let path = prepare_updater(
-                &test.updater_package,
-                appname,
-                cert_replace_script,
-                cert_dir,
-                cert_overrides,
-                &unpack_dir,
-                runner,
-            )?;
-            prepared_updaters.insert(test.from_installer.clone(), path.clone());
-            path
-        }
-    };
     info!("TEST-START: {}", test.full_id());
 
     let test_dir = setup_test_dir(&test.mar, tmpdir)?;
@@ -175,7 +186,7 @@ fn run_test(
         .arg(&test.from_installer)
         .arg(to_installer)
         .arg(&test.locale)
-        .arg(updater.clone())
+        .arg(updater)
         .arg(diff_file.to_str().unwrap())
         .arg(channel)
         // check_updates.sh requires positional args that we don't use
