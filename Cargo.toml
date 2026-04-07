@@ -107,6 +107,16 @@ opt-level = 2
 [profile.release.package.glsl]
 opt-level = 2
 
+# Megazord profiles: same as dev/release but with panic=unwind for parity with
+# how app-services is currently built.
+[profile.dev-megazord]
+inherits = "dev"
+panic = "unwind"
+
+[profile.release-megazord]
+inherits = "release"
+panic = "unwind"
+
 [patch.crates-io]
 # The build system doesn't want those to be used, but they are pulled anyways (because
 # dependencies can't be disabled based on features), but remain unused. We ensure they
