@@ -7,7 +7,6 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/ThreadLocal.h"
-#include "mozilla/WeakPtr.h"
 #include "mozilla/layers/LayersTypes.h"
 #include <set>
 
@@ -46,7 +45,7 @@ class CanvasShutdownManager final {
   static void MaybeRestoreRemoteCanvas();
 
   RefPtr<dom::ThreadSafeWorkerRef> mWorkerRef;
-  std::set<WeakPtr<dom::CanvasRenderingContext2D>> mActiveCanvas;
+  std::set<dom::CanvasRenderingContext2D*> mActiveCanvas;
   static MOZ_THREAD_LOCAL(CanvasShutdownManager*) sLocalManager;
 
   static StaticMutex sManagersMutex;
