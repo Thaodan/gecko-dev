@@ -149,6 +149,8 @@ class IPPProxyManagerSingleton extends EventTarget {
 
   #rotationTimer = 0;
   #usageRefreshAbortController = null;
+  /** @type {string | null} */
+  #errorType = null;
 
   constructor() {
     super();
@@ -251,6 +253,10 @@ class IPPProxyManagerSingleton extends EventTarget {
 
   get state() {
     return this.#state;
+  }
+
+  get errorType() {
+    return this.#errorType;
   }
 
   /**
@@ -681,6 +687,8 @@ class IPPProxyManagerSingleton extends EventTarget {
       return;
     }
 
+    this.#errorType = null;
+
     if (lazy.IPProtectionService.state !== lazy.IPProtectionStates.READY) {
       this.#setState(IPPProxyStates.NOT_READY);
       return;
@@ -706,6 +714,7 @@ class IPPProxyManagerSingleton extends EventTarget {
    * @param {string} error - the error message that occurred.
    */
   #setErrorState(error) {
+    this.#errorType = error;
     if (this.#state === IPPProxyStates.ACTIVE) {
       // If the proxy is active, switch to the error state.
       // Stop will need to be called to move out of the error state.
