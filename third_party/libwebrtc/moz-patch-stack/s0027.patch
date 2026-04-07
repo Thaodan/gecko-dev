@@ -202,7 +202,7 @@ index 3b1c52b6ad..60b251ae53 100644
      }
  
 diff --git a/api/BUILD.gn b/api/BUILD.gn
-index 7891d9adf1..506502ca44 100644
+index 537315fa5e..92c0d0897f 100644
 --- a/api/BUILD.gn
 +++ b/api/BUILD.gn
 @@ -35,6 +35,9 @@ rtc_library("enable_media") {
@@ -299,7 +299,7 @@ index 7891d9adf1..506502ca44 100644
  
  rtc_library("frame_transformer_interface") {
    visibility = [ "*" ]
-@@ -897,6 +926,7 @@ rtc_source_set("peer_network_dependencies") {
+@@ -907,6 +936,7 @@ rtc_source_set("peer_network_dependencies") {
  }
  
  rtc_source_set("peer_connection_quality_test_fixture_api") {
@@ -307,7 +307,7 @@ index 7891d9adf1..506502ca44 100644
    visibility = [ "*" ]
    testonly = true
    sources = [ "test/peerconnection_quality_test_fixture.h" ]
-@@ -940,6 +970,7 @@ rtc_source_set("peer_connection_quality_test_fixture_api") {
+@@ -950,6 +980,7 @@ rtc_source_set("peer_connection_quality_test_fixture_api") {
      "//third_party/abseil-cpp/absl/strings:string_view",
    ]
  }
@@ -315,7 +315,7 @@ index 7891d9adf1..506502ca44 100644
  
  rtc_library("frame_generator_api") {
    visibility = [ "*" ]
-@@ -1046,6 +1077,7 @@ rtc_library("create_frame_generator") {
+@@ -1056,6 +1087,7 @@ rtc_library("create_frame_generator") {
    ]
  }
  
@@ -323,7 +323,7 @@ index 7891d9adf1..506502ca44 100644
  rtc_library("create_peer_connection_quality_test_frame_generator") {
    visibility = [ "*" ]
    testonly = true
-@@ -1063,6 +1095,7 @@ rtc_library("create_peer_connection_quality_test_frame_generator") {
+@@ -1073,6 +1105,7 @@ rtc_library("create_peer_connection_quality_test_frame_generator") {
      "units:time_delta",
    ]
  }
@@ -331,7 +331,7 @@ index 7891d9adf1..506502ca44 100644
  
  rtc_source_set("data_channel_event_observer_interface") {
    visibility = [ "*" ]
-@@ -1257,6 +1290,7 @@ rtc_source_set("refcountedbase") {
+@@ -1267,6 +1300,7 @@ rtc_source_set("refcountedbase") {
  }
  
  rtc_library("ice_transport_factory") {
@@ -339,7 +339,7 @@ index 7891d9adf1..506502ca44 100644
    visibility = [ "*" ]
    sources = [
      "ice_transport_factory.cc",
-@@ -1279,6 +1313,7 @@ rtc_library("ice_transport_factory") {
+@@ -1289,6 +1323,7 @@ rtc_library("ice_transport_factory") {
      "rtc_event_log",
    ]
  }
@@ -477,7 +477,7 @@ index 136a8f937a..ba03201e69 100644
  if (rtc_include_tests) {
    rtc_source_set("test_feedback_generator_interface") {
 diff --git a/call/BUILD.gn b/call/BUILD.gn
-index 316a67a90d..190bce3234 100644
+index cddb735042..5bac2a1cc4 100644
 --- a/call/BUILD.gn
 +++ b/call/BUILD.gn
 @@ -46,7 +46,7 @@ rtc_library("call_interfaces") {

@@ -5,14 +5,14 @@ Subject: Bug 1942428 - (fix-882b32d00f) fix
 
 Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/f3ed04250e9ec1b22731ac690eb66bc96ff894d6
 ---
- call/payload_type.h | 4 ++++
+ api/payload_type.h | 4 ++++
  1 file changed, 4 insertions(+)
 
-diff --git a/call/payload_type.h b/call/payload_type.h
-index f67bb6b004..00746a85dd 100644
---- a/call/payload_type.h
-+++ b/call/payload_type.h
-@@ -35,7 +35,11 @@ class PayloadType : public StrongAlias<class PayloadTypeTag, uint8_t> {
+diff --git a/api/payload_type.h b/api/payload_type.h
+index 9d4a4434cf..32725fedc4 100644
+--- a/api/payload_type.h
++++ b/api/payload_type.h
+@@ -31,7 +31,11 @@ class PayloadType : public StrongAlias<class PayloadTypeTag, uint8_t> {
      if (rtcp_mux && (id > 63 && id < 96)) {
        return false;
      }
