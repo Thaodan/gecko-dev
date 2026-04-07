@@ -4913,12 +4913,18 @@ ${
   }
 
   /**
+   * Used to indicate if the input already has focus when a click is made, and
+   * if so, then we shouldn't select all the text.
+   */
+  #preventClickSelectsAll = false;
+
+  /**
    * Determines if we should select all the text in the Urlbar based on the
    *  Urlbar state, and whether the selection is empty.
    */
   #maybeSelectAll() {
     if (
-      !this._preventClickSelectsAll &&
+      !this.#preventClickSelectsAll &&
       this.#compositionState != lazy.UrlbarUtils.COMPOSITION.COMPOSING &&
       this.focused &&
       this.inputField.selectionStart == this.inputField.selectionEnd
@@ -4960,6 +4966,9 @@ ${
     this._handoffSession = undefined;
     this._isHandoffSession = false;
     this.removeAttribute("focused");
+    // Reset this, so that it doesn't cause issues with different tests
+    // when they focus and select the address bar.
+    this.#preventClickSelectsAll = false;
 
     if (this._autofillPlaceholder && this.userTypedValue) {
       // If we were autofilling, remove the autofilled portion, by restoring
@@ -5149,7 +5158,7 @@ ${
         }
 
         this.focusedViaMousedown = !this.focused;
-        this._preventClickSelectsAll = this.focused;
+        this.#preventClickSelectsAll = this.focused;
 
         // Keep the focus status, since the attribute may be changed
         // upon calling this.focus().
