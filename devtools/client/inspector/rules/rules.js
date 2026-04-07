@@ -1215,6 +1215,7 @@ class CssRuleView extends EventEmitter {
 
     const isProfilerActive = Services.profiler.IsActive();
     const startTime = isProfilerActive ? ChromeUtils.now() : null;
+    const done = this.inspector.updating("rule-view");
 
     const elementStyle = new ElementStyle(
       element,
@@ -1234,6 +1235,7 @@ class CssRuleView extends EventEmitter {
 
       await this.#populate();
       if (this.elementStyle !== elementStyle) {
+        done();
         return;
       }
       this.elementStyle.onChanged = () => {
@@ -1268,6 +1270,7 @@ class CssRuleView extends EventEmitter {
       }
       console.error("Error while updating the rule view", e);
     }
+    done();
   }
 
   /**
@@ -2836,12 +2839,7 @@ class RuleViewTool {
       return;
     }
 
-    const done = this.inspector.updating("rule-view");
-    try {
-      await this.view.selectElement(this.inspector.selection.nodeFront);
-    } finally {
-      done();
-    }
+    await this.view.selectElement(this.inspector.selection.nodeFront);
   }
 
   refresh() {
