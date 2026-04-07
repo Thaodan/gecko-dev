@@ -103,7 +103,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/b86cb7278bc4e5571
  create mode 100644 api/rtp_sender_setparameters_callback.h
 
 diff --git a/.gn b/.gn
-index ae9661e2de..1be68bf5f2 100644
+index 4706638e3e..675807743a 100644
 --- a/.gn
 +++ b/.gn
 @@ -71,6 +71,8 @@ default_args = {
