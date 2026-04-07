@@ -83,6 +83,7 @@ projects:
     - components:lib-fetch-okhttp
     - components:lib-publicsuffixlist
     - components:lib-state
+    - components:service-merino-manifest
     - components:support-base
     - components:support-images
     - components:support-ktx
@@ -740,6 +741,7 @@ projects:
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:service-location
+    - components:service-merino-manifest
     - components:support-appservices
     - components:support-base
     - components:support-images
@@ -807,6 +809,7 @@ projects:
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:service-location
+    - components:service-merino-manifest
     - components:support-appservices
     - components:support-base
     - components:support-images
@@ -853,6 +856,7 @@ projects:
     - components:lib-state
     - components:service-digitalassetlinks
     - components:service-location
+    - components:service-merino-manifest
     - components:support-appservices
     - components:support-base
     - components:support-images
@@ -979,6 +983,7 @@ projects:
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:service-location
+    - components:service-merino-manifest
     - components:support-appservices
     - components:support-base
     - components:support-images
@@ -1221,6 +1226,7 @@ projects:
     - components:lib-state
     - components:service-digitalassetlinks
     - components:service-location
+    - components:service-merino-manifest
     - components:support-appservices
     - components:support-base
     - components:support-images
@@ -1340,6 +1346,7 @@ projects:
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:service-location
+    - components:service-merino-manifest
     - components:support-appservices
     - components:support-base
     - components:support-images
@@ -1518,6 +1525,7 @@ projects:
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:service-firefox-accounts
+    - components:service-merino-manifest
     - components:support-appservices
     - components:support-base
     - components:support-images
@@ -1741,6 +1749,7 @@ projects:
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:service-location
+    - components:service-merino-manifest
     - components:support-appservices
     - components:support-base
     - components:support-images
@@ -2020,6 +2029,7 @@ projects:
     - components:service-digitalassetlinks
     - components:service-glean
     - components:service-location
+    - components:service-merino-manifest
     - components:service-nimbus
     - components:service-sync-logins
     - components:support-android-test
@@ -2077,6 +2087,7 @@ projects:
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:service-location
+    - components:service-merino-manifest
     - components:service-nimbus
     - components:support-appservices
     - components:support-base
