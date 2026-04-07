@@ -521,7 +521,11 @@ class Core(
      * Icons component for loading, caching and processing website icons.
      */
     val icons by lazyMonitored {
-        BrowserIcons(context, client)
+        BrowserIcons(
+            context = context,
+            httpClient = client,
+            useMerinoManifest = context.settings().enableMerinoManifest,
+        )
     }
 
     val metrics by lazyMonitored {
