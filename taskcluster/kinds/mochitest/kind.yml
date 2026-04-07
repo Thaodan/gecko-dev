@@ -169,8 +169,8 @@ tasks:
                         default: []
                 standalone:
                     by-test-platform:
-                        linux.*-64/(opt|debug): ['autoland', 'mozilla-central']
-                        windows.*-64-[^-/]+/(opt|debug): ['autoland', 'mozilla-central']
+                        linux.*-64(-shippable)?/(opt|debug): ['autoland', 'mozilla-central']
+                        windows.*-64-[^-/]+(-shippable)?/(opt|debug): ['autoland', 'mozilla-central']
                         default: []
                 headless:
                     by-test-platform:
@@ -356,8 +356,8 @@ tasks:
                         default: []
                 standalone:
                     by-test-platform:
-                        linux.*-64/(opt|debug): ['autoland', 'mozilla-central']
-                        windows.*-64-[^-/]+/(opt|debug): ['autoland', 'mozilla-central']
+                        linux.*-64(-shippable)?/(opt|debug): ['autoland', 'mozilla-central']
+                        windows.*-64-[^-/]+(-shippable)?/(opt|debug): ['autoland', 'mozilla-central']
                         default: []
                 vertical-tabs:
                     by-test-platform:
@@ -605,8 +605,8 @@ tasks:
                         default: built-projects
                 standalone:
                     by-test-platform:
-                        linux.*-64/(opt|debug): ['autoland', 'mozilla-central']
-                        windows.*-64-[^-/]+/(opt|debug): ['autoland', 'mozilla-central']
+                        linux.*-64(-shippable)?/(opt|debug): ['autoland', 'mozilla-central']
+                        windows.*-64-[^-/]+(-shippable)?/(opt|debug): ['autoland', 'mozilla-central']
                         default: []
                 inc-origin-init: []
         chunks: dynamic
@@ -648,8 +648,8 @@ tasks:
                         default: []
                 standalone:
                     by-test-platform:
-                        linux.*-64/(opt|debug): ['autoland', 'mozilla-central']
-                        windows.*-64-[^-/]+/(opt|debug): ['autoland', 'mozilla-central']
+                        linux.*-64(-shippable)?/(opt|debug): ['autoland', 'mozilla-central']
+                        windows.*-64-[^-/]+(-shippable)?/(opt|debug): ['autoland', 'mozilla-central']
                         default: []
                 http3:
                     by-test-platform:
