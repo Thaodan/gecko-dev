@@ -67,6 +67,7 @@ Function PrepareTelemetryPing
   nsJSON::Set /tree ping "Data" "update_channel" /value '"${UpdateChannel}"'
   nsJSON::Set /tree ping "Data" "locale" /value '"${AB_CD}"'
 
+  ; If the installation failed, these values will be the empty string.
   ReadINIStr $0 "$INSTDIR\application.ini" "App" "Version"
   nsJSON::Set /tree ping "Data" "version" /value '"$0"'
   ReadINIStr $0 "$INSTDIR\application.ini" "App" "BuildID"
@@ -79,6 +80,9 @@ Function PrepareTelemetryPing
     nsJSON::Set /tree ping "Data" "distribution_id" /value '"$0"'
     ReadINIStr $0 "$1" "Global" "version"
     nsJSON::Set /tree ping "Data" "distribution_version" /value '"$0"'
+  ${Else}
+    nsJSON::Set /tree ping "Data" "distribution_id" /value '"0"'
+    nsJSON::Set /tree ping "Data" "distribution_version" /value '"0"'
   ${EndIf}
 
   ReadRegDWORD $0 HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" "UBR"
@@ -111,7 +115,9 @@ Function PrepareTelemetryPing
   ${WinVerGetMajor} $0
   ${WinVerGetMinor} $1
   ${WinVerGetBuild} $2
+  ${WinVerGetServicePackLevel} $3
   nsJSON::Set /tree ping "Data" "os_version" /value '"$0.$1.$2"'
+  nsJSON::Set /tree ping "Data" "service_pack" /value '"$3"'
   ${If} ${IsServerOS}
     nsJSON::Set /tree ping "Data" "server_os" /value true
   ${Else}
@@ -250,6 +256,138 @@ Function PrepareFullInstallPing
   ${EndIf}
 
   nsJSON::Set /tree ping "Data" "new_launched" /value "$LaunchedNewApp"
+
+  Pop $1
+  Pop $0
+FunctionEnd
+!endif
+
+!ifdef TELEMETRY_STUB_INSTALLER
+Function PrepareStubInstallPing
+  Push $0
+  Push $1
+
+  nsJSON::Set /tree ping "Data" "installer_type" /value '"stub"'
+  ; Stub installers don't really have an installer_version, but it is required.
+  nsJSON::Set /tree ping "Data" "installer_version" /value '""'
+
+  nsJSON::Set /tree ping "Data" "stub_build_id" /value '"${MOZ_BUILDID}"'
+
+  nsJSON::Set /tree ping "Data" "download_retries" /value "$DownloadRetryCount"
+  nsJSON::Set /tree ping "Data" "bytes_downloaded" /value "$DownloadedBytes"
+  nsJSON::Set /tree ping "Data" "download_size" /value "$DownloadSizeBytes"
+
+  nsJSON::Set /tree ping "Data" "intro_time" /value "$IntroPhaseSeconds"
+  nsJSON::Set /tree ping "Data" "options_time" /value "$OptionsPhaseSeconds"
+
+  nsJSON::Set /tree ping "Data" "succeeded" /value false
+  ${Select} "$ExitCode"
+    ${Case} ${ERR_SUCCESS}
+      nsJSON::Set /tree ping "Data" "succeeded" /value true
+    ${Case} ${ERR_DOWNLOAD_CANCEL}
+      nsJSON::Set /tree ping "Data" "user_cancelled" /value true
+    ${Case} ${ERR_DOWNLOAD_TOO_MANY_RETRIES}
+      nsJSON::Set /tree ping "Data" "out_of_retries" /value true
+    ${Case} ${ERR_PREINSTALL_INVALID_HANDLE}
+      nsJSON::Set /tree ping "Data" "file_error" /value true
+    ${Case} ${ERR_PREINSTALL_CERT_UNTRUSTED}
+      nsJSON::Set /tree ping "Data" "sig_not_trusted" /value true
+    ${Case} ${ERR_PREINSTALL_CERT_ATTRIBUTES}
+      nsJSON::Set /tree ping "Data" "sig_unexpected" /value true
+    ${Case} ${ERR_PREINSTALL_CERT_UNTRUSTED_AND_ATTRIBUTES}
+      nsJSON::Set /tree ping "Data" "sig_not_trusted" /value true
+      nsJSON::Set /tree ping "Data" "sig_unexpected" /value true
+    ${Case} ${ERR_PREINSTALL_CERT_TIMEOUT}
+      nsJSON::Set /tree ping "Data" "sig_check_timeout" /value true
+    ${Case} ${ERR_PREINSTALL_SYS_HW_REQ}
+      nsJSON::Set /tree ping "Data" "hardware_req_not_met" /value true
+    ${Case} ${ERR_PREINSTALL_SYS_OS_REQ}
+      nsJSON::Set /tree ping "Data" "os_version_req_not_met" /value true
+    ${Case} ${ERR_PREINSTALL_SPACE}
+      nsJSON::Set /tree ping "Data" "disk_space_req_not_met" /value true
+    ${Case} ${ERR_PREINSTALL_NOT_WRITABLE}
+      nsJSON::Set /tree ping "Data" "writeable_req_not_met" /value true
+    ${Default} ; including ERR_UNKNOWN
+      nsJSON::Set /tree ping "Data" "unknown_error" /value true
+  ${EndSelect}
+
+  ; Get the seconds elapsed from the start of the download phase to the end of
+  ; the download phase.
+  ${GetSecondsElapsed} "$StartDownloadPhaseTickCount" "$EndDownloadPhaseTickCount" $0
+  nsJSON::Set /tree ping "Data" "download_time" /value "$0"
+
+  ; Get the seconds elapsed from the start of the last download to the end of
+  ; the last download.
+  ${GetSecondsElapsed} "$StartLastDownloadTickCount" "$EndDownloadPhaseTickCount" $0
+  ; FIXME - this was ignored on the server-side! (it's associated with the field after 'download_time')
+
+  nsJSON::Set /tree ping "Data" "download_latency" /value "$DownloadFirstTransferSeconds"
+
+  ; Get the seconds elapsed from the end of the download phase to the
+  ; completion of the pre-installation check phase.
+  ${GetSecondsElapsed} "$EndDownloadPhaseTickCount" "$EndPreInstallPhaseTickCount" $0
+  nsJSON::Set /tree ping "Data" "preinstall_time" /value $0
+
+  ; Get the seconds elapsed from the end of the pre-installation check phase
+  ; to the completion of the installation phase.
+  ${GetSecondsElapsed} "$EndPreInstallPhaseTickCount" "$EndInstallPhaseTickCount" $0
+  nsJSON::Set /tree ping "Data" "install_time" /value $0
+
+  ; Get the seconds elapsed from the end of the installation phase to the
+  ; completion of all phases.
+  ${GetSecondsElapsed} "$EndInstallPhaseTickCount" "$EndFinishPhaseTickCount" $0
+  nsJSON::Set /tree ping "Data" "finish_time" /value $0
+
+  ${If} "$InitialInstallRequirementsCode" == "1"
+    nsJSON::Set /tree ping "Data" "disk_space_error" /value true
+  ${ElseIf} "$InitialInstallRequirementsCode" == "2"
+    nsJSON::Set /tree ping "Data" "no_write_access" /value true
+  ${EndIf}
+
+  ${If} "$DownloadServerIP" == ""
+    StrCpy $DownloadServerIP "Unknown"
+  ${EndIf}
+  nsJSON::Quote /always "$DownloadServerIP"
+  Pop $0
+  nsJSON::Set /tree ping "Data" "download_ip" /value "$0"
+
+  ${GetLongPath} "$INSTDIR" $0
+  ${GetLongPath} "$InitialInstallDir" $1
+  ${If} "$0" == "$1"
+    nsJSON::Set /tree ping "Data" "default_path" /value true
+  ${Else}
+    nsJSON::Set /tree ping "Data" "default_path" /value false
+  ${EndIf}
+
+  ClearErrors
+  ${GetParameters} $0
+  ${GetOptions} "$0" "/LaunchedBy:" "$0"
+  ${If} ${Errors}
+    StrCpy $0 "unknown"
+  ${EndIf}
+  nsJSON::Set /tree ping "Data" "launched_by" /value '"$0"'
+
+  nsJSON::Set /tree ping "Data" "download_requests_blocked_by_server" /value "$DownloadRequestsBlockedByServer"
+
+  Call GetHadOldInstall
+  Pop $0
+  ${If} "$0" == "1"
+    nsJSON::Set /tree ping "Data" "had_old_install" /value true
+  ${Else}
+    nsJSON::Set /tree ping "Data" "had_old_install" /value false
+  ${EndIf}
+
+  Call GetDesktopLauncherStatus
+  Pop $0
+  nsJSON::Set /tree ping "Data" "desktop_launcher_status" /value "$0"
+
+  Call GetHadExistingProfile
+  Pop $0
+  ${If} "$0" == "1"
+    nsJSON::Set /tree ping "Data" "had_existing_profile" /value true
+  ${Else}
+    nsJSON::Set /tree ping "Data" "had_existing_profile" /value false
+  ${EndIf}
 
   Pop $1
   Pop $0
