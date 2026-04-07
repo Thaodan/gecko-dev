@@ -57,6 +57,17 @@ class nsUDPSocket final : public nsASocketHandler, public nsIUDPSocket {
 
   void CloseSocket();
 
+ public:
+  bool IsSocketClosed() const {
+#ifdef DEBUG
+    bool onSTSThread = false;
+    mSts->IsOnCurrentThread(&onSTSThread);
+    MOZ_ASSERT(onSTSThread);
+#endif
+    return !mFD;
+  }
+
+ private:
   // lock protects access to mListener;
   // so mListener is not cleared while being used/locked.
   Mutex mLock MOZ_UNANNOTATED{"nsUDPSocket.mLock"};
