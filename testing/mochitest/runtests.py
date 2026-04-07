@@ -2475,7 +2475,6 @@ toolbar#nav-bar {
             profile=options.profilePath,
             addons=extensions,
             locations=self.locations,
-            proxy=self.proxy(options),
             allowlistpaths=sandbox_allowlist_paths,
         )
 
@@ -3863,6 +3862,9 @@ toolbar#nav-bar {
         try:
             if self.startServers(options, debuggerInfo) is False:
                 return 1
+
+            # Write proxy prefs now that server ports are finalized.
+            self.profile.set_proxy(self.proxy(options))
 
             if self.mozHttp2Server is not None:
                 for key, value in self.mozHttp2Server.ports().items():
