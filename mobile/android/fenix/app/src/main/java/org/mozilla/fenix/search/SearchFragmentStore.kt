@@ -11,7 +11,6 @@ import androidx.navigation.NavController
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.selector.findTab
 import mozilla.components.browser.state.state.SearchState
-import mozilla.components.browser.state.state.searchEngines
 import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.concept.awesomebar.AwesomeBar
 import mozilla.components.concept.awesomebar.AwesomeBar.GroupedSuggestion
@@ -124,11 +123,6 @@ sealed class SearchEngineSource {
  * @property showSearchSuggestionsFromCurrentEngine Whether or not to show search suggestions from
  * the search engine in the AwesomeBar.
  * @property showSearchSuggestionsHint Whether or not to show search suggestions in private hint panel.
- * @property showSearchShortcuts Whether or not to show search shortcuts in the AwesomeBar.
- * @property areShortcutsAvailable Whether or not there are >=2 search engines installed
- * so to know to present users with certain options or not.
- * @property showSearchShortcutsSetting Whether the setting for showing search shortcuts is enabled
- * or disabled.
  * @property showClipboardSuggestions Whether or not to show clipboard suggestion in the AwesomeBar.
  * @property showSearchTermHistory Whether or not to show suggestions based on the previously used search terms
  * with the currently selected search engine.
@@ -175,9 +169,6 @@ data class SearchFragmentState(
     val shouldShowSearchSuggestions: Boolean,
     val showSearchSuggestionsFromCurrentEngine: Boolean,
     val showSearchSuggestionsHint: Boolean,
-    val showSearchShortcuts: Boolean,
-    val areShortcutsAvailable: Boolean,
-    val showSearchShortcutsSetting: Boolean,
     val showClipboardSuggestions: Boolean,
     val showSearchTermHistory: Boolean,
     val showHistorySuggestionsForCurrentEngine: Boolean,
@@ -221,9 +212,6 @@ data class SearchFragmentState(
             shouldShowSearchSuggestions = false,
             showSearchSuggestionsFromCurrentEngine = false,
             showSearchSuggestionsHint = false,
-            showSearchShortcuts = false,
-            areShortcutsAvailable = false,
-            showSearchShortcutsSetting = false,
             showClipboardSuggestions = false,
             showSearchTermHistory = false,
             showHistorySuggestionsForCurrentEngine = false,
@@ -289,9 +277,6 @@ fun createInitialSearchFragmentState(
             settings = settings,
         ),
         showSearchSuggestionsHint = false,
-        showSearchShortcuts = false,
-        areShortcutsAvailable = false,
-        showSearchShortcutsSetting = settings.shouldShowSearchShortcuts,
         showClipboardSuggestions = settings.shouldShowClipboardSuggestions,
         showSearchTermHistory = settings.shouldShowHistorySuggestions,
         showHistorySuggestionsForCurrentEngine = false,
@@ -487,7 +472,6 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
                 searchEngineSource = SearchEngineSource.Default(action.engine),
                 showSearchSuggestionsFromCurrentEngine =
                     shouldShowSearchSuggestions(action.browsingMode, action.settings),
-                showSearchShortcuts = false,
                 showClipboardSuggestions = action.settings.shouldShowClipboardSuggestions,
                 showSearchTermHistory = action.settings.shouldShowHistorySuggestions,
                 showHistorySuggestionsForCurrentEngine = false, // we'll show all history
@@ -520,7 +504,6 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
                 searchEngineSource = SearchEngineSource.Shortcut(action.engine),
                 showSearchSuggestionsFromCurrentEngine =
                     shouldShowSearchSuggestions(action.browsingMode, action.settings),
-                showSearchShortcuts = false,
                 showClipboardSuggestions = action.settings.shouldShowClipboardSuggestions,
                 showSearchTermHistory = action.settings.shouldShowHistorySuggestions,
                 showHistorySuggestionsForCurrentEngine =
@@ -550,7 +533,6 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
             state.copy(
                 searchEngineSource = SearchEngineSource.History(action.engine),
                 showSearchSuggestionsFromCurrentEngine = false,
-                showSearchShortcuts = false,
                 showClipboardSuggestions = false,
                 showSearchTermHistory = false,
                 showHistorySuggestionsForCurrentEngine = false,
@@ -573,7 +555,6 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
             state.copy(
                 searchEngineSource = SearchEngineSource.Bookmarks(action.engine),
                 showSearchSuggestionsFromCurrentEngine = false,
-                showSearchShortcuts = false,
                 showClipboardSuggestions = false,
                 showSearchTermHistory = false,
                 showHistorySuggestionsForCurrentEngine = false,
@@ -596,7 +577,6 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
             state.copy(
                 searchEngineSource = SearchEngineSource.Tabs(action.engine),
                 showSearchSuggestionsFromCurrentEngine = false,
-                showSearchShortcuts = false,
                 showClipboardSuggestions = false,
                 showSearchTermHistory = false,
                 showHistorySuggestionsForCurrentEngine = false,
@@ -627,8 +607,6 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
             )
             state.copy(
                 defaultEngine = resolvedEngine,
-                areShortcutsAvailable = action.search.searchEngines.size > 1,
-                showSearchShortcuts = false,
                 searchEngineSource = when (state.searchEngineSource) {
                     is SearchEngineSource.Default, is SearchEngineSource.None -> {
                         resolvedEngine?.let { SearchEngineSource.Default(it) }

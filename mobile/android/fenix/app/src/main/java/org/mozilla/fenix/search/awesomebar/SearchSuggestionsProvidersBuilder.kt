@@ -536,7 +536,6 @@ class SearchSuggestionsProvidersBuilder(
     /**
      * Data based on which the search suggestions providers list should be built.
      *
-     * @property showSearchShortcuts Whether to show the search shortcuts.
      * @property showSearchTermHistory Whether to show the search term history.
      * @property showHistorySuggestionsForCurrentEngine Whether to show history suggestions
      * for the current search engine.
@@ -561,7 +560,6 @@ class SearchSuggestionsProvidersBuilder(
      * @property searchEngineSource Hoe the current search engine was selected.
      */
     data class SearchProviderState(
-        val showSearchShortcuts: Boolean,
         val showSearchTermHistory: Boolean,
         val showHistorySuggestionsForCurrentEngine: Boolean,
         val showAllHistorySuggestions: Boolean,

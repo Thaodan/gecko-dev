@@ -239,7 +239,7 @@ class FenixSearchMiddleware(
                 (searchStartedForCurrentUrl || FxNimbus.features.searchSuggestionsOnHomepage.value().enabled)
         }
         val shouldShowSearchSuggestions = with(store.state) {
-            ((url != query && query.isNotBlank()) || showSearchShortcuts)
+            url != query && query.isNotBlank()
         }
         val shouldShowSuggestions = shouldShowTrendingSearches || shouldShowSearchSuggestions
 
@@ -248,7 +248,7 @@ class FenixSearchMiddleware(
         val showPrivatePrompt = with(store.state) {
             !settings.showSearchSuggestionsInPrivateOnboardingFinished &&
                     browsingModeManager.mode.isPrivate &&
-                    !isSearchSuggestionsFeatureEnabled() && !showSearchShortcuts &&
+                    !isSearchSuggestionsFeatureEnabled() &&
                     query.isNotBlank() && url != query
         }
 
@@ -266,12 +266,7 @@ class FenixSearchMiddleware(
         val suggestionsProvidersBuilder = suggestionsProvidersBuilder ?: return
         store.dispatch(
             SearchProvidersUpdated(
-                buildList {
-                    if (store.state.showSearchShortcuts) {
-                        add(suggestionsProvidersBuilder.shortcutsEnginePickerProvider)
-                    }
-                    addAll((suggestionsProvidersBuilder.getProvidersToAdd(store.state.toSearchProviderState())))
-                },
+                suggestionsProvidersBuilder.getProvidersToAdd(store.state.toSearchProviderState()).toList(),
             ),
         )
     }

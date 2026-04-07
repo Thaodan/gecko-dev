@@ -70,7 +70,6 @@ class HomeToolbarViewTest {
             },
         ),
         showSearchTermHistory = true,
-        areShortcutsAvailable = true,
         showHistorySuggestionsForCurrentEngine = true,
         showQrButton = true,
     )

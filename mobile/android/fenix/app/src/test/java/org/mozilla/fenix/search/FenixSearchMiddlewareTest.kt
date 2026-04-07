@@ -111,8 +111,6 @@ class FenixSearchMiddlewareTest {
 
         assertNotNull(store.state.defaultEngine)
         assertEquals("Engine B", store.state.defaultEngine!!.name)
-        assertTrue(store.state.areShortcutsAvailable)
-        assertFalse(store.state.showSearchShortcuts)
         assertTrue(store.state.searchEngineSource is SearchEngineSource.Default)
         assertNotNull(store.state.searchEngineSource.searchEngine)
         assertEquals("Engine B", store.state.searchEngineSource.searchEngine!!.name)
@@ -630,16 +628,12 @@ class FenixSearchMiddlewareTest {
     private fun buildEmptySearchState(
         searchEngineSource: SearchEngineSource = SearchEngineSource.Default(searchEngine = mockk()),
         defaultEngine: SearchEngine? = mockk(),
-        areShortcutsAvailable: Boolean = true,
-        showSearchShortcutsSetting: Boolean = false,
         showHistorySuggestionsForCurrentEngine: Boolean = true,
         showSponsoredSuggestions: Boolean = true,
         showNonSponsoredSuggestions: Boolean = true,
     ): SearchFragmentState = EMPTY_SEARCH_FRAGMENT_STATE.copy(
         searchEngineSource = searchEngineSource,
         defaultEngine = defaultEngine,
-        showSearchShortcutsSetting = showSearchShortcutsSetting,
-        areShortcutsAvailable = areShortcutsAvailable,
         showSearchTermHistory = true,
         showHistorySuggestionsForCurrentEngine = showHistorySuggestionsForCurrentEngine,
         showSponsoredSuggestions = showSponsoredSuggestions,
