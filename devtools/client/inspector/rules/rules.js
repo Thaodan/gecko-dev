@@ -1079,7 +1079,6 @@ class CssRuleView extends EventEmitter {
 
     this.#abortController.abort();
     this.#abortController = null;
-    this.#containers.clear();
 
     this.shortcuts.destroy();
 
@@ -1560,18 +1559,21 @@ class CssRuleView extends EventEmitter {
     const { signal } = this.#abortController;
     toggleButton.addEventListener(
       "click",
-      this.#toggleContainerVisibility.bind(
-        this,
-        containerId,
-        isPseudo,
-        !this.showPseudoElements
-      ),
+      () => {
+        this.#toggleContainerVisibility(
+          toggleButton,
+          container,
+          isPseudo,
+          !this.showPseudoElements
+        );
+      },
       { signal }
     );
 
     if (isPseudo) {
       this.#toggleContainerVisibility(
-        containerId,
+        toggleButton,
+        container,
         isPseudo,
         this.showPseudoElements
       );
@@ -1619,16 +1621,16 @@ class CssRuleView extends EventEmitter {
   /**
    * Toggle the visibility of an expandable container
    *
-   * @param  {string}  containerId
-   *         Container ID.
+   * @param  {DOMNode}  twisty
+   *         Clickable toggle DOM Node
+   * @param  {DOMNode}  container
+   *         Expandable container DOM Node
    * @param  {boolean}  isPseudo
    *         Whether or not the container will hold pseudo element rules
    * @param  {boolean}  showPseudo
    *         Whether or not pseudo element rules should be displayed
    */
-  #toggleContainerVisibility(containerId, isPseudo, showPseudo) {
-    const { header, container } = this.#containers.get(containerId);
-    const toggleButton = header.querySelector("button");
+  #toggleContainerVisibility(toggleButton, container, isPseudo, showPseudo) {
     let isOpen = toggleButton.getAttribute("aria-expanded") === "true";
 
     if (isPseudo) {
@@ -2414,6 +2416,19 @@ class CssRuleView extends EventEmitter {
   }
 
   /**
+   * Toggles the visibility of the pseudo element rule's container.
+   */
+  #togglePseudoElementRuleContainer() {
+    const container = this.styleDocument.getElementById(
+      PSEUDO_ELEMENTS_CONTAINER_ID
+    );
+    const toggle = this.styleDocument.querySelector(
+      `[aria-controls="${PSEUDO_ELEMENTS_CONTAINER_ID}"]`
+    );
+    this.#toggleContainerVisibility(toggle, container, true, true);
+  }
+
+  /**
    * Returns whether or not the rule is in the view
    *
    * @param  {StyleRuleFront} ruleFront
@@ -2566,7 +2581,7 @@ class CssRuleView extends EventEmitter {
       // Set the scroll behavior to "instant" to avoid timing issues between toggling
       // the pseudo element container and scrolling smoothly to the rule.
       scrollBehavior = "instant";
-      this.#toggleContainerVisibility(PSEUDO_ELEMENTS_CONTAINER_ID, true, true);
+      this.#togglePseudoElementRuleContainer();
     }
 
     const textProp = matchingTextPropComputed.textProp;
@@ -2614,20 +2629,23 @@ class CssRuleView extends EventEmitter {
     }
 
     // Get a potential @property section
-    const entry = this.#containers.get(REGISTERED_PROPERTIES_CONTAINER_ID);
-    if (!entry) {
+    const propertyContainer = this.styleDocument.getElementById(
+      REGISTERED_PROPERTIES_CONTAINER_ID
+    );
+    if (!propertyContainer) {
       return false;
     }
-    const { header, container } = entry;
 
-    const propertyEl = container.querySelector(`[data-name="${name}"]`);
+    const propertyEl = propertyContainer.querySelector(`[data-name="${name}"]`);
     if (!propertyEl) {
       return false;
     }
 
-    const toggleButton = header.querySelector("button");
-    if (toggleButton.ariaExpanded === "false") {
-      this.#toggleContainerVisibility(REGISTERED_PROPERTIES_CONTAINER_ID);
+    const toggle = this.styleDocument.querySelector(
+      `[aria-controls="${REGISTERED_PROPERTIES_CONTAINER_ID}"]`
+    );
+    if (toggle.ariaExpanded === "false") {
+      this.#toggleContainerVisibility(toggle, propertyContainer);
     }
 
     this.#highlightElementInRule({
