@@ -411,7 +411,14 @@ class H265 final {
   static Result<bool, nsresult> IsKeyFrame(
       const mozilla::MediaRawData* aSample);
 
- private:
+  #ifdef MOZ_WMF
+    // Return a filtered PREFIX_SEI_NUT NAL unit with user_data_unregistered
+    // payloads removed, or nullptr if no other payloads remain.
+    static already_AddRefed<mozilla::MediaByteBuffer> FilterPrefixSEIForWindows(
+        const H265NALU& aNALU);
+  #endif
+
+private:
   // Return RAW BYTE SEQUENCE PAYLOAD (rbsp) from NAL content.
   static already_AddRefed<mozilla::MediaByteBuffer> DecodeNALUnit(
       const Span<const uint8_t>& aNALU);
