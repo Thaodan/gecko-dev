@@ -12,7 +12,6 @@ import androidx.benchmark.macro.StartupTimingMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import org.junit.Rule
 import org.junit.Test
-import org.mozilla.fenix.benchmark.utils.EXTRA_COMPOSABLE_TOOLBAR
 import org.mozilla.fenix.benchmark.utils.FENIX_HOME_DEEP_LINK
 import org.mozilla.fenix.benchmark.utils.HtmlAsset
 import org.mozilla.fenix.benchmark.utils.MockWebServerRule
@@ -79,7 +78,6 @@ class BaselineProfilesPrivateBrowsingBenchmark {
             },
         ) {
             val intent = Intent(Intent.ACTION_VIEW, FENIX_HOME_DEEP_LINK)
-                .putExtra(EXTRA_COMPOSABLE_TOOLBAR, true)
 
             startActivityAndWait(intent = intent)
 

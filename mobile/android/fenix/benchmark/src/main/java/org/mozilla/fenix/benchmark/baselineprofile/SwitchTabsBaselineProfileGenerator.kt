@@ -10,7 +10,6 @@ import androidx.annotation.RequiresApi
 import androidx.benchmark.macro.junit4.BaselineProfileRule
 import org.junit.Rule
 import org.junit.Test
-import org.mozilla.fenix.benchmark.utils.EXTRA_COMPOSABLE_TOOLBAR
 import org.mozilla.fenix.benchmark.utils.FENIX_HOME_DEEP_LINK
 import org.mozilla.fenix.benchmark.utils.HtmlAsset
 import org.mozilla.fenix.benchmark.utils.MockWebServerRule
@@ -62,7 +61,6 @@ class SwitchTabsBaselineProfileGenerator {
             packageName = TARGET_PACKAGE,
         ) {
             val intent = Intent(Intent.ACTION_VIEW, FENIX_HOME_DEEP_LINK)
-                .putExtra(EXTRA_COMPOSABLE_TOOLBAR, true)
             intent.setPackage(packageName)
 
             startActivityAndWait(intent = intent)

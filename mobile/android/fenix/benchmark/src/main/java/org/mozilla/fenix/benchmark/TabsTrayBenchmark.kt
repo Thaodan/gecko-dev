@@ -18,7 +18,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mozilla.fenix.benchmark.utils.EXTRA_COMPOSABLE_TOOLBAR
 import org.mozilla.fenix.benchmark.utils.EXTRA_TAB_TRAY_ANIMATION
 import org.mozilla.fenix.benchmark.utils.EXTRA_TAB_TRAY_ENHANCEMENTS
 import org.mozilla.fenix.benchmark.utils.FENIX_HOME_DEEP_LINK
@@ -111,7 +110,6 @@ class TabsTrayBenchmark {
     private fun MacrobenchmarkScope.prepareTabsTray(animationsEnabled: Boolean) {
         pressHome()
         val intent = Intent(Intent.ACTION_VIEW, FENIX_HOME_DEEP_LINK)
-            .putExtra(EXTRA_COMPOSABLE_TOOLBAR, true)
             .putExtra(EXTRA_TAB_TRAY_ENHANCEMENTS, true)
             .putExtra(EXTRA_TAB_TRAY_ANIMATION, animationsEnabled)
 
