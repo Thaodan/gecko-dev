@@ -4,12 +4,13 @@
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fmt::{Display, Error, Formatter};
-use std::fs::{create_dir, exists, remove_dir_all};
+use std::fs::{create_dir, exists, remove_dir_all, File};
+use std::io::Write;
 use std::os::unix::fs::symlink;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use log::info;
+use log::{error, info};
 
 use crate::runner::CommandRunner;
 use crate::updater::{prepare_updater, CertOverride};
@@ -161,6 +162,7 @@ fn run_test(
     let test_dir = setup_test_dir(&test.mar, tmpdir)?;
     let mut diff_file = artifact_dir.to_path_buf();
     diff_file.push(format!("{}.summary.log", test.full_id()));
+
     let mut cmd = Command::new("/bin/bash");
     cmd.arg(check_updates)
         .arg(target_platform)
@@ -184,24 +186,32 @@ fn run_test(
         )
         .arg(appname)
         .current_dir(test_dir);
-    return match runner.run(&mut cmd)? {
-        0 => Ok(TestResult::Pass),
-        1 => Ok(TestResult::SetupErr(
-            "Failed to unpack from or to build".to_string(),
-        )),
-        2 => Ok(TestResult::SetupErr(
-            "Failed to cd into from build application directory".to_string(),
-        )),
-        3 => Ok(TestResult::SetupErr(
-            "from build application directory does not exist".to_string(),
-        )),
-        4 => Ok(TestResult::UpdateStatusErr),
-        5 => Ok(TestResult::UpdateSettingsMissingErr),
-        6 => Ok(TestResult::ChannelPrefsMissingErr),
-        7 => Ok(TestResult::DifferencesFoundErr),
-        8 => Ok(TestResult::DiffErr),
-        _ => Ok(TestResult::UnknownErr),
+    let command_result = runner.run(cmd)?;
+    let result = match command_result.exit_code {
+        0 => TestResult::Pass,
+        1 => TestResult::SetupErr("Failed to unpack from or to build".to_string()),
+        2 => TestResult::SetupErr("Failed to cd into from build application directory".to_string()),
+        3 => TestResult::SetupErr("from build application directory does not exist".to_string()),
+        4 => TestResult::UpdateStatusErr,
+        5 => TestResult::UpdateSettingsMissingErr,
+        6 => TestResult::ChannelPrefsMissingErr,
+        7 => TestResult::DifferencesFoundErr,
+        8 => TestResult::DiffErr,
+        _ => TestResult::UnknownErr,
     };
+
+    // save the output to an artifact
+    let mut output_file = artifact_dir.to_path_buf();
+    output_file.push(format!("{}.output.log", test.full_id()));
+    let mut f = File::create(output_file)?;
+    f.write_all(command_result.output.as_bytes())?;
+
+    // only echo it out on failure
+    if result != TestResult::Pass {
+        error!("{}", command_result.output);
+    }
+
+    return Ok(result);
 }
 
 /// Setup the test directory in a way that is compatible with the expectations
@@ -227,13 +237,18 @@ fn setup_test_dir(mar: &Path, tmpdir: &Path) -> Result<PathBuf, Box<dyn std::err
 
 #[cfg(test)]
 mod tests {
+    use crate::runner::CommandResult;
+
     use super::*;
     use tempfile::TempDir;
 
     struct FakeRunner(i32);
     impl CommandRunner for FakeRunner {
-        fn run(&self, _: &mut Command) -> Result<i32, Box<dyn std::error::Error>> {
-            Ok(self.0)
+        fn run(&self, _: Command) -> Result<CommandResult, Box<dyn std::error::Error>> {
+            Ok(CommandResult {
+                exit_code: self.0,
+                output: String::new(),
+            })
         }
     }
 

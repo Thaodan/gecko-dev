@@ -9,6 +9,8 @@ use std::process::Command;
 use tar::Archive;
 use xz::read::XzDecoder;
 
+use log::error;
+
 use crate::runner::CommandRunner;
 
 /// Represents a certificate in an updater binary that should be replaced
@@ -98,9 +100,12 @@ fn replace_certs(
         command.arg(cert_pair.orig.clone());
         command.arg(cert_pair.replacement.clone());
     }
-    if runner.run(&mut command)? == 0 {
+    let result = runner.run(command)?;
+    if result.exit_code == 0 {
         return Ok(());
     }
+    // only log the output on error
+    error!("{}", result.output);
     return Err(Box::new(Error::new(
         ErrorKind::Other,
         "Failed to replace certs!",
@@ -109,6 +114,8 @@ fn replace_certs(
 
 #[cfg(test)]
 mod tests {
+    use crate::runner::CommandResult;
+
     use super::*;
     use std::str::FromStr;
     use tempfile::TempDir;
@@ -135,8 +142,11 @@ mod tests {
 
     struct FakeRunner(i32);
     impl CommandRunner for FakeRunner {
-        fn run(&self, _: &mut Command) -> Result<i32, Box<dyn std::error::Error>> {
-            Ok(self.0)
+        fn run(&self, _: Command) -> Result<CommandResult, Box<dyn std::error::Error>> {
+            Ok(CommandResult {
+                exit_code: self.0,
+                output: String::new(),
+            })
         }
     }
 
