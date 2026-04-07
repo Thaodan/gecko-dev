@@ -199,6 +199,13 @@ toolbar[inactive="true"] .urlbar,
   .urlbar:not([focused])[textoverflow="left"][domaindir="rtl"] > .urlbar-input-container > .urlbar-input-box > & {
     mask-image: linear-gradient(to right, transparent var(--urlbar-scheme-size), black calc(var(--urlbar-scheme-size) + 3ch));
   }
+
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media -moz-pref("browser.urlbar.nova.featureGate") {
+    &::selection {
+      border-radius: var(--border-radius-xsmall);
+    }
+  }
 }
 
 #urlbar-scheme {

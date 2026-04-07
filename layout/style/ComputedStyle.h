@@ -128,7 +128,7 @@ class ComputedStyle {
     return bool(Flags() & Flag::HAS_AUTHOR_SPECIFIED_BORDER_BACKGROUND);
   }
 
-  // Whether there are author-specific rules for text color.
+  // Whether there are author-specific rules for text `color`.
   bool HasAuthorSpecifiedTextColor() const {
     return bool(Flags() & Flag::HAS_AUTHOR_SPECIFIED_TEXT_COLOR);
   }
