@@ -140,7 +140,7 @@ static AlignedAudioBuffer CopyAndPackAudio(AVFrame* aFrame,
     // Planar audio data. Convert it from 32 bits float to S16
     // and pack it into something we can understand.
     AudioDataValue* tmp = audio.get();
-    float** data = reinterpret_cast<float**>(aFrame->data);
+    float** data = reinterpret_cast<float**>(aFrame->extended_data);
     for (uint32_t frame = 0; frame < aNumAFrames; frame++) {
       for (uint32_t channel = 0; channel < aNumChannels; channel++) {
         *tmp++ = FloatToAudioSample<int16_t>(data[channel][frame]);
@@ -154,7 +154,7 @@ static AlignedAudioBuffer CopyAndPackAudio(AVFrame* aFrame,
   } else if (aFrame->format == AV_SAMPLE_FMT_S16P) {
     // Planar audio data. Pack it into something we can understand.
     AudioDataValue* tmp = audio.get();
-    AudioDataValue** data = reinterpret_cast<AudioDataValue**>(aFrame->data);
+    AudioDataValue** data = reinterpret_cast<AudioDataValue**>(aFrame->extended_data);
     for (uint32_t frame = 0; frame < aNumAFrames; frame++) {
       for (uint32_t channel = 0; channel < aNumChannels; channel++) {
         *tmp++ = data[channel][frame];
@@ -173,7 +173,7 @@ static AlignedAudioBuffer CopyAndPackAudio(AVFrame* aFrame,
     // Planar audio data. Convert it from S32 to S16
     // and pack it into something we can understand.
     AudioDataValue* tmp = audio.get();
-    int32_t** data = reinterpret_cast<int32_t**>(aFrame->data);
+    int32_t** data = reinterpret_cast<int32_t**>(aFrame->extended_data);
     for (uint32_t frame = 0; frame < aNumAFrames; frame++) {
       for (uint32_t channel = 0; channel < aNumChannels; channel++) {
         *tmp++ = data[channel][frame] / (1U << 16);
@@ -189,7 +189,7 @@ static AlignedAudioBuffer CopyAndPackAudio(AVFrame* aFrame,
   } else if (aFrame->format == AV_SAMPLE_FMT_FLTP) {
     // Planar audio data. Pack it into something we can understand.
     AudioDataValue* tmp = audio.get();
-    AudioDataValue** data = reinterpret_cast<AudioDataValue**>(aFrame->data);
+    AudioDataValue** data = reinterpret_cast<AudioDataValue**>(aFrame->extended_data);
     for (uint32_t frame = 0; frame < aNumAFrames; frame++) {
       for (uint32_t channel = 0; channel < aNumChannels; channel++) {
         *tmp++ = data[channel][frame];
@@ -208,7 +208,7 @@ static AlignedAudioBuffer CopyAndPackAudio(AVFrame* aFrame,
     // Planar audio data. Convert it from S16 to 32 bits float
     // and pack it into something we can understand.
     AudioDataValue* tmp = audio.get();
-    int16_t** data = reinterpret_cast<int16_t**>(aFrame->data);
+    int16_t** data = reinterpret_cast<int16_t**>(aFrame->extended_data);
     for (uint32_t frame = 0; frame < aNumAFrames; frame++) {
       for (uint32_t channel = 0; channel < aNumChannels; channel++) {
         *tmp++ = AudioSampleToFloat(data[channel][frame]);
@@ -227,7 +227,7 @@ static AlignedAudioBuffer CopyAndPackAudio(AVFrame* aFrame,
     // Planar audio data. Convert it from S32 to 32 bits float
     // and pack it into something we can understand.
     AudioDataValue* tmp = audio.get();
-    int32_t** data = reinterpret_cast<int32_t**>(aFrame->data);
+    int32_t** data = reinterpret_cast<int32_t**>(aFrame->extended_data);
     for (uint32_t frame = 0; frame < aNumAFrames; frame++) {
       for (uint32_t channel = 0; channel < aNumChannels; channel++) {
         *tmp++ = AudioSampleToFloat(data[channel][frame]);
