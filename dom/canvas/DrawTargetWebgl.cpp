@@ -1827,6 +1827,7 @@ bool DrawTargetWebgl::SharedContext::UploadSurface(
   if (srcRect.IsEmpty()) {
     return true;
   }
+  Maybe<DataSourceSurface::ScopedMap> map;
   if (aData) {
     // If the source rect could not possibly overlap the surface, then it is
     // effectively empty with nothing to upload.
@@ -1847,13 +1848,13 @@ bool DrawTargetWebgl::SharedContext::UploadSurface(
     // The surface needs to be uploaded to its backing texture either to
     // initialize or update the texture handle contents. Map the data
     // contents of the surface so it can be read.
-    DataSourceSurface::ScopedMap map(aData, DataSourceSurface::READ);
-    if (!map.IsMapped()) {
+    map.emplace(aData, DataSourceSurface::READ);
+    if (!map->IsMapped()) {
       return false;
     }
-    int32_t stride = map.GetStride();
+    int32_t stride = map->GetStride();
     if (mCurrentTarget && mCurrentTarget->mShmem.IsWritable() &&
-        map.GetData() == mCurrentTarget->mShmem.get<uint8_t>()) {
+        map->GetData() == mCurrentTarget->mShmem.get<uint8_t>()) {
       texDesc.sd = Some(layers::SurfaceDescriptorBuffer(
           layers::RGBDescriptor(mCurrentTarget->mSize, SurfaceFormat::R8G8B8A8),
           mCurrentTarget->mShmem));
@@ -1866,7 +1867,7 @@ bool DrawTargetWebgl::SharedContext::UploadSurface(
       // Get the data pointer range considering the sampling rect offset and
       // size.
       Range<const uint8_t> range(
-          map.GetData() + srcRect.y * size_t(stride) + srcRect.x * bpp,
+          map->GetData() + srcRect.y * size_t(stride) + srcRect.x * bpp,
           std::max(srcRect.height - 1, 0) * size_t(stride) +
               srcRect.width * bpp);
       texDesc.cpuData = Some(RawBuffer(range));
