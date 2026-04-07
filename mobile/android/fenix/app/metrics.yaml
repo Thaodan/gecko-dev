@@ -13641,10 +13641,11 @@ customization_settings:
       item:
         description: |
           A string containing the name of the shortcut the user selected. These items include:
-          new_tab, share, bookmark, translate, homepage, back
+          new_tab, share, bookmark, translate, homepage, back, none.
         type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2002636
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2020026
     data_reviews:
       - https://phabricator.services.mozilla.com/D274607
     data_sensitivity:

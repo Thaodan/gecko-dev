@@ -1257,6 +1257,8 @@
     <string name="toolbar_customize_shortcut_homepage">Homepage</string>
     <!-- Back shortcut in toolbar customization -->
     <string name="toolbar_customize_shortcut_back">Back</string>
+    <!-- Label for choosing in toolbar customization settings to not use any custom shortcut button. -->
+    <string name="toolbar_customize_shortcut_none">None</string>
 
     <!-- App icon Preferences -->
     <!-- Title for the preference that lets the user pick a new app icon -->

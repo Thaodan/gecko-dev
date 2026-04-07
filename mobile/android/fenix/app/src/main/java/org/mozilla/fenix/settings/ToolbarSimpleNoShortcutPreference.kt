@@ -13,32 +13,38 @@ import androidx.preference.PreferenceViewHolder
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.settings
 
-const val EXPANDED_TOOLBAR_TYPE = "expanded"
+const val NO_SHORTCUT_SIMPLE_TOOLBAR_TYPE = "simple_no_shortcut"
 
-internal class ToolbarExpandedShortcutPreference @JvmOverloads constructor(
+internal class ToolbarSimpleNoShortcutPreference @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
 ) : ToolbarShortcutPreference(context, attrs) {
 
-    override val options: List<ShortcutOption> = expandedShortcutOptions
+    override val options: List<ShortcutOption> = simpleShortcutOptions
 
-    override fun readSelectedKey(): String = context.settings().toolbarExpandedShortcutKey
+    /**
+     * Optional callback for when a new shortcut option is selected.
+     */
+    var optionChangedListener: ((ShortcutOption?) -> Unit)? = null
+
+    override fun readSelectedKey(): String = context.settings().toolbarSimpleShortcutKey
 
     override fun writeSelectedKey(key: String) {
-        context.settings().toolbarExpandedShortcutKey = key
+        context.settings().toolbarSimpleShortcutKey = key
+        optionChangedListener?.invoke((options.firstOrNull { it.key.value == key }))
     }
 
-    override fun getToolbarType(): String = EXPANDED_TOOLBAR_TYPE
+    override fun getToolbarType(): String = NO_SHORTCUT_SIMPLE_TOOLBAR_TYPE
 
-    override fun getSelectedIconImageView(holder: PreferenceViewHolder): ImageView {
+    override fun getSelectedIconImageView(holder: PreferenceViewHolder): ImageView? {
         val simplePreview = holder.findViewById(R.id.toolbar_simple_shortcut_preview)
         val simpleNoShortcutPreview = holder.findViewById(R.id.toolbar_simple_no_shortcut_preview)
         val expandedPreview = holder.findViewById(R.id.toolbar_expanded_shortcut_preview)
 
         simplePreview.visibility = GONE
-        simpleNoShortcutPreview.visibility = GONE
-        expandedPreview.visibility = VISIBLE
+        simpleNoShortcutPreview.visibility = VISIBLE
+        expandedPreview.visibility = GONE
 
-        return expandedPreview.findViewById(R.id.selected_expanded_shortcut_icon)
+        return null
     }
 }
