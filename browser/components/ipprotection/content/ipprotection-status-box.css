@@ -16,7 +16,7 @@
 .connected {
   background-color: var(--background-color-success);
 
-  ::slotted([slot="icon"]) {
+  ::slotted([slot="image"]) {
     -moz-context-properties: fill;
     fill: var(--icon-color-success);
   }
@@ -25,7 +25,7 @@
 .excluded {
   background-color: var(--background-color-success);
 
-  ::slotted([slot="icon"]) {
+  ::slotted([slot="image"]) {
     -moz-context-properties: fill, stroke;
     fill: transparent;
     stroke: var(--icon-color-success);
@@ -35,25 +35,24 @@
 .connecting {
   background-color: var(--background-color-box-info);
 
-  ::slotted([slot="icon"]) {
+  ::slotted([slot="image"]) {
     -moz-context-properties: fill;
     fill: var(--icon-color);
   }
 }
 
 .network-error {
-  background-color: var(--background-color-information);
+  background-color: var(--background-color-critical);
 
-  ::slotted([slot="icon"]) {
+  ::slotted([slot="image"]) {
     -moz-context-properties: fill;
-    fill: var(--icon-color-information);
+    fill: var(--icon-color-critical);
   }
 }
 
 #content-container {
   display: flex;
   flex-direction: column;
-  border: var(--border-width) solid var(--border-color);
   border-radius: var(--border-radius-medium);
   padding: var(--space-medium);
 }
@@ -61,7 +60,6 @@
 #header {
   display: flex;
   justify-content: space-between;
-  gap: var(--space-medium);
 }
 
 #title {
@@ -98,9 +96,9 @@
   margin-top: var(--space-large);
 }
 
-::slotted([slot="icon"]) {
-  height: var(--size-item-xlarge);
-  width: var(--size-item-xlarge);
+::slotted([slot="image"]) {
+  height: var(--size-image-small);
+  width: var(--size-image-small);
 }
 
 ::slotted([slot="location-icon"]) {
