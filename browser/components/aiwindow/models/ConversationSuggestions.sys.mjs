@@ -166,12 +166,14 @@ export const NewTabStarterGenerator = {
  * @param {Array} contextTabs - Array of tab objects with title, url, favicon
  * @param {number} n - Number of suggestions to generate (default 6)
  * @param {boolean} useMemories - Whether to include user memories in prompt (default false)
+ * @param {string | null} flowId - Flow ID for correlating with firefox_ai_runtime telemetry
  * @returns {Promise<Array>} Array of {text, type} suggestion objects
  */
 export async function generateConversationStartersSidebar(
   contextTabs = [],
   n = 2,
-  useMemories = false
+  useMemories = false,
+  flowId = null
 ) {
   try {
     const today = new Date().toISOString().slice(0, 10);
@@ -203,7 +205,8 @@ export async function generateConversationStartersSidebar(
     // Build engine and load prompt
     const engineInstance = await openAIEngine.build(
       MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER,
-      DEFAULT_ENGINE_ID
+      DEFAULT_ENGINE_ID,
+      flowId
     );
 
     const conversationStarterSystemPrompt = await engineInstance.loadPrompt(
@@ -270,13 +273,15 @@ export async function generateConversationStartersSidebar(
  * @param {object} currentTab - Current tab object with title, url
  * @param {number} n - Number of suggestions to generate (default 6)
  * @param {boolean} useMemories - Whether to include user memories in prompt (default false)
+ * @param {string | null} flowId - Flow ID for correlating with firefox_ai_runtime telemetry
  * @returns {Promise<Array>} Array of {text, type} suggestion objects
  */
 export async function generateFollowupPrompts(
   conversationHistory,
   currentTab,
   n = 2,
-  useMemories = false
+  useMemories = false,
+  flowId = null
 ) {
   try {
     const today = new Date().toISOString().slice(0, 10);
@@ -292,7 +297,8 @@ export async function generateFollowupPrompts(
     // Build engine and load prompt
     const engineInstance = await openAIEngine.build(
       MODEL_FEATURES.CONVERSATION_SUGGESTIONS_FOLLOWUP,
-      DEFAULT_ENGINE_ID
+      DEFAULT_ENGINE_ID,
+      flowId
     );
 
     const conversationFollowupPrompt = await engineInstance.loadPrompt(

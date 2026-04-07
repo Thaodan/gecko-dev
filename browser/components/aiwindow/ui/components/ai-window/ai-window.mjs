@@ -748,7 +748,12 @@ export class AIWindow extends MozLitElement {
           this.#memoriesToggled ?? this.#memoriesIconShown;
 
         const sidebarStarters = await lazy
-          .generateConversationStartersSidebar(contextTabs, 2, memoriesEnabled)
+          .generateConversationStartersSidebar(
+            contextTabs,
+            2,
+            memoriesEnabled,
+            this.conversationId
+          )
           .catch(e => {
             lazy.log.error("[Prompts] Failed to generate sidebar starters:", e);
             return null;
@@ -1221,7 +1226,8 @@ export class AIWindow extends MozLitElement {
         title: this.#conversation.pageMeta?.title || "",
         description: this.#conversation.pageMeta?.description || "",
       },
-      assistantResponse
+      assistantResponse,
+      this.conversationId
     );
     const title = await this.#conversation.titlePromise;
     delete this.#conversation.titlePromise;
@@ -1303,7 +1309,8 @@ export class AIWindow extends MozLitElement {
     try {
       const engineInstance = await lazy.openAIEngine.build(
         lazy.MODEL_FEATURES.CHAT,
-        lazy.DEFAULT_ENGINE_ID
+        lazy.DEFAULT_ENGINE_ID,
+        this.conversationId
       );
 
       if (inputText) {

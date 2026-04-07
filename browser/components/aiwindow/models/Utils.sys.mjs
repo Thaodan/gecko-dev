@@ -354,6 +354,20 @@ export class openAIEngine {
   #purpose = null;
 
   /**
+   * Feature name passed to PipelineOptions as featureId for telemetry.
+   *
+   * @type {string | null}
+   */
+  #feature = null;
+
+  /**
+   * Flow ID for correlating frontend and backend telemetry.
+   *
+   * @type {string | null}
+   */
+  #flowId = null;
+
+  /**
    * Gets the Remote Settings client for AI window configurations.
    *
    * @returns {RemoteSettingsClient}
@@ -607,10 +621,12 @@ export class openAIEngine {
    *   The feature name to use to retrieve remote settings for prompts.
    * @param {string} engineId
    *   The engine ID for MLEngine creation. Defaults to DEFAULT_ENGINE_ID.
+   * @param {string | null} [flowId]
+   *   Flow ID for correlating frontend and backend telemetry.
    * @returns {Promise<object>}
    *   Promise that will resolve to the configured engine instance.
    */
-  static async build(feature, engineId = DEFAULT_ENGINE_ID) {
+  static async build(feature, engineId = DEFAULT_ENGINE_ID, flowId = null) {
     const engine = new openAIEngine();
 
     await engine.loadConfig(feature);
@@ -623,12 +639,16 @@ export class openAIEngine {
       config?.purpose ??
       FEATURE_PURPOSES[feature] ??
       FEATURE_PURPOSES[DEFAULT_PURPOSE];
+    engine.#feature = feature;
+    engine.#flowId = flowId;
 
     engine.engineInstance = await openAIEngine.#createOpenAIEngine(
       engineId,
       engine.#serviceType,
       engine.#purpose,
-      engine.model
+      engine.model,
+      flowId,
+      feature
     );
 
     return engine;
@@ -659,13 +679,17 @@ export class openAIEngine {
    * @param {string} serviceType  The type of message to be sent ("ai", "memories", "s2s")
    * @param {string} purpose      The purpose of the request, used for telemetry tracking
    * @param {string | null} modelId  The resolved model ID (already contains fallback logic)
+   * @param {string | null} flowId   Flow ID for correlating frontend and backend telemetry
+   * @param {string | null} featureId  Feature name passed to PipelineOptions
    * @returns {Promise<object>}   The configured engine instance
    */
   static async #createOpenAIEngine(
     engineId,
     serviceType,
     purpose,
-    modelId = null
+    modelId = null,
+    flowId = null,
+    featureId = null
   ) {
     const extraHeadersPref = Services.prefs.getStringPref(
       "browser.smartwindow.extraHeaders",
@@ -685,6 +709,8 @@ export class openAIEngine {
         backend: "openai",
         baseURL: Services.prefs.getStringPref(ENDPOINT_PREF, ""),
         engineId,
+        featureId,
+        flowId,
         modelId,
         modelRevision: "main",
         taskName: "text-generation",
@@ -775,7 +801,9 @@ export class openAIEngine {
       this.#engineId,
       this.#serviceType,
       this.#purpose,
-      this.model
+      this.model,
+      this.#flowId,
+      this.#feature
     );
   }
 
