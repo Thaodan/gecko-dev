@@ -76,7 +76,6 @@ class SearchFragmentStoreTest {
         appStore = AppStore(initialState = AppState(mode = BrowsingMode.Normal))
         every { components.appStore } returns appStore
         every { components.core.store.state } returns BrowserState()
-        every { settings.shouldShowSearchShortcuts } returns true
         every { settings.shouldShowHistorySuggestions } returns true
         every { settings.shouldShowSearchSuggestions } returns true
         every { settings.shouldShowSearchSuggestionsInPrivate } returns false
@@ -148,7 +147,6 @@ class SearchFragmentStoreTest {
         appStore = AppStore(initialState = AppState(mode = BrowsingMode.Private))
         every { components.appStore } returns appStore
         every { components.core.store.state } returns BrowserState()
-        every { settings.shouldShowSearchShortcuts } returns true
         every { settings.shouldShowHistorySuggestions } returns true
         every { settings.shouldShowSearchSuggestions } returns true
         every { settings.shouldShowSearchSuggestionsInPrivate } returns false
@@ -397,8 +395,6 @@ class SearchFragmentStoreTest {
         val initialState = emptyDefaultState(showHistorySuggestionsForCurrentEngine = false)
         val store = SearchFragmentStore(initialState)
 
-        every { settings.shouldShowSearchShortcuts } returns false
-
         store.dispatch(
             SearchFragmentAction.SearchDefaultEngineSelected(
                 engine = searchEngine,
@@ -415,8 +411,6 @@ class SearchFragmentStoreTest {
         val initialState = emptyDefaultState(showHistorySuggestionsForCurrentEngine = false)
         val store = SearchFragmentStore(initialState)
 
-        every { settings.shouldShowSearchShortcuts } returns true
-
         store.dispatch(
             SearchFragmentAction.SearchDefaultEngineSelected(
                 engine = searchEngine,
@@ -432,8 +426,6 @@ class SearchFragmentStoreTest {
     fun `WHEN the default search engine is selected THEN search shortcuts are not displayed`() = runTest {
         val initialState = emptyDefaultState(showHistorySuggestionsForCurrentEngine = false)
         val store = SearchFragmentStore(initialState)
-
-        every { settings.shouldShowSearchShortcuts } returns true
 
         store.dispatch(
             SearchFragmentAction.SearchDefaultEngineSelected(
@@ -452,7 +444,6 @@ class SearchFragmentStoreTest {
     fun `GIVEN search shortcuts are disabled in settings WHEN the search engine shortcut is selected THEN search shortcuts are not displayed`() = runTest {
         val initialState = emptyDefaultState(showHistorySuggestionsForCurrentEngine = false)
         val store = SearchFragmentStore(initialState)
-        every { settings.shouldShowSearchShortcuts } returns false
 
         val newEngine: SearchEngine = mockk {
             every { id } returns "DuckDuckGo"
@@ -475,7 +466,6 @@ class SearchFragmentStoreTest {
     fun `GIVEN search shortcuts are enabled in settings WHEN the search engine shortcut is selected THEN search shortcuts are not displayed`() = runTest {
         val initialState = emptyDefaultState(showHistorySuggestionsForCurrentEngine = false)
         val store = SearchFragmentStore(initialState)
-        every { settings.shouldShowSearchShortcuts } returns true
 
         val newEngine: SearchEngine = mockk {
             every { id } returns "DuckDuckGo"
@@ -498,7 +488,6 @@ class SearchFragmentStoreTest {
     fun `GIVEN the search engine shortcut is selected THEN search shortcuts are not displayed`() = runTest {
         val initialState = emptyDefaultState(showHistorySuggestionsForCurrentEngine = false)
         val store = SearchFragmentStore(initialState)
-        every { settings.shouldShowSearchShortcuts } returns true
 
         val newEngine: SearchEngine = mockk {
             every { id } returns "DuckDuckGo"
@@ -841,7 +830,7 @@ class SearchFragmentStoreTest {
     fun `GIVEN private browsing mode WHEN the search engine is the default one THEN search suggestions providers are updated`() = runTest {
         val initialState = emptyDefaultState(showHistorySuggestionsForCurrentEngine = false)
         val store = SearchFragmentStore(initialState)
-        every { settings.shouldShowSearchShortcuts } returns false
+
         every { settings.shouldShowSearchSuggestions } returns true
         every { settings.shouldShowClipboardSuggestions } returns true
         every { settings.shouldShowHistorySuggestions } returns true
@@ -889,7 +878,7 @@ class SearchFragmentStoreTest {
     fun `GIVEN normal browsing mode WHEN the search engine is the default one THEN search suggestions providers are updated`() = runTest {
         val initialState = emptyDefaultState(showHistorySuggestionsForCurrentEngine = false)
         val store = SearchFragmentStore(initialState)
-        every { settings.shouldShowSearchShortcuts } returns false
+
         every { settings.shouldShowSearchSuggestions } returns true
         every { settings.shouldShowClipboardSuggestions } returns true
         every { settings.shouldShowHistorySuggestions } returns true
@@ -941,7 +930,6 @@ class SearchFragmentStoreTest {
             every { trendingUrl } returns null
         }
 
-        every { settings.shouldShowSearchShortcuts } returns true
         every { settings.shouldShowClipboardSuggestions } returns true
         every { settings.shouldShowHistorySuggestions } returns true
         every { settings.shouldShowBookmarkSuggestions } returns true
@@ -1022,7 +1010,6 @@ class SearchFragmentStoreTest {
         every { searchEngine.isGeneral } returns false
         every { searchEngine.trendingUrl } returns "https://mozilla.org"
         every { settings.shouldShowSearchSuggestions } returns false
-        every { settings.shouldShowSearchShortcuts } returns false
         every { settings.shouldShowClipboardSuggestions } returns false
         every { settings.shouldShowHistorySuggestions } returns true
         every { settings.shouldShowBookmarkSuggestions } returns false

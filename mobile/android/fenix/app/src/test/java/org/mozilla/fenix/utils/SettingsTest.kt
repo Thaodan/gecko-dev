@@ -351,13 +351,6 @@ class SettingsTest {
     }
 
     @Test
-    fun shouldShowSearchShortcuts() {
-        // When just created
-        // Then
-        assertFalse(settings.shouldShowSearchShortcuts)
-    }
-
-    @Test
     fun shouldShowHistorySuggestions() {
         // When just created
         // Then
