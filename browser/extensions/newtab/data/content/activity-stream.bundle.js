@@ -2005,7 +2005,6 @@ const LinkMenuOptions = {
         is_sponsored: !!site.sponsored_tile_id,
         event_source: "CONTEXT_MENU",
         topic: site.topic,
-        firstVisibleTimestamp: site.firstVisibleTimestamp,
         tile_id: site.tile_id,
         recommendation_id: site.recommendation_id,
         scheduled_corpus_item_id: site.scheduled_corpus_item_id,
@@ -2477,8 +2476,6 @@ class _LinkMenu extends (external_React_default()).PureComponent {
                 card_type,
                 corpus_item_id,
                 event_source,
-                fetchTimestamp,
-                firstVisibleTimestamp,
                 format,
                 is_section_followed,
                 received_rank,
@@ -2495,8 +2492,6 @@ class _LinkMenu extends (external_React_default()).PureComponent {
                 card_type,
                 corpus_item_id,
                 event_source,
-                fetchTimestamp,
-                firstVisibleTimestamp,
                 format,
                 received_rank,
                 recommendation_id,
@@ -2686,7 +2681,6 @@ class _DSLinkMenu extends (external_React_default()).PureComponent {
         recommendation_id: this.props.recommendation_id,
         corpus_item_id: this.props.corpus_item_id,
         scheduled_corpus_item_id: this.props.scheduled_corpus_item_id,
-        firstVisibleTimestamp: this.props.firstVisibleTimestamp,
         recommended_at: this.props.recommended_at,
         received_rank: this.props.received_rank,
         topic: this.props.topic,
@@ -3090,7 +3084,6 @@ class ImpressionStats_ImpressionStats extends (external_React_default()).PureCom
             shim: link.shim
           } : {}),
           recommendation_id: link.recommendation_id,
-          fetchTimestamp: link.fetchTimestamp,
           corpus_item_id: link.corpus_item_id,
           scheduled_corpus_item_id: link.scheduled_corpus_item_id,
           recommended_at: link.recommended_at,
@@ -3109,8 +3102,7 @@ class ImpressionStats_ImpressionStats extends (external_React_default()).PureCom
             is_section_followed: link.is_section_followed,
             layout_name: link.sectionLayoutName
           } : {})
-        })),
-        firstVisibleTimestamp: props.firstVisibleTimestamp
+        }))
       };
       props.dispatch(actionCreators.DiscoveryStreamImpressionStats(impressionData));
       this.impressionCardGuids = cards.map(link => link.id);
@@ -3827,8 +3819,6 @@ class _DSCard extends (external_React_default()).PureComponent {
           ...(this.props.shim && this.props.shim.click ? {
             shim: this.props.shim.click
           } : {}),
-          fetchTimestamp: this.props.fetchTimestamp,
-          firstVisibleTimestamp: this.props.firstVisibleTimestamp,
           corpus_item_id: this.props.corpus_item_id,
           scheduled_corpus_item_id: this.props.scheduled_corpus_item_id,
           recommended_at: this.props.recommended_at,
@@ -4144,7 +4134,6 @@ class _DSCard extends (external_React_default()).PureComponent {
           shim: this.props.shim.impression
         } : {}),
         recommendation_id: this.props.recommendation_id,
-        fetchTimestamp: this.props.fetchTimestamp,
         corpus_item_id: this.props.corpus_item_id,
         scheduled_corpus_item_id: this.props.scheduled_corpus_item_id,
         recommended_at: this.props.recommended_at,
@@ -4169,8 +4158,7 @@ class _DSCard extends (external_React_default()).PureComponent {
         } : {})
       }],
       dispatch: this.props.dispatch,
-      source: this.props.type,
-      firstVisibleTimestamp: this.props.firstVisibleTimestamp
+      source: this.props.type
     }), ctaButtonVariant === "variant-b" && /*#__PURE__*/external_React_default().createElement("div", {
       className: "cta-header"
     }, "Shop Now"), /*#__PURE__*/external_React_default().createElement(DefaultMeta, {
@@ -4222,8 +4210,6 @@ class _DSCard extends (external_React_default()).PureComponent {
       section: this.props.section,
       section_position: this.props.sectionPosition,
       is_section_followed: this.props.sectionFollowed,
-      fetchTimestamp: this.props.fetchTimestamp,
-      firstVisibleTimestamp: this.props.firstVisibleTimestamp,
       format: format ? format : getActiveCardSize(window.innerWidth, this.props.sectionsClassNames, this.props.section, this.props.flightId),
       isSectionsCard: this.props.mayHaveSectionsCards,
       topic: this.props.topic,
@@ -4557,7 +4543,6 @@ function AdBannerContextMenu({
     site: {
       // Props we want to pass on for new ad types that come from Unified Ads API
       block_key: spoc.block_key,
-      fetchTimestamp: spoc.fetchTimestamp,
       flight_id: spoc.flight_id,
       format: spoc.format,
       id: spoc.id,
@@ -4674,7 +4659,6 @@ const PREF_PROMOCARD_VISIBLE = "discoverystream.promoCard.visible";
  *
  * @param spoc
  * @param dispatch
- * @param firstVisibleTimestamp
  * @param row
  * @param type
  * @param prefs
@@ -4684,7 +4668,6 @@ const PREF_PROMOCARD_VISIBLE = "discoverystream.promoCard.visible";
 const AdBanner = ({
   spoc,
   dispatch,
-  firstVisibleTimestamp,
   row,
   type,
   prefs
@@ -4731,8 +4714,6 @@ const AdBanner = ({
         ...(spoc.shim?.click ? {
           shim: spoc.shim.click
         } : {}),
-        fetchTimestamp: spoc.fetchTimestamp,
-        firstVisibleTimestamp,
         format: spoc.format,
         ...(sectionsEnabled ? {
           section: spoc.format,
@@ -4786,8 +4767,7 @@ const AdBanner = ({
         shim: spoc.shim.impression
       } : {})
     }],
-    dispatch: dispatch,
-    firstVisibleTimestamp: firstVisibleTimestamp
+    dispatch: dispatch
   }), /*#__PURE__*/external_React_default().createElement("div", {
     className: "ad-banner-content"
   }, /*#__PURE__*/external_React_default().createElement("img", {
@@ -4970,7 +4950,6 @@ class _CardGrid extends (external_React_default()).PureComponent {
           url: rec.url,
           id: rec.id,
           shim: rec.shim,
-          fetchTimestamp: rec.fetchTimestamp,
           type: this.props.type,
           context: rec.context,
           sponsor: rec.sponsor,
@@ -4984,7 +4963,6 @@ class _CardGrid extends (external_React_default()).PureComponent {
           ctaButtonSponsors: ctaButtonSponsors,
           ctaButtonVariant: ctaButtonVariant,
           recommendation_id: rec.recommendation_id,
-          firstVisibleTimestamp: this.props.firstVisibleTimestamp,
           mayHaveSectionsCards: mayHaveSectionsCards,
           corpus_item_id: rec.corpus_item_id,
           scheduled_corpus_item_id: rec.scheduled_corpus_item_id,
@@ -5064,7 +5042,6 @@ class _CardGrid extends (external_React_default()).PureComponent {
             key: `dscard-${spocToRender.id}`,
             dispatch: this.props.dispatch,
             type: this.props.type,
-            firstVisibleTimestamp: this.props.firstVisibleTimestamp,
             row: row,
             prefs: prefs
           }));
@@ -10860,8 +10837,7 @@ const BriefingCard = ({
   headlines = [],
   lastUpdated,
   selectedTopics,
-  isFollowed,
-  firstVisibleTimestamp
+  isFollowed
 }) => {
   const [showTimestamp, setShowTimestamp] = (0,external_React_namespaceObject.useState)(false);
   const [timeAgo, setTimeAgo] = (0,external_React_namespaceObject.useState)("");
@@ -10922,8 +10898,6 @@ const BriefingCard = ({
         card_type: "organic",
         recommendation_id: headline.recommendation_id,
         tile_id: headline.id,
-        fetchTimestamp: headline.fetchTimestamp,
-        firstVisibleTimestamp,
         corpus_item_id: headline.corpus_item_id,
         scheduled_corpus_item_id: headline.scheduled_corpus_item_id,
         recommended_at: headline.recommended_at,
@@ -10990,7 +10964,6 @@ const BriefingCard = ({
       id: headline.id,
       pos: headline.pos,
       recommendation_id: headline.recommendation_id,
-      fetchTimestamp: headline.fetchTimestamp,
       corpus_item_id: headline.corpus_item_id,
       scheduled_corpus_item_id: headline.scheduled_corpus_item_id,
       recommended_at: headline.recommended_at,
@@ -11006,8 +10979,7 @@ const BriefingCard = ({
       } : {})
     })),
     dispatch: dispatch,
-    source: "DAILY_BRIEFING",
-    firstVisibleTimestamp: firstVisibleTimestamp
+    source: "DAILY_BRIEFING"
   }));
 };
 
@@ -11122,7 +11094,6 @@ function CardSection({
   section,
   dispatch,
   type,
-  firstVisibleTimestamp,
   ctaButtonVariant,
   ctaButtonSponsors,
   anySectionsFollowed,
@@ -11345,8 +11316,7 @@ function CardSection({
           headlines: briefingHeadlines,
           lastUpdated: briefingLastUpdated,
           selectedTopics: selectedTopics,
-          isFollowed: following,
-          firstVisibleTimestamp: firstVisibleTimestamp
+          isFollowed: following
         }));
         continue;
       }
@@ -11409,7 +11379,6 @@ function CardSection({
         url: rec.url,
         id: rec.id,
         shim: rec.shim,
-        fetchTimestamp: rec.fetchTimestamp,
         type: type,
         context: rec.context,
         sponsor: rec.sponsor,
@@ -11421,7 +11390,6 @@ function CardSection({
         context_type: rec.context_type,
         bookmarkGuid: rec.bookmarkGuid,
         recommendation_id: rec.recommendation_id,
-        firstVisibleTimestamp: firstVisibleTimestamp,
         corpus_item_id: rec.corpus_item_id,
         scheduled_corpus_item_id: rec.scheduled_corpus_item_id,
         recommended_at: rec.recommended_at,
@@ -11530,7 +11498,6 @@ function CardSections({
   feed,
   dispatch,
   type,
-  firstVisibleTimestamp,
   ctaButtonVariant,
   ctaButtonSponsors,
   placeholder
@@ -11593,7 +11560,6 @@ function CardSections({
     section: section,
     dispatch: dispatch,
     type: type,
-    firstVisibleTimestamp: firstVisibleTimestamp,
     ctaButtonVariant: ctaButtonVariant,
     ctaButtonSponsors: ctaButtonSponsors,
     anySectionsFollowed: anySectionsFollowed,
@@ -11620,7 +11586,6 @@ function CardSections({
         key: `dscard-${spocToRender.id}`,
         dispatch: dispatch,
         type: type,
-        firstVisibleTimestamp: firstVisibleTimestamp,
         row: row,
         prefs: prefs
       }));
@@ -14446,7 +14411,6 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
               data: component.data,
               dispatch: this.props.dispatch,
               type: component.type,
-              firstVisibleTimestamp: this.props.firstVisibleTimestamp,
               ctaButtonSponsors: component.properties.ctaButtonSponsors,
               ctaButtonVariant: component.properties.ctaButtonVariant,
               placeholder: this.props.placeholder
@@ -14467,7 +14431,6 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
             ctaButtonSponsors: component.properties.ctaButtonSponsors,
             ctaButtonVariant: component.properties.ctaButtonVariant,
             hideDescriptions: this.props.DiscoveryStream.hideDescriptions,
-            firstVisibleTimestamp: this.props.firstVisibleTimestamp,
             spocPositions: component.spocs?.positions,
             placeholder: this.props.placeholder
           });
@@ -17888,7 +17851,6 @@ class BaseContent extends (external_React_default()).PureComponent {
     this.toggleWidgetsManagementPanel = this.toggleWidgetsManagementPanel.bind(this);
     this.state = {
       fixedSearch: false,
-      firstVisibleTimestamp: null,
       colorMode: "",
       fixedNavStyle: {},
       wallpaperTheme: "",
@@ -17899,18 +17861,10 @@ class BaseContent extends (external_React_default()).PureComponent {
     };
     this.spocPlaceholderStartTime = null;
   }
-  setFirstVisibleTimestamp() {
-    if (!this.state.firstVisibleTimestamp) {
-      this.setState({
-        firstVisibleTimestamp: Date.now()
-      });
-    }
-  }
   onVisible() {
     this.setState({
       visible: true
     });
-    this.setFirstVisibleTimestamp();
     this.shouldDisplayTopicSelectionModal();
     this.onVisibilityDispatch();
     if (this.isSpocsOnDemandExpired && !this.spocPlaceholderStartTime) {
@@ -18506,7 +18460,6 @@ class BaseContent extends (external_React_default()).PureComponent {
         className: "borderless-error"
       }, /*#__PURE__*/external_React_default().createElement(DiscoveryStreamBase, {
         locale: props.App.locale,
-        firstVisibleTimestamp: this.state.firstVisibleTimestamp,
         placeholder: this.isSpocsOnDemandExpired
       }))), /*#__PURE__*/external_React_default().createElement("div", {
         className: "sidebar-inline-end"
@@ -18585,7 +18538,6 @@ class BaseContent extends (external_React_default()).PureComponent {
       className: "borderless-error"
     }, /*#__PURE__*/external_React_default().createElement(DiscoveryStreamBase, {
       locale: props.App.locale,
-      firstVisibleTimestamp: this.state.firstVisibleTimestamp,
       placeholder: this.isSpocsOnDemandExpired
     })) : /*#__PURE__*/external_React_default().createElement(Sections_Sections, null)), /*#__PURE__*/external_React_default().createElement(ConfirmDialog, null), wallpapersEnabled && this.renderWallpaperAttribution()), /*#__PURE__*/external_React_default().createElement("aside", null, this.props.Notifications?.showNotifications && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(Notifications_Notifications, {
       dispatch: this.props.dispatch

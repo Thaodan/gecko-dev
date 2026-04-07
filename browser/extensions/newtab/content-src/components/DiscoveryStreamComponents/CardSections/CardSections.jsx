@@ -134,7 +134,6 @@ function CardSection({
   section,
   dispatch,
   type,
-  firstVisibleTimestamp,
   ctaButtonVariant,
   ctaButtonSponsors,
   anySectionsFollowed,
@@ -396,7 +395,6 @@ function CardSection({
             lastUpdated={briefingLastUpdated}
             selectedTopics={selectedTopics}
             isFollowed={following}
-            firstVisibleTimestamp={firstVisibleTimestamp}
           />
         );
         continue;
@@ -472,7 +470,6 @@ function CardSection({
           url={rec.url}
           id={rec.id}
           shim={rec.shim}
-          fetchTimestamp={rec.fetchTimestamp}
           type={type}
           context={rec.context}
           sponsor={rec.sponsor}
@@ -484,7 +481,6 @@ function CardSection({
           context_type={rec.context_type}
           bookmarkGuid={rec.bookmarkGuid}
           recommendation_id={rec.recommendation_id}
-          firstVisibleTimestamp={firstVisibleTimestamp}
           corpus_item_id={rec.corpus_item_id}
           scheduled_corpus_item_id={rec.scheduled_corpus_item_id}
           recommended_at={rec.recommended_at}
@@ -641,7 +637,6 @@ function CardSections({
   feed,
   dispatch,
   type,
-  firstVisibleTimestamp,
   ctaButtonVariant,
   ctaButtonSponsors,
   placeholder,
@@ -717,7 +712,6 @@ function CardSections({
       section={section}
       dispatch={dispatch}
       type={type}
-      firstVisibleTimestamp={firstVisibleTimestamp}
       ctaButtonVariant={ctaButtonVariant}
       ctaButtonSponsors={ctaButtonSponsors}
       anySectionsFollowed={anySectionsFollowed}
@@ -758,7 +752,6 @@ function CardSections({
           key={`dscard-${spocToRender.id}`}
           dispatch={dispatch}
           type={type}
-          firstVisibleTimestamp={firstVisibleTimestamp}
           row={row}
           prefs={prefs}
         />

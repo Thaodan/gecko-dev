@@ -82,7 +82,6 @@ export const LinkMenuOptions = {
         is_sponsored: !!site.sponsored_tile_id,
         event_source: "CONTEXT_MENU",
         topic: site.topic,
-        firstVisibleTimestamp: site.firstVisibleTimestamp,
         tile_id: site.tile_id,
         recommendation_id: site.recommendation_id,
         scheduled_corpus_item_id: site.scheduled_corpus_item_id,

@@ -2291,8 +2291,6 @@ add_task(
     Services.fog.testResetFOG();
     const ACTION_POSITION = 42;
     const SHIM = "Y29uc2lkZXIgeW91ciBjdXJpb3NpdHkgcmV3YXJkZWQ=";
-    const FETCH_TIMESTAMP = new Date("March 22, 2024 10:15:20");
-    const NEWTAB_CREATION_TIMESTAMP = new Date("March 23, 2024 11:10:30");
     let action = actionCreators.DiscoveryStreamUserEvent({
       event: "CLICK",
       action_position: ACTION_POSITION,
@@ -2301,8 +2299,6 @@ add_task(
         recommendation_id: undefined,
         tile_id: 448685088,
         shim: SHIM,
-        fetchTimestamp: FETCH_TIMESTAMP.valueOf(),
-        firstVisibleTimestamp: NEWTAB_CREATION_TIMESTAMP.valueOf(),
       },
     });
 
