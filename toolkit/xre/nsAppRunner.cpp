@@ -3190,6 +3190,15 @@ static void SubmitDowngradeTelemetry(const nsCString& aLastVersion,
   NS_ENSURE_TRUE_VOID(sysInfo);
   sysInfo->GetPropertyAsACString(u"arch"_ns, arch);
 
+  bool isMSIX = false;
+#  ifdef XP_WIN
+  rv = sysInfo->GetPropertyAsBool(u"hasWinPackageId"_ns, &isMSIX);
+  if (rv != NS_OK) {
+    // Don't early return.
+    NS_ERROR("Failed to get property: hasWinPackageId");
+  }
+#  endif
+
   time_t now;
   time(&now);
   char date[sizeof "YYYY-MM-DDThh:mm:ss.000Z"];
@@ -3286,6 +3295,7 @@ static void SubmitDowngradeTelemetry(const nsCString& aLastVersion,
       w.StringProperty("lastBuildId", PromiseFlatCString(lastBuildId));
       w.BoolProperty("hasSync", aHasSync);
       w.IntProperty("button", aButton);
+      w.BoolProperty("isMSIX", isMSIX);
     }
     w.EndObject();
   }
