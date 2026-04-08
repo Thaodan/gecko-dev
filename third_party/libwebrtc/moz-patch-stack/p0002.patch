@@ -40,7 +40,7 @@ Cr-Branched-From: d1972add2a63b2a528a6471d447f82e0010b5215-refs/heads/main@{#468
  create mode 100644 modules/audio_coding/acm2/acm_resampler_unittest.cc
 
 diff --git a/modules/audio_coding/BUILD.gn b/modules/audio_coding/BUILD.gn
-index 1f94c30355..89acc50732 100644
+index 01a10e3dac..6a85f60863 100644
 --- a/modules/audio_coding/BUILD.gn
 +++ b/modules/audio_coding/BUILD.gn
 @@ -47,6 +47,7 @@ rtc_library("audio_coding") {
@@ -51,7 +51,7 @@ index 1f94c30355..89acc50732 100644
      "../../common_audio",
      "../../common_audio:common_audio_c",
      "../../rtc_base:buffer",
-@@ -1397,6 +1398,7 @@ if (rtc_include_tests) {
+@@ -1399,6 +1400,7 @@ if (rtc_include_tests) {
  
        sources = [
          "acm2/acm_remixing_unittest.cc",
