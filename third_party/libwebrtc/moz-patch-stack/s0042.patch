@@ -69,10 +69,10 @@ index bb8c521514..ec3f6e39d7 100644
    std::optional<TimeDelta> AverageRtt() const;
    std::optional<TimeDelta> LastRtt() const;
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc b/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
-index 72e5645d03..d3f073881b 100644
+index c68118d78f..99efc61d2f 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
-@@ -529,11 +529,11 @@ void ModuleRtpRtcpImpl2::GetSendStreamDataCounters(
+@@ -537,11 +537,11 @@ void ModuleRtpRtcpImpl2::GetSendStreamDataCounters(
  }
  
  // Received RTCP report.
@@ -90,10 +90,10 @@ index 72e5645d03..d3f073881b 100644
  
  std::vector<ReportBlockData> ModuleRtpRtcpImpl2::GetLatestReportBlockData()
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_impl2.h b/modules/rtp_rtcp/source/rtp_rtcp_impl2.h
-index 8ecfc14938..cee8b33925 100644
+index 95131bf3a2..bed8d524a8 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_impl2.h
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_impl2.h
-@@ -211,7 +211,8 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
+@@ -217,7 +217,8 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
  
    void RemoteRTCPSenderInfo(uint32_t* packet_count,
                              uint32_t* octet_count,
@@ -122,10 +122,10 @@ index 41c3d608ad..5c6a9fcb85 100644
    // Within this list, the sender-source SSRC pair is unique and per-pair the
    // ReportBlockData represents the latest Report Block that was received for
 diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index 2cad2218a5..e01ecd6aa8 100644
+index 5a74af7776..42c7032210 100644
 --- a/video/rtp_video_stream_receiver2.cc
 +++ b/video/rtp_video_stream_receiver2.cc
-@@ -1143,9 +1143,10 @@ std::optional<int64_t> RtpVideoStreamReceiver2::LastReceivedKeyframePacketMs()
+@@ -1142,9 +1142,10 @@ std::optional<int64_t> RtpVideoStreamReceiver2::LastReceivedKeyframePacketMs()
  // seem to be any support for these stats right now. So, we hack this in.
  void RtpVideoStreamReceiver2::RemoteRTCPSenderInfo(
      uint32_t* packet_count, uint32_t* octet_count,
@@ -153,10 +153,10 @@ index 52f998ddc2..1acb0ac70e 100644
   private:
    // Implements RtpVideoFrameReceiver.
 diff --git a/video/video_receive_stream2.cc b/video/video_receive_stream2.cc
-index 3200786849..2c5c4148d0 100644
+index a28053e8cc..b11e873c50 100644
 --- a/video/video_receive_stream2.cc
 +++ b/video/video_receive_stream2.cc
-@@ -632,7 +632,8 @@ VideoReceiveStreamInterface::Stats VideoReceiveStream2::GetStats() const {
+@@ -622,7 +622,8 @@ VideoReceiveStreamInterface::Stats VideoReceiveStream2::GetStats() const {
    // seem to be any support for these stats right now. So, we hack this in.
    rtp_video_stream_receiver_.RemoteRTCPSenderInfo(
        &stats.rtcp_sender_packets_sent, &stats.rtcp_sender_octets_sent,
