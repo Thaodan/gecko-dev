@@ -5415,53 +5415,58 @@ gfxFontGroup* CanvasRenderingContext2D::GetCurrentFontStyle() {
     visProvider = mOffscreenCanvas;
   }
 
-  // If we have a cached fontGroup, check that it is valid for the current
-  // prescontext or canvas; if not, we need to discard and re-create it.
-  RefPtr<gfxFontGroup>& fontGroup = CurrentState().fontGroup;
   if (ResolveFontLang()) {
-    fontGroup = nullptr;
-  }
-  if (fontGroup) {
-    if (fontGroup->GetFontVisibilityProvider() != visProvider) {
+    // If lang has changed, any cached fontGroup needs to be replaced.
+    CurrentState().fontGroup = nullptr;
+  } else {
+    // If there is a cached fontGroup, check if visibility setting matches;
+    // if not, we can't use it and will have to re-create it.
+    RefPtr<gfxFontGroup>& fontGroup = CurrentState().fontGroup;
+    if (fontGroup && fontGroup->GetFontVisibilityProvider() != visProvider) {
       fontGroup = nullptr;
     }
-  }
-
-  if (!fontGroup) {
-    ErrorResult err;
-    constexpr auto kDefaultFontStyle = "10px sans-serif"_ns;
-    const float kDefaultFontSize = 10.0;
-    // If the font has already been set, we're re-creating the fontGroup
-    // and should re-use the existing font attribute; if not, we initialize
-    // it to the canvas default.
-    const nsCString& currentFont = CurrentState().font;
-    bool fontUpdated = SetFontInternal(
-        currentFont.IsEmpty() ? kDefaultFontStyle : currentFont, err);
-    if (err.Failed() || !fontUpdated) {
-      err.SuppressException();
-      // XXX Should we get a default lang from the prescontext or something?
-      nsAtom* language = nsGkAtoms::x_western;
-      bool explicitLanguage = false;
-      gfxFontStyle style;
-      style.size = kDefaultFontSize;
-      int32_t perDevPixel, perCSSPixel;
-      GetAppUnitsValues(&perDevPixel, &perCSSPixel);
-      gfxFloat devToCssSize = gfxFloat(perDevPixel) / gfxFloat(perCSSPixel);
-      const auto* sans =
-          Servo_FontFamily_Generic(StyleGenericFontFamily::SansSerif);
-      fontGroup = new gfxFontGroup(
-          visProvider, sans->families, &style, language, explicitLanguage,
-          presContext ? presContext->GetTextPerfMetrics() : nullptr, nullptr,
-          devToCssSize, StyleFontVariantEmoji::Normal);
-      if (fontGroup) {
-        CurrentState().font = kDefaultFontStyle;
-      } else {
-        NS_ERROR("Default canvas font is invalid");
-      }
+    if (fontGroup) {
+      return fontGroup;
     }
   }
 
-  return fontGroup;
+  ErrorResult err;
+  constexpr auto kDefaultFontStyle = "10px sans-serif"_ns;
+  const float kDefaultFontSize = 10.0;
+  // If the font has already been set, we're re-creating the fontGroup
+  // and should re-use the existing font attribute; if not, we initialize
+  // it to the canvas default.
+  // We make a local copy of CurrentState().font because SetFontInternal
+  // may cause a flush and could invalidate any reference to the string in
+  // the CurrentState() record.
+  nsAutoCString currentFont(CurrentState().font);
+  if (currentFont.IsEmpty()) {
+    currentFont = kDefaultFontStyle;
+  }
+  if (!SetFontInternal(currentFont, err) || err.Failed()) {
+    err.SuppressException();
+    // XXX Should we get a default lang from the prescontext or something?
+    nsAtom* language = nsGkAtoms::x_western;
+    bool explicitLanguage = false;
+    gfxFontStyle style;
+    style.size = kDefaultFontSize;
+    int32_t perDevPixel, perCSSPixel;
+    GetAppUnitsValues(&perDevPixel, &perCSSPixel);
+    gfxFloat devToCssSize = gfxFloat(perDevPixel) / gfxFloat(perCSSPixel);
+    const auto* sans =
+        Servo_FontFamily_Generic(StyleGenericFontFamily::SansSerif);
+    CurrentState().fontGroup = new gfxFontGroup(
+        visProvider, sans->families, &style, language, explicitLanguage,
+        presContext ? presContext->GetTextPerfMetrics() : nullptr, nullptr,
+        devToCssSize, StyleFontVariantEmoji::Normal);
+    if (CurrentState().fontGroup) {
+      CurrentState().font = kDefaultFontStyle;
+    } else {
+      NS_ERROR("Default canvas font is invalid");
+    }
+  }
+
+  return CurrentState().fontGroup;
 }
 
 //
