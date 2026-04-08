@@ -29,6 +29,14 @@
 #ifndef EMULATED_THREADS_H_INCLUDED_
 #define EMULATED_THREADS_H_INCLUDED_
 
+#if __has_include(<threads.h>) && !defined(_WIN32)
+#include <threads.h>
+#include <pthread.h>
+#ifndef _MTX_INITIALIZER_NP
+#define _MTX_INITIALIZER_NP {0}
+#endif
+#else
+
 #include <time.h>
 
 #ifndef TIME_UTC
@@ -70,4 +78,5 @@ enum {
 
 
 
+#endif /* !__has_include(<threads.h>) */
 #endif /* EMULATED_THREADS_H_INCLUDED_ */
