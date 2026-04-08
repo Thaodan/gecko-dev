@@ -7596,6 +7596,9 @@ hr {
   margin-block-end: var(--space-xlarge);
 }
 @container content-grid (inline-size < calc(8 * 75px + 7 * 0.75rem)) {
+  .nova-enabled .ds-section-grid.ds-card-grid {
+    --sections-col-count: 1;
+  }
   .nova-enabled .ds-section-grid.ds-card-grid .col-1-position-0 {
     order: 0;
   }
@@ -8025,6 +8028,9 @@ hr {
   }
 }
 @container content-grid ((inline-size >= calc(8 * 75px + 7 * 0.75rem)) and (inline-size < calc(12 * 75px + 11 * 0.75rem))) {
+  .nova-enabled .ds-section-grid.ds-card-grid {
+    --sections-col-count: 2;
+  }
   .nova-enabled .ds-section-grid.ds-card-grid .col-2-position-0 {
     order: 0;
   }
@@ -8481,6 +8487,9 @@ hr {
   }
 }
 @container content-grid ((inline-size >= calc(12 * 75px + 11 * 0.75rem)) and (inline-size < calc(16 * 75px + 15 * 0.75rem))) {
+  .nova-enabled .ds-section-grid.ds-card-grid {
+    --sections-col-count: 3;
+  }
   .nova-enabled .ds-section-grid.ds-card-grid .col-3-position-0 {
     order: 0;
   }
@@ -8937,6 +8946,9 @@ hr {
   }
 }
 @container content-grid (inline-size >= calc(16 * 75px + 15 * 0.75rem)) {
+  .nova-enabled .ds-section-grid.ds-card-grid {
+    --sections-col-count: 4;
+  }
   .nova-enabled .ds-section-grid.ds-card-grid .col-4-position-0 {
     order: 0;
   }
