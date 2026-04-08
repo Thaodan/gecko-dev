@@ -6,6 +6,8 @@
 
 #include <cstring>
 
+#include "mozilla/Saturate.h"
+
 #include "Globals.h"
 
 using namespace mozilla;
@@ -46,26 +48,56 @@ base_alloc_size_t BaseAlloc::size_round_up(base_alloc_size_t aSize) {
 }
 
 unsigned BaseAlloc::get_list_index_for_size(base_alloc_size_t aSize) {
-  // Because the base allocator will allocate all objects on their own cache
-  // line, 1-in-4 free lists will never be used (x86_64) because no object
-  // will be created that size.  On x86_64 systems this wastes 1KiB of
-  // mFreeLists, this could be avoided by using a second lookup to turn the
-  // address into the free list index.
+  if constexpr (kBaseQuantum * 2 >= kCacheLineSize) {
+    return aSize / kBaseQuantum - 1;
+  } else {
+    // The lambda template prevents the C++ compiler from checking this
+    // branch when it's not used. This is used to avoid a compiler warning
+    // when kBaseQuantum * == kCacheLineSize.
+    return []<typename T>(T aSize) -> unsigned {
+      // The base allocator will allocate all objects on their own
+      // cache line, but if kBaseQuantum is less than two times smaller than
+      // kCacheLineSize, then some object sizes are impossible, they're
+      // always rounded up to ensure the next object begins on a cache line
+      // boundary.  Naively this would lead to 1-in-4 free lists being
+      // wasted (on x86_64) because no object will be created that size.
+      // Instead the following code calculates the list index for a given
+      // size.
+      //
+      // For any cache line multiple there are 3 possible sizes they are:
+      //  + cache_multiple,
+      //  + cache_multiple - kBaseQuantum
+      //  + cache_multiple - kBaseQuantum*2
+      //
+      // The code here will map them to indexes for the free list array.
 
-  // Note that this division rounds down.  That's intentional because
-  // "kBaseQuantum" is inclusive of the metadata.  The smallest object
-  // is kBaseQuantum - sizeof(BaseAllocMetadata) and dividing it by
-  // kBaseQuantum will round down to 0 and therefore this maps to the
-  // first free list.
-  unsigned index = aSize / kBaseQuantum;
+      // The minimum possible size is kBaseMinimumSize.  So start by
+      // enforcing that using a saturating subtraction so that the minimum
+      // becomes 0.
+      aSize = (SaturateUint32(aSize) - kBaseMinimumSize).value();
 
-  // Unless kBaseQuantum is the same size as BaseAllocMetadata, then we have
-  // to subtract 1.
-  if (kBaseQuantum == sizeof(BaseAllocMetadata)) {
-    index--;
+      // After that subtraction dividing by the cache line size gives us
+      // the group of 3 this size is in.
+      unsigned cache_line = aSize / kCacheLineSize;
+
+      // Find the remainder,
+      unsigned offset = (aSize % kCacheLineSize) / kBaseQuantum;
+
+      // Remainders 0, 1 and 2 are valid.  But any other remainder won't map
+      // to a valid size, round up to the valid size.
+      //
+      // With an exception for offset = 3, the expression in the return
+      // statement below will produce the same result for offset=3 wheather
+      // we enter this branch or not so we can skip it in that case.
+      if (offset > 3) {
+        cache_line++;
+        offset = 0;
+      }
+
+      // Find the index into the free list array.
+      return cache_line * 3 + offset;
+    }(aSize);
   }
-
-  return index;
 }
 
 void BaseAlloc::free(void* aPtr) MOZ_EXCLUDES(mMutex) {
