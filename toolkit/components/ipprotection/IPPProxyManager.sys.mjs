@@ -39,6 +39,7 @@ ChromeUtils.defineLazyGetter(
 export const ERRORS = Object.freeze({
   GENERIC: "generic-error",
   NETWORK: "network-error",
+  CATASTROPHIC: "catastrophic-error",
   TIMEOUT: "timeout-error", // Activation took too long and was aborted
   MISSING_PROMISE: "missing-activation-promise", // Expected promise was not returned
   MISSING_ABORT: "missing-abort-controller", // Expected abort controller was not returned
