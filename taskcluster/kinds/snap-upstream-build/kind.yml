@@ -125,7 +125,7 @@ tasks:
             product: firefox
             job-name: snap-amd64-beta-opt
         worker:
-            docker-image: {in-tree: snap-build-core22}
+            docker-image: {in-tree: snap-build-core24}
             max-run-time: 9000
         run:
             using: run-task
@@ -144,7 +144,7 @@ tasks:
             product: firefox
             job-name: snap-amd64-beta-debug
         worker:
-            docker-image: {in-tree: snap-build-core22}
+            docker-image: {in-tree: snap-build-core24}
             max-run-time: 7200
         run:
             using: run-task
@@ -201,7 +201,7 @@ tasks:
             product: firefox
             job-name: snap-amd64-stable-opt
         worker:
-            docker-image: {in-tree: snap-build-core22}
+            docker-image: {in-tree: snap-build-core24}
             max-run-time: 9000
         run:
             using: run-task
@@ -220,7 +220,7 @@ tasks:
             product: firefox
             job-name: snap-amd64-stable-debug
         worker:
-            docker-image: {in-tree: snap-build-core22}
+            docker-image: {in-tree: snap-build-core24}
             max-run-time: 7200
         run:
             using: run-task
