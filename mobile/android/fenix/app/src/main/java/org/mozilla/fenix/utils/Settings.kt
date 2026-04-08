@@ -1687,7 +1687,7 @@ class Settings(
 
     val shouldShowPwaCfr: Boolean
         get() {
-            if (!canShowCfr || !inAppMessagesEnabled) return false
+            if (!canShowCfr || !inAppMessagesEnabled || continuousOnboardingFeatureEnabled) return false
             // We only want to show this on the 3rd time a user visits a site
             if (userNeedsToVisitInstallableSites) return false
 
