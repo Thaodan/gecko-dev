@@ -522,34 +522,6 @@ static bool ResolveLocale(JSContext* cx, Handle<CollatorObject*> collator) {
   // Therefore use "variant" as the default value for both collation modes,
   // which is why there is not a sensitivity handling step here.
 
-  // Instead of having SpiderMonkey deal with Danish, Maltese, and Thai,
-  // we should use ICU4X's own resolved options.
-  // This is https://bugzilla.mozilla.org/show_bug.cgi?id=2018920 .
-  // Retaining the old code structure for now.
-
-  if (colOptions.ignorePunctuation ==
-      CollatorOptions::IgnorePunctuation::Locale) {
-    // If |locale| is the default locale (e.g. da-DK), but only supported
-    // through a fallback (da), we need to get the actual data locale first.
-    mozilla::Maybe<LanguageId> actualLocale{};
-    if (!BestAvailableLocale(cx, AvailableLocaleKind::Collator,
-                             resolved.dataLocale(), &actualLocale)) {
-      return false;
-    }
-    MOZ_ASSERT(actualLocale);
-
-    auto& sharedIntlData = cx->runtime()->sharedIntlData.ref();
-
-    bool ignorePunctuation;
-    if (!sharedIntlData.isIgnorePunctuation(cx, *actualLocale,
-                                            &ignorePunctuation)) {
-      return false;
-    }
-    colOptions.ignorePunctuation =
-        ignorePunctuation ? CollatorOptions::IgnorePunctuation::On
-                          : CollatorOptions::IgnorePunctuation::Off;
-  }
-
   // Finish initialization by setting the actual locale and collation.
   auto* locale = resolved.toLocale(cx);
   if (!locale) {
@@ -563,26 +535,28 @@ static bool ResolveLocale(JSContext* cx, Handle<CollatorObject*> collator) {
     collator->setCollation(cx->names().default_);
   }
 
-  auto kf = resolved.extension(UnicodeExtensionKey::CollationCaseFirst);
-  MOZ_ASSERT(kf, "resolved case first is non-null");
-
-  if (StringEqualsLiteral(kf, "upper")) {
-    colOptions.caseFirst = CollatorOptions::CaseFirst::Upper;
-  } else if (StringEqualsLiteral(kf, "lower")) {
-    colOptions.caseFirst = CollatorOptions::CaseFirst::Lower;
+  if (auto kf = resolved.extension(UnicodeExtensionKey::CollationCaseFirst)) {
+    if (StringEqualsLiteral(kf, "upper")) {
+      colOptions.caseFirst = CollatorOptions::CaseFirst::Upper;
+    } else if (StringEqualsLiteral(kf, "lower")) {
+      colOptions.caseFirst = CollatorOptions::CaseFirst::Lower;
+    } else {
+      MOZ_ASSERT(StringEqualsLiteral(kf, "false"));
+      colOptions.caseFirst = CollatorOptions::CaseFirst::False;
+    }
   } else {
-    MOZ_ASSERT(StringEqualsLiteral(kf, "false"));
-    colOptions.caseFirst = CollatorOptions::CaseFirst::False;
+    MOZ_ASSERT(colOptions.caseFirst == CollatorOptions::CaseFirst::Locale);
   }
 
-  auto kn = resolved.extension(UnicodeExtensionKey::CollationNumeric);
-  MOZ_ASSERT(kn, "resolved numeric is non-null");
-
-  if (StringEqualsLiteral(kn, "true")) {
-    colOptions.numeric = CollatorOptions::Numeric::On;
+  if (auto kn = resolved.extension(UnicodeExtensionKey::CollationNumeric)) {
+    if (StringEqualsLiteral(kn, "true")) {
+      colOptions.numeric = CollatorOptions::Numeric::On;
+    } else {
+      MOZ_ASSERT(StringEqualsLiteral(kn, "false"));
+      colOptions.numeric = CollatorOptions::Numeric::Off;
+    }
   } else {
-    MOZ_ASSERT(StringEqualsLiteral(kn, "false"));
-    colOptions.numeric = CollatorOptions::Numeric::Off;
+    MOZ_ASSERT(colOptions.numeric == CollatorOptions::Numeric::Locale);
   }
 
   // Set the resolved options.
@@ -699,6 +673,16 @@ static bool ResolvedOptions(JSContext* cx, Handle<CollatorObject*> collator,
                CollatorOptions::IgnorePunctuation::Locale);
     MOZ_ASSERT(resolvedOptions.numeric != CollatorOptions::Numeric::Locale);
     MOZ_ASSERT(resolvedOptions.caseFirst != CollatorOptions::CaseFirst::Locale);
+
+    // Case first defaults to "false" for all search collations.
+    MOZ_ASSERT_IF(
+        options.usage == CollatorOptions::Usage::Search &&
+            options.caseFirst == CollatorOptions::CaseFirst::Locale,
+        resolvedOptions.caseFirst == CollatorOptions::CaseFirst::False);
+
+    // Numeric defaults to "false" for all locales.
+    MOZ_ASSERT_IF(options.numeric == CollatorOptions::Numeric::Locale,
+                  resolvedOptions.numeric == CollatorOptions::Numeric::Off);
 
     options.ignorePunctuation = resolvedOptions.ignorePunctuation;
     options.numeric = resolvedOptions.numeric;
