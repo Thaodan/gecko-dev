@@ -38,15 +38,20 @@ using namespace mozilla;
 // free list.  This is not a security risk since these allocations are never
 // used outside of mozjemalloc.
 //
-// +------+-------------------+-----------
-// | Size | Free list ptr     | Next Size
-// +------+-------------------+-----------
+// +--------------+-------------------+-------------------
+// | Size / Alloc | Free list ptr     | Next Size / Alloc
+// +--------------+-------------------+-------------------
 //
 
 struct BaseAllocMetadata {
-  base_alloc_size_t mSize;
+  base_alloc_size_t mSize : 31;
 
-  explicit BaseAllocMetadata(base_alloc_size_t aSize) : mSize(aSize) {}
+  // Allocated is only used for assertions, but will be used with future
+  // patches.
+  bool mAllocated : 1;
+
+  explicit BaseAllocMetadata(base_alloc_size_t aSize)
+      : mSize(aSize), mAllocated(false) {}
 };
 
 class BaseAllocCell {
@@ -79,9 +84,20 @@ class BaseAllocCell {
     return reinterpret_cast<BaseAllocCell*>(aPtr);
   }
 
-  base_alloc_size_t& Size() { return Metadata()->mSize; }
+  base_alloc_size_t Size() { return Metadata()->mSize; }
+
+  bool Allocated() { return Metadata()->mAllocated; }
 
   void* Ptr() { return this; }
+
+  void SetAllocated() {
+    MOZ_ASSERT(!Allocated());
+    Metadata()->mAllocated = true;
+  }
+  void SetFreed() {
+    MOZ_ASSERT(Allocated());
+    Metadata()->mAllocated = false;
+  }
 
   // After freeing a cell but before we can use the list pointers we must
   // clear them to avoid assertions in DoublyLinkedList.
@@ -141,6 +157,7 @@ void BaseAlloc::free(void* aPtr) MOZ_EXCLUDES(mMutex) {
   // Otherwise the DoublyLinkedList code will hit an assertion because it
   // looks like it's already in a list.
   cell->ClearPayload();
+  cell->SetFreed();
 
   // TODO attempt coalesce.
 
@@ -178,6 +195,7 @@ void* BaseAlloc::alloc_from_list(base_alloc_size_t aSize) {
   for (unsigned i = start_index; i < NUM_LIST_SIZES; i++) {
     if (!mFreeLists[i].isEmpty()) {
       BaseAllocCell* cell = mFreeLists[i].popFront();
+      cell->SetAllocated();
       // TODO attempt split.
       return cell->Ptr();
     }
@@ -187,6 +205,7 @@ void* BaseAlloc::alloc_from_list(base_alloc_size_t aSize) {
   for (auto& cell : mFreeListOversize) {
     if (cell.Size() >= aSize) {
       mFreeListOversize.remove(&cell);
+      cell.SetAllocated();
 
       return cell.Ptr();
     }
@@ -273,6 +292,7 @@ BaseAllocCell* BaseAlloc::wilderness_alloc_inplace(base_alloc_size_t aSize) {
   // mNextAddr points to where the next allocation's payload can begin, the
   // size of the metadata is already accounted for.
   mNextAddr = next_cell;
+  cell->SetAllocated();
   return cell;
 }
 
