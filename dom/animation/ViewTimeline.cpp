@@ -219,6 +219,13 @@ std::pair<nscoord, nscoord> ViewTimeline::IntervalForTimelineRangeName(
   const nscoord alignedSubjectEndViewEnd =
       alignedSubjectStartViewEnd + mCachedCurrentTime->mSubjectSize;
 
+  // Precompute the range of `contain` to avoid the code duplication. See below
+  // for more details.
+  const nscoord containStart =
+      std::min(alignedSubjectStartViewStart, alignedSubjectEndViewEnd);
+  const nscoord containEnd =
+      std::max(alignedSubjectStartViewStart, alignedSubjectEndViewEnd);
+
   // FIXME: Bug 2030453. Check the case for RTL for horizontal axis. Perhaps we
   // have to swap these two values.
   switch (aName) {
@@ -256,15 +263,26 @@ std::pair<nscoord, nscoord> ViewTimeline::IntervalForTimelineRangeName(
       //
       // For more visual explanation, see:
       // https://github.com/w3c/csswg-drafts/issues/7973#issuecomment-1427150014
-      return {std::min(alignedSubjectStartViewStart, alignedSubjectEndViewEnd),
-              std::max(alignedSubjectStartViewStart, alignedSubjectEndViewEnd)};
+      return {containStart, containEnd};
 
     case StyleTimelineRangeName::Entry:
+      // Represents the range during which the principal box is entering the
+      // view progress visibility range.
+      // * 0% is equivalent to 0% of the cover range.
+      // * 100% is equivalent to 0% of the contain range.
+      return {alignedSubjectStartViewEnd, containStart};
+
     case StyleTimelineRangeName::Exit:
+      // Represents the range during which the principal box is exiting the view
+      // progress visibility range.
+      // * 0% is equivalent to 100% of the contain range.
+      // * 100% is equivalent to 100% of the cover range.
+      return {containEnd, alignedSubjectEndViewStart};
+
     case StyleTimelineRangeName::EntryCrossing:
     case StyleTimelineRangeName::ExitCrossing:
     case StyleTimelineRangeName::Scroll:
-      // TODO: Bug 2015128, Bug 2015130, Bug 2015131. Implement other keywords.
+      // TODO: Bug 2015130 and Bug 2015131. Implement other keywords.
       return {0, 0};
   }
 }
