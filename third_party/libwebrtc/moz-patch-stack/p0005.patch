@@ -297,7 +297,7 @@ index 3659d4f561..8fb8c972f2 100644
  }
  
 diff --git a/modules/video_coding/codecs/vp8/test/vp8_impl_unittest.cc b/modules/video_coding/codecs/vp8/test/vp8_impl_unittest.cc
-index 58d77fe15b..eb557775d7 100644
+index 9e0ceb3152..7033b4ecb4 100644
 --- a/modules/video_coding/codecs/vp8/test/vp8_impl_unittest.cc
 +++ b/modules/video_coding/codecs/vp8/test/vp8_impl_unittest.cc
 @@ -22,6 +22,7 @@
