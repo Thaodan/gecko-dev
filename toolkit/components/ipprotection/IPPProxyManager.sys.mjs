@@ -104,6 +104,9 @@ export async function scheduleCallback(
 ) {
   const getNow = imports.getNow || (() => Temporal.Now.instant());
   while (getNow().until(timepoint).total("milliseconds") > 0) {
+    if (abortSignal.aborted) {
+      return;
+    }
     const msUntilTrigger = getNow().until(timepoint).total("milliseconds");
     // clamp the timeout to the max allowed by setTimeout
     const clampedMs = Math.min(msUntilTrigger, 2147483647);
