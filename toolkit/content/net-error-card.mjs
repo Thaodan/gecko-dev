@@ -155,6 +155,7 @@ export class NetErrorCard extends MozLitElement {
     document.dispatchEvent(
       new CustomEvent("AboutNetErrorLoad", { bubbles: true })
     );
+    this.focusTryAgainButton();
   }
 
   shouldHideExceptionButton() {
@@ -289,6 +290,21 @@ export class NetErrorCard extends MozLitElement {
   handlePrefChangeDetected() {
     this.showPrefReset = true;
     this.focusPrefResetButton();
+  }
+
+  async focusTryAgainButton() {
+    await this.getUpdateComplete();
+
+    if (window.top != window) {
+      return;
+    }
+
+    if (!this.tryAgainButton) {
+      return;
+    }
+
+    await this.tryAgainButton.updateComplete;
+    this.tryAgainButton.focus();
   }
 
   async focusPrefResetButton() {
@@ -1017,7 +1033,11 @@ export class NetErrorCard extends MozLitElement {
         rel="stylesheet"
         href="chrome://global/skin/aboutNetError.css"
       />
-      <article class="felt-privacy-container">
+      <article
+        class="felt-privacy-container"
+        aria-labelledby="error-title"
+        aria-describedby="error-intro whatCanYouDo"
+      >
         <div class="img-container">
           <img src=${src} data-l10n-id=${alt} data-l10n-attrs="alt" />
         </div>
