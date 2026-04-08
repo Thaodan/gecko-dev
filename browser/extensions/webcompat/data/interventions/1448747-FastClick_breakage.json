@@ -41,10 +41,6 @@
       "issue": "broken-interactive-elements",
       "matches": ["*://renewd.com.au/*"]
     },
-    "1944027": {
-      "issue": "broken-interactive-elements",
-      "matches": ["*://rutamayacoffee.com/*"]
-    },
     "1968640": {
       "issue": "broken-interactive-elements",
       "matches": ["*://shop.ticket-center-hohenschwangau.de/*"]
