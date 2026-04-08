@@ -399,7 +399,7 @@ index 6ba3292fca..5d3a731864 100644
    RTPHeader();
    RTPHeader(const RTPHeader& other);
 diff --git a/api/rtp_parameters.cc b/api/rtp_parameters.cc
-index 7ca5481bca..a386e9ba81 100644
+index 3a36bfe00a..0e97d1e802 100644
 --- a/api/rtp_parameters.cc
 +++ b/api/rtp_parameters.cc
 @@ -224,7 +224,8 @@ bool RtpExtension::IsSupportedForAudio(absl::string_view uri) {
@@ -1510,10 +1510,10 @@ index b7933130bd..428fc9615d 100644
    vcm_ = nullptr;
  }
 diff --git a/webrtc.gni b/webrtc.gni
-index c78fc8a0b0..0ffcfb3c78 100644
+index 6eb16cf188..82d3bafaf2 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
-@@ -110,7 +110,7 @@ declare_args() {
+@@ -106,7 +106,7 @@ declare_args() {
  
    # Selects whether debug dumps for the audio processing module
    # should be generated.
