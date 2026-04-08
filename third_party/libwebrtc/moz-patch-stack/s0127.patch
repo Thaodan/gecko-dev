@@ -9,10 +9,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/cb3700134901dea40
  1 file changed, 4 insertions(+)
 
 diff --git a/modules/desktop_capture/win/wgc_capture_session.cc b/modules/desktop_capture/win/wgc_capture_session.cc
-index 3037d471cc..763ae9c22d 100644
+index 2b90262ef1..8e5ad8f558 100644
 --- a/modules/desktop_capture/win/wgc_capture_session.cc
 +++ b/modules/desktop_capture/win/wgc_capture_session.cc
-@@ -276,6 +276,9 @@ HRESULT WgcCaptureSession::StartCapture(const DesktopCaptureOptions& options) {
+@@ -289,6 +289,9 @@ HRESULT WgcCaptureSession::StartCapture(const DesktopCaptureOptions& options) {
    }
  #endif
  
@@ -22,7 +22,7 @@ index 3037d471cc..763ae9c22d 100644
    // Windows 11 24H2 (10.0.26100.0) added
    // `IGraphicsCaptureSession6::put_IncludeSecondaryWindows()`. See
    // `wgc_include_secondary_windows()` in
-@@ -287,6 +290,7 @@ HRESULT WgcCaptureSession::StartCapture(const DesktopCaptureOptions& options) {
+@@ -300,6 +303,7 @@ HRESULT WgcCaptureSession::StartCapture(const DesktopCaptureOptions& options) {
      session6->put_IncludeSecondaryWindows(
          options.wgc_include_secondary_windows());
    }
