@@ -5,12 +5,16 @@
 package org.mozilla.fenix.tabgroups
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.test.DeviceConfigurationOverride
+import androidx.compose.ui.test.ForcedSize
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import org.junit.Assert
@@ -113,6 +117,85 @@ class TabGroupCardTest {
         composeTestRule.onNodeWithTag(TabsTrayTestTag.DELETE_TAB_GROUP).assertIsDisplayed()
     }
 
+    @Test
+    fun verifyThumbnailSizesSimilarOnSmallWindowPortrait() {
+        composeTestRule.setContent {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.ForcedSize(DpSize(400.dp, 800.dp))) {
+                FirefoxTheme {
+                    ComposableUnderTest()
+                }
+            }
+        }
+        verifyThumbnailSizesSimilar()
+    }
+
+    @Test
+    fun verifyThumbnailSizesSimilarOnSmallWindowLandscape() {
+        composeTestRule.setContent {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.ForcedSize(DpSize(800.dp, 400.dp))) {
+                FirefoxTheme {
+                    ComposableUnderTest()
+                }
+            }
+        }
+        verifyThumbnailSizesSimilar()
+    }
+
+    @Test
+    fun verifyThumbnailSizesSimilarOnLargeWindowPortrait() {
+        composeTestRule.setContent {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.ForcedSize(DpSize(800.dp, 1280.dp))) {
+                FirefoxTheme {
+                    ComposableUnderTest()
+                }
+            }
+        }
+        verifyThumbnailSizesSimilar()
+    }
+
+    @Test
+    fun verifyThumbnailSizesSimilarOnLargeWindowLandscape() {
+        composeTestRule.setContent {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.ForcedSize(DpSize(1280.dp, 800.dp))) {
+                FirefoxTheme {
+                    ComposableUnderTest()
+                }
+            }
+        }
+        verifyThumbnailSizesSimilar()
+    }
+
+    private fun verifyThumbnailSizesSimilar() {
+        val first = composeTestRule.onNodeWithTag(
+            testTag = TabsTrayTestTag.TAB_GROUP_THUMBNAIL_FIRST,
+            useUnmergedTree = true,
+        ).fetchSemanticsNode().size
+        val second = composeTestRule.onNodeWithTag(
+            testTag = TabsTrayTestTag.TAB_GROUP_THUMBNAIL_SECOND,
+            useUnmergedTree = true,
+        ).fetchSemanticsNode().size
+        val third = composeTestRule.onNodeWithTag(
+            testTag = TabsTrayTestTag.TAB_GROUP_THUMBNAIL_THIRD,
+            useUnmergedTree = true,
+        ).fetchSemanticsNode().size
+        val fourth = composeTestRule.onNodeWithTag(
+            testTag = TabsTrayTestTag.TAB_GROUP_THUMBNAIL_FOURTH,
+            useUnmergedTree = true,
+        ).fetchSemanticsNode().size
+        val thumbnails = listOf(first, second, third, fourth)
+        val allowance = 10
+        for (i in 1 until thumbnails.size) {
+            assert(
+                thumbnails[i].height in first.height - allowance..first.height + allowance,
+                { "Height of thumbnail $i ${thumbnails[i].height} not within margin of error of ${first.height}" },
+            )
+            assert(
+                thumbnails[i].width in first.width - allowance..first.width + allowance,
+                { "Width of thumbnail $i ${thumbnails[i].width} not within margin of error of {${first.width}" },
+            )
+        }
+    }
+
     @Composable
     private fun ComposableUnderTest(
         onClick: (String) -> Unit = {},
@@ -129,7 +212,6 @@ class TabGroupCardTest {
                 ),
             ),
             selectionState = TabsTrayItemSelectionState(),
-            thumbnailSizePx = 12,
             clickHandler = TabsTrayItemClickHandler(
                 onClick = { onClick("Test") },
                 onLongClick = { onLongClick("Test") },
