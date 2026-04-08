@@ -92,7 +92,7 @@ class LinuxGamepadService {
   void AddMonitor();
   void RemoveMonitor();
   bool IsDeviceGamepad(struct udev_device* dev);
-  bool IsXpadDevice(struct udev_device* aDev);
+  bool IsXboxDevice(struct udev_device* aDev);
   void ReadUdevChange();
 
   // handler for data from /dev/input/eventN
@@ -209,12 +209,13 @@ void LinuxGamepadService::AddDevice(struct udev_device* dev) {
       gamepad->key_map[kStandardButtons[button]] = button;
     }
 
-    if (IsXpadDevice(dev)) {
-      // The xpad driver for X-Box like gamepads maps the button labelled X to
-      // BTN_X (== BTN_NORTH) and the button labelled Y to BTN_Y (== BTN_WEST).
-      // However, unlike Nintendo controllers (where X is north and Y is west),
-      // Xbox gamepads have X on the left (west) and Y on the top (north). We
-      // swap them here to provide consistent results to the Gamepad API.
+    if (IsXboxDevice(dev)) {
+      // The `xpad` and `microsoft` drivers for Xbox like gamepads map the
+      // button labelled X to BTN_X (== BTN_NORTH) and the button labelled Y to
+      // BTN_Y (== BTN_WEST). However, unlike Nintendo controllers (where X is
+      // north and Y is west), Xbox gamepads have X on the left (west) and Y on
+      // the top (north). We swap them here to provide consistent results to the
+      // Gamepad API.
 
       std::swap(gamepad->key_map[BTN_WEST], gamepad->key_map[BTN_NORTH]);
     }
@@ -411,13 +412,25 @@ bool LinuxGamepadService::IsDeviceGamepad(struct udev_device* aDev) {
   return strncmp(devpath, kEvdevPath, strlen(kEvdevPath)) == 0;
 }
 
-bool LinuxGamepadService::IsXpadDevice(struct udev_device* aDev) {
-  const char* driver =
-      mUdev.udev_device_get_property_value(aDev, "ID_USB_DRIVER");
+bool LinuxGamepadService::IsXboxDevice(struct udev_device* aDev) {
+  const char* driver = NULL;
+  struct udev_device* p = mUdev.udev_device_get_parent(aDev);
+  while (p && !driver) {
+    driver = mUdev.udev_device_get_driver(p);
+    p = mUdev.udev_device_get_parent(p);
+  }
   if (!driver) {
     return false;
   }
-  return strcmp(driver, "xpad") == 0;
+  if (strcmp(driver, "xpad") == 0) {
+    // Wired Xbox controllers and Xbox 360 wireless receivers
+    return true;
+  }
+  if (strcmp(driver, "microsoft") == 0) {
+    // Bluetooth Xbox controllers
+    return true;
+  }
+  return false;
 }
 
 void LinuxGamepadService::ReadUdevChange() {
