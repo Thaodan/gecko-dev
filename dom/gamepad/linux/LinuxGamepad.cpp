@@ -265,6 +265,20 @@ void LinuxGamepadService::AddDevice(struct udev_device* dev) {
     }
   }
 
+  // If this is a standard gamepad and has exactly 2 extra axes that are mapped
+  // to ABS_Z and ABS_RZ, then those are analog triggers and will be remapped.
+  if (gamepad->isStandardGamepad && numAxes == (AXIS_INDEX_COUNT + 2) &&
+      gamepad->abs_map[ABS_Z] && gamepad->abs_map[ABS_RZ]) {
+    // Correct the number of axes reported.
+    numAxes -= 2;
+
+    // Disable discrete trigger buttons. Set BTN_TL2 and BTN_TR2 to an invalid
+    // value that does not exist on the gamepad, so they won't trigger a button
+    // press when you partially pull the trigger.
+    gamepad->key_map[BTN_TL2] = 255;
+    gamepad->key_map[BTN_TR2] = 255;
+  }
+
   if (numAxes == 0) {
     NS_WARNING("Gamepad with zero axes detected?");
   }
@@ -475,6 +489,9 @@ gboolean LinuxGamepadService::OnGamepadData(GIOChannel* source,
     switch (event.type) {
       case EV_KEY:
         if (gamepad->isStandardGamepad) {
+          if (gamepad->key_map[event.code] == 255) {
+            continue;
+          }
           service->NewButtonEvent(gamepad->handle, gamepad->key_map[event.code],
                                   !!event.value);
         } else {
@@ -503,6 +520,20 @@ gboolean LinuxGamepadService::OnGamepadData(GIOChannel* source,
               service->NewButtonEvent(gamepad->handle, BUTTON_INDEX_DPAD_DOWN,
                                       AxisPositiveAsButton(scaledValue));
               break;
+            case ABS_Z: {
+              const double value = AxisToButtonValue(scaledValue);
+              service->NewButtonEvent(gamepad->handle,
+                                      BUTTON_INDEX_LEFT_TRIGGER,
+                                      value > BUTTON_THRESHOLD_VALUE, value);
+              break;
+            }
+            case ABS_RZ: {
+              const double value = AxisToButtonValue(scaledValue);
+              service->NewButtonEvent(gamepad->handle,
+                                      BUTTON_INDEX_RIGHT_TRIGGER,
+                                      value > BUTTON_THRESHOLD_VALUE, value);
+              break;
+            }
             default:
               service->NewAxisMoveEvent(
                   gamepad->handle, gamepad->abs_map[event.code], scaledValue);
