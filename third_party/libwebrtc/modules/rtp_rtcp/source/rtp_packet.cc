@@ -12,11 +12,11 @@
 
 #include <cstdint>
 #include <cstring>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "api/array_view.h"
 #include "api/rtp_parameters.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
@@ -93,7 +93,7 @@ bool RtpPacket::Parse(const uint8_t* buffer, size_t buffer_size) {
   return true;
 }
 
-bool RtpPacket::Parse(ArrayView<const uint8_t> packet) {
+bool RtpPacket::Parse(std::span<const uint8_t> packet) {
   return Parse(packet.data(), packet.size());
 }
 
@@ -247,7 +247,7 @@ void RtpPacket::SetCsrcs(std::span<const uint32_t> csrcs) {
   }
 }
 
-ArrayView<uint8_t> RtpPacket::AllocateRawExtension(int id, size_t length) {
+std::span<uint8_t> RtpPacket::AllocateRawExtension(int id, size_t length) {
   RTC_DCHECK_GE(id, RtpExtension::kMinId);
   RTC_DCHECK_LE(id, RtpExtension::kMaxId);
   RTC_DCHECK_GE(length, 1);
@@ -256,7 +256,7 @@ ArrayView<uint8_t> RtpPacket::AllocateRawExtension(int id, size_t length) {
   if (extension_entry != nullptr) {
     // Extension already reserved. Check if same length is used.
     if (extension_entry->length == length)
-      return MakeArrayView(WriteAt(extension_entry->offset), length);
+      return std::span(WriteAt(extension_entry->offset), length);
 
     RTC_LOG(LS_ERROR) << "Length mismatch for extension id " << id
                       << ": expected "
@@ -357,7 +357,7 @@ ArrayView<uint8_t> RtpPacket::AllocateRawExtension(int id, size_t length) {
       SetExtensionLengthMaybeAddZeroPadding(extensions_offset);
   payload_offset_ = extensions_offset + extensions_size_padded;
   buffer_.SetSize(payload_offset_);
-  return MakeArrayView(WriteAt(extension_info_offset), extension_info_length);
+  return std::span(WriteAt(extension_info_offset), extension_info_length);
 }
 
 void RtpPacket::PromoteToTwoByteHeaderExtension() {
@@ -417,7 +417,7 @@ uint8_t* RtpPacket::AllocatePayload(size_t size_bytes) {
   return SetPayloadSize(size_bytes);
 }
 
-void RtpPacket::SetPayload(ArrayView<const uint8_t> payload) {
+void RtpPacket::SetPayload(std::span<const uint8_t> payload) {
   if (payload.empty()) {
     SetPayloadSize(0);
     return;
@@ -609,7 +609,7 @@ RtpPacket::ExtensionInfo& RtpPacket::FindOrCreateExtensionInfo(int id) {
   return extension_entries_.back();
 }
 
-ArrayView<const uint8_t> RtpPacket::FindExtension(ExtensionType type) const {
+std::span<const uint8_t> RtpPacket::FindExtension(ExtensionType type) const {
   uint8_t id = extensions_.GetId(type);
   if (id == ExtensionManager::kInvalidId) {
     // Extension not registered.
@@ -619,10 +619,10 @@ ArrayView<const uint8_t> RtpPacket::FindExtension(ExtensionType type) const {
   if (extension_info == nullptr) {
     return {};
   }
-  return MakeArrayView(data() + extension_info->offset, extension_info->length);
+  return std::span(data() + extension_info->offset, extension_info->length);
 }
 
-ArrayView<uint8_t> RtpPacket::AllocateExtension(ExtensionType type,
+std::span<uint8_t> RtpPacket::AllocateExtension(ExtensionType type,
                                                 size_t length) {
   // TODO(webrtc:7990): Add support for empty extensions (length==0).
   if (length == 0 || length > RtpExtension::kMaxValueSize ||

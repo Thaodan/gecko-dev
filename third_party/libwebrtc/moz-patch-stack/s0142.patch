@@ -5,22 +5,15 @@ Subject: Bug 2027499 - adhere to spec on number of CSRCs in rtp packets. r=bwc
 Differential Revision: https://phabricator.services.mozilla.com/D291629
 Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/ccdaaef4f2b19d4a849d5a6f1e4aedba392c0f91
 ---
- modules/rtp_rtcp/source/rtp_packet.cc | 11 +++++++++--
- modules/rtp_rtcp/source/rtp_packet.h  |  9 ++++++++-
- 2 files changed, 17 insertions(+), 3 deletions(-)
+ modules/rtp_rtcp/source/rtp_packet.cc | 9 ++++++++-
+ modules/rtp_rtcp/source/rtp_packet.h  | 6 ++++++
+ 2 files changed, 14 insertions(+), 1 deletion(-)
 
 diff --git a/modules/rtp_rtcp/source/rtp_packet.cc b/modules/rtp_rtcp/source/rtp_packet.cc
-index 9948e5fa99..2b98fdab97 100644
+index adbf16854e..294d703af5 100644
 --- a/modules/rtp_rtcp/source/rtp_packet.cc
 +++ b/modules/rtp_rtcp/source/rtp_packet.cc
-@@ -224,20 +224,27 @@ void RtpPacket::ZeroMutableExtensions() {
-   }
- }
- 
--void RtpPacket::SetCsrcs(ArrayView<const uint32_t> csrcs) {
-+void RtpPacket::SetCsrcs(std::span<const uint32_t> csrcs) {
-   RTC_DCHECK_EQ(extensions_size_, 0);
-   RTC_DCHECK_EQ(payload_size_, 0);
+@@ -230,14 +230,21 @@ void RtpPacket::SetCsrcs(std::span<const uint32_t> csrcs) {
    RTC_DCHECK_EQ(padding_size_, 0);
    RTC_DCHECK_LE(csrcs.size(), 0x0fu);
    RTC_DCHECK_LE(kFixedHeaderSize + 4 * csrcs.size(), capacity());
@@ -42,20 +35,12 @@ index 9948e5fa99..2b98fdab97 100644
 -  buffer_.SetSize(payload_offset_);
  }
  
- ArrayView<uint8_t> RtpPacket::AllocateRawExtension(int id, size_t length) {
+ std::span<uint8_t> RtpPacket::AllocateRawExtension(int id, size_t length) {
 diff --git a/modules/rtp_rtcp/source/rtp_packet.h b/modules/rtp_rtcp/source/rtp_packet.h
-index 9abdbc6591..84f1c3f200 100644
+index 1a9f91799b..78cccb347d 100644
 --- a/modules/rtp_rtcp/source/rtp_packet.h
 +++ b/modules/rtp_rtcp/source/rtp_packet.h
-@@ -14,6 +14,7 @@
- #include <cstdint>
- #include <cstring>
- #include <optional>
-+#include <span>
- #include <string>
- #include <utility>
- #include <vector>
-@@ -30,6 +31,12 @@ class RtpPacket {
+@@ -30,6 +30,12 @@ class RtpPacket {
    using ExtensionType = RTPExtensionType;
    using ExtensionManager = RtpHeaderExtensionMap;
  
@@ -68,12 +53,3 @@ index 9abdbc6591..84f1c3f200 100644
    // `extensions` required for SetExtension/ReserveExtension functions during
    // packet creating and used if available in Parse function.
    // Adding and getting extensions will fail until `extensions` is
-@@ -119,7 +126,7 @@ class RtpPacket {
-   // Writes csrc list. Assumes:
-   // a) There is enough room left in buffer.
-   // b) Extension headers, payload or padding data has not already been added.
--  void SetCsrcs(ArrayView<const uint32_t> csrcs);
-+  void SetCsrcs(std::span<const uint32_t> csrcs);
- 
-   // Header extensions.
-   template <typename Extension>
