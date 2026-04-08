@@ -240,13 +240,10 @@ export class PictureInPictureLauncherChild extends JSWindowActorChild {
       autoFocus,
     });
 
-    // Some tests don't bother setting a reason.
-    if (reason) {
-      Glean.pictureinpicture["openedMethod" + reason].record({
-        firstTimeToggle: !Services.prefs.getBoolPref(TOGGLE_HAS_USED_PREF),
-        ...eventExtraKeys,
-      });
-    }
+    Glean.pictureinpicture["openedMethod" + reason].record({
+      firstTimeToggle: !Services.prefs.getBoolPref(TOGGLE_HAS_USED_PREF),
+      ...eventExtraKeys,
+    });
   }
 
   /**
