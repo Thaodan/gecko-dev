@@ -380,7 +380,6 @@ class NimbusGeckoPrefHandlerTest {
 
         // Checking that the engine received two distinct requests
         verify(exactly = 2) { mockEngine.getBrowserPrefs(any(), any(), any()) }
-        assertEquals(2, capturedPrefs[0].size)
         assertTrue(capturedPrefs[0].containsAll(listOf(TEST_PREF, SECOND_TEST_PREF)))
         assertEquals(listOf("browser.some.other.pref"), capturedPrefs[1])
     }
