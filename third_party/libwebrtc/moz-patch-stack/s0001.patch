@@ -686,7 +686,7 @@ index 8fb26e5522..3416ce8cf3 100644
  // Subclasses must defined kId and kUri static constexpr members.
  class BaseRtpStringExtension {
 diff --git a/modules/rtp_rtcp/source/rtp_packet.cc b/modules/rtp_rtcp/source/rtp_packet.cc
-index 3515521fcd..a869de1489 100644
+index 963519dd0c..1fb2630788 100644
 --- a/modules/rtp_rtcp/source/rtp_packet.cc
 +++ b/modules/rtp_rtcp/source/rtp_packet.cc
 @@ -212,6 +212,10 @@ void RtpPacket::ZeroMutableExtensions() {

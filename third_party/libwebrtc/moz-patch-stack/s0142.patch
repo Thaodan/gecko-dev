@@ -10,7 +10,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/ccdaaef4f2b19d4a8
  2 files changed, 17 insertions(+), 3 deletions(-)
 
 diff --git a/modules/rtp_rtcp/source/rtp_packet.cc b/modules/rtp_rtcp/source/rtp_packet.cc
-index 034fcd225f..12aae063d6 100644
+index 9948e5fa99..2b98fdab97 100644
 --- a/modules/rtp_rtcp/source/rtp_packet.cc
 +++ b/modules/rtp_rtcp/source/rtp_packet.cc
 @@ -224,20 +224,27 @@ void RtpPacket::ZeroMutableExtensions() {
