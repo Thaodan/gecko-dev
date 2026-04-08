@@ -54,6 +54,13 @@ class Collator final {
     mozilla_collator_glue_collator_free(reinterpret_cast<Collator*>(aCollator));
   }
 
+  /**
+   * Returns the resolved options of this collator.
+   */
+  CollatorOptions ResolvedOptions() {
+    return mozilla_collator_glue_collator_resolved_options(this);
+  }
+
   // If you have UTF-8, it's trivial to add `CompareUTF-8` that calls the
   // `compare_utf8` on the Rust collator. Do not convert from UTF-8 to UTF-16
   // and call this method!

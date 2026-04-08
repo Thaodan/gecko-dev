@@ -666,6 +666,52 @@ static mozilla::intl::Collator* GetOrCreateCollator(
   return coll;
 }
 
+static bool ResolvedOptions(JSContext* cx, Handle<CollatorObject*> collator,
+                            CollatorOptions* result) {
+  if (!ResolveLocale(cx, collator)) {
+    return false;
+  }
+  auto options = collator->getOptions();
+
+  // If any option is set to |Locale|, we need to construct a Collator to
+  // determine the resolved options.
+  if (options.ignorePunctuation == CollatorOptions::IgnorePunctuation::Locale ||
+      options.numeric == CollatorOptions::Numeric::Locale ||
+      options.caseFirst == CollatorOptions::CaseFirst::Locale) {
+    auto* coll = GetOrCreateCollator(cx, collator);
+    if (!coll) {
+      return false;
+    }
+    auto resolvedOptions = coll->ResolvedOptions();
+
+    // Assert all fixed input options match the resolved options.
+    MOZ_ASSERT(options.sensitivity == resolvedOptions.sensitivity);
+    MOZ_ASSERT_IF(
+        options.ignorePunctuation != CollatorOptions::IgnorePunctuation::Locale,
+        options.ignorePunctuation == resolvedOptions.ignorePunctuation);
+    MOZ_ASSERT_IF(options.numeric != CollatorOptions::Numeric::Locale,
+                  options.numeric == resolvedOptions.numeric);
+    MOZ_ASSERT_IF(options.caseFirst != CollatorOptions::CaseFirst::Locale,
+                  options.caseFirst == resolvedOptions.caseFirst);
+
+    // Assert all options are resolved to a locale-specific value.
+    MOZ_ASSERT(resolvedOptions.ignorePunctuation !=
+               CollatorOptions::IgnorePunctuation::Locale);
+    MOZ_ASSERT(resolvedOptions.numeric != CollatorOptions::Numeric::Locale);
+    MOZ_ASSERT(resolvedOptions.caseFirst != CollatorOptions::CaseFirst::Locale);
+
+    options.ignorePunctuation = resolvedOptions.ignorePunctuation;
+    options.numeric = resolvedOptions.numeric;
+    options.caseFirst = resolvedOptions.caseFirst;
+
+    // Set the resolved options.
+    collator->setOptions(options);
+  }
+
+  *result = options;
+  return true;
+}
+
 template <typename CharT>
 class MOZ_STACK_CLASS Latin1ToUtfCodeUnits final {
   static constexpr size_t MaxUtfCodeUnits(size_t n) {
@@ -915,10 +961,10 @@ static bool collator_resolvedOptions(JSContext* cx, const CallArgs& args) {
   Rooted<CollatorObject*> collator(
       cx, &args.thisv().toObject().as<CollatorObject>());
 
-  if (!ResolveLocale(cx, collator)) {
+  CollatorOptions colOptions;
+  if (!ResolvedOptions(cx, collator, &colOptions)) {
     return false;
   }
-  auto colOptions = collator->getOptions();
 
   // Step 3.
   Rooted<IdValueVector> options(cx, cx);
