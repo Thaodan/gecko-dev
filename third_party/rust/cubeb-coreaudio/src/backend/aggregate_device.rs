@@ -334,19 +334,17 @@ impl AggregateDevice {
             return Err(Error::from(status));
         }
 
-        let _teardown = finally(|| {
+        let cleanup = || {
             let status = audio_object_remove_property_listener(
                 device_id,
                 &address,
                 devices_changed_callback,
                 data_ptr as *mut c_void,
             );
-            // kAudioHardwareBadObjectError implies device_id is somehow dead,
-            // so its listener should receive nothing.
-            assert!(status == NO_ERR || status == (kAudioHardwareBadObjectError as OSStatus));
             sync_callback_registry_unregister(data_ptr as usize);
             unsafe { drop(Box::from_raw(data_ptr)) };
-        });
+            status
+        };
 
         Self::set_sub_devices(device_id, input_id, output_id)?;
 
@@ -364,6 +362,10 @@ impl AggregateDevice {
                 );
             }
             if *dev != device_id {
+                let status = cleanup();
+                // If the error is kAudioHardwareBadObjectError, it implies `device_id` is somehow
+                // dead, so its listener should receive nothing. It's ok to leave here.
+                assert!(status == NO_ERR || status == (kAudioHardwareBadObjectError as OSStatus));
                 return Err(Error::from(waiting_time));
             }
         }
@@ -384,6 +386,8 @@ impl AggregateDevice {
             NO_ERR
         }
 
+        let status = cleanup();
+        assert_eq!(status, NO_ERR);
         Ok(())
     }
 
