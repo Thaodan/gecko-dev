@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "CookieCommons.h"
+#include "CookieDummyStorage.h"
 #include "CookieLogging.h"
 #include "CookieParser.h"
 #include "CookieService.h"
@@ -1663,6 +1664,11 @@ bool CookieService::IsInitialized() const {
 CookieStorage* CookieService::PickStorage(const OriginAttributes& aAttrs) {
   MOZ_ASSERT(IsInitialized());
 
+  // We just want to avoid hanging in EnsureInitialized during shutdown.
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdown)) {
+    return MaybeCreateDummyStorage();
+  }
+
   if (aAttrs.IsPrivateBrowsing()) {
     return mPrivateStorage;
   }
@@ -1671,9 +1677,21 @@ CookieStorage* CookieService::PickStorage(const OriginAttributes& aAttrs) {
   return mPersistentStorage;
 }
 
+CookieStorage* CookieService::MaybeCreateDummyStorage() {
+  if (!mDummyStorage) {
+    mDummyStorage = new CookieDummyStorage();
+  }
+  return mDummyStorage;
+}
+
 CookieStorage* CookieService::PickStorage(
     const OriginAttributesPattern& aAttrs) {
   MOZ_ASSERT(IsInitialized());
+
+  // We just want to avoid hanging in EnsureInitialized during shutdown.
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdown)) {
+    return MaybeCreateDummyStorage();
+  }
 
   if (aAttrs.mPrivateBrowsingId.WasPassed() &&
       aAttrs.mPrivateBrowsingId.Value() > 0) {

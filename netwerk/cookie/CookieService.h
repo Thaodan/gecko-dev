@@ -140,6 +140,7 @@ class CookieService final : public nsICookieService,
   // private browsing.
   RefPtr<CookieStorage> mPersistentStorage;
   RefPtr<CookieStorage> mPrivateStorage;
+  RefPtr<CookieStorage> mDummyStorage;
 
  private:
   nsresult AddInternal(nsIURI* aCookieURI, const nsACString& aHost,
@@ -150,6 +151,8 @@ class CookieService final : public nsICookieService,
                        nsICookie::schemeType aSchemeMap, bool aIsPartitioned,
                        bool aFromHttp, const nsID* aOperationID,
                        nsICookieValidation** aValidation);
+
+  CookieStorage* MaybeCreateDummyStorage();
 };
 
 }  // namespace net
