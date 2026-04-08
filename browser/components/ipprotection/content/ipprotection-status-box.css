@@ -32,6 +32,15 @@
   }
 }
 
+.paused {
+  background-color: var(--background-color-box-info);
+
+  ::slotted([slot="image"]) {
+    -moz-context-properties: fill;
+    fill: var(--icon-color);
+  }
+}
+
 .connecting {
   background-color: var(--background-color-box-info);
 
