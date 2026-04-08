@@ -60,6 +60,16 @@ class ReadableStreamGenericReader : public nsISupports {
   RefPtr<ReadableStream> mStream;
 };
 
+namespace streams_abstract {
+
+bool ReadableStreamReaderGenericInitialize(ReadableStreamGenericReader* aReader,
+                                           ReadableStream* aStream);
+
+void ReadableStreamReaderGenericRelease(ReadableStreamGenericReader* aReader,
+                                        ErrorResult& aRv);
+
+}  // namespace streams_abstract
+
 }  // namespace mozilla::dom
 
 #endif

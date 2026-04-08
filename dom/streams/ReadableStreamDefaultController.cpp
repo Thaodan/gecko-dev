@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "ReadableStreamAbstract.h"
-#include "ReadableStreamDefaultControllerAbstract.h"
+#include "mozilla/dom/ReadableStreamDefaultController.h"
+
 #include "js/Exception.h"
 #include "js/TypeDecls.h"
 #include "js/Value.h"
@@ -12,6 +12,7 @@
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/ReadableStreamControllerBase.h"
 #include "mozilla/dom/ReadableStreamDefaultControllerBinding.h"
 #include "mozilla/dom/ReadableStreamDefaultReaderBinding.h"

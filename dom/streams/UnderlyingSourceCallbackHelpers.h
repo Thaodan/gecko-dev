@@ -246,7 +246,11 @@ class InputToReadableStreamAlgorithms final
   nsIInputStream* MaybeGetInputStreamIfUnread() override;
 
  private:
-  ~InputToReadableStreamAlgorithms();
+  ~InputToReadableStreamAlgorithms() {
+    if (mInput) {
+      mInput->Shutdown();
+    }
+  }
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void CloseAndReleaseObjects(
       JSContext* aCx, ReadableStream* aStream);
