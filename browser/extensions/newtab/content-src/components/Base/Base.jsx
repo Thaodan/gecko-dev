@@ -15,6 +15,7 @@ import { TopSites } from "content-src/components/TopSites/TopSites";
 import { Sections } from "content-src/components/Sections/Sections";
 import { Logo } from "content-src/components/Logo/Logo";
 import { Weather } from "content-src/components/Weather/Weather";
+import { Weather as WeatherWidget } from "content-src/components/Widgets/Weather/Weather";
 import { DownloadModalToggle } from "content-src/components/DownloadModalToggle/DownloadModalToggle";
 import { Notifications } from "content-src/components/Notifications/Notifications";
 import { TopicSelection } from "content-src/components/DiscoveryStreamComponents/TopicSelection/TopicSelection";
@@ -750,7 +751,9 @@ export class BaseContent extends React.PureComponent {
       showInferredPersonalizationEnabled:
         prefs[PREF_INFERRED_PERSONALIZATION_USER],
       topSitesRowsCount: prefs.topSitesRows,
-      weatherEnabled: prefs.showWeather,
+      weatherEnabled: novaEnabled
+        ? prefs["widgets.weather.enabled"]
+        : prefs.showWeather,
     };
 
     const pocketRegion = prefs["feeds.system.topstories"];
@@ -783,11 +786,23 @@ export class BaseContent extends React.PureComponent {
       nimbusTimerEnabled ||
       nimbusTimerTrainhopEnabled;
 
+    const mayHaveWeatherWidget =
+      prefs["widgets.system.weather.enabled"] ||
+      prefs.trainhopConfig?.widgets?.weatherEnabled;
+    const showWeatherWidgetInSidebar =
+      novaEnabled &&
+      mayHaveWeatherWidget &&
+      prefs["widgets.weather.enabled"] &&
+      weatherEnabled &&
+      prefs["widgets.weather.size"] === "small";
+
     // These prefs set the initial values on the Customize panel toggle switches
     const enabledWidgets = {
       listsEnabled: prefs["widgets.lists.enabled"],
       timerEnabled: prefs["widgets.focusTimer.enabled"],
-      weatherEnabled: prefs.showWeather,
+      weatherEnabled: novaEnabled
+        ? prefs["widgets.weather.enabled"]
+        : prefs.showWeather,
       widgetsMaximized: prefs["widgets.maximized"],
       widgetsMayBeMaximized: prefs["widgets.system.maximized"],
     };
@@ -921,9 +936,9 @@ export class BaseContent extends React.PureComponent {
             </div>
             <div className="sidebar-inline-end">
               {/* Mini Widgets - Weather */}
-              {weatherEnabled && (
+              {showWeatherWidgetInSidebar && (
                 <ErrorBoundary>
-                  <Weather />
+                  <WeatherWidget dispatch={props.dispatch} size="small" />
                 </ErrorBoundary>
               )}
             </div>
@@ -971,7 +986,7 @@ export class BaseContent extends React.PureComponent {
     return (
       <div className={featureClassName}>
         <div className="weatherWrapper">
-          {weatherEnabled && (
+          {!novaEnabled && weatherEnabled && (
             <ErrorBoundary>
               <Weather />
             </ErrorBoundary>

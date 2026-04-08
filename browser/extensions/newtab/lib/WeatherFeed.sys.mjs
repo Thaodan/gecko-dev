@@ -251,7 +251,9 @@ export class WeatherFeed {
         break;
       }
       case "weather.display":
-      case "widgets.system.weatherForecast.enabled": {
+      case "widgets.system.weatherForecast.enabled":
+      case "widgets.system.weather.enabled":
+      case "widgets.weather.size": {
         if (!this.hourlyForecasts?.length) {
           await this.fetch();
         }
@@ -380,10 +382,21 @@ export class WeatherFeed {
 
         const { values } = this.store.getState().Prefs;
 
+        // Hourly forecasts are only needed for medium/large widget sizes. The
+        // condition checks all the ways the forecast widget can be enabled:
+        //   - Nova path: weather.display is "detailed" AND the forecast feature
+        //     is system-enabled (via pref or trainhopConfig)
+        //   - Pre-Nova / trainhop path: the basic weather widget is enabled
+        //     directly via system pref or trainhopConfig
+        // The size guard short-circuits for "small" (sidebar) regardless of the
+        // other flags, since that variant never shows hourly data.
         const weatherForecastWidgetEnabled =
-          values["weather.display"] === "detailed" &&
-          (values["widgets.system.weatherForecast.enabled"] ||
-            values.trainhopConfig?.widgets?.weatherForecastEnabled);
+          values["widgets.weather.size"] !== "small" &&
+          ((values["weather.display"] === "detailed" &&
+            (values["widgets.system.weatherForecast.enabled"] ||
+              values.trainhopConfig?.widgets?.weatherForecastEnabled)) ||
+            values["widgets.system.weather.enabled"] ||
+            values.trainhopConfig?.widgets?.weatherEnabled);
 
         // @backward-compat { version 151 }
         // Read endpoint URLs from trainhopConfig or ActivityStream prefs so
@@ -411,14 +424,16 @@ export class WeatherFeed {
               // from geolocation and need to be populated in the fetch URL.
               // Fall back to this.locationData so the hourly endpoint can
               // resolve the selected location.
-              this.merino.fetchHourlyForecasts({
-                source: "newtab",
-                locationName,
-                city: city || this.locationData?.city,
-                region: region || this.locationData?.adminName?.id,
-                country: country || this.locationData?.country?.id,
-                endpointUrl: hourlyEndpointUrl,
-              })
+              this.merino
+                .fetchHourlyForecasts({
+                  source: "newtab",
+                  locationName,
+                  city: city || this.locationData?.city,
+                  region: region || this.locationData?.adminName?.id,
+                  country: country || this.locationData?.country?.id,
+                  endpointUrl: hourlyEndpointUrl,
+                })
+                .catch(() => null)
             : Promise.resolve(null),
         ]);
 
