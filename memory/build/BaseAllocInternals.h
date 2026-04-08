@@ -69,8 +69,6 @@ struct BaseAllocMetadata {
   // The size of the cell to this metadata's right (higher memory address)
   base_alloc_size_t mRightSize : 31;
 
-  // Allocated is only used for assertions, but will be used with future
-  // patches.
   bool mRightAllocated : 1;
 
   // There's no constructor because we must preserve either the previous or
@@ -81,6 +79,12 @@ struct BaseAllocMetadata {
     mRightAllocated = false;
   }
   void InitForLeftCell(base_alloc_size_t aSize) { mLeftSize = aSize; }
+
+  void Clear() {
+    mLeftSize = 0;
+    mRightSize = 0;
+    mRightAllocated = false;
+  }
 };
 
 class BaseAllocCell {
@@ -124,6 +128,8 @@ class BaseAllocCell {
 
   base_alloc_size_t Size() { return LeftMetadata()->mRightSize; }
 
+  void SetSize(base_alloc_size_t aNewSize);
+
   bool Allocated() { return LeftMetadata()->mRightAllocated; }
 
   void* Ptr() { return this; }
@@ -140,6 +146,11 @@ class BaseAllocCell {
   // After freeing a cell but before we can use the list pointers we must
   // clear them to avoid assertions in DoublyLinkedList.
   void ClearPayload();
+
+  BaseAllocCell* LeftCell();
+  BaseAllocCell* RightCell();
+
+  void Merge(BaseAllocCell* cell);
 
   // disable copy, move and new since this class must only be used in-place.
   BaseAllocCell(const BaseAllocCell&) = delete;

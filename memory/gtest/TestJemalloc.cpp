@@ -865,7 +865,7 @@ TEST(Jemalloc, StatsLite)
   moz_dispose_arena(my_arena);
 }
 
-void TestBaseAlloc(size_t size) {
+void TestBaseAlloc(size_t size, unsigned& hits) {
   SCOPED_TRACE(testing::Message() << "testing size " << size);
   void* ptr1 = sBaseAlloc.alloc(size);
   EXPECT_TRUE(ptr1);
@@ -882,7 +882,9 @@ void TestBaseAlloc(size_t size) {
   sBaseAlloc.free(ptr1);
   void* ptr3 = sBaseAlloc.alloc(size);
   EXPECT_TRUE(size <= sBaseAlloc.usable_size(ptr3));
-  EXPECT_EQ(ptr1, ptr3);
+  if (ptr1 == ptr3) {
+    hits++;
+  }
 
   sBaseAlloc.free(ptr2);
   sBaseAlloc.free(ptr3);
@@ -890,21 +892,31 @@ void TestBaseAlloc(size_t size) {
 
 TEST(Jemalloc, BaseAlloc)
 {
+  // Used to calculate the free list hit rate, see the end of the test.
+  unsigned tries = 0;
+  unsigned hits = 0;
+
   // Try varying sizes to hit each size class.  The base allocator's size
   // classes depend on cache line and C++ structure sizes, they'll be at least
   // 16 from each-other.
   for (size_t size = 8; size < 1024; size += 8) {
-    TestBaseAlloc(size);
+    tries++;
+    TestBaseAlloc(size, hits);
   }
   for (size_t size = 1024; size < 8192; size += 128) {
-    TestBaseAlloc(size);
+    tries++;
+    TestBaseAlloc(size, hits);
   }
   for (size_t size = 8192; size < 8_MiB; size += 1024) {
-    TestBaseAlloc(size);
+    tries++;
+    TestBaseAlloc(size, hits);
   }
 
   void* ptr1 = sBaseAlloc.calloc(100, 7);
   EXPECT_TRUE(ptr1);
   EXPECT_TRUE(100 * 7 <= sBaseAlloc.usable_size(ptr1));
   sBaseAlloc.free(ptr1);
+
+  // Free list hit rate is at least 90% (its typically 99%)
+  EXPECT_TRUE(float(hits) / float(tries) >= 0.9f);
 }
