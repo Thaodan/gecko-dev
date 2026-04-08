@@ -290,6 +290,8 @@ static int crashHelperClientFd = -1;
 #  endif
 #endif
 
+static void OOPInit();
+
 void RecordMainThreadId() {
   gMainThreadId =
 #if defined(XP_UNIX)
@@ -1675,10 +1677,6 @@ static size_t BuildTempPath(CharT (&aBuf)[N]) {
 
 template <typename PathStringT>
 static bool BuildTempPath(PathStringT& aResult) {
-  if (!aResult.IsEmpty()) {
-    return true;
-  }
-
   aResult.SetLength(XP_PATH_MAX);
   size_t actualLen = BuildTempPath(aResult.BeginWriting(), XP_PATH_MAX);
   if (!actualLen) {
@@ -1930,8 +1928,16 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force /*=false*/) {
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
+  // Locate the crash helper executable
+  PathString crashHelperPath_temp;
+  rv = LocateExecutable(aXREDirectory, CRASH_HELPER_FILENAME,
+                        crashHelperPath_temp);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   crashReporterPath = crashReporterPath_temp.get();
+  crashHelperPath = crashHelperPath_temp.get();
 #else
   // On Android, we launch a service defined via MOZ_ANDROID_CRASH_HANDLER
   const char* androidCrashHandler = PR_GetEnv("MOZ_ANDROID_CRASH_HANDLER");
@@ -1940,6 +1946,10 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force /*=false*/) {
   } else {
     NS_WARNING("No Android crash handler set");
   }
+
+  const char* crashHelperPathEnv = PR_GetEnv("MOZ_ANDROID_PACKAGE_NAME");
+  MOZ_ASSERT(crashHelperPathEnv, "The application package name is required");
+  crashHelperPath = crashHelperPathEnv;
 #endif  // !defined(MOZ_WIDGET_ANDROID)
 
   // get temp path to use for minidump path
@@ -2050,6 +2060,8 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force /*=false*/) {
 #endif
 
   oldTerminateHandler = std::set_terminate(&TerminateHandler);
+
+  OOPInit();
 
   return NS_OK;
 }
@@ -2289,6 +2301,8 @@ nsresult SetupExtraData(nsIFile* aAppDataDirectory,
   return NS_OK;
 }
 
+static void OOPDeinit();
+
 nsresult UnsetExceptionHandler() {
   if (isSafeToDump) {
     MutexAutoLock lock(*dumpSafetyLock);
@@ -2309,10 +2323,17 @@ nsresult UnsetExceptionHandler() {
 
   gExceptionHandler = nullptr;
 
+  OOPDeinit();
+
   delete dumpSafetyLock;
   dumpSafetyLock = nullptr;
 
   std::set_terminate(oldTerminateHandler);
+  StaticMutexAutoLock lock(gCrashHelperClientMutex);
+  if (gCrashHelperClient) {
+    crash_helper_shutdown(gCrashHelperClient);
+    gCrashHelperClient = nullptr;
+  }
 
   return NS_OK;
 }
@@ -3239,29 +3260,8 @@ static bool MoveToPending(nsIFile* dumpFile, nsIFile* extraFile,
   return true;
 }
 
-nsresult OOPInit(nsIFile* aXREDirectory) {
+static void OOPInit() {
   CrashHelperClient* crashHelperClient;
-
-  PathString tempPath;
-  if (!BuildTempPath(tempPath)) {
-    return NS_ERROR_FAILURE;
-  }
-
-#if !defined(MOZ_WIDGET_ANDROID)
-  // Locate the crash helper executable
-  PathString crashHelperPath_temp;
-  nsresult rv = LocateExecutable(aXREDirectory, CRASH_HELPER_FILENAME,
-                                 crashHelperPath_temp);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  crashHelperPath = crashHelperPath_temp.get();
-#else
-  const char* crashHelperPathEnv = PR_GetEnv("MOZ_ANDROID_PACKAGE_NAME");
-  MOZ_ASSERT(crashHelperPathEnv, "The application package name is required");
-  crashHelperPath = crashHelperPathEnv;
-#endif  // !defined(MOZ_WIDGET_ANDROID)
 
 #if defined(XP_WIN)
   childCrashNotifyPipe = nsCString("\\\\.\\pipe\\gecko-crash-server-pipe.");
@@ -3273,8 +3273,10 @@ nsresult OOPInit(nsIFile* aXREDirectory) {
   crashHelperClient = crash_helper_launch(
       (const BreakpadChar*)crashHelperPath.c_str(),
       (const BreakpadChar*)NS_ConvertUTF8toUTF16(childCrashNotifyPipe).getW(),
-      (const BreakpadChar*)tempPath.get());
+      (const BreakpadChar*)gExceptionHandler->dump_path().c_str());
 #elif defined(XP_LINUX)
+  const std::string dumpPath =
+      gExceptionHandler->minidump_descriptor().directory();
 #  if !defined(MOZ_WIDGET_ANDROID)
   if (!CrashGenerationServer::CreateReportChannel(&serverSocketFd,
                                                   &clientSocketFd)) {
@@ -3282,14 +3284,11 @@ nsresult OOPInit(nsIFile* aXREDirectory) {
   }
 
   crashHelperClient = crash_helper_launch(crashHelperPath.c_str(),
-                                          serverSocketFd, tempPath.get());
+                                          serverSocketFd, dumpPath.c_str());
   close(serverSocketFd);
 #  else
   crashHelperClient = crash_helper_connect(crashHelperClientFd);
-
-  if (crashHelperClient) {
-    set_crash_report_path(crashHelperClient, tempPath.get());
-  }
+  set_crash_report_path(crashHelperClient, dumpPath.c_str());
 #  endif  // !defined(MOZ_WIDGET_ANDROID)
 #elif defined(XP_MACOSX)
   childCrashNotifyPipe = nsCString("gecko-crash-server-pipe.");
@@ -3297,27 +3296,17 @@ nsresult OOPInit(nsIFile* aXREDirectory) {
 
   crashHelperClient = crash_helper_launch(
       crashHelperPath.c_str(), (BreakpadRawData)childCrashNotifyPipe.get(),
-      tempPath.get());
+      gExceptionHandler->dump_path().c_str());
 #endif
-  if (!crashHelperClient) {
-    return NS_ERROR_FAILURE;
-  }
 
   StaticMutexAutoLock lock(gCrashHelperClientMutex);
   gCrashHelperClient = crashHelperClient;
-  return NS_OK;
 }
 
-void OOPDeinit() {
+static void OOPDeinit() {
 #if defined(XP_WIN) || defined(XP_MACOSX)
   childCrashNotifyPipe = ""_ns;
 #endif  // defined(XP_WIN) || defined(XP_MACOSX)
-
-  StaticMutexAutoLock lock(gCrashHelperClientMutex);
-  if (gCrashHelperClient) {
-    crash_helper_shutdown(gCrashHelperClient);
-    gCrashHelperClient = nullptr;
-  }
 }
 
 // Parent-side API for children
