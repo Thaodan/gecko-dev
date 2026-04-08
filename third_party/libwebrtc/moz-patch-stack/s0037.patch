@@ -15,7 +15,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/edac9d01a9ac7594f
  3 files changed, 24 insertions(+)
 
 diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index 4ba06e2154..5a74af7776 100644
+index 8128e46ad6..f155d50779 100644
 --- a/video/rtp_video_stream_receiver2.cc
 +++ b/video/rtp_video_stream_receiver2.cc
 @@ -1137,6 +1137,16 @@ std::optional<int64_t> RtpVideoStreamReceiver2::LastReceivedKeyframePacketMs()
@@ -36,7 +36,7 @@ index 4ba06e2154..5a74af7776 100644
  RtpVideoStreamReceiver2::GetSenderReportStats() const {
    RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
 diff --git a/video/rtp_video_stream_receiver2.h b/video/rtp_video_stream_receiver2.h
-index 2ca52615a7..52f998ddc2 100644
+index 3fc2febca6..cfe182d755 100644
 --- a/video/rtp_video_stream_receiver2.h
 +++ b/video/rtp_video_stream_receiver2.h
 @@ -228,6 +228,12 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
@@ -53,7 +53,7 @@ index 2ca52615a7..52f998ddc2 100644
    // Implements RtpVideoFrameReceiver.
    void ManageFrame(std::unique_ptr<RtpFrameObject> frame) override;
 diff --git a/video/video_receive_stream2.cc b/video/video_receive_stream2.cc
-index 478b1af212..a28053e8cc 100644
+index 93ceb84ef3..0917ab39fa 100644
 --- a/video/video_receive_stream2.cc
 +++ b/video/video_receive_stream2.cc
 @@ -616,6 +616,14 @@ VideoReceiveStreamInterface::Stats VideoReceiveStream2::GetStats() const {
