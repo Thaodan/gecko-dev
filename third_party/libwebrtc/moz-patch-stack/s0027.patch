@@ -723,10 +723,10 @@ index d8f3b41988..01fcd82dc8 100644
      : content_hint(VideoTrackInterface::ContentHint::kNone) {}
  VideoOptions::~VideoOptions() = default;
 diff --git a/modules/audio_coding/BUILD.gn b/modules/audio_coding/BUILD.gn
-index 6a85f60863..fd2f4d4bcd 100644
+index 132b293f79..f8b6a6ab5c 100644
 --- a/modules/audio_coding/BUILD.gn
 +++ b/modules/audio_coding/BUILD.gn
-@@ -363,7 +363,7 @@ rtc_library("webrtc_opus_wrapper") {
+@@ -364,7 +364,7 @@ rtc_library("webrtc_opus_wrapper") {
      deps += [ rtc_opus_dir ]
      public_configs = [ "//third_party/opus:opus_config" ]
    } else if (build_with_mozilla) {
