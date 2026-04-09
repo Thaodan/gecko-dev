@@ -195,6 +195,7 @@ void ViewTimeline::UpdateCachedCurrentTime() {
   }
 }
 
+// FIXME: Bug 2018678. Need to be adjusted for sticky positioning element.
 // https://drafts.csswg.org/scroll-animations-1/#view-timelines-ranges
 std::pair<nscoord, nscoord> ViewTimeline::IntervalForTimelineRangeName(
     const StyleTimelineRangeName aName,
@@ -280,9 +281,29 @@ std::pair<nscoord, nscoord> ViewTimeline::IntervalForTimelineRangeName(
       return {containEnd, alignedSubjectEndViewStart};
 
     case StyleTimelineRangeName::EntryCrossing:
+      // Represents the range during which the principal box crosses the end
+      // border edge.
+      // * 0% is equivalent to 0% of the cover range.
+      //
+      // Note that the duration of the entry-crossing range is equal to the
+      // subject size, so this is equivalent to
+      // `{alignedSubjectStartViewEnd,
+      //   alignedSubjectStartViewEnd + mCachedCurrentTime->mSubjectSize}`.
+      return {alignedSubjectStartViewEnd, alignedSubjectEndViewEnd};
+
     case StyleTimelineRangeName::ExitCrossing:
+      // Represents the range during which the principal box crosses the start
+      // border edge.
+      // * 100% is equivalent to 100% of the cover range.
+      //
+      // Note that the duration of the exit-crossing range is equal to the
+      // subject size, so this is equivalent to
+      // `{alignedSubjectEndViewStart - mCachedCurrentTime->mSubjectSize,
+      //   alignedSubjectEndViewStart}`.
+      return {alignedSubjectStartViewStart, alignedSubjectEndViewStart};
+
     case StyleTimelineRangeName::Scroll:
-      // TODO: Bug 2015130 and Bug 2015131. Implement other keywords.
+      // TODO: Bug 2015131. Implement scroll keyword.
       return {0, 0};
   }
 
