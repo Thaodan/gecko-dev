@@ -203,6 +203,7 @@ class TabbedBrowsingTest {
         }.openTabDrawer {
             verifyNormalBrowsingButtonIsSelected()
             verifyPrivateBrowsingButtonIsSelected(false)
+            verifyTabGroupsButtonIsSelected(false)
             verifySyncedTabsButtonIsSelected(false)
             verifyNoOpenTabsInNormalBrowsing()
             verifyFab()
@@ -221,6 +222,7 @@ class TabbedBrowsingTest {
         }.toggleToPrivateTabs {
             verifyNormalBrowsingButtonIsSelected(false)
             verifyPrivateBrowsingButtonIsSelected(true)
+            verifyTabGroupsButtonIsSelected(false)
             verifySyncedTabsButtonIsSelected(false)
             verifyNoOpenTabsInPrivateBrowsing()
             verifyFab()
@@ -241,6 +243,7 @@ class TabbedBrowsingTest {
         }.openTabDrawer(composeTestRule) {
             verifyNormalBrowsingButtonIsSelected()
             verifyPrivateBrowsingButtonIsSelected(isSelected = false)
+            verifyTabGroupsButtonIsSelected(isSelected = false)
             verifySyncedTabsButtonIsSelected(isSelected = false)
             verifyThreeDotButton()
             verifyNormalTabsList()
@@ -268,6 +271,7 @@ class TabbedBrowsingTest {
         }.openTabDrawer(composeTestRule) {
             verifyNormalBrowsingButtonIsSelected(false)
             verifyPrivateBrowsingButtonIsSelected(true)
+            verifyTabGroupsButtonIsSelected(false)
             verifySyncedTabsButtonIsSelected(false)
             verifyThreeDotButton()
             verifyPrivateTabsList()
