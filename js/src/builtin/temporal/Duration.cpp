@@ -2225,7 +2225,8 @@ static bool ComputeNudgeWindow(JSContext* cx, const InternalDuration& duration,
 
   // Step 10.
   auto endDateTime = ISODateTime{end, isoDateTime.time};
-  MOZ_ASSERT(ISODateTimeWithinLimits(endDateTime));
+  MOZ_ASSERT(IsValidISODateTime(endDateTime));
+  MOZ_ASSERT(ISODateWithinLimits(endDateTime.date));
 
   // Steps 11-12.
   EpochNanoseconds endEpochNs;
