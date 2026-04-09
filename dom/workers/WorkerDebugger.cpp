@@ -122,14 +122,15 @@ class CompileDebuggerScriptRunnable final : public WorkerDebuggerRunnable {
 }  // namespace
 
 class WorkerDebugger::PostDebuggerMessageRunnable final : public Runnable {
-  WorkerDebugger* mDebugger;
+  nsMainThreadPtrHandle<WorkerDebugger> mDebugger;
   nsString mMessage;
 
  public:
   PostDebuggerMessageRunnable(WorkerDebugger* aDebugger,
                               const nsAString& aMessage)
       : mozilla::Runnable("PostDebuggerMessageRunnable"),
-        mDebugger(aDebugger),
+        mDebugger(new nsMainThreadPtrHolder<WorkerDebugger>(
+            "PostDebuggerMessageRunnable", aDebugger)),
         mMessage(aMessage) {}
 
  private:
@@ -144,7 +145,7 @@ class WorkerDebugger::PostDebuggerMessageRunnable final : public Runnable {
 };
 
 class WorkerDebugger::ReportDebuggerErrorRunnable final : public Runnable {
-  WorkerDebugger* mDebugger;
+  nsMainThreadPtrHandle<WorkerDebugger> mDebugger;
   nsCString mFilename;
   uint32_t mLineno;
   nsString mMessage;
@@ -154,7 +155,8 @@ class WorkerDebugger::ReportDebuggerErrorRunnable final : public Runnable {
                               const nsACString& aFilename, uint32_t aLineno,
                               const nsAString& aMessage)
       : Runnable("ReportDebuggerErrorRunnable"),
-        mDebugger(aDebugger),
+        mDebugger(new nsMainThreadPtrHolder<WorkerDebugger>(
+            "ReportDebuggerErrorRunnable", aDebugger)),
         mFilename(aFilename),
         mLineno(aLineno),
         mMessage(aMessage) {}
