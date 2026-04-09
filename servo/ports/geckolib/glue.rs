@@ -96,6 +96,7 @@ use style::properties::{
     PropertyDeclarationIdSet, PropertyId, ShorthandId, SourcePropertyDeclaration, StyleBuilder,
 };
 use style::properties_and_values::registry::PropertyRegistration;
+use style::properties_and_values::syntax::data_type::DependentDataTypes;
 use style::rule_cache::RuleCacheConditions;
 use style::rule_tree::{RuleCascadeFlags, StrongRuleNode};
 use style::selector_parser::PseudoElementCascadeType;
@@ -147,6 +148,7 @@ use style::values::generics::color::ColorMixFlags;
 use style::values::generics::easing::BeforeFlag;
 use style::values::generics::length::GenericAnchorSizeFunction;
 use style::values::resolved;
+use style::values::resolved::ToResolvedValue;
 use style::values::specified::align::AlignFlags;
 use style::values::specified::intersection_observer::IntersectionObserverMargin;
 use style::values::specified::position::PositionTryFallbacksItem;
@@ -8547,7 +8549,7 @@ pub unsafe extern "C" fn Servo_GetResolvedValue(
         element_info: resolved::ResolvedElementInfo {
             element: GeckoElement(element),
         },
-        for_property: prop,
+        for_property: PropertyId::NonCustom(prop),
         current_longhand: None,
     };
 
@@ -8616,9 +8618,11 @@ pub unsafe extern "C" fn Servo_GetCustomPropertyValue(
     style: &ComputedValues,
     name: &nsACString,
     raw_data: &PerDocumentStyleData,
+    element: &RawGeckoElement,
     value: &mut nsACString,
 ) -> bool {
     let data = raw_data.borrow();
+    let device = data.stylist.device();
     let name = Atom::from(name.as_str_unchecked());
     let custom_registration = data.stylist.get_custom_property_registration(&name);
     let computed_value = style.custom_properties.get(custom_registration, &name);
@@ -8626,9 +8630,21 @@ pub unsafe extern "C" fn Servo_GetCustomPropertyValue(
         Some(v) => v,
         None => return false,
     };
-    // TODO(emilio): This might want to return resolved colors and so on for example, see
-    // https://github.com/w3c/csswg-drafts/issues/10371.
-    computed_value.to_css(&mut CssWriter::new(value)).unwrap();
+
+    let mut context = resolved::Context {
+        style,
+        device,
+        element_info: resolved::ResolvedElementInfo {
+            element: GeckoElement(element),
+        },
+        for_property: PropertyId::Custom(name),
+        current_longhand: None,
+    };
+    computed_value
+        .clone()
+        .to_resolved_value(&mut context)
+        .to_css(&mut CssWriter::new(value))
+        .unwrap();
     true
 }
 
