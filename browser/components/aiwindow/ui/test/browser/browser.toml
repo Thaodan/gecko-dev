@@ -155,8 +155,6 @@ skip-if = [
 
 ["browser_smartwindow_tab_move.js"]
 
-["browser_smartwindow_sidebar_prefs.js"]
-
 ["browser_smartwindow_tab_switching.js"]
 skip-if = [
   "os == 'win' && os_version == '11.26200'", # Bug 2019745
