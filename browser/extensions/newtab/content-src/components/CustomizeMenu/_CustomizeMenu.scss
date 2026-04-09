@@ -95,27 +95,30 @@
   }
 }
 
-.customize-menu {
+.customize-menu-animate-wrapper {
   color: var(--newtab-text-primary-color);
   background-color: var(--newtab-background-color-secondary);
   width: 432px;
-  min-height: 100%;
+  height: 100%;
+  // Becomes block after first open; never reset (see .customize-animate-enter/exit)
+  display: none;
   position: fixed;
   inset-block: 0;
-  inset-inline: auto 0;
+  inset-inline-end: 0;
   z-index: 1001;
   padding-block: 0 var(--space-large);
   padding-inline: var(--space-large);
   transform: translateX(435px);
   visibility: hidden;
   cursor: default;
-  overflow: auto;
-  border: none;
-  margin: 0;
 
-
-  &::backdrop {
-    background: transparent;
+  &.customize-animate-enter,
+  &.customize-animate-exit,
+  &.customize-animate-enter-done,
+  &.customize-animate-exit-done {
+    // display: none avoids initial load cost
+    // Stays as display: block after initial load
+    display: block;
   }
 
   @media (prefers-reduced-motion: no-preference) {
@@ -151,7 +154,7 @@
   }
 }
 
-.customize-menu-content {
+.customize-menu {
   overflow: auto;
   height: 100%;
 
@@ -613,4 +616,3 @@
     width: 100%;
   }
 }
-
