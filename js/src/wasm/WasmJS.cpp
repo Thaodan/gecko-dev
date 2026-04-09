@@ -162,7 +162,7 @@ bool js::wasm::GetImports(JSContext* cx, const Module& module,
   const TableDescVector& tables = codeMeta.tables;
   for (const Import& import : moduleMeta.imports) {
     Maybe<BuiltinModuleId> builtinModule =
-        ImportMatchesBuiltinModule(import.module.utf8Bytes(), builtinModules);
+        ImportMatchesBuiltinModule(import, builtinModules);
     if (builtinModule) {
       if (*builtinModule == BuiltinModuleId::JSStringConstants) {
         isImportedStringModule = true;
