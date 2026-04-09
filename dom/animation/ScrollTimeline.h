@@ -80,31 +80,28 @@ class ScrollTimeline : public AnimationTimeline,
     };
     Type mType = Type::Root;
     RefPtr<Element> mElement;
-    // FIXME: Bug 1928437. We have to update mPseudoType to use
-    // PseudoStyleRequest.
-    PseudoStyleType mPseudoType;
+    PseudoStyleRequest mPseudoRequest;
 
     static Scroller Root(Element* aDocumentElement) {
-      return {Type::Root, aDocumentElement, PseudoStyleType::NotPseudo};
+      return {Type::Root, aDocumentElement, PseudoStyleRequest{}};
     }
 
-    static Scroller Nearest(Element* aElement, PseudoStyleType aPseudoType) {
-      return {Type::Nearest, aElement, aPseudoType};
+    static Scroller Nearest(Element* aElement,
+                            const PseudoStyleRequest& aPseudoRequest) {
+      return {Type::Nearest, aElement, aPseudoRequest};
     }
 
-    static Scroller Named(Element* aElement, PseudoStyleType aPseudoType) {
-      return {Type::Name, aElement, aPseudoType};
+    static Scroller Named(Element* aElement,
+                          const PseudoStyleRequest& aPseudoRequest) {
+      return {Type::Name, aElement, aPseudoRequest};
     }
 
-    static Scroller Self(Element* aElement, PseudoStyleType aPseudoType) {
-      return {Type::Self, aElement, aPseudoType};
+    static Scroller Self(Element* aElement,
+                         const PseudoStyleRequest& aPseudoRequest) {
+      return {Type::Self, aElement, aPseudoRequest};
     }
 
     explicit operator bool() const { return mElement; }
-    bool operator==(const Scroller& aOther) const {
-      return mType == aOther.mType && mElement == aOther.mElement &&
-             mPseudoType == aOther.mPseudoType;
-    }
   };
 
   static already_AddRefed<ScrollTimeline> MakeAnonymous(
@@ -117,11 +114,6 @@ class ScrollTimeline : public AnimationTimeline,
       Document* aDocument, Element* aReferenceElement,
       const PseudoStyleRequest& aPseudoRequest,
       const StyleScrollTimeline& aStyleTimeline);
-
-  bool operator==(const ScrollTimeline& aOther) const {
-    return mDocument == aOther.mDocument && mSource == aOther.mSource &&
-           mAxis == aOther.mAxis;
-  }
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ScrollTimeline, AnimationTimeline)
@@ -186,7 +178,7 @@ class ScrollTimeline : public AnimationTimeline,
 
   virtual NonOwningAnimationTarget TimelineTarget() const {
     MOZ_ASSERT(mSource);
-    return {mSource.mElement, PseudoStyleRequest{mSource.mPseudoType}};
+    return {mSource.mElement, mSource.mPseudoRequest};
   }
 
   bool SourceMatches(const Element* aElement,

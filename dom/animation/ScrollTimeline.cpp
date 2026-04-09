@@ -96,11 +96,11 @@ already_AddRefed<ScrollTimeline> ScrollTimeline::MakeAnonymous(
     case StyleScroller::Nearest: {
       auto [element, pseudo] =
           FindNearestScroller(aTarget.mElement, aTarget.mPseudoRequest);
-      scroller = Scroller::Nearest(const_cast<Element*>(element), pseudo.mType);
+      scroller = Scroller::Nearest(const_cast<Element*>(element), pseudo);
       break;
     }
     case StyleScroller::SelfElement:
-      scroller = Scroller::Self(aTarget.mElement, aTarget.mPseudoRequest.mType);
+      scroller = Scroller::Self(aTarget.mElement, aTarget.mPseudoRequest);
       break;
   }
 
@@ -118,7 +118,7 @@ already_AddRefed<ScrollTimeline> ScrollTimeline::MakeNamed(
     const StyleScrollTimeline& aStyleTimeline) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  Scroller scroller = Scroller::Named(aReferenceElement, aPseudoRequest.mType);
+  Scroller scroller = Scroller::Named(aReferenceElement, aPseudoRequest);
   return MakeAndAddRef<ScrollTimeline>(aDocument, std::move(scroller),
                                        aStyleTimeline.GetAxis());
 }
@@ -162,7 +162,7 @@ void ScrollTimeline::WillRefresh() {
 bool ScrollTimeline::SourceMatches(
     const Element* aElement, const PseudoStyleRequest& aPseudoRequest) const {
   return mSource.mElement == aElement &&
-         mSource.mPseudoType == aPseudoRequest.mType;
+         mSource.mPseudoRequest == aPseudoRequest;
 }
 
 layers::ScrollDirection ScrollTimeline::Axis() const {
@@ -207,7 +207,7 @@ void ScrollTimeline::ReplacePropertiesWith(
     const Element* aReferenceElement, const PseudoStyleRequest& aPseudoRequest,
     const StyleScrollTimeline& aNew) {
   MOZ_ASSERT(aReferenceElement == mSource.mElement &&
-             aPseudoRequest.mType == mSource.mPseudoType);
+             aPseudoRequest == mSource.mPseudoRequest);
   mAxis = aNew.GetAxis();
 
   for (auto* anim = mAnimationOrder.getFirst(); anim;
