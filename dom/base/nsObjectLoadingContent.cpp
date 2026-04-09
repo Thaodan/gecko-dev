@@ -238,8 +238,8 @@ already_AddRefed<nsIDocShell> nsObjectLoadingContent::SetupDocShell(
   }
 
   if (!docShell) {
-    mFrameLoader->Destroy();
-    mFrameLoader = nullptr;
+    RefPtr<nsFrameLoader> loader = std::move(mFrameLoader);
+    loader->Destroy();
     return nullptr;
   }
 
@@ -1525,8 +1525,8 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
       nsCOMPtr<nsIURILoader> uriLoader(components::URILoader::Service());
       if (NS_WARN_IF(!uriLoader)) {
         MOZ_ASSERT_UNREACHABLE("Failed to get uriLoader service");
-        mFrameLoader->Destroy();
-        mFrameLoader = nullptr;
+        RefPtr<nsFrameLoader> loader = std::move(mFrameLoader);
+        loader->Destroy();
         break;
       }
 
@@ -1824,11 +1824,6 @@ uint32_t nsObjectLoadingContent::GetCapabilities() const {
 }
 
 void nsObjectLoadingContent::Destroy() {
-  if (mFrameLoader) {
-    mFrameLoader->Destroy();
-    mFrameLoader = nullptr;
-  }
-
   // Reset state so that if the element is re-appended to tree again (e.g.
   // adopting to another document), it will reload resource again.
   UnloadObject();
@@ -1857,8 +1852,8 @@ void nsObjectLoadingContent::UnloadObject(bool aResetState) {
   // state, but not if we've loaded the image in a synthetic browsing context.
   CancelImageRequests(false);
   if (mFrameLoader) {
-    mFrameLoader->Destroy();
-    mFrameLoader = nullptr;
+    RefPtr<nsFrameLoader> loader = std::move(mFrameLoader);
+    loader->Destroy();
   }
 
   if (aResetState) {
@@ -1992,7 +1987,8 @@ void nsObjectLoadingContent::ConfigureFallback() {
   if (thisContent->IsHTMLElement(nsGkAtoms::object)) {
     // Do a depth-first traverse of node tree with the current element as root,
     // looking for non-<param> elements.  If we find some then we have an HTML
-    // fallback for this element.
+    // fallback for this element
+    AutoTArray<RefPtr<nsIContent>, 4> targets;
     for (nsIContent* child = thisContent->GetFirstChild(); child;) {
       hasHtmlFallback =
           hasHtmlFallback || (!child->IsHTMLElement(nsGkAtoms::param) &&
@@ -2001,16 +1997,23 @@ void nsObjectLoadingContent::ConfigureFallback() {
       // <object> and <embed> elements in the fallback need to StartObjectLoad.
       // Their children should be ignored since they are part of those
       // element's fallback.
-      if (auto embed = HTMLEmbedElement::FromNode(child)) {
-        embed->StartObjectLoad(true, true);
-        // Skip the children
-        child = child->GetNextNonChildNode(thisContent);
-      } else if (auto object = HTMLObjectElement::FromNode(child)) {
-        object->StartObjectLoad(true, true);
+      if (child->IsAnyOfHTMLElements(nsGkAtoms::embed, nsGkAtoms::object)) {
+        targets.AppendElement(child);
         // Skip the children
         child = child->GetNextNonChildNode(thisContent);
       } else {
         child = child->GetNextNode(thisContent);
+      }
+    }
+
+    for (RefPtr<nsIContent>& target : targets) {
+      if (!target->IsInclusiveDescendantOf(thisContent)) {
+        continue;
+      }
+      if (auto* embed = HTMLEmbedElement::FromNode(target)) {
+        embed->StartObjectLoad(true, true);
+      } else if (auto* object = HTMLObjectElement::FromNode(target)) {
+        object->StartObjectLoad(true, true);
       }
     }
   }
