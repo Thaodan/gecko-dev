@@ -2847,8 +2847,9 @@ ResizableArrayBufferObject::copyAndDetachSteal(
   MOZ_ASSERT(newByteLength <= ArrayBufferObject::ByteLengthLimit,
              "caller must validate the byte count it passes");
   MOZ_ASSERT(!source->isDetached());
-  MOZ_ASSERT(source->byteLength() >= sourceByteOffset);
-  MOZ_ASSERT(source->byteLength() >= sourceByteOffset + newByteLength);
+  MOZ_ASSERT_IF(newByteLength > 0, source->byteLength() >= sourceByteOffset);
+  MOZ_ASSERT_IF(newByteLength > 0,
+                source->byteLength() >= sourceByteOffset + newByteLength);
 
   AutoSetNewObjectMetadata metadata(cx);
   auto [newBuffer, toFill] = createBufferAndData<ImmutableArrayBufferObject,
@@ -2858,8 +2859,10 @@ ResizableArrayBufferObject::copyAndDetachSteal(
     return nullptr;
   }
 
-  std::uninitialized_copy_n(source->dataPointer() + sourceByteOffset,
-                            newByteLength, toFill);
+  if (newByteLength > 0) {
+    std::uninitialized_copy_n(source->dataPointer() + sourceByteOffset,
+                              newByteLength, toFill);
+  }
 
   return newBuffer;
 }
