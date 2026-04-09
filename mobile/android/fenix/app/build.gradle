@@ -60,6 +60,10 @@ android {
     compileSdk { version = release(config.compileSdkMajorVersion) { minorApiLevel = config.compileSdkMinorVersion } }
 
     defaultConfig {
+        ksp {
+            arg("room.schemaLocation", "$projectDir/schemas".toString())
+        }
+
         applicationId "org.mozilla"
         minSdk config.minSdkVersion
         targetSdk config.targetSdkVersion
