@@ -79,8 +79,15 @@ class ScrollTimeline : public AnimationTimeline,
       Self,
     };
     Type mType = Type::Root;
-    RefPtr<Element> mElement;
-    PseudoStyleRequest mPseudoRequest;
+
+   private:
+    OwningAnimationTarget mTarget;
+    Scroller(Type aType, Element* aElement,
+             const PseudoStyleRequest& aPseudoRequest)
+        : mType{aType}, mTarget{aElement, aPseudoRequest} {}
+
+   public:
+    Scroller() = default;
 
     static Scroller Root(Element* aDocumentElement) {
       return {Type::Root, aDocumentElement, PseudoStyleRequest{}};
@@ -101,7 +108,11 @@ class ScrollTimeline : public AnimationTimeline,
       return {Type::Self, aElement, aPseudoRequest};
     }
 
-    explicit operator bool() const { return mElement; }
+    explicit operator bool() const { return mTarget.mElement; }
+    NonOwningAnimationTarget Source() const {
+      return NonOwningAnimationTarget{mTarget};
+    }
+    RefPtr<Element>& ElementForCycleCollection() { return mTarget.mElement; }
   };
 
   static already_AddRefed<ScrollTimeline> MakeAnonymous(
@@ -173,12 +184,12 @@ class ScrollTimeline : public AnimationTimeline,
 
   Element* SourceElement() const {
     MOZ_ASSERT(mSource);
-    return mSource.mElement;
+    return mSource.Source().mElement;
   }
 
   virtual NonOwningAnimationTarget TimelineTarget() const {
     MOZ_ASSERT(mSource);
-    return {mSource.mElement, mSource.mPseudoRequest};
+    return mSource.Source();
   }
 
   bool SourceMatches(const Element* aElement,
