@@ -21,10 +21,10 @@ already_AddRefed<ViewTimeline> ViewTimeline::MakeNamed(
     const StyleViewTimeline& aStyleTimeline) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  // 1. Lookup scroller. We have to find the nearest scroller from |aSubject|
-  // and |aPseudoType|.
-  auto [element, pseudo] = FindNearestScroller(aSubject, aPseudoRequest);
-  auto scroller = Scroller::Nearest(const_cast<Element*>(element), pseudo);
+  // 1. Create an anonymous scroller, as if `scroll(nearest)`.
+  auto scroller = ScrollerInfo::Anonymous(
+      StyleScroller::Nearest,
+      NonOwningAnimationTarget{aSubject, aPseudoRequest});
 
   // 2. Create timeline.
   return MakeAndAddRef<ViewTimeline>(
@@ -37,9 +37,7 @@ already_AddRefed<ViewTimeline> ViewTimeline::MakeAnonymous(
     Document* aDocument, const NonOwningAnimationTarget& aTarget,
     StyleScrollAxis aAxis, const StyleViewTimelineInset& aInset) {
   // view() finds the nearest scroll container from the animation target.
-  auto [element, pseudo] =
-      FindNearestScroller(aTarget.mElement, aTarget.mPseudoRequest);
-  Scroller scroller = Scroller::Nearest(const_cast<Element*>(element), pseudo);
+  auto scroller = ScrollerInfo::Anonymous(StyleScroller::Nearest, aTarget);
   return MakeAndAddRef<ViewTimeline>(aDocument, scroller, aAxis,
                                      aTarget.mElement,
                                      aTarget.mPseudoRequest.mType, aInset);
@@ -102,7 +100,8 @@ void ViewTimeline::UpdateCachedCurrentTime() {
   mCachedCurrentTime.reset();
 
   // If no layout box, this timeline is inactive.
-  if (!mSource || !mSource.Source().mElement->GetPrimaryFrame()) {
+  const auto* e = mScrollerInfo.Source().mElement;
+  if (!e || !e->GetPrimaryFrame()) {
     return;
   }
 
