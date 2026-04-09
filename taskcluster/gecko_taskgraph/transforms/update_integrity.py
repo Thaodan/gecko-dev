@@ -47,6 +47,19 @@ def add_build_target(config, jobs):
 
 
 @transforms.add
+def skip_for_new_locales_and_platforms(config, jobs):
+    """Don't generate any jobs for newly added locales or platforms that don't have `from` releases to test."""
+    for job in jobs:
+        locale = job["attributes"].get("locale", "en-US")
+        build_target = job["attributes"]["build_target"]
+
+        if locale not in config.params["release_history"].get(build_target, {}):
+            continue
+
+        yield job
+
+
+@transforms.add
 def resolve_keys(config, jobs):
     for job in jobs:
         for key in ("cert-overrides", "fetches.toolchain"):
