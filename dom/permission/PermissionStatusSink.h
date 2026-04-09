@@ -73,31 +73,14 @@ class PermissionStatusSink {
 
   RefPtr<SystemPermissionStatePromise> ComputeSystemState();
 
-  // Returns mPermissionStatus. Must be called on mSerialEventTarget (i.e. the
-  // main thread for window sinks, the worker thread for worker sinks).
-  PermissionStatus* GetPermissionStatus() {
-    MOZ_ASSERT(mSerialEventTarget->IsOnCurrentThread());
-    return mPermissionStatus;
-  }
-
-  void ClearPermissionStatus() {
-    MOZ_ASSERT(mSerialEventTarget->IsOnCurrentThread());
-    mPermissionStatus = nullptr;
-  }
-
-  bool GetBrowserIdOnMainThread(uint64_t* aBrowserId);
-
   nsCOMPtr<nsISerialEventTarget> mSerialEventTarget;
   nsCOMPtr<nsIPrincipal> mPrincipalForPermission;
 
   RefPtr<PermissionObserver> mObserver;
 
-  Mutex mMutex;
-
- private:
-  // Only access via GetPermissionStatus(). Owned by mSerialEventTarget; for
-  // worker sinks the main thread must use mWorkerRef (under mMutex) instead.
   RefPtr<PermissionStatus> mPermissionStatus;
+
+  Mutex mMutex;
 
   // Protected by mutex.
   // Created and released on worker-thread. Used also on main-thread.
