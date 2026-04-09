@@ -386,23 +386,23 @@ NS_IMPL_RELEASE_INHERITED(ExtensionProtocolHandler, SubstitutingProtocolHandler)
 
 already_AddRefed<ExtensionProtocolHandler>
 ExtensionProtocolHandler::GetSingleton() {
-  static StaticMutex sMutex;                                                                                             
-  StaticMutexAutoLock lock(sMutex);                                                                                      
-  if (!sSingleton) {                                                                                                     
-    if (NS_IsMainThread()) {                                                                                             
+  static StaticMutex sMutex;
+  StaticMutexAutoLock lock(sMutex);
+  if (!sSingleton) {
+    if (NS_IsMainThread()) {
       sSingleton = new ExtensionProtocolHandler();
-      ClearOnShutdown(&sSingleton);                                                                                      
-    } else {                                              
-      StaticMutexAutoUnlock unlock(sMutex); 
-      RefPtr<nsIRunnable> r = NS_NewRunnableFunction(                                                                    
+      ClearOnShutdown(&sSingleton);
+    } else {
+      StaticMutexAutoUnlock unlock(sMutex);
+      RefPtr<nsIRunnable> r = NS_NewRunnableFunction(
           "ExtensionProtocolHandler::GetSingleton", []() {
-              StaticMutexAutoLock lock(sMutex);                                                                            
-            if (!sSingleton) {                                                                                           
+              StaticMutexAutoLock lock(sMutex);
+            if (!sSingleton) {
               sSingleton = new ExtensionProtocolHandler();
-              ClearOnShutdown(&sSingleton);                                                                              
-            }                                             
+              ClearOnShutdown(&sSingleton);
+            }
           });
-      SyncRunnable::DispatchToThread(GetMainThreadSerialEventTarget(), r);                                                                                                       
+      SyncRunnable::DispatchToThread(GetMainThreadSerialEventTarget(), r);
     }
   }
   return do_AddRef(sSingleton);
