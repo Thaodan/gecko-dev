@@ -3314,9 +3314,14 @@ function PageProxyClickHandler(aEvent) {
  */
 var BrowserOnClick = {
   ignoreWarningLink(reason, blockedInfo, browsingContext) {
-    let triggeringPrincipal =
-      blockedInfo.triggeringPrincipal ||
-      _createNullPrincipalFromTabUserContextId();
+    // Remove the query to avoid leaking sensitive data
+    let uri = browsingContext.currentURI.mutate().setQuery("").finalize();
+
+    let activeSHEntry = browsingContext.activeSessionHistoryEntry;
+    if (!activeSHEntry) {
+      console.error("No active session history entry found");
+      return;
+    }
 
     // Allow users to override and continue through to the site,
     // but add a notify bar as a reminder, so that they don't lose
@@ -3324,15 +3329,15 @@ var BrowserOnClick = {
     // Note that we have to use the passed URI info and can't just
     // rely on the document URI, because the latter contains
     // additional query parameters that should be stripped.
-    browsingContext.fixupAndLoadURIString(blockedInfo.uri, {
-      triggeringPrincipal,
+    browsingContext.loadURI(uri, {
+      triggeringPrincipal: activeSHEntry.triggeringPrincipal,
       flags: Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CLASSIFIER,
     });
 
     // We can't use browser.contentPrincipal which is principal of about:blocked
     // Create one from uri with current principal origin attributes
     let principal = Services.scriptSecurityManager.createContentPrincipal(
-      Services.io.newURI(blockedInfo.uri),
+      uri,
       browsingContext.currentWindowGlobal.documentPrincipal.originAttributes
     );
     Services.perms.addFromPrincipal(
@@ -3358,7 +3363,10 @@ var BrowserOnClick = {
 
     let title;
     if (reason === "malware") {
-      let reportUrl = gSafeBrowsing.getReportURL("MalwareMistake", blockedInfo);
+      let reportUrl = gSafeBrowsing.getReportURL("MalwareMistake", {
+        ...blockedInfo,
+        uri: uri.asciiSpec,
+      });
       title = gNavigatorBundle.getString("safebrowsing.reportedAttackSite");
       // There's no button if we can not get report url, for example if the provider
       // of blockedInfo is not Google
@@ -3376,7 +3384,10 @@ var BrowserOnClick = {
         };
       }
     } else if (reason === "phishing") {
-      let reportUrl = gSafeBrowsing.getReportURL("PhishMistake", blockedInfo);
+      let reportUrl = gSafeBrowsing.getReportURL("PhishMistake", {
+        ...blockedInfo,
+        uri: uri.asciiSpec,
+      });
       title = gNavigatorBundle.getString("safebrowsing.deceptiveSite");
       // There's no button if we can not get report url, for example if the provider
       // of blockedInfo is not Google
