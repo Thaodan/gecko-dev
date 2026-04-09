@@ -1617,7 +1617,11 @@ void CycleCollectedJSRuntime::JSObjectsTenured() {
       continue;
     }
     JSObject* wrapper = cache->GetWrapperMaybeDead();
-    MOZ_DIAGNOSTIC_ASSERT(wrapper);
+    if (MOZ_UNLIKELY(!wrapper)) {
+      // Wrapper might have been cleared temporarily while updating reflector
+      // global.
+      continue;
+    }
     if (!JS::ObjectIsTenured(wrapper)) {
       MOZ_ASSERT(!cache->PreservingWrapper());
       js::gc::FinalizeDeadNurseryObject(cx, wrapper);
