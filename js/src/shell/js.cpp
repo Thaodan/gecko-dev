@@ -14543,6 +14543,24 @@ bool ApplyBenchmarkMode(JSContext* cx, const OptionParser& op) {
     issue("--fuzzing-safe is set.");
   }
 
+#ifdef WASM_SUPPORTS_HUGE_MEMORY
+  // Wasm checks
+  if (JS::Prefs::wasm_disable_huge_memory()) {
+    issue("huge memory disabled");
+  }
+#endif
+
+  if (!JS::ContextOptionsRef(cx).wasmIon() ||
+      !JS::ContextOptionsRef(cx).wasmBaseline()) {
+    issue("missing wasm compiler");
+  }
+  if (JS::Prefs::wasm_test_serialization()) {
+    issue("testing serialization");
+  }
+  if (JS::Prefs::wasm_lazy_tiering_synchronous()) {
+    issue("tiering test configuration");
+  }
+
   if (jit::JitOptions.spectreIndexMasking ||
       jit::JitOptions.spectreObjectMitigations ||
       jit::JitOptions.spectreStringMitigations ||
