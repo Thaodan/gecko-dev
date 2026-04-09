@@ -510,12 +510,12 @@ void CopySamples(Span<S> aSource, Span<D> aDest, uint32_t aSourceChannelCount,
     MOZ_ASSERT(aSource.Length() -
                    aCopyToSpec.mFrameOffset * aSourceChannelCount >=
                aCopyToSpec.mFrameCount * aSourceChannelCount);
+    MOZ_ASSERT(aSource.Length() % aSourceChannelCount == 0);
+    size_t framesPerPlane = aSource.Length() / aSourceChannelCount;
     size_t writeIndex = 0;
-    // Scan the source linearly and put each sample at the right position in the
-    // destination interleaved buffer.
-    size_t readIndex = 0;
     for (size_t channel = 0; channel < aSourceChannelCount; channel++) {
       writeIndex = channel;
+      size_t readIndex = channel * framesPerPlane + aCopyToSpec.mFrameOffset;
       for (size_t i = 0; i < aCopyToSpec.mFrameCount; i++) {
         aDest[writeIndex] = ConvertAudioSample<D>(aSource[readIndex]);
         readIndex++;
