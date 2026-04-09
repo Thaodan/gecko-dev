@@ -26,14 +26,6 @@ void VideoStreamTrack::Destroy() {
   MediaStreamTrack::Destroy();
 }
 
-void VideoStreamTrack::AddVideoOutput(VideoFrameContainer* aSink) {
-  if (Ended()) {
-    return;
-  }
-  auto output = MakeRefPtr<VideoOutput>(aSink, AbstractThread::MainThread());
-  AddVideoOutput(output);
-}
-
 void VideoStreamTrack::AddVideoOutput(VideoOutput* aOutput) {
   if (Ended()) {
     return;
@@ -45,24 +37,16 @@ void VideoStreamTrack::AddVideoOutput(VideoOutput* aOutput) {
     }
   }
   mVideoOutputs.AppendElement(aOutput);
+  aOutput->mAttachment = VideoOutput::State::Attached;
   AddDirectListener(aOutput);
   AddListener(aOutput);
-}
-
-void VideoStreamTrack::RemoveVideoOutput(VideoFrameContainer* aSink) {
-  for (const auto& output : mVideoOutputs.Clone()) {
-    if (output->mVideoFrameContainer == aSink) {
-      mVideoOutputs.RemoveElement(output);
-      RemoveDirectListener(output);
-      RemoveListener(output);
-    }
-  }
 }
 
 void VideoStreamTrack::RemoveVideoOutput(VideoOutput* aOutput) {
   for (const auto& output : mVideoOutputs.Clone()) {
     if (output == aOutput) {
       mVideoOutputs.RemoveElement(aOutput);
+      aOutput->mAttachment = VideoOutput::State::Detaching;
       RemoveDirectListener(aOutput);
       RemoveListener(aOutput);
     }
