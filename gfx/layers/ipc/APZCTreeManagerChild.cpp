@@ -155,7 +155,9 @@ mozilla::ipc::IPCResult APZCTreeManagerChild::RecvHandleTap(
     controller->HandleTap(aType, aPoint, aModifiers, aGuid, aInputBlockId);
     return IPC_OK();
   }
-  dom::BrowserParent* tab =
+  // Hold strong reference to BrowserParent because SendHandleTap
+  // can run script via SetFocus.
+  RefPtr<dom::BrowserParent> tab =
       dom::BrowserParent::GetBrowserParentFromLayersId(aGuid.mLayersId);
   if (tab) {
 #ifdef MOZ_WIDGET_ANDROID
