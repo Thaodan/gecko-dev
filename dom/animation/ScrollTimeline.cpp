@@ -152,10 +152,9 @@ bool ScrollTimeline::SourceMatches(
   return source.mElement == aElement && source.mPseudoRequest == aPseudoRequest;
 }
 
-layers::ScrollDirection ScrollTimeline::Axis() const {
-  const auto* e = mScrollerInfo.Source().mElement;
+layers::ScrollDirection ScrollTimeline::State::Axis() const {
+  const auto* e = mSource.mElement;
   MOZ_ASSERT(e && e->GetPrimaryFrame());
-
   const WritingMode wm = e->GetPrimaryFrame()->GetWritingMode();
   return mAxis == StyleScrollAxis::X ||
                  (!wm.IsVertical() && mAxis == StyleScrollAxis::Inline) ||
@@ -164,8 +163,8 @@ layers::ScrollDirection ScrollTimeline::Axis() const {
              : layers::ScrollDirection::eVertical;
 }
 
-StyleOverflow ScrollTimeline::SourceScrollStyle() const {
-  DebugOnly<const Element*> e = mScrollerInfo.Source().mElement;
+StyleOverflow ScrollTimeline::State::SourceScrollStyle() const {
+  DebugOnly<const Element*> e = mSource.mElement;
   MOZ_ASSERT(e && e->GetPrimaryFrame());
 
   const ScrollContainerFrame* scrollContainerFrame = GetScrollContainerFrame();
@@ -178,19 +177,35 @@ StyleOverflow ScrollTimeline::SourceScrollStyle() const {
              : scrollStyles.mVertical;
 }
 
-bool ScrollTimeline::APZIsActiveForSource() const {
-  auto* e = mScrollerInfo.Source().mElement;
+bool ScrollTimeline::State::APZIsActiveForSource() const {
+  auto* e = mSource.mElement;
   MOZ_ASSERT(e);
   return gfxPlatform::AsyncPanZoomEnabled() &&
          !nsLayoutUtils::ShouldDisableApzForElement(e) &&
          DisplayPortUtils::HasNonMinimalNonZeroDisplayPort(e);
 }
 
-bool ScrollTimeline::ScrollingDirectionIsAvailable() const {
+bool ScrollTimeline::State::ScrollingDirectionIsAvailable() const {
   const ScrollContainerFrame* scrollContainerFrame = GetScrollContainerFrame();
   MOZ_ASSERT(scrollContainerFrame);
   return scrollContainerFrame->GetAvailableScrollingDirections().contains(
       Axis());
+}
+
+const ScrollContainerFrame* ScrollTimeline::State::GetScrollContainerFrame()
+    const {
+  auto* e = mSource.mElement;
+  if (!e) {
+    return nullptr;
+  }
+
+  if (mIsRoot) {
+    if (const PresShell* presShell = e->OwnerDoc()->GetPresShell()) {
+      return presShell->GetRootScrollContainerFrame();
+    }
+    return nullptr;
+  }
+  return nsLayoutUtils::FindScrollContainerFrameFor(e);
 }
 
 void ScrollTimeline::ReplacePropertiesWith(
@@ -216,19 +231,20 @@ void ScrollTimeline::UpdateCachedCurrentTime() {
 
   mCachedCurrentTime.reset();
 
-  const auto* e = mScrollerInfo.Source().mElement;
+  const auto state = GetState();
   // If no layout box, this timeline is inactive.
-  if (!e || !e->GetPrimaryFrame()) {
+  if (const auto* e = state.mSource.mElement; !e || !e->GetPrimaryFrame()) {
     return;
   }
 
   // if this is not a scroller container, this timeline is inactive.
-  const ScrollContainerFrame* scrollContainerFrame = GetScrollContainerFrame();
+  const ScrollContainerFrame* scrollContainerFrame =
+      state.GetScrollContainerFrame();
   if (!scrollContainerFrame) {
     return;
   }
 
-  const auto orientation = Axis();
+  const auto orientation = state.Axis();
 
   // If there is no scrollable overflow, then the ScrollTimeline is inactive.
   // https://drafts.csswg.org/scroll-animations-1/#scrolltimeline-interface
@@ -291,28 +307,6 @@ ScrollTimeline::ComputeTimelineData() const {
              ? Some(ComputedTimelineData{mCachedCurrentTime->mPosition, 0,
                                          mCachedCurrentTime->mMaxScrollOffset})
              : Nothing();
-}
-
-const ScrollContainerFrame* ScrollTimeline::GetScrollContainerFrame() const {
-  auto* e = mScrollerInfo.Source().mElement;
-  if (!e) {
-    return nullptr;
-  }
-
-  switch (mScrollerInfo.mType) {
-    case ScrollerInfo::Type::Root:
-      if (const PresShell* presShell = e->OwnerDoc()->GetPresShell()) {
-        return presShell->GetRootScrollContainerFrame();
-      }
-      return nullptr;
-    case ScrollerInfo::Type::Nearest:
-    case ScrollerInfo::Type::Name:
-    case ScrollerInfo::Type::Self:
-      return nsLayoutUtils::FindScrollContainerFrameFor(e);
-  }
-
-  MOZ_ASSERT_UNREACHABLE("Unsupported scroller type");
-  return nullptr;
 }
 
 static nsRefreshDriver* GetRefreshDriver(Document* aDocument) {

@@ -99,21 +99,22 @@ void ViewTimeline::UpdateCachedCurrentTime() {
 
   mCachedCurrentTime.reset();
 
+  const auto state = GetState();
   // If no layout box, this timeline is inactive.
-  const auto* e = mScrollerInfo.Source().mElement;
-  if (!e || !e->GetPrimaryFrame()) {
+  if (const auto* e = state.mSource.mElement; !e || !e->GetPrimaryFrame()) {
     return;
   }
 
   // if this is not a scroller container, this timeline is inactive.
-  const ScrollContainerFrame* scrollContainerFrame = GetScrollContainerFrame();
+  const ScrollContainerFrame* scrollContainerFrame =
+      state.GetScrollContainerFrame();
   if (!scrollContainerFrame) {
     return;
   }
 
   // If there is no scrollable overflow, then the ScrollTimeline is inactive.
   // https://drafts.csswg.org/scroll-animations-1/#scrolltimeline-interface
-  const auto orientation = Axis();
+  const auto orientation = state.Axis();
   if (!scrollContainerFrame->GetAvailableScrollingDirections().contains(
           orientation)) {
     return;

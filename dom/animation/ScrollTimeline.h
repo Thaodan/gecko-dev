@@ -79,6 +79,8 @@ class ScrollTimeline : public AnimationTimeline,
     Type mType = Type::Root;
 
    private:
+    // This may be the target being animated, or source (i.e. Providing the
+    // scroll progress). See construction functions `Named` and `Anonymous`
     OwningAnimationTarget mTarget;
     ScrollerInfo(Type aType, Element* aElement,
                  const PseudoStyleRequest& aPseudoRequest)
@@ -122,6 +124,42 @@ class ScrollTimeline : public AnimationTimeline,
   };
 
  public:
+  // Resolved state of this scroll timeline. Assumed to be short-lived.
+  class State {
+    friend class ScrollTimeline;
+    friend class ViewTimeline;
+
+   public:
+    // A helper to get the physical orientation of this scroll-timeline.
+    layers::ScrollDirection Axis() const;
+    StyleOverflow SourceScrollStyle() const;
+    bool APZIsActiveForSource() const;
+    Element* SourceElement() const {
+      auto* element = mSource.mElement;
+      MOZ_ASSERT(element);
+      return element;
+    }
+    bool ScrollingDirectionIsAvailable() const;
+    // If the source of a ScrollTimeline is an element whose principal box does
+    // not exist or is not a scroll container, then its phase is the timeline
+    // inactive phase. It is otherwise in the active phase. This returns true if
+    // the timeline is in active phase.
+    // https://drafts.csswg.org/web-animations-1/#inactive-timeline
+    // Note: This function is called only for compositor animations, so we must
+    // have the primary frame (principal box) for the source element if it
+    // exists.
+    bool IsActive() const { return GetScrollContainerFrame(); }
+    const ScrollContainerFrame* GetScrollContainerFrame() const;
+
+   private:
+    State(const NonOwningAnimationTarget& aResolvedSource,
+          StyleScrollAxis aAxis, bool aIsRoot)
+        : mSource{aResolvedSource}, mAxis{aAxis}, mIsRoot{aIsRoot} {}
+    NonOwningAnimationTarget mSource;
+    StyleScrollAxis mAxis;
+    bool mIsRoot;
+  };
+
   static already_AddRefed<ScrollTimeline> MakeAnonymous(
       Document* aDocument, const NonOwningAnimationTarget& aTarget,
       StyleScrollAxis aAxis, StyleScroller aScroller);
@@ -141,6 +179,11 @@ class ScrollTimeline : public AnimationTimeline,
     // FIXME: Bug 1676794: Implement ScrollTimeline interface.
     return nullptr;
   }
+
+  State GetState() const {
+    return State{mScrollerInfo.Source(), mAxis,
+                 mScrollerInfo.mType == ScrollerInfo::Type::Root};
+  };
 
   // AnimationTimeline methods.
   Nullable<TimeDuration> GetCurrentTimeAsDuration() const override;
@@ -180,15 +223,6 @@ class ScrollTimeline : public AnimationTimeline,
 
   void WillRefresh();
 
-  // If the source of a ScrollTimeline is an element whose principal box does
-  // not exist or is not a scroll container, then its phase is the timeline
-  // inactive phase. It is otherwise in the active phase. This returns true if
-  // the timeline is in active phase.
-  // https://drafts.csswg.org/web-animations-1/#inactive-timeline
-  // Note: This function is called only for compositor animations, so we must
-  // have the primary frame (principal box) for the source element if it exists.
-  bool IsActive() const { return GetScrollContainerFrame(); }
-
   Element* SourceElement() const {
     auto* element = mScrollerInfo.Source().mElement;
     MOZ_ASSERT(element);
@@ -202,15 +236,6 @@ class ScrollTimeline : public AnimationTimeline,
 
   bool SourceMatches(const Element* aElement,
                      const PseudoStyleRequest& aPseudoRequest) const;
-
-  // A helper to get the physical orientation of this scroll-timeline.
-  layers::ScrollDirection Axis() const;
-
-  StyleOverflow SourceScrollStyle() const;
-
-  bool APZIsActiveForSource() const;
-
-  bool ScrollingDirectionIsAvailable() const;
 
   void ReplacePropertiesWith(const Element* aReferenceElement,
                              const PseudoStyleRequest& aPseudoRequest,
@@ -252,8 +277,6 @@ class ScrollTimeline : public AnimationTimeline,
       remove();
     }
   }
-
-  const ScrollContainerFrame* GetScrollContainerFrame() const;
 
   static std::pair<const Element*, PseudoStyleRequest> FindNearestScroller(
       Element* aSubject, const PseudoStyleRequest& aPseudoRequest);
