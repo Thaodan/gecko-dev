@@ -151,8 +151,7 @@ ${
         <moz-input-box tooltip="aHTMLTooltip"
                        class="urlbar-input-box"
                        flex="1">
-          <html:input id="urlbar-scheme"
-                      required="required"/>
+          <!-- In the addressbar, there will be an input with id="urlbar-scheme" here. -->
           <html:input class="urlbar-input textbox-input"
                       role="combobox"
                       aria-autocomplete="both"
@@ -350,6 +349,11 @@ ${
 
     if (this.#isAddressbar) {
       this.inputField.id = "urlbar-input";
+
+      let schemeField = document.createElement("input");
+      schemeField.id = "urlbar-scheme";
+      schemeField.required = true;
+      this.inputField.before(schemeField);
     }
     if (this.#sapName == "searchbar") {
       // This adds a native clear button.
