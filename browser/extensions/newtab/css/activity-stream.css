@@ -1205,6 +1205,12 @@ main section {
 .top-site-outer.add-button .tile {
   background-color: var(--button-background-color);
 }
+.lightWallpaper .top-site-outer.add-button .tile {
+  color-scheme: light;
+}
+.darkWallpaper .top-site-outer.add-button .tile {
+  color-scheme: dark;
+}
 .top-site-outer.add-button .tile .icon-wrapper {
   background-image: url("chrome://global/skin/icons/plus-20.svg");
   background-size: cover;
