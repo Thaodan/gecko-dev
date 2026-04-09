@@ -1737,7 +1737,7 @@
         app:startDestination="@id/translationSettingsFragment">
         <fragment
             android:id="@+id/translationSettingsFragment"
-            android:name="org.mozilla.fenix.translations.TranslationSettingsFragment">
+            android:name="org.mozilla.fenix.translations.settings.TranslationSettingsFragment">
             <action
                 android:id="@+id/action_translationSettingsFragment_to_translationsDialogFragment"
                 app:destination="@id/translationsDialogFragment"

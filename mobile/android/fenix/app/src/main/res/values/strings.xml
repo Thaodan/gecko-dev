@@ -3233,6 +3233,13 @@
     <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
     <string name="translation_settings_download_language">Download languages</string>
 
+    <!-- Toggle switch title and description for the translation settings control. -->
+    <string name="translation_settings_control_title">Translations</string>
+    <!-- Description for the translation settings toggle switch. -->
+    <string name="translation_settings_control_description">All translations stay private on your device.</string>
+    <!-- Clickable text for the translations settings item that links to a website. -->
+    <string name="translation_settings_control_learn_more">Learn more</string>
+
     <!-- Automatic translation preference screen -->
     <!-- Title of the automatic translation preference screen that will appear on the toolbar.-->
     <string name="automatic_translation_toolbar_title_preference">Automatic translation</string>
