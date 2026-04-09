@@ -10,8 +10,8 @@ origin:
 
   url: https://github.com/google/brotli
 
-  release: e61745a6b7add50d380cfd7d3883dd6c62fc2c71 (2020-08-27T14:12:55Z).
-  revision: e61745a6b7add50d380cfd7d3883dd6c62fc2c71
+  release: 4792c8e4c4235f6b501f13dbd07a8b4b253eee21 (2026-04-08T19:24:31Z).
+  revision: 4792c8e4c4235f6b501f13dbd07a8b4b253eee21
 
   license: MIT
 
@@ -24,8 +24,10 @@ vendoring:
     - ".*"
     - "*"
     - docs
+    - go
     - python
     - scripts
+    - java
     - tests
     - c/enc
     - c/tools
@@ -48,3 +50,5 @@ vendoring:
     - action: move-dir
       from: '{vendor_dir}/c/dec'
       to: '{vendor_dir}/dec'
+    - action: delete-path
+      path: '{vendor_dir}/c'
