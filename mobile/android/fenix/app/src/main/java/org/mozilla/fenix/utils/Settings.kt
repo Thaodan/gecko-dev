@@ -2729,6 +2729,14 @@ class Settings(
     )
 
     /**
+     * Indicates if the IPProtection feature is available for the user.
+     *
+     * The flag is backed by a Nimbus `ip-protection` feature, with an option to override it through secret settings.
+     */
+    val isIPProtectionAvailable: Boolean
+        get() = FxNimbus.features.ipProtection.value().enabled || isIPProtectionEnabled
+
+    /**
      * Tracks how many times the summarize menu item has been shown.
      * Used to control highlight/badge visibility for feature discovery.
      */
