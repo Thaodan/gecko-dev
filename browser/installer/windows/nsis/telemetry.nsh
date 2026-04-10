@@ -392,12 +392,41 @@ Function PrepareStubInstallPing
 
   nsJSON::Set /tree ping "Data" "download_requests_blocked_by_server" /value "$DownloadRequestsBlockedByServer"
 
+  ${If} "$OpenedDownloadPage" == "1"
+    nsJSON::Set /tree ping "Data" "manual_download" /value true
+  ${Else}
+    nsJSON::Set /tree ping "Data" "manual_download" /value false
+  ${EndIf}
+
   Call GetHadOldInstall
   Pop $0
   ${If} "$0" == "1"
     nsJSON::Set /tree ping "Data" "had_old_install" /value true
   ${Else}
     nsJSON::Set /tree ping "Data" "had_old_install" /value false
+  ${EndIf}
+
+  nsJSON::Set /tree ping "Data" "old_running" /value false
+  ${If} "$FirefoxLaunchCode" == 2
+    nsJSON::Set /tree ping "Data" "new_launched" /value true
+  ${Else}
+    nsJSON::Set /tree ping "Data" "new_launched" /value false
+  ${EndIf}
+
+  nsJSON::Quote /always "$ExistingVersion"
+  Pop $0
+  nsJSON::Set /tree ping "Data" "old_version" /value "$0"
+
+  nsJSON::Quote /always "$ExistingBuildID"
+  Pop $0
+  nsJSON::Set /tree ping "Data" "old_build_id" /value "$0"
+
+  nsJSON::Set /tree ping "Data" "profile_cleanup_prompt" /value '"$ProfileCleanupPromptType"'
+
+  ${If} "$CheckboxCleanupProfile" == "1"
+    nsJSON::Set /tree ping "Data" "profile_cleanup_requested" /value true
+  ${Else}
+    nsJSON::Set /tree ping "Data" "profile_cleanup_requested" /value false
   ${EndIf}
 
   Call GetDesktopLauncherStatus
