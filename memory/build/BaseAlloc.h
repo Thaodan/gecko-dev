@@ -26,14 +26,17 @@ class BaseAlloc {
 
   void Init() MOZ_REQUIRES(gInitLock);
 
-  void* alloc(size_t aSize) MOZ_EXCLUDES(mMutex);
+  // These functions are exposed with MFBT_API so they can be called from
+  // gtests.
 
-  void* calloc(size_t aNumber, size_t aSize) MOZ_EXCLUDES(mMutex);
+  MFBT_API void* alloc(size_t aSize) MOZ_EXCLUDES(mMutex);
+
+  MFBT_API void* calloc(size_t aNumber, size_t aSize) MOZ_EXCLUDES(mMutex);
 
   // usable_size is safe both with and without the lock.
-  size_t usable_size(void* aPtr);
+  MFBT_API size_t usable_size(void* aPtr);
 
-  void free(void* aPtr) MOZ_EXCLUDES(mMutex);
+  MFBT_API void free(void* aPtr) MOZ_EXCLUDES(mMutex);
 
   Mutex mMutex;
 
@@ -93,7 +96,7 @@ class BaseAlloc {
   Stats mStats MOZ_GUARDED_BY(mMutex);
 };
 
-extern BaseAlloc sBaseAlloc;
+MFBT_API extern BaseAlloc sBaseAlloc;
 
 // Other classes may inherit from BaseAllocClass to get new and delete
 // methods that use the base allocator.
