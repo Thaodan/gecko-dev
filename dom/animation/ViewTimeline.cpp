@@ -102,7 +102,7 @@ void ViewTimeline::UpdateCachedCurrentTime() {
   mCachedCurrentTime.reset();
 
   // If no layout box, this timeline is inactive.
-  if (!mSource || !mSource.mElement->GetPrimaryFrame()) {
+  if (!mSource || !mSource.Source().mElement->GetPrimaryFrame()) {
     return;
   }
 
