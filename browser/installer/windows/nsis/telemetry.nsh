@@ -158,12 +158,6 @@ Function PrepareTelemetryPing
     nsJSON::Set /tree ping "Data" "attribution" /value $0
   ${EndIf}
 
-  ${If} ${Silent}
-    nsJSON::Set /tree ping "Data" "silent" /value true
-  ${Else}
-    nsJSON::Set /tree ping "Data" "silent" /value false
-  ${EndIf}
-
   ClearErrors
   ${GetParameters} $0
   ${GetOptions} $0 "/TelemetryDebug:" $0
@@ -266,6 +260,12 @@ Function PrepareFullInstallPing
   ${EndIf}
 
   nsJSON::Set /tree ping "Data" "new_launched" /value "$LaunchedNewApp"
+
+  ${If} ${Silent}
+    nsJSON::Set /tree ping "Data" "silent" /value true
+  ${Else}
+    nsJSON::Set /tree ping "Data" "silent" /value false
+  ${EndIf}
 
   Pop $1
   Pop $0

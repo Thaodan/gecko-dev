@@ -4,7 +4,6 @@
 Function TelemetryTests
   ${UnitTest} TestGenerateUUID
   ${UnitTest} TestCommonPingHttpDetails
-  ${UnitTest} TestSilentTelemetryField
   ${UnitTest} Test64BitBuildTelemetryField
   ${UnitTest} TestManualDownloadTelemetryField
   ${UnitTest} TestLaunchStatusTelemetryFields
@@ -94,34 +93,6 @@ Function TestCommonPingHttpDetails
   ; Ensure the callback was used.
   ${AssertTelemetryData} "another_ping_for_testing" "string" "it works"
 
-  Pop $0
-FunctionEnd
-
-Function TestSilentTelemetryField
-  Push $0
-  Push $1
-
-  ${If} ${Silent}
-    StrCpy $1 "silent"
-  ${Else}
-    StrCpy $1 "normal"
-  ${EndIf}
-
-  SetSilent silent
-  !insertmacro MakeTelemetryPing FakePingInfo
-  ${AssertTelemetryData} "silent" "value" "true"
-
-  SetSilent normal
-  !insertmacro MakeTelemetryPing FakePingInfo
-  ${AssertTelemetryData} "silent" "value" "false"
-
-  ${If} $1 == "silent"
-    SetSilent silent
-  ${Else}
-    SetSilent normal
-  ${EndIf}
-
-  Pop $1
   Pop $0
 FunctionEnd
 
