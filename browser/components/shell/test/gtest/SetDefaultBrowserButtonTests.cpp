@@ -101,6 +101,12 @@ static UIWindowElement WaitForSetDefaultBrowserButton() {
   return {};
 }
 
+static bool IsElementFocus(const UIElement& aElement) {
+  BOOL isFocus{FALSE};
+  aElement->get_CurrentHasKeyboardFocus(&isFocus);
+  return isFocus;
+}
+
 class SetDefaultBrowserButtonTests : public ::testing::Test {
  protected:
   static void SetUpTestSuite() {
@@ -218,4 +224,15 @@ TEST_F(SetDefaultBrowserButtonTests, FindDefaultBrowserButton) {
   auto [window, button]{WaitForSetDefaultBrowserButton()};
   ASSERT_THAT(window, testing::NotNull());
   ASSERT_THAT(button, testing::NotNull());
+}
+
+TEST_F(SetDefaultBrowserButtonTests, FocusDefaultBrowserButton) {
+  ASSERT_TRUE(LaunchModernSettingsDialogDefaultApps());
+
+  auto [window, button]{WaitForSetDefaultBrowserButton()};
+  ASSERT_THAT(window, testing::NotNull());
+  ASSERT_THAT(button, testing::NotNull());
+
+  FocusElement(window, button);
+  ASSERT_TRUE(IsElementFocus(button));
 }
