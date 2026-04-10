@@ -24,8 +24,7 @@ already_AddRefed<ViewTimeline> ViewTimeline::MakeNamed(
   // 1. Lookup scroller. We have to find the nearest scroller from |aSubject|
   // and |aPseudoType|.
   auto [element, pseudo] = FindNearestScroller(aSubject, aPseudoRequest);
-  auto scroller =
-      Scroller::Nearest(const_cast<Element*>(element), pseudo.mType);
+  auto scroller = Scroller::Nearest(const_cast<Element*>(element), pseudo);
 
   // 2. Create timeline.
   return MakeAndAddRef<ViewTimeline>(
@@ -40,8 +39,7 @@ already_AddRefed<ViewTimeline> ViewTimeline::MakeAnonymous(
   // view() finds the nearest scroll container from the animation target.
   auto [element, pseudo] =
       FindNearestScroller(aTarget.mElement, aTarget.mPseudoRequest);
-  Scroller scroller =
-      Scroller::Nearest(const_cast<Element*>(element), pseudo.mType);
+  Scroller scroller = Scroller::Nearest(const_cast<Element*>(element), pseudo);
   return MakeAndAddRef<ViewTimeline>(aDocument, scroller, aAxis,
                                      aTarget.mElement,
                                      aTarget.mPseudoRequest.mType, aInset);
