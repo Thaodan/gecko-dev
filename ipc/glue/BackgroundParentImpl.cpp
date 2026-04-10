@@ -720,6 +720,11 @@ IPCResult BackgroundParentImpl::RecvPSharedWorkerConstructor(
     return IPC_FAIL(this, "must be a content actor");
   }
 
+  if (MOZ_UNLIKELY(aData.serviceWorkerData().type() !=
+                   OptionalServiceWorkerData::Tvoid_t)) {
+    return IPC_FAIL(this, "Invalid worker type for PSharedWorkerParent");
+  }
+
   mozilla::dom::SharedWorkerParent* actor =
       static_cast<mozilla::dom::SharedWorkerParent*>(aActor);
   actor->Initialize(aData, aWindowID, aPortIdentifier);
