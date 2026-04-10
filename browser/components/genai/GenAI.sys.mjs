@@ -727,9 +727,9 @@ export const GenAI = {
       contextTabs = null,
     } = contextMenu;
 
-    // DO NOT show menu when inside an extension panel or chrome UI
+    // DO NOT show menu when inside an extension panel
     const uri = browser.browsingContext?.currentURI.spec;
-    if (uri?.startsWith("moz-extension:") || uri?.startsWith("chrome:")) {
+    if (uri?.startsWith("moz-extension:")) {
       showItem(menu, false);
       return;
     }
