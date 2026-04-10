@@ -68,10 +68,8 @@ class ScrollTimeline : public AnimationTimeline,
   template <typename T, typename... Args>
   friend already_AddRefed<T> mozilla::MakeAndAddRef(Args&&... aArgs);
 
- public:
-  struct Scroller {
-    // FIXME: Bug 1765211. Perhaps we only need root and a specific element.
-    // This depends on how we fix this bug.
+ protected:
+  struct ScrollerInfo {
     enum class Type : uint8_t {
       Root,
       Nearest,
@@ -82,39 +80,48 @@ class ScrollTimeline : public AnimationTimeline,
 
    private:
     OwningAnimationTarget mTarget;
-    Scroller(Type aType, Element* aElement,
-             const PseudoStyleRequest& aPseudoRequest)
+    ScrollerInfo(Type aType, Element* aElement,
+                 const PseudoStyleRequest& aPseudoRequest)
         : mType{aType}, mTarget{aElement, aPseudoRequest} {}
 
    public:
-    Scroller() = default;
+    ScrollerInfo() = default;
 
-    static Scroller Root(Element* aDocumentElement) {
-      return {Type::Root, aDocumentElement, PseudoStyleRequest{}};
+    bool IsAnonymous() const { return mType != Type::Name; }
+
+    static ScrollerInfo Anonymous(StyleScroller aType,
+                                  const NonOwningAnimationTarget& aTarget) {
+      const auto type = [aType]() {
+        switch (aType) {
+          case StyleScroller::Root:
+            break;
+          case StyleScroller::Nearest:
+            return Type::Nearest;
+          case StyleScroller::SelfElement:
+            return Type::Self;
+          default:
+            MOZ_ASSERT_UNREACHABLE("Unhandled scroller type");
+            break;
+        }
+
+        return Type::Root;
+      }();
+      // Store the animation target - we will look up the source at evaluation
+      // time.
+      return {type, aTarget.mElement, aTarget.mPseudoRequest};
     }
 
-    static Scroller Nearest(Element* aElement,
-                            const PseudoStyleRequest& aPseudoRequest) {
-      return {Type::Nearest, aElement, aPseudoRequest};
-    }
-
-    static Scroller Named(Element* aElement,
-                          const PseudoStyleRequest& aPseudoRequest) {
+    static ScrollerInfo Named(Element* aElement,
+                              const PseudoStyleRequest& aPseudoRequest) {
+      // This is assumed to be the source (pseudo) element.
       return {Type::Name, aElement, aPseudoRequest};
     }
 
-    static Scroller Self(Element* aElement,
-                         const PseudoStyleRequest& aPseudoRequest) {
-      return {Type::Self, aElement, aPseudoRequest};
-    }
-
-    explicit operator bool() const { return mTarget.mElement; }
-    NonOwningAnimationTarget Source() const {
-      return NonOwningAnimationTarget{mTarget};
-    }
+    NonOwningAnimationTarget Source() const;
     RefPtr<Element>& ElementForCycleCollection() { return mTarget.mElement; }
   };
 
+ public:
   static already_AddRefed<ScrollTimeline> MakeAnonymous(
       Document* aDocument, const NonOwningAnimationTarget& aTarget,
       StyleScrollAxis aAxis, StyleScroller aScroller);
@@ -183,13 +190,14 @@ class ScrollTimeline : public AnimationTimeline,
   bool IsActive() const { return GetScrollContainerFrame(); }
 
   Element* SourceElement() const {
-    MOZ_ASSERT(mSource);
-    return mSource.Source().mElement;
+    auto* element = mScrollerInfo.Source().mElement;
+    MOZ_ASSERT(element);
+    return element;
   }
 
   virtual NonOwningAnimationTarget TimelineTarget() const {
-    MOZ_ASSERT(mSource);
-    return mSource.Source();
+    MOZ_ASSERT(!mScrollerInfo.IsAnonymous());
+    return mScrollerInfo.Source();
   }
 
   bool SourceMatches(const Element* aElement,
@@ -223,7 +231,7 @@ class ScrollTimeline : public AnimationTimeline,
  protected:
   virtual ~ScrollTimeline();
   ScrollTimeline() = delete;
-  ScrollTimeline(Document* aDocument, const Scroller& aScroller,
+  ScrollTimeline(Document* aDocument, const ScrollerInfo& aScrollerInfo,
                  StyleScrollAxis aAxis);
 
   void TimelineDataDidChange();
@@ -255,7 +263,7 @@ class ScrollTimeline : public AnimationTimeline,
   // FIXME: Bug 1765211: We may have to update the source element once the
   // overflow property of the scroll-container is updated when we are using
   // nearest scroller.
-  Scroller mSource;
+  ScrollerInfo mScrollerInfo;
   StyleScrollAxis mAxis;
 
   struct CurrentTimeData {
