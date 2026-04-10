@@ -40,7 +40,7 @@ task-defaults:
                     - unittests/win_unittest.py
         requires-signed-builds:
             by-test-platform:
-                .*-artifact/.*: false
+                macosx.*-artifact/.*: false
                 macosx1500.*: true
                 windows.*-asan/opt: false    # No XPCShell on ASAN yet
                 windows.*-mingwclang/.*: false

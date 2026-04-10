@@ -133,9 +133,12 @@ tasks:
         description: "Win64 Opt Artifact Build"
         index:
             job-name: win64-artifact-opt
+        attributes:
+            enable-build-signing: true
         treeherder:
             platform: windows2012-64/opt
         worker:
+            chain-of-trust: true
             env:
                 MOZ_ARTIFACT_TASK: {task-reference: '<win64-opt>'}
         run:
@@ -157,9 +160,12 @@ tasks:
         description: "Win64 Debug Artifact Build"
         index:
             job-name: win64-artifact-debug
+        attributes:
+            enable-build-signing: true
         treeherder:
             platform: windows2012-64/debug
         worker:
+            chain-of-trust: true
             env:
                 MOZ_ARTIFACT_TASK: {task-reference: '<win64-debug>'}
         run:
