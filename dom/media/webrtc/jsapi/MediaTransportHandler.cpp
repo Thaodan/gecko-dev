@@ -284,57 +284,6 @@ static NrIceCtx::Policy toNrIcePolicy(dom::RTCIceTransportPolicy aPolicy) {
   return NrIceCtx::ICE_POLICY_ALL;
 }
 
-using ParsedIceServer = IceServerParser::ParsedIceServer;
-using IceTransport = IceServerParser::IceTransport;
-
-static const char* IceTransportToNrTransport(const ParsedIceServer& aEntry) {
-  if (aEntry.mUri.IsTls()) {
-    return kNrIceTransportTls;
-  }
-  return aEntry.mUri.mTransport == IceTransport::Tcp ? kNrIceTransportTcp
-                                                     : kNrIceTransportUdp;
-}
-
-static void ConvertIceServerEntries(
-    const nsTArray<ParsedIceServer>& aEntries,
-    std::vector<NrIceStunServer>* aStunServersOut,
-    std::vector<NrIceTurnServer>* aTurnServersOut) {
-  for (const auto& entry : aEntries) {
-    const char* transport = IceTransportToNrTransport(entry);
-
-    if (entry.mUri.IsTurn()) {
-      std::vector<unsigned char> password(entry.mPassword.BeginReading(),
-                                          entry.mPassword.EndReading());
-      UniquePtr<NrIceTurnServer> server(NrIceTurnServer::Create(
-          entry.mUri.mHost.get(), entry.mUri.mPort,
-          std::string(entry.mUsername.get()), password, transport));
-      if (!server) {
-        CSFLogError(LOGTAG, "%s: failed to create NrIceTurnServer",
-                    __FUNCTION__);
-        continue;
-      }
-      if (server->HasFqdn()) {
-        aTurnServersOut->push_back(*server);
-        server->SetUseIPv6IfFqdn();
-      }
-      aTurnServersOut->emplace_back(std::move(*server));
-    } else {
-      UniquePtr<NrIceStunServer> server(NrIceStunServer::Create(
-          entry.mUri.mHost.get(), entry.mUri.mPort, transport));
-      if (!server) {
-        CSFLogError(LOGTAG, "%s: failed to create NrIceStunServer",
-                    __FUNCTION__);
-        continue;
-      }
-      if (server->HasFqdn()) {
-        aStunServersOut->push_back(*server);
-        server->SetUseIPv6IfFqdn();
-      }
-      aStunServersOut->emplace_back(std::move(*server));
-    }
-  }
-}
-
 static NrIceCtx::GlobalConfig GetGlobalConfig() {
   NrIceCtx::GlobalConfig config;
   config.mTcpEnabled =
@@ -507,15 +456,14 @@ nsresult MediaTransportHandlerSTS::SetIceConfig(
     return NS_ERROR_FAILURE;
   }
 
-  std::vector<NrIceStunServer> stunServers;
-  std::vector<NrIceTurnServer> turnServers;
-  ConvertIceServerEntries(result.unwrap(), &stunServers, &turnServers);
+  nsTArray<ParsedIceServer> entries = result.unwrap();
 
   MOZ_RELEASE_ASSERT(mInitPromise);
 
   mInitPromise->Then(
       mStsThread, __func__,
-      [=, this, self = RefPtr<MediaTransportHandlerSTS>(this)]() {
+      [this, aIcePolicy, entries = std::move(entries),
+       self = RefPtr<MediaTransportHandlerSTS>(this)]() {
         if (!mIceCtx) {
           CSFLogError(LOGTAG, "%s: mIceCtx is null", __FUNCTION__);
           return;
@@ -532,18 +480,9 @@ nsresult MediaTransportHandlerSTS::SetIceConfig(
 
         nsresult rv;
 
-        if (NS_FAILED(rv = mIceCtx->SetStunServers(stunServers))) {
-          CSFLogError(LOGTAG, "%s: Failed to set stun servers", __FUNCTION__);
+        if (NS_FAILED(rv = mIceCtx->SetIceServers(entries, mTurnDisabled))) {
+          CSFLogError(LOGTAG, "%s: Failed to set ICE servers", __FUNCTION__);
           return;
-        }
-        if (!mTurnDisabled) {
-          if (NS_FAILED(rv = mIceCtx->SetTurnServers(turnServers))) {
-            CSFLogError(LOGTAG, "%s: Failed to set turn servers", __FUNCTION__);
-            return;
-          }
-        } else if (!turnServers.empty()) {
-          CSFLogError(LOGTAG, "%s: Setting turn servers disabled",
-                      __FUNCTION__);
         }
         if (NS_FAILED(rv = mIceCtx->SetIceConfig(config))) {
           CSFLogError(LOGTAG, "%s: Failed to set config", __FUNCTION__);
