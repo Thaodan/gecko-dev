@@ -109,18 +109,17 @@ function run_test() {
 
   // This is a built-in root, but not one that was added to the preexisting
   // certificate DB.
-  // Verisign Class 1 Public Primary Certification Authority - G3
-  // Certificate fingerprint (SHA1): 204285DCF7EB764195578E136BD4B7D1E98E46A5
-  // https://crt.sh/?id=8984570
-  const veriSignCertDBKey = `AAAAAAAAAAAAAAARAAAAzQCLW3VWhFSFCwDPrzhI
-    zrGkMIHKMQswCQYDVQQGEwJVUzEXMBUGA1UEChMOVmVyaVNpZ24sIEluYy4xHzAdB
-    gNVBAsTFlZlcmlTaWduIFRydXN0IE5ldHdvcmsxOjA4BgNVBAsTMShjKSAxOTk5IF
-    ZlcmlTaWduLCBJbmMuIC0gRm9yIGF1dGhvcml6ZWQgdXNlIG9ubHkxRTBDBgNVBAM
-    TPFZlcmlTaWduIENsYXNzIDEgUHVibGljIFByaW1hcnkgQ2VydGlmaWNhdGlvbiBB
-    dXRob3JpdHkgLSBHMw==`;
-  let veriSignCert = certdb.findCertByDBKey(veriSignCertDBKey);
-  ok(veriSignCert, "Should be able to find VeriSign root");
-  ok(veriSignCert.isBuiltInRoot, "VeriSign root is a built-in");
+  // HARICA TLS RSA Root CA 2021
+  // Certificate fingerprint (SHA1): 022D0582FA88CE140C0679DE7F1410E945D7A56D
+  // https://crt.sh/?id=4147041876
+  const haricaCACertDBKey = `AAAAAAAAAAAAAAAQAAAAbjnKkxzv
+    Q/PGjpPH9GSJOH4wbDELMAkGA1UEBhMCR1IxNzA1BgNVBAoMLkhlbGxlbmljIEFj
+    YWRlbWljIGFuZCBSZXNlYXJjaCBJbnN0aXR1dGlvbnMgQ0ExJDAiBgNVBAMMG0hB
+    UklDQSBUTFMgUlNBIFJvb3QgQ0EgMjAyMQ==`;
+
+  let haricaCACert = certdb.findCertByDBKey(haricaCACertDBKey);
+  ok(haricaCACert, "Should be able to find HARICA root");
+  ok(haricaCACert.isBuiltInRoot, "HARICA root is a built-in");
 
   // This is a built-in root. It was added to the preexisting certificate DB. It
   // should still be considered a built-in.
