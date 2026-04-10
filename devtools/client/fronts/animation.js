@@ -13,7 +13,7 @@ const {
   animationsSpec,
 } = require("resource://devtools/shared/specs/animation.js");
 
-class AnimationPlayerFront extends FrontClassWithSpec(animationPlayerSpec) {
+class AnimationFront extends FrontClassWithSpec(animationPlayerSpec) {
   constructor(conn, targetFront, parentFront) {
     super(conn, targetFront, parentFront);
 
@@ -206,7 +206,7 @@ class AnimationPlayerFront extends FrontClassWithSpec(animationPlayerSpec) {
   }
 }
 
-registerFront(AnimationPlayerFront);
+registerFront(AnimationFront);
 
 class AnimationsFront extends FrontClassWithSpec(animationsSpec) {
   constructor(client, targetFront, parentFront) {

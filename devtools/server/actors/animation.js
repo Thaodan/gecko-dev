@@ -357,12 +357,12 @@ class AnimationActor extends Actor {
     const compositorStatus = this.getPropertiesCompositorStatus();
 
     // Note that if you add a new property to the state object, make sure you
-    // add the corresponding property in the AnimationPlayerFront' initialState
+    // add the corresponding property in the AnimationFront' initialState
     // getter.
     return {
       // Don't include the type if the animation was removed (e.g. it isn't handled by the
       // AnimationsActor anymore). The client filters out animations without type as a
-      // result of its calls to AnimationPlayerFront#refreshState.
+      // result of its calls to AnimationFront#refreshState.
       type: this.animationRemoved ? null : this.getType(),
       // startTime is null whenever the animation is paused or waiting to start.
       startTime: this.animation.startTime,
