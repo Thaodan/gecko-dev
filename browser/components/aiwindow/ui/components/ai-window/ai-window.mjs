@@ -125,6 +125,8 @@ export class AIWindow extends MozLitElement {
   #conversation = null;
   #memoriesButton = null;
   #memoriesToggled = null;
+  #reportLink =
+    "https://connect.mozilla.org/t5/discussions/smart-window-beta-feedback/td-p/122365";
   #visibilityChangeHandler;
 
   #starters = [];
@@ -1911,10 +1913,13 @@ export class AIWindow extends MozLitElement {
           `
         : ""}
       ${this.showDisclaimer
-        ? html`<div
-            data-l10n-id="smartwindow-disclaimer"
-            class="disclaimer"
-          ></div>`
+        ? html`<div data-l10n-id="smartwindow-disclaimer" class="disclaimer">
+            <a
+              data-l10n-name="report-link"
+              href=${this.#reportLink}
+              target="_blank"
+            ></a>
+          </div>`
         : ""}
       ${this.showFooter ? html`<smartwindow-footer></smartwindow-footer>` : ""}
     `;
