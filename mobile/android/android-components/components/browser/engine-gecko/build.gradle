@@ -24,6 +24,12 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
+    packaging {
+        resources {
+            excludes += ['META-INF/LICENSE.md', 'META-INF/LICENSE-notice.md']
+        }
+    }
+
     buildFeatures {
         buildConfig = true
     }

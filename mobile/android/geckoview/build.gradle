@@ -149,18 +149,18 @@ android {
     namespace = 'org.mozilla.geckoview'
 }
 
-def gleanVersion = libs.versions.glean.get()
+def projectVersion = project.ext.gleanVersion
 
 configurations {
     api {
         outgoing {
             if (!mozconfig.substs.MOZ_ANDROID_GECKOVIEW_LITE) {
                 // The omni build provides glean-native
-                capability("org.mozilla.telemetry:glean-native:${gleanVersion}")
+                capability("org.mozilla.telemetry:glean-native:${project.ext.gleanVersion}")
             }
             afterEvaluate {
                 // Implicit capability
-                capability("org.mozilla.geckoview:${computeArtifactId()}:${gleanVersion}")
+                capability("org.mozilla.geckoview:${computeArtifactId()}:${projectVersion}")
             }
         }
     }
@@ -171,7 +171,7 @@ configurations {
     runtimeOnly {
         outgoing {
             afterEvaluate {
-                capability("org.mozilla.geckoview:geckoview:${gleanVersion}")
+                capability("org.mozilla.geckoview:geckoview:${projectVersion}")
             }
         }
     }
