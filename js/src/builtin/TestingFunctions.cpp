@@ -6336,10 +6336,8 @@ static bool Deserialize(JSContext* cx, unsigned argc, Value* vp) {
                                  &args[0].toObject().as<CloneBufferObject>());
 
   JS::CloneDataPolicy policy;
+  Maybe<JS::StructuredCloneScope> scopeOption;
 
-  JS::StructuredCloneScope scope =
-      obj->isSynthetic() ? JS::StructuredCloneScope::DifferentProcess
-                         : JS::StructuredCloneScope::SameProcess;
   if (args.get(1).isObject()) {
     RootedObject opts(cx, &args[1].toObject());
     if (!opts) {
@@ -6381,21 +6379,27 @@ static bool Deserialize(JSContext* cx, unsigned argc, Value* vp) {
       if (!str) {
         return false;
       }
-      auto maybeScope = ParseCloneScope(cx, str);
-      if (!maybeScope) {
+      scopeOption = ParseCloneScope(cx, str);
+      if (!scopeOption) {
         JS_ReportErrorASCII(cx, "Invalid structured clone scope");
         return false;
       }
-
-      if (*maybeScope < scope) {
-        JS_ReportErrorASCII(cx,
-                            "Cannot use less restrictive scope "
-                            "than the deserialized clone buffer's scope");
-        return false;
-      }
-
-      scope = *maybeScope;
     }
+  }
+
+  // Determine the scope after reading options, since option getters may
+  // modify the clone buffer.
+  JS::StructuredCloneScope scope =
+      obj->isSynthetic() ? JS::StructuredCloneScope::DifferentProcess
+                         : JS::StructuredCloneScope::SameProcess;
+  if (scopeOption.isSome()) {
+    if (*scopeOption < scope) {
+      JS_ReportErrorASCII(cx,
+                          "Cannot use less restrictive scope "
+                          "than the deserialized clone buffer's scope");
+      return false;
+    }
+    scope = *scopeOption;
   }
 
   if (scope > JS::StructuredCloneScope::SameProcess &&
