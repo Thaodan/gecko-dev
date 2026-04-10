@@ -235,7 +235,7 @@ toolbar[inactive="true"] .urlbar,
 }
 
 [open] > .urlbar-background {
-  border-color: var(--arrowpanel-border-color);
+  border-color: var(--panel-border-color);
   box-shadow: 0 2px 14px rgba(0, 0, 0, 0.13);
 
   /* The border moves outwards in the open state, so increase the radius
@@ -1064,7 +1064,7 @@ toolbar[inactive="true"] .urlbar,
   }
 
   .widget-overflow-list > & {
-    margin: var(--arrowpanel-menuitem-margin);
+    margin: var(--panel-menuitem-margin);
     width: auto;
 
     :root[lwtheme] & > #searchbar {

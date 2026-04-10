@@ -1862,7 +1862,7 @@
 #PopupSearchAutoComplete {
   --panel-color: var(--toolbar-field-focus-color);
   --panel-background: var(--toolbar-field-focus-background-color);
-  --panel-border-color: var(--arrowpanel-border-color);
+  --panel-border-color: inherit;
 }
 
 #PopupSearchAutoComplete::part(content) {
