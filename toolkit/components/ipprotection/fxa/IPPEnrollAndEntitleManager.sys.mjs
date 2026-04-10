@@ -16,6 +16,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/ipprotection/IPPStartupCache.sys.mjs",
   IPProtectionService:
     "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
+  IPPSignInWatcher:
+    "moz-src:///toolkit/components/ipprotection/fxa/IPPSignInWatcher.sys.mjs",
 });
 
 const GUARDIAN_ENDPOINT_PREF = "browser.ipProtection.guardian.endpoint";
@@ -47,7 +49,6 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
  */
 class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
   #entitlement = null;
-  #signInWatcher = null;
 
   // Promises to queue enrolling and entitling operations.
   #enrollingPromise = null;
@@ -68,23 +69,14 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
     // will recompute the state in `initOnStartupCompleted`.
     this.#entitlement = lazy.IPPStartupCache.entitlement;
 
-    // Duck typing: signInWatcher is not part of the base IPPAuthProvider contract.
-    // This manager requires the active auth provider to be an IPPFxaAuthProvider.
-    this.#signInWatcher = lazy.IPProtectionService.authProvider.signInWatcher;
-    if (!this.#signInWatcher) {
-      throw new Error(
-        "IPPEnrollAndEntitleManager requires an auth provider with a signInWatcher"
-      );
-    }
-
-    this.#signInWatcher.addEventListener(
+    lazy.IPPSignInWatcher.addEventListener(
       "IPPSignInWatcher:StateChanged",
       this.handleEvent
     );
   }
 
   initOnStartupCompleted() {
-    if (!this.#signInWatcher.isSignedIn) {
+    if (!lazy.IPPSignInWatcher.isSignedIn) {
       return;
     }
     // This bit must be async because we want to trigger the updateState at
@@ -93,17 +85,16 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
   }
 
   uninit() {
-    this.#signInWatcher.removeEventListener(
+    lazy.IPPSignInWatcher.removeEventListener(
       "IPPSignInWatcher:StateChanged",
       this.handleEvent
     );
-    this.#signInWatcher = null;
 
     this.#entitlement = null;
   }
 
   #handleEvent(_event) {
-    if (!this.#signInWatcher.isSignedIn) {
+    if (!lazy.IPPSignInWatcher.isSignedIn) {
       this.#setEntitlement(null);
       return;
     }
@@ -212,9 +203,7 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
     }
 
     const { enrollment, error: enrollmentError } =
-      // Duck typing: enroll() is not part of the base IPPAuthProvider contract.
-      // This manager requires the active auth provider to be an IPPFxaAuthProvider.
-      await lazy.IPProtectionService.authProvider.enroll(abortSignal);
+      await IPPEnrollAndEntitleManagerSingleton.#enroll(abortSignal);
 
     if (enrollmentError || !enrollment) {
       // Unset the entitlement if enrollment failed.
@@ -272,6 +261,34 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
 
     this.#setEntitlement(entitlement);
     return { isEntitled: true };
+  }
+
+  // These methods are static because we don't want to change the internal state
+  // of the singleton.
+
+  /**
+   * Enrolls the current FxA account with Guardian.
+   *
+   * Static to avoid changing internal state of the singleton.
+   *
+   * @param {AbortSignal} [abortSignal=null] - a signal to indicate the enrollment should be aborted
+   * @returns {Promise<object>} status
+   * @returns {boolean} status.enrollment - True if enrollment succeeded.
+   * @returns {string} [status.error] - Error message if enrollment failed.
+   */
+  static async #enroll(abortSignal = null) {
+    try {
+      const enrollment = await lazy.IPProtectionService.guardian.enrollWithFxa(
+        "alpha",
+        abortSignal
+      );
+      if (!enrollment?.ok) {
+        return { enrollment: null, error: enrollment?.error };
+      }
+    } catch (error) {
+      return { enrollment: null, error: error?.message };
+    }
+    return { enrollment: true };
   }
 
   /**

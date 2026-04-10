@@ -38,8 +38,6 @@ if (Services.appinfo.processType !== Services.appinfo.PROCESS_TYPE_DEFAULT) {
   throw new Error("Guardian.sys.mjs should only run in the parent process");
 }
 
-export const GUARDIAN_EXPERIMENT_TYPE = "alpha";
-
 /**
  * An HTTP Client to talk to the Guardian service.
  * Allows to enroll users to the proxy service,
@@ -71,20 +69,15 @@ export class GuardianClient {
    * @param { AbortSignal | null } aAbortSignal - An AbortSignal to cancel the operation.
    * @returns {Promise<{error?: string, ok?: boolean}>}
    */
-  async enrollWithFxa(
-    aExperimentType = GUARDIAN_EXPERIMENT_TYPE,
-    aAbortSignal = null
-  ) {
+  async enrollWithFxa(aExperimentType = "alpha", aAbortSignal = null) {
     // We abort loading the page if the origin is not allowed.
     const allowedOrigins = [
       new URL(this.guardianEndpoint).origin,
       new URL(this.fxaOrigin).origin,
     ];
-    const { loginURL, successURL, errorURL } =
-      this.enrollmentURLs(aExperimentType);
     // If the browser is redirected to one of those urls
     // we know we're done with the browser.
-    const finalizerURLs = [successURL, errorURL];
+    const finalizerURLs = [this.#successURL, this.#enrollmentError];
     return await lazy.hiddenBrowserManager.withHiddenBrowser(async browser => {
       const aborted = new Promise((_, reject) => {
         aAbortSignal?.addEventListener("abort", () => {
@@ -116,6 +109,8 @@ export class GuardianClient {
         }
         return false;
       });
+      const loginURL = this.#loginURL;
+      loginURL.searchParams.set("experiment", aExperimentType);
       const loginURI = Services.io.newURI(loginURL.href);
       if (!allowedOrigins.includes(loginURL.origin)) {
         throw new Error(`Login URL origin ${loginURL.origin} is not allowed.`);
@@ -295,24 +290,26 @@ export class GuardianClient {
     url.pathname = "/api/v1/fpn/token";
     return url;
   }
+  /** This is the URL that will be used to log in to the Guardian service. */
+  get #loginURL() {
+    const url = new URL(this.guardianEndpoint);
+    url.pathname = "/api/v1/fpn/auth";
+    return url;
+  }
+  /** This is the URL that the user will be redirected to after a successful enrollment. */
+  get #successURL() {
+    const url = new URL(this.guardianEndpoint);
+    url.pathname = "/oauth/success";
+    return url;
+  }
   /**
-   * Returns the URLs needed to perform FxA enrollment with Guardian.
-   *
-   * @param {"alpha"|"beta"|"delta"|"gamma"} experimentType
-   * @returns {{ loginURL: URL, successURL: URL, errorURL: URL }}
+   * This is the URL that the user will be redirected to after a rejected/failed enrollment.
+   * The url will contain an error query parameter with the error message.
    */
-  enrollmentURLs(experimentType = GUARDIAN_EXPERIMENT_TYPE) {
-    const loginURL = new URL(this.guardianEndpoint);
-    loginURL.pathname = "/api/v1/fpn/auth";
-    loginURL.searchParams.set("experiment", experimentType);
-
-    const successURL = new URL(this.guardianEndpoint);
-    successURL.pathname = "/oauth/success";
-
-    const errorURL = new URL(this.guardianEndpoint);
-    errorURL.pathname = "/api/v1/fpn/error";
-
-    return { loginURL, successURL, errorURL };
+  get #enrollmentError() {
+    const url = new URL(this.guardianEndpoint);
+    url.pathname = "/api/v1/fpn/error";
+    return url;
   }
   /** This is the URL that will be used to check the user's proxy status. */
   get #statusURL() {
