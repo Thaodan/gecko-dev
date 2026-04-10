@@ -60,12 +60,21 @@ class BaseAlloc {
   constexpr static unsigned kBaseQuantumLog2 =
       mozilla::CeilingLog2(kBaseQuantum);
 
+  // The minimum possible allocation size.  See get_list_index_for_size().
+  constexpr static unsigned kBaseMinimumSize =
+      (kCacheLineSize > kBaseQuantum * 2) ? (kCacheLineSize - kBaseQuantum * 2)
+                                          : kBaseQuantum;
+
   // The maximum object size handled by the regular free lists (before
   // deferring to the oversize rbtree).  This should fit arena_t.
   constexpr static base_alloc_size_t kMaxSizeForLists = 4096;
   static_assert(std::has_single_bit(kMaxSizeForLists));
 
-  constexpr static unsigned kNumFreeLists = kMaxSizeForLists / kBaseQuantum;
+  // There are no more than 3 size classes ber cache line. See
+  // get_list_index_for_size().
+  constexpr static unsigned kNumFreeLists =
+      kMaxSizeForLists / kCacheLineSize *
+      std::min(kCacheLineSize / kBaseQuantum, size_t(3));
 
   static base_alloc_size_t size_round_up(base_alloc_size_t aSize);
 
