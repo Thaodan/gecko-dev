@@ -907,6 +907,32 @@ export class BaseContent extends React.PureComponent {
                   <Search showLogo={false} {...props.Search} />
                 </ErrorBoundary>
               )}
+
+              {/* ASRouterNewTabMessage */}
+              {this.shouldShowOMCHighlight("ASRouterNewTabMessage") && (
+                <ErrorBoundary>
+                  <MessageWrapper dispatch={this.props.dispatch}>
+                    <ExternalComponentWrapper
+                      type="ASROUTER_NEWTAB_MESSAGE"
+                      messageData={this.props.Messages.messageData}
+                      className="asrouter-newtab-message-wrapper"
+                    />
+                  </MessageWrapper>
+                </ErrorBoundary>
+              )}
+
+              {/* ActivationWindowMessage */}
+              {this.shouldShowOMCHighlight("ActivationWindowMessage") && (
+                <ErrorBoundary>
+                  <MessageWrapper dispatch={this.props.dispatch}>
+                    <ActivationWindowMessage
+                      dispatch={this.props.dispatch}
+                      messageData={this.props.Messages.messageData}
+                    />
+                  </MessageWrapper>
+                </ErrorBoundary>
+              )}
+
               {/* TODO: Break out Topsites, Widgets from DiscoveryStreamBase */}
               {/* Shortcuts / Topsites */}
               {topSitesEnabled && (
