@@ -123,7 +123,21 @@ void BaseAlloc::free(void* aPtr) MOZ_EXCLUDES(mMutex) {
   cell->ClearPayload();
   cell->SetFreed();
 
-  // TODO attempt coalesce.
+  // Attempt to merge backwards
+  BaseAllocCell* left = cell->LeftCell();
+  if (left && !left->Allocated()) {
+    Unlink(left);
+    left->Merge(cell);
+    cell = left;
+  }
+  // And forward
+  BaseAllocCell* right = cell->RightCell();
+  if (right && !right->Allocated()) {
+    Unlink(right);
+    cell->Merge(right);
+  }
+  // the size will conform to our classes/free lists.
+  MOZ_ASSERT(cell->Size() == size_round_up(cell->Size()));
 
   unsigned index = get_list_index_for_size(cell->Size());
   if (index < kNumFreeLists) {
@@ -177,6 +191,17 @@ void* BaseAlloc::alloc_from_list(base_alloc_size_t aSize) {
   }
 
   return nullptr;
+}
+
+void BaseAlloc::Unlink(BaseAllocCell* cell) {
+  MOZ_ASSERT(!cell->Allocated());
+
+  unsigned index = get_list_index_for_size(cell->Size());
+  if (index < kNumFreeLists) {
+    mFreeLists[index].remove(cell);
+  } else {
+    mFreeListOversize.Remove(cell);
+  }
 }
 
 bool BaseAlloc::pages_alloc(base_alloc_size_t aSize) MOZ_REQUIRES(mMutex) {
@@ -279,4 +304,67 @@ size_t BaseAlloc::usable_size(void* aPtr) {
   return reinterpret_cast<BaseAllocCell*>(aPtr)->Size();
 }
 
+void BaseAllocCell::SetSize(base_alloc_size_t aSize) {
+  MOZ_ASSERT(aSize == BaseAlloc::size_round_up(aSize));
+
+  // Set the left metadata's size first so it can be used to get the
+  // right metadata's address.
+  LeftMetadata()->mRightSize = aSize;
+
+  // Now it's safe to set the right metadata's size.  Note that both the
+  // old-right metadata, and the new metadata's right size are left untouched.
+  RightMetadata()->mLeftSize = aSize;
+}
+
 void BaseAllocCell::ClearPayload() { memset(&mListElem, 0, sizeof(mListElem)); }
+
+BaseAllocCell* BaseAllocCell::LeftCell() {
+  base_alloc_size_t left_cell_size = LeftMetadata()->mLeftSize;
+  if (!left_cell_size) {
+    return nullptr;
+  }
+
+  BaseAllocCell* left = reinterpret_cast<BaseAllocCell*>(
+      reinterpret_cast<uintptr_t>(this) - BaseAlloc::kBaseQuantum -
+      left_cell_size);
+
+  MOZ_ASSERT(left->RightMetadata() == LeftMetadata());
+
+  return left;
+}
+
+BaseAllocCell* BaseAllocCell::RightCell() {
+  base_alloc_size_t right_size = RightMetadata()->mRightSize;
+  if (right_size == 0) {
+    return nullptr;
+  }
+
+  BaseAllocCell* right = reinterpret_cast<BaseAllocCell*>(
+      reinterpret_cast<uintptr_t>(this) + Size() + BaseAlloc::kBaseQuantum);
+
+  MOZ_ASSERT(RightMetadata() == right->LeftMetadata());
+
+  return right;
+}
+
+void BaseAllocCell::Merge(BaseAllocCell* aOther) {
+  // aOther must be after this, we can check by comparing what they each
+  // think their metadata is.
+  MOZ_ASSERT(RightMetadata() == aOther->LeftMetadata());
+  base_alloc_size_t new_size =
+      Size() + aOther->Size() + BaseAlloc::kBaseQuantum;
+
+#ifdef MOZ_DEBUG
+  BaseAllocMetadata* right_metadata = aOther->RightMetadata();
+#endif
+  // Check for overflow.
+  MOZ_ASSERT(new_size > this->Size() && new_size > aOther->Size());
+
+  BaseAllocMetadata* old_metadata = RightMetadata();
+  SetSize(new_size);
+
+  MOZ_ASSERT(RightMetadata() == right_metadata);
+
+  // Clearing the old metadata may make debugging easier.
+  old_metadata->Clear();
+}
