@@ -2112,6 +2112,12 @@ shellService:
       type: boolean
       fallbackPref: browser.shell.setDefaultGuidanceNotifications
       description: Whether or not the user should see the guidance notifications when setting Firefox as their default browser.
+    focusSetDefaultBrowserButton:
+      description: Focus the set default browser button in Windows Settings.
+      setPref:
+        branch: user
+        pref: browser.shell.focusSetDefaultBrowserButton
+      type: boolean
 upgradeDialog:
   description: The dialog shown for major upgrades
   owner: omc-core@mozilla.com
