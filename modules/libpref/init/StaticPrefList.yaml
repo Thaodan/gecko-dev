@@ -17229,11 +17229,6 @@
   value: true
   mirror: always
 
-- name: privacy.partition.network_state
-  type: RelaxedAtomicBool
-  value: true
-  mirror: always
-
 # Partition the OCSP cache by the partitionKey.
 - name: privacy.partition.network_state.ocsp_cache
   type: RelaxedAtomicBool
