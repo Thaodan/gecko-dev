@@ -1040,9 +1040,8 @@ NS_INTERFACE_MAP_END
 NS_IMPL_CYCLE_COLLECTING_ADDREF(Geolocation)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(Geolocation)
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_WEAK_PTR(Geolocation, mPendingCallbacks,
-                                               mWatchingCallbacks,
-                                               mPendingRequests)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(Geolocation, mPendingCallbacks,
+                                      mWatchingCallbacks, mPendingRequests)
 
 Geolocation::Geolocation()
     : mProtocolType(ProtocolType::OTHER), mLastWatchId(1) {}
