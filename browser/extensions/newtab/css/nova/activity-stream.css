@@ -1623,6 +1623,7 @@ main section {
   grid-gap: var(--space-xxlarge);
   grid-template-columns: repeat(auto-fit, 192px);
   margin: 0;
+  padding: 0;
 }
 @media (max-width: 610px) {
   .sections-list .section-list .context-menu {
@@ -8928,15 +8929,17 @@ main section {
 /* stylelint-disable max-nesting-depth */
 .ds-highlights .section .section-list {
   grid-gap: var(--gridRowGap);
+}
+.ds-highlights .section .section-list:not(.nova-enabled *) {
   grid-template-columns: repeat(1, 1fr);
 }
 @media (min-width: 610px) {
-  .ds-highlights .section .section-list {
+  .ds-highlights .section .section-list:not(.nova-enabled *) {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 @media (min-width: 866px) {
-  .ds-highlights .section .section-list {
+  .ds-highlights .section .section-list:not(.nova-enabled *) {
     grid-template-columns: repeat(4, 1fr);
   }
 }
@@ -8973,6 +8976,57 @@ main section {
 }
 .ds-highlights .hide-for-narrow {
   display: block;
+}
+.nova-enabled .ds-highlights {
+  display: grid;
+  grid-column: 1/-1;
+  grid-template-columns: repeat(2, calc(2 * var(--col-width) + 1 * var(--space-medium)));
+  gap: var(--space-medium);
+  justify-content: center;
+}
+@container content-grid (inline-size >= calc(8 * 75px + 7 * 0.75rem)) {
+  .nova-enabled .ds-highlights {
+    grid-template-columns: repeat(4, calc(2 * var(--col-width) + 1 * var(--space-medium)));
+  }
+}
+@container content-grid (inline-size >= calc(12 * 75px + 11 * 0.75rem)) {
+  .nova-enabled .ds-highlights {
+    grid-template-columns: repeat(4, calc(3 * var(--col-width) + 2 * var(--space-medium)));
+  }
+}
+.nova-enabled .ds-highlights .ds-highlights-title {
+  grid-column: 1/-1;
+  font-weight: var(--font-weight-heading, var(--heading-font-weight));
+  font-size: var(--font-size-heading-large, var(--font-size-xlarge));
+  color: var(--newtab-contextual-text-primary-color);
+  margin-block: var(--space-small) 0;
+}
+.lightWallpaper .nova-enabled .ds-highlights .ds-highlights-title {
+  color-scheme: light;
+}
+.darkWallpaper .nova-enabled .ds-highlights .ds-highlights-title {
+  color-scheme: dark;
+}
+@container content-grid (inline-size >= calc(12 * 75px + 11 * 0.75rem)) {
+  .nova-enabled .ds-highlights .ds-highlights-title {
+    font-size: var(--font-size-heading-xlarge, var(--font-size-xxlarge));
+  }
+}
+.nova-enabled .ds-highlights .section {
+  display: contents;
+}
+.nova-enabled .ds-highlights .section > div {
+  display: contents;
+}
+.nova-enabled .ds-highlights .section-list {
+  grid-column: 1/-1;
+  padding-block-end: var(--space-xxlarge);
+  grid-template-columns: repeat(2, 1fr);
+}
+@container content-grid (inline-size >= calc(8 * 75px + 7 * 0.75rem)) {
+  .nova-enabled .ds-highlights .section-list {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
 .ds-hr {
