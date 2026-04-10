@@ -17,24 +17,16 @@ function waitForDbUpdatePropagation() {
 }
 
 function triggerDbUpdate() {
-  let dbUpdate = waitForDbUpdatePropagation();
   Services.obs.notifyObservers(null, "pds-datastore-changed");
-  return dbUpdate;
+  return waitForDbUpdatePropagation();
 }
 
 add_task(async function test_windowTitle() {
-  // Initializing the database creates the first profile and dispatches the
-  // database update notification. Wait for it to ensure it isn't accidentally
-  // caught later.
-  let dbUpdate = waitForDbUpdatePropagation();
-  await initGroupDatabase();
-  await dbUpdate;
-
   // The currentProfile is null, because there are 0 profiles in the db, when
   // updateTitlebar is called in the EveryWindow init function.
   // So we uninit and init again so we have a current profile when
   // updateTitlebar is called.
-  await waitForDbUpdatePropagation();
+  await initGroupDatabase();
   await SelectableProfileService.uninit();
   await SelectableProfileService.init();
 
@@ -46,7 +38,7 @@ add_task(async function test_windowTitle() {
     "The profile name is not in the window title"
   );
 
-  dbUpdate = waitForDbUpdatePropagation();
+  let dbUpdate = waitForDbUpdatePropagation();
   let newProfile = await SelectableProfileService.createNewProfile(false);
   await dbUpdate;
 
