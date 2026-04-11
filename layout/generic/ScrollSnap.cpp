@@ -740,14 +740,21 @@ Maybe<SnapDestination> ScrollSnapUtils::GetSnapPointForResnap(
         if (aTarget.mSnapPoint.mX &&
             aSnapInfo.mScrollSnapStrictnessX !=
                 StyleScrollSnapStrictness::None &&
-            aTarget.mSnapPoint.mX == x) {
+            aTarget.mSnapPoint.mX == x &&
+            // Ignore snap points outside of the snapport to optimize the next
+            // re-snap iteration.
+            aTarget.mSnapArea.Intersects(nsRect(nsPoint(*x, *y),
+                                            aSnapInfo.mSnapportSize))) {
           snapTarget.mTargetIds.mIdsOnX.AppendElement(aTarget.mTargetId);
         }
 
         if (aTarget.mSnapPoint.mY &&
             aSnapInfo.mScrollSnapStrictnessY !=
                 StyleScrollSnapStrictness::None &&
-            aTarget.mSnapPoint.mY == y) {
+            aTarget.mSnapPoint.mY == y &&
+            // Likewise for the Y axis.
+            aTarget.mSnapArea.Intersects(nsRect(nsPoint(*x, *y),
+                                            aSnapInfo.mSnapportSize))) {
           snapTarget.mTargetIds.mIdsOnY.AppendElement(aTarget.mTargetId);
         }
         return true;
