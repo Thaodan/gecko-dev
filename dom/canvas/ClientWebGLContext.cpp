@@ -4390,6 +4390,16 @@ void ClientWebGLContext::TexImage(uint8_t funcDims, GLenum imageTarget,
         }
       }
 
+      if (sdType == layers::SurfaceDescriptor::TSurfaceDescriptorDXGIYCbCr) {
+        MOZ_ASSERT(desc->image);
+        keepAliveImage = desc->image;
+      }
+
+      if (sdType == layers::SurfaceDescriptor::TSurfaceDescriptorMacIOSurface) {
+        MOZ_ASSERT(desc->image);
+        keepAliveImage = desc->image;
+      }
+
       switch (respecFormat) {
         case LOCAL_GL_SRGB:
         case LOCAL_GL_SRGB8:
