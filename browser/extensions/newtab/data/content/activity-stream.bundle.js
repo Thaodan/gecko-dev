@@ -15113,9 +15113,9 @@ function SectionsMgmtPanel({
   if (cardGridEntry) {
     sectionsFeedName = cardGridEntry.feed.url;
   }
-  let sectionsList;
+  let sectionsList = [];
   if (sectionsFeedName) {
-    sectionsList = sections[sectionsFeedName].data.sections;
+    sectionsList = sections[sectionsFeedName]?.data?.sections ?? [];
   }
   const [sectionsState, setSectionState] = (0,external_React_namespaceObject.useState)(sectionPersonalization); // State management with useState
 
