@@ -46,9 +46,9 @@ mozilla::ipc::IPCResult SocketProcessBridgeParent::RecvInitBackgroundDataBridge(
   transportQueue->Dispatch(NS_NewRunnableFunction(
       "BackgroundDataBridgeParent::Bind",
       [endpoint = std::move(aEndpoint), aChannelID]() mutable {
-        RefPtr<net::BackgroundDataBridgeParent> actor =
-            new net::BackgroundDataBridgeParent(aChannelID);
-        endpoint.Bind(actor);
+        RefPtr<BackgroundDataBridgeParent> actor =
+          BackgroundDataBridgeParent::Create(aChannelID);
+        endpoint.Bind(actor);    
       }));
   return IPC_OK();
 }
