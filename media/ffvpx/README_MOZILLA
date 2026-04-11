@@ -153,9 +153,15 @@ might need to be reaplied or extended to other files including `time.h`. The
 issue being that it's included instead of the system header, causing all sorts
 of issues.
 
+Additionally, `jni.h` and `jni.c` in ffmpeg sources need to be renamed to
+`fffjni.h` and `fffjni.c`, and `#include` to those files need to be updated.
+This is because there are header collisions with the JDK.
+ 
 `moz.build` files might need to be modified as well, in light of compilation
 and link errors.
 
 There are going to be a lot of changes in terms of symbols exported. Adjust
 `libavutil/avutil.symbols` and `libavcodec/avcodec.symbols` by removing and
-adding symbols until the build passes.
+
+Finally, apply the patches:
+- vp9-get-format-rollback.patch to fix a VP9 decoder error handling issue.
