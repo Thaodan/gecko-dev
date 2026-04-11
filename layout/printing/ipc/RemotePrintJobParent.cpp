@@ -25,15 +25,18 @@
 namespace mozilla::layout {
 
 RemotePrintJobParent::RemotePrintJobParent(nsIPrintSettings* aPrintSettings)
-    : mPrintSettings(aPrintSettings),
-      mIsDoingPrinting(false),
-      mStatus(NS_ERROR_UNEXPECTED) {
+    : mPrintSettings(aPrintSettings), mStatus(NS_ERROR_UNEXPECTED) {
   MOZ_COUNT_CTOR(RemotePrintJobParent);
 }
 
 mozilla::ipc::IPCResult RemotePrintJobParent::RecvInitializePrint(
     const nsAString& aDocumentTitle, const int32_t& aStartPage,
     const int32_t& aEndPage) {
+  if (mInitializeReceived) {
+    MOZ_ASSERT_UNREACHABLE("Unexpected redundant call to RecvInitializePrint");
+    return IPC_FAIL(this, "Unexpected redundant call to RecvInitializePrint");
+  }
+  mInitializeReceived = true;
   nsresult rv = InitializePrintDevice(aDocumentTitle, aStartPage, aEndPage);
   if (NS_FAILED(rv)) {
     Unused << SendPrintInitializationResult(rv, FileDescriptor());
