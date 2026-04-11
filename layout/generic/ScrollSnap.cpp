@@ -764,8 +764,8 @@ Maybe<SnapDestination> ScrollSnapUtils::GetSnapPointForResnap(
             aTarget.mSnapPoint.mX == x &&
             // Ignore snap points outside of the snapport to optimize the next
             // re-snap iteration.
-            aTarget.mSnapArea.Intersects(nsRect(nsPoint(*x, *y),
-                                            aSnapInfo.mSnapportSize))) {
+            aTarget.mSnapArea.Intersects(
+                nsRect(nsPoint(*x, *y), aSnapInfo.mSnapportSize))) {
           snapTarget.mTargetIds.mIdsOnX.AppendElement(aTarget.mTargetId);
         }
 
@@ -774,8 +774,8 @@ Maybe<SnapDestination> ScrollSnapUtils::GetSnapPointForResnap(
                 StyleScrollSnapStrictness::None &&
             aTarget.mSnapPoint.mY == y &&
             // Likewise for the Y axis.
-            aTarget.mSnapArea.Intersects(nsRect(nsPoint(*x, *y),
-                                            aSnapInfo.mSnapportSize))) {
+            aTarget.mSnapArea.Intersects(
+                nsRect(nsPoint(*x, *y), aSnapInfo.mSnapportSize))) {
           snapTarget.mTargetIds.mIdsOnY.AppendElement(aTarget.mTargetId);
         }
         return true;
