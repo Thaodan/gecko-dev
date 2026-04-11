@@ -114,6 +114,8 @@ class SyncStoreSupportTest {
         val constellation = mock<DeviceConstellation>()
         val account = coMock<OAuthAccount> {
             whenever(deviceConstellation()).thenReturn(constellation)
+            whenever(getCurrentDeviceId()).thenReturn("id")
+            whenever(getSessionToken()).thenReturn("token")
             whenever(getProfile(eq(false))).thenReturn(profile)
         }
 
@@ -199,9 +201,13 @@ class SyncStoreSupportTest {
     fun `GIVEN account observer WHEN onReady is triggered THEN do nothing`() = runTest(testDispatcher) {
         // `onReady` is too early for us (today) to try and get the auth status from the cached value.
         // See: https://bugzilla.mozilla.org/show_bug.cgi?id=1909779
+        val currentDeviceId = "id"
+        val sessionToken = "token"
         val constellation = mock<DeviceConstellation>()
         val authenticatedAccount = coMock<OAuthAccount> {
             whenever(deviceConstellation()).thenReturn(constellation)
+            whenever(getCurrentDeviceId()).thenReturn(currentDeviceId)
+            whenever(getSessionToken()).thenReturn(sessionToken)
         }
         val initialState = store.state.copy()
 

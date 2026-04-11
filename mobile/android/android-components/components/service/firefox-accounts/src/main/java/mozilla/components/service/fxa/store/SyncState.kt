@@ -53,6 +53,8 @@ enum class SyncStatus {
  * @property email See [Profile.email].
  * @property avatar See [Profile.avatar].
  * @property displayName See [Profile.displayName].
+ * @property currentDeviceId See [OAuthAccount.getCurrentDeviceId].
+ * @property sessionToken See [OAuthAccount.getSessionToken].
  */
 data class Account(
     val uid: String?,
