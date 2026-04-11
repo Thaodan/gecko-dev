@@ -172,7 +172,7 @@
     }
   }
 
-  &[rich-suggestion][type="search"] {
+  &[type="rich-search"] {
     :root:not([uidensity="compact"]) & {
       min-height: 46px;
     }
@@ -676,7 +676,7 @@
 
   .urlbarView-title:empty + .urlbarView-tags:empty + &,
   /* This targets both rich and non-rich results, so not using the child selector here. */
-  .urlbarView-row:is([type=search], [restyled-search]):not([selected], [show-action-text], :hover) &,
+  .urlbarView-row:is([type=search], [type=rich-search], [restyled-search]):not([selected], [show-action-text], :hover) &,
   .urlbarView-row:not([has-action], [has-url], [restyled-search]) & {
     display: none;
   }
@@ -722,7 +722,7 @@
   /* If action visibility can be toggled the height should always stay the same. */
   .urlbarView-row[has-url]:is([type=remotetab], [sponsored]):is([selected], :hover) > .urlbarView-row-inner > .urlbarView-no-wrap > &,
   /* This targets both rich and non-rich results, so not using the child selector here. */
-  .urlbarView-row:is([type=search], [restyled-search]):not([selected], [show-action-text], :hover) &,
+  .urlbarView-row:is([type=search], [type=rich-search], [restyled-search]):not([selected], [show-action-text], :hover) &,
   .urlbarView[action-override] .urlbarView-row[type=switchtab] > .urlbarView-row-inner > .urlbarView-no-wrap > & {
     visibility: hidden;
     width: 0;
@@ -1803,8 +1803,9 @@
   fill-opacity: var(--urlbar-icon-fill-opacity);
 }
 
-/* Nova style */
-.urlbarView-row[nova] {
+/* Rows with the URL at the bottom */
+
+.urlbarView-row.with-bottom-url {
   .urlbarView-title {
     font-weight: var(--font-weight-semibold);
   }
