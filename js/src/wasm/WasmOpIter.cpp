@@ -285,6 +285,22 @@ OpKind wasm::Classify(OpBytes op) {
       return OpKind::BrOnNonNull;
     case Op::RefEq:
       return OpKind::Comparison;
+#  ifdef ENABLE_WASM_JSPI
+    case Op::ContNew:
+      return OpKind::ContNew;
+    case Op::ContBind:
+      return OpKind::ContBind;
+    case Op::Suspend:
+      return OpKind::Suspend;
+    case Op::Resume:
+      return OpKind::Resume;
+    case Op::ResumeThrow:
+      return OpKind::ResumeThrow;
+    case Op::ResumeThrowRef:
+      return OpKind::ResumeThrowRef;
+    case Op::Switch:
+      return OpKind::Switch;
+#  endif
     case Op::GcPrefix: {
       switch (GcOp(op.b1)) {
         case GcOp::Limit:

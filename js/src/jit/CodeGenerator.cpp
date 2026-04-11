@@ -8405,12 +8405,12 @@ void CodeGenerator::emitWasmAnyrefResultChecks(LInstruction* lir,
                                                MDefinition* mir) {
   MOZ_ASSERT(mir->type() == MIRType::WasmAnyRef);
 
-  wasm::MaybeRefType destType = mir->wasmRefType();
-  if (!destType) {
+  if (!JitOptions.fullDebugChecks) {
     return;
   }
 
-  if (!JitOptions.fullDebugChecks) {
+  wasm::MaybeRefType destType = mir->wasmRefType();
+  if (!destType || !destType.value().isCastable()) {
     return;
   }
 
