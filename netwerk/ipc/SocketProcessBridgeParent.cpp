@@ -48,7 +48,7 @@ mozilla::ipc::IPCResult SocketProcessBridgeParent::RecvInitBackgroundDataBridge(
       [endpoint = std::move(aEndpoint), aChannelID]() mutable {
         RefPtr<BackgroundDataBridgeParent> actor =
           BackgroundDataBridgeParent::Create(aChannelID);
-        endpoint.Bind(actor);    
+        endpoint.Bind(actor);
       }));
   return IPC_OK();
 }
