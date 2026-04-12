@@ -2989,6 +2989,7 @@ void ScrollContainerFrame::ScrollToImpl(
       (mLastScrollOrigin != ScrollOrigin::None &&
        mLastScrollOrigin != ScrollOrigin::NotSpecified &&
        mLastScrollOrigin != ScrollOrigin::Relative &&
+       mLastScrollOrigin != ScrollOrigin::Clamp &&
        mLastScrollOrigin != ScrollOrigin::Apz)) {
     aOrigin = ScrollOrigin::Other;
   }
@@ -3124,6 +3125,10 @@ void ScrollContainerFrame::ScrollToImpl(
   if (aOrigin == ScrollOrigin::Relative) {
     MOZ_ASSERT(!isScrollOriginDowngrade);
     MOZ_ASSERT(mLastScrollOrigin == ScrollOrigin::Relative);
+    AppendScrollUpdate(
+        ScrollPositionUpdate::NewRelativeScroll(mApzScrollPos, pt));
+    mApzScrollPos = pt;
+  } else if (aOrigin == ScrollOrigin::Clamp) {
     AppendScrollUpdate(
         ScrollPositionUpdate::NewRelativeScroll(mApzScrollPos, pt));
     mApzScrollPos = pt;
