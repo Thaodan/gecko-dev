@@ -1075,7 +1075,7 @@ void DocAccessibleParent::ActorDestroy(ActorDestroyReason aWhy) {
   if (!mShutdown) {
     ACQUIRE_ANDROID_LOCK
     Destroy();
-  } else if (RemoteParent()) {
+  } else if (!IsTopLevel()) {
     ACQUIRE_ANDROID_LOCK
     Unbind();
   }
