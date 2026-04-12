@@ -11,22 +11,14 @@ add_setup(async function setup() {
 });
 
 add_task(async () => {
-  await testInstallEngine(popup => {
-    if (
-      AppConstants.platform == "macosx" &&
-      Services.prefs.getBoolPref("widget.macos.native-anchored-menus", false)
-    ) {
-      // Native menus do not support synthesizing key events
-      popup.activateItem(popup.querySelector("menuitem[label*=engine1]"));
-    } else {
-      EventUtils.synthesizeKey("KEY_ArrowUp");
-      EventUtils.synthesizeKey("KEY_ArrowUp");
-      EventUtils.synthesizeKey("KEY_Enter");
-    }
+  await testInstallEngine(() => {
+    EventUtils.synthesizeKey("KEY_ArrowUp");
+    EventUtils.synthesizeKey("KEY_ArrowUp");
+    EventUtils.synthesizeKey("KEY_Enter");
   });
 
   await testInstallEngine(popup => {
-    popup.querySelector("menuitem[label*=engine1]").click();
+    popup.querySelector("panel-item[data-engine-name=engine1]").click();
   });
 });
 
