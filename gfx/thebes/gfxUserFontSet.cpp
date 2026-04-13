@@ -477,7 +477,7 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aForceAsync) {
           // were not able to call IsFontLoadAllowed ahead of time
           // for these entries.
           if (currSrc.mUseOriginPrincipal && IgnorePrincipal(currSrc.mURI)) {
-            set->AppendTask(PostTraversalTask::LoadFontEntry(this));
+            set->AppendTask(PostTraversalTask::LoadFontEntry(do_AddRef(this)));
             SetLoadState(STATUS_LOAD_PENDING);
             return;
           }
