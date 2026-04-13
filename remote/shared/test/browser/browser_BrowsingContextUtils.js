@@ -4,7 +4,7 @@
 "use strict";
 
 const { isBrowsingContextCompatible } = ChromeUtils.importESModule(
-  "chrome://remote/content/shared/messagehandler/transports/BrowsingContextUtils.sys.mjs"
+  "chrome://remote/content/shared/BrowsingContextUtils.sys.mjs"
 );
 const TEST_COM_PAGE = "https://example.com/document-builder.sjs?html=com";
 const TEST_NET_PAGE = "https://example.net/document-builder.sjs?html=net";
@@ -82,7 +82,7 @@ async function checkBrowsingContextCompatible(browser, browserId, expected) {
     [browserId, expected],
     (_browserId, _expected) => {
       const BrowsingContextUtils = ChromeUtils.importESModule(
-        "chrome://remote/content/shared/messagehandler/transports/BrowsingContextUtils.sys.mjs"
+        "chrome://remote/content/shared/BrowsingContextUtils.sys.mjs"
       );
       is(
         BrowsingContextUtils.isBrowsingContextCompatible(
@@ -95,4 +95,86 @@ async function checkBrowsingContextCompatible(browser, browserId, expected) {
       );
     }
   );
+}
+
+/**
+ * Create a XUL browser element in the provided XUL tab, with the provided type.
+ *
+ * @param {XULTab} tab
+ *     The XUL tab in which the browser element should be inserted.
+ * @param {string} type
+ *     The type attribute of the browser element, "chrome" or "content".
+ * @returns {XULBrowser}
+ *     The created browser element.
+ */
+function createParentBrowserElement(tab, type) {
+  const parentBrowser = gBrowser.ownerDocument.createXULElement("browser");
+  parentBrowser.setAttribute("type", type);
+  const container = gBrowser.getBrowserContainer(tab.linkedBrowser);
+  container.appendChild(parentBrowser);
+
+  return parentBrowser;
+}
+
+/**
+ * Install a sidebar extension.
+ *
+ * @returns {object}
+ *     Return value with two properties:
+ *     - extension: test wrapper as returned by SpecialPowers.loadExtension.
+ *       Make sure to explicitly call extension.unload() before the end of the test.
+ *     - sidebarBrowser: the browser element containing the extension sidebar.
+ */
+async function installSidebarExtension() {
+  info("Load the test extension");
+  let extension = ExtensionTestUtils.loadExtension({
+    manifest: {
+      sidebar_action: {
+        default_panel: "sidebar.html",
+      },
+    },
+    useAddonManager: "temporary",
+
+    files: {
+      "sidebar.html": `
+        <!DOCTYPE html>
+        <html>
+          Test extension
+          <script src="sidebar.js"></script>
+        </html>
+      `,
+      "sidebar.js": function () {
+        const { browser } = this;
+        browser.test.sendMessage("sidebar-loaded", {
+          bcId: SpecialPowers.wrap(window).browsingContext.id,
+        });
+      },
+      "tab.html": `
+        <!DOCTYPE html>
+        <html>
+          Test extension (tab)
+          <script src="tab.js"></script>
+        </html>
+      `,
+      "tab.js": function () {
+        const { browser } = this;
+        browser.test.sendMessage("tab-loaded", {
+          bcId: SpecialPowers.wrap(window).browsingContext.id,
+        });
+      },
+    },
+  });
+
+  info("Wait for the extension to start");
+  await extension.startup();
+
+  info("Wait for the extension browsing context");
+  const { bcId } = await extension.awaitMessage("sidebar-loaded");
+  const sidebarBrowser = BrowsingContext.get(bcId).top.embedderElement;
+  ok(sidebarBrowser, "Got a browser element for the extension sidebar");
+
+  return {
+    extension,
+    sidebarBrowser,
+  };
 }
