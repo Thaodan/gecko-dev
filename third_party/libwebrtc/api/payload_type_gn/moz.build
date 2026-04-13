@@ -9,11 +9,17 @@
 COMPILE_FLAGS["OS_INCLUDES"] = []
 AllowCompilerWarnings()
 
-DEFINES["BYTE_ORDER_BIG_ENDIAN"] = "0"
-DEFINES["CRC32C_TESTS_BUILT_WITH_GLOG"] = "0"
-DEFINES["HAVE_ARM64_CRC32C"] = "0"
-DEFINES["HAVE_BUILTIN_PREFETCH"] = "1"
-DEFINES["HAVE_SSE42"] = "0"
+DEFINES["ABSL_ALLOCATOR_NOTHROW"] = "1"
+DEFINES["PROTOBUF_ENABLE_DEBUG_LOGGING_MAY_LEAK_PII"] = "0"
+DEFINES["RTC_DAV1D_IN_INTERNAL_DECODER_FACTORY"] = True
+DEFINES["RTC_ENABLE_VP9"] = True
+DEFINES["WEBRTC_DEPRECATE_PLAN_B"] = True
+DEFINES["WEBRTC_ENABLE_PROTOBUF"] = "0"
+DEFINES["WEBRTC_ENCODER_PSNR_STATS"] = True
+DEFINES["WEBRTC_LIBRARY_IMPL"] = True
+DEFINES["WEBRTC_MOZILLA_BUILD"] = True
+DEFINES["WEBRTC_NON_STATIC_TRACE_EVENT_HANDLERS"] = "0"
+DEFINES["WEBRTC_STRICT_FIELD_TRIALS"] = "0"
 
 FINAL_LIBRARY = "xul"
 
@@ -23,15 +29,9 @@ LOCAL_INCLUDES += [
     "!/ipc/ipdl/_ipdlheaders",
     "!/third_party/libwebrtc/gen",
     "/ipc/chromium/src",
+    "/third_party/abseil-cpp/",
     "/third_party/libwebrtc/",
-    "/third_party/libwebrtc/third_party/crc32c/config/",
-    "/third_party/libwebrtc/third_party/crc32c/src/include/",
     "/tools/profiler/public"
-]
-
-UNIFIED_SOURCES += [
-    "/third_party/libwebrtc/third_party/crc32c/src/src/crc32c.cc",
-    "/third_party/libwebrtc/third_party/crc32c/src/src/crc32c_portable.cc"
 ]
 
 if not CONFIG["MOZ_DEBUG"]:
@@ -48,9 +48,11 @@ if CONFIG["OS_TARGET"] == "Android":
 
     DEFINES["ANDROID"] = True
     DEFINES["ANDROID_NDK_VERSION_ROLL"] = "r27_1"
-    DEFINES["HAVE_STRONG_GETAUXVAL"] = "1"
     DEFINES["HAVE_SYS_UIO_H"] = True
-    DEFINES["HAVE_WEAK_GETAUXVAL"] = "1"
+    DEFINES["WEBRTC_ANDROID"] = True
+    DEFINES["WEBRTC_ANDROID_OPENSLES"] = True
+    DEFINES["WEBRTC_LINUX"] = True
+    DEFINES["WEBRTC_POSIX"] = True
     DEFINES["_GNU_SOURCE"] = True
     DEFINES["__ANDROID_UNAVAILABLE_SYMBOLS_ARE_WEAK__"] = True
     DEFINES["__STDC_CONSTANT_MACROS"] = True
@@ -58,19 +60,19 @@ if CONFIG["OS_TARGET"] == "Android":
 
 if CONFIG["OS_TARGET"] == "Darwin":
 
-    DEFINES["HAVE_STRONG_GETAUXVAL"] = "0"
-    DEFINES["HAVE_WEAK_GETAUXVAL"] = "0"
+    DEFINES["WEBRTC_MAC"] = True
+    DEFINES["WEBRTC_POSIX"] = True
     DEFINES["__STDC_CONSTANT_MACROS"] = True
     DEFINES["__STDC_FORMAT_MACROS"] = True
 
 if CONFIG["OS_TARGET"] == "Linux":
 
-    DEFINES["HAVE_STRONG_GETAUXVAL"] = "1"
-    DEFINES["HAVE_WEAK_GETAUXVAL"] = "1"
     DEFINES["USE_AURA"] = "1"
     DEFINES["USE_GLIB"] = "1"
     DEFINES["USE_OZONE"] = "1"
     DEFINES["USE_UDEV"] = True
+    DEFINES["WEBRTC_LINUX"] = True
+    DEFINES["WEBRTC_POSIX"] = True
     DEFINES["_FILE_OFFSET_BITS"] = "64"
     DEFINES["_LARGEFILE64_SOURCE"] = True
     DEFINES["_LARGEFILE_SOURCE"] = True
@@ -79,10 +81,10 @@ if CONFIG["OS_TARGET"] == "Linux":
 
 if CONFIG["OS_TARGET"] == "OpenBSD":
 
-    DEFINES["HAVE_STRONG_GETAUXVAL"] = "0"
-    DEFINES["HAVE_WEAK_GETAUXVAL"] = "0"
     DEFINES["USE_GLIB"] = "1"
     DEFINES["USE_OZONE"] = "1"
+    DEFINES["WEBRTC_BSD"] = True
+    DEFINES["WEBRTC_POSIX"] = True
     DEFINES["_FILE_OFFSET_BITS"] = "64"
     DEFINES["_LARGEFILE64_SOURCE"] = True
     DEFINES["_LARGEFILE_SOURCE"] = True
@@ -92,13 +94,13 @@ if CONFIG["OS_TARGET"] == "OpenBSD":
 if CONFIG["OS_TARGET"] == "WINNT":
 
     DEFINES["CERT_CHAIN_PARA_HAS_EXTRA_FIELDS"] = True
-    DEFINES["HAVE_STRONG_GETAUXVAL"] = "0"
-    DEFINES["HAVE_WEAK_GETAUXVAL"] = "0"
     DEFINES["NOMINMAX"] = True
     DEFINES["NTDDI_VERSION"] = "0x0A000000"
     DEFINES["PSAPI_VERSION"] = "2"
+    DEFINES["RTC_ENABLE_WIN_WGC"] = True
     DEFINES["UNICODE"] = True
     DEFINES["USE_AURA"] = "1"
+    DEFINES["WEBRTC_WIN"] = True
     DEFINES["WIN32"] = True
     DEFINES["WIN32_LEAN_AND_MEAN"] = True
     DEFINES["WINAPI_FAMILY"] = "WINAPI_FAMILY_DESKTOP_APP"
@@ -107,6 +109,7 @@ if CONFIG["OS_TARGET"] == "WINNT":
     DEFINES["_CRT_NONSTDC_NO_WARNINGS"] = True
     DEFINES["_CRT_RAND_S"] = True
     DEFINES["_CRT_SECURE_NO_DEPRECATE"] = True
+    DEFINES["_ENABLE_EXTENDED_ALIGNED_STORAGE"] = True
     DEFINES["_HAS_EXCEPTIONS"] = "0"
     DEFINES["_HAS_NODISCARD"] = True
     DEFINES["_SCL_SECURE_NO_DEPRECATE"] = True
@@ -119,47 +122,37 @@ if CONFIG["OS_TARGET"] == "WINNT":
 
 if CONFIG["TARGET_CPU"] == "aarch64":
 
-    DEFINES["HAVE_MM_PREFETCH"] = "0"
+    DEFINES["WEBRTC_ARCH_ARM64"] = True
+    DEFINES["WEBRTC_HAS_NEON"] = True
     DEFINES["__ARM_NEON__"] = "1"
 
 if CONFIG["TARGET_CPU"] == "arm":
 
-    CXXFLAGS += [
-        "-mfpu=neon"
-    ]
-
-    DEFINES["HAVE_MM_PREFETCH"] = "0"
+    DEFINES["WEBRTC_ARCH_ARM"] = True
+    DEFINES["WEBRTC_ARCH_ARM_V7"] = True
+    DEFINES["WEBRTC_HAS_NEON"] = True
 
 if CONFIG["TARGET_CPU"] == "loongarch64":
 
-    DEFINES["HAVE_MM_PREFETCH"] = "0"
     DEFINES["_GNU_SOURCE"] = True
 
 if CONFIG["TARGET_CPU"] == "mips32":
 
-    DEFINES["HAVE_MM_PREFETCH"] = "0"
+    DEFINES["MIPS32_LE"] = True
+    DEFINES["MIPS_FPU_LE"] = True
     DEFINES["_GNU_SOURCE"] = True
 
 if CONFIG["TARGET_CPU"] == "mips64":
 
-    DEFINES["HAVE_MM_PREFETCH"] = "0"
     DEFINES["_GNU_SOURCE"] = True
-
-if CONFIG["TARGET_CPU"] == "ppc64":
-
-    DEFINES["HAVE_MM_PREFETCH"] = "0"
-
-if CONFIG["TARGET_CPU"] == "riscv64":
-
-    DEFINES["HAVE_MM_PREFETCH"] = "0"
 
 if CONFIG["TARGET_CPU"] == "x86":
 
-    DEFINES["HAVE_MM_PREFETCH"] = "1"
+    DEFINES["WEBRTC_ENABLE_AVX2"] = True
 
 if CONFIG["TARGET_CPU"] == "x86_64":
 
-    DEFINES["HAVE_MM_PREFETCH"] = "1"
+    DEFINES["WEBRTC_ENABLE_AVX2"] = True
 
 if CONFIG["MOZ_DEBUG"] == "1" and CONFIG["OS_TARGET"] == "Android":
 
@@ -181,12 +174,6 @@ if CONFIG["MOZ_DEBUG"] == "1" and CONFIG["OS_TARGET"] == "WINNT":
 
     DEFINES["_HAS_ITERATOR_DEBUGGING"] = "0"
 
-if CONFIG["OS_TARGET"] == "Android" and CONFIG["TARGET_CPU"] == "x86":
-
-    CXXFLAGS += [
-        "-msse2"
-    ]
-
 if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "aarch64":
 
     DEFINES["_GNU_SOURCE"] = True
@@ -197,14 +184,10 @@ if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "arm":
 
 if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "x86":
 
-    CXXFLAGS += [
-        "-msse2"
-    ]
-
     DEFINES["_GNU_SOURCE"] = True
 
 if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "x86_64":
 
     DEFINES["_GNU_SOURCE"] = True
 
-Library("crc32c_gn")
+Library("payload_type_gn")
