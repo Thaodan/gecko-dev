@@ -17274,7 +17274,6 @@ bool CodeGenerator::generateWasm(wasm::CallIndirectId callIndirectId,
     auto* ool = new (alloc())
         LambdaOutOfLineCode([this, entryTrapSiteDesc](OutOfLineCode& ool) {
           masm.wasmTrap(wasm::Trap::StackOverflow, entryTrapSiteDesc);
-          return true;
         });
     addOutOfLineCode(ool, (const BytecodeSite*)nullptr);
     masm.wasmReserveStackChecked(frameSize(), ool->entry());
@@ -17299,10 +17298,9 @@ bool CodeGenerator::generateWasm(wasm::CallIndirectId callIndirectId,
             if (functionEntryStackMap &&
                 !stackMaps->add(trapInsnOffset.offset(),
                                 functionEntryStackMap)) {
-              return false;
+              masm.setOOM();
             }
             masm.jump(ool.rejoin());
-            return true;
           });
 
       addOutOfLineCode(ool, (const BytecodeSite*)nullptr);
