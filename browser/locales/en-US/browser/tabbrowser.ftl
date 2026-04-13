@@ -389,12 +389,13 @@ tab-group-context-open-saved-group-in-new-window =
 tab-context-add-note =
     .label = Add Note
     .accesskey = A
-tab-context-update-note =
-    .label = Update Note
-    .accesskey = U
 tab-context-edit-note =
     .label = Edit Note
     .accesskey = E
+
+# TODO Bug 2023230: `tab-context-delete-note` is no longer used as of bug 2023200,
+# but it seems likely to return, so this string is being left in place for now.
+
 tab-context-delete-note =
     .label = Delete Note
     .accesskey = D
