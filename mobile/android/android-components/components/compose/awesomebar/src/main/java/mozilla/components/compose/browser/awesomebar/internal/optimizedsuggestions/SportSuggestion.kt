@@ -48,6 +48,7 @@ import mozilla.components.compose.browser.awesomebar.R
 import mozilla.components.compose.browser.awesomebar.internal.utils.SportSuggestionDataProvider
 import mozilla.components.compose.browser.awesomebar.internal.utils.SportSuggestionPreviewModel
 import mozilla.components.compose.browser.awesomebar.internal.utils.stringResId
+import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionCategory
 import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionDate
 import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionStatus
 import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionStatusType
@@ -55,8 +56,10 @@ import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestio
 import mozilla.components.ui.icons.R as iconsR
 
 @Composable
+@Suppress("LongParameterList")
 internal fun SportSuggestion(
     sport: String,
+    sportCategory: SportSuggestionCategory,
     status: SportSuggestionStatus,
     statusType: SportSuggestionStatusType,
     date: SportSuggestionDate,
@@ -85,6 +88,7 @@ internal fun SportSuggestion(
         ) {
             SuggestionHeader(
                 sport = sport,
+                sportCategory = sportCategory,
                 status = status,
                 statusType = statusType,
                 date = date,
@@ -109,12 +113,13 @@ internal fun SportSuggestion(
 @Composable
 private fun SuggestionHeader(
     sport: String,
+    sportCategory: SportSuggestionCategory,
     status: SportSuggestionStatus,
     statusType: SportSuggestionStatusType,
     date: SportSuggestionDate,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        getSportsIcon(sport)?.let {
+        sportCategory.toSportIcon()?.let {
             Icon(
                 modifier = Modifier
                     .size(32.dp)
@@ -187,16 +192,16 @@ private fun SuggestionTeams(
 }
 
 @Composable
-private fun getSportsIcon(sport: String): Painter? =
-    when (sport) {
-        "NBA", "CBB" -> painterResource(iconsR.drawable.mozac_ic_sports_basketball_32)
-        "MLB" -> painterResource(iconsR.drawable.mozac_ic_sports_baseball_32)
-        "NHL" -> painterResource(iconsR.drawable.mozac_ic_sports_hockey_32)
-        "NFL", "CFB" -> painterResource(iconsR.drawable.mozac_ic_sports_american_football_32)
-        "PGA" -> painterResource(iconsR.drawable.mozac_ic_sports_golf_32)
-        "Bundesliga", "Ligue 1", "Serie A", "Champions League" ->
-            painterResource(iconsR.drawable.mozac_ic_sports_european_football_32)
-        else -> null
+private fun SportSuggestionCategory.toSportIcon(): Painter? =
+    when (this) {
+        SportSuggestionCategory.BASEBALL -> painterResource(iconsR.drawable.mozac_ic_sports_baseball_32)
+        SportSuggestionCategory.BASKETBALL -> painterResource(iconsR.drawable.mozac_ic_sports_basketball_32)
+        SportSuggestionCategory.HOCKEY -> painterResource(iconsR.drawable.mozac_ic_sports_hockey_32)
+        SportSuggestionCategory.SOCCER -> painterResource(iconsR.drawable.mozac_ic_sports_soccer_32)
+        SportSuggestionCategory.FOOTBALL -> painterResource(iconsR.drawable.mozac_ic_sports_football_32)
+        SportSuggestionCategory.GOLF -> painterResource(iconsR.drawable.mozac_ic_sports_golf_32)
+        SportSuggestionCategory.RACING -> painterResource(iconsR.drawable.mozac_ic_sports_racing_32)
+        SportSuggestionCategory.MISC -> null
     }
 
 @Composable
@@ -293,6 +298,7 @@ private fun SportSuggestionPreview(
         Surface {
             SportSuggestion(
                 sport = config.sport,
+                sportCategory = config.sportCategory,
                 status = config.status,
                 statusType = config.statusType,
                 date = config.date,
@@ -316,6 +322,7 @@ private fun SportSuggestionPreviewPrivate(
         Surface {
             SportSuggestion(
                 sport = config.sport,
+                sportCategory = config.sportCategory,
                 status = config.status,
                 statusType = config.statusType,
                 date = config.date,

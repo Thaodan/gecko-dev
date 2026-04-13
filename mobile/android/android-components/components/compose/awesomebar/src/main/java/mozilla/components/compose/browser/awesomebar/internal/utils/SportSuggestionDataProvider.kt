@@ -5,6 +5,7 @@
 package mozilla.components.compose.browser.awesomebar.internal.utils
 
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionCategory
 import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionDate
 import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionStatus
 import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionStatusType
@@ -15,6 +16,7 @@ internal class SportSuggestionDataProvider : PreviewParameterProvider<SportSugge
     override val values = sequenceOf(
         SportSuggestionPreviewModel(
             sport = "NBA",
+            sportCategory = SportSuggestionCategory.BASKETBALL,
             status = SportSuggestionStatus.Final,
             statusType = SportSuggestionStatusType.PAST,
             date = SportSuggestionDate.General("28 Oct 2025"),
@@ -23,6 +25,7 @@ internal class SportSuggestionDataProvider : PreviewParameterProvider<SportSugge
         ),
         SportSuggestionPreviewModel(
             sport = "NFL",
+            sportCategory = SportSuggestionCategory.FOOTBALL,
             status = SportSuggestionStatus.InProgress,
             statusType = SportSuggestionStatusType.LIVE,
             date = SportSuggestionDate.Today,
@@ -31,6 +34,7 @@ internal class SportSuggestionDataProvider : PreviewParameterProvider<SportSugge
         ),
         SportSuggestionPreviewModel(
             sport = "MLB",
+            sportCategory = SportSuggestionCategory.BASEBALL,
             status = SportSuggestionStatus.Scheduled,
             statusType = SportSuggestionStatusType.SCHEDULED,
             date = SportSuggestionDate.Tomorrow("5PM"),
@@ -39,6 +43,7 @@ internal class SportSuggestionDataProvider : PreviewParameterProvider<SportSugge
         ),
         SportSuggestionPreviewModel(
             sport = "NHL",
+            sportCategory = SportSuggestionCategory.HOCKEY,
             status = SportSuggestionStatus.NotNecessary,
             statusType = SportSuggestionStatusType.PAST,
             date = SportSuggestionDate.General("28 Nov 24"),
@@ -50,6 +55,7 @@ internal class SportSuggestionDataProvider : PreviewParameterProvider<SportSugge
 
 internal data class SportSuggestionPreviewModel(
     val sport: String,
+    val sportCategory: SportSuggestionCategory,
     val status: SportSuggestionStatus,
     val statusType: SportSuggestionStatusType,
     val date: SportSuggestionDate,

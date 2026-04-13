@@ -151,6 +151,7 @@ private fun SuggestionItem(
             SportSuggestion(
                 onClick = { onSuggestionClicked(group, suggestion) },
                 sport = suggestion.sport,
+                sportCategory = suggestion.sportCategory,
                 status = suggestion.status,
                 statusType = suggestion.statusType,
                 date = suggestion.date,

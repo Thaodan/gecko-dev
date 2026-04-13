@@ -10,6 +10,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.awesomebar.AwesomeBar
+import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionCategory
 import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionDate
 import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionStatus
 import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionStatusType
@@ -374,6 +375,51 @@ class SportsOnlineSuggestionProviderTest {
 
         assertNull(provider.parseTeam(team))
     }
+
+    // --- parseSportCategory tests ---
+
+    @Test
+    fun `parseSportCategory returns BASEBALL for baseball`() {
+        assertEquals(SportSuggestionCategory.BASEBALL, provider.parseSportCategory("baseball"))
+    }
+
+    @Test
+    fun `parseSportCategory returns BASKETBALL for basketball`() {
+        assertEquals(SportSuggestionCategory.BASKETBALL, provider.parseSportCategory("basketball"))
+    }
+
+    @Test
+    fun `parseSportCategory returns HOCKEY for hockey`() {
+        assertEquals(SportSuggestionCategory.HOCKEY, provider.parseSportCategory("hockey"))
+    }
+
+    @Test
+    fun `parseSportCategory returns SOCCER for soccer`() {
+        assertEquals(SportSuggestionCategory.SOCCER, provider.parseSportCategory("soccer"))
+    }
+
+    @Test
+    fun `parseSportCategory returns FOOTBALL for football`() {
+        assertEquals(SportSuggestionCategory.FOOTBALL, provider.parseSportCategory("football"))
+    }
+
+    @Test
+    fun `parseSportCategory returns GOLF for golf`() {
+        assertEquals(SportSuggestionCategory.GOLF, provider.parseSportCategory("golf"))
+    }
+
+    @Test
+    fun `parseSportCategory returns RACING for racing`() {
+        assertEquals(SportSuggestionCategory.RACING, provider.parseSportCategory("racing"))
+    }
+
+    @Test
+    fun `parseSportCategory returns MISC for unrecognized category`() {
+        assertEquals(
+            SportSuggestionCategory.MISC,
+            provider.parseSportCategory("some-other-category"),
+        )
+    }
 }
 
 /**
@@ -395,6 +441,7 @@ private class FakeSportsSuggestionDataSource(
 private fun sampleSportItem(
     query: String = "NHL Winnipeg Jets at Minnesota Wild 28 Oct 2025",
     sport: String = "NHL",
+    sportCategory: String = "hockey",
     date: String = "2025-10-29T00:00:00+00:00",
     status: String = "Final - Over Time",
     statusType: String = "past",
@@ -403,6 +450,7 @@ private fun sampleSportItem(
 ) = AwesomeBar.SportItem(
     query = query,
     sport = sport,
+    sportCategory = sportCategory,
     date = date,
     status = status,
     statusType = statusType,

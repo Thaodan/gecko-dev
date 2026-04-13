@@ -56,6 +56,7 @@ class MockedSportsSuggestionDataSource : AwesomeBar.SportsSuggestionDataSource {
     private fun nbaSportItem(date: String) = AwesomeBar.SportItem(
         query = "NBA Lakers at Clippers 28 Oct 2025",
         sport = "NBA",
+        sportCategory = "basketball",
         date = date,
         status = "Final - Over Time",
         statusType = "past",
@@ -76,6 +77,7 @@ class MockedSportsSuggestionDataSource : AwesomeBar.SportsSuggestionDataSource {
     private fun nflSportItem(date: String) = AwesomeBar.SportItem(
         query = "NFL Columbus Blue Jackets at Minnesota Vikings today",
         sport = "NFL",
+        sportCategory = "football",
         date = date,
         status = "In Progress",
         statusType = "live",
@@ -96,6 +98,7 @@ class MockedSportsSuggestionDataSource : AwesomeBar.SportsSuggestionDataSource {
     private fun mlbSportItem(date: String) = AwesomeBar.SportItem(
         query = "MLB Yankees at Diamondbacks tomorrow",
         sport = "MLB",
+        sportCategory = "baseball",
         date = date,
         status = "Scheduled",
         statusType = "scheduled",
@@ -116,6 +119,7 @@ class MockedSportsSuggestionDataSource : AwesomeBar.SportsSuggestionDataSource {
     private fun nhlSportItem(date: String) = AwesomeBar.SportItem(
         query = "NHL Lightning at Canucks 28 Nov 24",
         sport = "NHL",
+        sportCategory = "hockey",
         date = date,
         status = "Not Necessary",
         statusType = "past",
