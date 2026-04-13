@@ -384,6 +384,16 @@ class Settings(
     val canShowCfr: Boolean
         get() = (System.currentTimeMillis() - lastCfrShownTimeInMillis) > THREE_DAYS_MS
 
+    val cfrPopupsEnabled by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_cfr_popups_enabled),
+        default = { FxNimbus.features.enablePopups.value().cfrPopupsEnabled },
+    )
+
+    val inAppMessagesEnabled by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_in_app_messages_enabled),
+        default = { FxNimbus.features.enablePopups.value().inAppMessagesEnabled },
+    )
+
     var forceEnableZoom by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_accessibility_force_enable_zoom),
         default = false,
