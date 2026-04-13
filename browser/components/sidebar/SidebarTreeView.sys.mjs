@@ -161,7 +161,7 @@ export class SidebarTreeView {
    * @returns {boolean}
    */
   #shouldHandleEvent(event) {
-    if (event.keyCode === "Home" || event.keyCode === "End") {
+    if (event.code === "Home" || event.code === "End") {
       // Keys that scroll the entire tree should always be handled.
       return true;
     }
