@@ -210,6 +210,7 @@ class PerformanceMainThread final : public Performance,
   // mTextFrameUnions's key is the containing block, and
   // the value is the unioned area.
   TextFrameUnions mTextFrameUnions;
+  uintptr_t mLCPCallbackKey = 0;
 };
 
 inline void ImplCycleCollectionTraverse(
