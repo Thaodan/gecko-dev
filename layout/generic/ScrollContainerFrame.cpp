@@ -872,11 +872,6 @@ void ScrollContainerFrame::ReflowScrolledFrame(ScrollReflowInput& aState,
   nscoord computedBSize = aState.mReflowInput.ComputedBSize();
   nscoord computedMinBSize = aState.mReflowInput.ComputedMinBSize();
   nscoord computedMaxBSize = aState.mReflowInput.ComputedMaxBSize();
-  if (!ShouldPropagateComputedBSizeToScrolledContent()) {
-    computedBSize = NS_UNCONSTRAINEDSIZE;
-    computedMinBSize = 0;
-    computedMaxBSize = NS_UNCONSTRAINEDSIZE;
-  }
 
   const LogicalMargin scrollbarGutter(
       wm, aState.ScrollbarGutter(aAssumeVScroll, aAssumeHScroll,

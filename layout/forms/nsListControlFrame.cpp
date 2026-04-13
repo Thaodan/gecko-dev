@@ -282,10 +282,6 @@ void nsListControlFrame::Reflow(nsPresContext* aPresContext,
       !hadPendingInterrupt && aPresContext->HasPendingInterrupt();
 }
 
-bool nsListControlFrame::ShouldPropagateComputedBSizeToScrolledContent() const {
-  return true;
-}
-
 //---------------------------------------------------------
 bool nsListControlFrame::ExtendedSelection(int32_t aStartIndex,
                                            int32_t aEndIndex, bool aClearAll) {
