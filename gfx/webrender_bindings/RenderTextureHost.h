@@ -119,6 +119,11 @@ class RenderTextureHost {
 
   virtual void Destroy();
 
+  void SetDestroyedCallback(std::function<void()>&& aDestroyedCallback) {
+    MOZ_ASSERT(!mDestroyedCallback);
+    mDestroyedCallback = std::move(aDestroyedCallback);
+  }
+
  protected:
   virtual ~RenderTextureHost();
 
@@ -130,6 +135,7 @@ class RenderTextureHost {
       gfx::IntSize aTextureSize) const;
 
   bool mIsFromDRMSource;
+  std::function<void()> mDestroyedCallback;
 
   friend class RenderTextureHostWrapper;
 };
