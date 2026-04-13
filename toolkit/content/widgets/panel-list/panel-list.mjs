@@ -54,6 +54,8 @@ export class PanelList extends HTMLElement {
   initializePopover() {
     if (this.supportsPopover() && !this.hasAttribute("popover")) {
       this.setAttribute("popover", "auto");
+    } else if (!this.supportsPopover() && this.hasAttribute("popover")) {
+      this.removeAttribute("popover");
     }
   }
 
@@ -106,8 +108,7 @@ export class PanelList extends HTMLElement {
       triggeringEvent &&
       (triggeringEvent.inputSource == MouseEvent.MOZ_SOURCE_KEYBOARD ||
         triggeringEvent.inputSource == MouseEvent.MOZ_SOURCE_UNKNOWN ||
-        triggeringEvent.code == "ArrowRight" ||
-        triggeringEvent.code == "ArrowLeft");
+        triggeringEvent.key);
 
     if (this.supportsPopover()) {
       const autohideDisabled = this.hasServices()
