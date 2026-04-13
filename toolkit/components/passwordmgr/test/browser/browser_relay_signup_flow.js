@@ -105,7 +105,7 @@ add_task(
         await clickRelayItemAndWaitForPopup(acPopup);
 
         const primaryButton = notificationPopup.querySelector(
-          "moz-button.popup-notification-primary-button"
+          "button.popup-notification-primary-button"
         );
 
         await clickButtonAndWaitForPopupToClose(primaryButton);
