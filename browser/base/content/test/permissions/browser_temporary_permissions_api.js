@@ -151,9 +151,7 @@ add_task(async function testTemporaryPermissionExpiry() {
     "geo",
     Services.perms.ALLOW_ACTION,
     browserId,
-    // Use a generous expiry so IPC round-trips in chaos mode don't race past
-    // it, but not so long that it risks test timeouts on slow debug builds.
-    2000
+    500
   );
 
   await waitForPermissionState(browser, "geolocation", "granted");
