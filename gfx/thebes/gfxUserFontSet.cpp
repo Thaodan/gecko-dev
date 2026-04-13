@@ -502,7 +502,14 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aForceAsync) {
         if (ServoStyleSet* set = gfxFontUtils::CurrentServoStyleSet()) {
           // If we need to start a font load and we're on a style
           // worker thread, we have to defer it.
-          set->AppendTask(PostTraversalTask::LoadFontEntry(this));
+          SetLoadState(STATUS_LOAD_PENDING);
+          set->AppendTask(PostTraversalTask::LoadFontEntry(do_AddRef(this)));
+          return;
+        }
+
+        if (dom::IsCurrentThreadRunningWorker()) {
+          // TODO: Maybe support loading the font entry in workers, at least for
+          // buffers or other sync sources?
           SetLoadState(STATUS_LOAD_PENDING);
           return;
         }
