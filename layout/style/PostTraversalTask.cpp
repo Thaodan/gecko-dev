@@ -4,8 +4,6 @@
 
 #include "PostTraversalTask.h"
 
-#include "ServoStyleSet.h"
-#include "gfxPlatformFontList.h"
 #include "gfxTextRun.h"
 #include "mozilla/dom/FontFace.h"
 #include "mozilla/dom/FontFaceSet.h"
@@ -25,17 +23,6 @@ void PostTraversalTask::Run() {
 
     case Type::LoadFontEntry:
       static_cast<gfxUserFontEntry*>(mTarget)->ContinueLoad();
-      break;
-
-    case Type::InitializeFamily:
-      (void)gfxPlatformFontList::PlatformFontList()->InitializeFamily(
-          static_cast<fontlist::Family*>(mTarget));
-      break;
-
-    case Type::FontInfoUpdate:
-      if (auto* pc = static_cast<ServoStyleSet*>(mTarget)->GetPresContext()) {
-        pc->ForceReflowForFontInfoUpdateFromStyle();
-      }
       break;
   }
 }
