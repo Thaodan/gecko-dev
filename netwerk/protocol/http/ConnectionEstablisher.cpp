@@ -680,7 +680,6 @@ bool UDPConnectionEstablisher::Start(DoneCallback&& aCallback) {
 
   nsresult rv = CreateAndConfigureUDPConn();
   if (NS_FAILED(rv)) {
-    Finish(rv);
     return false;
   }
 
