@@ -4,12 +4,21 @@
 
 package org.mozilla.fenix.tabgroups.fakes
 
+import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.mozilla.fenix.tabgroups.storage.database.StoredTabGroup
 import org.mozilla.fenix.tabgroups.storage.database.TapGroupAssignment
 import org.mozilla.fenix.tabgroups.storage.repository.TabGroupRepository
 
+/**
+ * Important Note: This is used for TESTING and COMPOSE PREVIEWS only.
+ *
+ * This is a fake implementation of [TabGroupRepository] designed exclusively
+ * for unit tests and Compose previews. Do NOT use this in production UI code.
+ */
+@VisibleForTesting
+@Suppress("EmptyFunctionBlock")
 class FakeTabGroupRepository(
     private val tabGroupFlow: MutableStateFlow<List<StoredTabGroup>> = MutableStateFlow(emptyList()),
     private val tabGroupAssignmentFlow: MutableStateFlow<Map<String, String>> = MutableStateFlow(mapOf()),
@@ -57,7 +66,9 @@ class FakeTabGroupRepository(
         closeAllTabGroups.invoke()
     }
 
-    override suspend fun deleteTabGroup(tabGroup: StoredTabGroup) {}
+    override suspend fun deleteTabGroup(tabGroup: StoredTabGroup) {
+        tabGroupFlow.emit(tabGroupFlow.value.filterNot { it.id == tabGroup.id })
+    }
 
     override suspend fun deleteTabGroupById(tabGroupId: String) {
         tabGroupFlow.emit(tabGroupFlow.value.filterNot { it.id == tabGroupId })
