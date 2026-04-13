@@ -69,7 +69,7 @@ export class SidebarTreeView {
         break;
       case "clear-selection":
         this.selectedLists.delete(event.originalTarget);
-        this.clearSelection();
+        this.#clearSelection();
         break;
       case "set-anchor":
         this.#setAnchor(event.originalTarget, event.detail.guid);
@@ -259,7 +259,7 @@ export class SidebarTreeView {
       this.#handleShiftSelect(rowEl);
       return;
     }
-    this.clearSelection();
+    this.#clearSelection();
     this.#setAnchor(rowEl.getRootNode().host, rowEl.guid);
   }
 
@@ -349,7 +349,7 @@ export class SidebarTreeView {
     startRowIndex,
     endRowIndex
   ) {
-    this.clearSelection();
+    this.#clearSelection();
     for (let i = startListIndex; i <= endListIndex; i++) {
       const list = lists[i];
       const isFirst = i === startListIndex;
@@ -399,7 +399,7 @@ export class SidebarTreeView {
     return items;
   }
 
-  clearSelection() {
+  #clearSelection() {
     for (const list of this.selectedLists) {
       list.clearSelection();
     }
@@ -407,7 +407,7 @@ export class SidebarTreeView {
   }
 
   resetSelection() {
-    this.clearSelection();
+    this.#clearSelection();
     this.#setAnchor(null, null);
   }
 }

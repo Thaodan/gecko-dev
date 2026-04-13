@@ -20,7 +20,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Sanitizer: "resource:///modules/Sanitizer.sys.mjs",
   SidebarTreeView:
     "moz-src:///browser/components/sidebar/SidebarTreeView.sys.mjs",
+  OpenInTabsUtils:
+    "moz-src:///browser/components/tabbrowser/OpenInTabsUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
+  PlacesUIUtils: "moz-src:///browser/components/places/PlacesUIUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
 });
 
@@ -107,19 +110,20 @@ export class SidebarHistory extends SidebarPage {
    */
   updateContextMenu() {
     for (const child of this._contextMenu.children) {
+      let shouldHide = false;
       const isMultiSelectCommand = child.classList.contains(
         "sidebar-history-multiselect-command"
       );
-      if (this.isMultipleRowsSelected) {
-        child.hidden = !isMultiSelectCommand;
-      } else {
-        child.hidden = isMultiSelectCommand;
+      const isPrivateWindowMenuItem =
+        child.id === "sidebar-history-context-open-in-private-window";
+      if (this.isMultipleRowsSelected !== isMultiSelectCommand) {
+        shouldHide = true;
       }
+      if (isPrivateWindowMenuItem && !lazy.PrivateBrowsingUtils.enabled) {
+        shouldHide = true;
+      }
+      child.hidden = shouldHide;
     }
-    let privateWindowMenuItem = this._contextMenu.querySelector(
-      "#sidebar-history-context-open-in-private-window"
-    );
-    privateWindowMenuItem.hidden = !lazy.PrivateBrowsingUtils.enabled;
   }
 
   handleContextMenuEvent(e) {
@@ -167,6 +171,9 @@ export class SidebarHistory extends SidebarPage {
       case "sidebar-history-clear":
         lazy.Sanitizer.showUI(this.topWindow);
         break;
+      case "sidebar-history-context-open-all-in-tabs":
+        this.#openAllInTabs(e);
+        break;
       case "sidebar-history-context-delete-page":
         this.controller.deleteFromHistory().catch(console.error);
         break;
@@ -185,10 +192,26 @@ export class SidebarHistory extends SidebarPage {
     this.controller.onChangeSortOption(e, sortOption);
   }
 
+  #openAllInTabs(e) {
+    const urls = this.treeView.getSelectedTabItems().map(item => item.url);
+    if (!lazy.OpenInTabsUtils.confirmOpenInTabs(urls.length, this.topWindow)) {
+      return;
+    }
+    const tabset = [];
+    for (const uri of urls) {
+      // The only reason to know if a url is bookmarked is for calling
+      // markPageAsFollowedBookmark, that will annotate the visit with TRANSITION_BOOKMARK.
+      // But the new frecency doesn't need that info, it can derive it iself,
+      // so we can just pass isBookmark: false and lose nothing
+      tabset.push({ uri, isBookmark: false });
+    }
+    lazy.PlacesUIUtils.openTabset(tabset, e, this.topWindow);
+  }
+
   #deleteMultipleFromHistory() {
-    const pageGuids = [...this.treeView.selectedLists].flatMap(
-      ({ selectedGuids }) => [...selectedGuids]
-    );
+    const pageGuids = this.treeView
+      .getSelectedTabItems()
+      .map(item => item.guid);
     return lazy.PlacesUtils.history.remove(pageGuids);
   }
 
