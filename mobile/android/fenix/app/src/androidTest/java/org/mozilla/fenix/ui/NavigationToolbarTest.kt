@@ -289,6 +289,8 @@ class NavigationToolbarTest {
 
         homeScreen(composeTestRule) {
         }.openSearch {
+            clickSearchSelectorButton()
+            selectTemporarySearchMethod("DuckDuckGo")
             clickScanButton()
             grantSystemPermission()
             verifyScannerOpen()
@@ -717,9 +719,11 @@ class NavigationToolbarTest {
             verifySearchBarPlaceholder("Search or enter address")
         }.clickURLBar {
             verifyKeyboardVisibility(isExpectedToBeVisible = true)
-            verifyScanButton(isDisplayed = true)
             verifyVoiceSearchButton(isDisplayed = true)
             verifySearchBarPlaceholder("Search or enter address")
+            clickSearchSelectorButton()
+            selectTemporarySearchMethod("DuckDuckGo")
+            verifyScanButton(isDisplayed = true)
             typeSearch("mozilla ")
             verifyScanButton(isDisplayed = false)
             verifyVoiceSearchButton(isDisplayed = true)

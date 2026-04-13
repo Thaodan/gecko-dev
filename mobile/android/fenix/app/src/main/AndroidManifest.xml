@@ -774,6 +774,16 @@
         </service>
 
         <provider
+            android:name=".components.LensFileProvider"
+            android:authorities="${applicationId}.lens.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_provider_paths" />
+        </provider>
+
+        <provider
             android:name=".perf.ProfilerProvider"
             android:authorities="${applicationId}.profiler"
             android:exported="false"
