@@ -106,25 +106,29 @@ export class SidebarTreeView {
         }
         break;
       case "ArrowUp":
+        event.preventDefault();
         if (prevSibling?.localName !== "moz-card") {
           this.#focusParentHeader(event.target);
           break;
         }
         if (prevSibling?.expanded) {
           focusedRow = this.#focusLastRow(prevSibling);
-        } else {
-          prevSibling?.summaryEl?.focus();
+        } else if (prevSibling) {
+          this.#focusHeader(prevSibling);
         }
         break;
       case "ArrowDown":
+        event.preventDefault();
         if (event.target.expanded) {
           focusedRow = this.#focusFirstRow(event.target);
         } else if (nextSibling?.localName === "moz-card") {
-          nextSibling?.summaryEl?.focus();
+          this.#focusHeader(nextSibling);
         } else if (event.target.classList.contains("last-card")) {
           const outerCard = event.target.parentElement;
           const nextOuterCard = outerCard?.nextElementSibling;
-          nextOuterCard?.summaryEl?.focus();
+          if (nextOuterCard?.localName === "moz-card") {
+            this.#focusHeader(nextOuterCard);
+          }
         }
         break;
       case "ArrowLeft":
@@ -142,7 +146,9 @@ export class SidebarTreeView {
         }
         break;
       case "Home":
-        this.cards[0]?.summaryEl?.focus();
+        if (this.cards[0]) {
+          this.#focusHeader(this.cards[0]);
+        }
         break;
       case "End":
         this.#focusLastVisibleRow();
@@ -180,11 +186,13 @@ export class SidebarTreeView {
     let innerElement = card.contentSlotEl.assignedElements()[0];
     if (innerElement.classList.contains("nested-card")) {
       // Focus the first nested card header.
-      innerElement.summaryEl.focus();
+      this.#focusHeader(innerElement);
     } else {
       // Focus the first URL.
       focusedRow = innerElement.rowEls[0];
-      focusedRow?.focus();
+      if (focusedRow) {
+        this.#focusRow(focusedRow);
+      }
     }
     return focusedRow;
   }
@@ -204,12 +212,14 @@ export class SidebarTreeView {
       if (lastNestedCard.expanded) {
         focusedRow = this.#focusLastRow(lastNestedCard);
       } else {
-        lastNestedCard.summaryEl.focus();
+        this.#focusHeader(lastNestedCard);
       }
     } else {
       // Focus the last URL.
       focusedRow = innerElement.rowEls[innerElement.rowEls.length - 1];
-      focusedRow?.focus();
+      if (focusedRow) {
+        this.#focusRow(focusedRow);
+      }
     }
     return focusedRow;
   }
@@ -225,11 +235,11 @@ export class SidebarTreeView {
     ) {
       // If this is an inner card, and the outer card is collapsed, then focus
       // the outer header.
-      lastCard.parentElement.summaryEl.focus();
+      this.#focusHeader(lastCard.parentElement);
     } else if (lastCard.expanded) {
       this.#focusLastRow(lastCard);
     } else {
-      lastCard.summaryEl.focus();
+      this.#focusHeader(lastCard);
     }
   }
 
@@ -240,8 +250,28 @@ export class SidebarTreeView {
    */
   #focusParentHeader(card) {
     if (card.classList.contains("nested-card")) {
-      card.parentElement.summaryEl.focus();
+      this.#focusHeader(card.parentElement);
     }
+  }
+
+  /**
+   * Focus a card's header without triggering unnecessary scrolling.
+   *
+   * @param {MozCard} card
+   */
+  #focusHeader(card) {
+    card.summaryEl.focus({ preventScroll: true });
+    card.summaryEl.scrollIntoView({ block: "nearest" });
+  }
+
+  /**
+   * Focus a tab row without triggering unnecessary scrolling.
+   *
+   * @param {SidebarTabRow} row
+   */
+  #focusRow(row) {
+    row.focus({ preventScroll: true });
+    row.scrollIntoView({ block: "nearest" });
   }
 
   /**

@@ -76,12 +76,12 @@ export class SidebarTabList extends FxviewTabListBase {
       (e.code == "ArrowUp" && this.activeIndex == 0) ||
       e.code === "ArrowLeft"
     ) {
-      this.#focusParentHeader(e.target);
+      this.#focusParentHeader(e);
     } else if (
       e.code == "ArrowDown" &&
       this.activeIndex == this.rowEls.length - 1
     ) {
-      this.#focusNextHeader(e.target);
+      this.#focusNextHeader(e);
     }
 
     // Update or clear multi-selection (depending on whether shift key is used).
@@ -101,15 +101,16 @@ export class SidebarTabList extends FxviewTabListBase {
     }
   }
 
-  #focusParentHeader(row) {
-    let parentCard = row.getRootNode().host.closest("moz-card");
+  #focusParentHeader(e) {
+    let parentCard = e.target.getRootNode().host.closest("moz-card");
     if (parentCard) {
-      parentCard.summaryEl.focus();
+      e.preventDefault();
+      this.#focusHeader(parentCard);
     }
   }
 
-  #focusNextHeader(row) {
-    let parentCard = row.getRootNode().host.closest("moz-card");
+  #focusNextHeader(e) {
+    let parentCard = e.target.getRootNode().host.closest("moz-card");
     if (
       this.sortOption == "datesite" &&
       parentCard.classList.contains("last-card")
@@ -117,12 +118,22 @@ export class SidebarTabList extends FxviewTabListBase {
       // If we're going down from the last site, then focus the next date.
       const dateCard = parentCard.parentElement;
       const nextDate = dateCard.nextElementSibling;
-      nextDate?.summaryEl.focus();
+      if (nextDate) {
+        e.preventDefault();
+        this.#focusHeader(nextDate);
+      }
+      return;
     }
     let nextCard = parentCard.nextElementSibling;
     if (nextCard && nextCard.localName == "moz-card") {
-      nextCard.summaryEl.focus();
+      e.preventDefault();
+      this.#focusHeader(nextCard);
     }
+  }
+
+  #focusHeader(card) {
+    card.summaryEl.focus({ preventScroll: true });
+    card.summaryEl.scrollIntoView({ block: "nearest" });
   }
 
   /**
@@ -288,8 +299,8 @@ export class SidebarTabRow extends FxviewTabRowBase {
    * Fallback to the native implementation in sidebar. We want to focus the
    * entire row instead of delegating it to link or hover buttons.
    */
-  focus() {
-    HTMLElement.prototype.focus.call(this);
+  focus(options) {
+    HTMLElement.prototype.focus.call(this, options);
   }
 
   #getContainerClasses() {
