@@ -92,6 +92,7 @@ run-sequentially = ["true"] # sets prefs that may disrupt other tests
 
 ["test_setSinkId-echoCancellation.html"]
 skip-if = [
+  "os == 'linux'", # bug 2030403
   "os == 'android'", # bug 1473346 - no setSinkId()
 ]
 
