@@ -393,20 +393,13 @@ add_task(async function test_tab_group_and_splitview_across_windows() {
       await browser.tabs.group({ groupId: gid2, tabIds: [tabIds[1]] });
       browser.test.assertDeepEq(
         [
-          // TODO bug 2029534: Use the following expectation when group.addTabs
-          // is fixed to have the correct order (and remove fixup below).
-          // { index: 0, tabId: tabIds[2], groupId: gid2, splitViewId: -1 },
-          // { index: 1, tabId: tabIds[0], groupId: gid2, splitViewId },
-          // { index: 2, tabId: tabIds[1], groupId: gid2, splitViewId },
-          { index: 0, tabId: tabIds[0], groupId: gid2, splitViewId },
-          { index: 1, tabId: tabIds[1], groupId: gid2, splitViewId },
-          { index: 2, tabId: tabIds[2], groupId: gid2, splitViewId: -1 },
+          { index: 0, tabId: tabIds[2], groupId: gid2, splitViewId: -1 },
+          { index: 1, tabId: tabIds[0], groupId: gid2, splitViewId },
+          { index: 2, tabId: tabIds[1], groupId: gid2, splitViewId },
         ],
         await queryTabsByWindowId(win2.id),
         "group() of one tab of a split moves the whole split across windows"
       );
-      // TODO bug 2029534: Remove this fixup along with the fixup above.
-      await browser.tabs.move(tabIds[2], { index: 0, windowId: win2.id });
 
       // windowId has only 1 tab (tabId0) at this point, add all from win2.
       groupId = await browser.tabs.group({
