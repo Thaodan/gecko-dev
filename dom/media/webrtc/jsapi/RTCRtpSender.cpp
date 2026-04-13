@@ -358,16 +358,10 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> RTCRtpSender::GetStatsInternal(
             // ReceiverReports have less information than SenderReports, so fill
             // in what we can.
             Maybe<webrtc::ReportBlockData> reportBlockData;
-            {
-              if (const auto remoteSsrc = aConduit->GetRemoteSSRC();
-                  remoteSsrc) {
-                for (auto& data : audioStats->report_block_datas) {
-                  if (data.source_ssrc() == ssrc &&
-                      data.sender_ssrc() == *remoteSsrc) {
-                    reportBlockData.emplace(data);
-                    break;
-                  }
-                }
+            for (auto& data : audioStats->report_block_datas) {
+              if (data.source_ssrc() == ssrc) {
+                reportBlockData.emplace(data);
+                break;
               }
             }
             reportBlockData.apply([&](auto& aReportBlockData) {
