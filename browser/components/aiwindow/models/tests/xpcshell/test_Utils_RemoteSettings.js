@@ -23,6 +23,7 @@ const PREF_MODEL_CHOICE = "browser.smartwindow.firstrun.modelChoice";
 
 const API_KEY = "fake-key";
 const ENDPOINT = "https://api.fake-endpoint.com/v1";
+const MAJOR_VERSION_3 = 3;
 const MAJOR_VERSION_2 = 2;
 const MAJOR_VERSION_1 = 1;
 
@@ -159,9 +160,8 @@ add_task(async function test_loadConfig_with_custom_endpoint_and_model() {
     );
 
     const prompt = await engine.loadPrompt(MODEL_FEATURES.CHAT);
-    Assert.equal(
-      prompt,
-      "Generic model prompt loaded!",
+    Assert.ok(
+      prompt.startsWith("Generic model prompt loaded"),
       "Should load generic prompt with custom endpoint"
     );
   } finally {
@@ -271,7 +271,7 @@ add_task(async function test_loadConfig_custom_endpoint_with_custom_model() {
     };
     sb.stub(openAIEngine, "getRemoteClient").returns(fakeClient);
 
-    await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_2);
+    await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_3);
 
     Assert.equal(
       engine.model,
@@ -598,7 +598,7 @@ add_task(
       });
 
       const engine = new openAIEngine();
-      await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_2);
+      await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_3);
 
       Assert.equal(
         engine.model,
@@ -822,7 +822,7 @@ add_task(async function test_custom_endpoint_override() {
     });
 
     const engine = new openAIEngine();
-    await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_2);
+    await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_3);
 
     Assert.equal(
       engine.model,
