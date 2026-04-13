@@ -268,6 +268,10 @@ already_AddRefed<AudioData> AudioData::Constructor(const GlobalObject& aGlobal,
   if (transferLen) {
     void* bufferContents =
         JS::StealArrayBufferContents(aGlobal.Context(), *transferBuffer);
+    if (!bufferContents) {
+      aRv.NoteJSContextException(aGlobal.Context());
+      return nullptr;
+    }
     transferData = UniquePtr<uint8_t[], JS::FreePolicy>(
         static_cast<uint8_t*>(bufferContents));
   }
