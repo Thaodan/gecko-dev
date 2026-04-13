@@ -1591,7 +1591,7 @@ class Settings(
 
     val shouldShowPwaCfr: Boolean
         get() {
-            if (!canShowCfr) return false
+            if (!canShowCfr || !inAppMessagesEnabled) return false
             // We only want to show this on the 3rd time a user visits a site
             if (userNeedsToVisitInstallableSites) return false
 
@@ -1618,7 +1618,7 @@ class Settings(
     )
 
     val shouldShowOpenInAppCfr: Boolean
-        get() = canShowCfr && shouldShowOpenInAppBanner
+        get() = canShowCfr && shouldShowOpenInAppBanner && inAppMessagesEnabled
 
     var shouldShowAutoCloseTabsBanner by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_should_show_auto_close_tabs_banner),
