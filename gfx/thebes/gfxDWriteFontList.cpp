@@ -1612,7 +1612,7 @@ void gfxDWriteFontList::InitSharedFontListForPlatform() {
   if (FAILED(hr)) {
     glean::fontlist::dwritefont_init_problem.AccumulateSingleSample(
         uint32_t(errGDIInterop));
-    delete mSharedFontList.exchange(nullptr);
+    mSharedFontList.reset(nullptr);
     return;
   }
 
@@ -1621,7 +1621,7 @@ void gfxDWriteFontList::InitSharedFontListForPlatform() {
   if (!mSystemFonts) {
     glean::fontlist::dwritefont_init_problem.AccumulateSingleSample(
         uint32_t(errSystemFontCollection));
-    delete mSharedFontList.exchange(nullptr);
+    mSharedFontList.reset(nullptr);
     return;
   }
 #ifdef MOZ_BUNDLED_FONTS
