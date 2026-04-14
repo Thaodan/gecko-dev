@@ -16,6 +16,7 @@
 #include "js/MemoryFunctions.h"
 #include "js/Object.h"              // JS::GetBuiltinClass
 #include "js/PropertyAndElement.h"  // JS_DefineElement, JS_GetProperty, JS_GetPropertyById, JS_HasOwnProperty, JS_HasOwnPropertyById
+#include "js/SharedArrayBuffer.h"
 #include "js/Value.h"
 #include "jsfriendapi.h"
 #include "mozilla/Casting.h"
@@ -831,6 +832,11 @@ double Key::DecodeNumber(const EncodedDataType*& aPos,
 
 Result<Ok, nsresult> Key::EncodeBinary(JSObject* aObject, bool aIsViewObject,
                                        uint8_t aTypeOffset) {
+  if (JS::IsSharedArrayBufferObject(aObject) ||
+      (aIsViewObject && JS::IsArrayBufferViewShared(aObject))) {
+    return Err(NS_ERROR_DOM_INDEXEDDB_DATA_ERR);
+  }
+
   uint8_t* bufferData;
   size_t bufferLength;
 
