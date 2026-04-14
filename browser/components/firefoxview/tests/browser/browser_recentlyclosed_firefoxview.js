@@ -469,10 +469,7 @@ add_task(async function test_empty_states() {
       "view-recentlyclosed:not([slot=recentlyclosed])"
     );
 
-    await TestUtils.waitForCondition(
-      () => recentlyClosedComponent.emptyState,
-      "Waiting for the recently closed component to be in the empty state"
-    );
+    await TestUtils.waitForCondition(() => recentlyClosedComponent.emptyState);
     let emptyStateCard = recentlyClosedComponent.emptyState;
     ok(
       emptyStateCard.headerEl.textContent.includes("Closed a tab too soon"),
@@ -491,8 +488,7 @@ add_task(async function test_empty_states() {
     // in about:preferences will require a browser reload
     recentlyClosedComponent.requestUpdate();
     await TestUtils.waitForCondition(
-      () => recentlyClosedComponent.fullyUpdated,
-      "The recently closed component to be fully updated"
+      () => recentlyClosedComponent.fullyUpdated
     );
     emptyStateCard = recentlyClosedComponent.emptyState;
     ok(

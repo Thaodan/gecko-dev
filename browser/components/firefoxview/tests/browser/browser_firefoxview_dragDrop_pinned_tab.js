@@ -54,8 +54,7 @@ add_task(async function () {
     let openTabs = document.querySelector("view-opentabs[name=opentabs]");
     await openTabs.updateComplete;
     await TestUtils.waitForCondition(
-      () => openTabs.viewCards[0].tabList.rowEls.length,
-      "The first view card tab list to have row elements"
+      () => openTabs.viewCards[0].tabList.rowEls.length
     );
     await openTabs.openTabsTarget.readyWindowsPromise;
     let card = openTabs.viewCards[0];

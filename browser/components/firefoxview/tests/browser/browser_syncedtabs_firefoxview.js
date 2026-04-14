@@ -96,10 +96,7 @@ add_task(async function test_signed_in() {
     let syncedTabsComponent = document.querySelector(
       "view-syncedtabs:not([slot=syncedtabs])"
     );
-    await TestUtils.waitForCondition(
-      () => syncedTabsComponent.fullyUpdated,
-      "Waiting for the synced tabs component to be fully updated"
-    );
+    await TestUtils.waitForCondition(() => syncedTabsComponent.fullyUpdated);
     let emptyState =
       syncedTabsComponent.shadowRoot.querySelector("fxview-empty-state");
     ok(
@@ -200,10 +197,7 @@ add_task(async function test_no_synced_tabs() {
     let syncedTabsComponent = document.querySelector(
       "view-syncedtabs:not([slot=syncedtabs])"
     );
-    await TestUtils.waitForCondition(
-      () => syncedTabsComponent.fullyUpdated,
-      "Waiting for the synced tabs component to be fully updated"
-    );
+    await TestUtils.waitForCondition(() => syncedTabsComponent.fullyUpdated);
     let emptyState =
       syncedTabsComponent.shadowRoot.querySelector("fxview-empty-state");
     ok(
@@ -243,10 +237,7 @@ add_task(async function test_no_error_for_two_desktop() {
     let syncedTabsComponent = document.querySelector(
       "view-syncedtabs:not([slot=syncedtabs])"
     );
-    await TestUtils.waitForCondition(
-      () => syncedTabsComponent.fullyUpdated,
-      "Waiting for the synced tabs component to be fully updated"
-    );
+    await TestUtils.waitForCondition(() => syncedTabsComponent.fullyUpdated);
     let emptyState =
       syncedTabsComponent.shadowRoot.querySelector("fxview-empty-state");
     is(emptyState, null, "No empty state should be shown");
@@ -290,10 +281,7 @@ add_task(async function test_empty_state() {
     let syncedTabsComponent = document.querySelector(
       "view-syncedtabs:not([slot=syncedtabs])"
     );
-    await TestUtils.waitForCondition(
-      () => syncedTabsComponent.fullyUpdated,
-      "Waiting for the synced tabs component to be fully updated"
-    );
+    await TestUtils.waitForCondition(() => syncedTabsComponent.fullyUpdated);
     let noTabs = syncedTabsComponent.shadowRoot.querySelectorAll(".notabs");
     is(noTabs.length, 2, "Should be 2 empty devices");
 
@@ -341,10 +329,7 @@ add_task(async function test_tabs() {
     let syncedTabsComponent = document.querySelector(
       "view-syncedtabs:not([slot=syncedtabs])"
     );
-    await TestUtils.waitForCondition(
-      () => syncedTabsComponent.fullyUpdated,
-      "Waiting for the synced tabs component to be fully updated"
-    );
+    await TestUtils.waitForCondition(() => syncedTabsComponent.fullyUpdated);
 
     let headers =
       syncedTabsComponent.shadowRoot.querySelectorAll("h3[slot=header]");
@@ -362,7 +347,7 @@ add_task(async function test_tabs() {
     let tabLists = syncedTabsComponent.tabLists;
     await TestUtils.waitForCondition(() => {
       return tabLists[0].rowEls.length;
-    }, "Waiting for the first synced tab list to have row elements");
+    });
     let tabRow1 = tabLists[0].rowEls;
     ok(
       tabRow1[0].shadowRoot.textContent.includes,
@@ -432,10 +417,7 @@ add_task(async function test_empty_desktop_same_name() {
     let syncedTabsComponent = document.querySelector(
       "view-syncedtabs:not([slot=syncedtabs])"
     );
-    await TestUtils.waitForCondition(
-      () => syncedTabsComponent.fullyUpdated,
-      "Waiting for the synced tabs component to be fully updated"
-    );
+    await TestUtils.waitForCondition(() => syncedTabsComponent.fullyUpdated);
     let noTabs = syncedTabsComponent.shadowRoot.querySelectorAll(".notabs");
     is(noTabs.length, 1, "Should be 1 empty devices");
 
@@ -483,10 +465,7 @@ add_task(async function test_empty_desktop_same_name_three() {
     let syncedTabsComponent = document.querySelector(
       "view-syncedtabs:not([slot=syncedtabs])"
     );
-    await TestUtils.waitForCondition(
-      () => syncedTabsComponent.fullyUpdated,
-      "Waiting for the synced tabs component to be fully updated"
-    );
+    await TestUtils.waitForCondition(() => syncedTabsComponent.fullyUpdated);
     let noTabs = syncedTabsComponent.shadowRoot.querySelectorAll(".notabs");
     is(noTabs.length, 2, "Should be 2 empty devices");
 
@@ -529,10 +508,7 @@ add_task(async function search_synced_tabs() {
     let syncedTabsComponent = document.querySelector(
       "view-syncedtabs:not([slot=syncedtabs])"
     );
-    await TestUtils.waitForCondition(
-      () => syncedTabsComponent.fullyUpdated,
-      "Waiting for the synced tabs component to be fully updated"
-    );
+    await TestUtils.waitForCondition(() => syncedTabsComponent.fullyUpdated);
 
     is(syncedTabsComponent.cardEls.length, 2, "There are two device cards.");
     await TestUtils.waitForCondition(
@@ -800,10 +776,8 @@ add_task(async function search_synced_tabs_recent_browsing() {
     );
 
     info("Click the Show All link.");
-    const showAllLink = await TestUtils.waitForCondition(
-      () =>
-        slot.shadowRoot.querySelector("[data-l10n-id='firefoxview-show-all']"),
-      "The show all link to be available in the slot's shadow root"
+    const showAllLink = await TestUtils.waitForCondition(() =>
+      slot.shadowRoot.querySelector("[data-l10n-id='firefoxview-show-all']")
     );
     is(showAllLink.role, "link", "The show all control is a link.");
     EventUtils.synthesizeMouseAtCenter(showAllLink, {}, content);

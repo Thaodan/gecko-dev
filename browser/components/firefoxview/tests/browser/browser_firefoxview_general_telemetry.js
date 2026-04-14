@@ -74,8 +74,7 @@ add_task(async function test_collapse_and_expand_card() {
       "view-recentlyclosed[slot=recentlyclosed]"
     );
     await TestUtils.waitForCondition(
-      () => recentlyClosedComponent.fullyUpdated,
-      "The recently closed component to be fully updated"
+      () => recentlyClosedComponent.fullyUpdated
     );
     let cardContainer = recentlyClosedComponent.cardEl;
     is(
@@ -152,8 +151,7 @@ add_task(async function test_browser_context_menu_telemetry() {
     await TestUtils.waitForCondition(
       () =>
         openTabsComponent.shadowRoot.querySelector("view-opentabs-card").tabList
-          .rowEls.length,
-      "open tabs card tab list to have row elements"
+          .rowEls.length
     );
     const [openTabsRow] =
       openTabsComponent.shadowRoot.querySelector("view-opentabs-card").tabList
@@ -201,13 +199,9 @@ add_task(async function test_context_menu_new_window_telemetry() {
     // Test history context menu options
     await navigateToViewAndWait(document, "history");
     let historyComponent = document.querySelector("view-history");
+    await TestUtils.waitForCondition(() => historyComponent.fullyUpdated);
     await TestUtils.waitForCondition(
-      () => historyComponent.fullyUpdated,
-      "The history component to be fully updated"
-    );
-    await TestUtils.waitForCondition(
-      () => historyComponent.lists[0].rowEls.length,
-      "Waiting for the first history list to have row elements"
+      () => historyComponent.lists[0].rowEls.length
     );
     let firstTabList = historyComponent.lists[0];
     let firstItem = firstTabList.rowEls[0];
@@ -265,13 +259,9 @@ add_task(async function test_context_menu_private_window_telemetry() {
     // Test history context menu options
     await navigateToViewAndWait(document, "history");
     let historyComponent = document.querySelector("view-history");
+    await TestUtils.waitForCondition(() => historyComponent.fullyUpdated);
     await TestUtils.waitForCondition(
-      () => historyComponent.fullyUpdated,
-      "Waiting for the history component to be fully updated"
-    );
-    await TestUtils.waitForCondition(
-      () => historyComponent.lists[0].rowEls.length,
-      "Waiting for the first history list to have row elements"
+      () => historyComponent.lists[0].rowEls.length
     );
     let firstTabList = historyComponent.lists[0];
     let firstItem = firstTabList.rowEls[0];
@@ -346,13 +336,9 @@ add_task(async function test_context_menu_delete_from_history_telemetry() {
     // Test history context menu options
     await navigateToViewAndWait(document, "history");
     let historyComponent = document.querySelector("view-history");
+    await TestUtils.waitForCondition(() => historyComponent.fullyUpdated);
     await TestUtils.waitForCondition(
-      () => historyComponent.fullyUpdated,
-      "The history component to be fully updated"
-    );
-    await TestUtils.waitForCondition(
-      () => historyComponent.lists[0].rowEls.length,
-      "Waiting for the first history list to have row elements"
+      () => historyComponent.lists[0].rowEls.length
     );
     let firstTabList = historyComponent.lists[0];
     let firstItem = firstTabList.rowEls[0];
@@ -398,8 +384,7 @@ add_task(async function test_context_menu_delete_from_history_telemetry() {
       () =>
         !historyComponent.paused &&
         historyComponent.fullyUpdated &&
-        !historyComponent.lists.length,
-      "The history component to be fully updated, unpaused, and have no lists"
+        !historyComponent.lists.length
     );
     await telemetryEvent(contextMenuEvent);
 
@@ -426,13 +411,9 @@ add_task(async function test_context_menu_forget_about_this_site_telemetry() {
     );
     await navigateToViewAndWait(document, "history");
     let historyComponent = document.querySelector("view-history");
+    await TestUtils.waitForCondition(() => historyComponent.fullyUpdated);
     await TestUtils.waitForCondition(
-      () => historyComponent.fullyUpdated,
-      "Waiting for the history component to be fully updated"
-    );
-    await TestUtils.waitForCondition(
-      () => historyComponent.lists[0].rowEls.length,
-      "Waiting for the first history list to have row elements"
+      () => historyComponent.lists[0].rowEls.length
     );
     let firstTabList = historyComponent.lists[0];
     let firstItem = firstTabList.rowEls[0];

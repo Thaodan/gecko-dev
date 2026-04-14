@@ -68,10 +68,7 @@ add_task(async function test_network_offline() {
     let syncedTabsComponent = document.querySelector(
       "view-syncedtabs:not([slot=syncedtabs])"
     );
-    await TestUtils.waitForCondition(
-      () => syncedTabsComponent.fullyUpdated,
-      "The synced tabs component to be fully updated"
-    );
+    await TestUtils.waitForCondition(() => syncedTabsComponent.fullyUpdated);
     await TestUtils.waitForCondition(
       () =>
         syncedTabsComponent.emptyState.shadowRoot.textContent.includes(
@@ -127,10 +124,7 @@ add_task(async function test_sync_error() {
     let syncedTabsComponent = document.querySelector(
       "view-syncedtabs:not([slot=syncedtabs])"
     );
-    await TestUtils.waitForCondition(
-      () => syncedTabsComponent.fullyUpdated,
-      "Waiting for the synced tabs component to be fully updated"
-    );
+    await TestUtils.waitForCondition(() => syncedTabsComponent.fullyUpdated);
     await TestUtils.waitForCondition(
       () =>
         syncedTabsComponent.emptyState.shadowRoot.textContent.includes(
