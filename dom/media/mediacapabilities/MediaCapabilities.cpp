@@ -404,6 +404,21 @@ void MediaCapabilities::CreateMediaCapabilitiesDecodingInfo(
               drmInfo.mKeySystemAccess->GetConfiguration(config);
               const bool hwDRM = IsHardwareDecryptionSupported(config);
 
+              if (shouldResistFingerprinting) {
+                if (hwDRM) {
+                  drmInfo.mSupported = false;
+                  drmInfo.mSmooth = false;
+                  drmInfo.mPowerEfficient = false;
+                } else {
+                  drmInfo.mPowerEfficient = false;
+                }
+                LOG("RFP: suppressing DRM capabilities: %s -> %s",
+                    MediaDecodingConfigurationToStr(aConfiguration).get(),
+                    MediaCapabilitiesInfoToStr(drmInfo).get());
+                promise->MaybeResolve(std::move(drmInfo));
+                return;
+              }
+
               if (hwDRM || !videoInfo) {
                 drmInfo.mPowerEfficient = hwDRM && !!videoInfo;
                 LOG("DRM hardware decrypt or no video track: %s -> %s",
@@ -415,7 +430,7 @@ void MediaCapabilities::CreateMediaCapabilitiesDecodingInfo(
 
               // Software DRM: query the video decoder for powerEfficient.
               CheckVideoDecodingInfo(taskQueue, compositor, frameRate,
-                                     shouldResistFingerprinting,
+                                     false /* RFP already handled */,
                                      std::move(videoInfo))
                   ->Then(
                       mainThread, __func__,
