@@ -5,7 +5,6 @@
 #include "nsDOMNavigationTiming.h"
 
 #include "GeckoProfiler.h"
-#include "SharedLcpMarkerState.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/Document.h"
@@ -30,8 +29,7 @@ LazyLogModule gPageLoadLog("PageLoad");
 
 }  // namespace mozilla
 
-nsDOMNavigationTiming::nsDOMNavigationTiming(nsDocShell* aDocShell)
-    : mSharedLcpMarkerState(MakeRefPtr<SharedLcpMarkerState>()) {
+nsDOMNavigationTiming::nsDOMNavigationTiming(nsDocShell* aDocShell) {
   Clear();
 
   mDocShell = aDocShell;
@@ -54,15 +52,10 @@ void nsDOMNavigationTiming::Clear() {
   mDOMContentLoadedEventEnd = TimeStamp();
   mDOMComplete = TimeStamp();
   mContentfulComposite = TimeStamp();
-  mNonBlankPaint = TimeStamp();
   mLargestContentfulRender = TimeStamp();
-  {
-    auto lock = mSharedLcpMarkerState->mInner.Lock();
-    lock->mNavStartTime = TimeStamp();
-    lock->mLargestContentfulRender = TimeStamp();
-    lock->mLCPElement.Truncate();
-    lock->mLCPImageURL.Truncate();
-  }
+  mNonBlankPaint = TimeStamp();
+  mLCPElement.Truncate();
+  mLCPImageURL.Truncate();
 
   mDocShellHasBeenActiveSinceNavigationStart = false;
 }
@@ -73,14 +66,8 @@ void nsDOMNavigationTiming::Anonymize(nsIURI* aFinalURI) {
   mBeforeUnloadStart = TimeStamp();
   mUnloadStart = TimeStamp();
   mUnloadEnd = TimeStamp();
-  auto lock = mSharedLcpMarkerState->mInner.Lock();
-  lock->mLCPElement.Truncate();
-  lock->mLCPImageURL.Truncate();
-}
-
-RefPtr<SharedLcpMarkerState> nsDOMNavigationTiming::GetSharedLcpMarkerState()
-    const {
-  return mSharedLcpMarkerState;
+  mLCPElement.Truncate();
+  mLCPImageURL.Truncate();
 }
 
 DOMTimeMilliSec nsDOMNavigationTiming::TimeStampToDOM(TimeStamp aStamp) const {
@@ -464,11 +451,8 @@ void nsDOMNavigationTiming::NotifyLargestContentfulRenderForRootContentDocument(
   // This can get called multiple times and updates over time.
   mLargestContentfulRender =
       mNavigationStart + TimeDuration::FromMilliseconds(aRenderTime);
-  auto lock = mSharedLcpMarkerState->mInner.Lock();
-  lock->mNavStartTime = mNavigationStart;
-  lock->mLargestContentfulRender = mLargestContentfulRender;
-  lock->mLCPElement = aElement;
-  lock->mLCPImageURL = aImageURL;
+  mLCPElement = aElement;
+  mLCPImageURL = aImageURL;
 }
 
 void nsDOMNavigationTiming::NotifyDocShellStateChanged(
@@ -514,7 +498,7 @@ struct LCPMarker : public BaseMarkerType<LCPMarker> {
 
 }  // namespace geckoprofiler::markers
 
-void SharedLcpMarkerState::MaybeAddLCPProfilerMarker(
+void nsDOMNavigationTiming::MaybeAddLCPProfilerMarker(
     MarkerInnerWindowId aInnerWindowID) {
   // This method might get called from outside of the main thread, so can't
   // check `profiler_thread_is_being_profiled_for_markers()` here.
@@ -522,23 +506,21 @@ void SharedLcpMarkerState::MaybeAddLCPProfilerMarker(
     return;
   }
 
-  auto inner = CopyInner();
+  TimeStamp navStartTime = GetNavigationStartTimeStamp();
+  TimeStamp lcpTime = GetLargestContentfulRenderTimeStamp();
 
-  if (!inner.mNavStartTime || !inner.mLargestContentfulRender) {
+  if (!navStartTime || !lcpTime) {
     return;
   }
 
-  TimeDuration elapsedTime =
-      inner.mLargestContentfulRender - inner.mNavStartTime;
-  PROFILER_MARKER(
-      "LargestContentfulPaint", DOM,
-      // Putting this marker to the main thread even if it's
-      // called from another one.
-      MarkerOptions(MarkerThreadId::MainThread(),
-                    MarkerTiming::Interval(inner.mNavStartTime,
-                                           inner.mLargestContentfulRender),
-                    std::move(aInnerWindowID)),
-      LCPMarker, elapsedTime, inner.mLCPElement, inner.mLCPImageURL);
+  TimeDuration elapsedTime = lcpTime - navStartTime;
+  PROFILER_MARKER("LargestContentfulPaint", DOM,
+                  // Putting this marker to the main thread even if it's
+                  // called from another one.
+                  MarkerOptions(MarkerThreadId::MainThread(),
+                                MarkerTiming::Interval(navStartTime, lcpTime),
+                                std::move(aInnerWindowID)),
+                  LCPMarker, elapsedTime, mLCPElement, mLCPImageURL);
 }
 
 mozilla::TimeStamp nsDOMNavigationTiming::GetUnloadEventStartTimeStamp() const {
@@ -583,8 +565,6 @@ nsDOMNavigationTiming::nsDOMNavigationTiming(nsDocShell* aDocShell,
       mNavigationStart(aOther->mNavigationStart),
       mNonBlankPaint(aOther->mNonBlankPaint),
       mContentfulComposite(aOther->mContentfulComposite),
-      mLargestContentfulRender(aOther->mLargestContentfulRender),
-      mSharedLcpMarkerState(MakeRefPtr<SharedLcpMarkerState>()),
       mBeforeUnloadStart(aOther->mBeforeUnloadStart),
       mUnloadStart(aOther->mUnloadStart),
       mUnloadEnd(aOther->mUnloadEnd),

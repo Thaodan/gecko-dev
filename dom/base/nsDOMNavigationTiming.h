@@ -15,7 +15,6 @@
 
 class nsDocShell;
 class nsIURI;
-class SharedLcpMarkerState;
 
 using DOMTimeMilliSec = unsigned long long;
 using DOMHighResTimeStamp = double;
@@ -178,7 +177,7 @@ class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
       const nsACString& aImageURL);
   void NotifyDocShellStateChanged(DocShellState aDocShellState);
 
-  RefPtr<SharedLcpMarkerState> GetSharedLcpMarkerState() const;
+  void MaybeAddLCPProfilerMarker(mozilla::MarkerInnerWindowId aInnerWindowID);
 
   DOMTimeMilliSec TimeStampToDOM(mozilla::TimeStamp aStamp) const;
 
@@ -236,7 +235,8 @@ class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
   mozilla::TimeStamp mNonBlankPaint;
   mozilla::TimeStamp mContentfulComposite;
   mozilla::TimeStamp mLargestContentfulRender;
-  RefPtr<SharedLcpMarkerState> mSharedLcpMarkerState;
+  nsString mLCPElement;
+  nsCString mLCPImageURL;
 
   mozilla::TimeStamp mBeforeUnloadStart;
   mozilla::TimeStamp mUnloadStart;

@@ -109,7 +109,6 @@ EXPORTS += [
     "nsWindowSizes.h",
     "nsWrapperCache.h",
     "nsWrapperCacheInlines.h",
-    "SharedLcpMarkerState.h",
     "XPathGenerator.h",
 ]
 
