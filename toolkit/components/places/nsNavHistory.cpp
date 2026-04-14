@@ -686,7 +686,7 @@ nsNavHistory::ExecuteQuery(nsINavHistoryQuery* aQuery,
 
 // determine from our nsNavHistoryQuery array and nsNavHistoryQueryOptions
 // if this is the place query from the history menu.
-// from browser-menubar.inc, our history menu query is:
+// from browser-menubar.inc.xhtml, our history menu query is:
 // place:sort=4&maxResults=10
 // note, any maxResult > 0 will still be considered a history menu query
 // or if this is the place query from the old "Most Visited" item in some
