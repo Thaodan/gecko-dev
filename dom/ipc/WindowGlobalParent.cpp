@@ -97,6 +97,20 @@ extern mozilla::LazyLogModule gUseCountersLog;
 
 namespace mozilla::dom {
 
+/**
+ * Accumulated page use counter data for a given top-level content document.
+ */
+struct PageUseCounters {
+  // The number of page use counter data messages we are still waiting for.
+  uint32_t mWaiting = 0;
+
+  // Whether we have received any page use counter data.
+  bool mReceivedAny = false;
+
+  // The accumulated page use counters.
+  UseCounters mUseCounters;
+};
+
 WindowGlobalParent::WindowGlobalParent(
     CanonicalBrowsingContext* aBrowsingContext, uint64_t aInnerWindowId,
     uint64_t aOuterWindowId, FieldValues&& aInit)
@@ -1131,20 +1145,6 @@ void WindowGlobalParent::DrawSnapshotInternal(gfx::CrossProcessPaint* aPaint,
         paint->LostFragment(wgp);
       });
 }
-
-/**
- * Accumulated page use counter data for a given top-level content document.
- */
-struct PageUseCounters {
-  // The number of page use counter data messages we are still waiting for.
-  uint32_t mWaiting = 0;
-
-  // Whether we have received any page use counter data.
-  bool mReceivedAny = false;
-
-  // The accumulated page use counters.
-  UseCounters mUseCounters;
-};
 
 mozilla::ipc::IPCResult WindowGlobalParent::RecvExpectPageUseCounters(
     const MaybeDiscarded<WindowContext>& aTop) {
