@@ -226,6 +226,7 @@ export const ProtonScreenActionButtons = props => {
     addonType,
     addonName,
     activeMultiSelect,
+    activeSingleSelectSelections,
     textInputs,
     installedAddons,
   } = props;
@@ -271,6 +272,16 @@ export const ProtonScreenActionButtons = props => {
         }
       }
       return true;
+    }
+    // Only disables the primary button until at least one single-select
+    // option is chosen.
+    if (disabledValue === "hasActiveSingleSelect") {
+      if (!activeSingleSelectSelections) {
+        return true;
+      }
+      return !Object.values(activeSingleSelectSelections).some(
+        val => val && val !== "none"
+      );
     }
     if (disabledValue === "hasTextInput") {
       // For text input, we check if the user has entered any text in the
@@ -778,6 +789,7 @@ export class ProtonScreen extends React.PureComponent {
         addonType={this.props.addonType}
         handleAction={this.props.handleAction}
         activeMultiSelect={this.props.activeMultiSelect}
+        activeSingleSelectSelections={this.props.activeSingleSelectSelections}
         textInputs={this.props.textInputs}
       />
     ) : null;
