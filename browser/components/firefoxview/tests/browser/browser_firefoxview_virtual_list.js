@@ -21,8 +21,7 @@ add_task(async function test_max_render_count_on_win_resize() {
 
     let historyComponent = document.querySelector("view-history");
     let tabList = await TestUtils.waitForCondition(
-      () => historyComponent.lists[0],
-      "Waiting for the first list in the history component to be available"
+      () => historyComponent.lists[0]
     );
     let rootVirtualList = tabList.rootVirtualListEl;
 

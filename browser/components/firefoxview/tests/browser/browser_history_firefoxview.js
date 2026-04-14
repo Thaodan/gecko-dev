@@ -206,10 +206,9 @@ add_task(async function test_list_ordering() {
 
     // Select first history item in first card
     await clearAllParentTelemetryEvents();
-    await TestUtils.waitForCondition(
-      () => historyComponent.lists[0].rowEls.length,
-      "The first history list to have row elements"
-    );
+    await TestUtils.waitForCondition(() => {
+      return historyComponent.lists[0].rowEls.length;
+    });
     let firstHistoryLink = historyComponent.lists[0].rowEls[0].mainEl;
     let promiseHidden = BrowserTestUtils.waitForEvent(
       document,
@@ -237,10 +236,7 @@ add_task(async function test_list_ordering() {
       {},
       content
     );
-    await TestUtils.waitForCondition(
-      () => historyComponent.fullyUpdated,
-      "Waiting for the history component to be fully updated"
-    );
+    await TestUtils.waitForCondition(() => historyComponent.fullyUpdated);
     await sortHistoryTelemetry(sortHistoryEvent);
 
     let expectedNumOfCards = historyComponent.controller.historyVisits.length;
@@ -268,10 +264,7 @@ add_task(async function test_list_ordering() {
       {},
       content
     );
-    await TestUtils.waitForCondition(
-      () => historyComponent.fullyUpdated,
-      "Waiting for the history component to be fully updated"
-    );
+    await TestUtils.waitForCondition(() => historyComponent.fullyUpdated);
     await sortHistoryTelemetry(sortHistoryEvent);
 
     // clean up extra tabs
@@ -290,10 +283,7 @@ add_task(async function test_empty_states() {
 
     let historyComponent = document.querySelector("view-history");
     historyComponent.profileAge = 8;
-    await TestUtils.waitForCondition(
-      () => historyComponent.emptyState,
-      "Waiting for the history component to be in the empty state"
-    );
+    await TestUtils.waitForCondition(() => historyComponent.emptyState);
     let emptyStateCard = historyComponent.emptyState;
     ok(
       emptyStateCard.headerEl.textContent.includes(
@@ -313,10 +303,7 @@ add_task(async function test_empty_states() {
     // Manually update the history component from the test, since changing this setting
     // in about:preferences will require a browser reload
     historyComponent.requestUpdate();
-    await TestUtils.waitForCondition(
-      () => historyComponent.fullyUpdated,
-      "Waiting for the history component to be fully updated"
-    );
+    await TestUtils.waitForCondition(() => historyComponent.fullyUpdated);
     emptyStateCard = historyComponent.emptyState;
     ok(
       emptyStateCard.headerEl.textContent.includes("You’re in control"),
@@ -333,10 +320,7 @@ add_task(async function test_empty_states() {
     // Manually update the history component from the test, since changing this setting
     // in about:preferences will require a browser reload
     historyComponent.requestUpdate();
-    await TestUtils.waitForCondition(
-      () => historyComponent.fullyUpdated,
-      "Waiting for the history component to be fully updated"
-    );
+    await TestUtils.waitForCondition(() => historyComponent.fullyUpdated);
 
     // Test import history banner shows if profile age is 7 days or less and
     // user hasn't already imported history from another browser
@@ -344,19 +328,13 @@ add_task(async function test_empty_states() {
     Services.prefs.setBoolPref(HAS_IMPORTED_HISTORY_PREF, true);
     ok(!historyComponent.cards.length, "Import history banner not shown yet");
     historyComponent.profileAge = 0;
-    await TestUtils.waitForCondition(
-      () => historyComponent.fullyUpdated,
-      "Waiting for the history component to be fully updated"
-    );
+    await TestUtils.waitForCondition(() => historyComponent.fullyUpdated);
     ok(
       !historyComponent.cards.length,
       "Import history banner still not shown yet"
     );
     Services.prefs.setBoolPref(HAS_IMPORTED_HISTORY_PREF, false);
-    await TestUtils.waitForCondition(
-      () => historyComponent.fullyUpdated,
-      "Waiting for the history component to be fully updated"
-    );
+    await TestUtils.waitForCondition(() => historyComponent.fullyUpdated);
     ok(
       historyComponent.cards[0].textContent.includes(
         "Import history from another browser"
@@ -366,10 +344,7 @@ add_task(async function test_empty_states() {
     let importHistoryCloseButton =
       historyComponent.cards[0].querySelector("moz-button.close");
     importHistoryCloseButton.click();
-    await TestUtils.waitForCondition(
-      () => historyComponent.fullyUpdated,
-      "Waiting for the history component to be fully updated"
-    );
+    await TestUtils.waitForCondition(() => historyComponent.fullyUpdated);
     ok(
       Services.prefs.getBoolPref(IMPORT_HISTORY_DISMISSED_PREF, true) &&
         !historyComponent.cards.length,
@@ -395,15 +370,11 @@ add_task(async function test_observers_removed_when_view_is_hidden() {
     await navigateToViewAndWait(document, "history");
     const historyComponent = document.querySelector("view-history");
     historyComponent.profileAge = 8;
-    let visitList = await TestUtils.waitForCondition(
-      () => historyComponent.cards?.[0]?.querySelector("fxview-tab-list"),
-      "the first history card to have a tab list"
+    let visitList = await TestUtils.waitForCondition(() =>
+      historyComponent.cards?.[0]?.querySelector("fxview-tab-list")
     );
     info("The list should show a visit from the new tab.");
-    await TestUtils.waitForCondition(
-      () => visitList.rowEls.length === 1,
-      "visit list to have exactly one row element"
-    );
+    await TestUtils.waitForCondition(() => visitList.rowEls.length === 1);
 
     let promiseHidden = BrowserTestUtils.waitForEvent(
       document,
@@ -425,14 +396,10 @@ add_task(async function test_observers_removed_when_view_is_hidden() {
 
     info("The list should update when Firefox View is visible.");
     await openFirefoxViewTab(browser.ownerGlobal);
-    visitList = await TestUtils.waitForCondition(
-      () => historyComponent.cards?.[0]?.querySelector("fxview-tab-list"),
-      "the first history card to have a tab list"
+    visitList = await TestUtils.waitForCondition(() =>
+      historyComponent.cards?.[0]?.querySelector("fxview-tab-list")
     );
-    await TestUtils.waitForCondition(
-      () => visitList.rowEls.length === 1,
-      "visit list to have exactly one row element"
-    );
+    await TestUtils.waitForCondition(() => visitList.rowEls.length > 1);
 
     BrowserTestUtils.removeTab(tab);
   });
@@ -458,9 +425,8 @@ add_task(async function test_show_all_history_telemetry() {
     await showAllHistoryTelemetry();
 
     // Make sure library window is shown
-    await TestUtils.waitForCondition(
-      () => Services.wm.getMostRecentWindow("Places:Organizer"),
-      "Waiting for the Places Organizer window to be open"
+    await TestUtils.waitForCondition(() =>
+      Services.wm.getMostRecentWindow("Places:Organizer")
     );
     let library = Services.wm.getMostRecentWindow("Places:Organizer");
     await BrowserTestUtils.closeWindow(library);
@@ -586,10 +552,7 @@ add_task(async function test_search_ignores_stale_queries() {
     info("Input a bogus search query.");
     EventUtils.synthesizeMouseAtCenter(searchTextbox, {}, content);
     EventUtils.sendString("Bogus Query", content);
-    await TestUtils.waitForCondition(
-      () => bogusQueryInProgress,
-      "The bogus query to be in progress"
-    );
+    await TestUtils.waitForCondition(() => bogusQueryInProgress);
 
     info("Clear the bogus query.");
     let clearButton = SpecialPowers.wrap(
@@ -623,8 +586,7 @@ add_task(async function test_persist_collapse_card_after_view_change() {
     const historyComponent = document.querySelector("view-history");
     historyComponent.profileAge = 8;
     await TestUtils.waitForCondition(
-      () => historyComponent.controller.totalVisitsCount === 4,
-      "The history component to have a total visit count of 4"
+      () => historyComponent.controller.totalVisitsCount === 4
     );
     let firstHistoryCard = historyComponent.cards[0];
     ok(

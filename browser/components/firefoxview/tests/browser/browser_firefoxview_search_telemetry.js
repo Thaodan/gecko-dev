@@ -142,10 +142,7 @@ add_task(async function test_show_all_recentlyclosed_telemetry() {
     const showAllButton = recentlyclosedSlot.shadowRoot.querySelector(
       "[data-l10n-id='firefoxview-show-all']"
     );
-    await TestUtils.waitForCondition(
-      () => !showAllButton.hidden,
-      "Waiting for the show all button to be visible"
-    );
+    await TestUtils.waitForCondition(() => !showAllButton.hidden);
     ok(!showAllButton.hidden, "Show all button is visible");
     await TestUtils.waitForCondition(() => {
       EventUtils.synthesizeMouseAtCenter(showAllButton, {}, content);
@@ -193,10 +190,7 @@ add_task(async function test_show_all_opentabs_telemetry() {
     const showAllButton = opentabsSlot.viewCards[0].shadowRoot.querySelector(
       "[data-l10n-id='firefoxview-show-all']"
     );
-    await TestUtils.waitForCondition(
-      () => !showAllButton.hidden,
-      "Waiting for the show all button to be visible"
-    );
+    await TestUtils.waitForCondition(() => !showAllButton.hidden);
     ok(!showAllButton.hidden, "Show all button is visible");
     await TestUtils.waitForCondition(() => {
       EventUtils.synthesizeMouseAtCenter(showAllButton, {}, content);
@@ -280,19 +274,14 @@ add_task(async function test_show_all_syncedtabs_telemetry() {
     );
     await clearAllParentTelemetryEvents();
 
-    const showAllButton = await TestUtils.waitForCondition(
-      () =>
-        syncedtabsSlot.shadowRoot.querySelector(
-          "[data-l10n-id='firefoxview-show-all']"
-        ),
-      "Waiting for the show all button to be available in the synced tabs slot"
+    const showAllButton = await TestUtils.waitForCondition(() =>
+      syncedtabsSlot.shadowRoot.querySelector(
+        "[data-l10n-id='firefoxview-show-all']"
+      )
     );
     info("Scroll show all button into view.");
     showAllButton.scrollIntoView();
-    await TestUtils.waitForCondition(
-      () => !showAllButton.hidden,
-      "Waiting for the show all button to be visible"
-    );
+    await TestUtils.waitForCondition(() => !showAllButton.hidden);
     ok(!showAllButton.hidden, "Show all button is visible");
     info("Click the Show All link.");
     await TestUtils.waitForCondition(() => {
@@ -353,10 +342,7 @@ add_task(async function test_sort_history_search_telemetry() {
       {},
       content
     );
-    await TestUtils.waitForCondition(
-      () => historyComponent.fullyUpdated,
-      "Waiting for the history component to be fully updated"
-    );
+    await TestUtils.waitForCondition(() => historyComponent.fullyUpdated);
     await telemetryEvent([
       [
         "firefoxview_next",
@@ -374,10 +360,7 @@ add_task(async function test_sort_history_search_telemetry() {
       {},
       content
     );
-    await TestUtils.waitForCondition(
-      () => historyComponent.fullyUpdated,
-      "Waiting for the history component to be fully updated"
-    );
+    await TestUtils.waitForCondition(() => historyComponent.fullyUpdated);
     await telemetryEvent([
       [
         "firefoxview_next",
@@ -464,17 +447,14 @@ add_task(async function test_cumulative_searches_recently_closed_telemetry() {
     );
     const searchTextbox = await TestUtils.waitForCondition(() => {
       return recentlyClosed.searchTextbox;
-    }, "Waiting for the recently closed search textbox to be available");
+    });
     info("Input a search query");
     EventUtils.synthesizeMouseAtCenter(searchTextbox, {}, content);
     EventUtils.sendString(URLs[0], content);
     // eslint-disable-next-line no-unused-vars
     const [recentlyclosedSlot, tabList] =
       await waitForRecentlyClosedTabsList(document);
-    await TestUtils.waitForCondition(
-      () => recentlyclosedSlot?.searchQuery,
-      "Waiting for the recently closed slot to have a search query"
-    );
+    await TestUtils.waitForCondition(() => recentlyclosedSlot?.searchQuery);
 
     await click_recently_closed_tab_item(tabList[0]);
 
@@ -511,7 +491,7 @@ add_task(async function test_cumulative_searches_open_tabs_telemetry() {
     await TestUtils.waitForCondition(() => {
       cards = getOpenTabsCards(openTabs);
       return cards.length == 1;
-    }, "There is one open tab card");
+    });
     await TestUtils.waitForCondition(
       () => cards[0].tabList.rowEls.length === 1 && openTabs?.searchQuery,
       "Expected search results are not shown yet."
