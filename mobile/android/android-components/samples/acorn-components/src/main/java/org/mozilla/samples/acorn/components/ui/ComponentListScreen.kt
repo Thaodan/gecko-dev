@@ -24,6 +24,7 @@ import mozilla.components.compose.base.theme.AcornTheme
 import org.mozilla.samples.acorn.components.Destinations
 
 private val componentCategories = listOf(
+    Destinations.BANNER to "Banner",
     Destinations.BUTTONS to "Buttons",
     Destinations.SNACKBAR to "Snackbar",
 )
