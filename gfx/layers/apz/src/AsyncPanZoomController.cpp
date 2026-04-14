@@ -3605,17 +3605,19 @@ void AsyncPanZoomController::HandlePanningWithTouchAction(double aAngle) {
       !mY.IsAxisLocked() && overscrollHandoffChain->CanScrollInDirection(
                                 this, ScrollDirection::eVertical);
   if (GetCurrentTouchBlock()->TouchActionAllowsPanningXY()) {
-    if (canScrollVertical &&
-        apz::IsCloseToHorizontal(aAngle,
-                                 StaticPrefs::apz_axis_lock_lock_angle())) {
-      mY.SetAxisLocked(true);
-      SetState(PANNING_LOCKED_X);
-    } else if (canScrollHorizontal &&
-               apz::IsCloseToVertical(
-                   aAngle, StaticPrefs::apz_axis_lock_lock_angle())) {
-      mX.SetAxisLocked(true);
-      SetState(PANNING_LOCKED_Y);
-    } else if (canScrollVertical || canScrollHorizontal) {
+    if (canScrollHorizontal && canScrollVertical) {
+      if (apz::IsCloseToHorizontal(aAngle,
+                                   StaticPrefs::apz_axis_lock_lock_angle())) {
+        mY.SetAxisLocked(true);
+        SetState(PANNING_LOCKED_X);
+      } else if (apz::IsCloseToVertical(
+                     aAngle, StaticPrefs::apz_axis_lock_lock_angle())) {
+        mX.SetAxisLocked(true);
+        SetState(PANNING_LOCKED_Y);
+      } else {
+        SetState(PANNING);
+      }
+    } else if (canScrollHorizontal || canScrollVertical) {
       SetState(PANNING);
     } else {
       SetState(NOTHING);
