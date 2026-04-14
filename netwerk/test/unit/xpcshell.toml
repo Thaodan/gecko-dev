@@ -1252,6 +1252,8 @@ skip-if = [
 
 ["test_multipart_byteranges.js"]
 
+["test_multipart_byteranges_invalid.js"]
+
 ["test_multipart_contentdisp.js"]
 
 ["test_multipart_set_cookie.js"]
