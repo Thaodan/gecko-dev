@@ -27,7 +27,7 @@ class TranslationsAIControllableFeature(
     }
 
     companion object : AIFeatureMetadata {
-        override val id: AIFeatureMetadata.FeatureId = AIFeatureMetadata.FeatureId("ai.translations")
+        override val id: AIFeatureMetadata.FeatureId = AIFeatureMetadata.FeatureId("translations")
         override val description = AIFeatureMetadata.Description(
             titleRes = R.string.ai_controls_translations_title,
             descriptionRes = R.string.ai_controls_translations_description,

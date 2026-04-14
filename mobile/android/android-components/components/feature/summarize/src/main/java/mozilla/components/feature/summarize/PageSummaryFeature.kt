@@ -26,7 +26,7 @@ class PageSummaryFeature(
     }
 
     companion object : AIFeatureMetadata {
-        override val id = AIFeatureMetadata.FeatureId("ai.summarize.page")
+        override val id = AIFeatureMetadata.FeatureId("pageSummaries")
 
         override val description = AIFeatureMetadata.Description(
             titleRes = R.string.mozac_ai_controls_page_summary_title,
