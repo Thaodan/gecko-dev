@@ -149,7 +149,6 @@ def run_nightly_builds_action(
     else:
         parameters["target_tasks_method"] = "nightly_all"
 
-    parameters["dontbuild"] = False
     # make parameters read-only
     parameters = Parameters(**parameters)
 
