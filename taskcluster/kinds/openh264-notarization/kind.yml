@@ -7,25 +7,25 @@ loader: taskgraph.loader.transform:loader
 transforms:
     - taskgraph.transforms.from_deps
     - gecko_taskgraph.transforms.filter_notarization
-    - gecko_taskgraph.transforms.chunk_partners
-    - gecko_taskgraph.transforms.partner_signing
-    - gecko_taskgraph.transforms.signing
+    - gecko_taskgraph.transforms.name_sanity
+    - gecko_taskgraph.transforms.mac_notarization
     - gecko_taskgraph.transforms.task
 
 kind-dependencies:
-    - release-partner-repack-mac-signing
+    - openh264-signing
 
 task-defaults:
     run-on-repo-type: [hg]
 
 only-for-build-platforms:
-    - macosx64-shippable/opt
+    - macosx64/opt
+    - macosx64-aarch64/opt
 
 tasks:
-    release-partner-repack-mac-notarization:
+    openh264-notarization:
         from-deps:
-            group-by: partner-repack-ids
+            group-by: single-with-filters
             copy-attributes: true
-        shipping-product: firefox
-        shipping-phase: promote
-        copy-repack-ids: true
+        worker-type: linux-signing
+        worker:
+            implementation: iscript
