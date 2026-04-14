@@ -25,6 +25,7 @@ import org.mozilla.samples.acorn.components.Destinations
 
 private val componentCategories = listOf(
     Destinations.ICONS to "Icons",
+    Destinations.COLORS to "Colors",
     Destinations.BANNER to "Banner",
     Destinations.BUTTONS to "Buttons",
     Destinations.SNACKBAR to "Snackbar",

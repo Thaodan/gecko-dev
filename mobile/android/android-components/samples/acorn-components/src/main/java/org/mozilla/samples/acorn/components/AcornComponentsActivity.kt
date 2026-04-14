@@ -14,6 +14,7 @@ import androidx.navigation.compose.rememberNavController
 import mozilla.components.compose.base.theme.AcornTheme
 import org.mozilla.samples.acorn.components.ui.BannerScreen
 import org.mozilla.samples.acorn.components.ui.ButtonsScreen
+import org.mozilla.samples.acorn.components.ui.ColorsScreen
 import org.mozilla.samples.acorn.components.ui.ComponentListScreen
 import org.mozilla.samples.acorn.components.ui.IconsScreen
 import org.mozilla.samples.acorn.components.ui.SnackbarScreen
@@ -43,6 +44,9 @@ class AcornComponentsActivity : AppCompatActivity() {
                     composable(Destinations.BUTTONS) {
                         ButtonsScreen(onNavigateUp = { navController.popBackStack() })
                     }
+                    composable(Destinations.COLORS) {
+                        ColorsScreen(onNavigateUp = { navController.popBackStack() })
+                    }
                     composable(Destinations.ICONS) {
                         IconsScreen(onNavigateUp = { navController.popBackStack() })
                     }
@@ -59,6 +63,7 @@ internal object Destinations {
     const val ROOT = "root"
     const val BANNER = "banner"
     const val BUTTONS = "buttons"
+    const val COLORS = "colors"
     const val ICONS = "icons"
     const val SNACKBAR = "snackbar"
 }
