@@ -84,6 +84,8 @@ GeckoMediaPluginServiceParent::GeckoMediaPluginServiceParent()
     : mScannedPluginOnDisk(false),
       mShuttingDown(false),
       mWaitingForPluginsSyncShutdown(false),
+      mInitPromiseMonitor("GeckoMediaPluginServiceParent::mInitPromiseMonitor"),
+      mInitPromise(&mInitPromiseMonitor),
       mLoadPluginsFromDiskComplete(false) {
   MOZ_ASSERT(NS_IsMainThread());
 }
@@ -313,9 +315,8 @@ GeckoMediaPluginServiceParent::Observe(nsISupports* aSubject,
     // origin-pairs, if we try to open an origin-pair for non-PB mode, we'll get
     // the NodeId salt stored on-disk, and if we try to open a PB mode
     // origin-pair, we'll re-generate new salt.
-    return GMPDispatch(NewRunnableMethod(
-        "gmp::GeckoMediaPluginServiceParent::ClearTemporaryStorage", this,
-        &GeckoMediaPluginServiceParent::ClearTemporaryStorage));
+    mTempNodeIds.Clear();
+    mTempGMPStorage.Clear();
   } else if (!strcmp("browser:purge-session-history", aTopic)) {
     GMP_LOG_DEBUG(
         "Received 'browser:purge-session-history', clearing everything");
@@ -377,7 +378,7 @@ void GeckoMediaPluginServiceParent::OnPreferenceChanged(
 
 RefPtr<GenericNonExclusivePromise>
 GeckoMediaPluginServiceParent::EnsureInitialized() {
-  MutexAutoLock lock(mMutex);
+  MonitorAutoLock lock(mInitPromiseMonitor);
   if (mLoadPluginsFromDiskComplete) {
     return GenericNonExclusivePromise::CreateAndResolve(true, __func__);
   }
@@ -442,6 +443,7 @@ GeckoMediaPluginServiceParent::GetContentParent(
 void GeckoMediaPluginServiceParent::InitializePlugins(
     nsISerialEventTarget* aGMPThread) {
   MOZ_ASSERT(aGMPThread);
+  MonitorAutoLock lock(mInitPromiseMonitor);
   if (mLoadPluginsFromDiskComplete) {
     return;
   }
@@ -453,12 +455,12 @@ void GeckoMediaPluginServiceParent::InitializePlugins(
       ->Then(
           aGMPThread, __func__,
           [self]() -> void {
-            MutexAutoLock lock(self->mMutex);
+            MonitorAutoLock lock(self->mInitPromiseMonitor);
             self->mLoadPluginsFromDiskComplete = true;
             self->mInitPromise.Resolve(true, __func__);
           },
           [self]() -> void {
-            MutexAutoLock lock(self->mMutex);
+            MonitorAutoLock lock(self->mInitPromiseMonitor);
             self->mLoadPluginsFromDiskComplete = true;
             self->mInitPromise.Reject(NS_ERROR_FAILURE, __func__);
           });
@@ -1860,14 +1862,6 @@ void GeckoMediaPluginServiceParent::ServiceUserDestroyed(
   mServiceParents.RemoveElement(aServiceParent);
 }
 
-void GeckoMediaPluginServiceParent::ClearTemporaryStorage() {
-  AssertOnGMPThread();
-  GMP_LOG_DEBUG("%s::%s", __CLASS__, __FUNCTION__);
-
-  mTempNodeIds.Clear();
-  mTempGMPStorage.Clear();
-}
-
 void GeckoMediaPluginServiceParent::ClearStorage() {
   AssertOnGMPThread();
   GMP_LOG_DEBUG("%s::%s", __CLASS__, __FUNCTION__);
@@ -2044,9 +2038,12 @@ class OpenPGMPServiceParent : public mozilla::Runnable {
   bool* mResult;
 };
 
-bool GeckoMediaPluginServiceParent::CreateGMPServiceParent(
-    ipc::Endpoint<PGMPServiceParent>&& aGMPService) {
-  if (mShuttingDown) {
+/* static */
+bool GMPServiceParent::Create(Endpoint<PGMPServiceParent>&& aGMPService) {
+  RefPtr<GeckoMediaPluginServiceParent> gmp =
+      GeckoMediaPluginServiceParent::GetSingleton();
+
+  if (!gmp || gmp->mShuttingDown) {
     // Shutdown is initiated. There is no point creating a new actor.
     return false;
   }
@@ -2054,11 +2051,10 @@ bool GeckoMediaPluginServiceParent::CreateGMPServiceParent(
   nsCOMPtr<nsIThread> gmpThread;
   RefPtr<GMPServiceParent> serviceParent;
   {
-    MutexAutoLock lock(mMutex);
-    nsresult rv = GetThreadLocked(getter_AddRefs(gmpThread));
+    MutexAutoLock lock(gmp->mMutex);
+    nsresult rv = gmp->GetThreadLocked(getter_AddRefs(gmpThread));
     NS_ENSURE_SUCCESS(rv, false);
-    serviceParent = new GMPServiceParent(this);
-    ServiceUserCreated(serviceParent);
+    serviceParent = new GMPServiceParent(gmp);
   }
   bool ok;
   nsresult rv = NS_DispatchAndSpinEventLoopUntilComplete(

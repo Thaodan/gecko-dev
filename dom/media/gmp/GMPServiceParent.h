@@ -73,11 +73,8 @@ class GeckoMediaPluginServiceParent final
 
   nsresult ForgetThisBaseDomainNative(const nsAString& aBaseDomain);
 
-  bool CreateGMPServiceParent(ipc::Endpoint<PGMPServiceParent>&& aGMPService);
-
   // Notifies that some user of this class is created/destroyed.
-  void ServiceUserCreated(GMPServiceParent* aServiceParent)
-      MOZ_REQUIRES(mMutex);
+  void ServiceUserCreated(GMPServiceParent* aServiceParent);
   void ServiceUserDestroyed(GMPServiceParent* aServiceParent);
 
   // If aContentProcess is specified, this will only update GMP caps in that
@@ -110,7 +107,6 @@ class GeckoMediaPluginServiceParent final
 
   virtual ~GeckoMediaPluginServiceParent();
 
-  void ClearTemporaryStorage();
   void ClearStorage();
 
   already_AddRefed<GMPParent> SelectPluginForAPI(
@@ -152,8 +148,7 @@ class GeckoMediaPluginServiceParent final
   friend class GMPParent;
   void ReAddOnGMPThread(const RefPtr<GMPParent>& aOld);
   void PluginTerminated(const RefPtr<GMPParent>& aOld);
-  void InitializePlugins(nsISerialEventTarget* GMPThread)
-      MOZ_REQUIRES(mMutex) override;
+  void InitializePlugins(nsISerialEventTarget* GMPThread) override;
   RefPtr<GenericPromise> LoadFromEnvironment();
   RefPtr<GenericPromise> AddOnGMPThread(nsString aDirectory);
 
@@ -238,8 +233,8 @@ class GeckoMediaPluginServiceParent final
 
   // Synchronization for barrier that ensures we've loaded GMPs from
   // MOZ_GMP_PATH before allowing GetContentParentFrom() to proceed.
-  MozPromiseHolder<GenericNonExclusivePromise> mInitPromise
-      MOZ_GUARDED_BY(mMutex);
+  Monitor mInitPromiseMonitor;
+  MozMonitoredPromiseHolder<GenericNonExclusivePromise> mInitPromise;
   bool mLoadPluginsFromDiskComplete;
 
   // Hashes nodeId to the hashtable of storage for that nodeId.
@@ -285,6 +280,8 @@ class GMPServiceParent final : public PGMPServiceParent {
                                   const nsAString& aTopLevelOrigin,
                                   const nsAString& aGMPName,
                                   GetGMPNodeIdResolver&& aResolve) override;
+
+  static bool Create(Endpoint<PGMPServiceParent>&& aGMPService);
 
   ipc::IPCResult RecvLaunchGMP(const NodeIdVariant& aNodeIdVariant,
                                const nsACString& aAPI,
