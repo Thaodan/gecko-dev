@@ -37,7 +37,6 @@ import mozilla.components.concept.engine.history.HistoryItem
 import mozilla.components.concept.engine.history.HistoryTrackingDelegate
 import mozilla.components.concept.engine.manifest.WebAppManifest
 import mozilla.components.concept.engine.manifest.WebAppManifestParser
-import mozilla.components.concept.engine.pageextraction.ContentParams
 import mozilla.components.concept.engine.pageextraction.PageExtractionError
 import mozilla.components.concept.engine.pageextraction.PageMetadata
 import mozilla.components.concept.engine.request.RequestInterceptor
@@ -83,7 +82,6 @@ import org.mozilla.geckoview.GeckoSession.APP_LINK_LAUNCH_TYPE_WARM
 import org.mozilla.geckoview.GeckoSession.NavigationDelegate
 import org.mozilla.geckoview.GeckoSession.PermissionDelegate.ContentPermission
 import org.mozilla.geckoview.GeckoSessionSettings
-import org.mozilla.geckoview.PageExtractionController
 import org.mozilla.geckoview.WebRequestError
 import org.mozilla.geckoview.WebResponse
 import java.security.cert.X509Certificate
@@ -863,15 +861,8 @@ class GeckoEngineSession(
      * See [EngineSession.getPageContent]
      */
     @OptIn(ExperimentalGeckoViewApi::class)
-    override fun getPageContent(
-        options: ContentParams,
-        onResult: (String) -> Unit,
-        onException: (Throwable) -> Unit,
-    ) {
-        val geckoViewOptions = PageExtractionController.ContentParams(
-            options.removeBoilerplate,
-        )
-        geckoSession.sessionPageExtractor.getPageContent(geckoViewOptions)
+    override fun getPageContent(onResult: (String) -> Unit, onException: (Throwable) -> Unit) {
+        geckoSession.sessionPageExtractor.pageContent
             .then(
                 { content ->
                     if (content == null) {
@@ -908,7 +899,6 @@ class GeckoEngineSession(
                             structuredDataTypes = metadata.structuredDataTypes.toList(),
                             wordCount = metadata.wordCount,
                             language = metadata.language,
-                            isReaderable = metadata.isReaderable,
                         ),
                     )
                     GeckoResult<Unit>()

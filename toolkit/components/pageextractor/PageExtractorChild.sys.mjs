@@ -60,12 +60,7 @@ export class PageExtractorChild extends JSWindowActorChild {
           const language = document?.querySelector(".container")?.lang ?? "";
           const wordCount = this.#getWordCount(language, text);
 
-          return {
-            structuredDataTypes: [],
-            wordCount,
-            language,
-            isReaderable: true,
-          };
+          return { structuredDataTypes: [], wordCount, language };
         }
         return this.getPageMetadata();
     }
@@ -111,9 +106,8 @@ export class PageExtractorChild extends JSWindowActorChild {
     const structuredDataTypes = this.#extractStructuredDataTypes(document);
     const language = this.#detectLanguage(document);
     const wordCount = this.#getWordCount(language, document.body.innerText);
-    const isReaderable = lazy.isProbablyReaderable(document);
 
-    return { structuredDataTypes, wordCount, language, isReaderable };
+    return { structuredDataTypes, wordCount, language };
   }
 
   /**

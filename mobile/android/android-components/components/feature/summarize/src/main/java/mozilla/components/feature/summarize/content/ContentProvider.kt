@@ -4,8 +4,6 @@
 
 package mozilla.components.feature.summarize.content
 
-import mozilla.components.feature.summarize.ext.shouldUseReaderModeContent
-
 /**
  * Represents the extracted content of a web page, combining its textual body and metadata.
  *
@@ -46,11 +44,7 @@ fun interface ContentProvider {
         ) = ContentProvider {
             runCatching {
                 val metadata = pageMetadataExtractor.getPageMetadata().getOrDefault(PageMetadata())
-                val content = pageContentExtractor.getPageContent(
-                    options = PageContentExtractor.Options(
-                        shouldUseReaderModeContent = metadata.shouldUseReaderModeContent,
-                    ),
-                ).getOrThrow()
+                val content = pageContentExtractor.getPageContent().getOrThrow()
 
                 Content(metadata, content)
             }

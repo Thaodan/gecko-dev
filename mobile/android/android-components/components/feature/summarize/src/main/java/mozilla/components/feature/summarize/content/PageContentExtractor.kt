@@ -14,17 +14,12 @@ fun interface PageContentExtractor {
     /**
      * Retrieve the page content.
      */
-    suspend fun getPageContent(options: Options): Result<String>
+    suspend fun getPageContent(): Result<String>
 
     /**
      * An exception that occurs in page content extraction.
      */
     class Exception : Llm.Exception("Could not extract content", errorCode)
-
-    /**
-     * Options defining how the content should be extracted.
-     */
-    data class Options(val shouldUseReaderModeContent: Boolean)
 }
 
 private val errorCode = ErrorCode(2001)

@@ -22,7 +22,7 @@ export class GeckoViewPageExtractor extends GeckoViewModule {
       case "GeckoView:PageExtractor:GetTextContent": {
         try {
           await this.getActor("PageExtractor")
-            .getText(aData ?? {})
+            .getText()
             .then(
               result => {
                 aCallback.onSuccess({
@@ -47,7 +47,6 @@ export class GeckoViewPageExtractor extends GeckoViewModule {
                   structuredDataTypes: result.structuredDataTypes,
                   wordCount: result.wordCount,
                   language: result.language,
-                  isReaderable: result.isReaderable,
                 });
               },
               error =>
