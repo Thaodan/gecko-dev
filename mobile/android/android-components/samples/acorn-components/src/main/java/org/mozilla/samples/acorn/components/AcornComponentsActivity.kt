@@ -14,6 +14,7 @@ import androidx.navigation.compose.rememberNavController
 import mozilla.components.compose.base.theme.AcornTheme
 import org.mozilla.samples.acorn.components.ui.ButtonsScreen
 import org.mozilla.samples.acorn.components.ui.ComponentListScreen
+import org.mozilla.samples.acorn.components.ui.SnackbarScreen
 
 /**
  * Activity demonstrating the Acorn Design System components.
@@ -37,6 +38,9 @@ class AcornComponentsActivity : ComponentActivity() {
                     composable(Destinations.BUTTONS) {
                         ButtonsScreen(onNavigateUp = { navController.popBackStack() })
                     }
+                    composable(Destinations.SNACKBAR) {
+                        SnackbarScreen(onNavigateUp = { navController.popBackStack() })
+                    }
                 }
             }
         }
@@ -46,4 +50,5 @@ class AcornComponentsActivity : ComponentActivity() {
 internal object Destinations {
     const val ROOT = "root"
     const val BUTTONS = "buttons"
+    const val SNACKBAR = "snackbar"
 }
