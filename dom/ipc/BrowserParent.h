@@ -413,8 +413,8 @@ class BrowserParent final : public PBrowserParent,
       const mozilla::WidgetTouchEvent& aEvent);
 
   mozilla::ipc::IPCResult RecvScrollRectIntoView(
-      const nsRect& aRect, const ScrollAxis& aVertical,
-      const ScrollAxis& aHorizontal, const ScrollFlags& aScrollFlags,
+      const nsRect& aRect, const AxisScrollParams& aVertical,
+      const AxisScrollParams& aHorizontal, const ScrollFlags& aScrollFlags,
       const int32_t& aAppUnitsPerDevPixel);
 
   already_AddRefed<PColorPickerParent> AllocPColorPickerParent(

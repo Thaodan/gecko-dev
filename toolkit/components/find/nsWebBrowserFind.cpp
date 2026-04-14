@@ -638,7 +638,7 @@ nsresult nsWebBrowserFind::SearchInFrame(nsPIDOMWindowOuter* aWindow,
               if (scrollSelection) {
                 scrollSelection->ScrollIntoView(
                     nsISelectionController::SELECTION_WHOLE_SELECTION,
-                    ScrollAxis(WhereToScroll::Center), ScrollAxis(),
+                    AxisScrollParams(WhereToScroll::Center), AxisScrollParams(),
                     ScrollFlags::None, SelectionScrollMode::SyncFlush);
               }
             }));

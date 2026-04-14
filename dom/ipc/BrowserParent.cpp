@@ -4206,8 +4206,8 @@ mozilla::ipc::IPCResult BrowserParent::RecvMaybeFireEmbedderLoadEvents(
 }
 
 mozilla::ipc::IPCResult BrowserParent::RecvScrollRectIntoView(
-    const nsRect& aRect, const ScrollAxis& aVertical,
-    const ScrollAxis& aHorizontal, const ScrollFlags& aScrollFlags,
+    const nsRect& aRect, const AxisScrollParams& aVertical,
+    const AxisScrollParams& aHorizontal, const ScrollFlags& aScrollFlags,
     const int32_t& aAppUnitsPerDevPixel) {
   BrowserBridgeParent* bridge = GetBrowserBridgeParent();
   if (!bridge || !bridge->CanSend()) {

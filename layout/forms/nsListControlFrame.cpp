@@ -940,8 +940,8 @@ void nsListControlFrame::ScrollToFrame(dom::HTMLOptionElement& aOptElement) {
   // otherwise we find the content's frame and scroll to it
   if (nsIFrame* childFrame = aOptElement.GetPrimaryFrame()) {
     RefPtr<mozilla::PresShell> presShell = PresShell();
-    presShell->ScrollFrameIntoView(childFrame, Nothing(), ScrollAxis(),
-                                   ScrollAxis(),
+    presShell->ScrollFrameIntoView(childFrame, Nothing(), AxisScrollParams(),
+                                   AxisScrollParams(),
                                    ScrollFlags::ScrollOverflowHidden |
                                        ScrollFlags::ScrollFirstAncestorOnly);
   }
