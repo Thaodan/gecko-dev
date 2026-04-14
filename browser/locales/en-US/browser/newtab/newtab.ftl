@@ -277,7 +277,9 @@ newtab-custom-settings = Manage more settings
 
 newtab-wallpaper-title = Wallpapers
 newtab-wallpaper-reset = Reset to default
+#  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = Upload an image
+newtab-wallpaper-add-an-image = Add an image
 newtab-wallpaper-custom-color = Choose a color
 newtab-wallpaper-toggle-title =
     .label = Wallpapers
@@ -302,7 +304,9 @@ newtab-wallpaper-light-fox-anniversary = A fox in a grassy field with a misty mo
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = Solid colors
+newtab-wallpaper-colors = Colors
 newtab-wallpaper-blue = Blue
 newtab-wallpaper-light-blue = Light blue
 newtab-wallpaper-light-purple = Light purple
