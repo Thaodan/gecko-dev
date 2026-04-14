@@ -164,10 +164,11 @@ const TagType* wasm::sWrappedJSValueTagType = nullptr;
 
 static bool InitTagForJSValue() {
   MutableTagType type = js_new<TagType>();
-  if (!type || !type->initialize(StaticTypeDefs::jsTag)) {
+  if (!type || !type->initialize(StaticTypeDefs::jsExceptionTag)) {
     return false;
   }
-  MOZ_ASSERT(WrappedJSValueTagType_ValueOffset == type->argOffsets()[0]);
+  MOZ_ASSERT(WrappedJSValueTagType_ValueOffset ==
+             type->exceptionArgOffsets()[0]);
 
   type.forget(&sWrappedJSValueTagType);
 
