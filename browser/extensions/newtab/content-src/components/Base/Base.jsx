@@ -873,17 +873,23 @@ export class BaseContent extends React.PureComponent {
     //  mobileDownloadPromo*, etc.) will become dead code and should
     // be deleted — expect lint errors for unused vars.
     if (novaEnabled) {
-      // Bug 2016230
-      // If ONLY Search or ONLY Shortcuts or ONLY Search AND Shortcuts or NO features
-      // the logo should be centered instead of left-sidebar
-      const logoShouldBeCentered = false;
+      // Logo renders in .content (above search/topsites) when no Pocket content
+      // feed and no content-area widgets are present. When either is enabled,
+      // the sidebar provides a better visual anchor.
+      const hasContentWidgets =
+        (mayHaveListsWidget && enabledWidgets.listsEnabled) ||
+        (mayHaveTimerWidget && enabledWidgets.timerEnabled) ||
+        (mayHaveWeatherWidget &&
+          enabledWidgets.weatherEnabled &&
+          !showWeatherWidgetInSidebar);
+      const logoShouldBeCentered = !pocketEnabled && !hasContentWidgets;
 
       return (
         <div className="nova-outer-wrapper">
-          <div className="container nova-enabled">
+          <div
+            className={`container nova-enabled${logoShouldBeCentered ? " logo-in-content" : ""}`}
+          >
             <div className="sidebar-inline-start">
-              {/* Logo */}
-              {/* TODO: Bug 2016230 - Add display logic for when to hide / display */}
               {!logoShouldBeCentered && (
                 <ErrorBoundary>
                   <Logo />
@@ -892,9 +898,6 @@ export class BaseContent extends React.PureComponent {
               {/* Future: Page Nav  */}
             </div>
             <div className="content">
-              {/* Logo */}
-
-              {/* TODO: Bug 2016230 - Add display logic for when to hide / display */}
               {logoShouldBeCentered && (
                 <ErrorBoundary>
                   <Logo />
