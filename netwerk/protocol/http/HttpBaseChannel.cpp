@@ -5432,25 +5432,18 @@ bool HttpBaseChannel::ShouldTaintReplacementChannelOrigin(
 
   nsresult rv;
 
-  if (mLoadInfo->GetLoadingPrincipal()) {
-    bool sameOrigin = false;
-    rv = mLoadInfo->GetLoadingPrincipal()->IsSameOrigin(mURI, &sameOrigin);
-    if (NS_FAILED(rv)) {
-      return true;
-    }
-    return !sameOrigin;
-  }
-  if (!mOriginalURI) {
+  // at this point we know the new channel is cross-origin, but if the
+  // redirecting url is same origin to the url that initiated the original
+  // request do not taint, i.e. A->A(308)->B, is equivalent to A->B
+
+  MOZ_ASSERT(mLoadInfo->TriggeringPrincipal());
+
+  bool sameOrigin = false;
+  rv = mLoadInfo->TriggeringPrincipal()->IsSameOrigin(mURI, &sameOrigin);
+  if (NS_FAILED(rv)) {
     return true;
   }
-
-  nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
-  if (!ssm) {
-    return true;
-  }
-
-  rv = ssm->CheckSameOriginURI(mOriginalURI, mURI, false, false);
-  return NS_FAILED(rv);
+  return !sameOrigin;
 }
 
 // Redirect Tracking
