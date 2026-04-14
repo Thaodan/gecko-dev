@@ -63,6 +63,7 @@ fun SnackbarScreen(onNavigateUp: () -> Unit = {}) {
                         )
                     }
                 },
+                actions = { ThemeToggleButton() },
             )
         },
         snackbarHost = {

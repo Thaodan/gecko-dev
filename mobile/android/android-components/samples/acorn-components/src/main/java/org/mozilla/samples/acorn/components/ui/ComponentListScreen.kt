@@ -44,6 +44,7 @@ fun ComponentListScreen(onNavigate: (String) -> Unit) {
                         style = AcornTheme.typography.headline5,
                     )
                 },
+                actions = { ThemeToggleButton() },
             )
         },
     ) { innerPadding ->

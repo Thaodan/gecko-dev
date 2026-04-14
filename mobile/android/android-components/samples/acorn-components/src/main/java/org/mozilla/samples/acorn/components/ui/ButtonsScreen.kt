@@ -57,6 +57,7 @@ fun ButtonsScreen(onNavigateUp: () -> Unit = {}) {
                         )
                     }
                 },
+                actions = { ThemeToggleButton() },
             )
         },
     ) { innerPadding ->

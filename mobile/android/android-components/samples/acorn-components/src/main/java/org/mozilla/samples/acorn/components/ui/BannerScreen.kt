@@ -54,6 +54,7 @@ fun BannerScreen(onNavigateUp: () -> Unit = {}) {
                         )
                     }
                 },
+                actions = { ThemeToggleButton() },
             )
         },
     ) { innerPadding ->
