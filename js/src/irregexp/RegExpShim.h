@@ -341,10 +341,34 @@ class LazyInstance {
   using type = LazyInstanceImpl<T>;
 };
 
-#define DEFINE_LAZY_LEAKY_OBJECT_GETTER(T, FunctionName) \
-  const T* FunctionName() {                              \
-    static base::LazyInstance<T>::type obj;              \
-    return obj.Pointer();                                \
+// LeakyObject<T> wraps an object of type T, which is initialized in the
+// constructor but never destructed. Thus LeakyObject<T> is trivially
+// destructible and can be used in static (lazily initialized) variables.
+template <typename T>
+class LeakyObject {
+ public:
+  template <typename... Args>
+  explicit LeakyObject(Args&&... args) {
+    new (storage_) T(std::forward<Args>(args)...);
+  }
+
+  LeakyObject(const LeakyObject&) = delete;
+  LeakyObject& operator=(const LeakyObject&) = delete;
+
+  T* get() { return reinterpret_cast<T*>(storage_); }
+
+ private:
+  alignas(T) char storage_[sizeof(T)];
+};
+
+// Define a function which returns a pointer to a lazily initialized and never
+// destructed object of type T, using a static local variable.
+// This is Meyer's singleton, and is guaranteed to be thread-safe.
+// See https://stackoverflow.com/a/1661564.
+#define DEFINE_LAZY_LEAKY_OBJECT_GETTER(T, FunctionName, ...) \
+  T* FunctionName() {                                         \
+    static ::v8::base::LeakyObject<T> object{__VA_ARGS__};    \
+    return object.get();                                      \
   }
 
 // Origin:
