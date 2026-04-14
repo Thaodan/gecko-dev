@@ -8,7 +8,7 @@
 void ParamTraitsEnumChecker::registerMatchers(MatchFinder *AstMatcher) {
   AstMatcher->addMatcher(
       classTemplateSpecializationDecl(
-          hasName("ParamTraits"), isDefinition(),
+          hasName("ParamTraits"),
           unless(anyOf(
               // Exclude ParamTraits that derive from EnumSerializer (e.g.,
               // ContiguousEnumSerializer) as these are the recommended way to
