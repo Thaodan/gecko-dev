@@ -50,7 +50,7 @@ def getReleaseInstallerPath(
     version,
     platform,
     locale="en-US",
-    last_linux_bz2_version=None,
+    last_linux_bz2_version="134.99.0",
 ):
     if productName not in ("fennec",):
         if platform.startswith("linux"):
