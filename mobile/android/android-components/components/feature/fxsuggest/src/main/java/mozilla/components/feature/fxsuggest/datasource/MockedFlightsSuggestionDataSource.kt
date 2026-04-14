@@ -2,12 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-package mozilla.components.feature.fxsuggest
+package mozilla.components.feature.fxsuggest.datasource
 
 import mozilla.components.concept.awesomebar.AwesomeBar
 
 /**
- * Mock implementation of [AwesomeBar.FlightsSuggestionDataSource].
+ * Mock implementation of [mozilla.components.concept.awesomebar.AwesomeBar.FlightsSuggestionDataSource].
  *
  * This data source returns a static list of predefined flight suggestions and is intended
  * strictly for development, visual testing, and UI prototyping.

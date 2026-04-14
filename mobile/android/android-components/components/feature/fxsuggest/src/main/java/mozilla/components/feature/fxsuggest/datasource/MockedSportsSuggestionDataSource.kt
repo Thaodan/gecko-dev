@@ -1,8 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
-package mozilla.components.feature.fxsuggest
+package mozilla.components.feature.fxsuggest.datasource
 
 import mozilla.components.concept.awesomebar.AwesomeBar
 import java.time.LocalDateTime
@@ -10,7 +9,7 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 
 /**
- * Mock implementation of [AwesomeBar.SportsSuggestionDataSource].
+ * Mock implementation of [mozilla.components.concept.awesomebar.AwesomeBar.SportsSuggestionDataSource].
  *
  * This data source returns a static list of predefined sport suggestions and is intended
  * strictly for development, visual testing, and UI prototyping.
