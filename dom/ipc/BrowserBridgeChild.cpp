@@ -56,10 +56,6 @@ already_AddRefed<BrowserBridgeHost> BrowserBridgeChild::FinishInit(
   return MakeAndAddRef<BrowserBridgeHost>(this);
 }
 
-nsILoadContext* BrowserBridgeChild::GetLoadContext() {
-  return mBrowsingContext;
-}
-
 void BrowserBridgeChild::NavigateByKey(bool aForward,
                                        bool aForDocumentNavigation) {
   (void)SendNavigateByKey(aForward, aForDocumentNavigation);
