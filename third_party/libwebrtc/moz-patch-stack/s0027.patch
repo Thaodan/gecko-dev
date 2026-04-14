@@ -548,10 +548,10 @@ index 88890be798..c9aefc297b 100644
  #include "rtc_base/memory/aligned_malloc.h"
  
 diff --git a/media/BUILD.gn b/media/BUILD.gn
-index fbe70c99bc..bb5484c473 100644
+index 9b026bf244..580612a99d 100644
 --- a/media/BUILD.gn
 +++ b/media/BUILD.gn
-@@ -77,7 +77,7 @@ rtc_library("rtc_media_base") {
+@@ -76,7 +76,7 @@ rtc_library("rtc_media_base") {
      "../api:media_stream_interface",
      "../api:rtc_error",
      "../api:rtp_parameters",
@@ -560,7 +560,7 @@ index fbe70c99bc..bb5484c473 100644
      "../api:scoped_refptr",
      "../api:sequence_checker",
      "../api:transport_api",
-@@ -128,6 +128,12 @@ rtc_library("rtc_media_base") {
+@@ -127,6 +127,12 @@ rtc_library("rtc_media_base") {
      "../video/config:encoder_config",
      "//third_party/abseil-cpp/absl/base:core_headers",
    ]
@@ -573,7 +573,7 @@ index fbe70c99bc..bb5484c473 100644
  }
  
  rtc_library("adapted_video_track_source") {
-@@ -154,6 +160,9 @@ rtc_library("adapted_video_track_source") {
+@@ -153,6 +159,9 @@ rtc_library("adapted_video_track_source") {
  
  rtc_source_set("audio_source") {
    sources = [ "base/audio_source.h" ]
@@ -583,7 +583,7 @@ index fbe70c99bc..bb5484c473 100644
  }
  
  rtc_library("video_adapter") {
-@@ -261,9 +270,16 @@ rtc_library("media_engine") {
+@@ -258,9 +267,16 @@ rtc_library("media_engine") {
      "../rtc_base/system:file_wrapper",
      "//third_party/abseil-cpp/absl/algorithm:container",
    ]
@@ -600,7 +600,7 @@ index fbe70c99bc..bb5484c473 100644
    sources = [
      "base/media_channel_impl.cc",
      "base/media_channel_impl.h",
-@@ -311,6 +327,7 @@ rtc_library("media_channel_impl") {
+@@ -307,6 +323,7 @@ rtc_library("media_channel_impl") {
      "//third_party/abseil-cpp/absl/strings:string_view",
    ]
  }
@@ -608,7 +608,7 @@ index fbe70c99bc..bb5484c473 100644
  
  rtc_source_set("media_channel") {
    sources = [ "base/media_channel.h" ]
-@@ -410,6 +427,7 @@ rtc_library("codec_list") {
+@@ -406,6 +423,7 @@ rtc_library("codec_list") {
  }
  
  rtc_library("rtp_utils") {
@@ -616,7 +616,7 @@ index fbe70c99bc..bb5484c473 100644
    sources = [
      "base/rtp_utils.cc",
      "base/rtp_utils.h",
-@@ -426,8 +444,10 @@ rtc_library("rtp_utils") {
+@@ -421,8 +439,10 @@ rtc_library("rtp_utils") {
      "//third_party/abseil-cpp/absl/strings:string_view",
    ]
  }
@@ -627,7 +627,7 @@ index fbe70c99bc..bb5484c473 100644
    sources = [
      "base/stream_params.cc",
      "base/stream_params.h",
-@@ -442,6 +462,7 @@ rtc_library("stream_params") {
+@@ -436,6 +456,7 @@ rtc_library("stream_params") {
      "//third_party/abseil-cpp/absl/strings:string_view",
    ]
  }
@@ -635,7 +635,7 @@ index fbe70c99bc..bb5484c473 100644
  
  rtc_library("media_constants") {
    sources = [
-@@ -452,6 +473,7 @@ rtc_library("media_constants") {
+@@ -446,6 +467,7 @@ rtc_library("media_constants") {
  }
  
  rtc_library("turn_utils") {
@@ -643,7 +643,7 @@ index fbe70c99bc..bb5484c473 100644
    sources = [
      "base/turn_utils.cc",
      "base/turn_utils.h",
-@@ -463,8 +485,10 @@ rtc_library("turn_utils") {
+@@ -456,8 +478,10 @@ rtc_library("turn_utils") {
      "../rtc_base/system:rtc_export",
    ]
  }
@@ -654,7 +654,7 @@ index fbe70c99bc..bb5484c473 100644
    sources = [
      "base/rid_description.cc",
      "base/rid_description.h",
-@@ -474,6 +498,7 @@ rtc_library("rid_description") {
+@@ -467,6 +491,7 @@ rtc_library("rid_description") {
      "//third_party/abseil-cpp/absl/strings:string_view",
    ]
  }
@@ -662,7 +662,7 @@ index fbe70c99bc..bb5484c473 100644
  
  rtc_library("rtc_simulcast_encoder_adapter") {
    visibility = [ "*" ]
-@@ -557,6 +582,11 @@ rtc_library("rtc_internal_video_codecs") {
+@@ -549,6 +574,11 @@ rtc_library("rtc_internal_video_codecs") {
      "//third_party/abseil-cpp/absl/container:inlined_vector",
      "//third_party/abseil-cpp/absl/strings",
    ]
@@ -674,7 +674,7 @@ index fbe70c99bc..bb5484c473 100644
  
    if (enable_libaom) {
      defines += [ "RTC_USE_LIBAOM_AV1_ENCODER" ]
-@@ -576,6 +606,13 @@ rtc_library("rtc_internal_video_codecs") {
+@@ -568,6 +598,13 @@ rtc_library("rtc_internal_video_codecs") {
      "engine/internal_encoder_factory.cc",
      "engine/internal_encoder_factory.h",
    ]
@@ -703,7 +703,7 @@ index 3cc8f7ba2f..f56a47aeed 100644
  class VideoMediaReceiveChannelInterface;
  class VoiceMediaSendChannelInterface;
 diff --git a/media/base/media_channel_impl.cc b/media/base/media_channel_impl.cc
-index d8f3b41988..01fcd82dc8 100644
+index cb74a2710e..b1c02c5025 100644
 --- a/media/base/media_channel_impl.cc
 +++ b/media/base/media_channel_impl.cc
 @@ -35,15 +35,6 @@
