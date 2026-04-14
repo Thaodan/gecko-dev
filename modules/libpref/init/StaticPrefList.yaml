@@ -15082,7 +15082,7 @@
 # Capacity of the above cache, in kilobytes.
 - name: network.ssl_tokens_cache_capacity
   type: RelaxedAtomicUint32
-  value: 2048
+  value: 8192
   mirror: always
 
 # How many records we store per entry
