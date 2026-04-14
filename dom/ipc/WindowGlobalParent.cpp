@@ -10,7 +10,6 @@
 #include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/BounceTrackingProtection.h"
-#include "mozilla/BounceTrackingStorageObserver.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Components.h"
 #include "mozilla/ContentBlockingAllowList.h"
@@ -1825,13 +1824,6 @@ IPCResult WindowGlobalParent::RecvSetCookies(
 
   return cs->SetCookies(aBaseDomain, aOriginAttributes, aHost, aIsThirdParty,
                         aCookies, GetBrowsingContext());
-}
-
-IPCResult WindowGlobalParent::RecvOnInitialStorageAccess() {
-  DebugOnly<nsresult> rv =
-      BounceTrackingStorageObserver::OnInitialStorageAccess(this);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to notify storage access");
-  return IPC_OK();
 }
 
 IPCResult WindowGlobalParent::RecvRecordUserActivationForBTP() {
