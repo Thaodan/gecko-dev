@@ -3106,6 +3106,13 @@
   value: 256
   mirror: always
 
+# Whether to validate that a fetch request's principal is compatible with the
+# remote type of the process it originates from.
+- name: dom.fetch.validatePrincipalForRemoteType
+  type: RelaxedAtomicBool
+  value: true
+  mirror: always
+
 - name: dom.fetchObserver.enabled
   type: RelaxedAtomicBool
   value: false
