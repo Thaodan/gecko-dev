@@ -82,10 +82,6 @@ class BounceTrackingState : public nsIWebProgressListener,
       nsIPrincipal* aTriggeringPrincipal,
       const bool aHasValidUserGestureActivation);
 
-  // Record sites which have written cookies in the current extended
-  // navigation.
-  [[nodiscard]] nsresult OnCookieWrite(const nsACString& aSiteHost);
-
   // Whether the given BrowsingContext should hold a BounceTrackingState
   // instance to monitor bounce tracking navigations.
   static bool ShouldCreateBounceTrackingStateForBC(
@@ -111,10 +107,6 @@ class BounceTrackingState : public nsIWebProgressListener,
   uint64_t GetBrowserId() { return mBrowserId; }
 
   const OriginAttributes& OriginAttributesRef();
-
-  // Record sites which have accessed storage in the current extended
-  // navigation.
-  [[nodiscard]] nsresult OnStorageAccess(nsIPrincipal* aPrincipal);
 
   // Record sites which have user activation in the current extended
   // navigation.
@@ -163,10 +155,6 @@ class BounceTrackingState : public nsIWebProgressListener,
   // When the document is loaded at the end of a navigation, update the
   // final host.
   [[nodiscard]] nsresult OnDocumentLoaded(nsIPrincipal* aDocumentPrincipal);
-
-  // Record sites which have activated service workers in the current
-  // extended navigation.
-  [[nodiscard]] nsresult OnServiceWorkerActivation();
 
   friend struct fmt::formatter<BounceTrackingState>;
 };

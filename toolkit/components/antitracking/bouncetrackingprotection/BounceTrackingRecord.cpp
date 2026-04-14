@@ -37,12 +37,6 @@ void BounceTrackingRecord::AddBounceHost(const nsACString& aHost) {
               __FUNCTION__, *this);
 }
 
-void BounceTrackingRecord::AddStorageAccessHost(const nsACString& aHost) {
-  MOZ_ASSERT(!aHost.IsEmpty());
-
-  mStorageAccessHosts.Insert(aHost);
-}
-
 void BounceTrackingRecord::AddUserActivationHost(const nsACString& aHost) {
   if (!aHost.IsEmpty()) {
     mUserActivationHosts.Insert(aHost);
@@ -52,11 +46,6 @@ void BounceTrackingRecord::AddUserActivationHost(const nsACString& aHost) {
 const nsTHashSet<nsCStringHashKey>& BounceTrackingRecord::GetBounceHosts()
     const {
   return mBounceHosts;
-}
-
-const nsTHashSet<nsCStringHashKey>&
-BounceTrackingRecord::GetStorageAccessHosts() const {
-  return mStorageAccessHosts;
 }
 
 const nsTHashSet<nsCStringHashKey>&
@@ -82,14 +71,6 @@ NS_IMETHODIMP BounceTrackingRecord::GetBounceHosts(
     if (!host.EqualsLiteral("null")) {
       aResult.AppendElement(host);
     }
-  }
-  return NS_OK;
-}
-
-NS_IMETHODIMP BounceTrackingRecord::GetStorageAccessHosts(
-    nsTArray<nsCString>& aResult) {
-  for (const auto& host : mStorageAccessHosts) {
-    aResult.AppendElement(host);
   }
   return NS_OK;
 }

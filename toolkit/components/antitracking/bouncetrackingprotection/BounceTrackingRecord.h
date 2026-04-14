@@ -36,13 +36,9 @@ class BounceTrackingRecord final : public nsIBounceTrackingRecord {
 
   void AddBounceHost(const nsACString& aHost);
 
-  void AddStorageAccessHost(const nsACString& aHost);
-
   void AddUserActivationHost(const nsACString& aHost);
 
   const nsTHashSet<nsCStringHashKey>& GetBounceHosts() const;
-
-  const nsTHashSet<nsCStringHashKey>& GetStorageAccessHosts() const;
 
   const nsTHashSet<nsCStringHashKey>& GetUserActivationHosts() const;
 
@@ -59,10 +55,6 @@ class BounceTrackingRecord final : public nsIBounceTrackingRecord {
   // A set of sites' hosts. All server-side and client-side redirects hit during
   // this extended navigation.
   nsTHashSet<nsCStringHashKey> mBounceHosts;
-
-  // A set of sites' hosts. All sites which accessed storage during this
-  // extended navigation.
-  nsTHashSet<nsCStringHashKey> mStorageAccessHosts;
 
   // A set of sites' hosts. All sites which received user activation during
   // this extended navigation.
@@ -88,9 +80,9 @@ struct fmt::formatter<mozilla::BounceTrackingRecord>
     return fmt::format_to(
         out,
         "{{mInitialHost:{}, mFinalHost:{}, mBounceHosts:[{}], "
-        "mStorageAccessHosts:[{}], mUserActivationHosts:[{}]}}",
+        "mUserActivationHosts:[{}]}}",
         aRec.mInitialHost, aRec.mFinalHost, aRec.mBounceHosts,
-        aRec.mStorageAccessHosts, aRec.mUserActivationHosts);
+        aRec.mUserActivationHosts);
   }
 };
 
