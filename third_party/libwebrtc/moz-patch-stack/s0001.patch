@@ -609,7 +609,7 @@ index c26d3659a7..3a5c4d94e3 100644
    method_ = new_method;
  }
 diff --git a/modules/rtp_rtcp/source/rtp_header_extensions.cc b/modules/rtp_rtcp/source/rtp_header_extensions.cc
-index 15884c814a..2218492e94 100644
+index 15884c814a..4dd236f58d 100644
 --- a/modules/rtp_rtcp/source/rtp_header_extensions.cc
 +++ b/modules/rtp_rtcp/source/rtp_header_extensions.cc
 @@ -422,6 +422,45 @@ bool PlayoutDelayLimits::Write(std::span<uint8_t> data,
@@ -629,7 +629,7 @@ index 15884c814a..2218492e94 100644
 +constexpr RTPExtensionType CsrcAudioLevel::kId;
 +constexpr const char* CsrcAudioLevel::kUri;
 +
-+bool CsrcAudioLevel::Parse(ArrayView<const uint8_t> data,
++bool CsrcAudioLevel::Parse(std::span<const uint8_t> data,
 +                           CsrcAudioLevelList* csrcAudioLevels) {
 +  if (data.size() < 1 || data.size() > kRtpCsrcSize)
 +    return false;
@@ -645,7 +645,7 @@ index 15884c814a..2218492e94 100644
 +  return csrcAudioLevels.numAudioLevels;
 +}
 +
-+bool CsrcAudioLevel::Write(ArrayView<uint8_t> data,
++bool CsrcAudioLevel::Write(std::span<uint8_t> data,
 +                           const CsrcAudioLevelList& csrcAudioLevels) {
 +  RTC_DCHECK_GE(csrcAudioLevels.numAudioLevels, 0);
 +  for(uint8_t i = 0; i < csrcAudioLevels.numAudioLevels; i++) {
@@ -659,7 +659,7 @@ index 15884c814a..2218492e94 100644
  //
  // E.g. default video or screenshare.
 diff --git a/modules/rtp_rtcp/source/rtp_header_extensions.h b/modules/rtp_rtcp/source/rtp_header_extensions.h
-index 03f846a905..b31748b0dc 100644
+index 03f846a905..12405e1646 100644
 --- a/modules/rtp_rtcp/source/rtp_header_extensions.h
 +++ b/modules/rtp_rtcp/source/rtp_header_extensions.h
 @@ -309,6 +309,22 @@ class ColorSpaceExtension {
@@ -675,10 +675,10 @@ index 03f846a905..b31748b0dc 100644
 +  static constexpr const char* kUri =
 +      "urn:ietf:params:rtp-hdrext:csrc-audio-level";
 +
-+  static bool Parse(rtc::ArrayView<const uint8_t> data,
++  static bool Parse(std::span<const uint8_t> data,
 +                    CsrcAudioLevelList* csrcAudioLevels);
 +  static size_t ValueSize(const CsrcAudioLevelList& csrcAudioLevels);
-+  static bool Write(rtc::ArrayView<uint8_t> data,
++  static bool Write(std::span<uint8_t> data,
 +                    const CsrcAudioLevelList& csrcAudioLevels);
 +};
 +
@@ -1392,10 +1392,10 @@ index 133c229ba3..5017d67c1a 100644
    const bool enable_svc_for_simulcast_;
    std::optional<SimulcastToSvcConverter> simulcast_to_svc_converter_;
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index 89498c5804..3453f19932 100644
+index 59fea18a7b..a59b237f80 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
-@@ -489,6 +489,12 @@ rtc_library("logging") {
+@@ -480,6 +480,12 @@ rtc_library("logging") {
      "//third_party/abseil-cpp/absl/strings:string_view",
    ]
  
