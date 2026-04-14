@@ -84,12 +84,14 @@ class SourceSurfaceCanvasRecording final : public gfx::SourceSurface {
   }
 
   already_AddRefed<gfx::DataSourceSurface> GetDataSurface() final {
-    EnsureDataSurfaceOnMainThread();
+    MutexAutoLock lock(mDataSurfaceLock);
+    EnsureDataSurfaceOnMainThread(lock);
     return do_AddRef(mDataSourceSurface);
   }
 
  private:
-  void EnsureDataSurfaceOnMainThread() {
+  void EnsureDataSurfaceOnMainThread(const MutexAutoLock& aProofOfLock)
+      MOZ_REQUIRES(mDataSurfaceLock) {
     // The data can only be retrieved on the main thread.
     if (!mDataSourceSurface && NS_IsMainThread()) {
       mDataSourceSurface = mCanvasChild->GetDataSurface(mRecordedSurface);
@@ -113,7 +115,9 @@ class SourceSurfaceCanvasRecording final : public gfx::SourceSurface {
   RefPtr<gfx::SourceSurface> mRecordedSurface;
   RefPtr<CanvasChild> mCanvasChild;
   RefPtr<CanvasDrawEventRecorder> mRecorder;
-  RefPtr<gfx::DataSourceSurface> mDataSourceSurface;
+  Mutex mDataSurfaceLock{"SourceSurfaceCanvasRecording::mDataSurfaceLock"};
+  RefPtr<gfx::DataSourceSurface> mDataSourceSurface
+      MOZ_GUARDED_BY(mDataSurfaceLock);
 };
 
 CanvasChild::CanvasChild(Endpoint<PCanvasChild>&& aEndpoint) {
