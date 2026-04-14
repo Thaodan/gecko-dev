@@ -64,16 +64,6 @@ webgl::NotLostData::~NotLostData() {
   }
 }
 
-// Currently WebGL only runs method dispatch on a single thread. Access to
-// context data outside of that thread happens only rarely to collect memory
-// reports, which should be the only possible source of contention. It is
-// sufficient to acquire the global host context lock here since individual
-// contexts can't contend with each other, as the dispatching thread will only
-// be accessing contexts one at a time.
-class LockInProcess {
-  LockedOutstandingContexts locked;
-};
-
 // -
 
 bool webgl::ObjectJS::ValidateForContext(
@@ -444,7 +434,7 @@ void ClientWebGLContext::ThrowEvent_WebGLContextCreationError(
 template <typename MethodT, typename... Args>
 void ClientWebGLContext::Run_WithDestArgTypes(
     std::optional<JS::AutoCheckCannotGC>&& noGc, const MethodT method,
-    const WebGLMethodInfo methodInfo, const Args&... args) const {
+    const size_t id, const Args&... args) const {
   // `AutoCheckCannotGC` must be reset after the GC data is done being used but
   // *before* the `notLost` destructor runs, since the latter can GC.
   const auto cleanup = MakeScopeExit([&]() { noGc.reset(); });
@@ -456,21 +446,15 @@ void ClientWebGLContext::Run_WithDestArgTypes(
 
   const auto& inProcess = notLost->inProcess;
   if (inProcess) {
-    if (methodInfo.flags & WebGLMethodInfo::LOCK_IN_PROCESS) {
-      LockInProcess locked;
-      (inProcess.get()->*method)(args...);
-      return;
-    }
-
     (inProcess.get()->*method)(args...);
     return;
   }
 
   const auto& child = notLost->outOfProcess;
 
-  const auto cmdInfo = webgl::SerializationInfo(methodInfo.id, args...);
-  const auto maybeDest = child->AllocPendingCmdBytes(cmdInfo.requiredByteCount,
-                                                     cmdInfo.alignmentOverhead);
+  const auto info = webgl::SerializationInfo(id, args...);
+  const auto maybeDest = child->AllocPendingCmdBytes(info.requiredByteCount,
+                                                     info.alignmentOverhead);
   if (!maybeDest) {
     noGc.reset();  // Reset early, as GC data will not be used, but JsWarning
                    // can GC.
@@ -479,7 +463,7 @@ void ClientWebGLContext::Run_WithDestArgTypes(
     return;
   }
   const auto& destBytes = *maybeDest;
-  webgl::Serialize(destBytes, methodInfo.id, args...);
+  webgl::Serialize(destBytes, id, args...);
 }
 
 // -
@@ -1482,7 +1466,6 @@ ClientWebGLContext::CreateOpaqueFramebuffer(
 
   const auto& inProcess = notLost->inProcess;
   if (inProcess) {
-    LockInProcess locked;
     if (!inProcess->CreateOpaqueFramebuffer(ret->mId, options)) {
       ret = nullptr;
     }

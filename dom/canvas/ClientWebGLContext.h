@@ -35,6 +35,9 @@ namespace mozilla {
 class ClientWebGLExtensionBase;
 class HostWebGLContext;
 
+template <typename MethodT, MethodT Method>
+size_t IdByMethod();
+
 namespace dom {
 class OwningHTMLCanvasElementOrOffscreenCanvas;
 class WebGLChild;
@@ -2350,9 +2353,9 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
   // method directly.  Otherwise, dispatch over IPC.
   template <typename MethodType, MethodType method, typename... CallerArgs>
   void Run(const CallerArgs&... args) const {
-    const auto info = WebGLMethodInfo::Get<MethodType, method>();
+    const auto id = IdByMethod<MethodType, method>();
     auto noNoGc = std::optional<JS::AutoCheckCannotGC>{};
-    Run_WithDestArgTypes_ConstnessHelper(std::move(noNoGc), method, info,
+    Run_WithDestArgTypes_ConstnessHelper(std::move(noNoGc), method, id,
                                          args...);
   }
 
@@ -2361,10 +2364,9 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
   template <typename MethodType, MethodType method, typename... CallerArgs>
   void RunWithGCData(JS::AutoCheckCannotGC&& aNoGC,
                      const CallerArgs&... aArgs) const {
-    const auto info = WebGLMethodInfo::Get<MethodType, method>();
+    const auto id = IdByMethod<MethodType, method>();
     auto noGc = std::optional<JS::AutoCheckCannotGC>{std::move(aNoGC)};
-    Run_WithDestArgTypes_ConstnessHelper(std::move(noGc), method, info,
-                                         aArgs...);
+    Run_WithDestArgTypes_ConstnessHelper(std::move(noGc), method, id, aArgs...);
   }
 
   // Because we're trying to explicitly pull `DestArgs` via `method`, we have
@@ -2372,25 +2374,23 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
   template <typename... DestArgs>
   void Run_WithDestArgTypes_ConstnessHelper(
       std::optional<JS::AutoCheckCannotGC>&& noGc,
-      void (HostWebGLContext::*method)(DestArgs...), const WebGLMethodInfo info,
+      void (HostWebGLContext::*method)(DestArgs...), const size_t id,
       const std::remove_reference_t<std::remove_const_t<DestArgs>>&... args)
       const {
-    Run_WithDestArgTypes(std::move(noGc), method, info, args...);
+    Run_WithDestArgTypes(std::move(noGc), method, id, args...);
   }
   template <typename... DestArgs>
   void Run_WithDestArgTypes_ConstnessHelper(
       std::optional<JS::AutoCheckCannotGC>&& noGc,
-      void (HostWebGLContext::*method)(DestArgs...) const,
-      const WebGLMethodInfo info,
+      void (HostWebGLContext::*method)(DestArgs...) const, const size_t id,
       const std::remove_reference_t<std::remove_const_t<DestArgs>>&... args)
       const {
-    Run_WithDestArgTypes(std::move(noGc), method, info, args...);
+    Run_WithDestArgTypes(std::move(noGc), method, id, args...);
   }
 
   template <typename MethodT, typename... DestArgs>
   void Run_WithDestArgTypes(std::optional<JS::AutoCheckCannotGC>&&, MethodT,
-                            const WebGLMethodInfo info,
-                            const DestArgs&...) const;
+                            const size_t id, const DestArgs&...) const;
 
   // -------------------------------------------------------------------------
   // Helpers for DOM operations, composition, actors, etc
