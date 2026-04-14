@@ -3432,6 +3432,7 @@ nsresult Element::LeaveLink(nsPresContext* aPresContext) {
   if (!shell) {
     return NS_OK;
   }
+  aPresContext->EventStateManager()->SetLinkOverFrame(nullptr);
   return nsDocShell::Cast(shell)->OnLeaveLink();
 }
 
