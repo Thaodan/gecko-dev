@@ -4657,7 +4657,7 @@ who = [
     "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "28.0.0 -> 28.0.0@git:de1e7aae31290751a141f029bfc69174102746d9"
+delta = "28.0.0 -> 28.0.0@git:2d21fcfe3e425ffdbf5cc4399212fbd1807af30f"
 importable = false
 
 [[audits.net2]]
@@ -7463,7 +7463,7 @@ who = [
     "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "28.0.0 -> 28.0.0@git:de1e7aae31290751a141f029bfc69174102746d9"
+delta = "28.0.0 -> 28.0.0@git:2d21fcfe3e425ffdbf5cc4399212fbd1807af30f"
 importable = false
 
 [[audits.wgpu-core-deps-apple]]
@@ -7504,7 +7504,7 @@ who = [
     "Erich Gubler <erichdongubler@gmail.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "28.0.0 -> 28.0.0@git:de1e7aae31290751a141f029bfc69174102746d9"
+delta = "28.0.0 -> 28.0.0@git:2d21fcfe3e425ffdbf5cc4399212fbd1807af30f"
 importable = false
 
 [[audits.wgpu-core-deps-windows-linux-android]]
@@ -7545,7 +7545,7 @@ who = [
     "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "28.0.0 -> 28.0.0@git:de1e7aae31290751a141f029bfc69174102746d9"
+delta = "28.0.0 -> 28.0.0@git:2d21fcfe3e425ffdbf5cc4399212fbd1807af30f"
 importable = false
 
 [[audits.wgpu-hal]]
@@ -7664,7 +7664,7 @@ who = [
     "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "28.0.0 -> 28.0.0@git:de1e7aae31290751a141f029bfc69174102746d9"
+delta = "28.0.0 -> 28.0.0@git:2d21fcfe3e425ffdbf5cc4399212fbd1807af30f"
 importable = false
 
 [[audits.wgpu-types]]
@@ -7778,7 +7778,7 @@ who = [
     "Erich Gubler <erichdongubler@gmail.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "28.0.0 -> 28.0.0@git:de1e7aae31290751a141f029bfc69174102746d9"
+delta = "28.0.0 -> 28.0.0@git:2d21fcfe3e425ffdbf5cc4399212fbd1807af30f"
 importable = false
 
 [[audits.whatsys]]
