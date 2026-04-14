@@ -19,6 +19,8 @@
 #  include <mach/vm_map.h>
 #endif
 
+#include "mozjemalloc_types.h"
+
 #if defined(XP_WIN)
 #  include "mozmemory_stall.h"
 #endif
@@ -648,7 +650,8 @@ void base_chunk_dealloc(void* aChunk, size_t aSize, ChunkType aType) {
 }
 
 // Deallocate chunks used for Arena allocations.
-void arena_chunk_dealloc(void* aChunk, size_t aSize) {
+void arena_chunk_dealloc(chunk_allocator_t* aChunkAllocator, void* aChunk,
+                         size_t aSize) {
   MOZ_ASSERT(aChunk);
   MOZ_ASSERT(GetChunkOffsetForPtr(aChunk) == 0);
   MOZ_ASSERT(aSize != 0);
@@ -656,7 +659,7 @@ void arena_chunk_dealloc(void* aChunk, size_t aSize) {
 
   gChunkRTree.Unset(aChunk);
 
-  base_chunk_dealloc(aChunk, aSize, ARENA_CHUNK);
+  aChunkAllocator->unmap(aChunk, aSize);
 }
 
 static void* chunk_recycle(size_t aSize, size_t aAlignment) {
@@ -746,23 +749,17 @@ void* base_chunk_alloc(size_t aSize, size_t aAlignment) {
 
 // Allocates `size` bytes of system memory aligned for `alignment` for
 // arena allocations.
-void* arena_chunk_alloc(size_t aSize, size_t aAlignment) {
-  void* ret = nullptr;
-
+void* arena_chunk_alloc(chunk_allocator_t* aChunkAllocator, size_t aSize,
+                        size_t aAlignment) {
   MOZ_ASSERT(aSize != 0);
   MOZ_ASSERT((aSize & kChunkSizeMask) == 0);
   MOZ_ASSERT(aAlignment != 0);
   MOZ_ASSERT((aAlignment & kChunkSizeMask) == 0);
 
-  if (CAN_RECYCLE(aSize)) {
-    ret = chunk_recycle(aSize, aAlignment);
-  }
-  if (!ret) {
-    ret = pages_mmap_aligned(aSize, aAlignment, ReserveAndCommit);
-  }
+  void* ret = aChunkAllocator->map(aSize, aAlignment);
   if (ret) {
     if (!gChunkRTree.Set(ret, ret)) {
-      base_chunk_dealloc(ret, aSize, UNKNOWN_CHUNK);
+      aChunkAllocator->unmap(ret, aSize);
       return nullptr;
     }
   }
@@ -770,6 +767,30 @@ void* arena_chunk_alloc(size_t aSize, size_t aAlignment) {
   MOZ_ASSERT(GetChunkOffsetForPtr(ret) == 0);
   return ret;
 }
+
+static void* system_pages_map(size_t aSize, size_t aAlignment) {
+  void* ret = nullptr;
+
+  if (CAN_RECYCLE(aSize)) {
+    ret = chunk_recycle(aSize, aAlignment);
+  }
+  if (!ret) {
+    ret = pages_mmap_aligned(aSize, aAlignment, ReserveAndCommit);
+  }
+
+  return ret;
+}
+
+static void system_pages_unmap(void* aAddr, size_t aSize) {
+  base_chunk_dealloc(aAddr, aSize, ARENA_CHUNK);
+}
+
+chunk_allocator_t gSystemChunkAllocator{
+    .map = system_pages_map,
+    .unmap = system_pages_unmap,
+    .commit = pages_commit,
+    .decommit = pages_decommit,
+};
 
 arena_chunk_t::arena_chunk_t(arena_t* aArena)
     : mArena(aArena), mDirtyRunHint(gChunkHeaderNumPages) {}
