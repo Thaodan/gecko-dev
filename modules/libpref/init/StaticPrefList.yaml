@@ -17367,12 +17367,6 @@
   value: 3600
   mirror: always
 
-# Whether only bounces that access storage should be considered trackers.
-- name: privacy.bounceTrackingProtection.requireStatefulBounces
-  type: bool
-  value: false
-  mirror: always
-
 # To be used in automated test environments to enable observer messages.
 - name: privacy.bounceTrackingProtection.enableTestMode
   type: RelaxedAtomicBool
