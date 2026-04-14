@@ -409,9 +409,6 @@ struct arena_t : public BaseAllocClass {
   static constexpr size_t LABEL_MAX_CAPACITY = 128;
   char mLabel[LABEL_MAX_CAPACITY] = {};
 
-  // Chunk allocator used for all of this arena's allocations.
-  chunk_allocator_t* mChunkAllocator;
-
  private:
   // Size/address-ordered tree of this arena's available runs.  This tree
   // is used for first-best-fit run allocation.

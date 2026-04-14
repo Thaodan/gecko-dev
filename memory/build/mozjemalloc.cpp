@@ -1180,8 +1180,8 @@ arena_run_t* arena_t::AllocRun(size_t aSize, bool aLarge, bool aZero) {
   } else {
     // No usable runs.  Create a new chunk from which to allocate
     // the run.
-    arena_chunk_t* chunk = (arena_chunk_t*)arena_chunk_alloc(
-        mChunkAllocator, kChunkSize, kChunkSize);
+    arena_chunk_t* chunk =
+        (arena_chunk_t*)chunk_alloc(kChunkSize, kChunkSize, false);
     if (!chunk) {
       return nullptr;
     }
@@ -1418,8 +1418,7 @@ ArenaPurgeResult arena_t::Purge(
       if (chunk_is_dying) {
         // Phase one already unlinked the chunk from structures, we just need to
         // release the memory.
-        arena_chunk_dealloc(purge_info.mArena.mChunkAllocator, (void*)chunk,
-                            kChunkSize);
+        chunk_dealloc((void*)chunk, kChunkSize, ARENA_CHUNK);
       }
       // There's nothing else to do here, our caller may execute Purge() again
       // if continue_purge_arena is true.
@@ -1477,8 +1476,7 @@ ArenaPurgeResult arena_t::Purge(
     // Phase 2 can release the spare chunk (not always == chunk) so an extra
     // parameter is used to return that chunk.
     if (chunk_to_release) {
-      arena_chunk_dealloc(purge_info.mArena.mChunkAllocator,
-                          (void*)chunk_to_release, kChunkSize);
+      chunk_dealloc((void*)chunk_to_release, kChunkSize, ARENA_CHUNK);
     }
     if (arena_is_dying) {
       return Dying;
@@ -2740,8 +2738,7 @@ static inline void arena_dalloc(void* aPtr, size_t aOffset, arena_t* aArena) {
   }
 
   if (chunk_dealloc_delay) {
-    arena_chunk_dealloc(arena->mChunkAllocator, (void*)chunk_dealloc_delay,
-                        kChunkSize);
+    chunk_dealloc((void*)chunk_dealloc_delay, kChunkSize, ARENA_CHUNK);
   }
 
   arena->MayDoOrQueuePurge(purge_action, "arena_dalloc");
@@ -3015,10 +3012,6 @@ arena_t::arena_t(arena_params_t* aParams, bool aIsPrivate)
         }
       }
     }
-
-    MOZ_ASSERT_IF(aParams->mChunkAllocator, aIsPrivate);
-    mChunkAllocator = aParams->mChunkAllocator ? aParams->mChunkAllocator
-                                               : &gSystemChunkAllocator;
   }
 
   MOZ_RELEASE_ASSERT(mLock.Init(doLock));
@@ -3050,7 +3043,7 @@ arena_t::~arena_t() {
   MOZ_RELEASE_ASSERT(!mStats.allocated_small && !mStats.allocated_large,
                      "Arena is not empty");
   if (mSpare) {
-    arena_chunk_dealloc(mChunkAllocator, mSpare, kChunkSize);
+    chunk_dealloc(mSpare, kChunkSize, ARENA_CHUNK);
   }
   for (i = 0; i < NUM_SMALL_CLASSES; i++) {
     MOZ_RELEASE_ASSERT(mBins[i].mNonFullRuns.isEmpty(), "Bin is not empty");
@@ -3190,7 +3183,7 @@ void* arena_t::PallocHuge(size_t aSize, size_t aAlignment, bool aZero) {
   }
 
   // Allocate one or more contiguous chunks for this request.
-  ret = arena_chunk_alloc(mChunkAllocator, csize, aAlignment);
+  ret = chunk_alloc(csize, aAlignment, false);
   if (!ret) {
     delete node;
     return nullptr;
@@ -3340,7 +3333,7 @@ static void huge_dalloc(void* aPtr, arena_t* aArena) {
   }
 
   // Unmap chunk.
-  arena_chunk_dealloc(node->mArena->mChunkAllocator, node->mAddr, mapped);
+  chunk_dealloc(node->mAddr, mapped, HUGE_CHUNK);
 
   delete node;
 }
