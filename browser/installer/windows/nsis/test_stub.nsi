@@ -177,6 +177,7 @@ Function .onInit
     ${UnitTest} TestUpdateInstalledPostSigningDataFileSuccess
 
     ${UnitTest} TestUseExistingInstallPathIfNoInstallDirArg
+    ${UnitTest} TestUseExistingInstallPathIfNoInstallDirArgWithExistingInRegister
     ${UnitTest} TestUseExistingInstallPathIfNoInstallDirArgWithPathArg
     ${UnitTest} TestUseExistingInstallPathIfNoInstallDirArgWithNameArg
     ${UnitTest} TestUseExistingInstallPathIfNoInstallDirArgWithDArg
@@ -709,6 +710,16 @@ Function TestUseExistingInstallPathIfNoInstallDirArg
   ${AssertEqual} INSTDIR "C:\Existing"
 FunctionEnd
 
+Function TestUseExistingInstallPathIfNoInstallDirArgWithExistingInRegister
+  StrCpy $MockParameters ""
+  StrCpy $INSTDIR "C:\Default"
+  Push $0
+  StrCpy $0 "C:\Existing"
+  ${UseExistingInstallPathIfNoInstallDirArg} $0
+  ${AssertEqual} INSTDIR "C:\Existing"
+  Pop $0
+FunctionEnd
+
 Function TestUseExistingInstallPathIfNoInstallDirArgWithPathArg
   StrCpy $MockParameters "/InstallDirectoryPath=C:\Test"
   StrCpy $INSTDIR "C:\Default"
@@ -724,10 +735,12 @@ Function TestUseExistingInstallPathIfNoInstallDirArgWithNameArg
 FunctionEnd
 
 Function TestUseExistingInstallPathIfNoInstallDirArgWithDArg
+  Push $MockCommandLine
   StrCpy $MockCommandLine "setup.exe /D=C:\Test"
   StrCpy $INSTDIR "C:\Default"
   ${UseExistingInstallPathIfNoInstallDirArg} "C:\Existing"
   ${AssertEqual} INSTDIR "C:\Default"
+  Pop $MockCommandLine
 FunctionEnd
 
 Section
