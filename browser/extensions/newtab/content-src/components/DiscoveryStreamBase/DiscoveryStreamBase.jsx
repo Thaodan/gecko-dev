@@ -16,13 +16,6 @@ import { selectLayoutRender } from "content-src/lib/selectLayoutRender";
 import { TopSites } from "content-src/components/TopSites/TopSites";
 import { CardSections } from "../DiscoveryStreamComponents/CardSections/CardSections";
 import { Widgets } from "content-src/components/Widgets/Widgets";
-import {
-  ASROUTER_NEWTAB_MESSAGE_POSITIONS,
-  shouldShowASRouterNewTabMessage,
-} from "../../lib/asrouter-message-utils.mjs";
-import { ErrorBoundary } from "content-src/components/ErrorBoundary/ErrorBoundary";
-import { MessageWrapper } from "content-src/components/MessageWrapper/MessageWrapper";
-import { ExternalComponentWrapper } from "content-src/components/ExternalComponentWrapper/ExternalComponentWrapper";
 
 // @nova-cleanup(remove-pref): Remove PREF_NOVA_ENABLED
 const PREF_NOVA_ENABLED = "nova.enabled";
@@ -217,8 +210,6 @@ export class _DiscoveryStreamBase extends React.PureComponent {
       prefs: this.props.Prefs.values,
       locale,
     });
-    // @nova-cleanup(remove-pref): Delete this line; remove all !novaEnabled guards on ASRouterNewTabMessage blocks below.
-    const novaEnabled = this.props.Prefs.values[PREF_NOVA_ENABLED];
     const sectionsEnabled =
       this.props.Prefs.values["discoverystream.sections.enabled"];
     const topicSelectionEnabled =
@@ -295,14 +286,6 @@ export class _DiscoveryStreamBase extends React.PureComponent {
           <ReportContent spocs={DiscoveryStream.spocs} />
         )}
 
-        {/**
-         * The ABOVE_TOPSITES ASRouterNewTabMessage rendering actually occurs in Base.jsx
-         * for silly reasons. Essentially, it's easier for the browser_asrouter_newtab_message
-         * mochitest-browser test to render a test message if it doesn't have to rely on
-         * DiscoveryStreamBase being rendered. Thankfully, this can all be removed
-         * after Nova ships.
-         */}
-
         {topSites &&
           this.renderLayout([
             {
@@ -311,27 +294,6 @@ export class _DiscoveryStreamBase extends React.PureComponent {
               sectionType: "topsites",
             },
           ])}
-
-        {
-          // @nova-cleanup(remove-conditional): Remove this entire block; Base.jsx handles ABOVE_WIDGETS in the Nova layout.
-        }
-        {!novaEnabled &&
-          shouldShowASRouterNewTabMessage(
-            this.props.Messages,
-            "ASRouterNewTabMessage",
-            ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_WIDGETS
-          ) && (
-            <ErrorBoundary>
-              <MessageWrapper dispatch={this.props.dispatch}>
-                <ExternalComponentWrapper
-                  type="ASROUTER_NEWTAB_MESSAGE"
-                  messageData={this.props.Messages.messageData}
-                  className="asrouter-newtab-message-wrapper"
-                />
-              </MessageWrapper>
-            </ErrorBoundary>
-          )}
-
         {widgets &&
           this.renderLayout([
             {
@@ -340,27 +302,6 @@ export class _DiscoveryStreamBase extends React.PureComponent {
               sectionType: "widgets",
             },
           ])}
-
-        {
-          //@nova-cleanup(remove-conditional): Remove this entire block; Base.jsx handles ABOVE_CONTENT_FEED in the Nova layout. */
-        }
-        {!novaEnabled &&
-          shouldShowASRouterNewTabMessage(
-            this.props.Messages,
-            "ASRouterNewTabMessage",
-            ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_CONTENT_FEED
-          ) && (
-            <ErrorBoundary>
-              <MessageWrapper dispatch={this.props.dispatch}>
-                <ExternalComponentWrapper
-                  type="ASROUTER_NEWTAB_MESSAGE"
-                  messageData={this.props.Messages.messageData}
-                  className="asrouter-newtab-message-wrapper"
-                />
-              </MessageWrapper>
-            </ErrorBoundary>
-          )}
-
         {!!layoutRender.length && (
           <CollapsibleSection
             className="ds-layout"
@@ -438,7 +379,6 @@ export class _DiscoveryStreamBase extends React.PureComponent {
 
 export const DiscoveryStreamBase = connect(state => ({
   DiscoveryStream: state.DiscoveryStream,
-  Messages: state.Messages,
   Prefs: state.Prefs,
   Sections: state.Sections,
   document: globalThis.document,

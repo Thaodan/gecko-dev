@@ -11,7 +11,6 @@ import {
   useIntersectionObserver,
   getActiveColumnLayout,
 } from "../../../lib/utils";
-import { shouldShowOMCHighlight } from "../../../lib/asrouter-message-utils.mjs";
 import { SectionContextMenu } from "../SectionContextMenu/SectionContextMenu";
 import { SectionFollowButton } from "../SectionFollowButton/SectionFollowButton";
 import { InterestPicker } from "../InterestPicker/InterestPicker";
@@ -120,6 +119,13 @@ const prefToArray = (pref = "") => {
     .filter(item => item);
 };
 
+function shouldShowOMCHighlight(messageData, componentId) {
+  if (!messageData || Object.keys(messageData).length === 0) {
+    return false;
+  }
+  return messageData?.content?.messageType === componentId;
+}
+
 function CardSection({
   sectionPosition,
   section,
@@ -135,8 +141,7 @@ function CardSection({
 }) {
   const prefs = useSelector(state => state.Prefs.values);
 
-  const Messages = useSelector(state => state.Messages);
-  const { messageData } = Messages;
+  const { messageData } = useSelector(state => state.Messages);
 
   const { sectionPersonalization, feeds } = useSelector(
     state => state.DiscoveryStream
@@ -508,7 +513,10 @@ function CardSection({
         {followable !== false &&
           !anySectionsFollowed &&
           sectionPosition === 0 &&
-          shouldShowOMCHighlight(Messages, "FollowSectionButtonHighlight") && (
+          shouldShowOMCHighlight(
+            messageData,
+            "FollowSectionButtonHighlight"
+          ) && (
             <MessageWrapper dispatch={dispatch}>
               <FollowSectionButtonHighlight
                 verticalPosition="inset-block-center"
@@ -523,7 +531,7 @@ function CardSection({
           !anySectionsFollowed &&
           sectionPosition === 0 &&
           shouldShowOMCHighlight(
-            Messages,
+            messageData,
             "FollowSectionButtonAltHighlight"
           ) && (
             <MessageWrapper dispatch={dispatch}>
@@ -632,8 +640,7 @@ function CardSections({
   const { spocs, sectionPersonalization } = useSelector(
     state => state.DiscoveryStream
   );
-  const Messages = useSelector(state => state.Messages);
-  const { messageData } = Messages;
+  const { messageData } = useSelector(state => state.Messages);
   const personalizationEnabled = prefs[PREF_SECTIONS_PERSONALIZATION_ENABLED];
   const interestPickerEnabled = prefs[PREF_INTEREST_PICKER_ENABLED];
   // @nova-cleanup(remove-conditional): Remove novaEnabled check once classic path is gone
@@ -805,7 +812,7 @@ function CardSections({
   function displayP13nCard() {
     if (messageData && Object.keys(messageData).length >= 1) {
       if (
-        shouldShowOMCHighlight(Messages, "PersonalizedCard") &&
+        shouldShowOMCHighlight(messageData, "PersonalizedCard") &&
         prefs[PREF_INFERRED_PERSONALIZATION_USER]
       ) {
         const row = messageData.content.position;

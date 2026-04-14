@@ -22,7 +22,6 @@ import { TopSiteImpressionWrapper } from "./TopSiteImpressionWrapper";
 import { connect } from "react-redux";
 import { MessageWrapper } from "../MessageWrapper/MessageWrapper";
 import { ShortcutFeatureHighlight } from "../DiscoveryStreamComponents/FeatureHighlight/ShortcutFeatureHighlight";
-import { shouldShowOMCHighlight } from "../../lib/asrouter-message-utils.mjs";
 
 const SPOC_TYPE = "SPOC";
 const NEWTAB_SOURCE = "newtab";
@@ -42,6 +41,7 @@ export class TopSiteLink extends React.PureComponent {
     this.state = { screenshotImage: null };
     this.onDragEvent = this.onDragEvent.bind(this);
     this.onKeyPress = this.onKeyPress.bind(this);
+    this.shouldShowOMCHighlight = this.shouldShowOMCHighlight.bind(this);
   }
 
   /*
@@ -220,6 +220,14 @@ export class TopSiteLink extends React.PureComponent {
       imageClassName,
       selectedColor,
     };
+  }
+
+  shouldShowOMCHighlight(componentId) {
+    const messageData = this.props.Messages?.messageData;
+    if (!messageData || Object.keys(messageData).length === 0) {
+      return false;
+    }
+    return messageData?.content?.messageType === componentId;
   }
 
   render() {
@@ -402,23 +410,19 @@ export class TopSiteLink extends React.PureComponent {
               />
             </div>
           </a>
-          {isAddButton &&
-            shouldShowOMCHighlight(
-              this.props.Messages,
-              "ShortcutHighlight"
-            ) && (
-              <MessageWrapper
+          {isAddButton && this.shouldShowOMCHighlight("ShortcutHighlight") && (
+            <MessageWrapper
+              dispatch={this.props.dispatch}
+              onClick={e => e.stopPropagation()}
+            >
+              <ShortcutFeatureHighlight
                 dispatch={this.props.dispatch}
-                onClick={e => e.stopPropagation()}
-              >
-                <ShortcutFeatureHighlight
-                  dispatch={this.props.dispatch}
-                  feature="FEATURE_SHORTCUT_HIGHLIGHT"
-                  position="inset-block-end inset-inline-start"
-                  messageData={this.props.Messages?.messageData}
-                />
-              </MessageWrapper>
-            )}
+                feature="FEATURE_SHORTCUT_HIGHLIGHT"
+                position="inset-block-end inset-inline-start"
+                messageData={this.props.Messages?.messageData}
+              />
+            </MessageWrapper>
+          )}
           {children}
           {impressionStats}
         </div>
