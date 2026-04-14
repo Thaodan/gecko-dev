@@ -1823,10 +1823,6 @@ IPCResult WindowGlobalParent::RecvSetCookies(
   NS_ENSURE_TRUE(csParent, IPC_OK());
   auto* cs = static_cast<net::CookieServiceParent*>(csParent);
 
-  if (!cs->ContentProcessHasCookie(aBaseDomain, aOriginAttributes)) {
-    return IPC_FAIL(this, "Invalid set-cookie request from content process");
-  }
-
   return cs->SetCookies(aBaseDomain, aOriginAttributes, aHost, aIsThirdParty,
                         aCookies, GetBrowsingContext());
 }
