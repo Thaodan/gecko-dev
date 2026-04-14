@@ -4614,7 +4614,7 @@ export class BackupService extends EventTarget {
       if (this.state.encryptionEnabled) {
         await this.disableEncryption();
       }
-      this.deleteLastBackup();
+      await this.deleteLastBackup();
     } catch (e) {
       // Ignore any exceptions
       lazy.logConsole.error(
