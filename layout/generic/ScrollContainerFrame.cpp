@@ -2968,6 +2968,13 @@ void ScrollContainerFrame::ScrollToImpl(
   // None is never a valid scroll origin to be passed in.
   MOZ_ASSERT(aOrigin != ScrollOrigin::None);
 
+  // Capture whether the original origin is Clamp before it is potentially
+  // promoted to Other below. When a reflow expands the container, a Clamp
+  // scroll may be triggered but leave the scroll position unchanged,
+  // hitting the early-exit below — where we must not cancel an in-progress
+  // APZ smooth scroll even if the origin was promoted to Other.
+  const bool isForClamping = aOrigin == ScrollOrigin::Clamp;
+
   // Figure out the effective origin for this scroll request.
   if (aOrigin == ScrollOrigin::NotSpecified) {
     // If no origin was specified, we still want to set it to something that's
@@ -2980,7 +2987,7 @@ void ScrollContainerFrame::ScrollToImpl(
   // was not relative, promote this origin to |other|. This ensures that we
   // may only transmit a relative update to APZ if all scrolls since the last
   // transaction or repaint request have been relative.
-  if (aOrigin == ScrollOrigin::Relative &&
+  if ((aOrigin == ScrollOrigin::Relative || aOrigin == ScrollOrigin::Clamp) &&
       (mLastScrollOrigin != ScrollOrigin::None &&
        mLastScrollOrigin != ScrollOrigin::NotSpecified &&
        mLastScrollOrigin != ScrollOrigin::Relative &&
@@ -3035,7 +3042,7 @@ void ScrollContainerFrame::ScrollToImpl(
     // kicked off. It might be reasonable to eventually remove the
     // mApzSmoothScrollDestination clause from this if statement, as that
     // may simplify this a bit and should be fine from the APZ side.
-    if (mApzSmoothScrollDestination && aOrigin != ScrollOrigin::Clamp) {
+    if (mApzSmoothScrollDestination && !isForClamping) {
       if (aOrigin == ScrollOrigin::Relative) {
         AppendScrollUpdate(
             ScrollPositionUpdate::NewRelativeScroll(mApzScrollPos, pt));
