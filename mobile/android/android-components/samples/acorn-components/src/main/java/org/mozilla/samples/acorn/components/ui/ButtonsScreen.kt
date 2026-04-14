@@ -18,6 +18,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -28,6 +32,7 @@ import mozilla.components.compose.base.button.FloatingActionButton
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.button.OutlinedButton
 import mozilla.components.compose.base.button.TextButton
+import mozilla.components.compose.base.textfield.TextField
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.ui.icons.R as iconsR
 
@@ -37,6 +42,8 @@ import mozilla.components.ui.icons.R as iconsR
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ButtonsScreen(onNavigateUp: () -> Unit = {}) {
+    var buttonLabel by remember { mutableStateOf("Label") }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -69,37 +76,51 @@ fun ButtonsScreen(onNavigateUp: () -> Unit = {}) {
                 .padding(vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            FilledButtonSection()
+            TextField(
+                value = buttonLabel,
+                onValueChange = { buttonLabel = it },
+                placeholder = "Enter button label",
+                errorText = "",
+                label = "Button Label",
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
             HorizontalDivider()
-            OutlinedButtonSection()
+
+            FilledButtonSection(label = buttonLabel)
             HorizontalDivider()
-            DestructiveButtonSection()
+
+            OutlinedButtonSection(label = buttonLabel)
             HorizontalDivider()
-            TextButtonSection()
+
+            DestructiveButtonSection(label = buttonLabel)
             HorizontalDivider()
-            FloatingActionButtonSection()
+
+            TextButtonSection(label = buttonLabel)
+            HorizontalDivider()
+
+            FloatingActionButtonSection(label = buttonLabel)
         }
     }
 }
 
 @Composable
-private fun FilledButtonSection() {
+private fun FilledButtonSection(label: String) {
     Column(
         modifier = Modifier.padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(text = "Filled Button", style = AcornTheme.typography.subtitle1)
 
-        FilledButton(text = "Label", onClick = {})
+        FilledButton(text = label, onClick = {})
 
         FilledButton(
-            text = "Label",
+            text = label,
             icon = painterResource(iconsR.drawable.mozac_ic_collection_24),
             onClick = {},
         )
 
         FilledButton(
-            text = "Label",
+            text = label,
             enabled = false,
             icon = painterResource(iconsR.drawable.mozac_ic_collection_24),
             onClick = {},
@@ -108,23 +129,23 @@ private fun FilledButtonSection() {
 }
 
 @Composable
-private fun OutlinedButtonSection() {
+private fun OutlinedButtonSection(label: String) {
     Column(
         modifier = Modifier.padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(text = "Outlined Button", style = AcornTheme.typography.subtitle1)
 
-        OutlinedButton(text = "Label", onClick = {})
+        OutlinedButton(text = label, onClick = {})
 
         OutlinedButton(
-            text = "Label",
+            text = label,
             icon = painterResource(iconsR.drawable.mozac_ic_collection_24),
             onClick = {},
         )
 
         OutlinedButton(
-            text = "Label",
+            text = label,
             enabled = false,
             icon = painterResource(iconsR.drawable.mozac_ic_collection_24),
             onClick = {},
@@ -133,17 +154,17 @@ private fun OutlinedButtonSection() {
 }
 
 @Composable
-private fun DestructiveButtonSection() {
+private fun DestructiveButtonSection(label: String) {
     Column(
         modifier = Modifier.padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text(text = "Label", style = AcornTheme.typography.subtitle1)
+        Text(text = "Destructive Button", style = AcornTheme.typography.subtitle1)
 
-        DestructiveButton(text = "Label", onClick = {})
+        DestructiveButton(text = label, onClick = {})
 
         DestructiveButton(
-            text = "Label",
+            text = label,
             icon = painterResource(iconsR.drawable.mozac_ic_collection_24),
             onClick = {},
         )
@@ -151,21 +172,21 @@ private fun DestructiveButtonSection() {
 }
 
 @Composable
-private fun TextButtonSection() {
+private fun TextButtonSection(label: String) {
     Column(
         modifier = Modifier.padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(text = "Text Button", style = AcornTheme.typography.subtitle1)
 
-        TextButton(text = "Label", onClick = {})
+        TextButton(text = label, onClick = {})
 
-        TextButton(text = "Label", enabled = false, onClick = {})
+        TextButton(text = label, enabled = false, onClick = {})
     }
 }
 
 @Composable
-private fun FloatingActionButtonSection() {
+private fun FloatingActionButtonSection(label: String) {
     Column(
         modifier = Modifier.padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -179,7 +200,7 @@ private fun FloatingActionButtonSection() {
 
         FloatingActionButton(
             icon = painterResource(iconsR.drawable.mozac_ic_plus_24),
-            label = "Label",
+            label = label,
             onClick = {},
         )
     }
