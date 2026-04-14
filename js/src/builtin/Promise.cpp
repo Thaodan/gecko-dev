@@ -2026,14 +2026,15 @@ enum GetCapabilitiesExecutorSlots {
  * https://tc39.es/ecma262/#sec-promise-executor
  */
 [[nodiscard]] PromiseObject* js::CreatePromiseObjectWithoutResolutionFunctions(
-    JSContext* cx) {
+    JSContext* cx, int32_t extraFlags) {
   // Steps 3-7.
   JS::Rooted<PromiseObject*> promise(cx, CreatePromiseObjectInternal(cx));
   if (!promise) {
     return nullptr;
   }
 
-  AddPromiseFlags(*promise, PROMISE_FLAG_DEFAULT_RESOLVING_FUNCTIONS);
+  AddPromiseFlags(*promise,
+                  PROMISE_FLAG_DEFAULT_RESOLVING_FUNCTIONS | extraFlags);
 
   // Let the Debugger know about this Promise, after we've set
   // flags and slots.
@@ -6479,12 +6480,12 @@ static bool OriginalPromiseThenBuiltin(JSContext* cx, HandleValue promiseVal,
  */
 [[nodiscard]] PromiseObject* js::CreatePromiseObjectForAsync(JSContext* cx) {
   // Step 1. Let promiseCapability be ! NewPromiseCapability(%Promise%).
-  PromiseObject* promise = CreatePromiseObjectWithoutResolutionFunctions(cx);
+  PromiseObject* promise =
+      CreatePromiseObjectWithoutResolutionFunctions(cx, PROMISE_FLAG_ASYNC);
   if (!promise) {
     return nullptr;
   }
 
-  AddPromiseFlags(*promise, PROMISE_FLAG_ASYNC);
   return promise;
 }
 
@@ -6495,12 +6496,12 @@ bool js::IsPromiseForAsyncFunctionOrGenerator(JSObject* promise) {
 
 [[nodiscard]] PromiseObject* js::CreatePromiseObjectForAsyncGenerator(
     JSContext* cx) {
-  PromiseObject* promise = CreatePromiseObjectWithoutResolutionFunctions(cx);
+  PromiseObject* promise =
+      CreatePromiseObjectWithoutResolutionFunctions(cx, PROMISE_FLAG_ASYNC);
   if (!promise) {
     return nullptr;
   }
 
-  AddPromiseFlags(*promise, PROMISE_FLAG_ASYNC);
   return promise;
 }
 
