@@ -360,7 +360,6 @@ module.exports = [
       "toolkit/themes/shared/offlineSupportPages.css",
       "toolkit/themes/shared/pictureinpicture/player.css",
       "toolkit/themes/shared/pictureinpicture/texttracks.css",
-      "toolkit/themes/shared/popup.css",
       "toolkit/themes/shared/profileDowngrade.css",
       "toolkit/themes/shared/profileSelection.css",
       "toolkit/themes/shared/radio.css",
