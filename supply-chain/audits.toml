@@ -4657,7 +4657,7 @@ who = [
     "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "28.0.0 -> 28.0.0@git:43f48b43ee8b31289f65c3d6c80444897fa1c80e"
+delta = "28.0.0 -> 28.0.0@git:de1e7aae31290751a141f029bfc69174102746d9"
 importable = false
 
 [[audits.net2]]
@@ -7463,7 +7463,7 @@ who = [
     "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "28.0.0 -> 28.0.0@git:43f48b43ee8b31289f65c3d6c80444897fa1c80e"
+delta = "28.0.0 -> 28.0.0@git:de1e7aae31290751a141f029bfc69174102746d9"
 importable = false
 
 [[audits.wgpu-core-deps-apple]]
@@ -7500,11 +7500,11 @@ delta = "27.0.0 -> 28.0.0"
 who = [
     "Jim Blandy <jimb@red-bean.com>",
     "Andy Leiserson <aleiserson@mozilla.com>",
-    "Erich Gubler <erichdongubler@gmail.com>",
     "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
+    "Erich Gubler <erichdongubler@gmail.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "28.0.0 -> 28.0.0@git:43f48b43ee8b31289f65c3d6c80444897fa1c80e"
+delta = "28.0.0 -> 28.0.0@git:de1e7aae31290751a141f029bfc69174102746d9"
 importable = false
 
 [[audits.wgpu-core-deps-windows-linux-android]]
@@ -7545,7 +7545,7 @@ who = [
     "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "28.0.0 -> 28.0.0@git:43f48b43ee8b31289f65c3d6c80444897fa1c80e"
+delta = "28.0.0 -> 28.0.0@git:de1e7aae31290751a141f029bfc69174102746d9"
 importable = false
 
 [[audits.wgpu-hal]]
@@ -7664,7 +7664,7 @@ who = [
     "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "28.0.0 -> 28.0.0@git:43f48b43ee8b31289f65c3d6c80444897fa1c80e"
+delta = "28.0.0 -> 28.0.0@git:de1e7aae31290751a141f029bfc69174102746d9"
 importable = false
 
 [[audits.wgpu-types]]
@@ -7774,11 +7774,11 @@ delta = "27.0.0 -> 28.0.0"
 who = [
     "Jim Blandy <jimb@red-bean.com>",
     "Andy Leiserson <aleiserson@mozilla.com>",
-    "Erich Gubler <erichdongubler@gmail.com>",
     "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
+    "Erich Gubler <erichdongubler@gmail.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "28.0.0 -> 28.0.0@git:43f48b43ee8b31289f65c3d6c80444897fa1c80e"
+delta = "28.0.0 -> 28.0.0@git:de1e7aae31290751a141f029bfc69174102746d9"
 importable = false
 
 [[audits.whatsys]]
