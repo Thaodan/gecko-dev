@@ -15540,7 +15540,7 @@ bool Document::IsFullscreenLeaf() {
   return Fullscreen() && CountFullscreenSubDocuments(*this) == 0;
 }
 
-static Document* GetFullscreenLeaf(Document& aDoc) {
+/* static */ Document* Document::GetFullscreenLeaf(Document& aDoc) {
   if (aDoc.IsFullscreenLeaf()) {
     return &aDoc;
   }
@@ -15555,7 +15555,7 @@ static Document* GetFullscreenLeaf(Document& aDoc) {
   return leaf;
 }
 
-static Document* GetFullscreenLeaf(Document* aDoc) {
+/* static */ Document* Document::GetFullscreenLeaf(Document* aDoc) {
   if (Document* leaf = GetFullscreenLeaf(*aDoc)) {
     return leaf;
   }
