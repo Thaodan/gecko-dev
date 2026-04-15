@@ -13,12 +13,8 @@ namespace mozilla::dom {
 
 class InternalResponse;
 
-using SynthesizeResponseArgs =
-    std::tuple<SafeRefPtr<InternalResponse>, FetchEventRespondWithClosure,
-               FetchEventTimeStamps>;
-
 using FetchEventRespondWithResult =
-    Variant<SynthesizeResponseArgs, ResetInterceptionArgs,
+    Variant<ChildToParentSynthesizeResponseArgs, ResetInterceptionArgs,
             CancelInterceptionArgs>;
 
 using FetchEventRespondWithPromise =
