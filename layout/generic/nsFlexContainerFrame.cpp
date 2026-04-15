@@ -2995,8 +2995,8 @@ void nsFlexContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     BuildDisplayListForChild(aBuilder, childFrame, childLists, flags);
   }
 
-  if (GetPrevInFlow() || GetNextInFlow()) {
-    DisplayAbsoluteFramesNotBuiltByPlaceholder(aBuilder, tempLists);
+  if (GetPrevInFlow()) {
+    DisplayPushedAbsoluteFrames(aBuilder, tempLists);
   }
 
   tempLists.MoveTo(aLists);

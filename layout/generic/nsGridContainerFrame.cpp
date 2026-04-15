@@ -10316,8 +10316,8 @@ void nsGridContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     BuildDisplayListForChild(aBuilder, child, aLists, flags);
   }
 
-  if (GetPrevInFlow() || GetNextInFlow()) {
-    DisplayAbsoluteFramesNotBuiltByPlaceholder(aBuilder, aLists);
+  if (GetPrevInFlow()) {
+    DisplayPushedAbsoluteFrames(aBuilder, aLists);
   }
 }
 

@@ -248,8 +248,8 @@ void nsFieldSetFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     BuildDisplayListForChild(aBuilder, legend, set);
   }
 
-  if (GetPrevInFlow() || GetNextInFlow()) {
-    DisplayAbsoluteFramesNotBuiltByPlaceholder(aBuilder, aLists);
+  if (GetPrevInFlow()) {
+    DisplayPushedAbsoluteFrames(aBuilder, aLists);
   }
 
   // Put the inner frame's display items on the master list. Note that this
