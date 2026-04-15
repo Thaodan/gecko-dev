@@ -178,6 +178,7 @@
 #include "nsIURI.h"
 #include "nsImageFrame.h"
 #include "nsLayoutUtils.h"
+#include "nsListControlFrame.h"
 #include "nsMenuPopupFrame.h"
 #include "nsNameSpaceManager.h"  // for Pref-related rule management (bugs 22963,20760,31816)
 #include "nsNetUtil.h"
@@ -8634,10 +8635,31 @@ nsIFrame* PresShell::EventHandler::ComputeRootFrameToHandleEvent(
     return rootFrameToHandleEvent;
   }
 
-  // If we have capturing content, let's compute root frame with it again.
-  return ComputeRootFrameToHandleEventWithCapturingContent(
-      rootFrameToHandleEvent, aCapturingContent, aIsCapturingContentIgnored,
-      aIsCaptureRetargeted);
+  *aIsCapturingContentIgnored = false;
+  *aIsCaptureRetargeted = false;
+
+  // If a capture is active, determine if the BrowsingContext is active. If
+  // not, clear the capture and target the mouse event normally instead. This
+  // would occur if the mouse button is held down while a tab change occurs.
+  // If the BrowsingContext is active, look for a scrolling container.
+  BrowsingContext* bc = GetPresContext()->Document()->GetBrowsingContext();
+  if (!bc || !bc->IsActive()) {
+    ClearMouseCapture();
+    *aIsCapturingContentIgnored = true;
+    return rootFrameToHandleEvent;
+  }
+
+  *aIsCaptureRetargeted = !!PresShell::sCapturingContentInfo.mRetargetToElement;
+
+  // As a special case, if a listbox is capturing, return its scrolled frame,
+  // see bug 519693.
+  // FIXME(emilio): This is super inconsistent, there should be a better way of
+  // making that work.
+  if (nsListControlFrame* lcf =
+          do_QueryFrame(aCapturingContent->GetPrimaryFrame())) {
+    return lcf->GetScrolledFrame();
+  }
+  return rootFrameToHandleEvent;
 }
 
 nsIFrame* PresShell::EventHandler::ComputeRootFrameToHandleEventWithPopup(
@@ -8691,46 +8713,6 @@ nsIFrame* PresShell::EventHandler::ComputeRootFrameToHandleEventWithPopup(
   }
 
   return aRootFrameToHandleEvent;
-}
-
-nsIFrame*
-PresShell::EventHandler::ComputeRootFrameToHandleEventWithCapturingContent(
-    nsIFrame* aRootFrameToHandleEvent, nsIContent* aCapturingContent,
-    bool* aIsCapturingContentIgnored, bool* aIsCaptureRetargeted) {
-  MOZ_ASSERT(aRootFrameToHandleEvent);
-  MOZ_ASSERT(aCapturingContent);
-  MOZ_ASSERT(aIsCapturingContentIgnored);
-  MOZ_ASSERT(aIsCaptureRetargeted);
-
-  *aIsCapturingContentIgnored = false;
-  *aIsCaptureRetargeted = false;
-
-  // If a capture is active, determine if the BrowsingContext is active. If
-  // not, clear the capture and target the mouse event normally instead. This
-  // would occur if the mouse button is held down while a tab change occurs.
-  // If the BrowsingContext is active, look for a scrolling container.
-  BrowsingContext* bc = GetPresContext()->Document()->GetBrowsingContext();
-  if (!bc || !bc->IsActive()) {
-    ClearMouseCapture();
-    *aIsCapturingContentIgnored = true;
-    return aRootFrameToHandleEvent;
-  }
-
-  if (PresShell::sCapturingContentInfo.mRetargetToElement) {
-    *aIsCaptureRetargeted = true;
-    return aRootFrameToHandleEvent;
-  }
-
-  nsIFrame* captureFrame = aCapturingContent->GetPrimaryFrame();
-  if (!captureFrame) {
-    return aRootFrameToHandleEvent;
-  }
-
-  // scrollable frames should use the scrolling container as the root instead
-  // of the document
-  ScrollContainerFrame* scrollFrame = do_QueryFrame(captureFrame);
-  return scrollFrame ? scrollFrame->GetScrolledFrame()
-                     : aRootFrameToHandleEvent;
 }
 
 nsresult

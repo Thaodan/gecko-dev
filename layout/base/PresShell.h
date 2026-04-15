@@ -2795,31 +2795,6 @@ class PresShell final : public nsStubDocumentObserver,
         nsIContent* aCapturingContent, bool* aIsCapturingContentIgnored);
 
     /**
-     * ComputeRootFrameToHandleEventWithCapturingContent() returns root frame
-     * to handle event for the capturing content, or aRootFrameToHandleEvent
-     * if it should be ignored.
-     *
-     * @param aRootFrameToHandleEvent           Candidate root frame to handle
-     *                                          the event.
-     * @param aCapturingContent                 Capturing content.  nullptr is
-     *                                          not allowed.
-     * @param aIsCapturingContentIgnored        [out] true if aCapturingContent
-     *                                          is not nullptr but it should be
-     *                                          ignored to handle the event.
-     * @param aIsCaptureRetargeted              [out] true if aCapturingContent
-     *                                          is not nullptr but it's
-     *                                          retargeted.
-     * @return                                  A popup frame if there is a
-     *                                          popup and we should handle the
-     *                                          event in it.  Otherwise,
-     *                                          aRootFrameToHandleEvent.
-     *                                          I.e., never returns nullptr.
-     */
-    nsIFrame* ComputeRootFrameToHandleEventWithCapturingContent(
-        nsIFrame* aRootFrameToHandleEvent, nsIContent* aCapturingContent,
-        bool* aIsCapturingContentIgnored, bool* aIsCaptureRetargeted);
-
-    /**
      * HandleEventWithPointerCapturingContentWithoutItsFrame() handles
      * aGUIEvent with aPointerCapturingContent when it does not have primary
      * frame.
