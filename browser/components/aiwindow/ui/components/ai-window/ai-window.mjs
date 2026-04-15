@@ -42,7 +42,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/models/ConversationSuggestions.sys.mjs",
   MemoriesManager:
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs",
-  MODELS:
+  getCurrentModelName:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs",
 });
 
@@ -1388,11 +1388,7 @@ export class AIWindow extends MozLitElement {
   }
 
   get modelName() {
-    const modelChoice = Services.prefs.getStringPref(
-      "browser.smartwindow.firstrun.modelChoice",
-      ""
-    );
-    return lazy.MODELS[modelChoice]?.modelName;
+    return lazy.getCurrentModelName();
   }
 
   #getConversationLastMessageAndCount(role) {
