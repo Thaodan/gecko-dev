@@ -111,6 +111,7 @@ def run_nightly_builds_action(parameters, graph_config, input, task_group_id, ta
     # previous graphs.
     parameters["optimize_target_tasks"] = True
 
+    parameters["dontbuild"] = False
     # make parameters read-only
     parameters = Parameters(**parameters)
 
