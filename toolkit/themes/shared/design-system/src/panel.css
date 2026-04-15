@@ -10,8 +10,8 @@
   --panel-color: FieldText;
   --panel-padding-block: var(--dimension-4);
   --panel-padding: var(--dimension-16);
-  --panel-shadow-margin: 12px;
-  --panel-shadow: var(--popup-box-shadow);
+  --panel-shadow-margin: var(--dimension-4);
+  --panel-shadow: 0 0 var(--panel-shadow-margin) hsla(0, 0%, 0%, 0.2);
   --panel-width: initial;
   --panel-dimmed: color-mix(in srgb, currentColor 17%, transparent);
   --panel-dimmed-further: color-mix(in srgb, currentColor 30%, transparent);
