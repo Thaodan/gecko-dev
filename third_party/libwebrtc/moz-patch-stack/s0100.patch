@@ -74,7 +74,7 @@ index a97e2f18b4..e03aab02cf 100644
  # The python interpreter to use by default. On Windows, this will look
  # for python3.exe and python3.bat.
 diff --git a/BUILD.gn b/BUILD.gn
-index 0c942fbb0e..7c5ba7f195 100644
+index 9c258bf486..2e498a0f67 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -21,15 +21,15 @@
@@ -106,7 +106,7 @@ index 0c942fbb0e..7c5ba7f195 100644
      defines = []
  
      deps = [
-@@ -837,7 +837,7 @@ rtc_static_library("dcsctp") {
+@@ -841,7 +841,7 @@ rtc_static_library("dcsctp") {
    visibility = [ "//:default" ]
    sources = []
    complete_static_lib = true
@@ -115,7 +115,7 @@ index 0c942fbb0e..7c5ba7f195 100644
    defines = []
    deps = [
      "net/dcsctp/public:factory",
-@@ -875,7 +875,7 @@ group("poison_default_neural_residual_echo_estimator") {
+@@ -879,7 +879,7 @@ group("poison_default_neural_residual_echo_estimator") {
  if (!build_with_chromium) {
    # Write debug logs to gn_logs.txt.
    # This is also required for Siso builds.
@@ -574,7 +574,7 @@ index a693604389..72972d18e1 100644
  import("../../webrtc.gni")
  
 diff --git a/modules/video_coding/BUILD.gn b/modules/video_coding/BUILD.gn
-index 0cd19e98f1..59b7d71e35 100644
+index a03ac2288f..7837aaf12a 100644
 --- a/modules/video_coding/BUILD.gn
 +++ b/modules/video_coding/BUILD.gn
 @@ -6,7 +6,7 @@

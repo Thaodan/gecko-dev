@@ -69,11 +69,11 @@ Bug 1883116 - (fix-3d9c3687a4) Supporting change of call_factory.cc to create_ca
 Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/b86cb7278bc4e557104cec0313d83511b9c8f40d
 ---
  .gn                                           |  2 +
- BUILD.gn                                      | 44 ++++++++++++++++++-
- api/BUILD.gn                                  | 37 +++++++++++++++-
+ BUILD.gn                                      | 48 ++++++++++++++++++-
+ api/BUILD.gn                                  | 37 +++++++++++++-
  api/rtp_sender_interface.h                    |  4 +-
- api/rtp_sender_setparameters_callback.cc      | 27 ++++++++++++
- api/rtp_sender_setparameters_callback.h       | 28 ++++++++++++
+ api/rtp_sender_setparameters_callback.cc      | 27 +++++++++++
+ api/rtp_sender_setparameters_callback.h       | 28 +++++++++++
  api/task_queue/BUILD.gn                       |  2 +
  api/transport/BUILD.gn                        |  2 +
  call/BUILD.gn                                 |  2 +-
@@ -81,24 +81,24 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/b86cb7278bc4e5571
  call/video_send_stream.h                      |  2 +-
  common_audio/BUILD.gn                         |  4 --
  common_audio/fir_filter_avx2.cc               |  2 +
- media/BUILD.gn                                | 39 +++++++++++++++-
+ media/BUILD.gn                                | 39 ++++++++++++++-
  media/base/media_channel.h                    |  3 --
  media/base/media_channel_impl.cc              |  9 ----
  modules/audio_coding/BUILD.gn                 |  2 +-
  modules/audio_device/BUILD.gn                 | 17 +++++--
- modules/audio_processing/aec3/BUILD.gn        | 13 +++---
+ modules/audio_processing/aec3/BUILD.gn        | 13 ++---
  .../aec3/adaptive_fir_filter_avx2.cc          |  2 +-
  .../audio_processing/agc2/rnn_vad/BUILD.gn    |  2 +-
- modules/desktop_capture/BUILD.gn              | 29 +-----------
+ modules/desktop_capture/BUILD.gn              | 29 +----------
  modules/portal/BUILD.gn                       | 24 ++++++++++
  modules/utility/BUILD.gn                      |  4 ++
  modules/video_capture/BUILD.gn                | 11 +----
- rtc_base/BUILD.gn                             | 26 ++++++++++-
+ rtc_base/BUILD.gn                             | 26 +++++++++-
  rtc_base/system/BUILD.gn                      |  2 +-
- test/BUILD.gn                                 | 10 +++++
+ test/BUILD.gn                                 | 10 ++++
  video/BUILD.gn                                |  4 +-
- webrtc.gni                                    | 32 +++++++++-----
- 30 files changed, 295 insertions(+), 92 deletions(-)
+ webrtc.gni                                    | 32 ++++++++-----
+ 30 files changed, 299 insertions(+), 92 deletions(-)
  create mode 100644 api/rtp_sender_setparameters_callback.cc
  create mode 100644 api/rtp_sender_setparameters_callback.h
 
@@ -116,7 +116,7 @@ index 4706638e3e..675807743a 100644
    # TODO(https://bugs.webrtc.org/14437):  Remove this section if general
    # Chromium fix resolves the problem.
 diff --git a/BUILD.gn b/BUILD.gn
-index 4d154f8e19..821060e2e3 100644
+index 4d154f8e19..f1d13160d2 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -33,7 +33,7 @@ if (is_android) {
@@ -184,8 +184,13 @@ index 4d154f8e19..821060e2e3 100644
  
      if (rtc_include_builtin_audio_codecs) {
        deps += [
-@@ -553,6 +585,16 @@ if (!build_with_chromium) {
+@@ -551,8 +583,22 @@ if (!build_with_chromium) {
+ 
+     if (build_with_mozilla) {
        deps += [
++        "api:frame_transformer_factory",
++        "api/audio:builtin_audio_processing_builder",
++        "api/video:builtin_video_bitrate_allocator_factory",
          "api/video:video_frame",
          "api/video:video_rtp_headers",
 +        "test:rtp_test_utils",
@@ -193,6 +198,7 @@ index 4d154f8e19..821060e2e3 100644
 +      # Added when we removed deps in other places to avoid building
 +      # unreachable sources.  See Bug 1820869.
 +      deps += [
++        "api/audio:aec3_factory",
 +        "api/video_codecs:video_codecs_api",
 +        "api/video_codecs:rtc_software_fallback_wrappers",
 +        "media:rtc_simulcast_encoder_adapter",
