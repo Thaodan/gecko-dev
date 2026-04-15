@@ -10979,12 +10979,12 @@ static bool StartSerializingShadowDOM(
   if (shadow->Serializable()) {
     aBuilder.Append(u" shadowrootserializable=\"\"");
   }
-  if (shadow->Clonable()) {
-    aBuilder.Append(u" shadowrootclonable=\"\"");
-  }
   if (StaticPrefs::dom_shadowdom_shadowRootSlotAssignment_enabled() &&
       shadow->SlotAssignment() == SlotAssignmentMode::Manual) {
     aBuilder.Append(u" shadowrootslotassignment=\"manual\"");
+  }
+  if (shadow->Clonable()) {
+    aBuilder.Append(u" shadowrootclonable=\"\"");
   }
 
   aBuilder.Append(u">");
