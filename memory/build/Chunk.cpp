@@ -648,7 +648,7 @@ void base_chunk_dealloc(void* aChunk, size_t aSize, ChunkType aType) {
 }
 
 // Deallocate chunks used for Arena allocations.
-void arena_chunk_dealloc(void* aChunk, size_t aSize, ChunkType aType) {
+void arena_chunk_dealloc(void* aChunk, size_t aSize) {
   MOZ_ASSERT(aChunk);
   MOZ_ASSERT(GetChunkOffsetForPtr(aChunk) == 0);
   MOZ_ASSERT(aSize != 0);
@@ -656,7 +656,7 @@ void arena_chunk_dealloc(void* aChunk, size_t aSize, ChunkType aType) {
 
   gChunkRTree.Unset(aChunk);
 
-  base_chunk_dealloc(aChunk, aSize, aType);
+  base_chunk_dealloc(aChunk, aSize, ARENA_CHUNK);
 }
 
 static void* chunk_recycle(size_t aSize, size_t aAlignment) {

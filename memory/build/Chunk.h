@@ -207,7 +207,7 @@ void base_chunk_dealloc(void* aChunk, size_t aSize, ChunkType aType);
 
 void* arena_chunk_alloc(size_t aSize, size_t aAlignment);
 
-void arena_chunk_dealloc(void* aChunk, size_t aSize, ChunkType aType);
+void arena_chunk_dealloc(void* aChunk, size_t aSize);
 #ifdef MOZ_DEBUG
 void chunk_assert_zero(void* aPtr, size_t aSize);
 #endif
