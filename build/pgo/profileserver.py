@@ -198,17 +198,17 @@ if __name__ == "__main__":
         runner = FirefoxRunner(
             profile=profile,
             binary=binary,
-            cmdargs=[f"http://localhost:{PORT}/quit.html"],
+            cmdargs=["data:text/html,<script>Quitter.quit()</script>"],
             env=env,
             process_args=process_args,
         )
         runner.start()
         ret = runner.wait()
         if ret:
-            print(f"Firefox exited with code {ret} during profile initialization")
+            print("Firefox exited with code %d during profile initialization" % ret)
             logfile = process_args.get("logfile")
             if logfile:
-                print(f"Firefox output ({logfile}):")
+                print("Firefox output (%s):" % logfile)
                 with open(logfile) as f:
                     print(f.read())
             sp3_httpd.stop()

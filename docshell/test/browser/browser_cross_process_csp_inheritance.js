@@ -9,7 +9,8 @@ const TEST_PATH = getRootDirectory(gTestPath).replace(
   "http://example.com"
 );
 const TEST_URI = TEST_PATH + "file_cross_process_csp_inheritance.html";
-const BLOB_CONTENT = "<html>test-same-diff-process-csp-inhertiance</html>";
+const DATA_URI =
+  "data:text/html,<html>test-same-diff-process-csp-inhertiance</html>";
 
 const FISSION_ENABLED = SpecialPowers.useRemoteSubframes;
 
@@ -26,16 +27,24 @@ function getCurrentURI(aBrowser) {
   });
 }
 
-function verifyResult(aTestName, aBrowser, aPID, aSamePID, aFissionEnabled) {
+function verifyResult(
+  aTestName,
+  aBrowser,
+  aDataURI,
+  aPID,
+  aSamePID,
+  aFissionEnabled
+) {
   return SpecialPowers.spawn(
     aBrowser,
-    [{ aTestName, aPID, aSamePID, aFissionEnabled }],
-    async function ({ aTestName, aPID, aSamePID, aFissionEnabled }) {
-      // sanity, to make sure a blob: URI was loaded
+    [{ aTestName, aDataURI, aPID, aSamePID, aFissionEnabled }],
+    async function ({ aTestName, aDataURI, aPID, aSamePID, aFissionEnabled }) {
+      // sanity, to make sure the correct URI was loaded
       let channel = content.docShell.currentDocumentChannel;
-      ok(
-        channel.URI.asciiSpec.startsWith("blob:"),
-        aTestName + ": blob uri loaded"
+      is(
+        channel.URI.asciiSpec,
+        aDataURI,
+        aTestName + ": correct data uri loaded"
       );
 
       // check that the process ID is the same/different when opening the new tab
@@ -44,7 +53,7 @@ function verifyResult(aTestName, aBrowser, aPID, aSamePID, aFissionEnabled) {
         is(pid, aPID, aTestName + ": process ID needs to be identical");
       } else if (aFissionEnabled) {
         // TODO: Fission discards dom.noopener.newprocess.enabled and puts
-        // blob: URIs in the same process. Unfortunately todo_isnot is not
+        // data: URIs in the same process. Unfortunately todo_isnot is not
         // defined in that scope, hence we have to use a workaround.
         todo(
           false,
@@ -76,21 +85,7 @@ async function simulateCspInheritanceForNewTab(aTestName, aSamePID) {
     is(currentURI, TEST_URI, aTestName + ": correct test uri loaded");
 
     let pid = await getCurrentPID(gBrowser.selectedBrowser);
-
-    // Create a blob URL in the content and set it on the link.
-    // We do this from SpecialPowers because the page's CSP blocks scripts.
-    let blobURL = await SpecialPowers.spawn(
-      gBrowser.selectedBrowser,
-      [BLOB_CONTENT],
-      function (html) {
-        let blob = new content.Blob([html], { type: "text/html" });
-        let url = content.URL.createObjectURL(blob);
-        content.document.getElementById("testLink").href = url;
-        return url;
-      }
-    );
-
-    let loadPromise = BrowserTestUtils.waitForNewTab(gBrowser, blobURL, true);
+    let loadPromise = BrowserTestUtils.waitForNewTab(gBrowser, DATA_URI, true);
     // simulate click
     BrowserTestUtils.synthesizeMouseAtCenter(
       "#testLink",
@@ -98,10 +93,11 @@ async function simulateCspInheritanceForNewTab(aTestName, aSamePID) {
       gBrowser.selectedBrowser
     );
     let tab = await loadPromise;
-    gBrowser.selectedTab = tab;
+    gBrowser.selectTabAtIndex(2);
     await verifyResult(
       aTestName,
       gBrowser.selectedBrowser,
+      DATA_URI,
       pid,
       aSamePID,
       FISSION_ENABLED
@@ -111,7 +107,7 @@ async function simulateCspInheritanceForNewTab(aTestName, aSamePID) {
 }
 
 add_task(async function test_csp_inheritance_diff_process() {
-  // forcing the new blob: URI load to happen in a *new* process by flipping the pref
+  // forcing the new data: URI load to happen in a *new* process by flipping the pref
   // to force <a rel="noopener" ...> to be loaded in a new process.
   await SpecialPowers.pushPrefEnv({
     set: [["dom.noopener.newprocess.enabled", true]],
@@ -120,7 +116,7 @@ add_task(async function test_csp_inheritance_diff_process() {
 });
 
 add_task(async function test_csp_inheritance_same_process() {
-  // forcing the new blob: URI load to happen in a *same* process by resetting the pref
+  // forcing the new data: URI load to happen in a *same* process by resetting the pref
   // and loaded <a rel="noopener" ...> in the *same* process.
   await SpecialPowers.pushPrefEnv({
     set: [["dom.noopener.newprocess.enabled", false]],

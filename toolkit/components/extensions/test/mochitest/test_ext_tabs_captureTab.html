@@ -13,31 +13,28 @@
 "use strict";
 
 async function runTest({ html, fullZoom, coords, rect, scale }) {
-  let blob = new Blob([html], { type: "text/html" });
-  let url = URL.createObjectURL(blob) + "#scroll";
+  let url = `data:text/html,${encodeURIComponent(html)}#scroll`;
 
-  async function background({ coords, rect, scale, method, fullZoom, url }) {
+  async function background({ coords, rect, scale, method, fullZoom }) {
     try {
       // Wait for the page to load
-      let { tabId, windowId } = await new Promise(resolve => {
-        function listener(details) {
-          if (details.frameId !== 0 || details.url !== url) {
-            return;
-          }
-          browser.webNavigation.onCompleted.removeListener(listener);
-          resolve(details);
-        }
-        browser.webNavigation.onCompleted.addListener(listener);
+      await new Promise(resolve => {
+        browser.webNavigation.onCompleted.addListener(
+          () => resolve(),
+          {url: [{schemes: ["data"]}]});
       });
 
-      let tab = await browser.tabs.get(tabId);
+      let [tab] = await browser.tabs.query({
+        currentWindow: true,
+        active: true,
+      });
 
       // TODO: Bug 1665429 - on mobile we ignore zoom for now
       if (browser.tabs.setZoom) {
         await browser.tabs.setZoom(tab.id, fullZoom ?? 1);
       }
 
-      let id = method === "captureVisibleTab" ? windowId : tab.id;
+      let id = method === "captureVisibleTab" ? tab.windowId : tab.id;
 
       let [jpeg, png, ...pngs] = await Promise.all([
         browser.tabs[method](id, { format: "jpeg", quality: 95, rect, scale }),
@@ -145,7 +142,7 @@ async function runTest({ html, fullZoom, coords, rect, scale }) {
   }
 
   for (let method of ["captureTab", "captureVisibleTab"]) {
-    let options = { coords, rect, scale, method, fullZoom, url };
+    let options = { coords, rect, scale, method, fullZoom };
     info(`Testing configuration: ${JSON.stringify(options)}`);
 
     let extension = ExtensionTestUtils.loadExtension({
@@ -164,8 +161,6 @@ async function runTest({ html, fullZoom, coords, rect, scale }) {
     testWindow.close();
     await extension.unload();
   }
-
-  URL.revokeObjectURL(url);
 }
 
 async function testEdgeToEdge({ color, fullZoom }) {
@@ -326,38 +321,6 @@ add_task(async function testCaptureVisibleTabPermissions() {
 });
 
 add_task(async function testCaptureVisibleTabWithActiveTab() {
-  let html = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-    </head>
-    <body><h1>hello</h1></body>
-    </html>
-  `;
-  let blob = new Blob([html], { type: "text/html" });
-  let url = URL.createObjectURL(blob) + "#scroll";
-  let background = async function (url) {
-    await new Promise(resolve => {
-      function listener(details) {
-        if (details.frameId !== 0 || details.url !== url) {
-          return;
-        }
-        browser.webNavigation.onCompleted.removeListener(listener);
-        resolve(details);
-      }
-      browser.webNavigation.onCompleted.addListener(listener);
-    });
-
-    browser.browserAction.onClicked.addListener(async tab => {
-      await browser.tabs.captureVisibleTab(tab.windowId);
-      browser.test.notifyPass("captureVisibleTabPermissions");
-    });
-
-    browser.test.sendMessage("ready");
-  };
-
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
       browser_action: {
@@ -365,23 +328,72 @@ add_task(async function testCaptureVisibleTabWithActiveTab() {
       },
       permissions: ["webNavigation", "tabs", "activeTab"],
     },
-    background: `(${background})(${JSON.stringify(url)})`,
+
+    async background() {
+      // Wait for the page (in the test window) to load.
+      await new Promise(resolve => {
+        browser.webNavigation.onCompleted.addListener(
+        () => resolve(),
+        {url: [{schemes: ["data"]}]});
+      });
+
+      browser.browserAction.onClicked.addListener(async tab => {
+        await browser.tabs.captureVisibleTab(tab.windowId);
+        browser.test.notifyPass("captureVisibleTabPermissions");
+      });
+
+      browser.test.sendMessage("ready");
+    },
   });
+
+  let html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+    <body><h1>hello</h1></body>
+    </html>
+  `;
 
   await extension.startup();
 
-  let testWindow = window.open(url);
+  let testWindow = window.open(`data:text/html,${encodeURIComponent(html)}#scroll`);
   await extension.awaitMessage("ready");
   await AppTestDelegate.clickBrowserAction(testWindow, extension);
   await extension.awaitFinish("captureVisibleTabPermissions");
   await AppTestDelegate.closeBrowserAction(testWindow, extension);
   testWindow.close();
-  URL.revokeObjectURL(url);
 
   await extension.unload();
 });
 
 add_task(async function testCaptureVisibleTabWithActiveTabAndNotUserInteraction() {
+  let extension = ExtensionTestUtils.loadExtension({
+    manifest: {
+      permissions: ["webNavigation", "tabs", "activeTab"],
+    },
+
+    async background() {
+      // Wait for the page (in the test window) to load.
+      await new Promise(resolve => {
+        browser.webNavigation.onCompleted.addListener(
+        () => resolve(),
+        {url: [{schemes: ["data"]}]});
+      });
+
+      let [tab] = await browser.tabs.query({ currentWindow: true, active: true });
+      await browser.test.assertRejects(
+        browser.tabs.captureVisibleTab(tab.windowId),
+        /Missing activeTab permission/,
+        "Expected rejection because activeTab permission isn't set"
+      );
+
+      browser.test.notifyPass("captureVisibleTabPermissions");
+    },
+  });
+
   let html = `
     <!DOCTYPE html>
     <html lang="en">
@@ -392,47 +404,37 @@ add_task(async function testCaptureVisibleTabWithActiveTabAndNotUserInteraction(
     <body><h1>hello</h1></body>
     </html>
   `;
-  let blob = new Blob([html], { type: "text/html" });
-  let url = URL.createObjectURL(blob) + "#scroll";
-  let background = async function (url) {
-    let { windowId } = await new Promise(resolve => {
-      function listener(details) {
-        if (details.frameId !== 0 || details.url !== url) {
-          return;
-        }
-        browser.webNavigation.onCompleted.removeListener(listener);
-        resolve(details);
-      }
-      browser.webNavigation.onCompleted.addListener(listener);
-    });
-
-    await browser.test.assertRejects(
-      browser.tabs.captureVisibleTab(windowId),
-      /Missing activeTab permission/,
-      "Expected rejection because activeTab permission isn't set"
-    );
-
-    browser.test.notifyPass("captureVisibleTabPermissions");
-  };
-
-  let extension = ExtensionTestUtils.loadExtension({
-    manifest: {
-      permissions: ["webNavigation", "tabs", "activeTab"],
-    },
-    background: `(${background})(${JSON.stringify(url)})`,
-  });
 
   await extension.startup();
 
-  let testWindow = window.open(url);
+  let testWindow = window.open(`data:text/html,${encodeURIComponent(html)}#scroll`);
   await extension.awaitFinish("captureVisibleTabPermissions");
   testWindow.close();
-  URL.revokeObjectURL(url);
 
   await extension.unload();
 });
 
 add_task(async function testCaptureVisibleTabWithActiveTabAndAllURLs() {
+  let extension = ExtensionTestUtils.loadExtension({
+    manifest: {
+      permissions: ["webNavigation", "tabs", "activeTab", "<all_urls>"],
+    },
+
+    async background() {
+      // Wait for the page (in the test window) to load.
+      await new Promise(resolve => {
+        browser.webNavigation.onCompleted.addListener(
+        () => resolve(),
+        {url: [{schemes: ["data"]}]});
+      });
+
+      let [tab] = await browser.tabs.query({ currentWindow: true, active: true });
+      await browser.tabs.captureVisibleTab(tab.windowId);
+
+      browser.test.notifyPass("captureVisibleTabPermissions");
+    },
+  });
+
   let html = `
     <!DOCTYPE html>
     <html lang="en">
@@ -443,38 +445,12 @@ add_task(async function testCaptureVisibleTabWithActiveTabAndAllURLs() {
     <body><h1>hello</h1></body>
     </html>
   `;
-  let blob = new Blob([html], { type: "text/html" });
-  let url = URL.createObjectURL(blob) + "#scroll";
-  let background = async function (url) {
-    let { windowId } = await new Promise(resolve => {
-      function listener(details) {
-        if (details.frameId !== 0 || details.url !== url) {
-          return;
-        }
-        browser.webNavigation.onCompleted.removeListener(listener);
-        resolve(details);
-      }
-      browser.webNavigation.onCompleted.addListener(listener);
-    });
-
-    await browser.tabs.captureVisibleTab(windowId);
-
-    browser.test.notifyPass("captureVisibleTabPermissions");
-  };
-
-  let extension = ExtensionTestUtils.loadExtension({
-    manifest: {
-      permissions: ["webNavigation", "tabs", "activeTab", "<all_urls>"],
-    },
-    background: `(${background})(${JSON.stringify(url)})`,
-  });
 
   await extension.startup();
 
-  let testWindow = window.open(url);
+  let testWindow = window.open(`data:text/html,${encodeURIComponent(html)}#scroll`);
   await extension.awaitFinish("captureVisibleTabPermissions");
   testWindow.close();
-  URL.revokeObjectURL(url);
 
   await extension.unload();
 });
