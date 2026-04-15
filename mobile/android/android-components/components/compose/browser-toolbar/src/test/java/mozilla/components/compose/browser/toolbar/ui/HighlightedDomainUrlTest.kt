@@ -9,6 +9,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import mozilla.components.support.test.mock
@@ -91,43 +92,55 @@ class HighlightedDomainUrlTest {
     }
 
     @Test
-    fun `GIVEN the start of the URL should be highlighted THEN get an appropriate highlight brush`() {
-        val url = "pagedomain.com/testing"
-        scrollState.stubScrollInfo(url)
-        val highlightRange = computeHighlightRange(url, "pagedomain.com")
-        val scrolledPixels = computeDomainEndScrollValue(url, highlightRange)
+    fun `GIVEN the displayed URL does not overflow the available space WHEN creating the fading brush THEN set no fading`() {
+        val expected = SolidColor(Color.Black)
+
+        val result = createUrlFadeBrush(
+            scrolledPixels = 0,
+            maxScrollPixels = 0,
+            viewportSize = viewPortWidth.toInt(),
+            fadeFraction = 0.5f,
+        )
+
+        assertEquals(expected, result)
+    }
+
+    @Test
+    fun `GIVEN the displayed URL only overflows to the right WHEN creating the fading brush THEN fade the right edge`() {
         val expected = Brush.horizontalGradient(
             0.5f to Color.Black,
             1f to Color.Transparent,
         )
 
-        val result = createDomainHighlightBrush(url, highlightRange, scrolledPixels, 0.5f)
+        val result = createUrlFadeBrush(
+            scrolledPixels = 0,
+            maxScrollPixels = 600,
+            viewportSize = viewPortWidth.toInt(),
+            fadeFraction = 0.5f,
+        )
 
         assertEquals(expected, result)
     }
 
     @Test
-    fun `GIVEN the end of the URL should be highlighted THEN get an appropriate highlight brush`() {
-        val url = "subdomain.pagedomain.com"
-        scrollState.stubScrollInfo(url)
-        val highlightRange = computeHighlightRange(url, "pagedomain.com")
-        val scrolledPixels = computeDomainEndScrollValue(url, highlightRange)
+    fun `GIVEN the displayed URL only overflows to the left WHEN creating the fading brush THEN fade the left edge`() {
         val expected = Brush.horizontalGradient(
             0f to Color.Transparent,
             0.5f to Color.Black,
         )
 
-        val result = createDomainHighlightBrush(url, highlightRange, scrolledPixels, 0.5f)
+        val result = createUrlFadeBrush(
+            scrolledPixels = 600,
+            maxScrollPixels = 600,
+            viewportSize = viewPortWidth.toInt(),
+            fadeFraction = 0.5f,
+        )
 
         assertEquals(expected, result)
     }
 
     @Test
-    fun `GIVEN the middle of the URL should be highlighted THEN get an appropriate highlight brush`() {
-        val url = "subdomain.pagedomain.com/testing"
-        scrollState.stubScrollInfo(url)
-        val highlightRange = computeHighlightRange(url, "pagedomain.com")
-        val scrolledPixels = computeDomainEndScrollValue(url, highlightRange)
+    fun `GIVEN the displayed URL overflows on both sides WHEN creating the fading brush THEN fade both edges`() {
         val expected = Brush.horizontalGradient(
             colorStops = arrayOf(
                 0f to Color.Transparent,
@@ -137,7 +150,12 @@ class HighlightedDomainUrlTest {
             ),
         )
 
-        val result = createDomainHighlightBrush(url, highlightRange, scrolledPixels, 0.5f)
+        val result = createUrlFadeBrush(
+            scrolledPixels = 100,
+            maxScrollPixels = 1200,
+            viewportSize = viewPortWidth.toInt(),
+            fadeFraction = 0.5f,
+        )
 
         assertEquals(expected, result)
     }
