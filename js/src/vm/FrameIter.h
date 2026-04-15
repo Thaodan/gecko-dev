@@ -243,7 +243,6 @@ class FrameIter {
   FrameIter(JSContext* cx, DebuggerEvalOption, JSPrincipals*);
   FrameIter(const FrameIter& iter) = delete;
   MOZ_IMPLICIT FrameIter(const Data& data);
-  explicit FrameIter(mozilla::UniquePtr<Data> data) : FrameIter(*data) {}
 
   bool done() const { return data_.state_ == DONE; }
 
@@ -368,7 +367,7 @@ class FrameIter {
   // -----------------------------------------------------------
 
   AbstractFramePtr abstractFramePtr() const;
-  mozilla::UniquePtr<Data> copyData() const;
+  Data* copyData() const;
 
   // This can only be called when isInterp():
   inline InterpreterFrame* interpFrame() const;
