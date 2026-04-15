@@ -35,7 +35,8 @@
   }
 }
 
-button.arrow-button {
+
+.arrow-button {
   background: url('chrome://global/skin/icons/arrow-left.svg') no-repeat left center;
 
   &:dir(rtl) {

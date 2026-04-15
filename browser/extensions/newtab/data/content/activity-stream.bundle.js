@@ -15310,8 +15310,7 @@ function SectionsMgmtPanel({
   pocketEnabled,
   onSubpanelToggle,
   togglePanel,
-  showPanel,
-  novaEnabled
+  showPanel
 }) {
   const arrowButtonRef = (0,external_React_namespaceObject.useRef)(null);
   const panelRef = (0,external_React_namespaceObject.useRef)(null);
@@ -15515,28 +15514,6 @@ function SectionsMgmtPanel({
       "data-l10n-id": "newtab-section-unblock-button"
     }))));
   });
-
-  // @nova-cleanup(remove-conditional): Remove novaEnabled check, keep arrowIconSrc computation
-  let arrowIconSrc;
-  if (novaEnabled) {
-    const isRTL = document.dir === "rtl";
-    arrowIconSrc = `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
-  }
-  const panelBody = /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("h3", {
-    "data-l10n-id": "newtab-section-mangage-topics-followed-topics"
-  }), followedSectionsData.length ? /*#__PURE__*/external_React_default().createElement("ul", {
-    className: "topic-list"
-  }, followedSectionsList) : /*#__PURE__*/external_React_default().createElement("span", {
-    className: "topic-list-empty-state",
-    "data-l10n-id": "newtab-section-mangage-topics-followed-topics-empty-state"
-  }), /*#__PURE__*/external_React_default().createElement("h3", {
-    "data-l10n-id": "newtab-section-mangage-topics-blocked-topics"
-  }), blockedSectionsData.length ? /*#__PURE__*/external_React_default().createElement("ul", {
-    className: "topic-list"
-  }, blockedSectionsList) : /*#__PURE__*/external_React_default().createElement("span", {
-    className: "topic-list-empty-state",
-    "data-l10n-id": "newtab-section-mangage-topics-blocked-topics-empty-state"
-  }));
   return /*#__PURE__*/external_React_default().createElement("div", null, /*#__PURE__*/external_React_default().createElement("moz-box-button", SectionsMgmtPanel_extends({
     onClick: togglePanel,
     "data-l10n-id": "newtab-section-manage-topics-button-v2"
@@ -15552,27 +15529,27 @@ function SectionsMgmtPanel({
   }, /*#__PURE__*/external_React_default().createElement("div", {
     ref: panelRef,
     className: "sections-mgmt-panel"
-  },
-  // @nova-cleanup(remove-conditional): Remove novaEnabled check and the else branch, keep the nova branch
-  novaEnabled ? /*#__PURE__*/external_React_default().createElement("div", {
-    className: "panel-content"
-  }, /*#__PURE__*/external_React_default().createElement("div", {
-    className: "arrow-wrapper"
-  }, /*#__PURE__*/external_React_default().createElement("moz-button", {
-    ref: arrowButtonRef,
-    type: "ghost",
-    className: "arrow-button",
-    iconSrc: arrowIconSrc,
-    onClick: togglePanel
-  }), /*#__PURE__*/external_React_default().createElement("h2", {
-    "data-l10n-id": "newtab-section-mangage-topics-title"
-  })), panelBody) : /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("button", {
+  }, /*#__PURE__*/external_React_default().createElement("button", {
     ref: arrowButtonRef,
     className: "arrow-button",
     onClick: togglePanel
   }, /*#__PURE__*/external_React_default().createElement("h1", {
     "data-l10n-id": "newtab-section-mangage-topics-title"
-  })), panelBody))));
+  })), /*#__PURE__*/external_React_default().createElement("h3", {
+    "data-l10n-id": "newtab-section-mangage-topics-followed-topics"
+  }), followedSectionsData.length ? /*#__PURE__*/external_React_default().createElement("ul", {
+    className: "topic-list"
+  }, followedSectionsList) : /*#__PURE__*/external_React_default().createElement("span", {
+    className: "topic-list-empty-state",
+    "data-l10n-id": "newtab-section-mangage-topics-followed-topics-empty-state"
+  }), /*#__PURE__*/external_React_default().createElement("h3", {
+    "data-l10n-id": "newtab-section-mangage-topics-blocked-topics"
+  }), blockedSectionsData.length ? /*#__PURE__*/external_React_default().createElement("ul", {
+    className: "topic-list"
+  }, blockedSectionsList) : /*#__PURE__*/external_React_default().createElement("span", {
+    className: "topic-list-empty-state",
+    "data-l10n-id": "newtab-section-mangage-topics-blocked-topics-empty-state"
+  }))));
 }
 
 ;// CONCATENATED MODULE: ./content-src/components/WallpaperCategories/WallpaperCategories.jsx
@@ -15975,12 +15952,6 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
     const {
       activeCategoryFluentID
     } = this.state;
-    // @nova-cleanup(remove-conditional): Remove novaEnabled check, keep arrowIconSrc computation
-    let arrowIconSrc;
-    if (novaEnabled) {
-      const isRTL = document.dir === "rtl";
-      arrowIconSrc = `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
-    }
     // Enable custom color select if pref'ed on
     let showColorPicker = prefs["newtabWallpapers.customColor.enabled"];
     let filteredWallpapers = wallpaperList.filter(wallpaper => wallpaper.category === activeCategory);
@@ -16170,16 +16141,7 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
       }, /*#__PURE__*/external_React_default().createElement("section", {
         ref: this.wallpaperListRef,
         className: "category wallpaper-list ignore-color-mode"
-      },
-      // @nova-cleanup(remove-conditional): Remove novaEnabled check and the else branch, keep the nova branch
-      novaEnabled ? /*#__PURE__*/external_React_default().createElement("moz-button", {
-        ref: this.arrowButtonRef,
-        type: "ghost",
-        className: "arrow-button",
-        iconSrc: arrowIconSrc,
-        "data-l10n-id": activeCategoryFluentID,
-        onClick: this.handleBack
-      }) : /*#__PURE__*/external_React_default().createElement("button", {
+      }, /*#__PURE__*/external_React_default().createElement("button", {
         ref: this.arrowButtonRef,
         className: "arrow-button",
         "data-l10n-id": activeCategoryFluentID,
@@ -16347,8 +16309,6 @@ function WidgetsManagementPanel({
     timerEnabled,
     listsEnabled
   } = enabledWidgets;
-  const isRTL = document.dir === "rtl";
-  const arrowIconSrc = `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
   return /*#__PURE__*/external_React_default().createElement("div", {
     id: "widgets-management-panel",
     className: "widgets-mgmt-panel-container"
@@ -16365,17 +16325,11 @@ function WidgetsManagementPanel({
   }, /*#__PURE__*/external_React_default().createElement("div", {
     ref: panelRef,
     className: "widgets-mgmt-panel"
-  }, /*#__PURE__*/external_React_default().createElement("div", {
-    className: "panel-content"
-  }, /*#__PURE__*/external_React_default().createElement("div", {
-    className: "arrow-wrapper"
-  }, /*#__PURE__*/external_React_default().createElement("moz-button", {
+  }, /*#__PURE__*/external_React_default().createElement("button", {
     ref: arrowButtonRef,
-    type: "ghost",
     className: "arrow-button",
-    iconSrc: arrowIconSrc,
     onClick: togglePanel
-  }), /*#__PURE__*/external_React_default().createElement("h2", {
+  }, /*#__PURE__*/external_React_default().createElement("h1", {
     "data-l10n-id": "newtab-widget-manage-title"
   })), /*#__PURE__*/external_React_default().createElement("div", {
     className: "settings-widgets"
@@ -16412,7 +16366,7 @@ function WidgetsManagementPanel({
     "data-preference": "widgets.lists.enabled",
     "data-event-source": "WIDGET_LISTS",
     "data-l10n-id": "newtab-custom-widget-lists-toggle"
-  })))))));
+  }))))));
 }
 
 ;// CONCATENATED MODULE: ./content-src/components/CustomizeMenu/ContentSection/ContentSection.jsx
@@ -16602,7 +16556,7 @@ class ContentSection extends (external_React_default()).PureComponent {
     }
 
     // @nova-cleanup(remove-conditional): This conditional adds the toggle for wallpaper visibility.
-    return /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("div", {
+    return /*#__PURE__*/external_React_default().createElement("div", {
       className: "home-section"
     }, (wallpapersEnabled || novaEnabled) && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("div", {
       className: "wallpapers-section"
@@ -16670,7 +16624,7 @@ class ContentSection extends (external_React_default()).PureComponent {
       pressed: weatherEnabled || null,
       ontoggle: this.onPreferenceSelect,
       onToggle: this.onPreferenceSelect,
-      "data-preference": "showWeather",
+      "data-preference": novaEnabled ? "widgets.weather.enabled" : "showWeather",
       "data-event-source": "WEATHER",
       "data-l10n-id": "newtab-custom-weather-toggle"
     })), /*#__PURE__*/external_React_default().createElement("span", {
@@ -16800,25 +16754,13 @@ class ContentSection extends (external_React_default()).PureComponent {
       pocketEnabled: pocketEnabled,
       onSubpanelToggle: onSubpanelToggle,
       togglePanel: toggleSectionsMgmtPanel,
-      showPanel: showSectionsMgmtPanel,
-      novaEnabled: novaEnabled
+      showPanel: showSectionsMgmtPanel
     }))))))),
     // @nova-cleanup(remove-conditional): Remove this divider once Nova lands
     !novaEnabled && /*#__PURE__*/external_React_default().createElement("span", {
       className: "divider",
       role: "separator"
-    }),
-    // @nova-cleanup(remove-conditional): Remove this block once Nova ships
-    !novaEnabled && /*#__PURE__*/external_React_default().createElement("div", null, /*#__PURE__*/external_React_default().createElement("button", {
-      id: "settings-link",
-      className: "external-link",
-      onClick: openPreferences,
-      "data-l10n-id": "newtab-custom-settings"
-    }))),
-    // @nova-cleanup(remove-conditional): Remove novaEnabled check, keep manage-settings-footer
-    novaEnabled && /*#__PURE__*/external_React_default().createElement("div", {
-      className: "manage-settings-footer"
-    }, /*#__PURE__*/external_React_default().createElement("button", {
+    }), /*#__PURE__*/external_React_default().createElement("div", null, /*#__PURE__*/external_React_default().createElement("button", {
       id: "settings-link",
       className: "external-link",
       onClick: openPreferences,
