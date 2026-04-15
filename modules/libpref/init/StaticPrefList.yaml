@@ -5742,7 +5742,7 @@
 
 - name: dom.shadowdom.shadowRootSlotAssignment.enabled
   type: RelaxedAtomicBool
-  value: false
+  value: true
   mirror: always
 
 # NOTE: This preference is used in unit tests. If it is removed or its default
