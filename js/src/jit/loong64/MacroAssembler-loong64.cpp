@@ -238,7 +238,8 @@ void MacroAssemblerLOONG64::ma_li(Register dest, ImmWord imm) {
     as_bstrins_d(dest, zero, 63, 52);
   } else if (bits_31_12 == 0 && bits_51_32 == 0) {
     as_lu52i_d(dest, zero, bits_63_52);
-  } else if (bits_31_12 != 0 && (((bits_31_12 >> 19) & 1) == 0) && bits_51_32 == 0) {
+  } else if (bits_31_12 != 0 && (((bits_31_12 >> 19) & 1) == 0) &&
+             bits_51_32 == 0) {
     as_lu12i_w(dest, bits_31_12);
     as_lu52i_d(dest, dest, bits_63_52);
   } else {
