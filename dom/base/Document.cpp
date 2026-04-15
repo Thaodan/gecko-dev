@@ -154,7 +154,6 @@
 #include "mozilla/dom/Comment.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/CustomElementRegistry.h"
-#include "mozilla/dom/CustomEvent.h"
 #include "mozilla/dom/DOMImplementation.h"
 #include "mozilla/dom/DOMIntersectionObserver.h"
 #include "mozilla/dom/DOMStringList.h"
@@ -15540,7 +15539,7 @@ bool Document::IsFullscreenLeaf() {
   return Fullscreen() && CountFullscreenSubDocuments(*this) == 0;
 }
 
-/* static */ Document* Document::GetFullscreenLeaf(Document& aDoc) {
+static Document* GetFullscreenLeaf(Document& aDoc) {
   if (aDoc.IsFullscreenLeaf()) {
     return &aDoc;
   }
@@ -15555,7 +15554,7 @@ bool Document::IsFullscreenLeaf() {
   return leaf;
 }
 
-/* static */ Document* Document::GetFullscreenLeaf(Document* aDoc) {
+static Document* GetFullscreenLeaf(Document* aDoc) {
   if (Document* leaf = GetFullscreenLeaf(*aDoc)) {
     return leaf;
   }
@@ -15734,9 +15733,6 @@ void Document::RestorePreviousFullscreenState(UniquePtr<FullscreenExit> aExit) {
     DebugOnly<bool> removedFullscreenElement = lastDoc->PopFullscreenElement();
     MOZ_ASSERT(removedFullscreenElement);
     newFullscreenDoc = lastDoc;
-
-    GetWindowGlobalChild()->SendUpdateFullscreenKeyboardLockStatus(
-        newFullscreenDoc->HasFullscreenKeyboardLockEnabled());
   } else {
     lastDoc->CleanupFullscreenState();
     newFullscreenDoc = lastDoc->GetInProcessParentDocument();
@@ -15784,7 +15780,6 @@ void Document::CleanupFullscreenState() {
 
   UpdateViewportScrollbarOverrideForFullscreen(this);
   mFullscreenRoot = nullptr;
-  SetFullscreenKeyboardLockStatus(FullscreenKeyboardLock::None);
 
   // Restore the zoom level that was in place prior to entering fullscreen.
   if (PresShell* presShell = GetPresShell()) {
@@ -16514,13 +16509,11 @@ bool IsInActiveTab(Document* aDoc) {
   return bc->IsActive();
 }
 
-void Document::RemoteFrameFullscreenChanged(
-    Element* aFrameElement, bool aFullscreenKeyboardLockEnabled) {
+void Document::RemoteFrameFullscreenChanged(Element* aFrameElement) {
   // Ensure the frame element is the fullscreen element in this document.
   // If the frame element is already the fullscreen element in this document,
   // this has no effect.
-  auto request = FullscreenRequest::CreateForRemote(
-      aFrameElement, aFullscreenKeyboardLockEnabled);
+  auto request = FullscreenRequest::CreateForRemote(aFrameElement);
   RequestFullscreen(std::move(request), XRE_IsContentProcess());
 }
 
@@ -16738,33 +16731,17 @@ void Document::RequestFullscreenInContentProcess(
     return;
   }
 
-  auto fullscreenKeyboardLock = aRequest->mFullscreenKeyboardLock;
   PendingFullscreenChangeList::Add(std::move(aRequest));
   // If we are not the top level process, dispatch an event to make
   // our parent process go fullscreen first.
   Dispatch(NS_NewRunnableFunction(
-      "Document::RequestFullscreenInContentProcess",
-      [self = RefPtr{this}, fullscreenKeyboardLock] {
+      "Document::RequestFullscreenInContentProcess", [self = RefPtr{this}] {
         if (!self->HasPendingFullscreenRequests()) {
           return;
         }
-
-        AutoJSAPI jsapi;
-        if (!jsapi.Init(self->GetOwnerGlobal())) {
-          return;
-        }
-        JSContext* cx = jsapi.cx();
-        JS::Rooted<JS::Value> detail(cx);
-        if (!ToJSValue(cx, fullscreenKeyboardLock, &detail)) {
-          return;
-        }
-        RefPtr event = NS_NewDOMCustomEvent(self, nullptr, nullptr);
-        event->InitCustomEvent(cx, u"MozDOMFullscreen:Request"_ns,
-                               /* aCanBubble */ true,
-                               /* aCancelable */ false, detail);
-        event->SetTrusted(true);
-        event->WidgetEventPtr()->mFlags.mOnlyChromeDispatch = true;
-        self->DispatchEvent(*event);
+        nsContentUtils::DispatchEventOnlyToChrome(
+            self, self, u"MozDOMFullscreen:Request"_ns, CanBubble::eYes,
+            Cancelable::eNo, /* DefaultAction */ nullptr);
       }));
 }
 
@@ -16967,8 +16944,6 @@ bool Document::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest) {
   }
 
   FullscreenRoots::Add(this);
-
-  SetFullscreenKeyboardLockStatus(aRequest->mFullscreenKeyboardLock);
 
   // If it is the first entry of the fullscreen, trigger an event so
   // that the UI can response to this change, e.g. hide chrome, or
@@ -21105,14 +21080,6 @@ void Document::GetAllInProcessDocuments(
   for (Document* doc : AllDocumentsList()) {
     aAllDocuments.AppendElement(doc);
   }
-}
-
-void Document::SetFullscreenKeyboardLockStatus(FullscreenKeyboardLock aStatus) {
-  mFullscreenKeyboardLockStatus = aStatus;
-}
-
-bool Document::HasFullscreenKeyboardLockEnabled() {
-  return mFullscreenKeyboardLockStatus == FullscreenKeyboardLock::Browser;
 }
 
 }  // namespace mozilla::dom

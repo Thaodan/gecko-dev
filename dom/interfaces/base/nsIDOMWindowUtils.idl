@@ -1264,9 +1264,7 @@ interface nsIDOMWindowUtils : nsISupports {
    * aFrameElement is the iframe element which contains the child-process
    * fullscreen document.
    */
-  void remoteFrameFullscreenChanged(
-    in Element aFrameElement,
-    [optional] in boolean aFullscreenKeyboardLockEnabled);
+  void remoteFrameFullscreenChanged(in Element aFrameElement);
 
   /**
    * Called when the remote frame has popped all fullscreen elements off its

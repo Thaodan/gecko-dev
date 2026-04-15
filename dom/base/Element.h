@@ -123,7 +123,6 @@ struct ScrollToOptions;
 struct FocusOptions;
 struct ShadowRootInit;
 struct ScrollOptions;
-struct RequestFullscreenOptions;
 class Attr;
 class BooleanOrScrollIntoViewOptions;
 class Document;
@@ -1579,8 +1578,7 @@ class Element : public FragmentOrElement {
 
   void ReleaseCapture();
 
-  already_AddRefed<Promise> RequestFullscreen(const RequestFullscreenOptions&,
-                                              CallerType, ErrorResult&);
+  already_AddRefed<Promise> RequestFullscreen(CallerType, ErrorResult&);
   void RequestPointerLock(CallerType aCallerType);
   Attr* GetAttributeNode(const nsAString& aName);
   MOZ_CAN_RUN_SCRIPT already_AddRefed<Attr> SetAttributeNode(

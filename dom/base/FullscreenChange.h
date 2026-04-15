@@ -14,7 +14,6 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
-#include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/Promise.h"
 #include "nsIScriptError.h"
 #include "nsRefreshDriver.h"
@@ -76,22 +75,17 @@ class FullscreenRequest : public FullscreenChange {
  public:
   static const ChangeType kType = eEnter;
 
-  static UniquePtr<FullscreenRequest> Create(
-      dom::Element* aElement,
-      dom::FullscreenKeyboardLock aFullscreenKeyboardLock,
-      dom::CallerType aCallerType, ErrorResult& aRv) {
+  static UniquePtr<FullscreenRequest> Create(dom::Element* aElement,
+                                             dom::CallerType aCallerType,
+                                             ErrorResult& aRv) {
     RefPtr<Promise> promise = Promise::Create(aElement->GetOwnerGlobal(), aRv);
-    return WrapUnique(new FullscreenRequest(aElement, promise.forget(),
-                                            aCallerType, true,
-                                            aFullscreenKeyboardLock));
+    return WrapUnique(
+        new FullscreenRequest(aElement, promise.forget(), aCallerType, true));
   }
 
-  static UniquePtr<FullscreenRequest> CreateForRemote(
-      dom::Element* aElement, bool aFullscreenKeyboardLockEnabled) {
-    return WrapUnique(new FullscreenRequest(
-        aElement, nullptr, dom::CallerType::NonSystem, false,
-        aFullscreenKeyboardLockEnabled ? dom::FullscreenKeyboardLock::Browser
-                                       : dom::FullscreenKeyboardLock::None));
+  static UniquePtr<FullscreenRequest> CreateForRemote(dom::Element* aElement) {
+    return WrapUnique(new FullscreenRequest(aElement, nullptr,
+                                            dom::CallerType::NonSystem, false));
   }
 
   MOZ_COUNTED_DTOR(FullscreenRequest)
@@ -124,18 +118,14 @@ class FullscreenRequest : public FullscreenChange {
   // need to send some notification itself with the real origin.
   const bool mShouldNotifyNewOrigin;
 
-  const dom::FullscreenKeyboardLock mFullscreenKeyboardLock;
-
  private:
   FullscreenRequest(dom::Element* aElement,
                     already_AddRefed<dom::Promise> aPromise,
-                    dom::CallerType aCallerType, bool aShouldNotifyNewOrigin,
-                    dom::FullscreenKeyboardLock aFullscreenKeyboardLock)
+                    dom::CallerType aCallerType, bool aShouldNotifyNewOrigin)
       : FullscreenChange(kType, aElement->OwnerDoc(), std::move(aPromise)),
         mElement(aElement),
         mCallerType(aCallerType),
-        mShouldNotifyNewOrigin(aShouldNotifyNewOrigin),
-        mFullscreenKeyboardLock(aFullscreenKeyboardLock) {
+        mShouldNotifyNewOrigin(aShouldNotifyNewOrigin) {
     MOZ_COUNT_CTOR(FullscreenRequest);
   }
 };

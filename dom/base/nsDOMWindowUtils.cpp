@@ -3464,12 +3464,11 @@ nsDOMWindowUtils::SetVisualViewportSize(float aWidth, float aHeight) {
 }
 
 nsresult nsDOMWindowUtils::RemoteFrameFullscreenChanged(
-    Element* aFrameElement, bool aFullscreenKeyboardLockEnabled) {
+    Element* aFrameElement) {
   nsCOMPtr<Document> doc = GetDocument();
   NS_ENSURE_STATE(doc);
 
-  doc->RemoteFrameFullscreenChanged(aFrameElement,
-                                    aFullscreenKeyboardLockEnabled);
+  doc->RemoteFrameFullscreenChanged(aFrameElement);
   return NS_OK;
 }
 
