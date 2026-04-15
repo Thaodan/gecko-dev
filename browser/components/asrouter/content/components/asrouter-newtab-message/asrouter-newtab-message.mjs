@@ -150,10 +150,10 @@ export default class ASRouterNewTabMessage extends MozLitElement {
     if (!primaryButton && !secondaryButton) {
       return nothing;
     }
-    return html`<div class="button-group">
+    return html`<moz-button-group class="button-group">
       ${this.#renderPrimaryButtonContent(primaryButton)}
       ${this.#renderSecondaryButton(secondaryButton)}
-    </div>`;
+    </moz-button-group>`;
   }
 
   render() {
