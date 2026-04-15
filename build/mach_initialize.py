@@ -354,7 +354,6 @@ def initialize(topsrcdir):
         "test-interventions": MachCommandReference(
             "testing/webcompat/mach_commands.py"
         ),
-        "esmify": MachCommandReference("tools/esmify/mach_commands.py"),
         "xpcshell": MachCommandReference("js/xpconnect/mach_commands.py"),
         "uniffi": MachCommandReference(
             "toolkit/components/uniffi-bindgen-gecko-js/mach_commands.py"
