@@ -5,7 +5,6 @@
 package org.mozilla.fenix.tabstray.ui.fab
 
 import androidx.annotation.DrawableRes
-import androidx.annotation.VisibleForTesting
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -56,7 +55,6 @@ import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.Mode
 import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
-import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
 import org.mozilla.fenix.theme.FirefoxTheme
 import androidx.compose.material3.FloatingActionButtonDefaults as M3FloatingActionButtonDefaults
 import mozilla.components.ui.icons.R as iconsR
@@ -230,20 +228,13 @@ private fun FloatingToolbarActions(
 }
 
 @Composable
-@VisibleForTesting
-internal fun FloatingToolbarFAB(
+private fun FloatingToolbarFAB(
     state: TabsTrayState,
     isSignedIn: Boolean,
     onOpenNewNormalTabClicked: () -> Unit,
     onOpenNewPrivateTabClicked: () -> Unit,
     onSyncedTabsFabClicked: () -> Unit,
 ) {
-    val isSyncDisabled = !isSignedIn || state.sync.syncedTabs.any {
-        it is SyncedTabsListItem.Error && it.errorText == stringResource(
-            id = R.string.synced_tabs_reauth,
-        )
-    }
-
     @DrawableRes val icon: Int
     val contentDescription: String
     var colors = FloatingActionButtonDefaults.colorsPrimary()
@@ -270,11 +261,11 @@ internal fun FloatingToolbarFAB(
             icon = iconsR.drawable.mozac_ic_sync_24
             contentDescription = stringResource(id = R.string.resync_button_content_description)
             onClick = {
-                if (!isSyncDisabled) {
+                if (isSignedIn) {
                     onSyncedTabsFabClicked()
                 }
             }
-            if (isSyncDisabled) {
+            if (!isSignedIn) {
                 colors = FloatingActionButtonDefaults.colorsDisabled()
                 elevation = M3FloatingActionButtonDefaults.elevation(
                     defaultElevation = 0.dp,
