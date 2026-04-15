@@ -2082,6 +2082,13 @@ class Document : public nsINode,
   bool IsFullscreenLeaf();
 
   /**
+   * Get the fullscreen leaf document starting from aDoc or the current
+   * in-process root document if aDoc is not fullscreen.
+   */
+  static Document* GetFullscreenLeaf(Document* aDoc);
+  static Document* GetFullscreenLeaf(Document& aDoc);
+
+  /**
    * Returns the document which is at the root of this document's branch
    * in the in-process document tree. Returns nullptr if the document isn't
    * fullscreen.
