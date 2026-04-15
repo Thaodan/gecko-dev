@@ -4733,7 +4733,7 @@ gfxFontStyle::gfxFontStyle()
       variantCaps(NS_FONT_VARIANT_CAPS_NORMAL),
       variantSubSuper(NS_FONT_VARIANT_POSITION_NORMAL),
       sizeAdjustBasis(uint8_t(FontSizeAdjust::Tag::None)),
-      systemFont(false),
+      systemFont(true),
       printerFont(false),
 #ifdef XP_WIN
       allowForceGDIClassic(true),
