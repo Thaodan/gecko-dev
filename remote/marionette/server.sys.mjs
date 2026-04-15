@@ -304,6 +304,7 @@ export class TCPConnection {
    *     A command's implementation may throw at any time.
    */
   async dispatch(cmd, resp) {
+    let errorMessage = "";
     const startTime = ChromeUtils.now();
 
     if (cmd.name !== "WebDriver:NewSession") {
@@ -349,12 +350,15 @@ export class TCPConnection {
           resp.body.value = rv;
         }
       }
+    } catch (e) {
+      errorMessage = ` - Error: ${e.message}`;
+      throw e;
     } finally {
       if (Services.profiler.IsActive()) {
         ChromeUtils.addProfilerMarker(
           "Marionette: Command",
           { startTime, category: "Remote-Protocol" },
-          `${cmd.name} (${cmd.id})`
+          `${cmd.name} (${cmd.id})${errorMessage}`
         );
       }
     }
