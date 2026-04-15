@@ -373,10 +373,8 @@
         if (fromTabList) {
           dropIndex = this._getDropIndex(event);
           if (dropIndex && dropIndex > movingTabs[0].elementIndex) {
+            dropIndex--;
             directionForward = true;
-            if (!isSplitViewWrapper(movingTabs[0])) {
-              dropIndex--;
-            }
           }
         } else if (
           draggedTab.currentIndex > tabs[tabs.length - 1].currentIndex
@@ -422,19 +420,13 @@
         let moveTabs = () => {
           if (dropIndex !== undefined) {
             for (let tab of movingTabs) {
-              if (fromTabList && isSplitViewWrapper(tab)) {
-                const dropTarget =
-                  this._tabbrowserTabs.dragAndDropElements[dropIndex];
-                gBrowser.moveTabBefore(tab, dropTarget, dropMetricsContext);
-              } else {
-                gBrowser.moveTabTo(
-                  tab,
-                  { elementIndex: dropIndex },
-                  dropMetricsContext
-                );
-                if (!directionForward) {
-                  dropIndex++;
-                }
+              gBrowser.moveTabTo(
+                tab,
+                { elementIndex: dropIndex },
+                dropMetricsContext
+              );
+              if (!directionForward) {
+                dropIndex++;
               }
             }
           } else if (dropElement && dropBefore) {
