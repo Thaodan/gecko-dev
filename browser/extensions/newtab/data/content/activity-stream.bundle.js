@@ -4577,6 +4577,7 @@ function AdBannerContextMenu({
 
 
 const PREF_PROMO_CARD_DISMISSED = "discoverystream.promoCard.visible";
+const PROMO_CARD_IMAGE_SRC = "chrome://newtab/content/data/content/assets/firefox-mascot-prop-paintbucket-rgb.svg";
 
 /**
  * The PromoCard component displays a promotional message.
@@ -4588,6 +4589,12 @@ const PromoCard = () => {
   const onCtaClick = (0,external_React_namespaceObject.useCallback)(() => {
     dispatch(actionCreators.AlsoToMain({
       type: actionTypes.PROMO_CARD_CLICK
+    }));
+    dispatch({
+      type: actionTypes.SHOW_PERSONALIZE
+    });
+    dispatch(actionCreators.UserEvent({
+      event: "SHOW_PERSONALIZE"
     }));
   }, [dispatch]);
   const onDismissClick = (0,external_React_namespaceObject.useCallback)(() => {
@@ -4621,23 +4628,28 @@ const PromoCard = () => {
   }, /*#__PURE__*/external_React_default().createElement("div", {
     className: "img-wrapper"
   }, /*#__PURE__*/external_React_default().createElement("img", {
-    src: "chrome://newtab/content/data/content/assets/puzzle-fox.svg",
+    src: PROMO_CARD_IMAGE_SRC,
     alt: ""
-  })), /*#__PURE__*/external_React_default().createElement("span", {
+  })), /*#__PURE__*/external_React_default().createElement("div", {
+    className: "promo-card-content"
+  }, /*#__PURE__*/external_React_default().createElement("div", {
+    className: "promo-card-copy"
+  }, /*#__PURE__*/external_React_default().createElement("div", {
+    className: "promo-card-title-wrapper"
+  }, /*#__PURE__*/external_React_default().createElement("span", {
     className: "promo-card-title",
-    "data-l10n-id": "newtab-promo-card-title"
-  }), /*#__PURE__*/external_React_default().createElement("span", {
+    "data-l10n-id": "newtab-promo-card-title-addons"
+  })), /*#__PURE__*/external_React_default().createElement("p", {
     className: "promo-card-body",
-    "data-l10n-id": "newtab-promo-card-body"
-  }), /*#__PURE__*/external_React_default().createElement("span", {
+    "data-l10n-id": "newtab-promo-card-body-addons"
+  })), /*#__PURE__*/external_React_default().createElement("div", {
     className: "promo-card-cta-wrapper"
-  }, /*#__PURE__*/external_React_default().createElement("a", {
-    href: "https://support.mozilla.org/kb/sponsor-privacy",
-    "data-l10n-id": "newtab-promo-card-cta",
-    target: "_blank",
-    rel: "noreferrer",
+  }, /*#__PURE__*/external_React_default().createElement("moz-button", {
+    className: "promo-card-cta",
+    type: "default",
+    "data-l10n-id": "newtab-promo-card-cta-addons",
     onClick: onCtaClick
-  }))));
+  })))));
 };
 
 ;// CONCATENATED MODULE: ./content-src/components/DiscoveryStreamComponents/AdBanner/AdBanner.jsx
