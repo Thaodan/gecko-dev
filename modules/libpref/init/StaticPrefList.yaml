@@ -2678,12 +2678,6 @@
   value: true
   mirror: always
 
-# Enable relaxed Custom Element names
-- name: dom.custom_elements.relaxed_names.enabled
-  type: bool
-  value: true
-  mirror: always
-
 # Allow control characters appear in composition string.
 # When this is false, control characters except
 # CHARACTER TABULATION (horizontal tab) are removed from
