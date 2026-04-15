@@ -41,7 +41,7 @@ add_task(async function () {
   await performRequests(monitor, tab, 1);
 
   // Wait till there are four resources rendered in the results
-  await waitForDOMIfNeeded(document, ".request-list-item", 4);
+  await waitForDOM(document, ".request-list-item", 4);
 
   const requestItems = document.querySelectorAll(".request-list-item");
   ok(
