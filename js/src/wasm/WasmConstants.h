@@ -65,6 +65,9 @@ enum class TypeCode {
   I8 = 0x78,   // SLEB128(-0x08)
   I16 = 0x77,  // SLEB128(-0x09)
 
+  // A null reference in the cont hierarchy.
+  NullContRef = 0x75,  // SLEB128(-0x0b)
+
   // A function pointer with any signature
   FuncRef = 0x70,  // SLEB128(-0x10)
 
@@ -104,6 +107,9 @@ enum class TypeCode {
   // A reference to an exception value.
   ExnRef = 0x69,  // SLEB128(-0x17)
 
+  // A reference to a continuation.
+  ContRef = 0x68,  // SLEB128(-0x18)
+
   // A null reference in the any hierarchy.
   NullAnyRef = 0x71,  // SLEB128(-0x0F)
 
@@ -115,6 +121,9 @@ enum class TypeCode {
 
   // Type constructor for array types - gc proposal
   Array = 0x5e,  // SLEB128(-0x22)
+
+  // Type constructor for cont types - stack switching proposal
+  Cont = 0x5d,  // SLEB128(-0x23)
 
   // Value for non-nullable type present.
   TableHasInitExpr = 0x40,
@@ -501,6 +510,17 @@ enum class Op {
 
   // Function references
   BrOnNonNull = 0xd6,
+
+#ifdef ENABLE_WASM_JSPI
+  // Stack switching
+  ContNew = 0xe0,
+  ContBind = 0xe1,
+  Suspend = 0xe2,
+  Resume = 0xe3,
+  ResumeThrow = 0xe4,
+  ResumeThrowRef = 0xe5,
+  Switch = 0xe6,
+#endif
 
   FirstPrefix = 0xfa,
   GcPrefix = 0xfb,
@@ -1153,6 +1173,13 @@ enum class FieldFlags { Mutable = 0x01, AllowedMask = 0x01 };
 
 enum class FieldWideningOp { None, Signed, Unsigned };
 
+enum class HandlerKind : uint8_t {
+  Suspend = 0x0,
+  Switch = 0x1,
+
+  Limit = Switch,
+};
+
 // The WebAssembly custom page sizes proposal allows for a virtual page size of
 // either 64KiB, or 1 byte.  We call these Standard and Tiny, respectively.
 enum class PageSize {
@@ -1211,6 +1238,7 @@ static const unsigned MaxTryTableCatches = 10000;
 static const unsigned MaxBrTableElems = 65520;
 static const unsigned MaxCodeSectionBytes = MaxModuleBytes;
 static const unsigned MaxBranchHintValue = 2;
+static const unsigned MaxHandlers = 16;
 
 // 512KiB should be enough, considering how Rabaldr uses the stack and
 // what the standard limits are:

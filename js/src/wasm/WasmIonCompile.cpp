@@ -4543,7 +4543,7 @@ class FunctionCompiler {
                                          uint32_t tagIndex, DefVector* values) {
     SharedTagType tagType = codeMeta().tags[tagIndex].type;
     const ValTypeVector& params = tagType->argTypes();
-    const TagOffsetVector& offsets = tagType->argOffsets();
+    const TagOffsetVector& offsets = tagType->exceptionArgOffsets();
 
     // Get the data pointer from the exception object
     auto* data = MWasmLoadField::New(
@@ -4711,12 +4711,12 @@ class FunctionCompiler {
 
     // Store the params into the data pointer
     SharedTagType tagType = codeMeta().tags[tagIndex].type;
-    for (size_t i = 0; i < tagType->argOffsets().length(); i++) {
+    for (size_t i = 0; i < tagType->exceptionArgOffsets().length(); i++) {
       if (!mirGen().ensureBallast()) {
         return false;
       }
       ValType type = tagType->argTypes()[i];
-      uint32_t offset = tagType->argOffsets()[i];
+      uint32_t offset = tagType->exceptionArgOffsets()[i];
 
       if (!type.isRefRepr()) {
         auto* store = MWasmStoreField::New(

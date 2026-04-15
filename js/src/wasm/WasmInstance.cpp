@@ -2617,7 +2617,13 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
       }
     } else if (typeDef.kind() == TypeDefKind::Func) {
       // Nothing to do; the default values are OK.
-    } else {
+    }
+#ifdef ENABLE_WASM_JSPI
+    else if (typeDef.kind() == TypeDefKind::Cont) {
+      // Nothing to do; the default values are OK.
+    }
+#endif
+    else {
       MOZ_ASSERT(typeDef.kind() == TypeDefKind::None);
       MOZ_CRASH();
     }

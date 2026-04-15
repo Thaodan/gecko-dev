@@ -234,6 +234,16 @@ enum class OpKind {
   TryTable,
   CallBuiltinModuleFunc,
   StackSwitch,
+#  ifdef ENABLE_WASM_JSPI
+  ContNew,
+  ContBind,
+  Suspend,
+  Resume,
+  ResumeThrow,
+  ResumeThrowRef,
+  Switch,
+  GuardSuspending,
+#  endif
 };
 
 // Return the OpKind for a given Op. This is used for sanity-checking that
@@ -1696,7 +1706,7 @@ inline bool OpIter<Policy>::readTryTable(BlockType* type,
     // branch
     if (tryTableCatch.tagIndex != CatchAllIndex) {
       const TagType& tagType = *codeMeta_.tags[tryTableCatch.tagIndex].type;
-      ResultType tagResult = tagType.resultType();
+      ResultType tagResult = tagType.argResultType();
       if (!tagResult.cloneToVector(&tryTableCatch.labelType)) {
         return false;
       }
@@ -1758,7 +1768,7 @@ inline bool OpIter<Policy>::readCatch(LabelKind* kind, uint32_t* tagIndex,
   // Reset local state to the beginning of the 'try' block.
   unsetLocals_.resetToBlock(controlStack_.length() - 1);
 
-  return push(codeMeta_.tags[*tagIndex].type->resultType());
+  return push(codeMeta_.tags[*tagIndex].type->argResultType());
 }
 
 template <typename Policy>
@@ -1834,7 +1844,8 @@ inline bool OpIter<Policy>::readThrow(uint32_t* tagIndex,
     return fail("tag index out of range");
   }
 
-  if (!popWithType(codeMeta_.tags[*tagIndex].type->resultType(), argValues)) {
+  if (!popWithType(codeMeta_.tags[*tagIndex].type->argResultType(),
+                   argValues)) {
     return false;
   }
 

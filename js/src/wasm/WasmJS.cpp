@@ -3781,7 +3781,7 @@ void WasmExceptionObject::trace(JSTracer* trc, JSObject* obj) {
 
   wasm::SharedTagType tag = exnObj.tagType();
   const wasm::ValTypeVector& params = tag->argTypes();
-  const wasm::TagOffsetVector& offsets = tag->argOffsets();
+  const wasm::TagOffsetVector& offsets = tag->exceptionArgOffsets();
   uint8_t* typedMem = exnObj.typedMem();
   for (size_t i = 0; i < params.length(); i++) {
     ValType paramType = params[i];
@@ -3886,7 +3886,7 @@ bool WasmExceptionObject::construct(JSContext* cx, unsigned argc, Value* vp) {
 
   wasm::SharedTagType tagType = exnObj->tagType();
   const wasm::ValTypeVector& params = tagType->argTypes();
-  const wasm::TagOffsetVector& offsets = tagType->argOffsets();
+  const wasm::TagOffsetVector& offsets = tagType->exceptionArgOffsets();
 
   RootedValue nextArg(cx);
   for (size_t i = 0; i < params.length(); i++) {
@@ -4057,7 +4057,7 @@ bool WasmExceptionObject::getArgImpl(JSContext* cx, const CallArgs& args) {
     return false;
   }
 
-  uint32_t offset = exnTag->tagType()->argOffsets()[index];
+  uint32_t offset = exnTag->tagType()->exceptionArgOffsets()[index];
   RootedValue result(cx);
   if (!exnObj->loadArg(cx, offset, params[index], &result)) {
     return false;
