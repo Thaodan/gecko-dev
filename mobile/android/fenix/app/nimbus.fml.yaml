@@ -1267,6 +1267,14 @@ features:
         value:
           enabled: true
 
+  homepage-sports-widget:
+    description: Feature to enable Homepage Sports Widget for users on Firefox on Android.
+    variables:
+      enabled:
+        description: If true, Homepage Sports Widget is enabled.
+        type: Boolean
+        default: false
+
 types:
   objects:
     GleanServerKnobsConfiguration:

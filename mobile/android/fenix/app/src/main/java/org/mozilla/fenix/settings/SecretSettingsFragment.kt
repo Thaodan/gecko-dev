@@ -508,6 +508,11 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
             isChecked = context.settings().googleLensIntegrationEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
+
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_homepage_sports_widget).apply {
+            isChecked = context.settings().enableHomepageSportsWidget
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
     }
 
     override fun onDisplayPreferenceDialog(preference: Preference) {
