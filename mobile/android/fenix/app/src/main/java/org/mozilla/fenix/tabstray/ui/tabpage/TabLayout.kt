@@ -9,6 +9,7 @@ import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.animation.rememberSplineBasedDecay
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridItemScope
@@ -39,6 +41,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,6 +56,8 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.modifier.thenConditional
 import org.mozilla.fenix.R
@@ -152,7 +157,7 @@ fun TabLayout(
     header: (@Composable () -> Unit)? = null,
     contentPadding: PaddingValues = defaultTabLayoutContentPadding(),
 ) {
-    var selectedTabIndex = 0
+    var selectedTabIndex = -1
     selectedTabId?.let {
         tabs.forEachIndexed { index, tab ->
             if (tab is TabsTrayItem.Tab && tab.id == selectedTabId) {
@@ -196,6 +201,56 @@ fun TabLayout(
     }
 }
 
+@Composable
+private fun TabLayoutScrollHelper(
+    state: ScrollableState,
+    selectedTabIndex: Int,
+    bottomPadding: Dp,
+    isHeaderPresent: Boolean,
+) {
+    val density = LocalDensity.current
+    val bottomPaddingPx = with(density) { bottomPadding.roundToPx() }
+
+    LaunchedEffect(selectedTabIndex) {
+        if (selectedTabIndex < 0) return@LaunchedEffect
+
+        val targetIndex = selectedTabIndex + (if (isHeaderPresent) 1 else 0)
+
+        val scrollToItem: suspend (Int, Int) -> Unit = when (state) {
+            is LazyListState -> state::scrollToItem
+            is LazyGridState -> state::scrollToItem
+            else -> return@LaunchedEffect
+        }
+
+        snapshotFlow { calculateScrollDimensions(state) }
+            .filterNotNull()
+            .first()
+            .let { (viewportHeight, itemHeight) ->
+                if (viewportHeight > 0 && itemHeight > 0) {
+                    val offset = -(viewportHeight - itemHeight - bottomPaddingPx)
+                    scrollToItem(targetIndex, offset)
+                }
+            }
+    }
+}
+
+private fun calculateScrollDimensions(state: ScrollableState): Pair<Int, Int>? {
+    val (viewportHeight, items) = when (state) {
+        is LazyListState -> state.layoutInfo.viewportSize.height to state.layoutInfo.visibleItemsInfo.map {
+            it.key to it.size
+        }
+        is LazyGridState -> state.layoutInfo.viewportSize.height to state.layoutInfo.visibleItemsInfo.map {
+            it.key to it.size.height
+        }
+        else -> return null
+    }
+
+    if (viewportHeight <= 0) return null
+
+    val itemHeight = items.firstOrNull { it.first != HEADER_ITEM_KEY }?.second ?: 0
+    return viewportHeight to itemHeight
+}
+
 @Suppress("LongParameterList", "LongMethod")
 @Composable
 private fun TabGrid(
@@ -214,7 +269,15 @@ private fun TabGrid(
     editTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     header: (@Composable () -> Unit)? = null,
 ) {
-    val gridState = rememberLazyGridState(initialFirstVisibleItemIndex = selectedTabIndex)
+    val gridState = rememberLazyGridState()
+
+    TabLayoutScrollHelper(
+        state = gridState,
+        selectedTabIndex = selectedTabIndex,
+        bottomPadding = contentPadding.calculateBottomPadding(),
+        isHeaderPresent = header != null,
+    )
+
     val tabGridBottomPadding = dimensionResource(id = R.dimen.tab_tray_grid_bottom_padding)
     val isInMultiSelectMode = selectionMode is TabsTrayState.Mode.Select
 
@@ -394,8 +457,16 @@ private fun TabList(
     header: (@Composable () -> Unit)? = null,
     onTabDragStart: () -> Unit = {},
 ) {
-    val state = rememberLazyListState(initialFirstVisibleItemIndex = selectedTabIndex)
+    val state = rememberLazyListState()
     val tabListBottomPadding = dimensionResource(id = R.dimen.tab_tray_list_bottom_padding)
+
+    TabLayoutScrollHelper(
+        state = state,
+        selectedTabIndex = selectedTabIndex,
+        bottomPadding = tabListBottomPadding,
+        isHeaderPresent = header != null,
+    )
+
     val isInMultiSelectMode = selectionMode is TabsTrayState.Mode.Select
     val reorderState = createListReorderState(
         listState = state,
@@ -543,10 +614,10 @@ private data class TabLayoutPreviewModel(
 
 private val tabLayoutPreviewData: List<Pair<String, TabLayoutPreviewModel>> = listOf(
     Pair(
-        "50 Tabs, 10th selected",
+        "50 Tabs, 25th selected",
         TabLayoutPreviewModel(
             tabCount = 50,
-            selectedTabIndex = 10,
+            selectedTabIndex = 25,
         ),
     ),
     Pair(
