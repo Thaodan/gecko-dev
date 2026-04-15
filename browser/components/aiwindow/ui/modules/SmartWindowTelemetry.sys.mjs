@@ -40,7 +40,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  getModelForChoice:
+  MODELS:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs",
 });
 
@@ -54,7 +54,7 @@ export const SmartWindowTelemetry = {
     }
     this._initialized = true;
 
-    this.updateModelMetric().catch(console.error);
+    this.updateModelMetric();
     this.updateMemoriesFromConversationMetric();
     this.updateMemoriesFromHistoryMetric();
   },
@@ -73,9 +73,10 @@ export const SmartWindowTelemetry = {
     );
   },
 
-  async updateModelMetric() {
-    const modelInfo = await lazy.getModelForChoice(lazy.modelChoice);
-    Glean.smartWindow.model.set(modelInfo?.model ?? "unset");
+  updateModelMetric() {
+    const choice = lazy.modelChoice;
+    const model = choice ? lazy.MODELS[choice]?.modelName : null;
+    Glean.smartWindow.model.set(model ?? "unset");
   },
 
   recordUriLoad() {

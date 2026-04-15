@@ -14,200 +14,194 @@ const MODEL_PREF = "browser.smartwindow.firstrun.modelChoice";
 const AUTO_ADVANCE_PREF = "browser.smartwindow.firstrun.autoAdvanceMS";
 const FIRST_RUN_COMPLETE_PREF = "browser.smartwindow.firstrun.hasCompleted";
 const EXPLAINER_PAGE_PREF = "browser.smartwindow.firstrun.explainerURL";
-const { getAllModelsData } = ChromeUtils.importESModule(
+const { MODELS } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs"
 );
 
 const autoAdvanceMS = Services.prefs.getIntPref(AUTO_ADVANCE_PREF);
 
-function createAIWindowConfig(modelData) {
-  return {
-    id: "AI_WINDOW_WELCOME",
-    template: "spotlight",
-    transitions: true,
-    modal: "tab",
-    backdrop: "transparent",
-    screens: [
-      {
-        id: "AI_WINDOW_INTRO",
-        auto_advance: {
-          actionEl: "primary_button",
-          actionTimeMS: autoAdvanceMS,
+const AI_WINDOW_CONFIG = {
+  id: "AI_WINDOW_WELCOME",
+  template: "spotlight",
+  transitions: true,
+  modal: "tab",
+  backdrop: "transparent",
+  screens: [
+    {
+      id: "AI_WINDOW_INTRO",
+      auto_advance: {
+        actionEl: "primary_button",
+        actionTimeMS: autoAdvanceMS,
+      },
+      force_hide_steps_indicator: true,
+      content: {
+        fullscreen: true,
+        hide_secondary_section: "responsive",
+        position: "center",
+        paddingBottom: "0px",
+        background: "transparent",
+        screen_style: {
+          overflow: "hidden",
         },
-        force_hide_steps_indicator: true,
-        content: {
-          fullscreen: true,
-          hide_secondary_section: "responsive",
-          position: "center",
-          paddingBottom: "0px",
-          background: "transparent",
-          screen_style: {
-            overflow: "hidden",
-          },
-          title: {
-            fontWeight: 350,
-            fontSize: "39px",
-            letterSpacing: 0,
-            lineHeight: "56px",
-            textAlign: "center",
-            string_id: "aiwindow-firstrun-title",
-          },
-          primary_button: {
-            label: "",
-            action: {
-              navigate: true,
-            },
+        title: {
+          fontWeight: 350,
+          fontSize: "39px",
+          letterSpacing: 0,
+          lineHeight: "56px",
+          textAlign: "center",
+          string_id: "aiwindow-firstrun-title",
+        },
+        primary_button: {
+          label: "",
+          action: {
+            navigate: true,
           },
         },
       },
-      {
-        id: "AI_WINDOW_CHOOSE_MODEL",
-        force_hide_steps_indicator: true,
-        content: {
-          position: "center",
-          background: "transparent",
-          screen_style: {
-            width: "750px",
+    },
+    {
+      id: "AI_WINDOW_CHOOSE_MODEL",
+      force_hide_steps_indicator: true,
+      content: {
+        position: "center",
+        background: "transparent",
+        screen_style: {
+          width: "750px",
+        },
+        title: {
+          string_id: "aiwindow-firstrun-model-title",
+          fontSize: "40px",
+          fontWeight: "350",
+          letterSpacing: 0,
+          lineHeight: "normal",
+        },
+        subtitle: {
+          string_id: "aiwindow-firstrun-model-subtitle",
+          fontSize: "17px",
+          fontWeight: 320,
+        },
+        tiles: {
+          type: "single-select",
+          selected: "none",
+          autoTrigger: false,
+          action: {
+            picker: "<event>",
           },
-          title: {
-            string_id: "aiwindow-firstrun-model-title",
-            fontSize: "40px",
-            fontWeight: "350",
-            letterSpacing: 0,
-            lineHeight: "normal",
-          },
-          subtitle: {
-            string_id: "aiwindow-firstrun-model-subtitle",
-            fontSize: "17px",
-            fontWeight: 320,
-          },
-          tiles: {
-            type: "single-select",
-            selected: "none",
-            autoTrigger: false,
-            action: {
-              picker: "<event>",
-            },
-            data: [
-              {
-                id: "model_1",
-                label: {
-                  string_id: "aiwindow-firstrun-model-fast-label",
-                  fontSize: "20px",
-                  fontWeight: 613,
-                },
-                icon: {
-                  background:
-                    'center / contain no-repeat url("chrome://browser/content/aiwindow/assets/model-choice-1.svg")',
-                },
-                body: {
-                  string_id: "aiwindow-firstrun-model-fast-body",
-                  fontSize: "15px",
-                  fontWeight: 320,
-                },
-                subtitle: {
-                  string_id: "aiwindow-firstrun-model-chip-subtitle",
-                  args: modelData["1"],
-                },
-                action: {
-                  type: "SET_PREF",
-                  data: {
-                    pref: {
-                      name: MODEL_PREF,
-                      value: "1",
-                    },
+          data: [
+            {
+              id: "model_1",
+              label: {
+                string_id: "aiwindow-firstrun-model-fast-label",
+                fontSize: "20px",
+                fontWeight: 613,
+              },
+              icon: {
+                background:
+                  'center / contain no-repeat url("chrome://browser/content/aiwindow/assets/model-choice-1.svg")',
+              },
+              body: {
+                string_id: "aiwindow-firstrun-model-fast-body",
+                fontSize: "15px",
+                fontWeight: 320,
+              },
+              subtitle: {
+                string_id: "aiwindow-firstrun-model-chip-subtitle",
+                args: MODELS["1"],
+              },
+              action: {
+                type: "SET_PREF",
+                data: {
+                  pref: {
+                    name: MODEL_PREF,
+                    value: "1",
                   },
                 },
               },
-              {
-                id: "model_2",
-                label: {
-                  string_id: "aiwindow-firstrun-model-allpurpose-label",
-                  fontSize: "20px",
-                  fontWeight: 613,
-                },
-                icon: {
-                  background:
-                    'center / contain no-repeat url("chrome://browser/content/aiwindow/assets/model-choice-2.svg")',
-                },
-                body: {
-                  string_id: "aiwindow-firstrun-model-allpurpose-body",
-                  fontSize: "15px",
-                  fontWeight: 320,
-                },
-                subtitle: {
-                  string_id: "aiwindow-firstrun-model-chip-subtitle",
-                  args: modelData["2"],
-                },
-                action: {
-                  type: "SET_PREF",
-                  data: {
-                    pref: {
-                      name: MODEL_PREF,
-                      value: "2",
-                    },
+            },
+            {
+              id: "model_2",
+              label: {
+                string_id: "aiwindow-firstrun-model-allpurpose-label",
+                fontSize: "20px",
+                fontWeight: 613,
+              },
+              icon: {
+                background:
+                  'center / contain no-repeat url("chrome://browser/content/aiwindow/assets/model-choice-2.svg")',
+              },
+              body: {
+                string_id: "aiwindow-firstrun-model-allpurpose-body",
+                fontSize: "15px",
+                fontWeight: 320,
+              },
+              subtitle: {
+                string_id: "aiwindow-firstrun-model-chip-subtitle",
+                args: MODELS["2"],
+              },
+              action: {
+                type: "SET_PREF",
+                data: {
+                  pref: {
+                    name: MODEL_PREF,
+                    value: "2",
                   },
                 },
               },
-              {
-                id: "model_3",
-                label: {
-                  string_id: "aiwindow-firstrun-model-personal-label",
-                  fontSize: "20px",
-                  fontWeight: 613,
-                },
-                icon: {
-                  background:
-                    'center / contain no-repeat url("chrome://browser/content/aiwindow/assets/model-choice-3.svg")',
-                },
-                body: {
-                  string_id: "aiwindow-firstrun-model-personal-body",
-                  fontSize: "15px",
-                  fontWeight: 320,
-                },
-                subtitle: {
-                  string_id: "aiwindow-firstrun-model-chip-subtitle",
-                  args: modelData["3"],
-                },
-                action: {
-                  type: "SET_PREF",
-                  data: {
-                    pref: {
-                      name: MODEL_PREF,
-                      value: "3",
-                    },
+            },
+            {
+              id: "model_3",
+              label: {
+                string_id: "aiwindow-firstrun-model-personal-label",
+                fontSize: "20px",
+                fontWeight: 613,
+              },
+              icon: {
+                background:
+                  'center / contain no-repeat url("chrome://browser/content/aiwindow/assets/model-choice-3.svg")',
+              },
+              body: {
+                string_id: "aiwindow-firstrun-model-personal-body",
+                fontSize: "15px",
+                fontWeight: 320,
+              },
+              subtitle: {
+                string_id: "aiwindow-firstrun-model-chip-subtitle",
+                args: MODELS["3"],
+              },
+              action: {
+                type: "SET_PREF",
+                data: {
+                  pref: {
+                    name: MODEL_PREF,
+                    value: "3",
                   },
                 },
               },
-            ],
+            },
+          ],
+        },
+        primary_button: {
+          disabled: "hasActiveSingleSelect",
+          label: {
+            string_id: "aiwindow-firstrun-button",
           },
-          primary_button: {
-            disabled: "hasActiveSingleSelect",
-            label: {
-              string_id: "aiwindow-firstrun-button",
-            },
-            action: {
-              type: "SET_PREF",
-              data: {
-                pref: {
-                  name: FIRST_RUN_COMPLETE_PREF,
-                  value: true,
-                },
+          action: {
+            type: "SET_PREF",
+            data: {
+              pref: {
+                name: FIRST_RUN_COMPLETE_PREF,
+                value: true,
               },
-              navigate: true,
             },
+            navigate: true,
           },
         },
       },
-    ],
-  };
-}
+    },
+  ],
+};
 
-async function renderFirstRun() {
-  // Create config after model data is loaded
-  const modelData = await getAllModelsData();
-  const AI_WINDOW_CONFIG = createAIWindowConfig(modelData);
-
+function renderFirstRun() {
   const AWParent = new lazy.AboutWelcomeParent();
   const receive = name => data =>
     AWParent.onContentMessage(
@@ -280,11 +274,7 @@ async function renderFirstRun() {
 }
 
 if (document.readyState === "loading") {
-  document.addEventListener(
-    "DOMContentLoaded",
-    () => renderFirstRun().catch(console.error),
-    { once: true }
-  );
+  document.addEventListener("DOMContentLoaded", renderFirstRun, { once: true });
 } else {
-  renderFirstRun().catch(console.error);
+  renderFirstRun();
 }

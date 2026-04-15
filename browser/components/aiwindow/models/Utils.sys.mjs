@@ -194,11 +194,6 @@ export const FEATURE_MAJOR_VERSIONS = Object.freeze({
  */
 
 /**
- * @typedef {object} RemoteSettingsClient
- * @property {() => Promise<object[]>} get - Function to get records from remote settings
- */
-
-/**
  * Parses a version string in the format "{major}.{minor}".
  *
  * @param {string} versionString - Version string to parse (e.g., "1.2")
@@ -891,55 +886,6 @@ export class openAIEngine {
    */
   runWithGenerator(options) {
     return this._runWithGeneratorAuth(options);
-  }
-}
-
-/**
- * Resolves chat model metadata for a given choice ID from Remote Settings.
- *
- * @param {string} choiceId - Model choice ID (e.g., "1", "2", "3")
- * @param {number} [maxMajorVersion] - Maximum major version to include
- * @returns {Promise<{model: string, ownerName: string}|null>}
- *   Returns null if choice ID not found in Remote Settings
- */
-export async function resolveChatModelChoice(
-  choiceId,
-  maxMajorVersion = FEATURE_MAJOR_VERSIONS[MODEL_FEATURES.CHAT]
-) {
-  if (choiceId === "0") {
-    // Custom model - no RS lookup needed
-    return {
-      model: "custom-model",
-      ownerName: "",
-    };
-  }
-
-  try {
-    const client = openAIEngine.getRemoteClient();
-    const allRecords = await client.get();
-
-    const record = selectMainConfig(
-      allRecords.filter(r => r.feature === MODEL_FEATURES.CHAT),
-      {
-        majorVersion: maxMajorVersion,
-        feature: MODEL_FEATURES.CHAT,
-        modelChoiceId: choiceId,
-      }
-    );
-    if (!record) {
-      return null;
-    }
-
-    return {
-      model: record.model,
-      ownerName: record.owner_name ?? "",
-    };
-  } catch (error) {
-    console.warn(
-      "Failed to resolve chat model choice from Remote Settings:",
-      error
-    );
-    return null;
   }
 }
 
