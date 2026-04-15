@@ -2726,6 +2726,11 @@ class Settings(
         default = Config.channel.isNightlyOrDebug,
     )
 
+    var importBookmarksFeatureFlagEnabled by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_import_bookmarks),
+        default = Config.channel.isDebug,
+    )
+
     /**
      * Persists IPProtection state set through Secret Settings.
      *
