@@ -63,11 +63,8 @@ export class CustomKeysParent extends JSWindowActorParent {
     }
 
     // Add some shortcuts that aren't available in menus.
-    const fileCat = topWin.document.getElementById("file-menu").label;
-    let cat = keys[fileCat];
-    add(cat, "key_duplicateTab", "customkeys-file-duplicate-tab");
     const historyCat = topWin.document.getElementById("history-menu").label;
-    cat = keys[historyCat];
+    let cat = keys[historyCat];
     add(
       cat,
       "key_restoreLastClosedTabOrWindowOrSession",
