@@ -2,10 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { PlacesUtils } from "resource://gre/modules/PlacesUtils.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  JsonSchema: "resource://gre/modules/JsonSchema.sys.mjs",
+  PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
+});
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "CONTENT_SHARING_ENABLED",
@@ -18,9 +21,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "browser.contentsharing.server.url",
   ""
 );
-ChromeUtils.defineESModuleGetters(lazy, {
-  JsonSchema: "resource://gre/modules/JsonSchema.sys.mjs",
-});
 
 const SCHEMA_MAP = new Map();
 async function loadContentSharingSchema() {
@@ -96,7 +96,7 @@ class ContentSharingUtilsClass {
       };
 
       const share = this.buildShare(shareObject);
-      await this.openShareUrlInNewTab(share);
+      await this.openShareUrlInNewTab(share, tabs[0].ownerGlobal);
     } catch (e) {
       console.error("ContentSharingUtils: failed to share tabs", e);
     }
@@ -120,12 +120,12 @@ class ContentSharingUtilsClass {
       title,
       type: "tab_group",
       children: tabGroup.tabs.map(t => {
-        return { uri: t.linkedBrowser.currentURI.spec, title: t.label };
+        return { uri: t.linkedBrowser.currentURI.displaySpec, title: t.label };
       }),
     };
 
     const share = this.buildShare(shareObject);
-    await this.openShareUrlInNewTab(share);
+    await this.openShareUrlInNewTab(share, tabGroup.ownerGlobal);
   }
 
   /**
@@ -147,14 +147,20 @@ class ContentSharingUtilsClass {
 
     let bookmark;
     if (bookmarkFolderGuids.length === 1) {
-      bookmark = await PlacesUtils.promiseBookmarksTree(bookmarkFolderGuids[0]);
+      bookmark = await lazy.PlacesUtils.promiseBookmarksTree(
+        bookmarkFolderGuids[0]
+      );
     } else {
       // More than one folder selected: first folder is the parent, rest are children.
-      bookmark = await PlacesUtils.promiseBookmarksTree(bookmarkFolderGuids[0]);
+      bookmark = await lazy.PlacesUtils.promiseBookmarksTree(
+        bookmarkFolderGuids[0]
+      );
       bookmark.children = bookmark.children ?? [];
 
       for (let guid of bookmarkFolderGuids.slice(1)) {
-        bookmark.children.push(await PlacesUtils.promiseBookmarksTree(guid));
+        bookmark.children.push(
+          await lazy.PlacesUtils.promiseBookmarksTree(guid)
+        );
       }
     }
 
