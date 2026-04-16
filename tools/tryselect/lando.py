@@ -426,7 +426,12 @@ class LandoAPI:
 
 
 def push_to_lando_try(
-    vcs: SupportedVcsRepository, commit_message: str, changed_files: dict, metrics
+    vcs: SupportedVcsRepository,
+    commit_message: str,
+    changed_files: dict,
+    metrics,
+    *,
+    force_old_lando: bool = False,
 ):
     """Push a set of patches to Lando's try endpoint."""
 
@@ -453,7 +458,7 @@ def push_to_lando_try(
     # Bug 1979252: A/B test use of new lando for some pushes to try.
     new_lando_probability = 0.1
 
-    if random() < new_lando_probability:
+    if not force_old_lando and random() < new_lando_probability:
         default_lando_config_section = NEW_LANDO_ENTRY
 
     lando_config_section = os.getenv("LANDO_TRY_CONFIG", default_lando_config_section)
