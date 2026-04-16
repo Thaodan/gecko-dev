@@ -73,7 +73,7 @@ function fullZoomLocationChangeObserver(aSubject) {
   // If the tab was the last one in its window and has been dragged to another
   // window, the original browser's window will be unavailable here. Since that
   // window is closing, we can just ignore this notification.
-  if (!aSubject.ownerDocGlobal) {
+  if (!aSubject.ownerGlobal) {
     return;
   }
   updateZoomUI(aSubject, false);
@@ -99,7 +99,7 @@ function onZoomChange(event) {
       // an associated browser.
       return;
     }
-    browser = topDoc.ownerDocGlobal.docShell.chromeEventHandler;
+    browser = topDoc.ownerGlobal.docShell.chromeEventHandler;
   } else {
     browser = event.originalTarget;
   }
@@ -114,11 +114,11 @@ function onZoomChange(event) {
  *   change is related to tab switching. Optional
  */
 export async function updateZoomUI(aBrowser, aAnimate = false) {
-  let win = aBrowser.ownerDocGlobal;
+  let win = aBrowser.ownerGlobal;
   if (
     !win.gBrowser ||
     win.gBrowser.selectedBrowser != aBrowser ||
-    aBrowser.browsingContext?.topChromeWindow != win
+    aBrowser.browsingContext.topChromeWindow != win
   ) {
     return;
   }
@@ -200,7 +200,7 @@ customizationListener.onWidgetAdded =
 customizationListener.onWidgetReset = customizationListener.onWidgetUndoMove =
   function (aWidgetNode) {
     if (aWidgetNode.id == "zoom-controls") {
-      updateZoomUI(aWidgetNode.ownerDocGlobal.gBrowser.selectedBrowser);
+      updateZoomUI(aWidgetNode.ownerGlobal.gBrowser.selectedBrowser);
     }
   };
 CustomizableUI.addListener(customizationListener);
