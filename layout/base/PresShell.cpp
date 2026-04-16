@@ -7859,6 +7859,12 @@ nsIFrame* PresShell::EventHandler::GetFrameToHandleNonTouchEvent(
     return nullptr;
   }
 
+  Document* doc = GetDocument();
+  if (MOZ_UNLIKELY(doc && doc->RenderingSuppressedForViewTransitions())) {
+    Element* root = doc->GetRootElement();
+    return root ? root->GetPrimaryFrame() : nullptr;
+  }
+
   ViewportType viewportType = ViewportType::Layout;
   if (aWeakRootFrameToHandleEvent->Type() == LayoutFrameType::Viewport) {
     nsPresContext* pc = aWeakRootFrameToHandleEvent->PresContext();
