@@ -569,15 +569,18 @@ Algorithms
 
 .. list-table::
    :widths: 25 25
+   :header-rows: 1
 
+   * - Name
+     - Header
    * - ``mozilla::BinarySearch``
      - ``mfbt/BinarySearch.h``
-   * - ``mozilla::BitwiseCast``
-     - ``mfbt/Casting.h`` (strict aliasing-safe cast)
-   * - ``mozilla/MathAlgorithms.h``
-     - (rotate, ctlz, popcount, gcd, abs, lcm)
+   * - ``mozilla::BitwiseCast`` (strict aliasing-safe cast)
+     - ``mfbt/Casting.h``
+   * - ``rotate``, ``ctlz``, ``popcount``, ``gcd``, ``abs``, ``lcm``, etc
+     - ``mozilla/MathAlgorithms.h``
    * - ``mozilla::RollingMean``
-     - ``mfbt/RollingMean.h`` ()
+     - ``mfbt/RollingMean.h``
 
 
 Concurrency
