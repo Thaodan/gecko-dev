@@ -3856,7 +3856,7 @@ static bool CallDefaultPromiseRejectFunction(
                                                       HandleValue argVal);
 
 [[nodiscard]] static JSObject* CommonStaticResolveImpl(JSContext* cx,
-                                                       HandleValue thisVal,
+                                                       HandleObject thisObj,
                                                        HandleValue argVal);
 
 static bool IsPromiseSpecies(JSContext* cx, JSFunction* species);
@@ -3968,7 +3968,7 @@ template <typename GetNextFuncT, typename GetResolveAndRejectFuncT>
         // Step {c, d}. Let nextPromise be
         //              ? Call(promiseResolve, constructor, « next »).
         // Inline the call to Promise.resolve.
-        JSObject* res = CommonStaticResolveImpl(cx, CVal, nextValue);
+        JSObject* res = CommonStaticResolveImpl(cx, C, nextValue);
         if (!res) {
           return false;
         }
@@ -3983,7 +3983,7 @@ template <typename GetNextFuncT, typename GetResolveAndRejectFuncT>
       // Step {c, d}. Let nextPromise be
       //              ? Call(promiseResolve, constructor, « next »).
       // Inline the call to Promise.resolve.
-      JSObject* res = CommonStaticResolveImpl(cx, CVal, nextValue);
+      JSObject* res = CommonStaticResolveImpl(cx, C, nextValue);
       if (!res) {
         return false;
       }
@@ -5681,18 +5681,9 @@ static bool PromiseAllSettledKeyedRejectElementFunction(JSContext* cx,
  * https://tc39.es/ecma262/#sec-promise-resolve
  */
 [[nodiscard]] static JSObject* CommonStaticResolveImpl(JSContext* cx,
-                                                       HandleValue thisVal,
+                                                       HandleObject thisObj,
                                                        HandleValue argVal) {
-  // Promise.resolve
-  // Step 1. Let C be the this value.
-  // Step 2. If Type(C) is not Object, throw a TypeError exception.
-  if (!thisVal.isObject()) {
-    const char* msg = "Receiver of Promise.resolve call";
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_OBJECT_REQUIRED, msg);
-    return nullptr;
-  }
-  RootedObject C(cx, &thisVal.toObject());
+  RootedObject C(cx, thisObj);
 
   // Promise.resolve
   // Step 3. Return ? PromiseResolve(C, x).
@@ -5728,7 +5719,7 @@ static bool PromiseAllSettledKeyedRejectElementFunction(JSContext* cx,
       }
 
       // Step 2.b. If SameValue(xConstructor, C) is true, return x.
-      if (ctorVal == thisVal) {
+      if (ctorVal == ObjectValue(*thisObj)) {
         return xObj;
       }
     }
@@ -5757,8 +5748,7 @@ static bool PromiseAllSettledKeyedRejectElementFunction(JSContext* cx,
 [[nodiscard]] JSObject* js::PromiseResolve(JSContext* cx,
                                            HandleObject constructor,
                                            HandleValue value) {
-  RootedValue C(cx, ObjectValue(*constructor));
-  return CommonStaticResolveImpl(cx, C, value);
+  return CommonStaticResolveImpl(cx, constructor, value);
 }
 
 /**
@@ -5822,7 +5812,20 @@ bool js::Promise_static_resolve(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   HandleValue thisVal = args.thisv();
   HandleValue argVal = args.get(0);
-  JSObject* result = CommonStaticResolveImpl(cx, thisVal, argVal);
+
+  // Promise.resolve
+  // Step 1. Let C be the this value.
+  // Step 2. If Type(C) is not Object, throw a TypeError exception
+  if (!thisVal.isObject()) {
+    const char* msg = "Receiver of Promise.resolve call";
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_OBJECT_REQUIRED, msg);
+    return false;
+  }
+
+  RootedObject thisObj(cx, &thisVal.toObject());
+
+  JSObject* result = CommonStaticResolveImpl(cx, thisObj, argVal);
   if (!result) {
     return false;
   }
@@ -5840,12 +5843,12 @@ bool js::Promise_static_resolve(JSContext* cx, unsigned argc, Value* vp) {
  */
 /* static */
 JSObject* PromiseObject::unforgeableResolve(JSContext* cx, HandleValue value) {
-  JSObject* promiseCtor = JS::GetPromiseConstructor(cx);
+  RootedObject promiseCtor(cx, JS::GetPromiseConstructor(cx));
   if (!promiseCtor) {
     return nullptr;
   }
-  RootedValue cVal(cx, ObjectValue(*promiseCtor));
-  return CommonStaticResolveImpl(cx, cVal, value);
+
+  return CommonStaticResolveImpl(cx, promiseCtor, value);
 }
 
 /**
