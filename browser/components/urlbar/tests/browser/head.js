@@ -63,23 +63,6 @@ function resetCUIAndReinitUrlbarInput(win = window) {
   CustomizableUI.dispatchToolboxEvent("aftercustomization", {}, win);
 }
 
-async function focusSwitcher(win = window) {
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window: win,
-    waitForFocus: true,
-    value: "",
-    fireInputEvent: true,
-  });
-  Assert.ok(win.gURLBar.hasAttribute("focused"), "Urlbar was focused");
-
-  EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true }, win);
-  let switcher = win.gURLBar.querySelector(".searchmode-switcher");
-  await BrowserTestUtils.waitForCondition(
-    () => win.document.activeElement == switcher
-  );
-  Assert.ok(true, "Search mode switcher was focused");
-}
-
 /**
  * Clears the SAP telemetry probes (SEARCH_COUNTS and all of Glean).
  */
