@@ -1108,7 +1108,7 @@ StorageAccessAPIHelper::
   MOZ_ASSERT(cc);
 
   return cc
-      ->SendTestCookiePermissionDecided(aBrowsingContext, aRequestingPrincipal)
+      ->SendTestCookiePermissionDecided(aBrowsingContext, WrapNotNull(aRequestingPrincipal))
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [](const ContentChild::TestCookiePermissionDecidedPromise::
