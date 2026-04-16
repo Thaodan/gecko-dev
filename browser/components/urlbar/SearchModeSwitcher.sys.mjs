@@ -641,7 +641,10 @@ export class SearchModeSwitcher {
       this.closePanel();
     }
 
-    let opts = { searchEngine: engine, searchModeEntry: "searchbutton" };
+    let opts = {
+      searchEngine: engine,
+      searchModeEntry: "searchbutton",
+    };
 
     if (restrict || (!this.#input.userTypedValue && !whereToOpenSerp)) {
       let search = restrict ? restrict + " " + this.#input.userTypedValue : "";
@@ -661,6 +664,7 @@ export class SearchModeSwitcher {
       }
       if (whereToOpenSerp) {
         opts.where = whereToOpenSerp;
+        opts.inBackground = true;
       }
       this.#input.openEngineHomePage(this.#input.userTypedValue || "", opts);
     }

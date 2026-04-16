@@ -2854,8 +2854,12 @@ ${
    * @param {object} options
    * @param {SearchEngine} options.searchEngine
    * @param {string} [options.where]
+   * @param {boolean} [options.inBackground]
    */
-  openEngineHomePage(value, { searchEngine, where = "current" }) {
+  openEngineHomePage(
+    value,
+    { searchEngine, where = "current", inBackground = false }
+  ) {
     if (!searchEngine) {
       console.warn("No searchEngine parameter");
       return;
@@ -2877,7 +2881,7 @@ ${
     }
     this.selectionStart = -1;
 
-    this.window.openTrustedLinkIn(url, where, { inBackground: true });
+    this.window.openTrustedLinkIn(url, where, { inBackground });
   }
 
   /**
@@ -4209,6 +4213,9 @@ ${
    *   Whether the event is a KeyboardEvent that triggers canonization.
    */
   #isCanonizeKeyboardEvent(event) {
+    if (this.sapName == "searchbar") {
+      return false;
+    }
     return (
       KeyboardEvent.isInstance(event) &&
       event.keyCode == KeyEvent.DOM_VK_RETURN &&
@@ -4233,7 +4240,6 @@ ${
     // Only add the suffix when the URL bar value isn't already "URL-like",
     // and only if we get a keyboard event, to match user expectations.
     if (
-      this.sapName == "searchbar" ||
       !this.#isCanonizeKeyboardEvent(event) ||
       !/^\s*[^.:\/\s]+(?:\/.*|\s*)$/i.test(value)
     ) {
