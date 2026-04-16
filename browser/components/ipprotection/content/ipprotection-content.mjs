@@ -48,6 +48,8 @@ export default class IPProtectionContentElement extends MozLitElement {
     _messageDismissed: { type: Boolean, state: true },
   };
 
+  #prevBandwidthWarning = false;
+
   constructor() {
     super();
 
@@ -205,6 +207,16 @@ export default class IPProtectionContentElement extends MozLitElement {
     if (this.state.error) {
       this._messageDismissed = false;
     }
+
+    // Reset dismissed state when a higher bandwidth threshold is crossed.
+    if (
+      this.state.bandwidthWarning &&
+      !this.#prevBandwidthWarning &&
+      this._messageDismissed
+    ) {
+      this._messageDismissed = false;
+    }
+    this.#prevBandwidthWarning = !!this.state.bandwidthWarning;
   }
 
   messageBarTemplate() {

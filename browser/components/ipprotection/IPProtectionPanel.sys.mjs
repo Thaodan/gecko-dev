@@ -22,8 +22,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
   IPPUsageHelper:
     "moz-src:///browser/components/ipprotection/IPPUsageHelper.sys.mjs",
-  UsageStates:
-    "moz-src:///browser/components/ipprotection/IPPUsageHelper.sys.mjs",
   IPProtectionService:
     "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
   IPProtection:
@@ -141,7 +139,6 @@ export class IPProtectionPanel {
   panel = null;
   initiatedUpgrade = false;
   #window = null;
-  #lastDismissedUsageState = "none";
   #panelView = null;
   // Bug 2020733: Adds a key listener at the panel level
   //  since moz-button (header button) traps key events in its shadow DOM.
@@ -695,14 +692,15 @@ export class IPProtectionPanel {
 
   #shouldShowBandwidthWarning() {
     const state = lazy.IPPUsageHelper.state;
-    if (
-      (state == "warning-75-percent" || state == "warning-90-percent") &&
-      state !== this.#lastDismissedUsageState
-    ) {
-      return true;
+    let threshold = 0;
+    if (state === "warning-75-percent") {
+      threshold = 75;
+    } else if (state === "warning-90-percent") {
+      threshold = 90;
+    } else {
+      return false;
     }
-
-    return false;
+    return lazy.IPPUsageHelper.getDismissedThresholds().panel < threshold;
   }
 
   #addProgressListener() {
@@ -891,7 +889,22 @@ export class IPProtectionPanel {
       lazy.IPPExceptionsManager.setExclusion(principal, true);
       Glean.ipprotection.exclusionToggled.record({ excluded: true });
     } else if (event.type == "IPProtection:DismissBandwidthWarning") {
-      this.#lastDismissedUsageState = lazy.IPPUsageHelper.state;
+      const state = lazy.IPPUsageHelper.state;
+      let threshold = 0;
+      if (state === "warning-75-percent") {
+        threshold = 75;
+      } else if (state === "warning-90-percent") {
+        threshold = 90;
+      }
+      if (threshold > 0) {
+        const current = lazy.IPPUsageHelper.getDismissedThresholds();
+        if (threshold > current.panel) {
+          lazy.IPPUsageHelper.setDismissedThresholds({
+            ...current,
+            panel: threshold,
+          });
+        }
+      }
       this.setState({ bandwidthWarning: false });
     } else if (event.type == "IPPProxyManager:UsageChanged") {
       const usage = event.detail.usage;
@@ -949,9 +962,6 @@ export class IPProtectionPanel {
         });
       }
     } else if (event.type == "IPPUsageHelper:StateChanged") {
-      if (lazy.IPPUsageHelper.state === lazy.UsageStates.NONE) {
-        this.#lastDismissedUsageState = lazy.UsageStates.NONE;
-      }
       this.setState({ bandwidthWarning: this.#shouldShowBandwidthWarning() });
     }
   }
