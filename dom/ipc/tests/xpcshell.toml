@@ -6,6 +6,8 @@
 
 ["test_bug1086684.js"]
 
+["test_cookieJarSettings_ipc.js"]
+
 ["test_child_docshell.js"]
 
 ["test_headless_content_process.js"]
