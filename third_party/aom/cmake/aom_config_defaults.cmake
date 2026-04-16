@@ -8,7 +8,7 @@
 # License 1.0 was not distributed with this source code in the PATENTS file, you
 # can obtain it at www.aomedia.org/license/patent.
 
-include("${AOM_ROOT}/build/cmake/util.cmake")
+include("${AOM_ROOT}/cmake/util.cmake")
 
 # This file sets default values for libaom configuration variables. All libaom
 # config variables are added to the CMake variable cache via the macros provided
@@ -82,9 +82,6 @@ set_aom_config_var(CONFIG_GCC 0 "Building with GCC (detect).")
 set_aom_config_var(CONFIG_GCOV 0 "Enable gcov support.")
 set_aom_config_var(CONFIG_GPROF 0 "Enable gprof support.")
 set_aom_config_var(CONFIG_LIBYUV 1 "Enables libyuv scaling/conversion support.")
-# Set CONFIG_SVT_AV1 to 0 to avoid the BSD 3-Clause Clear License used by the
-# code in third_party/SVT-AV1/.
-set_aom_config_var(CONFIG_SVT_AV1 1 "Enables SVT-AV1 AVX2 convolution support.")
 
 set_aom_config_var(CONFIG_AV1_HIGHBITDEPTH 1
                    "Build with high bitdepth support.")
