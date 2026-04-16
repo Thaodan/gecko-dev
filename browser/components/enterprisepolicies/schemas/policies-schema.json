@@ -894,6 +894,9 @@
             "updates_disabled": {
               "type": "boolean"
             },
+            "update_url": {
+              "type": "URL"
+            },
             "default_area": {
               "type": "string",
               "enum": ["navbar", "menupanel"]
