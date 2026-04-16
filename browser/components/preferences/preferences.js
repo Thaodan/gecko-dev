@@ -395,6 +395,7 @@ function init_all() {
     if (!redesignEnabled && config.replaces) {
       continue;
     }
+
     SettingPaneManager.registerPane(id, config);
   }
 
