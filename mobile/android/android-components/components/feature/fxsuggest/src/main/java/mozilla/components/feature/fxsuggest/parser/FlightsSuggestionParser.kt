@@ -17,6 +17,10 @@ internal class FlightsSuggestionParser {
             flight.toFlightItem()
         }
     }
+
+    companion object {
+        const val PROVIDER_NAME = "flightaware"
+    }
 }
 
 private fun FlightDto.toFlightItem(): FlightItem {

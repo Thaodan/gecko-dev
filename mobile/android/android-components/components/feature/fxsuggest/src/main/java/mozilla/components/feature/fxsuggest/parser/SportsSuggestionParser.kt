@@ -15,6 +15,10 @@ internal class SportsSuggestionParser {
             sport.toSportItem()
         }
     }
+
+    companion object {
+        const val PROVIDER_NAME = "sports"
+    }
 }
 
 private fun SportEventDto.toSportItem(): SportItem {

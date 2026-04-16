@@ -14,6 +14,10 @@ internal class StocksSuggestionParser {
             stock.toStockItem()
         }
     }
+
+    companion object {
+        const val PROVIDER_NAME = "polygon"
+    }
 }
 
 private fun StockTickerDto.toStockItem() = StockItem(
