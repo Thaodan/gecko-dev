@@ -6,10 +6,13 @@
 const parsePropertiesFile = require("devtools/shared/node-properties/node-properties");
 const { sprintf } = require("devtools/shared/sprintfjs/sprintf");
 
-const propertiesMap = {};
+// Map between .properties file paths, e.g. "devtools/client/locales/startup.properties"
+// and objects containing all the key, value pairs for this localization file.
+const propertiesMap = new Map();
 
 // Map used to memoize Number formatters.
 const numberFormatters = new Map();
+
 const getNumberFormatter = function (decimals) {
   let formatter = numberFormatters.get(decimals);
   if (!formatter) {
@@ -62,16 +65,16 @@ function getPropertiesFile(url) {
  * @return {object} parsed properties mapped in an object.
  */
 function getProperties(url) {
-  if (!propertiesMap[url]) {
+  if (!propertiesMap.has(url)) {
     try {
-      propertiesMap[url] = parsePropertiesFile(getPropertiesFile(url));
+      propertiesMap.set(url, parsePropertiesFile(getPropertiesFile(url)));
     } catch (e) {
       console.error(`Failed to load localization file: ${url}`, e);
-      propertiesMap[url] = {};
+      propertiesMap.set(url, {});
     }
   }
 
-  return propertiesMap[url];
+  return propertiesMap.get(url);
 }
 
 /**
