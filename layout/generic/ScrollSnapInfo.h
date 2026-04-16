@@ -11,8 +11,8 @@
 #include "mozilla/ScrollTypes.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/layers/LayersTypes.h"
 #include "mozilla/WritingModes.h"
+#include "mozilla/layers/LayersTypes.h"
 #include "nsPoint.h"
 
 class nsIContent;

@@ -26,7 +26,7 @@
 #include "mozilla/StaticPtr.h"  // for StaticAutoPtr
 #include "mozilla/TimeStamp.h"  // for TimeStamp
 #include "mozilla/WritingModes.h"
-#include "nsTHashMap.h"         // for nsTHashMap
+#include "nsTHashMap.h"  // for nsTHashMap
 #include "nsString.h"
 #include "PLDHashTable.h"  // for PLDHashNumber
 
