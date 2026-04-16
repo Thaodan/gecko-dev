@@ -130,6 +130,10 @@ class MacIOSurface final
     return mozilla::gfx::ColorRange::LIMITED;
   }
 
+  bool IsHDRSurface() {
+    return mozilla::gfx::IsHDRTransferFunction(mTransferFunction);
+  }
+
   // Bind this IOSurface to a texture using the most efficient mechanism
   // available on the current platform.
   //

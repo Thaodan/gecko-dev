@@ -878,10 +878,8 @@ void NativeLayerCA::AttachExternalImage(wr::RenderTextureHost* aExternalImage) {
   mIsDRM = isDRM;
 
   MacIOSurface* macIOSurface = texture->GetSurface();
-  bool isHDR =
-      macIOSurface->GetTransferFunction() == gfx::TransferFunction::PQ ||
-      macIOSurface->GetTransferFunction() == gfx::TransferFunction::HLG;
-  mIsHDR = isHDR && StaticPrefs::gfx_color_management_hdr_video();
+  mIsHDR = macIOSurface->IsHDRSurface() &&
+           StaticPrefs::gfx_color_management_hdr_video();
 
   bool specializeVideo = ShouldSpecializeVideo(lock);
   bool changedSpecializeVideo = (mSpecializeVideo != specializeVideo);
