@@ -230,7 +230,6 @@ interface AwesomeBar {
      * data representation before being mapped into an AwesomeBar-specific
      * suggestion type (e.g. [AwesomeBar.FlightSuggestion]).
      *
-     * @property query The full query string that triggered this suggestion.
      * @property flightNumber The IATA flight designator (e.g., "AA123").
      * @property destination The arrival airport information.
      * @property origin The departure airport information.
@@ -244,7 +243,6 @@ interface AwesomeBar {
      * @property airline The operating airline for this flight.
      */
     data class FlightItem(
-        val query: String,
         val flightNumber: String,
         val destination: Airport,
         val origin: Airport,
@@ -482,7 +480,6 @@ interface AwesomeBar {
      * @property id A unique ID (provider scope) identifying this [FlightSuggestion].
      * @property score A score used to rank suggestions of this provider against each other.
      * @property onSuggestionClicked A callback to be executed when the [FlightSuggestion] was clicked by the user.
-     * @property query The user input in the toolbar.
      * @property flightNumber The IATA flight designator (e.g., "AA123").
      * @property airlineName The name of the airline.
      * @property flightStatus The status of the flight.
@@ -496,7 +493,6 @@ interface AwesomeBar {
         override val id: String = UUID.randomUUID().toString(),
         override val score: Int = 0,
         override val onSuggestionClicked: (() -> Unit)? = null,
-        val query: String,
         val flightNumber: String,
         val airlineName: String?,
         val flightStatus: FlightSuggestionStatus,
