@@ -19104,9 +19104,14 @@ class BaseContent extends (external_React_default()).PureComponent {
         className: "nova-outer-wrapper"
       }, /*#__PURE__*/external_React_default().createElement("div", {
         className: `container nova-enabled${logoShouldBeCentered ? " logo-in-content" : ""}`
-      }, /*#__PURE__*/external_React_default().createElement("div", {
+      }, /*#__PURE__*/external_React_default().createElement("aside", {
         className: "sidebar-inline-start"
-      }, !logoShouldBeCentered && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(Logo, null))), /*#__PURE__*/external_React_default().createElement("div", {
+      }, !logoShouldBeCentered && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(Logo, null))), /*#__PURE__*/external_React_default().createElement("aside", {
+        className: "sidebar-inline-end"
+      }, showWeatherWidgetInSidebar && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(Weather_Weather, {
+        dispatch: props.dispatch,
+        size: "small"
+      }))), /*#__PURE__*/external_React_default().createElement("main", {
         className: "content"
       }, logoShouldBeCentered && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(Logo, null)), prefs.showSearch && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(Search_Search, Base_extends({
         showLogo: false
@@ -19138,11 +19143,6 @@ class BaseContent extends (external_React_default()).PureComponent {
       }, /*#__PURE__*/external_React_default().createElement(DiscoveryStreamBase, {
         locale: props.App.locale,
         spocsLoading: this.isSpocsOnDemandExpired
-      }))), /*#__PURE__*/external_React_default().createElement("div", {
-        className: "sidebar-inline-end"
-      }, showWeatherWidgetInSidebar && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(Weather_Weather, {
-        dispatch: props.dispatch,
-        size: "small"
       })))), /*#__PURE__*/external_React_default().createElement(ConfirmDialog, null), /*#__PURE__*/external_React_default().createElement("menu", {
         className: "personalizeButtonWrapper"
       }, /*#__PURE__*/external_React_default().createElement(CustomizeMenu, {
