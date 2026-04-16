@@ -1014,7 +1014,7 @@ nsExternalHelperAppService::LoadURI(nsIURI* aURI,
 
   if (XRE_IsContentProcess()) {
     mozilla::dom::ContentChild::GetSingleton()->SendLoadURIExternal(
-        aURI, aTriggeringPrincipal, aRedirectPrincipal, aBrowsingContext,
+        aURI, WrapNotNull(aTriggeringPrincipal), aRedirectPrincipal, aBrowsingContext,
         aTriggeredExternally, aHasValidUserGestureActivation, aNewWindowTarget);
     return NS_OK;
   }
