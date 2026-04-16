@@ -3851,10 +3851,6 @@ static bool CallDefaultPromiseRejectFunction(
   return true;
 }
 
-[[nodiscard]] static JSObject* CommonStaticRejectImpl(JSContext* cx,
-                                                      HandleValue thisVal,
-                                                      HandleValue argVal);
-
 [[nodiscard]] static JSObject* CommonStaticResolveImpl(JSContext* cx,
                                                        HandleObject thisObj,
                                                        HandleValue argVal);
@@ -5627,50 +5623,6 @@ static bool PromiseAllSettledKeyedRejectElementFunction(JSContext* cx,
 /**
  * ES2022 draft rev d03c1ec6e235a5180fa772b6178727c17974cb14
  *
- * Promise.reject ( r )
- * https://tc39.es/ecma262/#sec-promise.reject
- */
-[[nodiscard]] static JSObject* CommonStaticRejectImpl(JSContext* cx,
-                                                      HandleValue thisVal,
-                                                      HandleValue argVal) {
-  // Promise.reject
-  // Step 1. Let C be the this value.
-  // Step 2. Let promiseCapability be ? NewPromiseCapability(C).
-  //
-  // Promise.reject => NewPromiseCapability
-  // Step 1. If IsConstructor(C) is false, throw a TypeError exception.
-  if (!thisVal.isObject()) {
-    const char* msg = "Receiver of Promise.reject call";
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_OBJECT_REQUIRED, msg);
-    return nullptr;
-  }
-  RootedObject C(cx, &thisVal.toObject());
-
-  // Promise.reject
-  // Step 2. Let promiseCapability be ? NewPromiseCapability(C).
-  Rooted<PromiseCapability> capability(cx);
-  if (!NewPromiseCapability(cx, C, &capability, true)) {
-    return nullptr;
-  }
-
-  HandleObject promise = capability.promise();
-
-  // Promise.reject
-  // Step 3. Perform ? Call(promiseCapability.[[Reject]], undefined, « r »).
-  if (!CallPromiseRejectFunction(cx, capability.reject(), argVal, promise,
-                                 nullptr, UnhandledRejectionBehavior::Report)) {
-    return nullptr;
-  }
-
-  // Promise.reject
-  // Step 4. Return promiseCapability.[[Promise]].
-  return promise;
-}
-
-/**
- * ES2022 draft rev d03c1ec6e235a5180fa772b6178727c17974cb14
- *
  * Unified implementation of
 
  * NewPromiseCapability ( C )
@@ -5761,11 +5713,39 @@ static bool Promise_reject(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   HandleValue thisVal = args.thisv();
   HandleValue argVal = args.get(0);
-  JSObject* result = CommonStaticRejectImpl(cx, thisVal, argVal);
-  if (!result) {
+  // Promise.reject
+  // Step 1. Let C be the this value.
+  // Step 2. Let promiseCapability be ? NewPromiseCapability(C).
+  //
+  // Promise.reject => NewPromiseCapability
+  // Step 1. If IsConstructor(C) is false, throw a TypeError exception.
+  if (!thisVal.isObject()) {
+    const char* msg = "Receiver of Promise.reject call";
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_OBJECT_REQUIRED, msg);
     return false;
   }
-  args.rval().setObject(*result);
+  RootedObject C(cx, &thisVal.toObject());
+
+  // Promise.reject
+  // Step 2. Let promiseCapability be ? NewPromiseCapability(C).
+  Rooted<PromiseCapability> capability(cx);
+  if (!NewPromiseCapability(cx, C, &capability, true)) {
+    return false;
+  }
+
+  HandleObject promise = capability.promise();
+
+  // Promise.reject
+  // Step 3. Perform ? Call(promiseCapability.[[Reject]], undefined, « r »).
+  if (!CallPromiseRejectFunction(cx, capability.reject(), argVal, promise,
+                                 nullptr, UnhandledRejectionBehavior::Report)) {
+    return false;
+  }
+
+  // Promise.reject
+  // Step 4. Return promiseCapability.[[Promise]].
+  args.rval().setObject(*promise);
   return true;
 }
 
