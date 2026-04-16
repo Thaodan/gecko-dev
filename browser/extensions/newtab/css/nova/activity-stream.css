@@ -9599,7 +9599,7 @@ button.arrow-button:dir(rtl) {
 }
 .nova-enabled .content .ds-navigation .ds-navigation-privacy {
   grid-column: 1/-1;
-  text-align: end;
+  justify-self: end;
 }
 .ds-navigation.ds-navigation-new-topics {
   display: block;
