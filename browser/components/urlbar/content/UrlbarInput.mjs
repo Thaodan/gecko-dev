@@ -137,12 +137,12 @@ export class UrlbarInput extends HTMLElement {
           </html:span>
         </html:moz-button>
         <!-- In XUL windows, this will be wrapped in a panel with class="searchmode-switcher-panel". -->
-        <html:panel-list class="searchmode-switcher-popup">
-          <html:div class="searchmode-switcher-popup-description" role="heading" />
+        <html:panel-list class="searchmode-switcher-panel-list">
+          <html:div class="searchmode-switcher-panel-description" role="heading" />
 ${
   lazy.UrlbarPrefs.get("nova.featureGate")
-    ? '<html:hr class="searchmode-switcher-popup-installed-engine-separator"/><html:hr class="searchmode-switcher-popup-footer-separator"/>'
-    : '<html:hr/><html:hr class="searchmode-switcher-popup-installed-engine-separator searchmode-switcher-popup-footer-separator"/>'
+    ? '<html:hr class="searchmode-switcher-panel-installed-engine-separator"/><html:hr class="searchmode-switcher-panel-footer-separator"/>'
+    : '<html:hr/><html:hr class="searchmode-switcher-panel-installed-engine-separator searchmode-switcher-panel-footer-separator"/>'
 }
         </html:panel-list>
 
@@ -364,7 +364,7 @@ ${
     this.searchModeSwitcher = new lazy.SearchModeSwitcher(this);
 
     let searchModeSwitcherDescription = this.querySelector(
-      ".searchmode-switcher-popup-description"
+      ".searchmode-switcher-panel-description"
     );
 
     searchModeSwitcherDescription.setAttribute(

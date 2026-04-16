@@ -93,7 +93,7 @@ add_task(async function test_picked_settings() {
   let popupHidden = UrlbarTestUtils.searchModeSwitcherPopupClosed(window);
   let pageLoaded = BrowserTestUtils.browserLoaded(window);
   popup
-    .querySelector(".searchmode-switcher-popup-search-settings-button")
+    .querySelector(".searchmode-switcher-panel-search-settings-button")
     .button.click();
   await Promise.all([pageLoaded, popupHidden]);
   Assert.equal(

@@ -1557,7 +1557,7 @@ class UrlbarInputTestUtils {
    *   The search mode switcher popup.
    */
   searchModeSwitcherPopup(win) {
-    return this.#urlbar(win).querySelector(".searchmode-switcher-popup");
+    return this.#urlbar(win).querySelector(".searchmode-switcher-panel-list");
   }
 
   /**

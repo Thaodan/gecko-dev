@@ -67,12 +67,12 @@ export class SearchModeSwitcher {
 
     lazy.UrlbarPrefs.addObserver(this);
 
-    this.#panelList = input.querySelector(".searchmode-switcher-popup");
+    this.#panelList = input.querySelector(".searchmode-switcher-panel-list");
     this.#button = input.querySelector(".searchmode-switcher");
     this.#closebutton = input.querySelector(".searchmode-switcher-close");
 
     // MozButton and PanelList have to be hooked up via id.
-    this.#panelList.id = "searchmode-switcher-popup-" + input.sapName;
+    this.#panelList.id = "searchmode-switcher-panel-list-" + input.sapName;
     this.#button.setAttribute("menuid", this.#panelList.id);
 
     // In XUL documents, wrap in a XUL panel to make sure it's
@@ -468,10 +468,10 @@ export class SearchModeSwitcher {
 
     let browser = this.#input.window.gBrowser;
     let installedEngineSeparator = this.#panelList.querySelector(
-      ".searchmode-switcher-popup-installed-engine-separator"
+      ".searchmode-switcher-panel-installed-engine-separator"
     );
     let footerSeparator = this.#panelList.querySelector(
-      ".searchmode-switcher-popup-footer-separator"
+      ".searchmode-switcher-panel-footer-separator"
     );
 
     // Add installed engines.
@@ -614,7 +614,7 @@ export class SearchModeSwitcher {
   #buildSettingsButton() {
     // Icon is set via css based on the class.
     let menuitem = this.#createButton(undefined);
-    menuitem.classList.add("searchmode-switcher-popup-search-settings-button");
+    menuitem.classList.add("searchmode-switcher-panel-search-settings-button");
     menuitem.dataset.action = "openpreferences";
     this.#input.document.l10n.setAttributes(
       menuitem,

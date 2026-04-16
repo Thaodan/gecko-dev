@@ -156,12 +156,12 @@ export class SmartbarInput extends HTMLElement {
           </html:span>
         </html:moz-button>
         <!-- In XUL windows, this will be wrapped in a panel with class="searchmode-switcher-panel". -->
-        <html:panel-list class="searchmode-switcher-popup">
-          <html:span class="searchmode-switcher-popup-description" role="heading" />
+        <html:panel-list class="searchmode-switcher-panel-list">
+          <html:span class="searchmode-switcher-panel-description" role="heading" />
 ${
   lazy.UrlbarPrefs.get("nova.featureGate")
-    ? '<html:hr class="searchmode-switcher-popup-installed-engine-separator"/><html:hr class="searchmode-switcher-popup-footer-separator"/>'
-    : '<html:hr/><html:hr class="searchmode-switcher-popup-installed-engine-separator searchmode-switcher-popup-footer-separator"/>'
+    ? '<html:hr class="searchmode-switcher-panel-installed-engine-separator"/><html:hr class="searchmode-switcher-panel-footer-separator"/>'
+    : '<html:hr/><html:hr class="searchmode-switcher-panel-installed-engine-separator searchmode-switcher-panel-footer-separator"/>'
 }
         </html:panel-list>
 
