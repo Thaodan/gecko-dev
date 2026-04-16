@@ -7,7 +7,9 @@ package mozilla.components.feature.fxsuggest.datasource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
+import kotlinx.serialization.json.Json
 import mozilla.components.concept.awesomebar.AwesomeBar
+import mozilla.components.feature.fxsuggest.dto.CombinedSuggestionResponseDto
 
 /**
  * Minimum length of the query that will trigger network request for fetching online suggestions.
@@ -63,6 +65,8 @@ class CombinedOnlineSuggestionDataSource(
     @Volatile
     private var pendingRequest: Pair<String, Deferred<CombinedResults>>? = null
 
+    private val json = Json { ignoreUnknownKeys = true }
+
     /**
      * Returns suggestions for [query], making at most one network request even when called
      * concurrently by multiple providers for the same query.
@@ -93,7 +97,12 @@ class CombinedOnlineSuggestionDataSource(
     }
 
     private fun parseResponse(body: String): CombinedResults {
-        println(body)
-        TODO()
+        return try {
+            val response = json.decodeFromString<CombinedSuggestionResponseDto>(body)
+            response.suggestions.maxByOrNull { it.score } ?: return CombinedResults.Empty
+            TODO()
+        } catch (_: Exception) {
+            CombinedResults.Empty
+        }
     }
 }
