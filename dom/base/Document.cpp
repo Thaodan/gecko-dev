@@ -15646,6 +15646,31 @@ static void DispatchFullscreenNewOriginEvent(Document* aDoc) {
   asyncDispatcher->PostDOMEvent();
 }
 
+static void DispatchFullscreenUpdateKeyboardLockEvent(Document* aDoc) {
+  // Dispatch an event to update the fullscreen keyboard lock status
+  // to that of the new fullscreen document and display a warning if the
+  // status has changed.
+  aDoc->Dispatch(NS_NewRunnableFunction(
+      "DispatchFullscreenUpdateKeyboardLockEvent", [doc = RefPtr{aDoc}]() {
+        AutoJSAPI jsapi;
+        if (!jsapi.Init(doc->GetOwnerGlobal())) {
+          return;
+        }
+        JSContext* cx = jsapi.cx();
+        JS::Rooted<JS::Value> detail(cx);
+        if (!ToJSValue(cx, doc->GetFullscreenKeyboardLockStatus(), &detail)) {
+          return;
+        }
+        RefPtr event = NS_NewDOMCustomEvent(doc, nullptr, nullptr);
+        event->InitCustomEvent(cx, u"MozDOMFullscreen:UpdateKeyboardLock"_ns,
+                               /* aCanBubble */ true,
+                               /* aCancelable */ false, detail);
+        event->SetTrusted(true);
+        event->WidgetEventPtr()->mFlags.mOnlyChromeDispatch = true;
+        doc->DispatchEvent(*event);
+      }));
+}
+
 void Document::RestorePreviousFullscreenState(UniquePtr<FullscreenExit> aExit) {
   NS_ASSERTION(!Fullscreen() || !FullscreenRoots::IsEmpty(),
                "Should have at least 1 fullscreen root when fullscreen!");
@@ -15716,9 +15741,7 @@ void Document::RestorePreviousFullscreenState(UniquePtr<FullscreenExit> aExit) {
     DebugOnly<bool> removedFullscreenElement = lastDoc->PopFullscreenElement();
     MOZ_ASSERT(removedFullscreenElement);
     newFullscreenDoc = lastDoc;
-
-    GetWindowGlobalChild()->SendUpdateFullscreenKeyboardLockStatus(
-        newFullscreenDoc->HasFullscreenKeyboardLockEnabled());
+    DispatchFullscreenUpdateKeyboardLockEvent(newFullscreenDoc);
   } else {
     lastDoc->CleanupFullscreenState();
     newFullscreenDoc = lastDoc->GetInProcessParentDocument();
@@ -16952,6 +16975,9 @@ bool Document::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest) {
   FullscreenRoots::Add(this);
 
   SetFullscreenKeyboardLockStatus(aRequest->mFullscreenKeyboardLock);
+  if (previousFullscreenDoc) {
+    DispatchFullscreenUpdateKeyboardLockEvent(this);
+  }
 
   // If it is the first entry of the fullscreen, trigger an event so
   // that the UI can response to this change, e.g. hide chrome, or
@@ -21095,6 +21121,10 @@ void Document::GetAllInProcessDocuments(
 
 void Document::SetFullscreenKeyboardLockStatus(FullscreenKeyboardLock aStatus) {
   mFullscreenKeyboardLockStatus = aStatus;
+}
+
+FullscreenKeyboardLock Document::GetFullscreenKeyboardLockStatus() const {
+  return mFullscreenKeyboardLockStatus;
 }
 
 bool Document::HasFullscreenKeyboardLockEnabled() {

@@ -134,6 +134,12 @@ export class DOMFullscreenChild extends JSWindowActorChild {
         }
         break;
       }
+      case "MozDOMFullscreen:UpdateKeyboardLock": {
+        this.sendAsyncMessage("DOMFullscreen:UpdateKeyboardLock", {
+          fullscreenKeyboardLock: aEvent.detail,
+        });
+        break;
+      }
       case "MozAfterPaint": {
         // Only send Painted signal after we actually finish painting
         // the transition for the fullscreen change.

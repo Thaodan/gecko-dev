@@ -2141,6 +2141,7 @@ class Document : public nsINode,
   static void ClearPendingFullscreenRequests(Document* aDocument);
 
   void SetFullscreenKeyboardLockStatus(FullscreenKeyboardLock aStatus);
+  FullscreenKeyboardLock GetFullscreenKeyboardLockStatus() const;
   bool HasFullscreenKeyboardLockEnabled();
 
   // ScreenOrientation related APIs

@@ -187,6 +187,25 @@ export class DOMFullscreenParent extends JSWindowActorParent {
         this.timerId = null;
         break;
       }
+      case "DOMFullscreen:UpdateKeyboardLock": {
+        // Validate the received keyboardlock state before updating - an
+        // infected content process could send something unexpected.
+        let newLock =
+          aMessage.data.fullscreenKeyboardLock == "none" ||
+          aMessage.data.fullscreenKeyboardLock == "browser"
+            ? aMessage.data.fullscreenKeyboardLock
+            : "none";
+        if (this.fullscreenKeyboardLock != newLock) {
+          this.fullscreenKeyboardLock = newLock;
+          this.manager.updateFullscreenKeyboardLockStatus(newLock);
+          window.PointerlockFsWarning.close("fullscreen-warning");
+          window.PointerlockFsWarning.showFullScreen(
+            this.browsingContext,
+            newLock == "browser"
+          );
+        }
+        break;
+      }
     }
   }
 
