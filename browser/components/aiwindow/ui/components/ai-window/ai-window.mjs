@@ -823,7 +823,10 @@ export class AIWindow extends MozLitElement {
       // during connectedCallback.
       smartbar.addEventListener(
         "smartbar-initialized",
-        () => this.#setupSmartbarFocus(smartbar),
+        () => {
+          this.#setupSmartbarFocus(smartbar);
+          this.#observeSmartbarHeight();
+        },
         { once: true }
       );
 
@@ -849,7 +852,6 @@ export class AIWindow extends MozLitElement {
     this.#smartbar = smartbar;
     this.#memoriesButton = smartbar.querySelector("memories-icon-button");
     this.syncSmartbarMemoriesStateFromConversation();
-    this.#observeSmartbarHeight();
 
     // Create toggle button, like with Smartbar above
     let toggleButton = this.renderRoot.querySelector("#smartbar-toggle-button");
