@@ -1051,7 +1051,7 @@ nsresult ContentChild::ProvideWindowCommon(
       (void)SendCreateWindowInDifferentProcess(
           aTabOpener, parent, aChromeFlags, aCalledFromJS,
           aOpenWindowInfo->GetIsTopLevelCreatedByWebContent(), aURI, features,
-          aModifiers, name, WrapNotNull(triggeringPrincipal), policyContainer, referrerInfo,
+          aModifiers, name, triggeringPrincipal, policyContainer, referrerInfo,
           aOpenWindowInfo->GetOriginAttributes(), hasValidUserGestureActivation,
           textDirectiveUserActivation);
 
