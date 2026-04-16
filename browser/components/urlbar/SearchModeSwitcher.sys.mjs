@@ -82,7 +82,7 @@ export class SearchModeSwitcher {
       let panel = document.createXULElement("panel");
       panel.setAttribute("level", "top");
       panel.setAttribute("consumeoutsideclicks", "false");
-      panel.classList.add("searchmode-switcher-panel");
+      panel.classList.add("searchmode-switcher-panel", "toolbar-menupopup");
       this.#panelList.replaceWith(panel);
       panel.appendChild(this.#panelList);
     }

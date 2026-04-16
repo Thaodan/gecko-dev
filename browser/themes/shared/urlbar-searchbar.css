@@ -1258,7 +1258,8 @@ toolbar[inactive="true"] .urlbar,
 }
 
 .searchmode-switcher-panel {
-  --panel-padding: 0;
+  /* Override definition for toolbar-menupopup.  */
+  --panel-padding: 0 !important;
 }
 
 .searchmode-switcher-dropmarker {
