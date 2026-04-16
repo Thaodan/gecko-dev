@@ -1765,7 +1765,6 @@ let interfaceNamesInGlobalScope = [
   {
     name: "documentPictureInPicture",
     insecureContext: false,
-    nightly: true,
     android: false,
   },
   // IMPORTANT: Do not change this list without review from a DOM peer!
