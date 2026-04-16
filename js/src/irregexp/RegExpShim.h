@@ -19,8 +19,8 @@
 #include <algorithm>
 #include <bit>
 #include <cctype>
-#include <iostream>
 #include <optional>
+#include <ostream>
 
 #ifdef JS_JITSPEW
 #  include <queue>
@@ -204,6 +204,11 @@ char (&ArraySizeHelper(const T (&array)[N]))[N];
 #else
 #  define kUnalignedReadSupported true
 #endif
+
+// Some V8 files use cout without including iostream.
+namespace std {
+extern std::ostream cout;
+}
 
 namespace v8 {
 
@@ -650,7 +655,7 @@ std::ostream& operator<<(std::ostream& os, const AsHex& c);
 // std::cerr when used.
 class StdoutStream : public std::ostream {
  public:
-  StdoutStream() : std::ostream(std::cerr.rdbuf()) {}
+  StdoutStream();
 };
 
 // Reuse existing Maybe implementation
