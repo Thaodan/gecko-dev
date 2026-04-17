@@ -48,7 +48,7 @@ index e8367393a3..a693604389 100644
      }
    }
 diff --git a/modules/video_capture/BUILD.gn b/modules/video_capture/BUILD.gn
-index b55f37a39d..d452183e65 100644
+index 6feba4a247..8f9c8bb2c9 100644
 --- a/modules/video_capture/BUILD.gn
 +++ b/modules/video_capture/BUILD.gn
 @@ -118,7 +118,7 @@ if (!build_with_chromium || is_linux || is_chromeos) {
@@ -61,7 +61,7 @@ index b55f37a39d..d452183e65 100644
        }
      }
 diff --git a/sdk/BUILD.gn b/sdk/BUILD.gn
-index 137ab195fd..0bdc1046a7 100644
+index 119af02e14..264d00b23c 100644
 --- a/sdk/BUILD.gn
 +++ b/sdk/BUILD.gn
 @@ -616,6 +616,20 @@ if (is_ios || is_mac) {

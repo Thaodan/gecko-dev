@@ -26,7 +26,7 @@ index e16d071c6a..1c37f0229e 100644
        deps += [ "logging:rtc_event_log_proto" ]
      }
 diff --git a/sdk/BUILD.gn b/sdk/BUILD.gn
-index 065df50da8..137ab195fd 100644
+index 5252eb9193..119af02e14 100644
 --- a/sdk/BUILD.gn
 +++ b/sdk/BUILD.gn
 @@ -556,6 +556,7 @@ if (is_ios || is_mac) {

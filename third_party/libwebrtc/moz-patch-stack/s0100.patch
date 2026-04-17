@@ -426,7 +426,7 @@ index 40914333eb..e6cbd42d6b 100644
  
  group("logging") {
 diff --git a/media/BUILD.gn b/media/BUILD.gn
-index a215465866..d771ed4b8a 100644
+index 7008032e8c..348bc27219 100644
 --- a/media/BUILD.gn
 +++ b/media/BUILD.gn
 @@ -6,7 +6,7 @@
@@ -454,7 +454,7 @@ index 6091e49b7b..9c45ec8379 100644
  
  config("audio_device_warnings_config") {
 diff --git a/modules/audio_processing/aec3/BUILD.gn b/modules/audio_processing/aec3/BUILD.gn
-index c1c01ec57f..2a3ba6c6f8 100644
+index 622a4a1b37..9e7a6f52cb 100644
 --- a/modules/audio_processing/aec3/BUILD.gn
 +++ b/modules/audio_processing/aec3/BUILD.gn
 @@ -126,7 +126,7 @@ rtc_library("aec3") {
@@ -480,7 +480,7 @@ index dd576d29fa..178f069a62 100644
      }
    }
 diff --git a/modules/audio_processing/agc2/BUILD.gn b/modules/audio_processing/agc2/BUILD.gn
-index 92276ee60c..9130b4a093 100644
+index 55e28a79ba..4184606cf9 100644
 --- a/modules/audio_processing/agc2/BUILD.gn
 +++ b/modules/audio_processing/agc2/BUILD.gn
 @@ -256,7 +256,7 @@ rtc_library("vad_wrapper") {
@@ -602,7 +602,7 @@ index 1f19fdc878..03a6b32d0c 100644
  
  if (rtc_build_libsrtp) {
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index 37a68b88e3..a7bc7e37f2 100644
+index b995be1cca..3d07e0f639 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
 @@ -9,8 +9,8 @@
@@ -616,7 +616,7 @@ index 37a68b88e3..a7bc7e37f2 100644
  }
  
  rtc_source_set("protobuf_utils") {
-@@ -1971,8 +1971,8 @@ if (!rtc_rusty_base64) {
+@@ -1952,8 +1952,8 @@ if (!rtc_rusty_base64) {
      ]
    }
  } else {
@@ -673,10 +673,10 @@ index ad91b314f9..94280afb3d 100644
  
  rtc_source_set("arch") {
 diff --git a/rtc_tools/network_tester/BUILD.gn b/rtc_tools/network_tester/BUILD.gn
-index fd98be799b..fe30e9ece9 100644
+index f39654771e..13e85e152c 100644
 --- a/rtc_tools/network_tester/BUILD.gn
 +++ b/rtc_tools/network_tester/BUILD.gn
-@@ -187,8 +187,8 @@ if (is_android) {
+@@ -186,8 +186,8 @@ if (is_android) {
        "../../rtc_base:threading",
      ]
  
@@ -688,7 +688,7 @@ index fd98be799b..fe30e9ece9 100644
      output_extension = "so"
    }
 diff --git a/sdk/BUILD.gn b/sdk/BUILD.gn
-index 0bdc1046a7..722693997a 100644
+index 264d00b23c..1f962e2e8c 100644
 --- a/sdk/BUILD.gn
 +++ b/sdk/BUILD.gn
 @@ -9,12 +9,12 @@

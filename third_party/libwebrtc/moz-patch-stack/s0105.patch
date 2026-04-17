@@ -38,7 +38,7 @@ index ab1652692d..7227f61fc4 100644
        ]
        # Added when we removed deps in other places to avoid building
 diff --git a/media/BUILD.gn b/media/BUILD.gn
-index d771ed4b8a..05d8985f72 100644
+index 348bc27219..46f807fc4d 100644
 --- a/media/BUILD.gn
 +++ b/media/BUILD.gn
 @@ -12,12 +12,10 @@ import("../webrtc.gni")
@@ -117,10 +117,10 @@ index d771ed4b8a..05d8985f72 100644
    public_configs = []
    if (!build_with_chromium) {
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index a7bc7e37f2..7d7c685e78 100644
+index 3d07e0f639..81b861b899 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
-@@ -1607,6 +1607,7 @@ rtc_source_set("ssl_header") {
+@@ -1603,6 +1603,7 @@ rtc_source_set("ssl_header") {
  }
  
  rtc_library("digest") {
@@ -128,7 +128,7 @@ index a7bc7e37f2..7d7c685e78 100644
    visibility = [ "*" ]
    sources = [
      "message_digest.cc",
-@@ -1628,8 +1629,10 @@ rtc_library("digest") {
+@@ -1624,8 +1625,10 @@ rtc_library("digest") {
      configs += [ "..:external_ssl_library" ]
    }
  }
@@ -139,7 +139,7 @@ index a7bc7e37f2..7d7c685e78 100644
    visibility = [ "*" ]
    sources = [
      "crypto_random.cc",
-@@ -1650,6 +1653,7 @@ rtc_library("crypto_random") {
+@@ -1646,6 +1649,7 @@ rtc_library("crypto_random") {
      configs += [ "..:external_ssl_library" ]
    }
  }
