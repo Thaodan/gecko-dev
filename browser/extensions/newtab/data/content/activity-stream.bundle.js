@@ -4089,7 +4089,7 @@ class _DSCard extends (external_React_default()).PureComponent {
     const ctaButtonClassName = ctaButtonEnabled ? `ds-card-cta-button` : ``;
     const compactImagesClassName = compactImages ? `ds-card-compact-image` : ``;
     const imageGradientClassName = imageGradient ? `ds-card-image-gradient` : ``;
-    const sectionsCardsClassName = [mayHaveSectionsCards ? `sections-card-ui` : ``, novaEnabled ? `nova-card-ui` : ``, this.props.sectionsClassNames].filter(Boolean).join(" ");
+    const sectionsCardsClassName = [mayHaveSectionsCards ? `sections-card-ui` : ``, this.props.sectionsClassNames].filter(Boolean).join(" ");
     const titleLinesName = `ds-card-title-lines-${titleLines}`;
     const descLinesClassName = `ds-card-desc-lines-${descLines}`;
     const isMediumRectangle = format === "rectangle";
