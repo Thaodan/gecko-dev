@@ -367,8 +367,8 @@ export default class IPProtectionContentElement extends MozLitElement {
   pausedTemplate() {
     return html`
       <ipprotection-status-box
-        headerL10nId="ipprotection-connection-status-paused-title"
-        descriptionL10nId="ipprotection-connection-status-paused-description"
+        headerL10nId="ipprotection-connection-status-paused-title-1"
+        descriptionL10nId="ipprotection-connection-status-paused-description-1"
         .descriptionL10nArgs=${JSON.stringify({
           maxUsage: this.state.bandwidthUsage.max / BANDWIDTH.BYTES_IN_GB,
         })}
