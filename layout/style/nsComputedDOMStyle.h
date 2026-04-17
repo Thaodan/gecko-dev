@@ -382,8 +382,6 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   friend struct ComputedStyleMap;
   friend AnchorPosResolutionParams AnchorPosResolutionParams::From(
       const nsComputedDOMStyle*);
-
-  bool HasLonghandProperty(const nsACString& aMaybeCustomPropertyName) final;
 };
 
 already_AddRefed<nsComputedDOMStyle> NS_NewComputedDOMStyle(
