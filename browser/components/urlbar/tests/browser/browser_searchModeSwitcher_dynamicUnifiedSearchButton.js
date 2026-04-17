@@ -3,11 +3,11 @@
 
 "use strict";
 
-const TEST_URL = `${TEST_BASE_URL}has-a-link.html`;
-
 ChromeUtils.defineESModuleGetters(this, {
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
 });
+
+const TEST_URL = `${TEST_BASE_URL}has-a-link.html`;
 
 add_setup(async function setup() {
   await SpecialPowers.pushPrefEnv({
@@ -178,6 +178,11 @@ async function assertState(expectedVisible, expectedProxyPageState) {
   }, `Wait until Unified Search Button visibility will be changed to ${expectedVisible}`);
   Assert.ok(true, "Unified Search Button visibility is correct");
   Assert.equal(gURLBar.getAttribute("pageproxystate"), expectedProxyPageState);
+  Assert.equal(
+    switcher.getAttribute("aria-hidden"),
+    expectedVisible ? null : "true",
+    "aria-hidden should be set when the switcher is hidden so screen readers do not announce"
+  );
 }
 
 async function clickOnBrowserElement() {

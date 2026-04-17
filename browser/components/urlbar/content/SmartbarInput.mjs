@@ -5276,6 +5276,12 @@ ${
       return;
     }
     this.toggleAttribute("unifiedsearchbutton-available", available);
+    const switcher = this.querySelector(".searchmode-switcher");
+    if (available) {
+      switcher.removeAttribute("aria-hidden");
+    } else {
+      switcher.setAttribute("aria-hidden", "true");
+    }
     this.getBrowserState(
       this.window.gBrowser.selectedBrowser
     ).isUnifiedSearchButtonAvailable = available;
