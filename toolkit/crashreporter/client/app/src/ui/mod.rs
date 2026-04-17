@@ -10,7 +10,7 @@
 //! * a `fn invoke(&self, f: model::InvokeFn)` method which invokes the given function
 //!   asynchronously (without blocking) on the UI loop thread.
 
-use crate::std::{rc::Rc, sync::Arc};
+use crate::std::sync::Arc;
 use crate::{
     async_task::AsyncTask, config::Config, data, logic::ReportCrash, settings::Settings, std,
     thread_bound::ThreadBound,
@@ -134,7 +134,7 @@ pub struct ReportCrashUI {
     state: Arc<ThreadBound<ReportCrashUIState>>,
     ui: Arc<UI>,
     config: Arc<Config>,
-    logic: Rc<AsyncTask<ReportCrash>>,
+    logic: AsyncTask<ReportCrash>,
 }
 
 /// The state of the creash UI.
@@ -172,7 +172,7 @@ impl ReportCrashUI {
             })),
             ui: Default::default(),
             config,
-            logic: Rc::new(logic),
+            logic,
         }
     }
 
