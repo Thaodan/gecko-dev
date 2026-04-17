@@ -88,6 +88,11 @@
         </toolbarbutton>
         <toolbarbutton
           tabindex="0"
+          id="tabGroupEditor_copyAllLinks"
+          class="subviewbutton">
+        </toolbarbutton>
+        <toolbarbutton
+          tabindex="0"
           id="tabGroupEditor_saveAndCloseGroup"
           class="subviewbutton"
           data-l10n-id="tab-group-editor-action-save">
@@ -455,6 +460,7 @@
         moveGroupToNewWindow: document.getElementById(
           "tabGroupEditor_moveGroupToNewWindow"
         ),
+        copyAllLinks: document.getElementById("tabGroupEditor_copyAllLinks"),
         ungroupTabs: document.getElementById("tabGroupEditor_ungroupTabs"),
         saveAndCloseGroup: document.getElementById(
           "tabGroupEditor_saveAndCloseGroup"
@@ -473,6 +479,14 @@
           gBrowser.replaceGroupWithWindow(this.activeGroup);
         }
       );
+
+      this.#commandButtons.copyAllLinks.addEventListener("command", () => {
+        let links = this.#getGroupLinks(this.activeGroup);
+        if (links.length) {
+          BrowserUtils.copyLinks(links);
+        }
+        this.close();
+      });
 
       this.#commandButtons.ungroupTabs.addEventListener("command", () => {
         this.activeGroup.ungroupTabs({
@@ -756,6 +770,7 @@
           ? "tab-group-editor-title-create"
           : "tab-group-editor-title-edit"
       );
+      this.#commandButtons.copyAllLinks.hidden = enableCreateMode;
       this.#createMode = enableCreateMode;
     }
 
@@ -907,6 +922,13 @@
       });
       document.getElementById("tabGroupEditor_moveGroupToNewWindow").disabled =
         gBrowser.openTabs.length == this.activeGroup?.tabs.length;
+      let linkCount = this.#getGroupLinks(this.activeGroup).length;
+      document.l10n.setAttributes(
+        this.#commandButtons.copyAllLinks,
+        "tab-group-editor-action-copy-links",
+        { linkCount }
+      );
+      this.#commandButtons.copyAllLinks.disabled = !linkCount;
       this.#maybeDisableOrHideSaveButton();
     }
 
@@ -1031,6 +1053,25 @@
       };
       window.addEventListener("TabOpen", onTabOpened);
       gBrowser.addAdjacentNewTab(lastTab);
+    }
+
+    /**
+     * @param {MozTabbrowserTabGroup} group
+     * @returns {Array<{url: string, title: string}>}
+     */
+    #getGroupLinks(group) {
+      let links = [];
+      for (let tab of group.tabs) {
+        let browser = tab.linkedBrowser;
+        let shareableURL = BrowserUtils.getShareableURL(browser.currentURI);
+        if (shareableURL) {
+          links.push({
+            url: gURLBar.makeURIReadable(shareableURL).displaySpec,
+            title: browser.contentTitle,
+          });
+        }
+      }
+      return links;
     }
 
     /**
