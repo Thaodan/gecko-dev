@@ -257,10 +257,10 @@ void nsTextControlFrame::Reflow(nsPresContext* aPresContext,
   const WritingMode wm = aReflowInput.GetWritingMode();
   if (oldBSize == NS_UNCONSTRAINEDSIZE &&
       StyleUIReset()->mFieldSizing != StyleFieldSizing::Content) {
+    const nscoord fixedBSize = aReflowInput.ApplyMinMaxBSize(
+        CalcFixedSize(aReflowInput.mRenderingContext, wm).BSize(wm));
     const_cast<ReflowInput&>(aReflowInput)
-        .SetComputedBSize(
-            CalcFixedSize(aReflowInput.mRenderingContext, wm).BSize(wm),
-            ReflowInput::ResetResizeFlags::No);
+        .SetComputedBSize(fixedBSize, ReflowInput::ResetResizeFlags::No);
   }
   ScrollContainerFrame::Reflow(aPresContext, aDesiredSize, aReflowInput,
                                aStatus);
