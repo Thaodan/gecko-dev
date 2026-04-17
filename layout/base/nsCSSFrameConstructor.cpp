@@ -2176,7 +2176,8 @@ nsIFrame* nsCSSFrameConstructor::ConstructTableCol(
   int32_t span = colFrame->GetSpan();
   for (int32_t spanX = 1; spanX < span; spanX++) {
     nsTableColFrame* newCol = NS_NewTableColFrame(mPresShell, computedStyle);
-    InitAndRestoreFrame(aState, content, aParentFrame, newCol, false);
+    InitAndRestoreFrame(aState, content, aParentFrame, newCol,
+                        AllowCounters::No);
     aFrameList.LastChild()->SetNextContinuation(newCol);
     newCol->SetPrevContinuation(aFrameList.LastChild());
     aFrameList.AppendFrame(nullptr, newCol);
@@ -4356,7 +4357,8 @@ nsIFrame* nsCSSFrameConstructor::ConstructNonScrollableBlock(
 
 void nsCSSFrameConstructor::InitAndRestoreFrame(
     const nsFrameConstructorState& aState, nsIContent* aContent,
-    nsContainerFrame* aParentFrame, nsIFrame* aNewFrame, bool aAllowCounters) {
+    nsContainerFrame* aParentFrame, nsIFrame* aNewFrame,
+    AllowCounters aAllowCounters) {
   MOZ_ASSERT(aNewFrame, "Null frame cannot be initialized");
 
   // Initialize the frame
@@ -4368,7 +4370,7 @@ void nsCSSFrameConstructor::InitAndRestoreFrame(
     RestoreFrameStateFor(aNewFrame, aState.mFrameState);
   }
 
-  if (aAllowCounters &&
+  if (aAllowCounters == AllowCounters::Yes &&
       mContainStyleScopeManager.AddCounterChanges(aNewFrame)) {
     CountersDirty();
   }
@@ -10244,7 +10246,8 @@ nsFrameList nsCSSFrameConstructor::CreateColumnSpanSiblings(
             PseudoStyleType::MozColumnSpanWrapper);
     nsBlockFrame* columnSpanWrapper =
         NS_NewBlockFrame(mPresShell, columnSpanWrapperStyle);
-    InitAndRestoreFrame(aState, content, parentFrame, columnSpanWrapper, false);
+    InitAndRestoreFrame(aState, content, parentFrame, columnSpanWrapper,
+                        AllowCounters::No);
     columnSpanWrapper->AddStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR |
                                     NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
 
@@ -10537,7 +10540,8 @@ void nsCSSFrameConstructor::CreateIBSiblings(nsFrameConstructorState& aState,
     // right now. The anonymous block will be the parent of these block
     // children of the inline.
     nsBlockFrame* blockFrame = NS_NewBlockFrame(mPresShell, blockSC);
-    InitAndRestoreFrame(aState, content, parentFrame, blockFrame, false);
+    InitAndRestoreFrame(aState, content, parentFrame, blockFrame,
+                        AllowCounters::No);
     if (aInitialInline->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
       blockFrame->AddStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR);
     }
@@ -10580,7 +10584,8 @@ void nsCSSFrameConstructor::CreateIBSiblings(nsFrameConstructorState& aState,
     // Now grab the initial inlines in aChildList and put them into an inline
     // frame.
     nsInlineFrame* inlineFrame = NS_NewInlineFrame(mPresShell, computedStyle);
-    InitAndRestoreFrame(aState, content, parentFrame, inlineFrame, false);
+    InitAndRestoreFrame(aState, content, parentFrame, inlineFrame,
+                        AllowCounters::No);
     inlineFrame->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
     if (aInitialInline->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
       inlineFrame->AddStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR);

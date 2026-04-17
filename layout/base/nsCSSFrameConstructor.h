@@ -367,9 +367,12 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                        nsIFrame* aPrevPageFrame,
                                        nsCanvasFrame*& aCanvasFrame);
 
+  enum class AllowCounters : bool { No, Yes };
+
   void InitAndRestoreFrame(const nsFrameConstructorState& aState,
                            nsIContent* aContent, nsContainerFrame* aParentFrame,
-                           nsIFrame* aNewFrame, bool aAllowCounters = true);
+                           nsIFrame* aNewFrame,
+                           AllowCounters = AllowCounters::Yes);
 
   already_AddRefed<ComputedStyle> ResolveComputedStyle(nsIContent* aContent);
 
