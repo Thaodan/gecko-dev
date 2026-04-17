@@ -79,6 +79,21 @@ nsresult nsTextControlFrame::CreateAnonymousContent(
   return NS_OK;
 }
 
+void nsTextControlFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
+  switch (StyleUIReset()->mFieldSizing) {
+    case StyleFieldSizing::Content:
+      RemoveStateBits(NS_FRAME_REFLOW_ROOT);
+      break;
+    case StyleFieldSizing::Fixed:
+      // Mark the input as being a reflow root. This will allow incremental
+      // reflows to be initiated at this frame, rather than descending from the
+      // root frame of the frame hierarchy.
+      AddStateBits(NS_FRAME_REFLOW_ROOT);
+      break;
+  }
+  ScrollContainerFrame::DidSetComputedStyle(aOldComputedStyle);
+}
+
 void nsTextControlFrame::AppendAnonymousContentTo(
     nsTArray<nsIContent*>& aElements, uint32_t aFilter) {
   ScrollContainerFrame::AppendAnonymousContentTo(aElements, aFilter);
@@ -88,16 +103,9 @@ void nsTextControlFrame::AppendAnonymousContentTo(
 }
 
 void nsTextControlFrame::InitPrimaryFrame() {
-  // Mark the input as being a reflow root. This will allow incremental reflows
-  // to be initiated at this frame, rather than descending from the root frame
-  // of the frame hierarchy.
-  // TODO(emilio): Move this to nsTextControlFrame::Init.
-  AddStateBits(NS_FRAME_REFLOW_ROOT);
-
   if (auto* ts = ControlElement()->GetTextControlState()) {
     ts->InitializeSelection(PresShell());
   }
-
   nsIFrame::InitPrimaryFrame();
 }
 
@@ -109,8 +117,10 @@ void nsTextControlFrame::Destroy(DestroyContext& aContext) {
   ScrollContainerFrame::Destroy(aContext);
 }
 
-LogicalSize nsTextControlFrame::CalcIntrinsicSize(gfxContext* aRenderingContext,
-                                                  WritingMode aWM) const {
+LogicalSize nsTextControlFrame::CalcFixedSize(gfxContext* aRenderingContext,
+                                              WritingMode aWM) const {
+  MOZ_ASSERT(StyleUIReset()->mFieldSizing == StyleFieldSizing::Fixed);
+
   LogicalSize intrinsicSize(aWM);
   const float inflation = nsLayoutUtils::FontSizeInflationFor(this);
   RefPtr<nsFontMetrics> fontMet =
@@ -193,10 +203,13 @@ LogicalSize nsTextControlFrame::CalcIntrinsicSize(gfxContext* aRenderingContext,
 
 nscoord nsTextControlFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
                                            IntrinsicISizeType aType) {
+  if (StyleUIReset()->mFieldSizing == StyleFieldSizing::Content) {
+    return ScrollContainerFrame::IntrinsicISize(aInput, aType);
+  }
   // Our min inline size is just our preferred inline-size if we have auto
   // inline size.
   WritingMode wm = GetWritingMode();
-  return CalcIntrinsicSize(aInput.mContext, wm).ISize(wm);
+  return CalcFixedSize(aInput.mContext, wm).ISize(wm);
 }
 
 Maybe<nscoord> nsTextControlFrame::ComputeBaseline(
@@ -225,6 +238,8 @@ void nsTextControlFrame::Reflow(nsPresContext* aPresContext,
                                 nsReflowStatus& aStatus) {
   DO_GLOBAL_REFLOW_COUNT("nsTextControlFrame");
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
+  MOZ_ASSERT_IF(StyleUIReset()->mFieldSizing == StyleFieldSizing::Fixed,
+                HasAnyStateBits(NS_FRAME_REFLOW_ROOT));
   {
     // Calculate the baseline and store it in mFirstBaseline.
     // TODO(emilio): Is this still needed?
@@ -240,11 +255,11 @@ void nsTextControlFrame::Reflow(nsPresContext* aPresContext,
   // avail bsize. Maybe do a copy instead, or plumb stuff further down but...
   const auto oldBSize = aReflowInput.ComputedBSize();
   const WritingMode wm = aReflowInput.GetWritingMode();
-  if (oldBSize == NS_UNCONSTRAINEDSIZE) {
-    // TODO: Don't do this for field-sizing: content.
+  if (oldBSize == NS_UNCONSTRAINEDSIZE &&
+      StyleUIReset()->mFieldSizing != StyleFieldSizing::Content) {
     const_cast<ReflowInput&>(aReflowInput)
         .SetComputedBSize(
-            CalcIntrinsicSize(aReflowInput.mRenderingContext, wm).BSize(wm),
+            CalcFixedSize(aReflowInput.mRenderingContext, wm).BSize(wm),
             ReflowInput::ResetResizeFlags::No);
   }
   ScrollContainerFrame::Reflow(aPresContext, aDesiredSize, aReflowInput,
