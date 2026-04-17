@@ -75,7 +75,7 @@ pane-sync-title3 = Sync
 category-sync3 =
     .tooltiptext = { pane-sync-title3 }
 
-pane-ai-controls-title = AI Controls
+pane-ai-controls-title = AI controls
 category-ai-controls =
     .tooltiptext = { pane-ai-controls-title }
 
@@ -88,8 +88,8 @@ pane-experimental-reset =
   .label = Restore Defaults
   .accesskey = R
 
-help-button-label = { -brand-short-name } Support
-addons-button-label = Extensions & Themes
+help-button-label = { -brand-short-name } support
+addons-button-label = Extensions and themes
 
 focus-search =
     .key = f
