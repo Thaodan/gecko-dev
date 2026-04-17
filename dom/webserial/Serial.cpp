@@ -41,8 +41,7 @@ static Serial* FindWindowSerialForWorkerPrivate(WorkerPrivate* aWorkerPrivate) {
   return inner->Navigator()->GetExistingSerial();
 }
 
-NS_IMPL_CYCLE_COLLECTION_WEAK_PTR_INHERITED(Serial, DOMEventTargetHelper,
-                                            mPorts)
+NS_IMPL_CYCLE_COLLECTION_INHERITED(Serial, DOMEventTargetHelper, mPorts)
 
 NS_IMPL_ADDREF_INHERITED(Serial, DOMEventTargetHelper)
 NS_IMPL_RELEASE_INHERITED(Serial, DOMEventTargetHelper)
