@@ -5,21 +5,20 @@ const { HttpServer } = ChromeUtils.importESModule(
 );
 
 var h2Port;
-var prefs;
-var http2pref;
-var altsvcpref1;
-var altsvcpref2;
+var h3Port;
 
-// https://foo.example.com:(h2Port)
-// https://bar.example.com:(h2Port) <- invalid for bar, but ok for foo
+// https://foo.example.com:(h3Port)
+// https://bar.example.com:(h3Port) <- invalid for bar, but ok for foo
 var h1Foo; // server http://foo.example.com:(h1Foo.identity.primaryPort)
 var h1Bar; // server http://bar.example.com:(h1bar.identity.primaryPort)
 
 var otherServer; // server socket listening for other connection.
 
 var h2FooRoute; // foo.example.com:H2PORT
-var h2BarRoute; // bar.example.com:H2PORT
-var h2Route; // :H2PORT
+
+var h3FooRoute; // foo.example.com:H3PORT
+var h3BarRoute; // bar.example.com:H3PORT
+var h3Route; // :H3PORT
 var httpFooOrigin; // http://foo.exmaple.com:PORT/
 var httpsFooOrigin; // https://foo.exmaple.com:PORT/
 var httpBarOrigin; // http://bar.example.com:PORT/
@@ -30,25 +29,27 @@ function run_test() {
   Assert.notEqual(h2Port, null);
   Assert.notEqual(h2Port, "");
 
-  // Set to allow the cert presented by our H2 server
+  h3Port = Services.env.get("MOZHTTP3_PORT");
+  Assert.notEqual(h3Port, null);
+  Assert.notEqual(h3Port, "");
+
+  // Set to allow the cert presented by our H3 server
   do_get_profile();
-  prefs = Services.prefs;
 
-  http2pref = prefs.getBoolPref("network.http.http2.enabled");
-  altsvcpref1 = prefs.getBoolPref("network.http.altsvc.enabled");
-  altsvcpref2 = prefs.getBoolPref("network.http.altsvc.oe", true);
-
-  prefs.setBoolPref("network.http.http2.enabled", true);
-  prefs.setBoolPref("network.http.altsvc.enabled", true);
-  prefs.setBoolPref("network.http.altsvc.oe", true);
-  prefs.setCharPref(
+  // HE3 doesn't support AltSvc with different host yet.
+  Services.prefs.setBoolPref("network.http.happy_eyeballs_enabled", false);
+  Services.prefs.setBoolPref("network.http.http2.enabled", true);
+  Services.prefs.setBoolPref("network.http.http3.enable", true);
+  Services.prefs.setBoolPref("network.http.altsvc.enabled", true);
+  Services.prefs.setBoolPref("network.http.altsvc.oe", true);
+  Services.prefs.setCharPref(
     "network.dns.localDomains",
     "foo.example.com, bar.example.com"
   );
 
   // The moz-http2 cert is for foo.example.com and is signed by http2-ca.pem
   // so add that cert to the trust list as a signing cert. The same cert is used
-  // for both h2FooRoute and h2BarRoute though it is only valid for
+  // for both h3FooRoute and h3BarRoute though it is only valid for
   // the foo.example.com domain name.
   let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
     Ci.nsIX509CertDB
@@ -75,13 +76,15 @@ function run_test() {
   );
 
   h2FooRoute = "foo.example.com:" + h2Port;
-  h2BarRoute = "bar.example.com:" + h2Port;
-  h2Route = ":" + h2Port;
+
+  h3FooRoute = "foo.example.com:" + h3Port;
+  h3BarRoute = "bar.example.com:" + h3Port;
+  h3Route = ":" + h3Port;
 
   httpFooOrigin = "http://foo.example.com:" + h1Foo.identity.primaryPort + "/";
-  httpsFooOrigin = "https://" + h2FooRoute + "/";
+  httpsFooOrigin = "https://" + h3FooRoute + "/";
   httpBarOrigin = "http://bar.example.com:" + h1Bar.identity.primaryPort + "/";
-  httpsBarOrigin = "https://" + h2BarRoute + "/";
+  httpsBarOrigin = "https://" + h3BarRoute + "/";
   dump(
     "http foo - " +
       httpFooOrigin +
@@ -110,8 +113,16 @@ function h1Server(metadata, response) {
   response.setHeader("Access-Control-Allow-Headers", "x-altsvc", false);
 
   try {
-    var hval = "h2=" + metadata.getHeader("x-altsvc");
-    response.setHeader("Alt-Svc", hval, false);
+    // If needed, prefix Alt-Svc with "h3=".
+    if (metadata.getHeader("x-altsvc").includes("=")) {
+      response.setHeader("Alt-Svc", metadata.getHeader("x-altsvc"), false);
+    } else {
+      response.setHeader(
+        "Alt-Svc",
+        "h3=" + metadata.getHeader("x-altsvc"),
+        false
+      );
+    }
   } catch (e) {}
 
   var body = "Q: What did 0 say to 8? A: Nice Belt!\n";
@@ -132,11 +143,14 @@ function h1ServerWK(metadata, response) {
 }
 
 function resetPrefs() {
-  prefs.setBoolPref("network.http.http2.enabled", http2pref);
-  prefs.setBoolPref("network.http.altsvc.enabled", altsvcpref1);
-  prefs.setBoolPref("network.http.altsvc.oe", altsvcpref2);
-  prefs.clearUserPref("network.dns.localDomains");
-  prefs.clearUserPref("network.security.ports.banned");
+  Services.prefs.clearUserPref("network.http.http2.enabled");
+  Services.prefs.clearUserPref("network.http.http3.enable");
+  Services.prefs.clearUserPref("network.dns.localDomains");
+  Services.prefs.clearUserPref("network.http.altsvc.enabled");
+  Services.prefs.clearUserPref("network.http.altsvc.oe");
+  Services.prefs.clearUserPref("network.dns.localDomains");
+  Services.prefs.clearUserPref("network.security.ports.banned");
+  Services.prefs.clearUserPref("network.http.happy_eyeballs_enabled");
 }
 
 function makeChan(origin) {
@@ -151,12 +165,17 @@ var xaltsvc;
 var loadWithoutClearingMappings = false;
 var disallowH3 = false;
 var disallowH2 = false;
+var testKeepAliveNotSet = false;
 var nextTest;
 var expectPass = true;
 var waitFor = 0;
 var originAttributes = {};
 
-var Listener = function () {};
+var Listener = function (expectedHttpVersion, expectedRoute) {
+  this._expectedRoute = expectedRoute;
+  this._expectedHttpVersion = expectedHttpVersion;
+};
+
 Listener.prototype = {
   onStartRequest: function testOnStartRequest(request) {
     Assert.ok(request instanceof Ci.nsIHttpChannel);
@@ -185,24 +204,39 @@ Listener.prototype = {
     dump("routed is " + routed + "\n");
     Assert.equal(Components.isSuccessCode(status), expectPass);
 
+    function assertHttpVersion(request, expectedHttpVersion) {
+      if (expectedHttpVersion) {
+        const httpVersion = request?.protocolVersion || "";
+        Assert.equal(httpVersion, httpVersion);
+      }
+    }
+
     if (waitFor != 0) {
       Assert.equal(routed, "");
       do_test_pending();
       loadWithoutClearingMappings = true;
-      do_timeout(waitFor, doTest);
+      do_timeout(waitFor, () => {
+        doTest(this._expectedHttpVersion, this._expectedRoute);
+      });
       waitFor = 0;
       xaltsvc = "NA";
     } else if (xaltsvc == "NA") {
       Assert.equal(routed, "");
       nextTest();
+    } else if (this._expectedRoute && this._expectedRoute == routed) {
+      assertHttpVersion(request, this._expectedHttpVersion);
+      nextTest();
     } else if (routed == xaltsvc) {
       Assert.equal(routed, xaltsvc); // always true, but a useful log
+      assertHttpVersion(request, this._expectedHttpVersion);
       nextTest();
     } else {
       dump("poll later for alt svc mapping\n");
       do_test_pending();
       loadWithoutClearingMappings = true;
-      do_timeout(500, doTest);
+      do_timeout(500, () => {
+        doTest(this._expectedHttpVersion, this._expectedRoute);
+      });
     }
 
     do_test_finished();
@@ -220,12 +254,16 @@ function testsDone() {
   h1Bar.stop(do_test_finished);
 }
 
-function doTest() {
+function doTest(expectedHttpVersion, expectedRoute) {
   dump("execute doTest " + origin + "\n");
   var chan = makeChan(origin);
-  var listener = new Listener();
+  var listener = new Listener(expectedHttpVersion, expectedRoute);
   if (xaltsvc != "NA") {
     chan.setRequestHeader("x-altsvc", xaltsvc, false);
+  }
+  if (testKeepAliveNotSet) {
+    chan.setRequestHeader("Connection", "close", false);
+    testKeepAliveNotSet = false;
   }
   if (loadWithoutClearingMappings) {
     chan.loadFlags = Ci.nsIChannel.LOAD_INITIAL_DOCUMENT_URI;
@@ -253,40 +291,40 @@ function doTest() {
 // 1] it is sent in the x-altsvc request header, and the response uses the value in the Alt-Svc response header
 // 2] the test polls until necko sets Alt-Used to that value (i.e. it uses that route)
 //
-// When xaltsvc is set to h2Route (i.e. :port with the implied hostname) it doesn't match the alt-used,
+// When xaltsvc is set to h3Route (i.e. :port with the implied hostname) it doesn't match the alt-used,
 // which is always explicit, so it needs to be changed after the channel is created but before the
 // listener is invoked
 
-// http://foo served from h2=:port
+// http://foo served from h3=:port
 function doTest1() {
   dump("doTest1()\n");
   origin = httpFooOrigin;
-  xaltsvc = h2Route;
+  xaltsvc = h3Route;
   nextTest = doTest2;
   do_test_pending();
-  doTest();
-  xaltsvc = h2FooRoute;
+  doTest("h3");
+  xaltsvc = h3FooRoute;
 }
 
-// http://foo served from h2=foo:port
+// http://foo served from h3=foo:port
 function doTest2() {
   dump("doTest2()\n");
   origin = httpFooOrigin;
-  xaltsvc = h2FooRoute;
+  xaltsvc = h3FooRoute;
   nextTest = doTest3;
   do_test_pending();
-  doTest();
+  doTest("h3");
 }
 
-// http://foo served from h2=bar:port
+// http://foo served from h3=bar:port
 // requires cert for foo
 function doTest3() {
   dump("doTest3()\n");
   origin = httpFooOrigin;
-  xaltsvc = h2BarRoute;
+  xaltsvc = h3BarRoute;
   nextTest = doTest4;
   do_test_pending();
-  doTest();
+  doTest("h3");
 }
 
 // https://bar should fail because host bar has cert for foo
@@ -300,25 +338,32 @@ function doTest4() {
   doTest();
 }
 
-// https://foo no alt-svc (just check cert setup)
+// http://bar via h3 on bar
+// should not use TLS/h3 because h3BarRoute is not auth'd for bar
+// however the test ought to PASS (i.e. get a 200) because fallback
+// to plaintext happens.. thus the timeout
 function doTest5() {
   dump("doTest5()\n");
-  origin = httpsFooOrigin;
-  xaltsvc = "NA";
+  origin = httpBarOrigin;
+  xaltsvc = h3BarRoute;
   expectPass = true;
+  waitFor = 500;
   nextTest = doTest6;
   do_test_pending();
-  doTest();
+  doTest("h3");
 }
 
-// https://foo via bar (bar has cert for foo)
+// http://bar served from h3=:port, which is like the bar route in 8
 function doTest6() {
   dump("doTest6()\n");
-  origin = httpsFooOrigin;
-  xaltsvc = h2BarRoute;
+  origin = httpBarOrigin;
+  xaltsvc = h3Route;
+  expectPass = true;
+  waitFor = 500;
   nextTest = doTest7;
   do_test_pending();
   doTest();
+  xaltsvc = h3BarRoute;
 }
 
 // check again https://bar should fail because host bar has cert for foo
@@ -332,78 +377,39 @@ function doTest7() {
   doTest();
 }
 
-// http://bar via h2 on bar
-// should not use TLS/h2 because h2BarRoute is not auth'd for bar
-// however the test ought to PASS (i.e. get a 200) because fallback
-// to plaintext happens.. thus the timeout
+// http://bar served from h3=foo, should fail because host foo only has
+// cert for foo. Fail in this case means alt-svc is not used, but content
+// is served
 function doTest8() {
   dump("doTest8()\n");
   origin = httpBarOrigin;
-  xaltsvc = h2BarRoute;
+  xaltsvc = h3FooRoute;
   expectPass = true;
   waitFor = 500;
   nextTest = doTest9;
   do_test_pending();
-  doTest();
+  doTest("h3");
 }
 
-// http://bar served from h2=:port, which is like the bar route in 8
+// Test 9-12:
+// Insert a cache of http://foo served from h3=:port with origin attributes.
 function doTest9() {
   dump("doTest9()\n");
-  origin = httpBarOrigin;
-  xaltsvc = h2Route;
-  expectPass = true;
-  waitFor = 500;
-  nextTest = doTest10;
-  do_test_pending();
-  doTest();
-  xaltsvc = h2BarRoute;
-}
-
-// check again https://bar should fail because host bar has cert for foo
-function doTest10() {
-  dump("doTest10()\n");
-  origin = httpsBarOrigin;
-  xaltsvc = "";
-  expectPass = false;
-  nextTest = doTest11;
-  do_test_pending();
-  doTest();
-}
-
-// http://bar served from h2=foo, should fail because host foo only has
-// cert for foo. Fail in this case means alt-svc is not used, but content
-// is served
-function doTest11() {
-  dump("doTest11()\n");
-  origin = httpBarOrigin;
-  xaltsvc = h2FooRoute;
-  expectPass = true;
-  waitFor = 500;
-  nextTest = doTest12;
-  do_test_pending();
-  doTest();
-}
-
-// Test 12-15:
-// Insert a cache of http://foo served from h2=:port with origin attributes.
-function doTest12() {
-  dump("doTest12()\n");
   origin = httpFooOrigin;
-  xaltsvc = h2Route;
+  xaltsvc = h3Route;
   originAttributes = {
     userContextId: 1,
     firstPartyDomain: "a.com",
   };
-  nextTest = doTest13;
+  nextTest = doTest10;
   do_test_pending();
-  doTest();
-  xaltsvc = h2FooRoute;
+  doTest("h3");
+  xaltsvc = h3FooRoute;
 }
 
 // Make sure we get a cache miss with a different userContextId.
-function doTest13() {
-  dump("doTest13()\n");
+function doTest10() {
+  dump("doTest10()\n");
   origin = httpFooOrigin;
   xaltsvc = "NA";
   originAttributes = {
@@ -411,14 +417,14 @@ function doTest13() {
     firstPartyDomain: "a.com",
   };
   loadWithoutClearingMappings = true;
-  nextTest = doTest14;
+  nextTest = doTest11;
   do_test_pending();
-  doTest();
+  doTest("h3");
 }
 
 // Make sure we get a cache miss with a different firstPartyDomain.
-function doTest14() {
-  dump("doTest14()\n");
+function doTest11() {
+  dump("doTest11()\n");
   origin = httpFooOrigin;
   xaltsvc = "NA";
   originAttributes = {
@@ -426,14 +432,14 @@ function doTest14() {
     firstPartyDomain: "b.com",
   };
   loadWithoutClearingMappings = true;
-  nextTest = doTest15;
+  nextTest = doTest12;
   do_test_pending();
-  doTest();
+  doTest("h3");
 }
 //
 // Make sure we get a cache hit with the same origin attributes.
-function doTest15() {
-  dump("doTest15()\n");
+function doTest12() {
+  dump("doTest12()\n");
   origin = httpFooOrigin;
   xaltsvc = "NA";
   originAttributes = {
@@ -441,16 +447,32 @@ function doTest15() {
     firstPartyDomain: "a.com",
   };
   loadWithoutClearingMappings = true;
-  nextTest = doTest16;
+  nextTest = doTest13;
   do_test_pending();
-  doTest();
+  doTest("h3");
   // This ensures a cache hit.
-  xaltsvc = h2FooRoute;
+  xaltsvc = h3FooRoute;
 }
 
-// Make sure we do not use H2 if it is disabled on a channel.
-function doTest16() {
-  dump("doTest16()\n");
+// Make sure we do not use H3 if it is disabled on a channel.
+function doTest13() {
+  dump("doTest13()\n");
+  origin = httpFooOrigin;
+  xaltsvc = "NA";
+  disallowH3 = true;
+  originAttributes = {
+    userContextId: 1,
+    firstPartyDomain: "a.com",
+  };
+  loadWithoutClearingMappings = true;
+  nextTest = doTest14;
+  do_test_pending();
+  doTest("h3");
+}
+
+// Make sure we use H3 if only Http2 is disabled on a channel.
+function doTest14() {
+  dump("doTest14()\n");
   origin = httpFooOrigin;
   xaltsvc = "NA";
   disallowH2 = true;
@@ -459,34 +481,33 @@ function doTest16() {
     firstPartyDomain: "a.com",
   };
   loadWithoutClearingMappings = true;
-  nextTest = doTest17;
+  nextTest = doTest15;
   do_test_pending();
-  doTest();
+  doTest("h3");
+  // This should ensures a cache hit.
+  xaltsvc = h3FooRoute;
 }
 
-// Make sure we use H2 if only Http3 is disabled on a channel.
-function doTest17() {
-  dump("doTest17()\n");
+// Make sure we do not use H3 if NS_HTTP_ALLOW_KEEPALIVE is not set.
+function doTest15() {
+  dump("doTest15()\n");
   origin = httpFooOrigin;
-  xaltsvc = h2Route;
-  disallowH3 = true;
+  xaltsvc = "NA";
+  testKeepAliveNotSet = true;
   originAttributes = {
     userContextId: 1,
     firstPartyDomain: "a.com",
   };
   loadWithoutClearingMappings = true;
-  nextTest = doTest18;
+  nextTest = doTest16;
   do_test_pending();
-  doTest();
-  // This should ensures a cache hit.
-  xaltsvc = h2FooRoute;
+  doTest("h3");
 }
 
 // Check we don't connect to blocked ports
-function doTest18() {
-  dump("doTest18()\n");
+function doTest16() {
+  dump("doTest16()\n");
   origin = httpFooOrigin;
-  nextTest = testsDone;
   otherServer = Cc["@mozilla.org/network/server-socket;1"].createInstance(
     Ci.nsIServerSocket
   );
@@ -508,90 +529,23 @@ function doTest18() {
       do_test_finished();
     },
   });
-  nextTest = doTest19;
+  nextTest = doTest17;
   do_test_pending();
-  doTest();
+  doTest("h3");
 }
 
-// Check we don't connect to blocked ports
-function doTest19() {
-  dump("doTest19()\n");
+// Make sure we do not use a draft QUIC version.
+function doTest17() {
+  dump("doTest17()\n");
   origin = httpFooOrigin;
   nextTest = testsDone;
-  otherServer = Cc["@mozilla.org/network/server-socket;1"].createInstance(
-    Ci.nsIServerSocket
-  );
-  const BAD_PORT_U32 = 6667 + 65536;
-  otherServer.init(BAD_PORT_U32, true, -1);
-  Assert.equal(otherServer.port, 6667, "Trying to listen on port 6667");
-  xaltsvc = "localhost:" + BAD_PORT_U32;
-  dump("Blocked port: " + otherServer.port);
-  waitFor = 500;
-  otherServer.asyncListen({
-    onSocketAccepted() {
-      Assert.ok(false, "Got connection to socket when we didn't expect it!");
-    },
-    onStopListening() {
-      // We get closed when the entire file is done, which guarantees we get the socket accept
-      // if we do connect to the alt-svc header
-      do_test_finished();
-    },
-  });
-  nextTest = doTest20;
+  xaltsvc = "h3-29=" + h3FooRoute + ", h2=" + h2FooRoute;
+  disallowH2 = false;
+  originAttributes = {
+    userContextId: 1,
+    firstPartyDomain: "a.com",
+  };
+  loadWithoutClearingMappings = true;
   do_test_pending();
-  doTest();
-}
-function doTest20() {
-  dump("doTest20()\n");
-  origin = httpFooOrigin;
-  nextTest = testsDone;
-  otherServer = Cc["@mozilla.org/network/server-socket;1"].createInstance(
-    Ci.nsIServerSocket
-  );
-  const BAD_PORT_U64 = 6666 + 429496729;
-  otherServer.init(6666, true, -1);
-  Assert.equal(otherServer.port, 6666, "Trying to listen on port 6666");
-  xaltsvc = "localhost:" + BAD_PORT_U64;
-  dump("Blocked port: " + otherServer.port);
-  waitFor = 500;
-  otherServer.asyncListen({
-    onSocketAccepted() {
-      Assert.ok(false, "Got connection to socket when we didn't expect it!");
-    },
-    onStopListening() {
-      // We get closed when the entire file is done, which guarantees we get the socket accept
-      // if we do connect to the alt-svc header
-      do_test_finished();
-    },
-  });
-  nextTest = doTest21;
-  do_test_pending();
-  doTest();
-}
-// Port 65535 should be OK
-function doTest21() {
-  dump("doTest21()\n");
-  origin = httpFooOrigin;
-  nextTest = testsDone;
-  otherServer = Cc["@mozilla.org/network/server-socket;1"].createInstance(
-    Ci.nsIServerSocket
-  );
-  const GOOD_PORT = 65535;
-  otherServer.init(65535, true, -1);
-  Assert.equal(otherServer.port, 65535, "Trying to listen on port 65535");
-  xaltsvc = "localhost:" + GOOD_PORT;
-  dump("Allowed port: " + otherServer.port);
-  waitFor = 500;
-  otherServer.asyncListen({
-    onSocketAccepted() {
-      Assert.ok(true, "Got connection to socket when we didn't expect it!");
-    },
-    onStopListening() {
-      // We get closed when the entire file is done, which guarantees we get the socket accept
-      // if we do connect to the alt-svc header
-      do_test_finished();
-    },
-  });
-  do_test_pending();
-  doTest();
+  doTest("h2", h2FooRoute);
 }
