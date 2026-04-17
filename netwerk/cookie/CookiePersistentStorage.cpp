@@ -2073,30 +2073,24 @@ void CookiePersistentStorage::EnsureInitialized() {
   bool isAccumulated = false;
 
   if (!mInitialized) {
-#ifndef ANDROID
     TimeStamp startBlockTime = TimeStamp::Now();
-#endif
     MonitorAutoLock lock(mMonitor);
 
     while (!mInitialized) {
       mMonitor.Wait();
     }
-#ifndef ANDROID
     TimeStamp endBlockTime = TimeStamp::Now();
     mozilla::glean::networking::sqlite_cookies_block_main_thread
         .AccumulateRawDuration(endBlockTime - startBlockTime);
     mozilla::glean::networking::sqlite_cookies_time_to_block_main_thread
         .AccumulateRawDuration(TimeDuration::Zero());
-#endif
     isAccumulated = true;
   } else if (!mEndInitDBConn.IsNull()) {
     // We didn't block main thread, and here comes the first cookie request.
     // Collect how close we're going to block main thread.
-#ifndef ANDROID
     TimeStamp now = TimeStamp::Now();
     mozilla::glean::networking::sqlite_cookies_time_to_block_main_thread
         .AccumulateRawDuration(now - mEndInitDBConn);
-#endif
     // Nullify the timestamp so wo don't accumulate this telemetry probe again.
     mEndInitDBConn = TimeStamp();
     isAccumulated = true;
@@ -2104,10 +2098,8 @@ void CookiePersistentStorage::EnsureInitialized() {
     // A request comes while we finished cookie thread task and InitDBConn is
     // on the way from cookie thread to main thread. We're very close to block
     // main thread.
-#ifndef ANDROID
     mozilla::glean::networking::sqlite_cookies_time_to_block_main_thread
         .AccumulateRawDuration(TimeDuration::Zero());
-#endif
     isAccumulated = true;
   }
 
