@@ -3449,12 +3449,9 @@ pref("ui.new-webcompat-reporter.reason-dropdown", 2);
 
 pref("ui.new-webcompat-reporter.reason-dropdown.randomized", true);
 
-// Reset Private Browsing Session feature
-#if defined(NIGHTLY_BUILD)
-  pref("browser.privatebrowsing.resetPBM.enabled", true);
-#else
-  pref("browser.privatebrowsing.resetPBM.enabled", false);
-#endif
+// Reset Private Browsing Session feature a.k.a "Fire Button"
+pref("browser.privatebrowsing.resetPBM.enabled", true);
+
 // Whether the reset private browsing panel should ask for confirmation before
 // performing the clear action.
 pref("browser.privatebrowsing.resetPBM.showConfirmationDialog", true);
