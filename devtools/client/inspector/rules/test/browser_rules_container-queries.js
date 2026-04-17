@@ -62,6 +62,19 @@ const TEST_URI = `
         color: peachpuff;
       }
     }
+
+    article {
+      container-name: post;
+      container-type: inline-size;
+      --x: red;
+      --y: 10px;
+    }
+
+    @container style(--x: red), style(var(--y, 1px) > 20px), post style(--x), mycontainer style(--x) {
+      h5, [test-hint="style-query"] {
+        color: var(--x);
+      }
+    }
   </style>
   <body id=myBody class="a-container test">
     <h1>Hello @container!</h1>
@@ -74,10 +87,14 @@ const TEST_URI = `
     <aside>
       <h4>Yup</h4>
     </aside>
+    <article>
+      <h5>News</h5>
+    </article>
   </body>
 `;
 
 add_task(async function () {
+  await pushPref("layout.css.style-queries.enabled", true);
   await addTab(
     "https://example.com/document-builder.sjs?html=" +
       encodeURIComponent(TEST_URI)
@@ -99,18 +116,25 @@ add_task(async function () {
 
   info("Check that the query container tooltip works as expected");
   // Retrieve query containers sizes
-  const { bodyInlineSize, bodyBlockSize, sectionInlineSize, asideInlineSize } =
-    await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
-      const body = content.document.body;
-      const section = content.document.querySelector("section");
-      const aside = content.document.querySelector("aside");
-      return {
-        bodyInlineSize: content.getComputedStyle(body).inlineSize,
-        bodyBlockSize: content.getComputedStyle(body).blockSize,
-        sectionInlineSize: content.getComputedStyle(section).inlineSize,
-        asideInlineSize: content.getComputedStyle(aside).inlineSize,
-      };
-    });
+  const {
+    bodyInlineSize,
+    bodyBlockSize,
+    sectionInlineSize,
+    asideInlineSize,
+    articleInlineSize,
+  } = await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
+    const body = content.document.body;
+    const section = content.document.querySelector("section");
+    const aside = content.document.querySelector("aside");
+    const article = content.document.querySelector("article");
+    return {
+      bodyInlineSize: content.getComputedStyle(body).inlineSize,
+      bodyBlockSize: content.getComputedStyle(body).blockSize,
+      sectionInlineSize: content.getComputedStyle(section).inlineSize,
+      asideInlineSize: content.getComputedStyle(aside).inlineSize,
+      articleInlineSize: content.getComputedStyle(article).inlineSize,
+    };
+  });
 
   await assertQueryContainerTooltip({
     inspector,
@@ -302,6 +326,76 @@ add_task(async function () {
     ],
   });
   await assertJumpToContainerButton(inspector, view, 1, 0, "aside");
+
+  info(
+    "Check that the query container tooltip works as expected for style queries"
+  );
+  await selectNode("h5", inspector);
+  assertContainerQueryData(view, [
+    { selector: "element", ancestorRulesData: null },
+    {
+      selector: `h5, [test-hint="style-query"]`,
+      ancestorRulesData: [
+        "@container style(--x: red), style((var(--y, 1px) > 20px)), post style(--x), mycontainer style(--x) {",
+      ],
+    },
+    {
+      selector: `article`,
+    },
+  ]);
+  await assertQueryContainerTooltip({
+    inspector,
+    view,
+    ruleIndex: 1,
+    conditionIndex: 0,
+    expectedHeaderText: "<article>",
+    expectedBodyText: [
+      "container-name: post",
+      "container-type: inline-size",
+      `inline-size: ${articleInlineSize}`,
+    ],
+  });
+  await assertQueryContainerTooltip({
+    inspector,
+    view,
+    ruleIndex: 1,
+    conditionIndex: 1,
+    expectedHeaderText: "<article>",
+    expectedBodyText: [
+      "container-name: post",
+      "container-type: inline-size",
+      `inline-size: ${articleInlineSize}`,
+    ],
+    // condition is "style((var(--y, 1px) > 20px))", but --y is set to "10px" on <article>
+    unmatched: true,
+  });
+  await assertQueryContainerTooltip({
+    inspector,
+    view,
+    ruleIndex: 1,
+    conditionIndex: 2,
+    expectedHeaderText: "<article>",
+    expectedBodyText: [
+      "container-name: post",
+      "container-type: inline-size",
+      `inline-size: ${articleInlineSize}`,
+    ],
+  });
+  await assertQueryContainerTooltip({
+    inspector,
+    view,
+    ruleIndex: 1,
+    conditionIndex: 3,
+    expectedHeaderText: "<body#myBody.a-container.test>",
+    expectedBodyText: [
+      "container-name: mycontainer containeralias",
+      "container-type: size",
+      `inline-size: ${bodyInlineSize}`,
+      `block-size: ${bodyBlockSize}`,
+    ],
+    // condition is "mycontainer style(--x)", and --x is not defined on <body>
+    unmatched: true,
+  });
 });
 
 function assertContainerQueryData(view, expectedRules) {
