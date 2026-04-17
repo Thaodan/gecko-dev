@@ -5859,30 +5859,14 @@ ${
     );
   }
 
-  _on_overflow(event) {
-    const targetIsPlaceholder =
-      event.originalTarget.implementedPseudoElement == "::placeholder";
-    // We only care about the non-placeholder text.
-    // This shouldn't be needed, see bug 1487036.
-    if (targetIsPlaceholder) {
-      return;
-    }
+  _on_overflow(_event) {
     this._overflowing = true;
     this.updateTextOverflow();
   }
 
-  _on_underflow(event) {
-    const targetIsPlaceholder =
-      event.originalTarget.implementedPseudoElement == "::placeholder";
-    // We only care about the non-placeholder text.
-    // This shouldn't be needed, see bug 1487036.
-    if (targetIsPlaceholder) {
-      return;
-    }
+  _on_underflow(_event) {
     this._overflowing = false;
-
     this.updateTextOverflow();
-
     this._updateUrlTooltip();
   }
 
