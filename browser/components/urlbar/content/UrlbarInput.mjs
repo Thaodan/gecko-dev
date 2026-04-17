@@ -140,7 +140,7 @@ export class UrlbarInput extends HTMLElement {
         <html:panel-list class="searchmode-switcher-panel-list">
           <html:div class="searchmode-switcher-panel-description" role="heading" />
 ${
-  lazy.UrlbarPrefs.get("nova.featureGate")
+  Services.prefs.getBoolPref("browser.nova.enabled", false)
     ? '<html:hr class="searchmode-switcher-panel-installed-engine-separator"/><html:hr class="searchmode-switcher-panel-footer-separator"/>'
     : '<html:hr/><html:hr class="searchmode-switcher-panel-installed-engine-separator searchmode-switcher-panel-footer-separator"/>'
 }
@@ -369,7 +369,8 @@ ${
 
     searchModeSwitcherDescription.setAttribute(
       "data-l10n-id",
-      this.#isAddressbar && !lazy.UrlbarPrefs.get("nova.featureGate")
+      this.#isAddressbar &&
+        !Services.prefs.getBoolPref("browser.nova.enabled", false)
         ? "urlbar-searchmode-popup-one-off-header"
         : "urlbar-searchmode-popup-header"
     );

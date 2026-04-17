@@ -159,7 +159,7 @@ export class SmartbarInput extends HTMLElement {
         <html:panel-list class="searchmode-switcher-panel-list">
           <html:span class="searchmode-switcher-panel-description" role="heading" />
 ${
-  lazy.UrlbarPrefs.get("nova.featureGate")
+  Services.prefs.getBoolPref("browser.nova.enabled", false)
     ? '<html:hr class="searchmode-switcher-panel-installed-engine-separator"/><html:hr class="searchmode-switcher-panel-footer-separator"/>'
     : '<html:hr/><html:hr class="searchmode-switcher-panel-installed-engine-separator searchmode-switcher-panel-footer-separator"/>'
 }
