@@ -94,10 +94,15 @@ export class ASRouterStorage {
   _openDatabase() {
     return lazy.IndexedDB.open(this.dbName, this.dbVersion, db => {
       // If provided with array of objectStore names we need to create all the
-      // individual stores
+      // individual stores.
+      // createObjectStore is synchronous (returns IDBObjectStore, not
+      // IDBRequest), so we must not wrap it with the async _requestWrapper:
+      // its returned Promise would never be awaited inside this synchronous
+      // callback, silently swallowing any error instead of letting it abort
+      // the version-change transaction.
       this.storeNames.forEach(store => {
         if (!db.objectStoreNames.contains(store)) {
-          this._requestWrapper(() => db.createObjectStore(store));
+          db.createObjectStore(store);
         }
       });
     });

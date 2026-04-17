@@ -181,6 +181,30 @@ describe("ASRouterStorage", () => {
 
     assert.notCalled(dbStub.createObjectStore);
   });
+  it("should propagate createObjectStore errors during upgrade", async () => {
+    const error = new Error("disk error");
+    const dbStub = {
+      createObjectStore: sandbox.stub().throws(error),
+      objectStoreNames: { contains: sandbox.stub().returns(false) },
+    };
+
+    indexedDB.open.callsFake((name, version, callback) => {
+      callback(dbStub);
+      return Promise.reject(error);
+    });
+
+    storage = new ASRouterStorage({
+      storeNames: ["storage_test"],
+      telemetry: { handleUndesiredEvent: sandbox.stub() },
+    });
+
+    try {
+      await storage._openDatabase();
+      assert.fail("should have thrown");
+    } catch (e) {
+      assert.equal(e, error);
+    }
+  });
   describe("#_requestWrapper", () => {
     it("should return a successful result", async () => {
       const result = await storage._requestWrapper(() =>
