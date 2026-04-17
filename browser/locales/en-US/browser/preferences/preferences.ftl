@@ -67,9 +67,9 @@ pane-search-title = Search
 category-search =
     .tooltiptext = { pane-search-title }
 
-pane-privacy-title = Privacy & Security
-category-privacy =
-    .tooltiptext = { pane-privacy-title }
+pane-privacy-title2 = Privacy and security
+pane-privacy-section =
+    .heading = Privacy and security
 
 pane-sync-title3 = Sync
 category-sync3 =
@@ -2342,6 +2342,18 @@ preferences-doh-custom-provider-label =
 
 preferences-doh-header2 =
   .heading = DNS over HTTPS
+
+## Connection and software security section
+
+preferences-connection-header =
+    .heading = Connection and software security
+
+preferences-connection-link-section =
+    .label = Connection and software security
+    .description = See how connections stay secure, harmful software is blocked, and websites are verified.
+
+preferences-connection-link-button =
+    .label = Advanced settings
 
 ## The following strings are used in the Download section of settings
 

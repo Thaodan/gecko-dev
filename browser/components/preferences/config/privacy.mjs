@@ -1662,6 +1662,17 @@ SettingGroupManager.registerGroups({
       },
     ],
   },
+  connectionLink: {
+    l10nId: "preferences-connection-link-section",
+    iconSrc: "chrome://devtools/skin/images/globe.svg",
+    items: [
+      {
+        id: "connectionLinkButton",
+        l10nId: "preferences-connection-link-button",
+        control: "moz-box-button",
+      },
+    ],
+  },
   ipprotection: {
     l10nId: "ip-protection-description",
     headingLevel: 2,
@@ -4542,6 +4553,14 @@ Preferences.addSetting({
     }
     setting.emit("change");
     return val;
+  },
+});
+
+Preferences.addSetting({
+  id: "connectionLinkButton",
+  onUserClick(e) {
+    e.preventDefault();
+    gotoPref("paneConnectionSecurity");
   },
 });
 
