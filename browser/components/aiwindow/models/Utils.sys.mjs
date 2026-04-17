@@ -558,13 +558,21 @@ export class openAIEngine {
       majorVersion
     );
 
-    const hasCustomEndpoint = Services.prefs.prefHasUserValue(ENDPOINT_PREF);
-    if (hasCustomEndpoint) {
+    if (openAIEngine.hasCustomEndpoint()) {
       if (feature === MODEL_FEATURES.CHAT) {
         this._loadGenericChatPrompt(featureConfigs, majorVersion);
       }
       this._applyCustomEndpointModel();
     }
+  }
+
+  /**
+   * Checks whether a custom endpoint is configured via pref.
+   *
+   * @returns {boolean} True if the endpoint pref has a user-set value.
+   */
+  static hasCustomEndpoint() {
+    return Services.prefs.prefHasUserValue(ENDPOINT_PREF);
   }
 
   /**
@@ -709,9 +717,9 @@ export class openAIEngine {
 
     try {
       const engineInstance = await openAIEngine._createEngine({
-        apiKey: Services.prefs.getStringPref(APIKEY_PREF, ""),
+        apiKey: this.hasCustomEndpoint() ? this.apiKey : "",
         backend: "openai",
-        baseURL: Services.prefs.getStringPref(ENDPOINT_PREF, ""),
+        baseURL: this.endpoint,
         engineId,
         featureId,
         flowId,
@@ -750,7 +758,9 @@ export class openAIEngine {
     try {
       return await this.engineInstance.run(content);
     } catch (ex) {
-      if (!this._is401Error(ex)) {
+      // Skip the token retry flow when using a custom endpoint,
+      // as the retry logic only applies to FxAccounts tokens.
+      if (!this._is401Error(ex) || openAIEngine.hasCustomEndpoint()) {
         throw ex;
       }
 
@@ -839,7 +849,9 @@ export class openAIEngine {
         yield chunk;
       }
     } catch (ex) {
-      if (!this._is401Error(ex)) {
+      // Skip the token retry flow when using a custom endpoint,
+      // as the retry logic only applies to FxAccounts tokens.
+      if (!this._is401Error(ex) || openAIEngine.hasCustomEndpoint()) {
         throw ex;
       }
 
@@ -892,6 +904,15 @@ export class openAIEngine {
     return this._runWithGeneratorAuth(options);
   }
 }
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  openAIEngine,
+  "endpoint",
+  ENDPOINT_PREF,
+  ""
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(openAIEngine, "apiKey", APIKEY_PREF, "");
 
 /**
  * Resolves chat model metadata for a given choice ID from Remote Settings.
