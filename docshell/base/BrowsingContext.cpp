@@ -125,11 +125,6 @@ struct ParamTraits<mozilla::dom::ForcedColorsOverride>
           mozilla::dom::ForcedColorsOverride> {};
 
 template <>
-struct ParamTraits<mozilla::dom::PrefersReducedMotionOverride>
-    : public mozilla::dom::WebIDLEnumSerializer<
-          mozilla::dom::PrefersReducedMotionOverride> {};
-
-template <>
 struct ParamTraits<mozilla::dom::ExplicitActiveStatus>
     : public ContiguousEnumSerializer<
           mozilla::dom::ExplicitActiveStatus,
@@ -3492,22 +3487,6 @@ void BrowsingContext::DidSet(FieldIndex<IDX_ForcedColorsOverride>,
     return;
   }
   PresContextAffectingFieldChanged();
-}
-
-void BrowsingContext::DidSet(FieldIndex<IDX_PrefersReducedMotionOverride>,
-                             dom::PrefersReducedMotionOverride aOldValue) {
-  MOZ_ASSERT(IsTop());
-  if (PrefersReducedMotionOverride() == aOldValue) {
-    return;
-  }
-
-  WalkPresContexts([&](nsPresContext* aPc) {
-    aPc->MediaFeatureValuesChanged(
-        {MediaFeatureChangeReason::PreferenceChange},
-        // We're already iterating through sub documents, so we don't need to
-        // propagate the change again.
-        MediaFeatureChangePropagation::JustThisDocument);
-  });
 }
 
 void BrowsingContext::DidSet(FieldIndex<IDX_AnimationsPlayBackRateMultiplier>,

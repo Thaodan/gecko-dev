@@ -277,20 +277,6 @@ bool Gecko_MediaFeatures_PrefersReducedMotion(const Document* aDocument) {
           RFPTarget::CSSPrefersReducedMotion)) {
     return false;
   }
-
-  // Check for DevTools override first
-  if (dom::BrowsingContext* bc = aDocument->GetBrowsingContext()) {
-    auto* top = bc->Top();
-    switch (top->GetPrefersReducedMotionOverride()) {
-      case dom::PrefersReducedMotionOverride::Reduce:
-        return true;
-      case dom::PrefersReducedMotionOverride::No_preference:
-        return false;
-      case dom::PrefersReducedMotionOverride::None:
-        break;
-    }
-  }
-
   return LookAndFeel::GetInt(LookAndFeel::IntID::PrefersReducedMotion, 0) == 1;
 }
 
