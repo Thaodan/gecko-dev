@@ -127,8 +127,6 @@ skip-if = [
 
 ["browser_smartwindow_init.js"]
 
-["browser_smartwindow_jump_to_bottom.js"]
-
 ["browser_smartwindow_leak.js"]
 skip-if = [
   "debug && standalone", # Bug 2025711
