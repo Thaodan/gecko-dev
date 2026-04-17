@@ -314,18 +314,6 @@ support-files = [
 
 ["browser_queryContextCache.js"]
 
-["browser_quickactions.js"]
-
-["browser_quickactions_commands.js"]
-
-["browser_quickactions_devtools.js"]
-
-["browser_quickactions_screenshot.js"]
-
-["browser_quickactions_tab_refocus.js"]
-
-["browser_quickactions_translate.js"]
-
 ["browser_raceWithTabs.js"]
 
 ["browser_recentsearches.js"]
