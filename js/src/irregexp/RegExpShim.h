@@ -959,6 +959,12 @@ class FixedIntegerArray : public ByteArray {
     f.setValue(object.value());
     return f;
   }
+
+  SafeHeapObjectSize length() const {
+    uint32_t byteLength = ByteArray::length().value();
+    MOZ_ASSERT(byteLength % sizeof(T) == 0);
+    return SafeHeapObjectSize(byteLength / sizeof(T));
+  }
 };
 
 using FixedUInt16Array = FixedIntegerArray<uint16_t>;
