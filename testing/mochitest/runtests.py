@@ -4246,7 +4246,6 @@ toolbar#nav-bar {
             self.restartAfterFailure = restartAfterFailure
             self.browserProcessId = None
             self.stackFixerFunction = self.stackFixer()
-            self.current_test_failcount = 0
 
             if shutdownLeaks:
                 harness.message_logger.enable_saved_buffers()
@@ -4277,7 +4276,7 @@ toolbar#nav-bar {
                 self.dumpScreenOnFail,
                 self.trackShutdownLeaks,
                 self.trackLSANLeaks,
-                self.count_structured,
+                self.countline,
             ]
             if self.bisectChunk or self.restartAfterFailure:
                 handlers.append(self.record_result)
@@ -4342,20 +4341,25 @@ toolbar#nav-bar {
                     self.harness.expectedError[key] = error_msg.strip()
             return message
 
-        def count_structured(self, message):
-            if message["action"] == "test_start":
-                self.current_test_failcount = 0
-            elif message["action"] == "test_status":
-                if "expected" in message:
-                    self.current_test_failcount += 1
-                elif message["status"] == "FAIL":
-                    self.harness.counttodo += 1
-                else:
-                    self.harness.countpass += 1
-            elif message["action"] == "log" and message.get("level") == "ERROR":
-                self.current_test_failcount += 1
-            elif message["action"] == "test_end":
-                self.harness.countfail += self.current_test_failcount
+        def countline(self, message):
+            if message["action"] == "log":
+                line = message.get("message", "")
+            elif message["action"] == "process_output":
+                line = message.get("data", "")
+            else:
+                return message
+            val = 0
+            try:
+                val = int(line.split(":")[-1].strip())
+            except (AttributeError, ValueError):
+                return message
+
+            if "Passed:" in line:
+                self.harness.countpass += val
+            elif "Failed:" in line:
+                self.harness.countfail += val
+            elif "Todo:" in line:
+                self.harness.counttodo += val
             return message
 
         def fix_stack(self, message):

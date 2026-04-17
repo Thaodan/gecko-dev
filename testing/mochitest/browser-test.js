@@ -850,13 +850,9 @@ Tester.prototype = {
     }
     let changedPrefs = [];
     for (let p of failures) {
-      this.currentTest.addResult(
-        new testResult({
-          name: `changed preference: ${p}`,
-          pass: !gConfig.comparePrefs,
-          todo: !gConfig.comparePrefs,
-          allowFailure: this.currentTest.allowFailure,
-        })
+      this.structuredLogger.error(
+        // We only report unexpected failures when --compare-preferences is set.
+        `TEST-${gConfig.comparePrefs ? "UN" : ""}EXPECTED-FAIL | ${testPath} | changed preference: ${p}`
       );
       changedPrefs.push(p);
     }
