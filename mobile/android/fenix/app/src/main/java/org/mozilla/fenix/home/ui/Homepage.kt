@@ -48,6 +48,7 @@ import org.mozilla.fenix.GleanMetrics.RecentlyVisitedHomepage
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.appstate.setup.checklist.SetupChecklistState
+import org.mozilla.fenix.components.appstate.sports.SportsWidgetState
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.compose.MessageCard
 import org.mozilla.fenix.compose.home.HomeSectionHeader
@@ -562,6 +563,8 @@ private fun HomepagePreview() {
                     showCollections = true,
                     showPrivacyReport = true,
                     trackersBlockedCount = 754,
+                    showSportsWidget = false,
+                    sportsWidgetState = SportsWidgetState(),
                     headerState = HeaderState.Normal(
                         wordmarkTextColor = null,
                         privateBrowsingButtonColor = colorResource(
@@ -615,6 +618,8 @@ private fun HomepageBannerPreview() {
                     showCollections = true,
                     showPrivacyReport = true,
                     trackersBlockedCount = 754,
+                    showSportsWidget = false,
+                    sportsWidgetState = SportsWidgetState(),
                     headerState = HeaderState.Normal(
                         wordmarkTextColor = null,
                         privateBrowsingButtonColor = colorResource(
@@ -668,6 +673,8 @@ private fun HomepagePreviewCollections() {
                     showCollections = true,
                     showPrivacyReport = true,
                     trackersBlockedCount = 754,
+                    showSportsWidget = false,
+                    sportsWidgetState = SportsWidgetState(),
                     headerState = HeaderState.Normal(
                         wordmarkTextColor = null,
                         privateBrowsingButtonColor = colorResource(
@@ -721,6 +728,8 @@ private fun MinimalHomepagePreview() {
                     showCollections = false,
                     showPrivacyReport = true,
                     trackersBlockedCount = 754,
+                    showSportsWidget = false,
+                    sportsWidgetState = SportsWidgetState(),
                     headerState = HeaderState.Normal(
                         wordmarkTextColor = null,
                         privateBrowsingButtonColor = colorResource(

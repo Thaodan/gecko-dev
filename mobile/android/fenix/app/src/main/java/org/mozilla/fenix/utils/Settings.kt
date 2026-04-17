@@ -2561,6 +2561,14 @@ class Settings(
     )
 
     /**
+     * The set of ISO codes of the user's selected countries to follow for the sports widget.
+     */
+    var sportsSelectedCountries by stringSetPreference(
+        appContext.getPreferenceKey(R.string.pref_key_sports_selected_countries),
+        default = setOf(),
+    )
+
+    /**
      * Adjust Activated User sent
      */
     var growthUserActivatedSent by booleanPreference(
