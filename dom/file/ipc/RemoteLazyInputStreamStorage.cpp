@@ -82,21 +82,8 @@ void RemoteLazyInputStreamStorage::AddStream(nsIInputStream* aInputStream,
       gRemoteLazyStreamLog, LogLevel::Verbose,
       ("Storage::AddStream(%s) = %p", nsIDToCString(aID).get(), aInputStream));
 
-  // Pass a replacement out-param so non-cloneable streams are replaced.
-  // We can ignore the replacement return value because, in that case,
-  // `cloneable` refers to the replacement stream.
-  nsCOMPtr<nsIInputStream> replacement;
-  nsCOMPtr<nsICloneableInputStream> cloneable;
-  nsresult rv = NS_EnsureInputStreamIsCloneable(
-      aInputStream, getter_AddRefs(cloneable), getter_AddRefs(replacement));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
-
-  MOZ_ASSERT(cloneable->GetCloneable(), "NS_EnsureInputStreamIsCloneable lied");
-
   UniquePtr<StreamData> data = MakeUnique<StreamData>();
-  data->mInputStream = cloneable.forget();
+  data->mInputStream = aInputStream;
 
   mozilla::StaticMutexAutoLock lock(gMutex);
   mStorage.InsertOrUpdate(aID, std::move(data));
@@ -134,8 +121,11 @@ void RemoteLazyInputStreamStorage::GetStream(const nsID& aID, uint64_t aStart,
           ("Storage::GetStream(%s, %" PRIu64 " %" PRIu64 ")",
            nsIDToCString(aID).get(), aStart, aLength));
 
-  nsCOMPtr<nsICloneableInputStream> inputStream;
+  nsCOMPtr<nsIInputStream> inputStream;
 
+  // NS_CloneInputStream cannot be called when the mutex is locked because it
+  // can, recursively call GetStream() in case the child actor lives on the
+  // parent process.
   {
     mozilla::StaticMutexAutoLock lock(gMutex);
     StreamData* data = mStorage.Get(aID);
@@ -146,13 +136,29 @@ void RemoteLazyInputStreamStorage::GetStream(const nsID& aID, uint64_t aStart,
     inputStream = data->mInputStream;
   }
 
-  MOZ_ASSERT(inputStream && inputStream->GetCloneable());
+  MOZ_ASSERT(inputStream);
+
+  // We cannot return always the same inputStream because not all of them are
+  // able to be reused. Better to clone them.
 
   nsCOMPtr<nsIInputStream> clonedStream;
+  nsCOMPtr<nsIInputStream> replacementStream;
 
-  nsresult rv = inputStream->Clone(getter_AddRefs(clonedStream));
+  nsresult rv = NS_CloneInputStream(inputStream, getter_AddRefs(clonedStream),
+                                    getter_AddRefs(replacementStream));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return;
+  }
+
+  if (replacementStream) {
+    mozilla::StaticMutexAutoLock lock(gMutex);
+    StreamData* data = mStorage.Get(aID);
+    // data can be gone in the meantime.
+    if (!data) {
+      return;
+    }
+
+    data->mInputStream = std::move(replacementStream);
   }
 
   // Now it's the right time to apply a slice if needed.
