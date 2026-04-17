@@ -690,6 +690,7 @@ TestRunner.testFinished = function (tests) {
     TestRunner._currentTest == TestRunner._lastTestFinished &&
     !TestRunner._loopIsRestarting
   ) {
+    record(false, false, "called finish() multiple times");
     TestRunner.structuredLogger.testEnd(
       TestRunner.currentTestURL,
       "FAIL",
@@ -828,10 +829,10 @@ TestRunner.testFinished = function (tests) {
           var testwin = $("testframe").contentWindow;
           if (testwin.SimpleTest) {
             if (typeof testwin.SimpleTest.testsLength === "undefined") {
-              TestRunner.structuredLogger.error(
-                "TEST-UNEXPECTED-FAIL | " +
-                  TestRunner.currentTestURL +
-                  " fired an unload callback with missing test data," +
+              record(
+                false,
+                false,
+                "fired an unload callback with missing test data," +
                   " possibly due to the test navigating or reloading"
               );
               TestRunner.updateUI([{ result: false }]);
@@ -847,11 +848,10 @@ TestRunner.testFinished = function (tests) {
                 wrongtestname =
                   testwin.SimpleTest._tests[testwin.SimpleTest.testsLength + i]
                     .name;
-                TestRunner.structuredLogger.error(
-                  "TEST-UNEXPECTED-FAIL | " +
-                    TestRunner.currentTestURL +
-                    " logged result after SimpleTest.finish(): " +
-                    wrongtestname
+                record(
+                  false,
+                  false,
+                  "logged result after SimpleTest.finish(): " + wrongtestname
                 );
                 didReportError = true;
               }
@@ -860,10 +860,10 @@ TestRunner.testFinished = function (tests) {
                 // here (e.g. if wrongtestlength is somehow negative), it's
                 // important that we log *something* for the { result: false }
                 // test-failure that we're about to post.
-                TestRunner.structuredLogger.error(
-                  "TEST-UNEXPECTED-FAIL | " +
-                    TestRunner.currentTestURL +
-                    " hit an unexpected condition when checking for" +
+                record(
+                  false,
+                  false,
+                  "hit an unexpected condition when checking for" +
                     " logged results after SimpleTest.finish()"
                 );
               }
