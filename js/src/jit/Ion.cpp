@@ -415,6 +415,18 @@ void JitRuntime::TraceAtomZoneRoots(JSTracer* trc) {
 }
 
 /* static */
+bool JitRuntime::MarkJitcodeGlobalTableIteratively(GCMarker* marker) {
+  if (marker->runtime()->hasJitRuntime() &&
+      marker->runtime()->jitRuntime()->hasJitcodeGlobalTable()) {
+    return marker->runtime()
+        ->jitRuntime()
+        ->getJitcodeGlobalTable()
+        ->markIteratively(marker);
+  }
+  return false;
+}
+
+/* static */
 void JitRuntime::TraceWeakJitcodeGlobalTable(JSRuntime* rt, JSTracer* trc) {
   if (rt->hasJitRuntime() && rt->jitRuntime()->hasJitcodeGlobalTable()) {
     rt->jitRuntime()->getJitcodeGlobalTable()->traceWeak(rt, trc);
@@ -614,15 +626,12 @@ void JitCode::traceChildren(JSTracer* trc) {
 }
 
 void JitCode::finalize(JS::GCContext* gcx) {
-  // If this jitcode had a bytecode map, either the entry has been removed
-  // from the table, or it has been detached (jitcode_ set to null) because
-  // the profiler buffer still references it.
+  // If this jitcode had a bytecode map, it must have already been removed.
 #ifdef DEBUG
   JSRuntime* rt = gcx->runtime();
   if (hasBytecodeMap_) {
     MOZ_ASSERT(rt->jitRuntime()->hasJitcodeGlobalTable());
-    auto* entry = rt->jitRuntime()->getJitcodeGlobalTable()->lookup(raw());
-    MOZ_ASSERT(!entry || !entry->hasJitcode());
+    MOZ_ASSERT(!rt->jitRuntime()->getJitcodeGlobalTable()->lookup(raw()));
   }
 #endif
 

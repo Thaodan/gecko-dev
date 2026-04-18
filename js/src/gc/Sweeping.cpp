@@ -685,6 +685,8 @@ IncrementalProgress GCRuntime::markWeakReferences(
         markedAny |= WeakMapBase::markZoneIteratively(zone, &marker());
       }
     }
+
+    markedAny |= jit::JitRuntime::MarkJitcodeGlobalTableIteratively(&marker());
   }
 
   assertNoMarkingWork();
