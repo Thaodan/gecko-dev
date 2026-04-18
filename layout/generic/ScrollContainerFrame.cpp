@@ -4078,7 +4078,24 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   }
 
   {
-    DisplayListClipState::AutoSaveRestore clipState(aBuilder);
+    DisplayListClipState::AutoSaveRestore paddingBoxClipState(aBuilder);
+    // The border radius goes around the padding box. This usually matches the
+    // scrollport, so for most cases we can use a single clip. Further more, if
+    // the scrollport doesn't intersect our rounded rect we can avoid the
+    // roundedness altogether.
+    const bool radiiOnScrollPort = haveRadii && !IsSingleLineTextInput(this);
+    if (haveRadii && !radiiOnScrollPort) {
+      auto paddingBoxClip =
+          GetPaddingRectRelativeToSelf() + aBuilder->ToReferenceFrame(this);
+      nsRegion intersection = nsLayoutUtils::RoundedRectIntersectRect(
+          paddingBoxClip, radii, clipRect);
+      if (!intersection.GetLargestRectangle().Contains(clipRect)) {
+        paddingBoxClipState.ClipContainingBlockDescendants(paddingBoxClip,
+                                                           &radii);
+      }
+    }
+
+    DisplayListClipState::AutoSaveRestore scrollPortClipState(aBuilder);
 
     // If we're building an async zoom container, clip the contents inside
     // to the layout viewport (scrollPortClip). The composition bounds clip
@@ -4087,11 +4104,11 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     nsRect clipRectForContents =
         willBuildAsyncZoomContainer ? scrollPortClip : clipRect;
     if (mIsRoot) {
-      clipState.ClipContentDescendants(clipRectForContents,
-                                       haveRadii ? &radii : nullptr);
+      scrollPortClipState.ClipContentDescendants(
+          clipRectForContents, radiiOnScrollPort ? &radii : nullptr);
     } else {
-      clipState.ClipContainingBlockDescendants(clipRectForContents,
-                                               haveRadii ? &radii : nullptr);
+      scrollPortClipState.ClipContainingBlockDescendants(
+          clipRectForContents, radiiOnScrollPort ? &radii : nullptr);
     }
 
     nsDisplayListBuilder::AutoCurrentActiveScrolledRootSetter asrSetter(
@@ -7135,8 +7152,14 @@ nsRect ScrollContainerFrame::GetUnsnappedScrolledRectInternal(
 
 nsMargin ScrollContainerFrame::GetActualScrollbarSizes(
     ScrollbarSizesOptions aOptions /* = ScrollbarSizesOptions::NONE */) const {
-  nsRect r = GetPaddingRectRelativeToSelf();
+  if (IsSingleLineTextInput(this)) {
+    // The assumption below that the scrollport usually starts in the padding
+    // rect doesn't hold for single line text inputs. Luckily we know those have
+    // no scrollbars tho.
+    return {};
+  }
 
+  nsRect r = GetPaddingRectRelativeToSelf();
   nsMargin m(mScrollPort.y - r.y, r.XMost() - mScrollPort.XMost(),
              r.YMost() - mScrollPort.YMost(), mScrollPort.x - r.x);
 
