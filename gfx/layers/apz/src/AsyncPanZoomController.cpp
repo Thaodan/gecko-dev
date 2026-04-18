@@ -2837,7 +2837,15 @@ nsEventStatus AsyncPanZoomController::OnPanBegin(
   if (!UsingStatefulAxisLock()) {
     SetState(PANNING);
   } else {
-    HandlePanning(aEvent.mPanDisplacement);
+    float dx = aEvent.mPanDisplacement.x, dy = aEvent.mPanDisplacement.y;
+
+    if (dx != 0.0f || dy != 0.0f) {
+      double angle = atan2(dy, dx);  // range [-pi, pi]
+      angle = fabs(angle);           // range [0, pi]
+      HandlePanning(angle);
+    } else {
+      SetState(PANNING);
+    }
   }
 
   // If we are not currently in a overscroll animation and there is no
@@ -3584,8 +3592,7 @@ void AsyncPanZoomController::SetVelocityVector(
   mY.SetVelocity(aVelocityVector.y);
 }
 
-void AsyncPanZoomController::HandlePanningWithTouchAction(
-    const ParentLayerPoint& aVector) {
+void AsyncPanZoomController::HandlePanningWithTouchAction(double aAngle) {
   // Handling of cross sliding will need to be added in this method after
   // touch-action released enabled by default.
   MOZ_ASSERT(GetCurrentTouchBlock());
@@ -3599,12 +3606,12 @@ void AsyncPanZoomController::HandlePanningWithTouchAction(
                                 this, ScrollDirection::eVertical);
   if (GetCurrentTouchBlock()->TouchActionAllowsPanningXY()) {
     if (canScrollHorizontal && canScrollVertical) {
-      if (apz::IsCloseToHorizontal(aVector,
+      if (apz::IsCloseToHorizontal(aAngle,
                                    StaticPrefs::apz_axis_lock_lock_angle())) {
         mY.SetAxisLocked(true);
         SetState(PANNING_LOCKED_X);
       } else if (apz::IsCloseToVertical(
-                     aVector, StaticPrefs::apz_axis_lock_lock_angle())) {
+                     aAngle, StaticPrefs::apz_axis_lock_lock_angle())) {
         mX.SetAxisLocked(true);
         SetState(PANNING_LOCKED_Y);
       } else {
@@ -3619,7 +3626,7 @@ void AsyncPanZoomController::HandlePanningWithTouchAction(
     // Using bigger angle for panning to keep behavior consistent
     // with IE.
     if (apz::IsCloseToHorizontal(
-            aVector, StaticPrefs::apz_axis_lock_direct_pan_angle())) {
+            aAngle, StaticPrefs::apz_axis_lock_direct_pan_angle())) {
       mY.SetAxisLocked(true);
       SetState(PANNING_LOCKED_X);
       mPanDirRestricted = true;
@@ -3629,7 +3636,7 @@ void AsyncPanZoomController::HandlePanningWithTouchAction(
       SetState(NOTHING);
     }
   } else if (GetCurrentTouchBlock()->TouchActionAllowsPanningY()) {
-    if (apz::IsCloseToVertical(aVector,
+    if (apz::IsCloseToVertical(aAngle,
                                StaticPrefs::apz_axis_lock_direct_pan_angle())) {
       mX.SetAxisLocked(true);
       SetState(PANNING_LOCKED_Y);
@@ -3649,7 +3656,7 @@ void AsyncPanZoomController::HandlePanningWithTouchAction(
   }
 }
 
-void AsyncPanZoomController::HandlePanning(const ScreenPoint& aVector) {
+void AsyncPanZoomController::HandlePanning(double aAngle) {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
   MOZ_ASSERT(GetCurrentInputBlock());
   RefPtr<const OverscrollHandoffChain> overscrollHandoffChain =
@@ -3666,12 +3673,12 @@ void AsyncPanZoomController::HandlePanning(const ScreenPoint& aVector) {
   if (!canScrollHorizontal || !canScrollVertical) {
     SetState(PANNING);
   } else if (apz::IsCloseToHorizontal(
-                 aVector, StaticPrefs::apz_axis_lock_lock_angle())) {
+                 aAngle, StaticPrefs::apz_axis_lock_lock_angle())) {
     mY.SetAxisLocked(true);
     if (canScrollHorizontal) {
       SetState(PANNING_LOCKED_X);
     }
-  } else if (apz::IsCloseToVertical(aVector,
+  } else if (apz::IsCloseToVertical(aAngle,
                                     StaticPrefs::apz_axis_lock_lock_angle())) {
     mX.SetAxisLocked(true);
     if (canScrollVertical) {
@@ -3691,6 +3698,9 @@ void AsyncPanZoomController::HandlePanningUpdate(
     ParentLayerPoint vector =
         ToParentLayerCoordinates(aPanDistance, mStartTouch);
 
+    float angle = atan2f(vector.y, vector.x);  // range [-pi, pi]
+    angle = fabsf(angle);                      // range [0, pi]
+
     float breakThreshold =
         StaticPrefs::apz_axis_lock_breakout_threshold() * GetDPI();
 
@@ -3699,12 +3709,12 @@ void AsyncPanZoomController::HandlePanningUpdate(
       switch (mState) {
         case PANNING_LOCKED_X:
           if (!apz::IsCloseToHorizontal(
-                  vector, StaticPrefs::apz_axis_lock_breakout_angle())) {
+                  angle, StaticPrefs::apz_axis_lock_breakout_angle())) {
             mY.SetAxisLocked(false);
             // If we are within the lock angle from the Y axis and STICKY,
             // lock onto the Y axis. BREAKABLE should not re-acquire the lock.
             if (apz::IsCloseToVertical(
-                    vector, StaticPrefs::apz_axis_lock_lock_angle()) &&
+                    angle, StaticPrefs::apz_axis_lock_lock_angle()) &&
                 GetAxisLockMode() != AxisLockMode::BREAKABLE) {
               mX.SetAxisLocked(true);
               SetState(PANNING_LOCKED_Y);
@@ -3716,12 +3726,12 @@ void AsyncPanZoomController::HandlePanningUpdate(
 
         case PANNING_LOCKED_Y:
           if (!apz::IsCloseToVertical(
-                  vector, StaticPrefs::apz_axis_lock_breakout_angle())) {
+                  angle, StaticPrefs::apz_axis_lock_breakout_angle())) {
             mX.SetAxisLocked(false);
             // If we are within the lock angle from the X axis and STICKY,
             // lock onto the X axis. BREAKABLE should not re-acquire the lock.
             if (apz::IsCloseToHorizontal(
-                    vector, StaticPrefs::apz_axis_lock_lock_angle()) &&
+                    angle, StaticPrefs::apz_axis_lock_lock_angle()) &&
                 GetAxisLockMode() != AxisLockMode::BREAKABLE) {
               mY.SetAxisLocked(true);
               SetState(PANNING_LOCKED_X);
@@ -3735,7 +3745,7 @@ void AsyncPanZoomController::HandlePanningUpdate(
           // `HandlePanning` can re-acquire the axis lock, which we don't want
           // to do if the lock is BREAKABLE
           if (GetAxisLockMode() != AxisLockMode::BREAKABLE) {
-            HandlePanning(aPanDistance);
+            HandlePanning(angle);
           }
           break;
 
@@ -3808,9 +3818,11 @@ nsEventStatus AsyncPanZoomController::StartPanning(
     const ExternalPoint& aStartPoint, const TimeStamp& aEventTime) {
   ParentLayerPoint vector =
       ToParentLayerCoordinates(PanVector(aStartPoint), mStartTouch);
+  double angle = atan2(vector.y, vector.x);  // range [-pi, pi]
+  angle = fabs(angle);                       // range [0, pi]
 
   RecursiveMutexAutoLock lock(mRecursiveMutex);
-  HandlePanningWithTouchAction(vector);
+  HandlePanningWithTouchAction(angle);
 
   if (IsInPanningState()) {
     mTouchStartRestingTimeBeforePan = aEventTime - mTouchStartTime;

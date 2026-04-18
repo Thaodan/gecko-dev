@@ -917,15 +917,15 @@ class AsyncPanZoomController {
   void RestoreOverscrollAmount(const ParentLayerPoint& aOverscroll);
 
   /**
-   * Sets the panning state basing on the pan vector and current
+   * Sets the panning state basing on the pan direction angle and current
    * touch-action value.
    */
-  void HandlePanningWithTouchAction(const ParentLayerPoint& aVector);
+  void HandlePanningWithTouchAction(double angle);
 
   /**
    * Sets the panning state ignoring the touch action value.
    */
-  void HandlePanning(const ScreenPoint& aVector);
+  void HandlePanning(double angle);
 
   /**
    * Update the panning state and axis locks.
