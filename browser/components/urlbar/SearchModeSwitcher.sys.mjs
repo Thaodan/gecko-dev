@@ -261,15 +261,12 @@ export class SearchModeSwitcher {
       }
       case "searchmode": {
         let engineId = panelItem.dataset.engineId;
-        this.search({
-          engine: lazy.SearchService.getEngineById(engineId),
-          whereToOpenSerp: this.#whereToOpenSerp(event),
-        });
+        this.#remoteSearch(lazy.SearchService.getEngineById(engineId), event);
         break;
       }
       case "localsearchmode": {
         let restrict = panelItem.dataset.restrict;
-        this.search({ restrict });
+        this.#localSearch(restrict);
         break;
       }
       case "installopensearch": {
@@ -445,6 +442,9 @@ export class SearchModeSwitcher {
         : lazy.UrlbarSearchUtils.getDefaultEngine(
             lazy.PrivateBrowsingUtils.isWindowPrivate(this.#input.window)
           );
+      if (!engine) {
+        return { label: null, icon: SearchModeSwitcher.DEFAULT_ICON };
+      }
       let icon = (await engine.getIconURL()) ?? SearchModeSwitcher.DEFAULT_ICON;
       return { label: engine.name, icon };
     }
@@ -553,19 +553,19 @@ export class SearchModeSwitcher {
   }
 
   /**
-   * @param {MouseEvent|KeyboardEvent|XULCommandEvent} event
-   * @returns {string|null} Returns where the engine result page should be
-   * opened, or null if it should not be opened.
+   * @param {MouseEvent|KeyboardEvent} event
+   * @returns {string}
+   *   Where the search engine result page should be opened.
    */
   #whereToOpenSerp(event) {
     let where = lazy.BrowserUtils.whereToOpenLink(event, false, true);
+    // Usually, shift means "open in new window", but in the search
+    // mode switcher it means "open SERP even if urlbar is empty",
+    // so we just return tab, tabshifted or current but never window.
     if (where.startsWith("tab")) {
       return where;
     }
-    if (event.shiftKey) {
-      return "current";
-    }
-    return null;
+    return "current";
   }
 
   /**
@@ -628,63 +628,62 @@ export class SearchModeSwitcher {
   }
 
   /**
+   * Enables a local search mode based on the restrict token.
    *
-   * @param {object} [opts]
-   * @param {SearchEngine} [opts.engine]
-   * @param {?string} [opts.restrict]
-   * @param {?string} [opts.whereToOpenSerp]
-   *   If this is null, start a query in the urlbar.
-   *   Otherwise, open the SERP in that place.
+   * @param {string} restrict
+   *   The restrict token
    */
-  search({ engine = null, restrict = null, whereToOpenSerp = null } = {}) {
-    if (!whereToOpenSerp || whereToOpenSerp == "current") {
-      this.closePanel();
-    }
+  #localSearch(restrict) {
+    this.closePanel();
 
-    let opts = {
-      searchEngine: engine,
+    this.#input.search(restrict + " " + this.#getSearchString(), {
       searchModeEntry: "searchbutton",
-    };
-    let searchString = this.#getSearchString();
+    });
 
-    if (restrict || (!searchString && !whereToOpenSerp)) {
-      let search = restrict ? restrict + " " + searchString : "";
-      this.#input.search(search, opts);
+    if (this.#input.sapName == "urlbar") {
+      Glean.urlbarUnifiedsearchbutton.picked.local_search.add(1);
+    }
+  }
+
+  /**
+   * Enters searchmode in the urlbar or opens a SERP, depending
+   * on whether the urlbar is empty.
+   * Shift can also be used to force the SERP.
+   *
+   * @param {SearchEngine} searchEngine
+   *   The engine to search with.
+   * @param {KeyboardEvent|MouseEvent} event
+   *   The event that triggered the search.
+   */
+  #remoteSearch(searchEngine, event) {
+    let whereToOpenSerp = this.#whereToOpenSerp(event);
+    let searchString = this.#getSearchString();
+    if (!searchString && !event.shiftKey && whereToOpenSerp == "current") {
+      // Go into searchmode.
+      this.closePanel();
+      this.#input.search("", {
+        searchEngine,
+        searchModeEntry: "searchbutton",
+      });
     } else {
-      if (engine && !whereToOpenSerp) {
-        this.#input.value = searchString;
-        this.#input.setSearchMode(
-          {
-            engineName: engine.name,
-            entry: "searchbutton",
-            source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
-            isPreview: false,
-          },
-          this.#input.window.gBrowser.selectedBrowser
-        );
+      // Go directly to SERP.
+      if (whereToOpenSerp == "current") {
+        this.closePanel();
       }
-      if (whereToOpenSerp) {
-        opts.where = whereToOpenSerp;
-        opts.inBackground = true;
-      }
-      this.#input.openEngineHomePage(searchString, opts);
+
+      this.#input.openSearchEnginePage(searchString, {
+        event,
+        searchEngine,
+        where: whereToOpenSerp,
+        inBackground: true,
+      });
     }
 
-    if (engine) {
-      if (this.#input.sapName == "urlbar") {
-        // TODO do we really need to distinguish here?
-        Glean.urlbarUnifiedsearchbutton.picked[
-          engine.isConfigEngine ? "builtin_search" : "addon_search"
-        ].add(1);
-      }
-    } else if (restrict) {
-      if (this.#input.sapName == "urlbar") {
-        Glean.urlbarUnifiedsearchbutton.picked.local_search.add(1);
-      }
-    } else {
-      console.warn(
-        `Unexpected search: ${JSON.stringify({ engine, restrict, whereToOpenSerp })}`
-      );
+    if (this.#input.sapName == "urlbar") {
+      // TODO do we really need to distinguish here?
+      Glean.urlbarUnifiedsearchbutton.picked[
+        searchEngine.isConfigEngine ? "builtin_search" : "addon_search"
+      ].add(1);
     }
   }
 
@@ -698,6 +697,27 @@ export class SearchModeSwitcher {
       return "";
     }
     return this.#input.value;
+  }
+
+  /**
+   * Returns whether the event's target is an item
+   * in the search mode switcher popup.
+   *
+   * @param {Event|null|undefined} event
+   * @returns {boolean}
+   */
+  eventTargetIsPanelItem(event) {
+    let target = event?.target;
+    if (!target || !("classList" in target)) {
+      return false;
+    }
+    let classList = /** @type {DOMTokenList}*/ (target.classList);
+
+    return (
+      classList.contains("searchmode-switcher-addEngine") ||
+      classList.contains("searchmode-switcher-installed") ||
+      classList.contains("searchmode-switcher-local")
+    );
   }
 
   #enableObservers() {
@@ -750,18 +770,12 @@ export class SearchModeSwitcher {
     return panelitem;
   }
 
-  async #installOpenSearchEngine(e, engine) {
+  async #installOpenSearchEngine(event, engine) {
     let topic = "browser-search-engine-modified";
 
     let observer = engineObj => {
       Services.obs.removeObserver(observer, topic);
-      let eng = lazy.SearchService.getEngineByName(
-        engineObj.wrappedJSObject.name
-      );
-      this.search({
-        engine: eng,
-        whereToOpenSerp: this.#whereToOpenSerp(e),
-      });
+      this.#remoteSearch(engineObj.wrappedJSObject, event);
     };
     Services.obs.addObserver(observer, topic);
 

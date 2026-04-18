@@ -413,8 +413,8 @@ add_task(async function open_engine_page_directly() {
     }
 
     await popupHidden;
-    await UrlbarTestUtils.assertSearchMode(newWin, null);
     await pageLoaded;
+    await UrlbarTestUtils.assertSearchMode(newWin, null);
     Assert.ok(true, "The popup was hidden and expected page was loaded");
 
     await BrowserTestUtils.closeWindow(newWin);

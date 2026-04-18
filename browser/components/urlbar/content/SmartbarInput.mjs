@@ -2848,41 +2848,79 @@ ${
   }
 
   /**
-   * Opens a search page if the value is non-empty, otherwise opens the
-   * search engine homepage (searchform).
+   * Opens a SERP if value is non-empty, otherwise
+   * opens the search engine homepage (searchform).
    *
    * @param {string} value
    * @param {object} options
    * @param {SearchEngine} options.searchEngine
-   * @param {string} [options.where]
+   * @param {Event} options.event
+   * @param {string} options.where
    * @param {boolean} [options.inBackground]
    */
-  openEngineHomePage(
+  openSearchEnginePage(
     value,
-    { searchEngine, where = "current", inBackground = false }
+    { searchEngine, event, where, inBackground = false }
   ) {
-    if (!searchEngine) {
-      console.warn("No searchEngine parameter");
+    if (!searchEngine || !event || !where) {
+      console.warn("Missing parameters");
       return;
     }
 
     let trimmedValue = value.trim();
-    let url;
+    let url, postData;
     if (trimmedValue) {
-      url = searchEngine.getSubmission(trimmedValue, null).uri.spec;
-      // TODO: record SAP telemetry, see Bug 1961789.
+      [url, postData] = lazy.UrlbarUtils.getSearchQueryUrl(
+        searchEngine,
+        trimmedValue
+      );
+      if (where.startsWith("tab")) {
+        // The TabOpen event is fired synchronously so tabEvent.target
+        // is guaranteed to be our new search tab.
+        this.window.gBrowser.tabContainer.addEventListener(
+          "TabOpen",
+          tabEvent =>
+            this._recordSearch(
+              searchEngine,
+              event,
+              {},
+              tabEvent.target.linkedBrowser
+            ),
+          { once: true }
+        );
+      } else {
+        this._recordSearch(searchEngine, event);
+      }
+
+      if (where == "current") {
+        // Enter search mode so:
+        // - in the urlbar, persisted search terms work
+        // - in the searchbar, the engine stays selected
+        //
+        // Note that this will also record telemetry and
+        // search mode will be exited on the urlbar if the
+        // engine does not support persisted search terms
+        this.setSearchMode(
+          {
+            engineName: searchEngine.name,
+            entry: "searchbutton",
+            source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
+            isPreview: false,
+          },
+          this.window.gBrowser.selectedBrowser
+        );
+      }
     } else {
       url = searchEngine.searchForm;
       lazy.BrowserSearchTelemetry.recordSearchForm(searchEngine, this.#sapName);
+      if (this.#isAddressbar && where == "current") {
+        this.inputField.value = url;
+        this.selectionStart = -1;
+      }
     }
+    this._lastSearchString = trimmedValue;
 
-    this._lastSearchString = "";
-    if (this.#isAddressbar && where == "current") {
-      this.#setInputValue(url);
-    }
-    this.selectionStart = -1;
-
-    this.window.openTrustedLinkIn(url, where, { inBackground });
+    this.window.openTrustedLinkIn(url, where, { inBackground, postData });
   }
 
   /**
@@ -3447,6 +3485,11 @@ ${
     if (this.#isAddressbar) {
       if (this._isHandoffSession) {
         return "urlbar_handoff";
+      }
+
+      if (this.searchModeSwitcher?.eventTargetIsPanelItem(event)) {
+        // The search mode switcher doesn't have its own search source yet.
+        return "urlbar_searchmode";
       }
 
       const isOneOff =
