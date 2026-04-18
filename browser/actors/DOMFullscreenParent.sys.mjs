@@ -17,8 +17,6 @@ export class DOMFullscreenParent extends JSWindowActorParent {
   //       browser-fullScreenAndPointerLock.js into the actor
   nextMsgRecipient = null;
 
-  fullscreenKeyboardLock = undefined;
-
   updateFullscreenWindowReference(aWindow) {
     if (aWindow.document.documentElement.hasAttribute("inDOMFullscreen")) {
       this._fullscreenWindow = aWindow;
@@ -155,7 +153,7 @@ export class DOMFullscreenParent extends JSWindowActorParent {
         if (window.document.fullscreen) {
           window.PointerlockFsWarning.showFullScreen(
             topBrowsingContext,
-            this.fullscreenKeyboardLock == "browser"
+            window.document.fullscreenKeyboardLock == "browser"
           );
         }
         this.updateFullscreenWindowReference(window);
@@ -172,14 +170,12 @@ export class DOMFullscreenParent extends JSWindowActorParent {
       case "DOMFullscreen:Exit": {
         this.manager.fullscreen = false;
         this.waitingForChildEnterFullscreen = false;
-        this.fullscreenKeyboardLock = undefined;
         window.windowUtils.remoteFrameFullscreenReverted();
         break;
       }
       case "DOMFullscreen:Exited": {
         this.manager.fullscreen = false;
         this.waitingForChildExitFullscreen = false;
-        this.fullscreenKeyboardLock = undefined;
         this.cleanupDomFullscreen(window);
         this.updateFullscreenWindowReference(window);
         break;
@@ -205,8 +201,7 @@ export class DOMFullscreenParent extends JSWindowActorParent {
             aMessage.data.fullscreenKeyboardLock == "browser")
             ? aMessage.data.fullscreenKeyboardLock
             : "none";
-        if (this.fullscreenKeyboardLock != newLock) {
-          this.fullscreenKeyboardLock = newLock;
+        if (window.document.fullscreenKeyboardLock != newLock) {
           this.manager.updateFullscreenKeyboardLockStatus(newLock);
           window.PointerlockFsWarning.close("fullscreen-warning");
           window.PointerlockFsWarning.showFullScreen(
@@ -261,7 +256,7 @@ export class DOMFullscreenParent extends JSWindowActorParent {
         if (!this.hasBeenDestroyed() && this.requestOrigin) {
           window.PointerlockFsWarning.showFullScreen(
             this.requestOrigin.browsingContext,
-            this.fullscreenKeyboardLock == "browser"
+            browser.ownerGlobal.document.fullscreenKeyboardLock == "browser"
           );
         }
         break;
@@ -291,7 +286,7 @@ export class DOMFullscreenParent extends JSWindowActorParent {
         if (!this.hasBeenDestroyed() && this.requestOrigin) {
           window.PointerlockFsWarning.showFullScreen(
             this.requestOrigin.browsingContext,
-            this.fullscreenKeyboardLock == "browser"
+            window.document.fullscreenKeyboardLock == "browser"
           );
         }
         break;

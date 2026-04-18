@@ -194,6 +194,17 @@ add_task(async function test_keyboard_lock_change_warning_change_iframe() {
     info("Wait for fullscreen warning timed out");
     await DOMFullscreenTestUtils.waitForWarningState(browser, "hidden");
 
+    info("Press Escape key multiple times should reshow the warning");
+    warningShownPromise = DOMFullscreenTestUtils.waitForWarningState(
+      browser,
+      "onscreen",
+      true
+    );
+    EventUtils.synthesizeKey("KEY_Escape", {});
+    EventUtils.synthesizeKey("KEY_Escape", {});
+    EventUtils.synthesizeKey("KEY_Escape", {});
+    await warningShownPromise;
+
     info("Log press to exit fullscreen");
     // Synthesize a long-press of the Escape key by repeating 2 keydown events.
     // This works as the long_press_interval is set to 0 on setup.
