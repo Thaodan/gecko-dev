@@ -436,7 +436,7 @@ function clickDoorhangerButton(aPopup, aButtonIndex) {
   } else {
     Assert.ok(true, "Triggering menuitem # " + aButtonIndex);
   }
-  button.click();
+  button.doCommand();
 }
 
 async function cleanupDoorhanger(notif) {

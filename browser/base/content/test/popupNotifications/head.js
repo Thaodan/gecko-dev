@@ -1,6 +1,5 @@
 ChromeUtils.defineESModuleGetters(this, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
-  AppConstants: "resource://gre/modules/AppConstants.sys.mjs",
 });
 
 /**
@@ -303,7 +302,6 @@ function triggerMainCommand(popup) {
   ok(!!notifications.length, "at least one notification displayed");
   let notification = notifications[0];
   info("Triggering main command for notification " + notification.id);
-  notification.button.performUpdate?.();
   EventUtils.synthesizeMouseAtCenter(notification.button, {});
 }
 
@@ -319,7 +317,8 @@ function triggerSecondaryCommand(popup, index) {
   }
 
   // Extra secondary actions appear in a menu.
-  notification.secondaryButton.chevronButtonEl.focus();
+  notification.secondaryButton.nextElementSibling.focus();
+
   popup.addEventListener(
     "popupshown",
     function () {
@@ -341,10 +340,8 @@ function triggerSecondaryCommand(popup, index) {
     "Open the popup to trigger secondary command for notification " +
       notification.id
   );
-
-  const isMac = AppConstants.platform == "macosx";
   EventUtils.synthesizeKey("KEY_ArrowDown", {
-    altKey: !isMac,
+    altKey: !navigator.platform.includes("Mac"),
   });
 }
 
