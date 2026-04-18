@@ -208,6 +208,11 @@ export class AIWindowTabStatesManager {
       "ai-window:sidebar-navigating",
       this.#onSidebarNavigating
     );
+
+    this.#window.addEventListener(
+      "ai-window:close-sidebar",
+      this.#onCloseSidebar
+    );
   }
 
   /**
@@ -242,6 +247,11 @@ export class AIWindowTabStatesManager {
     this.#window.removeEventListener(
       "ai-window:sidebar-navigating",
       this.#onSidebarNavigating
+    );
+
+    this.#window.removeEventListener(
+      "ai-window:close-sidebar",
+      this.#onCloseSidebar
     );
   }
 
@@ -717,6 +727,10 @@ export class AIWindowTabStatesManager {
     }
 
     this.#getTabState(tab, { input: "" });
+  };
+
+  #onCloseSidebar = () => {
+    lazy.AIWindowUI.closeSidebar(this.#window);
   };
 
   /**

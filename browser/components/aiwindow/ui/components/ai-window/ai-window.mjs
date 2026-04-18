@@ -1760,6 +1760,10 @@ export class AIWindow extends MozLitElement {
     this.loadStarterPrompts(false, selectedTab);
   }
 
+  #onCloseSidebarClick() {
+    this.#dispatchChromeEvent("ai-window:close-sidebar");
+  }
+
   showSearchingIndicator(isSearching, searchQuery) {
     this.#dispatchMessageToChatContent({
       role: "loading",
@@ -1962,6 +1966,14 @@ export class AIWindow extends MozLitElement {
               size="default"
               iconsrc="chrome://browser/content/aiwindow/assets/new-chat.svg"
               @click=${this.onCreateNewChatClick}
+            ></moz-button>
+            <moz-button
+              data-l10n-id="aiwindow-close-sidebar"
+              data-l10n-attrs="tooltiptext,aria-label"
+              class="close-sidebar-button"
+              size="default"
+              iconsrc="chrome://global/skin/icons/close.svg"
+              @click=${this.#onCloseSidebarClick}
             ></moz-button>
           </div>`
         : ""}
