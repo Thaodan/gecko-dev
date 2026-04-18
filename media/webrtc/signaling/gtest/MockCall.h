@@ -5,6 +5,8 @@
 #ifndef MOCK_CALL_H_
 #define MOCK_CALL_H_
 
+#include <span>
+
 #include "gmock/gmock.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Maybe.h"
@@ -144,7 +146,7 @@ class MockVideoSendStream : public webrtc::VideoSendStream {
     return std::vector<webrtc::scoped_refptr<webrtc::Resource>>();
   }
 
-  void SetCsrcs(webrtc::ArrayView<const uint32_t> csrcs) override {}
+  void SetCsrcs(std::span<const uint32_t> csrcs) override {}
   void GenerateKeyFrame(const std::vector<std::string>& rids) override {}
 
   virtual ~MockVideoSendStream() {}
