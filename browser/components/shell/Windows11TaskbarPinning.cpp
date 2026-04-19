@@ -551,7 +551,8 @@ Win11PinToTaskBarResult IsCurrentAppPinnedToTaskbarWin11(bool aCheckOnly) {
 #else  // MINGW32 implementation below
 
 Win11PinToTaskBarResult PinCurrentAppToTaskbarWin11(
-    bool aCheckOnly, const nsAString& aAppUserModelId) {
+    bool aCheckOnly, const nsAString& aAppUserModelId,
+    const bool aFireAndForget) {
   return {S_OK, Win11PinToTaskBarResultStatus::NotSupported};
 }
 
