@@ -14120,6 +14120,11 @@ function Weather_Weather({
     }
     return undefined;
   }, [handleErrorIntersection, hasError]);
+
+  // Must be declared before the early return to satisfy React's Rules of Hooks.
+  const handleOptInLocationSelected = (0,external_React_namespaceObject.useCallback)(() => {
+    dispatch(actionCreators.SetPref("weather.optInAccepted", true));
+  }, [dispatch]);
   if (!weatherData?.initialized || !isWeatherEnabled) {
     return null;
   }
@@ -14236,9 +14241,6 @@ function Weather_Weather({
       }
     }));
   }
-  const handleOptInLocationSelected = (0,external_React_namespaceObject.useCallback)(() => {
-    dispatch(actionCreators.SetPref("weather.optInAccepted", true));
-  }, [dispatch]);
   function handleOptInChooseLocation() {
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.AlsoToMain({

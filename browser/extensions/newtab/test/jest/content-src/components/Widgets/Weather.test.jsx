@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import { render, fireEvent } from "@testing-library/react";
+import { render, fireEvent, act } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { combineReducers, createStore } from "redux";
 import { INITIAL_STATE, reducers } from "common/Reducers.sys.mjs";
@@ -165,6 +165,37 @@ describe("<Weather> (Widgets/Weather)", () => {
       expect(
         container.querySelector(".weather-widget")
       ).not.toBeInTheDocument();
+    });
+
+    it("renders correctly when transitioning from uninitialized to initialized", () => {
+      const store = createStore(combineReducers(reducers), {
+        ...mockState,
+        Weather: { ...mockState.Weather, initialized: false },
+      });
+
+      const { container } = render(
+        <Provider store={store}>
+          <Weather dispatch={jest.fn()} size="small" />
+        </Provider>
+      );
+
+      expect(
+        container.querySelector(".weather-widget")
+      ).not.toBeInTheDocument();
+
+      act(() => {
+        store.dispatch({
+          type: at.WEATHER_UPDATE,
+          data: {
+            suggestions: mockState.Weather.suggestions,
+            hourlyForecasts: mockState.Weather.hourlyForecasts,
+            lastUpdated: Date.now(),
+            locationData: mockState.Weather.locationData,
+          },
+        });
+      });
+
+      expect(container.querySelector(".weather-widget")).toBeInTheDocument();
     });
   });
 

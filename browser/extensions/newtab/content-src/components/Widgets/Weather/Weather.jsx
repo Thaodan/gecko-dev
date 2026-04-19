@@ -136,6 +136,11 @@ function Weather({ dispatch, size }) {
     return undefined;
   }, [handleErrorIntersection, hasError]);
 
+  // Must be declared before the early return to satisfy React's Rules of Hooks.
+  const handleOptInLocationSelected = useCallback(() => {
+    dispatch(ac.SetPref("weather.optInAccepted", true));
+  }, [dispatch]);
+
   if (!weatherData?.initialized || !isWeatherEnabled) {
     return null;
   }
@@ -281,10 +286,6 @@ function Weather({ dispatch, size }) {
       })
     );
   }
-
-  const handleOptInLocationSelected = useCallback(() => {
-    dispatch(ac.SetPref("weather.optInAccepted", true));
-  }, [dispatch]);
 
   function handleOptInChooseLocation() {
     batch(() => {
