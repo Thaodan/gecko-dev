@@ -36,18 +36,17 @@ class LoadContextInfoFactory : public nsILoadContextInfoFactory {
       NS_DECL_NSILOADCONTEXTINFOFACTORY
 };
 
-already_AddRefed<LoadContextInfo> GetLoadContextInfo(nsIChannel* aChannel);
+LoadContextInfo* GetLoadContextInfo(nsIChannel* aChannel);
 
-already_AddRefed<LoadContextInfo> GetLoadContextInfo(
-    nsILoadContext* aLoadContext, bool aIsAnonymous);
+LoadContextInfo* GetLoadContextInfo(nsILoadContext* aLoadContext,
+                                    bool aIsAnonymous);
 
-already_AddRefed<LoadContextInfo> GetLoadContextInfo(nsIDOMWindow* aWindow,
-                                                     bool aIsAnonymous);
+LoadContextInfo* GetLoadContextInfo(nsIDOMWindow* aWindow, bool aIsAnonymous);
 
-already_AddRefed<LoadContextInfo> GetLoadContextInfo(nsILoadContextInfo* aInfo);
+LoadContextInfo* GetLoadContextInfo(nsILoadContextInfo* aInfo);
 
-already_AddRefed<LoadContextInfo> GetLoadContextInfo(
-    bool const aIsAnonymous, OriginAttributes const& aOriginAttributes);
+LoadContextInfo* GetLoadContextInfo(bool const aIsAnonymous,
+                                    OriginAttributes const& aOriginAttributes);
 
 }  // namespace net
 }  // namespace mozilla
