@@ -856,7 +856,14 @@ Maybe<ScrollDirection> TouchBlockState::GetBestGuessPanDirection(
       aInput.mTouches.Length() != 1) {
     return Nothing();
   }
-  ScreenPoint vector = aInput.mTouches[0].mScreenPoint - mSlopOrigin;
+  RefPtr<AsyncPanZoomController> apzc = GetTargetApzc();
+  if (!apzc) {
+    return Nothing();
+  }
+  ScreenPoint screenVector =
+      ScreenPoint(aInput.mTouches[0].mScreenPoint - mSlopOrigin);
+  ParentLayerPoint vector =
+      apzc->ToParentLayerCoordinates(screenVector, ScreenPoint(mSlopOrigin));
 
   double angleThreshold = TouchActionAllowsPanningXY()
                               ? StaticPrefs::apz_axis_lock_lock_angle()

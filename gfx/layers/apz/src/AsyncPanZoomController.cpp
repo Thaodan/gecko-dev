@@ -2837,7 +2837,7 @@ nsEventStatus AsyncPanZoomController::OnPanBegin(
   if (!UsingStatefulAxisLock()) {
     SetState(PANNING);
   } else {
-    HandlePanning(aEvent.mPanDisplacement);
+    HandlePanning(aEvent.mLocalPanDisplacement);
   }
 
   // If we are not currently in a overscroll animation and there is no
@@ -3647,7 +3647,7 @@ void AsyncPanZoomController::HandlePanningWithTouchAction(
   }
 }
 
-void AsyncPanZoomController::HandlePanning(const ScreenPoint& aVector) {
+void AsyncPanZoomController::HandlePanning(const ParentLayerPoint& aVector) {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
   MOZ_ASSERT(GetCurrentInputBlock());
   RefPtr<const OverscrollHandoffChain> overscrollHandoffChain =
@@ -3733,7 +3733,7 @@ void AsyncPanZoomController::HandlePanningUpdate(
           // `HandlePanning` can re-acquire the axis lock, which we don't want
           // to do if the lock is BREAKABLE
           if (GetAxisLockMode() != AxisLockMode::BREAKABLE) {
-            HandlePanning(aPanDistance);
+            HandlePanning(vector);
           }
           break;
 

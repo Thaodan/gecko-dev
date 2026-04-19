@@ -925,7 +925,7 @@ class AsyncPanZoomController {
   /**
    * Sets the panning state ignoring the touch action value.
    */
-  void HandlePanning(const ScreenPoint& aVector);
+  void HandlePanning(const ParentLayerPoint& aVector);
 
   /**
    * Update the panning state and axis locks.

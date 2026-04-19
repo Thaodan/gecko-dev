@@ -185,13 +185,9 @@ namespace apz {
  * Returns false if aVector is a zero vector.
  * @param aThreshold an angle in radians in the range [0, pi/2]
  */
-// FIXME: Bug 2032315: Narrow the signature to only accept ParentLayerPoint, and
-// convert call sites that currently pass Screen coordinates to pass ParentLayer
-// instead.
-template <typename Units>
-bool IsCloseToHorizontal(const gfx::PointTyped<Units>& aVector,
-                         float aThreshold) {
-  if (aVector == gfx::PointTyped<Units>()) {
+inline bool IsCloseToHorizontal(const ParentLayerPoint& aVector,
+                                float aThreshold) {
+  if (aVector == ParentLayerPoint()) {
     return false;
   }
   float angle = float(fabs(atan2(aVector.y, aVector.x)));
@@ -203,13 +199,9 @@ bool IsCloseToHorizontal(const gfx::PointTyped<Units>& aVector,
  * Returns false if aVector is a zero vector.
  * @param aThreshold an angle in radians in the range [0, pi/2]
  */
-// FIXME: Bug 2032315: Narrow the signature to only accept ParentLayerPoint, and
-// convert call sites that currently pass Screen coordinates to pass ParentLayer
-// instead.
-template <typename Units>
-bool IsCloseToVertical(const gfx::PointTyped<Units>& aVector,
-                       float aThreshold) {
-  if (aVector == gfx::PointTyped<Units>()) {
+inline bool IsCloseToVertical(const ParentLayerPoint& aVector,
+                              float aThreshold) {
+  if (aVector == ParentLayerPoint()) {
     return false;
   }
   float angle = float(fabs(atan2(aVector.y, aVector.x)));
