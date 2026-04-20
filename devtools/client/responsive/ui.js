@@ -199,6 +199,10 @@ class ResponsiveUI extends EventEmitter {
       this.dynamicToolbarEnabled
     );
 
+    const dynamicToolbarInner = doc.createElement("div");
+    dynamicToolbarInner.classList.add("rdm-dynamic-toolbar-inner");
+    this.dynamicToolbar.append(dynamicToolbarInner);
+
     if (this.dynamicToolbarEnabled) {
       this.dynamicToolbar.style.height = DYNAMIC_TOOLBAR_MAX_HEIGHT + "px";
       InspectorUtils.setDynamicToolbarMaxHeight(
@@ -235,6 +239,11 @@ class ResponsiveUI extends EventEmitter {
       this.browserContainerEl.querySelector(".browserStack");
 
     this.browserContainerEl.classList.add("responsive-mode");
+
+    this.browserContainerEl.style.setProperty(
+      "--rdm-dynamic-toolbar-max-height",
+      DYNAMIC_TOOLBAR_MAX_HEIGHT + "px"
+    );
 
     // Prepend the RDM iframe inside of the current tab's browser container.
     this.browserContainerEl.prepend(rdmFrame);
