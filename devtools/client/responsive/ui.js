@@ -411,6 +411,16 @@ class ResponsiveUI extends EventEmitter {
     // Remove any .style.top remnants (set by setCurrentDynamicToolbarHeight).
     this.tab.linkedBrowser.style.removeProperty("top");
 
+    // Reset any dynamic toolbar related settings on the browser.
+    InspectorUtils.setVerticalClipping(
+      this.tab.linkedBrowser.browsingContext,
+      0
+    );
+    InspectorUtils.setDynamicToolbarMaxHeight(
+      this.tab.linkedBrowser.browsingContext,
+      0
+    );
+
     // Ensure the tab is reloaded if required when exiting RDM so that no emulated
     // settings are left in a customized state.
     if (!isTabContentDestroying) {
