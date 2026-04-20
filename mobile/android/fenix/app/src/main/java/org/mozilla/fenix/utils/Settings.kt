@@ -2120,6 +2120,11 @@ class Settings(
         default = true,
     )
 
+    var isSwipeToolbarToShowTabsEnabled by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_swipe_toolbar_show_tabs),
+        default = true,
+    )
+
     /**
      * Address Sync feature.
      */

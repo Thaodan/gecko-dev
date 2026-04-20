@@ -1330,7 +1330,7 @@
     <!-- Preference for using the dynamic toolbar -->
     <string name="preference_gestures_dynamic_toolbar">Scroll to hide toolbar</string>
     <!-- Preference for showing the opened tabs by swiping up on the toolbar-->
-    <string name="preference_gestures_swipe_toolbar_show_tabs">Swipe toolbar up to open tabs</string>
+    <string name="preference_gestures_swipe_toolbar_show_tabs_2">Swipe toolbar vertically to see open tabs</string>
     <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
     <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Swipe address bar sideways to switch tabs</string>
     <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->

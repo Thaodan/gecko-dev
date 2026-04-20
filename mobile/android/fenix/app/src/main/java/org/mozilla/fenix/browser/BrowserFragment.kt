@@ -245,15 +245,18 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
                 ),
             )
         }
-        binding.gestureLayout.addGestureListener(
-            ToolbarVerticalGesturesHandler(
-                appStore = components.appStore,
-                toolbarLayout = browserToolbarView.layout,
-                navBarLayout = browserNavigationBar?.layout,
-                toolbarPosition = settings.toolbarPosition,
-                navController = findNavController(),
-            ),
-        )
+
+        if (settings.isSwipeToolbarToShowTabsEnabled) {
+            binding.gestureLayout.addGestureListener(
+                ToolbarVerticalGesturesHandler(
+                    appStore = components.appStore,
+                    toolbarLayout = browserToolbarView.layout,
+                    navBarLayout = browserNavigationBar?.layout,
+                    toolbarPosition = settings.toolbarPosition,
+                    navController = findNavController(),
+                ),
+            )
+        }
     }
 
     private fun setupShakeDetection() {
