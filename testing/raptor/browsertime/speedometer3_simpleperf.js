@@ -14,6 +14,7 @@ module.exports = logTest(
     const page_cycle_delay = context.options.browsertime.page_cycle_delay;
     const post_startup_delay = context.options.browsertime.post_startup_delay;
     const page_timeout = context.options.timeouts.pageLoad;
+    const iteration_count = context.options.browsertime.iteration_count;
 
     const suites = [
       "TodoMVC-JavaScript-ES5",
@@ -41,7 +42,7 @@ module.exports = logTest(
     // Browser cycle count determines which suite to run
     const suiteCount = context.index - 1;
     const suite = suites[suiteCount];
-    const url = `${context.options.browsertime.url}&suite=${suite}&iterationCount=50`;
+    const url = `${context.options.browsertime.url}&suite=${suite}&iterationCount=${iteration_count}`;
 
     // Post startup delay
     context.log.info(
@@ -77,6 +78,9 @@ module.exports = logTest(
       // Start benchmark. Run the sp3 test suite iteration_count iterations
       await commands.measure.start(url);
 
+      context.log.info(
+        `Running ${suite} for ${iteration_count} internal iterations`
+      );
       await commands.js.runAndWait(`this.benchmarkClient.start();`);
 
       // Wait for iterations of test suite to finish. Error if timeout exceeded
