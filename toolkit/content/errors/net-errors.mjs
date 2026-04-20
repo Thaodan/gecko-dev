@@ -594,8 +594,8 @@ export const NET_ERRORS = [
     hasNoUserFix: true,
   },
   {
-    id: "mitm",
-    errorCode: "mitm",
+    id: "MOZILLA_PKIX_ERROR_MITM_DETECTED",
+    errorCode: "MOZILLA_PKIX_ERROR_MITM_DETECTED",
     category: "cert",
     bodyTitleL10nId: "certerror-mitm-title",
     introContent: {
@@ -709,6 +709,11 @@ export const NET_ERRORS = [
     descriptionParts: [
       { tag: "li", dataL10nId: "neterror-nss-failure-not-verified" },
       { tag: "li", dataL10nId: "neterror-nss-failure-contact-website" },
+      {
+        tag: "li",
+        dataL10nId: "neterror-nss-failure-error-code",
+        dataL10nArgs: { errorCodeString: null },
+      },
     ],
     buttons: {
       showTryAgain: false,
