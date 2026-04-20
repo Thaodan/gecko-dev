@@ -381,10 +381,6 @@ var SidebarController = {
     return this.installedExtensions ? this.installedExtensions.split(",") : [];
   },
 
-  get launcherSplitter() {
-    return this._launcherSplitter;
-  },
-
   init() {
     // Initialize global state manager.
     this.SidebarManager;
@@ -494,6 +490,7 @@ var SidebarController = {
         };
         this._splitter.addEventListener("command", this._browserResizeObserver);
       }
+      this._enableLauncherDragging();
       this._enablePinnedTabsSplitterDragging();
 
       // Record Glean metrics.
@@ -1504,16 +1501,14 @@ var SidebarController = {
    * Enable the splitter which can be used to resize the launcher.
    */
   _enableLauncherDragging() {
-    if (this._launcherDropHandler) {
-      // Already set up observers and handler.
+    if (!this._launcherSplitter.hidden) {
+      // Already showing the launcher splitter with observers connected.
+      // Nothing to do.
       return;
     }
-    if (!this._panelResizeObserver) {
-      this._panelResizeObserver = new ResizeObserver(
-        ([entry]) =>
-          (this._state.panelWidth = entry.contentBoxSize[0].inlineSize)
-      );
-    }
+    this._panelResizeObserver = new ResizeObserver(
+      ([entry]) => (this._state.panelWidth = entry.contentBoxSize[0].inlineSize)
+    );
     this._panelResizeObserver.observe(this._box);
 
     this._launcherDropHandler = () => {
@@ -1524,6 +1519,8 @@ var SidebarController = {
       "command",
       this._launcherDropHandler
     );
+
+    this._launcherSplitter.hidden = false;
   },
 
   /**
@@ -1582,7 +1579,8 @@ var SidebarController = {
       "command",
       this._launcherDropHandler
     );
-    delete this._launcherDropHandler;
+
+    this._launcherSplitter.hidden = true;
   },
 
   /**
