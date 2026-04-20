@@ -180,6 +180,7 @@ export class ContentSection extends React.PureComponent {
       showSectionsMgmtPanel,
       // @nova-cleanup(remove-conditional): Remove novaEnabled
       novaEnabled,
+      wallpapersSystemEnabled,
       toggleWidgetsManagementPanel,
       showWidgetsManagementPanel,
       widgetsEnabled,
@@ -207,7 +208,7 @@ export class ContentSection extends React.PureComponent {
     return (
       <>
         <div className="home-section">
-          {(wallpapersEnabled || novaEnabled) && (
+          {wallpapersSystemEnabled && (
             <>
               <div className="wallpapers-section">
                 {novaEnabled && (
@@ -221,14 +222,12 @@ export class ContentSection extends React.PureComponent {
                     data-l10n-id="newtab-wallpaper-toggle-title"
                   />
                 )}
-                {wallpapersEnabled && (
-                  <WallpaperCategories
-                    setPref={setPref}
-                    activeWallpaper={activeWallpaper}
-                    exitEventFired={exitEventFired}
-                    onSubpanelToggle={onSubpanelToggle}
-                  />
-                )}
+                <WallpaperCategories
+                  setPref={setPref}
+                  activeWallpaper={activeWallpaper}
+                  exitEventFired={exitEventFired}
+                  onSubpanelToggle={onSubpanelToggle}
+                />
               </div>
             </>
           )}
