@@ -53,6 +53,7 @@ import org.mozilla.fenix.components.toolbar.BrowserToolbarComposable
 import org.mozilla.fenix.components.toolbar.BrowserToolbarView
 import org.mozilla.fenix.components.toolbar.FenixBrowserToolbarView
 import org.mozilla.fenix.components.toolbar.ToolbarMenu
+import org.mozilla.fenix.components.toolbar.gestures.ToolbarGestureHandler
 import org.mozilla.fenix.components.toolbar.ui.createShareBrowserAction
 import org.mozilla.fenix.compose.snackbar.Snackbar
 import org.mozilla.fenix.compose.snackbar.SnackbarState

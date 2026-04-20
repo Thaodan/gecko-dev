@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-package org.mozilla.fenix.browser
+package org.mozilla.fenix.components.toolbar.gestures
 
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
@@ -31,6 +31,8 @@ import mozilla.components.support.utils.ext.mandatorySystemGestureInsets
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.R
+import org.mozilla.fenix.browser.SwipeGestureListener
+import org.mozilla.fenix.browser.TabPreview
 import org.mozilla.fenix.ext.getRectWithScreenLocation
 import org.mozilla.fenix.ext.maxActiveTime
 import org.mozilla.fenix.ext.pixelSizeFor
