@@ -15,7 +15,6 @@ import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination
 import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
 import org.mozilla.fenix.tabstray.redux.state.TabSearchState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
-import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.Mode
 import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
 import org.mozilla.fenix.tabstray.syncedtabs.generateFakeTab
 import org.mozilla.fenix.tabstray.syncedtabs.getFakeSyncedTabList
@@ -512,87 +511,6 @@ class TabsTrayStoreReducerTest {
             tabGroupState = TabsTrayState.TabGroupState(groups = expectedTabGroups),
         )
         val resultState = TabsTrayReducer.reduce(state = initialState, action = action)
-
-        assertEquals(expectedState, resultState)
-    }
-
-    @Test
-    fun `WHEN a user taps clicks on an unselected tab group during multiselection THEN the group and its tabs are added to the selection state`() {
-        val tabs = List(size = 20) { createTab(url = "") }
-        val tabGroup = createTabGroup(
-            tabs = MutableList(size = 20) { createTab(url = "") },
-        )
-        val initialState = TabsTrayState(
-            normalTabsState = TabsTrayState.NormalTabsState(items = tabs + tabGroup),
-            mode = Mode.Select(
-                selectedTabs = emptySet(),
-                selectedTabGroups = emptySet(),
-            ),
-            tabGroupState = TabsTrayState.TabGroupState(groups = listOf(tabGroup)),
-        )
-        val resultState = TabsTrayReducer.reduce(
-            state = initialState,
-            action = TabsTrayAction.AddSelectTabItem(item = tabGroup),
-        )
-        val expectedState = initialState.copy(
-            mode = Mode.Select(
-                selectedTabs = tabGroup.tabs.toSet(),
-                selectedTabGroups = setOf(tabGroup),
-            ),
-        )
-
-        assertEquals(expectedState, resultState)
-    }
-
-    @Test
-    fun `WHEN a user taps clicks on a selected tab group during multiselection THEN the group and its tabs are removed from the selection state`() {
-        val tabs = List(size = 20) { createTab(url = "") }
-        val tabGroup = createTabGroup(
-            tabs = MutableList(size = 20) { createTab(url = "") },
-        )
-        val initialState = TabsTrayState(
-            normalTabsState = TabsTrayState.NormalTabsState(items = tabs + tabGroup),
-            mode = Mode.Select(
-                selectedTabs = tabGroup.tabs.toSet(),
-                selectedTabGroups = setOf(tabGroup),
-            ),
-            tabGroupState = TabsTrayState.TabGroupState(groups = listOf(tabGroup)),
-        )
-        val resultState = TabsTrayReducer.reduce(
-            state = initialState,
-            action = TabsTrayAction.RemoveSelectTabItem(item = tabGroup),
-        )
-        val expectedState = initialState.copy(
-            mode = Mode.Normal,
-        )
-
-        assertEquals(expectedState, resultState)
-    }
-
-    @Test
-    fun `GIVEN there is a tab and a tab group selected WHEN a user taps clicks on the selected tab group during multiselection THEN the group and its tabs are removed from the selection state`() {
-        val tabs = List(size = 20) { createTab(url = "") }
-        val tabGroup = createTabGroup(
-            tabs = MutableList(size = 20) { createTab(url = "") },
-        )
-        val initialState = TabsTrayState(
-            normalTabsState = TabsTrayState.NormalTabsState(items = tabs + tabGroup),
-            mode = Mode.Select(
-                selectedTabs = tabGroup.tabs.toSet() + tabs[0],
-                selectedTabGroups = setOf(tabGroup),
-            ),
-            tabGroupState = TabsTrayState.TabGroupState(groups = listOf(tabGroup)),
-        )
-        val resultState = TabsTrayReducer.reduce(
-            state = initialState,
-            action = TabsTrayAction.RemoveSelectTabItem(item = tabGroup),
-        )
-        val expectedState = initialState.copy(
-            mode = Mode.Select(
-                selectedTabs = setOf(tabs[0]),
-                selectedTabGroups = emptySet(),
-            ),
-        )
 
         assertEquals(expectedState, resultState)
     }

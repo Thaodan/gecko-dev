@@ -4,12 +4,14 @@
 
 package org.mozilla.fenix.tabstray.redux.reducer
 
+import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination.DeleteTabGroupConfirmationDialog
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination.ExpandedTabGroup
 import org.mozilla.fenix.tabstray.redux.action.TabGroupAction
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.redux.state.initializeTabGroupForm
+import kotlin.collections.plus
 
 /**
  * Reducer for [TabGroupAction] dispatched from the Tabs Tray store.
@@ -75,13 +77,10 @@ object TabGroupActionReducer {
                 backStack = state.backStack.popTabGroupFlow(),
             )
 
-            is TabGroupAction.TabGroupClicked -> when (state.mode) {
-                is TabsTrayState.Mode.Normal -> state.copy(
-                    backStack = state.backStack + ExpandedTabGroup(group = action.group),
-                )
-
-                is TabsTrayState.Mode.Select -> state
-            }
+            is TabGroupAction.TabGroupClicked -> processTabGroupClick(
+                currentState = state,
+                group = action.group,
+            )
 
             is TabGroupAction.TabAddedToGroup -> state
 
@@ -126,4 +125,37 @@ object TabGroupActionReducer {
 
     private fun TabsTrayState.navigateToEditTabGroup(): List<TabManagerNavDestination> =
         backStack + TabManagerNavDestination.EditTabGroup
+
+    private fun processTabGroupClick(
+        currentState: TabsTrayState,
+        group: TabsTrayItem.TabGroup,
+    ): TabsTrayState = when (currentState.mode) {
+        is TabsTrayState.Mode.Normal -> currentState.copy(
+            backStack = currentState.backStack + ExpandedTabGroup(group = group),
+        )
+
+        is TabsTrayState.Mode.Select -> {
+            val selectedTabs = currentState.mode.selectedTabs.toHashSet()
+            val selectedTabGroups = currentState.mode.selectedTabGroups.toHashSet()
+
+            if (group in currentState.mode.selectedTabGroups) {
+                selectedTabGroups.remove(group)
+                selectedTabs.removeAll(group.tabs.toSet())
+            } else {
+                selectedTabGroups.add(group)
+                selectedTabs.addAll(group.tabs)
+            }
+
+            val newMode = if (selectedTabs.isEmpty() && selectedTabGroups.isEmpty()) {
+                TabsTrayState.Mode.Normal
+            } else {
+                TabsTrayState.Mode.Select(
+                    selectedTabs = selectedTabs,
+                    selectedTabGroups = selectedTabGroups,
+                )
+            }
+
+            currentState.copy(mode = newMode)
+        }
+    }
 }

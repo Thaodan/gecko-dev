@@ -423,24 +423,23 @@ private fun TabsTrayPreview(
                     )
                 }
             },
-            onItemClick = { tab ->
-                when (tabsTrayStore.state.mode) {
-                    TabsTrayState.Mode.Normal -> {
-                        tabsTrayStore.dispatch(TabsTrayAction.UpdateSelectedTabId(tabId = tab.id))
+            onItemClick = { item ->
+                val isSelected = tabsTrayStore.state.mode.contains(item)
+                when (item) {
+                    is TabsTrayItem.Tab -> if (isSelected) {
+                        tabsTrayStore.dispatch(TabsTrayAction.RemoveSelectTab(item))
+                    } else if (tabsTrayStore.state.mode is TabsTrayState.Mode.Select) {
+                        tabsTrayStore.dispatch(TabsTrayAction.AddSelectTab(item))
+                    } else {
+                        tabsTrayStore.dispatch(TabsTrayAction.UpdateSelectedTabId(tabId = item.id))
                     }
 
-                    is TabsTrayState.Mode.Select -> {
-                        if (tabsTrayStore.state.mode.selectedTabs.contains(tab)) {
-                            tabsTrayStore.dispatch(TabsTrayAction.RemoveSelectTabItem(tab))
-                        } else {
-                            tabsTrayStore.dispatch(TabsTrayAction.AddSelectTabItem(tab))
-                        }
+                    is TabsTrayItem.TabGroup -> {
+                        tabsTrayStore.dispatch(TabGroupAction.TabGroupClicked(group = item))
                     }
                 }
             },
-            onItemLongClick = { tab ->
-                tabsTrayStore.dispatch(TabsTrayAction.AddSelectTabItem(tab))
-            },
+            onItemLongClick = {},
             onInactiveTabsHeaderClick = { expanded ->
                 tabsTrayStore.dispatch(TabsTrayAction.UpdateInactiveExpanded(expanded))
             },

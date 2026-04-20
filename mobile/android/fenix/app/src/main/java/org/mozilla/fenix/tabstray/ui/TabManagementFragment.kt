@@ -556,8 +556,8 @@ class TabManagementFragment : DialogFragment() {
      * This method performs the tab click handling.  Separate from
      * onTabClick() in that an animation may play prior to handling the user action.
      */
-    private fun performTabClick(tab: TabsTrayItem) {
-        if (tab is TabsTrayItem.Tab && shouldConsiderShowingTabSwipeCFR()) {
+    private fun performTabClick(tab: TabsTrayItem.Tab) {
+        if (shouldConsiderShowingTabSwipeCFR()) {
             val normalTabs = tabsTrayStore.state.normalTabsState.items
             val currentTabId = tabsTrayStore.state.selectedTabId
 
