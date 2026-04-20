@@ -22,8 +22,6 @@ class NS_NO_VTABLE nsIBlobURLMutator : public nsISupports {
   NS_IMETHOD SetRevoked(bool aRevoked) = 0;
 };
 
-inline NS_DEFINE_CID(kHOSTOBJECTURICID, NS_HOSTOBJECTURI_CID);
-
 namespace mozilla::dom {
 
 /**
@@ -34,6 +32,7 @@ class BlobURL final : public mozilla::net::nsSimpleURI {
   BlobURL();
 
  public:
+  NS_INLINE_DECL_STATIC_IID(NS_HOSTOBJECTURI_CID)
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSISERIALIZABLE
 
