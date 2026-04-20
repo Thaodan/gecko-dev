@@ -588,6 +588,7 @@ function CardSection({
                 following={following}
                 onFollowClick={onFollowClick}
                 onUnfollowClick={onUnfollowClick}
+                title={title}
               />
             )}
           {subtitle && <p className="section-subtitle">{subtitle}</p>}
