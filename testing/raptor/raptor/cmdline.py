@@ -650,6 +650,9 @@ def verify_options(parser, args):
     if args.simpleperf and args.app not in SIMPLEPERF_APPS:
         parser.error(f"--simpleperf is only available in: {', '.join(SIMPLEPERF_APPS)}")
 
+    if args.simpleperf and args.gecko_profile:
+        parser.error("--simpleperf cannot be used with --gecko-profile.")
+
 
 def parse_args(argv=None):
     parser = create_parser()
