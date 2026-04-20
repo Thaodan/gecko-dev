@@ -922,6 +922,9 @@
         "Search": {
           "type": "boolean"
         },
+        "Weather": {
+          "type": "boolean"
+        },
         "TopSites": {
           "type": "boolean"
         },
