@@ -109,6 +109,9 @@ class ResponsiveUI extends EventEmitter {
     this.resolveInited = resolve;
 
     this.dynamicToolbar = null;
+    this.dynamicToolbarEnabled = Services.prefs.getBoolPref(
+      USE_DYNAMIC_TOOLBAR_PREF
+    );
   }
 
   get toolWindow() {
@@ -191,10 +194,12 @@ class ResponsiveUI extends EventEmitter {
     // Create dynamic toolbar
     this.dynamicToolbar = doc.createElement("div");
     this.dynamicToolbar.classList.add("rdm-dynamic-toolbar", "dynamic-toolbar");
-    this.dynamicToolbar.style.visibility = "hidden";
+    this.dynamicToolbar.classList.toggle(
+      "dynamic-toolbar-enabled",
+      this.dynamicToolbarEnabled
+    );
 
-    if (Services.prefs.getBoolPref(USE_DYNAMIC_TOOLBAR_PREF)) {
-      this.dynamicToolbar.style.visibility = "visible";
+    if (this.dynamicToolbarEnabled) {
       this.dynamicToolbar.style.height = DYNAMIC_TOOLBAR_MAX_HEIGHT + "px";
       InspectorUtils.setDynamicToolbarMaxHeight(
         this.tab.linkedBrowser.browsingContext,

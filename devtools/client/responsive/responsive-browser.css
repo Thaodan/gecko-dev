@@ -80,6 +80,10 @@
   opacity: 0.5;
 }
 
+.rdm-dynamic-toolbar:not(.dynamic-toolbar-enabled) {
+  display: none;
+}
+
 .browserContainer.responsive-mode > .browserStack > :is(browser, .rdm-screen-box) {
   grid-column: center-align;
   grid-row: margin-top-offset;
