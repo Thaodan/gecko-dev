@@ -12,16 +12,15 @@ use std::ffi::c_void;
 use std::io::{Read as _, Write as _};
 use std::path::Path;
 use std::sync::Mutex;
-use thin_vec::ThinVec;
 
 /// Callback type for [`ssl_tokens_cache_read`].
 pub type SslTokensReadCallback =
-    unsafe extern "C" fn(ctx: *mut c_void, record: *const SslTokensPersistedRecord);
+    unsafe extern "C" fn(ctx: *mut c_void, record: *const SslTokensPersistedRecordFfi);
 
 /// FFI-safe representation of one persisted token record.
 /// Cert chain data is excluded — see `PersistedRecord` for rationale.
 #[repr(C)]
-pub struct SslTokensPersistedRecord {
+pub struct SslTokensPersistedRecordFfi {
     pub id: u64,
     pub key: nsCString,
     pub expiration_time: PrTime,
@@ -39,7 +38,7 @@ pub struct SslTokensPersistedRecord {
 #[derive(Clone, Serialize, Deserialize)]
 #[expect(
     clippy::unsafe_derive_deserialize,
-    reason = "from_record is unrelated to deserialization"
+    reason = "from_ffi is unrelated to deserialization"
 )]
 struct PersistedRecord {
     id: u64,
@@ -52,30 +51,30 @@ struct PersistedRecord {
 }
 
 impl PersistedRecord {
-    /// Constructs a `PersistedRecord` from a C-compatible record, ignoring cert chains.
+    /// Constructs a `PersistedRecord` from an FFI struct, ignoring cert chains.
     ///
     /// # Safety
     ///
     /// `token` must be valid for `token_len` bytes.
-    unsafe fn from_record(rec: &SslTokensPersistedRecord) -> Self {
-        let key = rec.key.as_ref().to_vec();
+    unsafe fn from_ffi(ffi: &SslTokensPersistedRecordFfi) -> Self {
+        let key = ffi.key.as_ref().to_vec();
         // SAFETY: token is valid for token_len bytes.
-        let token = unsafe { std::slice::from_raw_parts(rec.token, rec.token_len) }.to_vec();
+        let token = unsafe { std::slice::from_raw_parts(ffi.token, ffi.token_len) }.to_vec();
         Self {
-            id: rec.id,
+            id: ffi.id,
             key,
-            expiration_time: rec.expiration_time,
+            expiration_time: ffi.expiration_time,
             token,
-            ev_status: rec.ev_status,
-            ct_status: rec.ct_status,
-            overridable_error: rec.overridable_error,
+            ev_status: ffi.ev_status,
+            ct_status: ffi.ct_status,
+            overridable_error: ffi.overridable_error,
         }
     }
 
-    /// Constructs a stack-allocated `SslTokensPersistedRecord` that borrows
-    /// from `self` and passes it to `f`. The record must not escape `f`.
-    fn with_record<F: FnOnce(&SslTokensPersistedRecord)>(&self, f: F) {
-        let rec = SslTokensPersistedRecord {
+    /// Constructs a stack-allocated `SslTokensPersistedRecordFfi` that borrows
+    /// from `self` and passes it to `f`. The FFI struct must not escape `f`.
+    fn with_ffi<F: FnOnce(&SslTokensPersistedRecordFfi)>(&self, f: F) {
+        let ffi = SslTokensPersistedRecordFfi {
             id: self.id,
             key: nsCString::from(&self.key[..]),
             expiration_time: self.expiration_time,
@@ -85,7 +84,7 @@ impl PersistedRecord {
             ct_status: self.ct_status,
             overridable_error: self.overridable_error,
         };
-        f(&rec);
+        f(&ffi);
     }
 }
 
@@ -116,35 +115,11 @@ enum ParseError {
     Truncated,
 }
 
-/// Zlib-compresses `data` using default compression. The embedded Adler-32
-/// checksum allows `zlib_decompress` to detect corruption or tampering.
-fn zlib_compress(data: &[u8]) -> Option<Vec<u8>> {
-    let mut enc = ZlibEncoder::new(Vec::new(), Compression::default());
-    enc.write_all(data).ok()?;
-    enc.finish().ok()
-}
-
-/// Zlib-decompresses `data`, verifying the embedded Adler-32 checksum.
-/// Returns `None` on corruption, tampering, or if the output exceeds
-/// `MAX_PAYLOAD_SIZE`.
-fn zlib_decompress(data: &[u8]) -> Option<Vec<u8>> {
-    if data.len() > MAX_PAYLOAD_SIZE {
-        return None;
-    }
-    let mut out = Vec::new();
-    ZlibDecoder::new(data)
-        .take(MAX_PAYLOAD_SIZE as u64 + 1)
-        .read_to_end(&mut out)
-        .ok()?;
-    if out.len() > MAX_PAYLOAD_SIZE {
-        return None;
-    }
-    Some(out)
-}
-
 fn to_file_bytes(records: &[PersistedRecord], magic: [u8; 4]) -> Vec<u8> {
     let record_bytes = bincode::serialize(records).unwrap_or_default();
-    let body = zlib_compress(&record_bytes).unwrap_or_default();
+    let mut enc = ZlibEncoder::new(Vec::new(), Compression::default());
+    _ = enc.write_all(&record_bytes);
+    let body = enc.finish().unwrap_or_default();
     let mut out = Vec::with_capacity(HEADER_SIZE + body.len());
     out.extend_from_slice(&magic);
     out.push(VERSION);
@@ -166,7 +141,19 @@ fn from_file_bytes(
     if *version != VERSION {
         return Err(ParseError::BadVersion);
     }
-    let record_bytes = zlib_decompress(body).ok_or(ParseError::Truncated)?;
+    // Reject implausibly large compressed bodies before allocating.
+    if body.len() > MAX_PAYLOAD_SIZE {
+        return Err(ParseError::Truncated);
+    }
+    // ZlibDecoder verifies the Adler-32 checksum embedded in the zlib stream.
+    let mut record_bytes = Vec::new();
+    ZlibDecoder::new(body)
+        .take(MAX_PAYLOAD_SIZE as u64 + 1)
+        .read_to_end(&mut record_bytes)
+        .map_err(|_| ParseError::Truncated)?;
+    if record_bytes.len() > MAX_PAYLOAD_SIZE {
+        return Err(ParseError::Truncated);
+    }
     bincode::deserialize::<Vec<PersistedRecord>>(&record_bytes).map_err(|_| ParseError::Truncated)
 }
 
@@ -184,16 +171,28 @@ fn read_file_with_tmp_fallback(bin_path: &Path) -> Option<(Vec<u8>, bool)> {
         .ok()
 }
 
-fn nscstring_as_path(s: &nsCString) -> Option<&Path> {
-    std::str::from_utf8(s.as_ref()).ok().map(Path::new)
-}
-
 fn write_atomically(buf: &[u8], bin_path: &Path) -> std::io::Result<()> {
     let tmp_path = bin_path.with_extension("tmp");
     let mut f = std::fs::File::create(&tmp_path)?;
     f.write_all(buf)?;
     f.sync_all()?;
     std::fs::rename(tmp_path, bin_path)
+}
+
+/// Builds a `HashSet` from a raw `(ptr, count)` pair.
+///
+/// # Safety
+///
+/// `ids` must point to `count` valid `u64` values if `count > 0`.
+unsafe fn id_set_from_raw(ids: *const u64, count: usize) -> HashSet<u64> {
+    if count == 0 {
+        return HashSet::default();
+    }
+    // SAFETY: ids points to count valid u64 values.
+    unsafe { std::slice::from_raw_parts(ids, count) }
+        .iter()
+        .copied()
+        .collect()
 }
 
 /// Calls `callback` for each non-expired record, passing a stack-allocated FFI
@@ -211,7 +210,7 @@ unsafe fn dispatch_records(
 ) {
     for rec in records.iter().filter(|r| r.expiration_time > now) {
         // SAFETY: callback is a valid function pointer and ctx is caller-managed.
-        rec.with_record(|c_rec| unsafe { callback(ctx, &raw const *c_rec) });
+        rec.with_ffi(|ffi| unsafe { callback(ctx, &raw const *ffi) });
     }
 }
 
@@ -221,17 +220,6 @@ fn with_state<F: FnOnce(&mut SslTokensState)>(f: F) {
     }
 }
 
-fn serialize_filtered(records: &[PersistedRecord], ids: &HashSet<u64>) -> Vec<u8> {
-    to_file_bytes(
-        &records
-            .iter()
-            .filter(|r| ids.contains(&r.id))
-            .cloned()
-            .collect::<Vec<_>>(),
-        MAGIC,
-    )
-}
-
 /// Appends a record to the in-memory shadow copy.
 ///
 /// # Safety
@@ -239,9 +227,9 @@ fn serialize_filtered(records: &[PersistedRecord], ids: &HashSet<u64>) -> Vec<u8
 /// All pointer fields in `record` must be valid for their associated length
 /// fields for the duration of this call.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ssl_tokens_cache_append(record: &SslTokensPersistedRecord) {
-    // SAFETY: caller guarantees all pointer fields are valid for their lengths.
-    let rec = unsafe { PersistedRecord::from_record(record) };
+pub unsafe extern "C" fn ssl_tokens_cache_append(record: *const SslTokensPersistedRecordFfi) {
+    // SAFETY: caller guarantees record and all pointer fields are valid.
+    let rec = unsafe { PersistedRecord::from_ffi(&*record) };
     with_state(|state| state.records.push(rec));
 }
 
@@ -249,22 +237,36 @@ pub unsafe extern "C" fn ssl_tokens_cache_append(record: &SslTokensPersistedReco
 ///
 /// # Safety
 ///
-/// `path` and `valid_ids` must be valid non-null pointers.
+/// If `valid_id_count > 0`, `valid_ids` must point to `valid_id_count` valid
+/// `u64` values.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ssl_tokens_cache_write(path: &nsCString, valid_ids: &ThinVec<u64>) {
-    let Some(path) = nscstring_as_path(path) else {
+pub unsafe extern "C" fn ssl_tokens_cache_write(
+    path: &nsCString,
+    valid_ids: *const u64,
+    valid_id_count: usize,
+) {
+    let Ok(path_str) = std::str::from_utf8(path.as_ref()) else {
         return;
     };
 
-    let ids: HashSet<u64> = valid_ids.iter().copied().collect();
+    // SAFETY: valid_ids points to valid_id_count valid u64 values.
+    let ids = unsafe { id_set_from_raw(valid_ids, valid_id_count) };
 
     // Serialize while holding the lock (fast, no I/O), then write outside it.
     let buf = {
         let Ok(state) = STATE.lock() else { return };
-        serialize_filtered(&state.records, &ids)
+        to_file_bytes(
+            &state
+                .records
+                .iter()
+                .filter(|r| ids.contains(&r.id))
+                .cloned()
+                .collect::<Vec<_>>(),
+            MAGIC,
+        )
     };
 
-    if let Err(e) = write_atomically(&buf, path) {
+    if let Err(e) = write_atomically(&buf, Path::new(path_str)) {
         warn!("SslTokensCache: write failed: {e}");
     }
 }
@@ -283,10 +285,11 @@ pub unsafe extern "C" fn ssl_tokens_cache_read(
     callback: SslTokensReadCallback,
     ctx: *mut c_void,
 ) {
-    let Some(bin_path) = nscstring_as_path(path) else {
+    let Ok(path_str) = std::str::from_utf8(path.as_ref()) else {
         return;
     };
 
+    let bin_path = Path::new(path_str);
     let Some((data, loaded_from_tmp)) = read_file_with_tmp_fallback(bin_path) else {
         return;
     };
@@ -348,67 +351,15 @@ pub unsafe extern "C" fn ssl_tokens_cache_clear() {
 ///
 /// # Safety
 ///
-/// `valid_ids` must be a valid non-null reference for the duration of this call.
+/// `valid_ids` must point to `valid_id_count` valid `u64` values.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ssl_tokens_cache_retain_only(valid_ids: &ThinVec<u64>) {
-    let ids: HashSet<u64> = valid_ids.iter().copied().collect();
+pub unsafe extern "C" fn ssl_tokens_cache_retain_only(
+    valid_ids: *const u64,
+    valid_id_count: usize,
+) {
+    // SAFETY: valid_ids points to valid_id_count valid u64 values.
+    let ids = unsafe { id_set_from_raw(valid_ids, valid_id_count) };
     with_state(|state| state.records.retain(|r| ids.contains(&r.id)));
-}
-
-/// Serializes the in-memory shadow filtered to `valid_ids` into STCF format
-/// for IPC transport, appending the bytes to `out` (mapped to
-/// `nsTArray<uint8_t>*` in C++). `out` is left unchanged on failure.
-///
-/// # Safety
-///
-/// `valid_ids` and `out` must be valid non-null pointers.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ssl_tokens_cache_serialize(
-    valid_ids: &ThinVec<u64>,
-    out: &mut ThinVec<u8>,
-) {
-    let ids: HashSet<u64> = valid_ids.iter().copied().collect();
-    let Ok(state) = STATE.lock() else {
-        return;
-    };
-    out.extend_from_slice(&serialize_filtered(&state.records, &ids));
-}
-
-/// Parses an STCF-format buffer (as produced by [`ssl_tokens_cache_serialize`])
-/// and dispatches each non-expired record to `callback`.
-///
-/// Does not modify the in-memory shadow; the C++ callback is expected to call
-/// `ssl_tokens_cache_append` for records that should be persisted.
-///
-/// # Safety
-///
-/// `data` must point to `data_len` valid bytes. `callback` must be a valid
-/// function pointer. `ctx` must remain valid for the duration of this call.
-/// The pointer passed to `callback` is stack-allocated and is only valid inside
-/// the callback. `callback` is always invoked synchronously — it is never
-/// called after this function returns, so callers may safely pass pointers to
-/// stack-allocated context.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ssl_tokens_cache_deserialize_ipc(
-    data: *const u8,
-    data_len: usize,
-    now: PrTime,
-    callback: SslTokensReadCallback,
-    ctx: *mut c_void,
-) {
-    // SAFETY: data points to data_len valid bytes per the contract.
-    let bytes = unsafe { std::slice::from_raw_parts(data, data_len) };
-    let records = match from_file_bytes(bytes, MAGIC) {
-        Ok(r) => r,
-        Err(e) => {
-            warn!("SslTokensCache: IPC deserialize error ({e:?})");
-            return;
-        }
-    };
-    // SAFETY: callback and ctx are valid for the duration of this call.
-    unsafe {
-        dispatch_records(&records, now, callback, ctx);
-    }
 }
 
 #[cfg(test)]
@@ -548,41 +499,5 @@ mod tests {
         let out = from_file_bytes(&data, MAGIC).expect("valid file bytes");
         assert_eq!(out[0].key, b"a.com:443");
         Ok(())
-    }
-
-    // --- serialize_filtered / from_file_bytes (IPC round-trip logic) ---
-
-    #[test]
-    fn ipc_round_trip_empty() {
-        let ids: HashSet<u64> = HashSet::default();
-        let buf = serialize_filtered(&[], &ids);
-        assert!(
-            !buf.is_empty(),
-            "empty cache still produces a valid STCF header"
-        );
-        let records = from_file_bytes(&buf, MAGIC).expect("valid STCF");
-        assert!(records.is_empty());
-    }
-
-    #[test]
-    fn ipc_round_trip_records() {
-        let records = vec![
-            make_record(1, "a.com:443", b"tok1", i64::MAX),
-            make_record(2, "b.com:443", b"tok2", i64::MAX),
-            make_record(3, "c.com:443", b"tok3", i64::MAX),
-        ];
-        let ids: HashSet<u64> = [1, 3].into_iter().collect(); // exclude id=2
-        let buf = serialize_filtered(&records, &ids);
-        assert!(!buf.is_empty());
-
-        let out = from_file_bytes(&buf, MAGIC).expect("valid STCF");
-        assert_eq!(out.len(), 2);
-        assert!(out.iter().any(|r| r.key == b"a.com:443"));
-        assert!(out.iter().any(|r| r.key == b"c.com:443"));
-    }
-
-    #[test]
-    fn ipc_deserialize_bad_data() {
-        assert!(from_file_bytes(b"not valid STCF data at all", MAGIC).is_err());
     }
 }
