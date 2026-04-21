@@ -76,6 +76,8 @@
 
 .tab-preview-add-note {
   margin: 0 !important;
+  -moz-context-properties: fill;
+  fill: currentColor;
 
   &[hidden] {
     display: none;
