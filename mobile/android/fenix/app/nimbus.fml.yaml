@@ -1019,7 +1019,7 @@ features:
           enabled: false
       - channel: nightly
         value:
-          enabled: false
+          enabled: true
   tab-groups-drag-and-drop:
     description: Control the visibility of drag and drop for tab groups.
     variables:
