@@ -19,7 +19,7 @@ import org.mozilla.fenix.distributions.DistributionProviderChecker
 import org.mozilla.fenix.distributions.DistributionSettings
 
 @RunWith(AndroidJUnit4::class)
-internal class MarketingAttributionServiceTest {
+internal class InstallReferrerHandlingServiceTest {
 
     private var providerValue: String? = null
     private var storedId: String? = null
@@ -59,83 +59,83 @@ internal class MarketingAttributionServiceTest {
     @Test
     fun `WHEN installReferrerResponse is empty or null THEN we should not show marketing onboarding`() =
         runBlocking {
-            assertFalse(MarketingAttributionService.shouldShowMarketingOnboarding(null, distributionIdManager))
-            assertFalse(MarketingAttributionService.shouldShowMarketingOnboarding("", distributionIdManager))
-            assertFalse(MarketingAttributionService.shouldShowMarketingOnboarding(" ", distributionIdManager))
+            assertFalse(InstallReferrerHandlingService.shouldShowMarketingOnboarding(null, distributionIdManager))
+            assertFalse(InstallReferrerHandlingService.shouldShowMarketingOnboarding("", distributionIdManager))
+            assertFalse(InstallReferrerHandlingService.shouldShowMarketingOnboarding(" ", distributionIdManager))
         }
 
     @Test
     fun `WHEN installReferrerResponse is in the marketing prefixes THEN we should show marketing onboarding`() =
         runBlocking {
-            assertTrue(MarketingAttributionService.shouldShowMarketingOnboarding("gclid=", distributionIdManager))
-            assertTrue(MarketingAttributionService.shouldShowMarketingOnboarding("gclid=12345", distributionIdManager))
-            assertTrue(MarketingAttributionService.shouldShowMarketingOnboarding("adjust_reftag=", distributionIdManager))
-            assertTrue(MarketingAttributionService.shouldShowMarketingOnboarding("adjust_reftag=test", distributionIdManager))
+            assertTrue(InstallReferrerHandlingService.shouldShowMarketingOnboarding("gclid=", distributionIdManager))
+            assertTrue(InstallReferrerHandlingService.shouldShowMarketingOnboarding("gclid=12345", distributionIdManager))
+            assertTrue(InstallReferrerHandlingService.shouldShowMarketingOnboarding("adjust_reftag=", distributionIdManager))
+            assertTrue(InstallReferrerHandlingService.shouldShowMarketingOnboarding("adjust_reftag=test", distributionIdManager))
         }
 
     @Test
     fun `WHEN installReferrerResponse is not in the marketing prefixes THEN we should show marketing onboarding`() =
         runBlocking {
-            assertFalse(MarketingAttributionService.shouldShowMarketingOnboarding(" gclid=12345", distributionIdManager))
-            assertFalse(MarketingAttributionService.shouldShowMarketingOnboarding("utm_source=google-play&utm_medium=organic", distributionIdManager))
-            assertFalse(MarketingAttributionService.shouldShowMarketingOnboarding("utm_source=(not%20set)&utm_medium=(not%20set)", distributionIdManager))
-            assertFalse(MarketingAttributionService.shouldShowMarketingOnboarding("utm_source=eea-browser-choice&utm_medium=preload", distributionIdManager))
-            assertFalse(MarketingAttributionService.shouldShowMarketingOnboarding("gclida=", distributionIdManager))
-            assertFalse(MarketingAttributionService.shouldShowMarketingOnboarding("adjust_reftag_test", distributionIdManager))
-            assertFalse(MarketingAttributionService.shouldShowMarketingOnboarding("test", distributionIdManager))
+            assertFalse(InstallReferrerHandlingService.shouldShowMarketingOnboarding(" gclid=12345", distributionIdManager))
+            assertFalse(InstallReferrerHandlingService.shouldShowMarketingOnboarding("utm_source=google-play&utm_medium=organic", distributionIdManager))
+            assertFalse(InstallReferrerHandlingService.shouldShowMarketingOnboarding("utm_source=(not%20set)&utm_medium=(not%20set)", distributionIdManager))
+            assertFalse(InstallReferrerHandlingService.shouldShowMarketingOnboarding("utm_source=eea-browser-choice&utm_medium=preload", distributionIdManager))
+            assertFalse(InstallReferrerHandlingService.shouldShowMarketingOnboarding("gclida=", distributionIdManager))
+            assertFalse(InstallReferrerHandlingService.shouldShowMarketingOnboarding("adjust_reftag_test", distributionIdManager))
+            assertFalse(InstallReferrerHandlingService.shouldShowMarketingOnboarding("test", distributionIdManager))
         }
 
     @Test
     fun `GIVEN a partnership distribution WHEN we should skip the marketing screen THEN we skip it`() =
         runBlocking {
             distributionIdManager.setDistribution(DistributionIdManager.Distribution.VIVO_001)
-            assertFalse(MarketingAttributionService.shouldShowMarketingOnboarding(null, distributionIdManager))
+            assertFalse(InstallReferrerHandlingService.shouldShowMarketingOnboarding(null, distributionIdManager))
 
             distributionIdManager.setDistribution(DistributionIdManager.Distribution.DT_001)
-            assertFalse(MarketingAttributionService.shouldShowMarketingOnboarding(null, distributionIdManager))
+            assertFalse(InstallReferrerHandlingService.shouldShowMarketingOnboarding(null, distributionIdManager))
 
             distributionIdManager.setDistribution(DistributionIdManager.Distribution.DT_002)
-            assertFalse(MarketingAttributionService.shouldShowMarketingOnboarding(null, distributionIdManager))
+            assertFalse(InstallReferrerHandlingService.shouldShowMarketingOnboarding(null, distributionIdManager))
 
             distributionIdManager.setDistribution(DistributionIdManager.Distribution.DT_003)
-            assertFalse(MarketingAttributionService.shouldShowMarketingOnboarding(null, distributionIdManager))
+            assertFalse(InstallReferrerHandlingService.shouldShowMarketingOnboarding(null, distributionIdManager))
 
             distributionIdManager.setDistribution(DistributionIdManager.Distribution.XIAOMI_001)
-            assertFalse(MarketingAttributionService.shouldShowMarketingOnboarding(null, distributionIdManager))
+            assertFalse(InstallReferrerHandlingService.shouldShowMarketingOnboarding(null, distributionIdManager))
 
             distributionIdManager.setDistribution(DistributionIdManager.Distribution.AURA_001)
-            assertFalse(MarketingAttributionService.shouldShowMarketingOnboarding(null, distributionIdManager))
+            assertFalse(InstallReferrerHandlingService.shouldShowMarketingOnboarding(null, distributionIdManager))
         }
 
     @Test
     fun `WHEN installReferrerResponse is null or blank or malformed THEN isMetaAttribution returns false`() {
-        assertFalse(MarketingAttributionService.isMetaAttribution(null))
-        assertFalse(MarketingAttributionService.isMetaAttribution(""))
-        assertFalse(MarketingAttributionService.isMetaAttribution(" "))
+        assertFalse(InstallReferrerHandlingService.isMetaAttribution(null))
+        assertFalse(InstallReferrerHandlingService.isMetaAttribution(""))
+        assertFalse(InstallReferrerHandlingService.isMetaAttribution(" "))
 
         val malformedReferrer = """utm_content={"app":12345,"t":1234567890,"source":{"data":"DATA","nonce":"NONCE"}"""
-        assertFalse(MarketingAttributionService.isMetaAttribution(malformedReferrer))
+        assertFalse(InstallReferrerHandlingService.isMetaAttribution(malformedReferrer))
     }
 
     @Test
     fun `WHEN installReferrerResponse contains Meta utm_content params THEN isMetaAttribution returns true`() {
         val metaReferrer = """utm_content={"app":12345,"t":1234567890,"source":{"data":"DATA","nonce":"NONCE"}}"""
-        assertTrue(MarketingAttributionService.isMetaAttribution(metaReferrer))
+        assertTrue(InstallReferrerHandlingService.isMetaAttribution(metaReferrer))
     }
 
     @Test
     fun `WHEN installReferrerResponse missing Meta data or nonce THEN isMetaAttribution returns false`() {
         var metaReferrer = """utm_content={"app":12345,"t":1234567890,"source":{"nonce":"NONCE"}}"""
-        assertFalse(MarketingAttributionService.isMetaAttribution(metaReferrer))
+        assertFalse(InstallReferrerHandlingService.isMetaAttribution(metaReferrer))
 
         metaReferrer = """utm_content={"app":12345,"t":1234567890,"source":{"data":"DATA"}}"""
-        assertFalse(MarketingAttributionService.isMetaAttribution(metaReferrer))
+        assertFalse(InstallReferrerHandlingService.isMetaAttribution(metaReferrer))
     }
 
     @Test
     fun `WHEN installReferrerResponse does not contain Meta params THEN isMetaAttribution returns false`() {
-        assertFalse(MarketingAttributionService.isMetaAttribution("utm_source=google&utm_medium=cpc"))
-        assertFalse(MarketingAttributionService.isMetaAttribution("gclid=12345"))
-        assertFalse(MarketingAttributionService.isMetaAttribution("adjust_reftag=test"))
+        assertFalse(InstallReferrerHandlingService.isMetaAttribution("utm_source=google&utm_medium=cpc"))
+        assertFalse(InstallReferrerHandlingService.isMetaAttribution("gclid=12345"))
+        assertFalse(InstallReferrerHandlingService.isMetaAttribution("adjust_reftag=test"))
     }
 }

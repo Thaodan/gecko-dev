@@ -26,7 +26,7 @@ const val ADJUST_REFTAG_PREFIX = "adjust_reftag="
  *
  * This should be only used when user has not gone through the onboarding flow.
  */
-class MarketingAttributionService(private val context: Context) {
+class InstallReferrerHandlingService(private val context: Context) {
     private val logger = Logger("MarketingAttributionService")
     private var referrerClient: InstallReferrerClient? = null
 
