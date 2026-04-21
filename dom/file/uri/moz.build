@@ -7,7 +7,6 @@ with Files("**"):
 
 EXPORTS.mozilla.dom += [
     "BlobURL.h",
-    "BlobURLChannel.h",
     "BlobURLInputStream.h",
     "BlobURLProtocolHandler.h",
 ]

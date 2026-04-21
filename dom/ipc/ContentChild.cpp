@@ -2840,9 +2840,12 @@ mozilla::ipc::IPCResult ContentChild::RecvInitBlobURLs(
     nsTArray<BlobURLRegistrationData>&& aRegistrations) {
   for (uint32_t i = 0; i < aRegistrations.Length(); ++i) {
     BlobURLRegistrationData& registration = aRegistrations[i];
-    BlobURLProtocolHandler::AddDataEntryChild(registration.url(),
-                                              registration.principal(),
-                                              registration.partitionKey());
+    RefPtr<BlobImpl> blobImpl = IPCBlobUtils::Deserialize(registration.blob());
+    MOZ_ASSERT(blobImpl);
+
+    BlobURLProtocolHandler::AddDataEntry(registration.url(),
+                                         registration.principal(),
+                                         registration.partitionKey(), blobImpl);
     // If we have received an already-revoked blobURL, we have to keep it alive
     // for a while (see BlobURLProtocolHandler) in order to support pending
     // operations such as navigation, download and so on.
@@ -3282,9 +3285,13 @@ mozilla::ipc::IPCResult ContentChild::RecvPWebBrowserPersistDocumentConstructor(
 }
 
 mozilla::ipc::IPCResult ContentChild::RecvBlobURLRegistration(
-    const nsCString& aURI, nsIPrincipal* aPrincipal,
+    const nsCString& aURI, const IPCBlob& aBlob, nsIPrincipal* aPrincipal,
     const nsCString& aPartitionKey) {
-  BlobURLProtocolHandler::AddDataEntryChild(aURI, aPrincipal, aPartitionKey);
+  RefPtr<BlobImpl> blobImpl = IPCBlobUtils::Deserialize(aBlob);
+  MOZ_ASSERT(blobImpl);
+
+  BlobURLProtocolHandler::AddDataEntry(aURI, aPrincipal, aPartitionKey,
+                                       blobImpl);
   return IPC_OK();
 }
 

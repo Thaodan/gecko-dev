@@ -3081,11 +3081,17 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
         return true;
       }
 
-      registrations.AppendElement(
-          BlobURLRegistrationData(nsCString(aURI), WrapNotNull(aPrincipal),
-                                  nsCString(aPartitionKey), aRevoked));
+      IPCBlob ipcBlob;
+      nsresult rv = IPCBlobUtils::Serialize(aBlobImpl, ipcBlob);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return false;
+      }
 
-      nsresult rv = TransmitPermissionsForPrincipal(aPrincipal);
+      registrations.AppendElement(BlobURLRegistrationData(
+          nsCString(aURI), ipcBlob, WrapNotNull(aPrincipal),
+          nsCString(aPartitionKey), aRevoked));
+
+      rv = TransmitPermissionsForPrincipal(aPrincipal);
       (void)NS_WARN_IF(NS_FAILED(rv));
       return true;
     });
@@ -5782,7 +5788,14 @@ void ContentParent::BroadcastBlobURLRegistration(const nsACString& aURI,
         break;
       }
 
-      (void)cp->SendBlobURLRegistration(uri, aPrincipal, aPartitionKey);
+      IPCBlob ipcBlob;
+      rv = IPCBlobUtils::Serialize(aBlobImpl, ipcBlob);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        break;
+      }
+
+      (void)cp->SendBlobURLRegistration(uri, ipcBlob, aPrincipal,
+                                        aPartitionKey);
     }
   }
 }
@@ -5841,8 +5854,8 @@ mozilla::ipc::IPCResult ContentParent::RecvStoreAndBroadcastBlobURLRegistration(
     return IPC_FAIL(this, "Blob deserialization failed.");
   }
 
-  BlobURLProtocolHandler::AddDataEntryParent(aURI, aPrincipal, aPartitionKey,
-                                             blobImpl, ChildID());
+  BlobURLProtocolHandler::AddDataEntry(aURI, aPrincipal, aPartitionKey,
+                                       blobImpl, Some(ChildID()));
   BroadcastBlobURLRegistration(aURI, blobImpl, aPrincipal, aPartitionKey, this);
 
   return IPC_OK();
@@ -6098,11 +6111,17 @@ void ContentParent::TransmitBlobURLsForPrincipal(nsIPrincipal* aPrincipal) {
             return true;
           }
 
-          registrations.AppendElement(
-              BlobURLRegistrationData(nsCString(aURI), WrapNotNull(aPrincipal),
-                                      nsCString(aPartitionKey), aRevoked));
+          IPCBlob ipcBlob;
+          nsresult rv = IPCBlobUtils::Serialize(aBlobImpl, ipcBlob);
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            return false;
+          }
 
-          nsresult rv = TransmitPermissionsForPrincipal(aBlobPrincipal);
+          registrations.AppendElement(BlobURLRegistrationData(
+              nsCString(aURI), ipcBlob, WrapNotNull(aPrincipal),
+              nsCString(aPartitionKey), aRevoked));
+
+          rv = TransmitPermissionsForPrincipal(aBlobPrincipal);
           (void)NS_WARN_IF(NS_FAILED(rv));
           return true;
         });
@@ -6113,12 +6132,11 @@ void ContentParent::TransmitBlobURLsForPrincipal(nsIPrincipal* aPrincipal) {
   }
 }
 
-void ContentParent::TransmitBlobDataIfBlobURL(nsIURI* aURI,
-                                              const OriginAttributes& aAttrs) {
+void ContentParent::TransmitBlobDataIfBlobURL(nsIURI* aURI) {
   MOZ_ASSERT(aURI);
 
   nsCOMPtr<nsIPrincipal> principal;
-  if (BlobURLProtocolHandler::GetBlobURLPrincipal(aURI, aAttrs,
+  if (BlobURLProtocolHandler::GetBlobURLPrincipal(aURI,
                                                   getter_AddRefs(principal))) {
     TransmitBlobURLsForPrincipal(principal);
   }

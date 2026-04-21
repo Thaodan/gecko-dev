@@ -88,7 +88,8 @@ template <typename T>
         aIPCResponse.metadata().principalInfo().ref()));
   }
 
-  response->SetBodyBlobImpl(aIPCResponse.metadata().bodyBlobImpl());
+  nsAutoCString bodyBlobURISpec(aIPCResponse.metadata().bodyBlobURISpec());
+  response->SetBodyBlobURISpec(bodyBlobURISpec);
   nsAutoString bodyLocalPath(aIPCResponse.metadata().bodyLocalPath());
   response->SetBodyLocalPath(bodyLocalPath);
 
@@ -141,7 +142,7 @@ InternalResponseMetadata InternalResponse::GetMetadata() {
   Maybe<mozilla::ipc::PrincipalInfo> principalInfo =
       mPrincipalInfo ? Some(*mPrincipalInfo) : Nothing();
 
-  RefPtr<BlobImpl> bodyBlobImpl(BodyBlobImpl());
+  nsAutoCString bodyBlobURISpec(BodyBlobURISpec());
   nsAutoString bodyLocalPath(BodyLocalPath());
 
   // Note: all the arguments are copied rather than moved, which would be more
@@ -150,7 +151,7 @@ InternalResponseMetadata InternalResponse::GetMetadata() {
   return InternalResponseMetadata(
       mType, GetUnfilteredURLList().Clone(), GetUnfilteredStatus(),
       GetUnfilteredStatusText(), headersGuard, headers, mErrorCode,
-      GetAlternativeDataType(), securityInfo, principalInfo, bodyBlobImpl,
+      GetAlternativeDataType(), securityInfo, principalInfo, bodyBlobURISpec,
       bodyLocalPath, GetCredentialsMode());
 }
 

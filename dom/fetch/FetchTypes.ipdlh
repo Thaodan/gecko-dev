@@ -8,7 +8,6 @@ include PerformanceTimingTypes;
 include NeckoChannelParams;
 
 include "mozilla/dom/FetchIPCTypes.h";
-include "mozilla/dom/IPCBlobUtils.h";
 include "mozilla/ipc/TransportSecurityInfoUtils.h";
 include "mozilla/ipc/URIUtils.h";
 
@@ -26,7 +25,6 @@ using nsILoadInfo::CrossOriginEmbedderPolicy from "nsILoadInfo.h";
 [RefCounted] using class mozilla::RemoteLazyInputStream from "mozilla/RemoteLazyInputStream.h";
 [RefCounted] using class nsITransportSecurityInfo from "nsITransportSecurityInfo.h";
 [RefCounted] using class nsIURI from "nsIURI.h";
-[RefCounted] using class mozilla::dom::BlobImpl from "mozilla/dom/BlobImpl.h";
 
 namespace mozilla {
 namespace dom {
@@ -96,7 +94,7 @@ struct InternalResponseMetadata {
   nsCString alternativeDataType;
   nullable nsITransportSecurityInfo securityInfo;
   PrincipalInfo? principalInfo;
-  nullable BlobImpl bodyBlobImpl;
+  nsCString bodyBlobURISpec;
   nsString bodyLocalPath;
   RequestCredentials credentialsMode;
 };

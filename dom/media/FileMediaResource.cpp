@@ -7,7 +7,6 @@
 #include "mozilla/AbstractThread.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/BlobImpl.h"
-#include "mozilla/dom/BlobURLChannel.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "nsContentUtils.h"
 #include "nsIFile.h"
@@ -15,7 +14,6 @@
 #include "nsIFileStreams.h"
 #include "nsITimedChannel.h"
 #include "nsNetUtil.h"
-#include "nsQueryObject.h"
 
 namespace mozilla {
 
@@ -74,9 +72,9 @@ nsresult FileMediaResource::Open(nsIStreamListener** aStreamListener) {
     rv = NS_NewLocalFileInputStream(getter_AddRefs(mInput), file, -1, -1,
                                     nsIFileInputStream::SHARE_DELETE);
     NS_ENSURE_SUCCESS(rv, rv);
-  } else if (RefPtr<dom::BlobURLChannel> blobChan = do_QueryObject(mChannel)) {
+  } else if (dom::IsBlobURI(mURI)) {
     RefPtr<dom::BlobImpl> blobImpl;
-    rv = blobChan->GetBackingBlob(getter_AddRefs(blobImpl));
+    rv = NS_GetBlobForBlobURI(mURI, getter_AddRefs(blobImpl));
     NS_ENSURE_SUCCESS(rv, rv);
     MOZ_ASSERT(blobImpl);
 

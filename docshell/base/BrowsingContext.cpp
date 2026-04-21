@@ -2351,7 +2351,7 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
         aLoadState->SetChannelInitialized(true);
       }
 
-      cp->TransmitBlobDataIfBlobURL(aLoadState->URI(), mOriginAttributes);
+      cp->TransmitBlobDataIfBlobURL(aLoadState->URI());
 
 #ifdef ANDROID
       uint32_t appLinkLaunchType = aLoadState->GetAppLinkLaunchType();

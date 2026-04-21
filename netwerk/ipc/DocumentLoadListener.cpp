@@ -2337,8 +2337,7 @@ DocumentLoadListener::RedirectToRealChannel(
       args.timing() = std::move(mTiming);
     }
 
-    nsCOMPtr<nsILoadInfo> loadInfo = chan->LoadInfo();
-    cp->TransmitBlobDataIfBlobURL(args.uri(), loadInfo->GetOriginAttributes());
+    cp->TransmitBlobDataIfBlobURL(args.uri());
 
     if (CanonicalBrowsingContext* bc = GetDocumentBrowsingContext()) {
       if (bc->IsTop() && bc->IsActive()) {

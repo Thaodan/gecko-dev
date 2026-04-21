@@ -85,9 +85,11 @@ class Response final : public FetchBody<Response>, public nsWrapperCache {
 
   using FetchBody::GetBody;
 
-  using FetchBody::BodyBlobImpl;
+  using FetchBody::BodyBlobURISpec;
 
-  BlobImpl* BodyBlobImpl() const { return mInternalResponse->BodyBlobImpl(); }
+  const nsACString& BodyBlobURISpec() const {
+    return mInternalResponse->BodyBlobURISpec();
+  }
 
   using FetchBody::BodyLocalPath;
 

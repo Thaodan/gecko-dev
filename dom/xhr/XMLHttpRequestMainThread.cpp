@@ -37,7 +37,6 @@
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/dom/AutoSuppressEventHandlingAndSuspend.h"
 #include "mozilla/dom/BlobBinding.h"
-#include "mozilla/dom/BlobURLChannel.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/dom/DOMString.h"
 #include "mozilla/dom/DocGroup.h"
@@ -94,7 +93,6 @@
 #include "nsIWindowWatcher.h"
 #include "nsMimeTypes.h"
 #include "nsNetUtil.h"
-#include "nsQueryObject.h"
 #include "nsReadableUtils.h"
 #include "nsSandboxFlags.h"
 #include "nsStreamListenerWrapper.h"
@@ -891,25 +889,24 @@ bool XMLHttpRequestMainThread::BadContentRangeRequested() {
   if (!mChannel) {
     return false;
   }
-  // Only BlobURLChannel supports this
-  RefPtr<BlobURLChannel> blobChan = do_QueryObject(mChannel);
-  if (!blobChan) {
+  // Only nsIBaseChannel supports this
+  nsCOMPtr<nsIBaseChannel> baseChan = do_QueryInterface(mChannel);
+  if (!baseChan) {
     return false;
   }
   // A bad range was requested if the channel has no content range
   // despite the request specifying a range header.
-  return !blobChan->GetResponseContentRange() &&
-         mAuthorRequestHeaders.Has("range");
+  return !baseChan->ContentRange() && mAuthorRequestHeaders.Has("range");
 }
 
 RefPtr<mozilla::net::ContentRange>
 XMLHttpRequestMainThread::GetRequestedContentRange() const {
   MOZ_ASSERT(mChannel);
-  RefPtr<BlobURLChannel> blobChan = do_QueryObject(mChannel);
-  if (!blobChan) {
+  nsCOMPtr<nsIBaseChannel> baseChan = do_QueryInterface(mChannel);
+  if (!baseChan) {
     return nullptr;
   }
-  return blobChan->GetResponseContentRange();
+  return baseChan->ContentRange();
 }
 
 void XMLHttpRequestMainThread::GetContentRangeHeader(nsACString& out) const {
@@ -1780,6 +1777,30 @@ nsresult XMLHttpRequestMainThread::StreamReaderFunc(
 
 namespace {
 
+void GetBlobURIFromChannel(nsIRequest* aRequest, nsIURI** aURI) {
+  MOZ_ASSERT(aRequest);
+  MOZ_ASSERT(aURI);
+
+  *aURI = nullptr;
+
+  nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
+  if (!channel) {
+    return;
+  }
+
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = channel->GetURI(getter_AddRefs(uri));
+  if (NS_FAILED(rv)) {
+    return;
+  }
+
+  if (!dom::IsBlobURI(uri)) {
+    return;
+  }
+
+  uri.forget(aURI);
+}
+
 nsresult GetLocalFileFromChannel(nsIRequest* aRequest, nsIFile** aFile) {
   MOZ_ASSERT(aRequest);
   MOZ_ASSERT(aFile);
@@ -1879,9 +1900,11 @@ XMLHttpRequestMainThread::OnDataAvailable(nsIRequest* request,
 
   if (mResponseType == XMLHttpRequestResponseType::Blob) {
     nsCOMPtr<nsIFile> localFile;
-    if (RefPtr<BlobURLChannel> blobChan = do_QueryObject(request)) {
+    nsCOMPtr<nsIURI> blobURI;
+    GetBlobURIFromChannel(request, getter_AddRefs(blobURI));
+    if (blobURI) {
       RefPtr<BlobImpl> blobImpl;
-      rv = blobChan->GetBackingBlob(getter_AddRefs(blobImpl));
+      rv = NS_GetBlobForBlobURI(blobURI, getter_AddRefs(blobImpl));
       if (NS_SUCCEEDED(rv)) {
         mResponseBlobImpl = blobImpl;
       }
@@ -2766,12 +2789,11 @@ nsresult XMLHttpRequestMainThread::InitiateFetch(
 
   // Should set a Content-Range header for blob scheme, and also slice the
   // blob appropriately, so we process the Range header here for later use.
-  RefPtr<BlobURLChannel> blobChan = do_QueryObject(mChannel);
-  if (blobChan) {
+  if (IsBlobURI(mRequestURL)) {
     nsAutoCString range;
     mAuthorRequestHeaders.Get("range", range);
     if (!range.IsVoid()) {
-      rv = blobChan->SetRequestContentRangeHeader(range);
+      rv = NS_SetChannelContentRangeForBlobURI(mChannel, mRequestURL, range);
       if (mFlagSynchronous && NS_FAILED(rv)) {
         // We later fire an error progress event for non-sync
         mState = XMLHttpRequest_Binding::DONE;

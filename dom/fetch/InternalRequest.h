@@ -343,9 +343,11 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
 
   int64_t BodyLength() const { return mBodyLength; }
 
-  void SetBodyBlobImpl(BlobImpl* aBlobImpl) { mBodyBlobImpl = aBlobImpl; }
+  void SetBodyBlobURISpec(nsACString& aBlobURISpec) {
+    mBodyBlobURISpec = aBlobURISpec;
+  }
 
-  BlobImpl* BodyBlobImpl() const { return mBodyBlobImpl; }
+  const nsACString& BodyBlobURISpec() const { return mBodyBlobURISpec; }
 
   void SetBodyLocalPath(nsAString& aLocalPath) { mBodyLocalPath = aLocalPath; }
 
@@ -471,7 +473,7 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
   // mURLList: a list of one or more fetch URLs
   nsTArray<NotNull<RefPtr<nsIURI>>> mURLList;
   RefPtr<InternalHeaders> mHeaders;
-  RefPtr<BlobImpl> mBodyBlobImpl;
+  nsCString mBodyBlobURISpec;
   nsString mBodyLocalPath;
   nsCOMPtr<nsIInputStream> mBodyStream;
 

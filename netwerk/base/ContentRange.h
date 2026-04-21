@@ -5,7 +5,6 @@
 #ifndef ContentRange_h_
 #define ContentRange_h_
 
-#include "nsContentUtils.h"
 #include "nsString.h"
 #include "nsISupportsImpl.h"
 
@@ -32,7 +31,7 @@ class ContentRange {
   bool IsValid() const { return mStart < mSize; }
   ContentRange(uint64_t aStart, uint64_t aEnd, uint64_t aSize)
       : mStart(aStart), mEnd(aEnd), mSize(aSize) {}
-  ContentRange(const nsContentUtils::ParsedRange& aRangeHeader, uint64_t aSize);
+  ContentRange(const nsACString& aRangeHeader, uint64_t aSize);
   void AsHeader(nsACString& aOutString) const;
 
   NS_INLINE_DECL_REFCOUNTING(ContentRange)

@@ -63,7 +63,6 @@ class nsJSURI final : public mozilla::net::nsSimpleURI {
 
   nsIURI* GetBaseURI() const { return mBaseURI; }
 
-  NS_INLINE_DECL_STATIC_IID(NS_JSURI_CID)
   NS_DECL_ISUPPORTS_INHERITED
 
   // nsIURI overrides

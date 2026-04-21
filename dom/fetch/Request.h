@@ -89,9 +89,11 @@ class Request final : public FetchBody<Request>, public nsWrapperCache {
     mRequest->SetBody(aStream, aBodyLength);
   }
 
-  using FetchBody::BodyBlobImpl;
+  using FetchBody::BodyBlobURISpec;
 
-  BlobImpl* BodyBlobImpl() const { return mRequest->BodyBlobImpl(); }
+  const nsACString& BodyBlobURISpec() const {
+    return mRequest->BodyBlobURISpec();
+  }
 
   using FetchBody::BodyLocalPath;
 
