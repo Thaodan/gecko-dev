@@ -39,19 +39,13 @@ import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.store.BrowserStore
@@ -121,7 +115,6 @@ import org.mozilla.fenix.ext.isToolbarAtBottom
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.recordEventInNimbus
 import org.mozilla.fenix.ext.requireComponents
-import org.mozilla.fenix.ext.scaleToBottomOfView
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.tabClosedUndoMessage
 import org.mozilla.fenix.ext.updateMicrosurveyPromptForConfigurationChange
@@ -265,9 +258,6 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
     private val toolbarView: FenixHomeToolbar
         get() = nullableToolbarView!!
 
-    private var lastAppliedWallpaperName: String = Wallpaper.DEFAULT
-    private var wallpaperUpdatesJob: Job? = null
-
     @VisibleForTesting
     internal val messagingFeatureHomescreen = ViewBoundFeatureWrapper<MessagingFeature>()
 
@@ -394,8 +384,6 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         val activity = activity as HomeActivity
         val components = requireComponents
-
-        initWallpaper()
 
         lifecycleScope.launch(IO) {
             val settings = requireContext().settings()
@@ -766,8 +754,6 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
                 reinitializeMicrosurveyPrompt = { initializeMicrosurveyPrompt() },
             )
         }
-
-        initWallpaper(orientationChange = true)
     }
 
     private fun showEncourageSearchCfr() {
@@ -1069,7 +1055,7 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
                     }
 
                     Box(modifier = Modifier.fillMaxSize()) {
-                        if (settings.shouldUseComposeWallpaper && !appState.value.mode.isPrivate) {
+                        if (!appState.value.mode.isPrivate) {
                             WallpaperBackground(
                                 wallpaper = appState.value.wallpaperState.currentWallpaper,
                                 loadBitmap = components.useCases.wallpaperUseCases.loadBitmap::invoke,
@@ -1244,7 +1230,6 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
         _binding = null
 
         bundleArgs.clear()
-        lastAppliedWallpaperName = Wallpaper.DEFAULT
     }
 
     override fun onStart() {
@@ -1403,90 +1388,10 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
         }
     }
 
-    @VisibleForTesting
-    internal fun shouldEnableWallpaper() =
-        (activity as? HomeActivity)?.themeManager?.currentTheme?.isPrivate?.not() ?: false
-
-    private fun initWallpaper(orientationChange: Boolean = false) {
-        if (requireContext().settings().shouldUseComposeWallpaper) {
-            binding.wallpaperImageView.isVisible = false
-        } else {
-            applyWallpaper(
-                wallpaperName = requireContext().settings().currentWallpaperName,
-                orientationChange = orientationChange,
-                orientation = requireContext().resources.configuration.orientation,
-            )
-        }
-    }
-
     internal fun isEdgeToEdgeBackgroundEnabled(): Boolean {
         val settings = requireContext().settings()
         return settings.enableHomepageEdgeToEdgeBackgroundFeature &&
                 settings.currentWallpaperName == Wallpaper.EDGE_TO_EDGE
-    }
-
-    private fun applyWallpaper(wallpaperName: String, orientationChange: Boolean, orientation: Int) {
-        viewLifecycleOwner.lifecycleScope.launch {
-            when {
-                !shouldEnableWallpaper() || (wallpaperName == lastAppliedWallpaperName && !orientationChange) -> {
-                    // no-op
-                }
-
-                Wallpaper.isLocalWallpaper(wallpaperName) -> {
-                    binding.wallpaperImageView.isVisible = false
-                    lastAppliedWallpaperName = wallpaperName
-                }
-
-                else -> {
-                    // loadBitmap does file lookups based on name, so we don't need a fully
-                    // qualified type to load the image
-                    val wallpaper = Wallpaper.Default.copy(name = wallpaperName)
-                    val wallpaperImage = requireComponents.useCases.wallpaperUseCases.loadBitmap(wallpaper, orientation)
-                    wallpaperImage?.let {
-                        it.scaleToBottomOfView(binding.wallpaperImageView)
-                        binding.wallpaperImageView.isVisible = true
-                        lastAppliedWallpaperName = wallpaperName
-                    } ?: run {
-                        if (!isActive) return@launch
-                        binding.wallpaperImageView.isVisible = false
-                        showComposeSnackbar(
-                            SnackbarState(
-                                message = resources.getString(R.string.wallpaper_select_error_snackbar_message),
-                            ),
-                        )
-                        // If setting a wallpaper failed reset also the contrasting text color.
-                        requireContext().settings().currentWallpaperTextColor = 0L
-                        lastAppliedWallpaperName = Wallpaper.DEFAULT
-                    }
-                }
-            }
-
-            observeWallpaperUpdates()
-        }
-    }
-
-    private fun observeWallpaperUpdates() {
-        if (!shouldEnableWallpaper() || wallpaperUpdatesJob?.isActive == true) return
-
-        wallpaperUpdatesJob = viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.CREATED) {
-                requireComponents.appStore.stateFlow
-                    .filter { it.mode == BrowsingMode.Normal }
-                    .map { it.wallpaperState.currentWallpaper }
-                    .distinctUntilChanged()
-                    .collect {
-                        if (it.name != lastAppliedWallpaperName) {
-                            applyWallpaper(
-                                wallpaperName = it.name,
-                                orientationChange = false,
-                                orientation = requireContext().resources.configuration.orientation,
-                            )
-                        }
-                    }
-            }
-        }.also { job ->
-            job.invokeOnCompletion { wallpaperUpdatesJob = null }
-        }
     }
 
     private fun initializeAwesomeBarComposable(
