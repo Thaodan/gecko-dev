@@ -29,6 +29,10 @@ const { IPPEnrollAndEntitleManager } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/fxa/IPPEnrollAndEntitleManager.sys.mjs"
 );
 
+const { IPPFxaAuthProvider } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/ipprotection/fxa/IPPFxaAuthProvider.sys.mjs"
+);
+
 const { HttpServer, HTTP_403 } = ChromeUtils.importESModule(
   "resource://testing-common/httpd.sys.mjs"
 );
@@ -268,7 +272,6 @@ let DEFAULT_SERVICE_STATUS = {
   isSignedIn: false,
   isEnrolledAndEntitled: undefined,
   canEnroll: true,
-  isLinkedToGuardian: false,
   entitlement: {
     status: 200,
     error: undefined,
@@ -296,7 +299,7 @@ let STUBS = {
   fetchUserInfo: undefined,
   fetchProxyPass: undefined,
   fetchProxyUsage: undefined,
-  isLinkedToGuardian: undefined,
+  getEntitlement: undefined,
   fxaSignInFlow: undefined,
 };
 /* exported STUBS */
@@ -417,10 +420,9 @@ function setupStubs(stubs = STUBS) {
   stubs.fetchUserInfo = guardianStub.fetchUserInfo;
   stubs.fetchProxyPass = guardianStub.fetchProxyPass;
   stubs.fetchProxyUsage = guardianStub.fetchProxyUsage;
-  stubs.isLinkedToGuardian = setupSandbox.stub(
-    IPPEnrollAndEntitleManager,
-    "isLinkedToGuardian"
-  );
+  stubs.getEntitlement = setupSandbox
+    .stub(IPPFxaAuthProvider, "getEntitlement")
+    .resolves({ entitlement: DEFAULT_SERVICE_STATUS.entitlement?.entitlement });
   stubs.fxaSignInFlow = setupSandbox.stub(
     SpecialMessageActions,
     "fxaSignInFlow"
@@ -439,7 +441,6 @@ function setupService(
     entitlement,
     proxyPass,
     usageInfo,
-    isLinkedToGuardian,
     signInFlow,
   } = DEFAULT_SERVICE_STATUS,
   stubs = STUBS
@@ -464,6 +465,7 @@ function setupService(
 
   if (typeof entitlement != "undefined") {
     stubs.fetchUserInfo.resolves(entitlement);
+    stubs.getEntitlement.resolves({ entitlement: entitlement?.entitlement });
   } else {
     stubs.fetchUserInfo.resolves(DEFAULT_SERVICE_STATUS.entitlement);
   }
@@ -474,10 +476,6 @@ function setupService(
 
   if (typeof usageInfo != "undefined") {
     stubs.fetchProxyUsage.resolves(usageInfo);
-  }
-
-  if (typeof isLinkedToGuardian != "undefined") {
-    stubs.isLinkedToGuardian.resolves(isLinkedToGuardian);
   }
 
   if (typeof signInFlow != "undefined") {
