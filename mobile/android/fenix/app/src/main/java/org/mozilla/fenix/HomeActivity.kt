@@ -107,6 +107,7 @@ import org.mozilla.fenix.components.metrics.BreadcrumbsRecorder
 import org.mozilla.fenix.components.metrics.GrowthDataWorker
 import org.mozilla.fenix.components.metrics.InstallReferrerHandlingService
 import org.mozilla.fenix.components.metrics.MarketingAttributionHandler
+import org.mozilla.fenix.components.metrics.RtamoAttributionHandler
 import org.mozilla.fenix.components.metrics.fonts.FontEnumerationWorker
 import org.mozilla.fenix.components.share.QR_CODE_URI_KEY
 import org.mozilla.fenix.components.share.SEND_TO_DEVICES_ACTION
@@ -441,10 +442,8 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
                 installReferrerHandlingService = InstallReferrerHandlingService(
                     context = applicationContext,
                     handlers = listOf(
-                        MarketingAttributionHandler(
-                            settings = settings(),
-                            distributionIdManager = components.distributionIdManager,
-                        ),
+                        RtamoAttributionHandler(settings(), components.addonsProvider),
+                        MarketingAttributionHandler(settings(), components.distributionIdManager),
                     ),
                 ).also {
                     it.start()
