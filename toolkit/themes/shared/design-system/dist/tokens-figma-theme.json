@@ -405,9 +405,9 @@
   "button/icon/fill": "currentColor",
   "button/icon/stroke": "{Theme$button/icon/fill}",
   "button/opacity/disabled": {
-    "light": 50,
-    "dark": 50,
-    "forcedColors": 100
+    "light": 0.5,
+    "dark": 0.5,
+    "forcedColors": 1
   },
   "button/text/color": {
     "light": "{Colors$color/gray/100}",
@@ -583,6 +583,16 @@
     "light": "{Theme$link/color}",
     "dark": "{Theme$link/color}",
     "forcedColors": "{Theme$link/color}"
+  },
+  "opacity/deemphasized-strong": {
+    "light": 0.6,
+    "dark": 0.6,
+    "forcedColors": 1
+  },
+  "opacity/deemphasized": {
+    "light": 0.8,
+    "dark": 0.8,
+    "forcedColors": 1
   },
   "table/background/color": {
     "light": "#f8f8fa",

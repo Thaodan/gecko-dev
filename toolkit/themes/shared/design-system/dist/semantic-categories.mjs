@@ -1572,8 +1572,16 @@ export const tokensTable = {
   ],
   opacity: [
     {
-      value: { default: 0.5, forcedColors: 1 },
+      value: { default: "0.5", forcedColors: "1" },
       name: "--button-opacity-disabled",
+    },
+    {
+      value: { default: "0.6", prefersContrast: "1" },
+      name: "--opacity-deemphasized-strong",
+    },
+    {
+      value: { default: "0.8", prefersContrast: "1" },
+      name: "--opacity-deemphasized",
     },
   ],
   "icon-size": [
@@ -2220,7 +2228,7 @@ export const variableLookupTable = {
   "button-icon-stroke": "var(--button-icon-fill)",
   "button-min-height": "var(--size-item-large)",
   "button-min-height-small": "var(--size-item-medium)",
-  "button-opacity-disabled": { default: 0.5, forcedColors: 1 },
+  "button-opacity-disabled": { default: "0.5", forcedColors: "1" },
   "button-padding": "var(--space-xsmall) var(--space-large)",
   "button-padding-icon": 0,
   "button-size-icon": "var(--button-min-height)",
@@ -2391,6 +2399,8 @@ export const variableLookupTable = {
     platform: { default: "var(--link-color)" },
   },
   "link-focus-outline-offset": "1px",
+  "opacity-deemphasized-strong": { default: "0.6", prefersContrast: "1" },
+  "opacity-deemphasized": { default: "0.8", prefersContrast: "1" },
   "page-main-content-width": { brand: { default: "664px" } },
   "popup-box-shadow": "var(--box-shadow-level-3)",
   "table-background-color": {
