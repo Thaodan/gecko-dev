@@ -7987,6 +7987,11 @@
   value: false
   mirror: always
 
+- name: gfx.webrender.debug.dl.dump-spatial-tree
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
 - name: gfx.webrender.debug.highlight-backdrop-filters
   type: RelaxedAtomicBool
   value: false
