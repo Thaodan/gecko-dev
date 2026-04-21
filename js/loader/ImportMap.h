@@ -21,10 +21,10 @@ class nsIScriptElement;
 class nsIURI;
 
 namespace JS::loader {
+class LoadedScript;
 class ModuleLoaderBase;
-class ScriptFetchInfo;
-class ScriptLoadRequest;
 class ScriptLoaderInterface;
+class ScriptLoadRequest;
 
 /**
  * A helper class to report warning to ScriptLoaderInterface.
@@ -104,7 +104,7 @@ class ImportMap {
    */
   static ResolveResult ResolveModuleSpecifier(ImportMap* aImportMap,
                                               ScriptLoaderInterface* aLoader,
-                                              ScriptFetchInfo* aFetchInfo,
+                                              LoadedScript* aScript,
                                               const nsAString& aSpecifier);
 
   static mozilla::Maybe<nsString> LookupIntegrity(ImportMap* aImportMap,

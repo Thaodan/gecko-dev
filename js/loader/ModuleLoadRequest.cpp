@@ -96,8 +96,8 @@ void ModuleLoadRequest::ModuleLoaded() {
 
   mModuleScript = mLoader->GetFetchedModule(ModuleMapKey(URI(), mModuleType));
 
-  if (FetchInfo()->IsForModulePreload() != mLoadContext->IsPreload()) {
-    FetchInfo()->SetForModulePreload(mLoadContext->IsPreload());
+  if (mModuleScript->ForPreload() != mLoadContext->IsPreload()) {
+    mModuleScript->SetForPreload(mLoadContext->IsPreload());
   }
 }
 

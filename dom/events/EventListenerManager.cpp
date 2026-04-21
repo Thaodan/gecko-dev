@@ -1183,10 +1183,8 @@ nsresult EventListenerManager::CompileEventHandlerInternal(
           JS::loader::ParserMetadata::NotParserInserted,
           aElement->OwnerDoc()->NodePrincipal());
 
-  RefPtr<JS::loader::ScriptFetchInfo> fetchInfo =
-      new JS::loader::ScriptFetchInfo(JS::loader::ScriptKind::eEvent,
-                                      aElement->OwnerDoc()->GetReferrerPolicy(),
-                                      fetchOptions, uri);
+  RefPtr<JS::loader::EventScript> eventScript = new JS::loader::EventScript(
+      aElement->OwnerDoc()->GetReferrerPolicy(), fetchOptions, uri);
 
   JS::CompileOptions options(cx);
   // Use line 0 to make the function body starts from line 1.
@@ -1201,7 +1199,7 @@ nsresult EventListenerManager::CompileEventHandlerInternal(
   NS_ENSURE_SUCCESS(result, result);
   NS_ENSURE_TRUE(handler, NS_ERROR_FAILURE);
 
-  JS::Rooted<JS::Value> privateValue(cx, JS::PrivateValue(fetchInfo));
+  JS::Rooted<JS::Value> privateValue(cx, JS::PrivateValue(eventScript));
   result = nsJSUtils::UpdateFunctionDebugMetadata(jsapi, handler, options,
                                                   jsStr, privateValue);
   NS_ENSURE_SUCCESS(result, result);

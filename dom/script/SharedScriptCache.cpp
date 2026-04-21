@@ -48,6 +48,13 @@ ScriptHashKey::ScriptHashKey(
   MOZ_COUNT_CTOR(ScriptHashKey);
 }
 
+ScriptHashKey::ScriptHashKey(ScriptLoader* aLoader,
+                             const JS::loader::ScriptLoadRequest* aRequest,
+                             const JS::loader::LoadedScript* aLoadedScript)
+    : ScriptHashKey(aLoader, aRequest, aLoadedScript->ReferrerPolicy(),
+                    aLoadedScript->GetFetchOptions(), aLoadedScript->GetURI()) {
+}
+
 ScriptHashKey::ScriptHashKey(const ScriptLoadData& aLoadData)
     : ScriptHashKey(aLoadData.CacheKey()) {}
 
@@ -240,8 +247,7 @@ ScriptLoadData::ScriptLoadData(ScriptLoader* aLoader,
                                JS::loader::LoadedScript* aLoadedScript)
     : mExpirationTime(aRequest->ExpirationTime()),
       mLoader(aLoader),
-      mKey(aLoader, aRequest, aRequest->ReferrerPolicy(),
-           aRequest->FetchOptions(), aLoadedScript->GetURI()),
+      mKey(aLoader, aRequest, aLoadedScript),
       mLoadedScript(aLoadedScript),
       mNetworkMetadata(aRequest->mNetworkMetadata) {}
 

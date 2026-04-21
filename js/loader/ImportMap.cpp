@@ -905,11 +905,11 @@ static UniquePtr<SpecifierResolutionRecord> CreateResolutionRecord(
 // static
 ResolveResult ImportMap::ResolveModuleSpecifier(ImportMap* aImportMap,
                                                 ScriptLoaderInterface* aLoader,
-                                                ScriptFetchInfo* aFetchInfo,
+                                                LoadedScript* aScript,
                                                 const nsAString& aSpecifier) {
   nsCOMPtr<nsIURI> baseURL;
-  if (aFetchInfo && !aFetchInfo->IsForEventScript()) {
-    baseURL = aFetchInfo->BaseURL();
+  if (aScript && !aScript->IsEventScript()) {
+    baseURL = aScript->BaseURL();
   } else {
     baseURL = aLoader->GetBaseURI();
   }

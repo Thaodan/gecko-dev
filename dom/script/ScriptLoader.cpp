@@ -1145,9 +1145,7 @@ void ScriptLoader::NotifyObserversForCachedScript(
     return;
   }
 
-  ScriptHashKey key(this, aRequest, aRequest->ReferrerPolicy(),
-                    aRequest->FetchOptions(),
-                    aRequest->getLoadedScript()->GetURI());
+  ScriptHashKey key(this, aRequest, aRequest->getLoadedScript());
   nsAutoCString keyStr;
   key.ToStringForLookup(keyStr);
 
@@ -1216,9 +1214,8 @@ void ScriptLoader::TryUseCache(ReferrerPolicy aReferrerPolicy,
 
   // NOTE: Some ScriptLoadRequest fields aren't yet accessible until
   //       either NoCacheEntryFound or CacheEntryFound is called,
-  //       which constructs ScriptFetchInfo and LoadedScript.
-  //       aRequest->FetchOptions() and aRequest->ReferrerPolicy() are
-  //       backed by ScriptFetchInfo, and aRequest->URI() is backed by
+  //       which constructs LoadedScript.
+  //       aRequest->FetchOptions() and aRequest->URI() are backed by
   //       LoadedScript, and we cannot use them here.
   ScriptHashKey key(this, aRequest, aReferrerPolicy, aFetchOptions, aURI);
   auto cacheResult = mCache->Lookup(*this, key, /* aSyncLoad = */ true);
@@ -1275,8 +1272,7 @@ void ScriptLoader::TryUseCache(ReferrerPolicy aReferrerPolicy,
 
   aRequest->mNetworkMetadata = cacheResult.mNetworkMetadata;
 
-  MOZ_ASSERT(cacheResult.mCompleteValue->CachedReferrerPolicy() ==
-             aReferrerPolicy);
+  MOZ_ASSERT(cacheResult.mCompleteValue->ReferrerPolicy() == aReferrerPolicy);
 
   mMemoryCacheUsed++;
   if (!cacheResult.mCompleteValue->IsEverHitFromMemoryCache()) {
@@ -3073,12 +3069,17 @@ class MOZ_RAII AutoSetProcessingScriptTag {
   ~AutoSetProcessingScriptTag() { mContext->SetProcessingScriptTag(mOldTag); }
 };
 
-static void ExecuteCompiledScript(JSContext* aCx, JS::Handle<JSScript*> aScript,
+static void ExecuteCompiledScript(JSContext* aCx, ClassicScript* aLoaderScript,
+                                  JS::Handle<JSScript*> aScript,
                                   ErrorResult& aRv) {
   if (!aScript) {
     // Compilation succeeds without producing a script if scripting is
     // disabled for the global.
     return;
+  }
+
+  if (JS::GetScriptPrivate(aScript).isUndefined()) {
+    aLoaderScript->AssociateWithScript(aScript);
   }
 
   if (!JS_ExecuteScript(aCx, aScript)) {
@@ -3228,6 +3229,7 @@ enum class IsAlreadyCollecting : bool { No, Yes };
 static void InstantiateStencil(
     JSContext* aCx, JS::CompileOptions& aCompileOptions, JS::Stencil* aStencil,
     JS::MutableHandle<JSScript*> aScript,
+    JS::Handle<JS::Value> aDebuggerPrivateValue,
     JS::Handle<JSScript*> aDebuggerIntroductionScript, ErrorResult& aRv,
     const nsAutoCString& aProfilerLabelString,
     JS::InstantiationStorage* aStorage = nullptr,
@@ -3257,13 +3259,9 @@ static void InstantiateStencil(
   aScript.set(script);
 
   if (instantiateOptions.deferDebugMetadata) {
-    // The private value is updated by the
-    // ScriptFetchInfo::AssociateWithScript call done after
-    // InstantiateClassicScriptFromAny in ScriptLoader::EvaluateScript.
-    JS::Rooted<JS::Value> unused(aCx);
-    if (!JS::UpdateDebugMetadata(aCx, aScript, instantiateOptions, unused,
-                                 nullptr, aDebuggerIntroductionScript,
-                                 nullptr)) {
+    if (!JS::UpdateDebugMetadata(aCx, aScript, instantiateOptions,
+                                 aDebuggerPrivateValue, nullptr,
+                                 aDebuggerIntroductionScript, nullptr)) {
       aRv = NS_ERROR_OUT_OF_MEMORY;
     }
   }
@@ -3272,6 +3270,7 @@ static void InstantiateStencil(
 void ScriptLoader::InstantiateClassicScriptFromMaybeEncodedSource(
     JSContext* aCx, JS::CompileOptions& aCompileOptions,
     ScriptLoadRequest* aRequest, JS::MutableHandle<JSScript*> aScript,
+    JS::Handle<JS::Value> aDebuggerPrivateValue,
     JS::Handle<JSScript*> aDebuggerIntroductionScript, ErrorResult& aRv) {
   MOZ_ASSERT(!aRequest->IsWasmBytes());
   nsAutoCString profilerLabelString;
@@ -3296,8 +3295,8 @@ void ScriptLoader::InstantiateClassicScriptFromMaybeEncodedSource(
       aRequest->SetStencil(stencil);
 
       InstantiateStencil(aCx, aCompileOptions, stencil, aScript,
-                         aDebuggerIntroductionScript, aRv, profilerLabelString,
-                         &storage);
+                         aDebuggerPrivateValue, aDebuggerIntroductionScript,
+                         aRv, profilerLabelString, &storage);
     } else {
       LOG(("ScriptLoadRequest (%p): Decode and Execute", aRequest));
 
@@ -3314,8 +3313,8 @@ void ScriptLoader::InstantiateClassicScriptFromMaybeEncodedSource(
         aRequest->SetStencil(stencil);
 
         InstantiateStencil(aCx, aCompileOptions, stencil, aScript,
-                           aDebuggerIntroductionScript, aRv,
-                           profilerLabelString);
+                           aDebuggerPrivateValue, aDebuggerIntroductionScript,
+                           aRv, profilerLabelString);
       }
     }
 
@@ -3350,8 +3349,8 @@ void ScriptLoader::InstantiateClassicScriptFromMaybeEncodedSource(
     aRequest->SetStencil(stencil);
 
     InstantiateStencil(aCx, aCompileOptions, stencil, aScript,
-                       aDebuggerIntroductionScript, aRv, profilerLabelString,
-                       &storage, collectDelazifications);
+                       aDebuggerPrivateValue, aDebuggerIntroductionScript, aRv,
+                       profilerLabelString, &storage, collectDelazifications);
   } else {
     // Main thread parsing (inline and small scripts)
     LOG(("ScriptLoadRequest (%p): Compile And Exec", aRequest));
@@ -3380,8 +3379,8 @@ void ScriptLoader::InstantiateClassicScriptFromMaybeEncodedSource(
         aRequest->SetStencil(stencil);
 
         InstantiateStencil(aCx, aCompileOptions, stencil, aScript,
-                           aDebuggerIntroductionScript, erv,
-                           profilerLabelString, /* aStorage = */ nullptr,
+                           aDebuggerPrivateValue, aDebuggerIntroductionScript,
+                           erv, profilerLabelString, /* aStorage = */ nullptr,
                            collectDelazifications);
       }
 
@@ -3394,6 +3393,7 @@ void ScriptLoader::InstantiateClassicScriptFromCachedStencil(
     JSContext* aCx, JS::CompileOptions& aCompileOptions,
     ScriptLoadRequest* aRequest, JS::Stencil* aStencil,
     JS::MutableHandle<JSScript*> aScript,
+    JS::Handle<JS::Value> aDebuggerPrivateValue,
     JS::Handle<JSScript*> aDebuggerIntroductionScript, ErrorResult& aRv) {
   MOZ_ASSERT(!aRequest->IsWasmBytes());
   nsAutoCString profilerLabelString;
@@ -3413,26 +3413,28 @@ void ScriptLoader::InstantiateClassicScriptFromCachedStencil(
   // HasDiskCacheReference condition, and that filters out any loaded scripts
   // queued multiple times.
   InstantiateStencil(aCx, aCompileOptions, aStencil, aScript,
-                     aDebuggerIntroductionScript, aRv, profilerLabelString,
+                     aDebuggerPrivateValue, aDebuggerIntroductionScript, aRv,
+                     profilerLabelString,
                      /* aStorage = */ nullptr, CollectDelazifications::Yes);
 }
 
 void ScriptLoader::InstantiateClassicScriptFromAny(
     JSContext* aCx, JS::CompileOptions& aCompileOptions,
     ScriptLoadRequest* aRequest, JS::MutableHandle<JSScript*> aScript,
+    JS::Handle<JS::Value> aDebuggerPrivateValue,
     JS::Handle<JSScript*> aDebuggerIntroductionScript, ErrorResult& aRv) {
   MOZ_ASSERT(!aRequest->IsWasmBytes());
   if (aRequest->IsCachedStencil()) {
     RefPtr<JS::Stencil> stencil = aRequest->GetStencil();
-    InstantiateClassicScriptFromCachedStencil(aCx, aCompileOptions, aRequest,
-                                              stencil, aScript,
-                                              aDebuggerIntroductionScript, aRv);
+    InstantiateClassicScriptFromCachedStencil(
+        aCx, aCompileOptions, aRequest, stencil, aScript, aDebuggerPrivateValue,
+        aDebuggerIntroductionScript, aRv);
     return;
   }
 
   InstantiateClassicScriptFromMaybeEncodedSource(
-      aCx, aCompileOptions, aRequest, aScript, aDebuggerIntroductionScript,
-      aRv);
+      aCx, aCompileOptions, aRequest, aScript, aDebuggerPrivateValue,
+      aDebuggerIntroductionScript, aRv);
   if (aRv.Failed()) {
     return;
   }
@@ -3463,9 +3465,7 @@ ScriptLoader::CacheBehavior ScriptLoader::GetCacheBehavior(
     return CacheBehavior::Insert;
   }
 
-  ScriptHashKey key(this, aRequest, aRequest->ReferrerPolicy(),
-                    aRequest->FetchOptions(),
-                    aRequest->getLoadedScript()->GetURI());
+  ScriptHashKey key(this, aRequest, aRequest->getLoadedScript());
   auto cacheResult = mCache->Lookup(*this, key,
                                     /* aSyncLoad = */ true);
   if (cacheResult.mState == CachedSubResourceState::Complete) {
@@ -3517,8 +3517,7 @@ void ScriptLoader::TryCacheRequest(ScriptLoadRequest* aRequest) {
   if (cacheBehavior == CacheBehavior::Insert) {
     loadedScript->SetSRIMetadata(aRequest->mIntegrity);
     auto loadData = MakeRefPtr<ScriptLoadData>(this, aRequest, loadedScript);
-    loadedScript->ConvertToCachedStencil(aRequest->ReferrerPolicy(),
-                                         aRequest->BaseURL());
+    loadedScript->ConvertToCachedStencil();
     if (loadedScript->mFetchCount == 0) {
       loadedScript->mFetchCount = 1;
     }
@@ -3529,8 +3528,7 @@ void ScriptLoader::TryCacheRequest(ScriptLoadRequest* aRequest) {
     TRACE_FOR_TEST(aRequest, "memorycache:saved");
   } else {
     MOZ_ASSERT(cacheBehavior == CacheBehavior::Evict);
-    ScriptHashKey key(this, aRequest, aRequest->ReferrerPolicy(),
-                      aRequest->FetchOptions(), loadedScript->GetURI());
+    ScriptHashKey key(this, aRequest, loadedScript);
     mCache->Evict(key);
     LOG(("ScriptLoader (%p): Evicting in-memory cache for %s.", this,
          aRequest->URI()->GetSpecOrDefault().get()));
@@ -3641,6 +3639,10 @@ nsresult ScriptLoader::EvaluateScript(nsIGlobalObject* aGlobalObject,
   // Create a ClassicScript object and associate it with the JSScript.
   MOZ_ASSERT(aRequest->mLoadedScript->IsClassicScript());
 
+  RefPtr<ClassicScript> classicScript =
+      aRequest->mLoadedScript->AsClassicScript();
+  JS::Rooted<JS::Value> classicScriptValue(cx, JS::PrivateValue(classicScript));
+
   JS::CompileOptions options(cx);
   JS::Rooted<JSScript*> introductionScript(cx);
   nsresult rv =
@@ -3678,7 +3680,7 @@ nsresult ScriptLoader::EvaluateScript(nsIGlobalObject* aGlobalObject,
   JSAutoRealm autoRealm(cx, global);
   JS::Rooted<JSScript*> script(cx);
   InstantiateClassicScriptFromAny(cx, options, aRequest, &script,
-                                  introductionScript, erv);
+                                  classicScriptValue, introductionScript, erv);
 
   if (!erv.Failed()) {
     LOG(("ScriptLoadRequest (%p): Evaluate Script", aRequest));
@@ -3689,11 +3691,7 @@ nsresult ScriptLoader::EvaluateScript(nsIGlobalObject* aGlobalObject,
     MOZ_ASSERT(options.noScriptRval);
     TRACE_FOR_TEST(aRequest, "evaluate:classic");
 
-    if (script && JS::GetScriptPrivate(script).isUndefined()) {
-      aRequest->FetchInfo()->AssociateWithScript(script);
-    }
-
-    ExecuteCompiledScript(cx, script, erv);
+    ExecuteCompiledScript(cx, classicScript, script, erv);
   }
   rv = EvaluationExceptionToNSResult(erv);
 
@@ -3716,13 +3714,13 @@ nsresult ScriptLoader::EvaluateScript(nsIGlobalObject* aGlobalObject,
 }
 
 /* static */
-ScriptFetchInfo* ScriptLoader::GetActiveScriptFetchInfo(JSContext* aCx) {
+LoadedScript* ScriptLoader::GetActiveScript(JSContext* aCx) {
   JS::Value value = JS::GetScriptedCallerPrivate(aCx);
   if (value.isUndefined()) {
     return nullptr;
   }
 
-  return static_cast<ScriptFetchInfo*>(value.toPrivate());
+  return static_cast<LoadedScript*>(value.toPrivate());
 }
 
 void ScriptLoader::RegisterForDiskCache(ScriptLoadRequest* aRequest) {

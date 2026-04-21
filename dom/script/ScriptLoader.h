@@ -461,12 +461,10 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   void Destroy();
 
   /*
-   * Get the currently active script's ScriptFetchInfo.
-   *
-   * This is used as the ScriptFetchInfo of the initiating script when executing
-   * timeout handler scripts.
+   * Get the currently active script. This is used as the initiating script when
+   * executing timeout handler scripts.
    */
-  static JS::loader::ScriptFetchInfo* GetActiveScriptFetchInfo(JSContext* aCx);
+  static JS::loader::LoadedScript* GetActiveScript(JSContext* aCx);
 
   Document* GetDocument() const { return mDocument; }
 
@@ -690,6 +688,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   void InstantiateClassicScriptFromAny(
       JSContext* aCx, JS::CompileOptions& aCompileOptions,
       ScriptLoadRequest* aRequest, JS::MutableHandle<JSScript*> aScript,
+      JS::Handle<JS::Value> aDebuggerPrivateValue,
       JS::Handle<JSScript*> aDebuggerIntroductionScript, ErrorResult& aRv);
 
   // Instantiate classic script from one of the following data:
@@ -700,6 +699,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   void InstantiateClassicScriptFromMaybeEncodedSource(
       JSContext* aCx, JS::CompileOptions& aCompileOptions,
       ScriptLoadRequest* aRequest, JS::MutableHandle<JSScript*> aScript,
+      JS::Handle<JS::Value> aDebuggerPrivateValue,
       JS::Handle<JSScript*> aDebuggerIntroductionScript, ErrorResult& aRv);
 
   // Instantiate classic script from the following data:
@@ -708,6 +708,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
       JSContext* aCx, JS::CompileOptions& aCompileOptions,
       ScriptLoadRequest* aRequest, JS::Stencil* aStencil,
       JS::MutableHandle<JSScript*> aScript,
+      JS::Handle<JS::Value> aDebuggerPrivateValue,
       JS::Handle<JSScript*> aDebuggerIntroductionScript, ErrorResult& aRv);
 
   static nsCString& BytecodeMimeTypeFor(const ScriptLoadRequest* aRequest);

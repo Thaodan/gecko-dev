@@ -114,10 +114,6 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
     mErroredLoadingImports = true;
   }
 
-  void UpdateReferrerPolicy(mozilla::dom::ReferrerPolicy aReferrerPolicy) {
-    FetchInfo()->UpdateReferrerPolicy(aReferrerPolicy);
-  }
-
  public:
   // Fields.
   const Kind mKind;
