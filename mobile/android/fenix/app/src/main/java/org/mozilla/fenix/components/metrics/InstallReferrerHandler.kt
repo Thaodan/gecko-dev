@@ -13,4 +13,9 @@ interface InstallReferrerHandler {
      * Called with the install referrer response when it becomes available, or null on failure.
      */
     fun handleReferrer(installReferrerResponse: String?)
+
+    /**
+     * Stop any in progress functionality as not needed anymore.
+     */
+    fun stop()
 }

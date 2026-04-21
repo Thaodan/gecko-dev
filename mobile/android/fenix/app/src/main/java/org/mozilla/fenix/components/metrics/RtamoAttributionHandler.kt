@@ -8,9 +8,13 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mozilla.components.feature.addons.AddonsProvider
 import mozilla.components.support.base.log.logger.Logger
+import org.mozilla.fenix.GleanMetrics.Addons
 import org.mozilla.fenix.utils.Settings
 
 private const val EXPECTED_UTM_SOURCE = "addons.mozilla.org"
@@ -48,30 +52,51 @@ class RtamoAttributionHandler(
 
     @Suppress("TooGenericExceptionCaught")
     override fun handleReferrer(installReferrerResponse: String?) {
-        if (!installReferrerResponse.isNullOrBlank()) {
-            scope.launch {
-                val utmParams = UTMParams.parseUTMParameters(installReferrerResponse)
-
-                val isUTMSourceValid = utmParams.source == EXPECTED_UTM_SOURCE
-                val isUTMContentValid = utmParams.content.startsWith(EXPECTED_UTM_CONTENT_PATTERN_PREFIX)
-                if (!isUTMSourceValid || !isUTMContentValid) {
-                    rtamoCheckComplete.complete(Unit)
-                    return@launch
-                }
-
-                try {
-                    val downloadUrl = addonsProvider.getAddonByID(utmParams.content)?.downloadUrl
-                    if (!downloadUrl.isNullOrBlank()) {
-                        settings.rtamoAddonDownloadUrl = downloadUrl
-                    }
-                } catch (e: Exception) {
-                    logger.error("Failed to fetch RTAMO addon [${utmParams.content}]", e)
-                } finally {
-                    rtamoCheckComplete.complete(Unit)
-                }
-            }
-        } else {
+        if (installReferrerResponse.isNullOrBlank()) {
             rtamoCheckComplete.complete(Unit)
+            return
+        }
+
+        scope.launch {
+            try {
+                fetchRtamoAddonDownloadUrl(installReferrerResponse)
+            } catch (e: Exception) {
+                logger.error("Failed to fetch RTAMO addon", e)
+                Addons.rtamoFailed.record(Addons.RtamoFailedExtra(RTAMOFailReason.UNKNOWN_URL.value))
+            } finally {
+                rtamoCheckComplete.complete(Unit)
+            }
+        }
+    }
+
+    private suspend fun fetchRtamoAddonDownloadUrl(installReferrerResponse: String) {
+        val utmParams = UTMParams.parseUTMParameters(installReferrerResponse)
+        if (utmParams.source != EXPECTED_UTM_SOURCE) return
+
+        if (!utmParams.content.startsWith(EXPECTED_UTM_CONTENT_PATTERN_PREFIX)) {
+            Addons.rtamoFailed.record(Addons.RtamoFailedExtra(RTAMOFailReason.INVALID_ID.value))
+            return
+        }
+
+        val downloadUrl = addonsProvider.getAddonByID(utmParams.content)?.downloadUrl
+        if (!downloadUrl.isNullOrBlank() && currentCoroutineContext().isActive) {
+            settings.rtamoAddonDownloadUrl = downloadUrl
+            Addons.rtamoIdentified.record(Addons.RtamoIdentifiedExtra(downloadUrl))
+        }
+    }
+
+    override fun stop() {
+        if (rtamoCheckComplete.isActive) {
+            Addons.rtamoFailed.record(Addons.RtamoFailedExtra(RTAMOFailReason.CANCELLED.value))
+            scope.cancel()
+        }
+    }
+
+    private companion object {
+        private enum class RTAMOFailReason(val value: String) {
+            UNKNOWN_URL("unknown_url"),
+            INVALID_ID("invalid_id"),
+            CANCELLED("cancelled"),
         }
     }
 }

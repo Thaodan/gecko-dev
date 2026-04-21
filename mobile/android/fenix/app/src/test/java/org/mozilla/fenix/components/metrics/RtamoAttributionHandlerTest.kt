@@ -13,9 +13,15 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.addons.AddonsProvider
+import mozilla.components.support.test.robolectric.testContext
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mozilla.fenix.GleanMetrics.Addons
+import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
 import java.io.IOException
@@ -28,6 +34,8 @@ private const val ADDON_DOWNLOAD_URL =
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class RtamoAttributionHandlerTest {
+    @get:Rule
+    val gleanTestRule = FenixGleanTestRule(testContext)
 
     private val settings: Settings = mockk(relaxed = true)
     private val addonsProvider: AddonsProvider = mockk(relaxed = true)
@@ -46,6 +54,10 @@ class RtamoAttributionHandlerTest {
 
         coVerify { addonsProvider.getAddonByID(ADDON_RTA_TOKEN) }
         verify { settings.rtamoAddonDownloadUrl = ADDON_DOWNLOAD_URL }
+        assertEquals(
+            ADDON_DOWNLOAD_URL,
+            Addons.rtamoIdentified.testGetValue()?.last()?.extra?.get("addon_download_url"),
+        )
         assertTrue(handler.rtamoCheckComplete.isCompleted)
     }
 
@@ -62,6 +74,8 @@ class RtamoAttributionHandlerTest {
 
         coVerify(exactly = 0) { addonsProvider.getAddonByID(any()) }
         verify(exactly = 0) { settings.rtamoAddonDownloadUrl = any() }
+        assertNull(Addons.rtamoFailed.testGetValue())
+        assertNull(Addons.rtamoIdentified.testGetValue())
         assertTrue(handler.rtamoCheckComplete.isCompleted)
     }
 
@@ -78,6 +92,8 @@ class RtamoAttributionHandlerTest {
 
         coVerify(exactly = 0) { addonsProvider.getAddonByID(any()) }
         verify(exactly = 0) { settings.rtamoAddonDownloadUrl = any() }
+        assertNull(Addons.rtamoFailed.testGetValue())
+        assertNull(Addons.rtamoIdentified.testGetValue())
         assertTrue(handler.rtamoCheckComplete.isCompleted)
     }
 
@@ -94,6 +110,8 @@ class RtamoAttributionHandlerTest {
 
         coVerify(exactly = 0) { addonsProvider.getAddonByID(any()) }
         verify(exactly = 0) { settings.rtamoAddonDownloadUrl = any() }
+        assertEquals("invalid_id", Addons.rtamoFailed.testGetValue()?.last()?.extra?.get("reason"))
+        assertNull(Addons.rtamoIdentified.testGetValue())
         assertTrue(handler.rtamoCheckComplete.isCompleted)
     }
 
@@ -111,6 +129,8 @@ class RtamoAttributionHandlerTest {
 
         coVerify { addonsProvider.getAddonByID(ADDON_RTA_TOKEN) }
         verify(exactly = 0) { settings.rtamoAddonDownloadUrl = any() }
+        assertNull(Addons.rtamoFailed.testGetValue())
+        assertNull(Addons.rtamoIdentified.testGetValue())
         assertTrue(handler.rtamoCheckComplete.isCompleted)
     }
 
@@ -128,6 +148,8 @@ class RtamoAttributionHandlerTest {
 
         coVerify { addonsProvider.getAddonByID(ADDON_RTA_TOKEN) }
         verify(exactly = 0) { settings.rtamoAddonDownloadUrl = any() }
+        assertEquals("unknown_url", Addons.rtamoFailed.testGetValue()?.last()?.extra?.get("reason"))
+        assertNull(Addons.rtamoIdentified.testGetValue())
         assertTrue(handler.rtamoCheckComplete.isCompleted)
     }
 

@@ -144,6 +144,19 @@ internal class InstallReferrerHandlingServiceTest {
         assertNull(service.referrerClient)
     }
 
+    fun `GIVEN multiple handlers WHEN stop is called THEN all handlers are asked to stop`() {
+        val handler2 = RecordingInstallReferrerHandler()
+        val service = fakeInstallReferrerService(
+            handlers = listOf(handler, handler2),
+            referrerResponse = "",
+        )
+
+        service.stop()
+
+        assertTrue(handler.wasStopped)
+        assertTrue(handler2.wasStopped)
+    }
+
     private fun fakeInstallReferrerService(
         handlers: List<InstallReferrerHandler> = listOf(handler),
         responseCode: Int = InstallReferrerClient.InstallReferrerResponse.OK,
@@ -168,10 +181,16 @@ private class RecordingInstallReferrerHandler : InstallReferrerHandler {
         private set
     var wasCalled = false
         private set
+    var wasStopped = false
+        private set
 
     override fun handleReferrer(installReferrerResponse: String?) {
         wasCalled = true
         receivedResponse = installReferrerResponse
+    }
+
+    override fun stop() {
+        wasStopped = true
     }
 }
 

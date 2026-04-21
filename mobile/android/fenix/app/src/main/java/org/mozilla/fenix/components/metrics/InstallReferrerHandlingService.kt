@@ -90,6 +90,7 @@ class InstallReferrerHandlingService(
      * Stops the connection with the install referrer.
      */
     fun stop() {
+        handlers.forEach { it.stop() }
         referrerClient?.endConnection()
         referrerClient = null
     }

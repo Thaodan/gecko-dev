@@ -49,6 +49,8 @@ class MarketingAttributionHandler(
         }
     }
 
+    override fun stop() = Unit
+
     private fun isMetaAttribution(installReferrerResponse: String?): Boolean {
         if (installReferrerResponse.isNullOrBlank()) {
             return false
