@@ -4,10 +4,30 @@
 
 const selection = $("#selection")[0];
 const count = $("#selection-count")[0];
+const excludeFilter = $("#exclude-filter")[0];
 const pluralize = (count, noun, suffix = "s") =>
   `${count} ${noun}${count !== 1 ? suffix : ""}`;
 
 var selected = [];
+
+var getExcludeTerms = () =>
+  excludeFilter.value
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(t => t);
+
+let excludeDebounce;
+var scheduleApplyChunks = () => {
+  clearTimeout(excludeDebounce);
+  excludeDebounce = setTimeout(applyChunks, 150);
+};
+
+// Flush any pending exclude-filter keystroke synchronously before Push
+// serializes the form, so the submitted value reflects the latest set.
+$("#push")[0].addEventListener("click", () => {
+  clearTimeout(excludeDebounce);
+  applyChunks();
+});
 
 var updateLabels = () => {
   $(".tab-pane.active > .filter-label").each(function () {
@@ -102,7 +122,7 @@ var applyChunks = () => {
     }
   });
 
-  let chunked = selected.filter(function (label) {
+  let visible = selected.filter(function (label) {
     let task = tasks[label];
     let key = task.unittest_suite + "-" + task.unittest_flavor;
     if (key in filters && !filters[key].includes(parseInt(task.test_chunk))) {
@@ -111,6 +131,14 @@ var applyChunks = () => {
     return true;
   });
 
-  selection.value = chunked.join("\n");
-  count.innerText = pluralize(chunked.length, "task") + " selected";
+  let excludeTerms = getExcludeTerms();
+  if (excludeTerms.length) {
+    visible = visible.filter(label => {
+      let lower = label.toLowerCase();
+      return !excludeTerms.some(term => lower.includes(term));
+    });
+  }
+
+  selection.value = visible.join("\n");
+  count.innerText = pluralize(visible.length, "task") + " selected";
 };

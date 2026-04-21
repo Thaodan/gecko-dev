@@ -67,6 +67,10 @@
       </div>
     </div>
     <div class="col-4" id="preview">
+      <input id="exclude-filter" type="text" placeholder="Exclude jobs containing... (space-separated)"
+             autocomplete="off"
+             aria-label="Exclude jobs containing"
+             oninput="scheduleApplyChunks();">
       <form id="submit-tasks" action="" method="POST">
         <textarea id="selection" name="selected-tasks" wrap="off"></textarea>
         <div id="selection-info">

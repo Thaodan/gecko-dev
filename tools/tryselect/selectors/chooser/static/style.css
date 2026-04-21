@@ -79,15 +79,28 @@ body {
 
 #preview {
   position: fixed;
-  height: 100vh;
+  top: 70px;
+  bottom: 0;
   margin-left: 66%;
   width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 #submit-tasks {
   display: flex;
   flex-direction: column;
-  height: 80%;
+  flex: 1;
+  min-height: 0;
+}
+
+#exclude-filter {
+  margin-bottom: 5px;
+  padding: 6px 10px;
+  width: 100%;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 14px;
 }
 
 #selection-info {

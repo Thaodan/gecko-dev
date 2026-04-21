@@ -71,6 +71,19 @@ def test_try_chooser(app, queue: multiprocessing.Queue):
     assert b'name="artifact" checked' not in response.data
     assert b'name="artifact"' in response.data
 
+    # Exclude-filter input should be present and wired to the debounced
+    # handler so keystrokes don't trigger a full re-render each time.
+    assert b'id="exclude-filter"' in response.data
+    assert b'placeholder="Exclude jobs containing' in response.data
+    assert b'oninput="scheduleApplyChunks();"' in response.data
+    assert b'aria-label="Exclude jobs containing"' in response.data
+    # Don't persist filter text across sessions via browser autofill.
+    assert b'autocomplete="off"' in response.data
+    # Exclude-filter must sit outside the form so Enter can't submit it.
+    assert response.data.index(b'id="exclude-filter"') < response.data.index(
+        b'<form id="submit-tasks"'
+    )
+
     response = client.post("/", data={"action": "Cancel"})
     assert response.status_code == 200
     assert b"You may now close this page" in response.data
