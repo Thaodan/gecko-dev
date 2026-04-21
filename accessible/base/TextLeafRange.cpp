@@ -335,7 +335,6 @@ class PrevWordBreakClassWalker {
       if (!PrevChar()) {
         return Nothing();
       }
-      MOZ_ASSERT(mOffset >= 0);
       WordBreakClass curClass = GetWordBreakClass(mText.CharAt(mOffset));
       if (curClass != mClass) {
         mClass = curClass;
@@ -351,7 +350,6 @@ class PrevWordBreakClassWalker {
       // There are no characters before us.
       return true;
     }
-    MOZ_ASSERT(mOffset >= 0);
     WordBreakClass curClass = GetWordBreakClass(mText.CharAt(mOffset));
     // We wanted to peek at the previous character, not really move to it.
     ++mOffset;
@@ -368,20 +366,14 @@ class PrevWordBreakClassWalker {
       // PrevChar was called already and failed.
       return false;
     }
-    // Walk backward through leaves, skipping any that are empty.
-    for (;;) {
-      mAcc = PrevLeaf(mAcc);
-      if (!mAcc) {
-        return false;
-      }
-      mText.Truncate();
-      mAcc->AppendTextTo(mText);
-      if (!mText.IsEmpty()) {
-        mOffset = static_cast<int32_t>(mText.Length()) - 1;
-        return true;
-      }
+    mAcc = PrevLeaf(mAcc);
+    if (!mAcc) {
+      return false;
     }
-    return false;
+    mText.Truncate();
+    mAcc->AppendTextTo(mText);
+    mOffset = static_cast<int32_t>(mText.Length()) - 1;
+    return true;
   }
 
   Accessible* mAcc;
