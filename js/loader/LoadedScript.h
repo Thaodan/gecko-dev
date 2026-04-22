@@ -593,13 +593,6 @@ class LoadedScriptDelegate {
   using ScriptTextBuffer = LoadedScript::ScriptTextBuffer<Unit>;
   using MaybeSourceText = LoadedScript::MaybeSourceText;
 
-  mozilla::dom::ReferrerPolicy ReferrerPolicy() const {
-    return GetLoadedScript()->ReferrerPolicy();
-  }
-  void UpdateReferrerPolicy(mozilla::dom::ReferrerPolicy aReferrerPolicy) {
-    GetLoadedScript()->AsModuleScript()->UpdateReferrerPolicy(aReferrerPolicy);
-  }
-
   ScriptFetchOptions* FetchOptions() const {
     return GetLoadedScript()->GetFetchOptions();
   }

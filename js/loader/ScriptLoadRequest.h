@@ -152,6 +152,10 @@ class ScriptLoadRequest : public nsISupports,
     return mState == State::Ready || mState == State::Canceled;
   }
 
+  mozilla::dom::ReferrerPolicy ReferrerPolicy() const {
+    return getLoadedScript()->ReferrerPolicy();
+  }
+
   mozilla::dom::RequestPriority FetchPriority() const {
     return FetchOptions()->mFetchPriority;
   }
