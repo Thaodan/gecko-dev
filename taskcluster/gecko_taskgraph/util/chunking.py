@@ -26,6 +26,8 @@ from gecko_taskgraph.util.bugbug import CT_LOW, BugbugTimeoutException, push_sch
 
 logger = logging.getLogger(__name__)
 here = os.path.abspath(os.path.dirname(__file__))
+
+_CHUNK_SUFFIX_RE = re.compile(r"-\d+$")
 resolver = TestResolver.from_environment(cwd=here, loader_cls=TestManifestLoader)
 
 VARIANTS_YML = os.path.join(TEST_CONFIGS, "variants.yml")
@@ -146,6 +148,12 @@ def guess_mozinfo_from_task(task, repo="", app_version="", test_tags=[]):
     return info
 
 
+def _strip_job_name(job_name):
+    # Strip chunk numbers and geckoview- infix from job names before matching.
+    name = _CHUNK_SUFFIX_RE.sub("", job_name)
+    return name.replace("-geckoview-", "-")
+
+
 @functools.cache
 def _load_manifest_runtimes_data():
     index_route = "gecko.v2.mozilla-central.latest.source.test-info-manifest-timings"
@@ -200,14 +208,6 @@ def get_runtimes(platform, suite_name):
             platform_candidates.append(shippable)
     matched_jobs = []
     used_platform = None
-
-    # Implicit parts of job names that are always present for certain
-    # platforms but not included in the suite name by the task graph.
-    # Strip these (along with chunk numbers) from job names before matching.
-    def _strip_job_name(job_name):
-        name = re.sub(r"-\d+$", "", job_name)
-        name = name.replace("-geckoview-", "-")
-        return name
 
     # Try each platform candidate until we find jobs
     for candidate in platform_candidates:
