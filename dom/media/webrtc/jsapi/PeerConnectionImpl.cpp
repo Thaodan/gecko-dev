@@ -2580,6 +2580,9 @@ void PeerConnectionImpl::SetConfiguration(
       return;
     }
     mRtcpMuxPolicy = Some(aConfiguration.mRtcpMuxPolicy);
+    if (aConfiguration.mRtcpMuxPolicy == dom::RTCRtcpMuxPolicy::Negotiate) {
+      mozilla::glean::rtcpeerconnection::count_rtcp_mux_policy_negotiate.Add(1);
+    }
   } else if (*mRtcpMuxPolicy != aConfiguration.mRtcpMuxPolicy) {
     aRv.ThrowInvalidModificationError(
         "Cannot change rtcpMuxPolicy with setConfiguration");
