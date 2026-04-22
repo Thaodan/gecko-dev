@@ -1225,7 +1225,7 @@ void BufferAllocator::sweepForMinorCollection() {
 
       // Signal to the main thread that swept data is available by setting this
       // relaxed atomic flag.
-      hasMinorSweepDataToMerge = true;
+      hasSweepDataToMerge = true;
     }
   }
 
@@ -1237,7 +1237,7 @@ void BufferAllocator::sweepForMinorCollection() {
     AutoLock lock(this);
     MOZ_ASSERT(!minorSweepingFinished);
     minorSweepingFinished = true;
-    hasMinorSweepDataToMerge = true;
+    hasSweepDataToMerge = true;
   }
 }
 
@@ -1352,7 +1352,7 @@ void BufferAllocator::sweepForMajorCollection(bool shouldDecommit) {
 
       // Signal to the main thread that swept data is available by setting this
       // relaxed atomic flag.
-      hasMinorSweepDataToMerge = true;
+      hasSweepDataToMerge = true;
     }
   }
 
@@ -1546,7 +1546,7 @@ void BufferAllocator::mergeSweptData(const AutoLock& lock) {
 
   largeTenuredAllocs.ref().prepend(std::move(sweptLargeTenuredAllocs.ref()));
 
-  hasMinorSweepDataToMerge = false;
+  hasSweepDataToMerge = false;
 
   if (minorSweepingFinished) {
     MOZ_ASSERT(minorState == State::Sweeping);
@@ -1733,7 +1733,7 @@ void BufferAllocator::checkGCStateNotInUse(const AutoLock& lock) {
 
     MOZ_ASSERT(!majorStartedWhileMinorSweeping);
     MOZ_ASSERT(!majorFinishedWhileMinorSweeping);
-    MOZ_ASSERT(!hasMinorSweepDataToMerge);
+    MOZ_ASSERT(!hasSweepDataToMerge);
     MOZ_ASSERT(!minorSweepingFinished);
     MOZ_ASSERT(!majorSweepingFinished);
   }
@@ -2077,7 +2077,7 @@ BufferAllocator::RefillResult BufferAllocator::refillFreeLists(
 
   // If that fails try to merge swept data and retry, avoiding taking the lock
   // unless we know there is data to merge. This reduces context switches.
-  if (hasMinorSweepDataToMerge) {
+  if (hasSweepDataToMerge) {
     mergeSweptData();
     return RefillResult::Retry;
   }
@@ -2849,11 +2849,11 @@ bool BufferAllocator::isSweepingChunk(BufferChunk* chunk) {
     // TODO: We could set a flag for nursery chunks allocated during minor
     // collection to allow operations on chunks that are not being swept here.
 
-    if (!hasMinorSweepDataToMerge) {
+    if (!hasSweepDataToMerge) {
 #ifdef DEBUG
       {
         AutoLock lock(this);
-        MOZ_ASSERT_IF(!hasMinorSweepDataToMerge, !minorSweepingFinished);
+        MOZ_ASSERT_IF(!hasSweepDataToMerge, !minorSweepingFinished);
       }
 #endif
 
