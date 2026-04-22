@@ -1851,10 +1851,12 @@ class Element : public FragmentOrElement {
 
   MOZ_CAN_RUN_SCRIPT
   void GetAnimations(const GetAnimationsOptions& aOptions,
-                     nsTArray<RefPtr<Animation>>& aAnimations);
+                     nsTArray<RefPtr<Animation>>& aAnimations,
+                     ErrorResult& aError);
 
   void GetAnimationsWithoutFlush(const GetAnimationsOptions& aOptions,
-                                 nsTArray<RefPtr<Animation>>& aAnimations);
+                                 nsTArray<RefPtr<Animation>>& aAnimations,
+                                 ErrorResult& aError);
 
   void CloneAnimationsFrom(const Element& aOther);
 
