@@ -2180,7 +2180,7 @@ static MethodStatus BaselineCanEnterAtBranch(JSContext* cx, HandleScript script,
     }
 
     JitSpew(JitSpew_IonScripts, "Forcing OSR Mismatch Compilation");
-    Invalidate(cx, script);
+    Invalidate(cx, script, /* resetUses = */ false);
   }
 
   // Attempt compilation.
