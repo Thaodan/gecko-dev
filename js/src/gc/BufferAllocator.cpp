@@ -2537,6 +2537,7 @@ bool BufferAllocator::sweepChunk(BufferChunk* chunk, SweepKind sweepKind,
   for (auto iter = chunk->smallRegionIter(); !iter.done(); iter.next()) {
     SmallBufferRegion* region = iter.get();
     MOZ_ASSERT(!chunk->isMarked(region));
+    MOZ_ASSERT(!chunk->isNurseryOwned(region));
     MOZ_ASSERT(chunk->allocBytes(region) == SmallRegionSize);
 
     if (!sweepSmallBufferRegion(chunk, region, sweepKind)) {
@@ -2546,8 +2547,13 @@ bool BufferAllocator::sweepChunk(BufferChunk* chunk, SweepKind sweepKind,
                   MemCheckKind::MakeUndefined);
       smallRegionBytesFreed += SmallRegionSize;
       sweptAny = true;
-    } else if (region->hasNurseryOwnedAllocs()) {
-      hasNurseryOwnedSmallRegions = true;
+    } else {
+      if (sweepKind == SweepKind::Tenured) {
+        chunk->setMarked(region);
+      }
+      if (region->hasNurseryOwnedAllocs()) {
+        hasNurseryOwnedSmallRegions = true;
+      }
     }
   }
 
@@ -2657,9 +2663,6 @@ template <typename D, size_t S, size_t G>
 AllocSpace<D, S, G>::SweepResult AllocSpace<D, S, G>::sweep(
     BufferAllocator* allocator, FreeLists& freeLists, SweepKind sweepKind,
     bool sweptAnyPreviously, bool shouldDecommit) {
-  static_assert(std::is_same_v<D, BufferChunk> ||
-                std::is_same_v<D, SmallBufferRegion>);
-
   SweepResult result;
 
   size_t freeStart = firstAllocOffset();
@@ -2673,12 +2676,6 @@ AllocSpace<D, S, G>::SweepResult AllocSpace<D, S, G>::sweep(
 
     bool nurseryOwned = isNurseryOwned(alloc);
     bool canSweep = BufferAllocator::CanSweepAlloc(nurseryOwned, sweepKind);
-    if constexpr (std::is_same_v<D, BufferChunk>) {
-      if (static_cast<BufferChunk*>(this)->isSmallBufferRegion(alloc)) {
-        canSweep = false;
-      }
-    }
-
     bool shouldSweep = canSweep && !isMarked(alloc);
     if (shouldSweep) {
       // Dead. Update allocated bitmap, metadata and heap size accounting.
