@@ -57,6 +57,14 @@ vendoring:
 
   exclude:
     - "**"
+    - "src/hb-coretext*"
+    - "src/hb-directwrite*"
+    - "src/hb-gpu-paint.cc"
+    - "src/hb-harfrust.cc"
+    - "src/hb-kbts.cc"
+    - "src/hb-paint*.cc"
+    - "src/hb-raster*.cc"
+    - "src/hb-vector*.cc"
     - "src/test*"
     - src/hb-ucdn
 
