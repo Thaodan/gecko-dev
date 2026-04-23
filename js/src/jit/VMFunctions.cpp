@@ -3289,6 +3289,13 @@ double DateParse(JSContext* cx, const JSString* str) {
   return JS::CanonicalizeNaN(js::DateParse(cx, linear).toDouble());
 }
 
+double DateLocalTimeToUTC(JSContext* cx, int64_t localTime) {
+  AutoUnsafeCallWithABI unsafe;
+
+  // ClippedTime can return non-canonical NaN, so canonicalize explicitly.
+  return JS::CanonicalizeNaN(js::LocalTimeToUTC(cx, localTime).toDouble());
+}
+
 JSObject* NewDateObject(JSContext* cx, double utcTime) {
   auto clipped = JS::TimeClip(utcTime);
   MOZ_ASSERT(

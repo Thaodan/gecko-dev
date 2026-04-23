@@ -41,6 +41,12 @@ JS::ClippedTime DateNow(JSContext* cx);
  */
 JS::ClippedTime DateParse(JSContext* cx, const JSLinearString* str);
 
+
+/**
+ * Convert from local time to UTC time.
+ */
+JS::ClippedTime LocalTimeToUTC(JSContext* cx, int64_t localTime);
+
 bool date_valueOf(JSContext* cx, unsigned argc, JS::Value* vp);
 
 bool date_toPrimitive(JSContext* cx, unsigned argc, JS::Value* vp);

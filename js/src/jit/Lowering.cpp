@@ -8334,6 +8334,12 @@ void LIRGenerator::visitTimeClip(MTimeClip* ins) {
   }
 }
 
+void LIRGenerator::visitLocalTimeToUTC(MLocalTimeToUTC* ins) {
+  auto* lir = new (alloc()) LLocalTimeToUTC(
+      useInt64RegisterAtStart(ins->localTime()), tempFixed(CallTempReg0));
+  defineReturn(lir, ins);
+}
+
 void LIRGenerator::visitPostIntPtrConversion(MPostIntPtrConversion* ins) {
   // This operation is a no-op.
   redefine(ins, ins->input());

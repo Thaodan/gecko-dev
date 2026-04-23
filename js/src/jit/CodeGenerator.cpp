@@ -22683,6 +22683,19 @@ void CodeGenerator::visitTimeClipCall(LTimeClipCall* ins) {
   masm.timeClip(time, output, temp, liveVolatileRegs(ins));
 }
 
+void CodeGenerator::visitLocalTimeToUTC(LLocalTimeToUTC* ins) {
+  Register64 localTime = ToRegister64(ins->localTime());
+  Register temp0 = ToRegister(ins->temp0());
+  MOZ_ASSERT(ToFloatRegister(ins->output()) == ReturnDoubleReg);
+
+  using Fn = double (*)(JSContext*, int64_t);
+  masm.setupAlignedABICall();
+  masm.loadJSContext(temp0);
+  masm.passABIArg(temp0);
+  masm.passABIArg(localTime);
+  masm.callWithABI<Fn, jit::DateLocalTimeToUTC>(ABIType::Float64);
+}
+
 void CodeGenerator::visitNewDateObject(LNewDateObject* lir) {
   FloatRegister utcTime = ToFloatRegister(lir->utcTime());
   Register output = ToRegister(lir->output());

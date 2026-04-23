@@ -2169,6 +2169,12 @@ ClippedTime js::DateParse(JSContext* cx, const JSLinearString* str) {
   return result;
 }
 
+JS::ClippedTime js::LocalTimeToUTC(JSContext* cx, int64_t localTime) {
+  MOZ_ASSERT(IsLocalTimeValue(localTime),
+             "localTime is a valid local time value when called from JIT");
+  return TimeClip(UTC(cx->realm()->getDateTimeInfo(), localTime));
+}
+
 /**
  * 21.4.3.2 Date.parse ( string )
  *
