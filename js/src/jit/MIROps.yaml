@@ -1375,6 +1375,7 @@
     string: String
   result_type: String
   movable: true
+  folds_to: custom
   congruent_to: if_operands_equal
   # Strings are immutable, so there is no implicit dependency.
   alias_set: none

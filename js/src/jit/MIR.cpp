@@ -2239,6 +2239,18 @@ MDefinition* MCodePointAt::foldsTo(TempAllocator& alloc) {
   return MConstant::NewInt32(alloc, first);
 }
 
+MDefinition* MLinearizeString::foldsTo(TempAllocator& alloc) {
+  MDefinition* string = this->string();
+  if (!string->isConstant()) {
+    return this;
+  }
+
+  // Constant strings are atoms, which are guaranteed to be linear.
+  static_assert(std::is_same_v<decltype(string->toConstant()->toString()),
+                               JSOffThreadAtom*>);
+  return string;
+}
+
 MDefinition* MToRelativeStringIndex::foldsTo(TempAllocator& alloc) {
   MDefinition* index = this->index();
   MDefinition* length = this->length();
