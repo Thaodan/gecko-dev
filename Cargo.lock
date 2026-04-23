@@ -325,7 +325,7 @@ dependencies = [
 [[package]]
 name = "audioipc2"
 version = "0.6.0"
-source = "git+https://github.com/mozilla/audioipc?rev=453cb88c9914b6b8dc7be63e37f482d2a2f4b97f#453cb88c9914b6b8dc7be63e37f482d2a2f4b97f"
+source = "git+https://github.com/mozilla/audioipc?rev=b52c33425baf619b6c1278c5b4c7ffa3e92b9b1e#b52c33425baf619b6c1278c5b4c7ffa3e92b9b1e"
 dependencies = [
  "arrayvec",
  "ashmem",
@@ -333,6 +333,7 @@ dependencies = [
  "bincode",
  "byteorder",
  "bytes",
+ "cc",
  "crossbeam-queue",
  "cubeb",
  "iovec",
@@ -351,7 +352,7 @@ dependencies = [
 [[package]]
 name = "audioipc2-client"
 version = "0.6.0"
-source = "git+https://github.com/mozilla/audioipc?rev=453cb88c9914b6b8dc7be63e37f482d2a2f4b97f#453cb88c9914b6b8dc7be63e37f482d2a2f4b97f"
+source = "git+https://github.com/mozilla/audioipc?rev=b52c33425baf619b6c1278c5b4c7ffa3e92b9b1e#b52c33425baf619b6c1278c5b4c7ffa3e92b9b1e"
 dependencies = [
  "audio_thread_priority",
  "audioipc2",
@@ -362,7 +363,7 @@ dependencies = [
 [[package]]
 name = "audioipc2-server"
 version = "0.6.0"
-source = "git+https://github.com/mozilla/audioipc?rev=453cb88c9914b6b8dc7be63e37f482d2a2f4b97f#453cb88c9914b6b8dc7be63e37f482d2a2f4b97f"
+source = "git+https://github.com/mozilla/audioipc?rev=b52c33425baf619b6c1278c5b4c7ffa3e92b9b1e#b52c33425baf619b6c1278c5b4c7ffa3e92b9b1e"
 dependencies = [
  "audio_thread_priority",
  "audioipc2",
