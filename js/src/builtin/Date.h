@@ -16,6 +16,8 @@
 #include "js/RootingAPI.h"
 #include "js/TypeDecls.h"
 
+class JSLinearString;
+
 namespace js {
 
 /*
@@ -33,6 +35,11 @@ extern JSObject* NewDateObjectMsec(JSContext* cx, JS::ClippedTime t,
  * Returns the current time in milliseconds since the epoch.
  */
 JS::ClippedTime DateNow(JSContext* cx);
+
+/**
+ * Returns the result of calling |Date.parse|.
+ */
+JS::ClippedTime DateParse(JSContext* cx, const JSLinearString* str);
 
 bool date_valueOf(JSContext* cx, unsigned argc, JS::Value* vp);
 

@@ -3277,6 +3277,17 @@ double DateNow(JSContext* cx) {
   return JS::CanonicalizeNaN(js::DateNow(cx).toDouble());
 }
 
+double DateParse(JSContext* cx, const JSString* str) {
+  AutoUnsafeCallWithABI unsafe;
+
+  MOZ_ASSERT(str->isLinear());
+
+  const auto* linear = &str->asLinear();
+
+  // ClippedTime can return non-canonical NaN, so canonicalize explicitly.
+  return JS::CanonicalizeNaN(js::DateParse(cx, linear).toDouble());
+}
+
 JSAtom* AtomizeStringNoGC(JSContext* cx, JSString* str) {
   // IC code calls this directly so we shouldn't GC.
   AutoUnsafeCallWithABI unsafe;

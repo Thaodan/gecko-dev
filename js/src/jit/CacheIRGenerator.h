@@ -925,6 +925,7 @@ class MOZ_RAII InlinableNativeIRGenerator {
   AttachDecision tryAttachDateGetTime();
   AttachDecision tryAttachDateGet(DateComponent component);
   AttachDecision tryAttachDateNow();
+  AttachDecision tryAttachDateParse();
   AttachDecision tryAttachWeakMapHas();
   AttachDecision tryAttachWeakMapGet();
   AttachDecision tryAttachWeakSetHas();

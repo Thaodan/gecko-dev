@@ -5950,6 +5950,16 @@ bool WarpCacheIRTranspiler::emitDateNow(NumberOperandId resultId) {
   return defineOperand(resultId, ins);
 }
 
+bool WarpCacheIRTranspiler::emitDateParse(StringOperandId strId,
+                                          NumberOperandId resultId) {
+  MDefinition* str = getOperand(strId);
+
+  auto* ins = MDateParse::New(alloc(), str);
+  add(ins);
+
+  return defineOperand(resultId, ins);
+}
+
 bool WarpCacheIRTranspiler::emitTruthyResult(OperandId inputId) {
   MDefinition* input = getOperand(inputId);
 

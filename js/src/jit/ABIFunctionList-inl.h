@@ -143,6 +143,7 @@ namespace jit {
   _(js::jit::BigIntNumberCompare<js::jit::ComparisonKind::GreaterThanOrEqual>) \
   _(js::jit::DateFillLocalTimeSlots)                                           \
   _(js::jit::DateNow)                                                          \
+  _(js::jit::DateParse)                                                        \
   _(js::jit::EqualStringsHelperPure)                                           \
   _(js::jit::FinishBailoutToBaseline)                                          \
   _(js::jit::Float16ToFloat32)                                                 \

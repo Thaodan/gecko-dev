@@ -8309,6 +8309,12 @@ void LIRGenerator::visitDateNow(MDateNow* ins) {
   defineReturn(lir, ins);
 }
 
+void LIRGenerator::visitDateParse(MDateParse* ins) {
+  auto* lir = new (alloc())
+      LDateParse(useRegisterAtStart(ins->string()), tempFixed(CallTempReg0));
+  defineReturn(lir, ins);
+}
+
 void LIRGenerator::visitPostIntPtrConversion(MPostIntPtrConversion* ins) {
   // This operation is a no-op.
   redefine(ins, ins->input());

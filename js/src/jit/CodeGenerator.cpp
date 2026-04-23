@@ -22654,6 +22654,19 @@ void CodeGenerator::visitDateNow(LDateNow* ins) {
   masm.callWithABI<Fn, jit::DateNow>(ABIType::Float64);
 }
 
+void CodeGenerator::visitDateParse(LDateParse* ins) {
+  Register string = ToRegister(ins->string());
+  Register temp0 = ToRegister(ins->temp0());
+  MOZ_ASSERT(ToFloatRegister(ins->output()) == ReturnDoubleReg);
+
+  using Fn = double (*)(JSContext*, const JSString*);
+  masm.setupAlignedABICall();
+  masm.loadJSContext(temp0);
+  masm.passABIArg(temp0);
+  masm.passABIArg(string);
+  masm.callWithABI<Fn, jit::DateParse>(ABIType::Float64);
+}
+
 void CodeGenerator::visitCanonicalizeNaND(LCanonicalizeNaND* ins) {
   auto output = ToFloatRegister(ins->output());
   MOZ_ASSERT(output == ToFloatRegister(ins->input()));

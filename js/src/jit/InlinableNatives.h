@@ -91,6 +91,7 @@
   _(DateGetMinutes)                                \
   _(DateGetSeconds)                                \
   _(DateNow)                                       \
+  _(DateParse)                                     \
                                                    \
   _(FunctionBind)                                  \
                                                    \

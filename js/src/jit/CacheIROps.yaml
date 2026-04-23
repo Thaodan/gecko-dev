@@ -3847,6 +3847,14 @@
   args:
     result: NumberId
 
+- name: DateParse
+  shared: true
+  transpile: true
+  cost_estimate: 4
+  args:
+    str: StringId
+    result: NumberId
+
 - name: ArrayFromArgumentsObjectResult
   shared: true
   transpile: true
