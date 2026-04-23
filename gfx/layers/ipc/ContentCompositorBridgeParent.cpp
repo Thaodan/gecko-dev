@@ -177,7 +177,6 @@ ContentCompositorBridgeParent::AllocPWebRenderBridgeParent(
     nsCString error("NO_PARENT");
     WebRenderBridgeParent* parent =
         WebRenderBridgeParent::CreateDestroyed(aPipelineId, std::move(error));
-    parent->AddRef();  // IPDL reference
     return parent;
   }
 
@@ -186,7 +185,6 @@ ContentCompositorBridgeParent::AllocPWebRenderBridgeParent(
   WebRenderBridgeParent* parent = new WebRenderBridgeParent(
       this, aPipelineId, root->CompositorScheduler(), std::move(api),
       std::move(holder), cbp->GetVsyncInterval());
-  parent->AddRef();  // IPDL reference
 
   {  // scope lock
     StaticMonitorAutoLock lock(CompositorBridgeParent::sIndirectLayerTreesLock);
@@ -202,7 +200,6 @@ bool ContentCompositorBridgeParent::DeallocPWebRenderBridgeParent(
     PWebRenderBridgeParent* aActor) {
   WebRenderBridgeParent* parent = static_cast<WebRenderBridgeParent*>(aActor);
   EraseLayerState(wr::AsLayersId(parent->PipelineId()));
-  parent->Release();  // IPDL reference
   return true;
 }
 
