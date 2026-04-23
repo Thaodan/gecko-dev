@@ -131,7 +131,6 @@ using Buffer =
                                                   .instSize = 4,
                                                   .guardSize = 2,
                                                   .headerSize = 2,
-                                                  .instBufferAlign = 8,
                                                   .pcBias = 8,
                                                   .alignFillInst = kNopByte,
                                                   .nopFillInst = kNopByte,
