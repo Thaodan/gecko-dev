@@ -25,7 +25,7 @@ import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithText
-import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.loremIpsumAsset
 import org.mozilla.fenix.helpers.TestHelper.clickSnackbarButton
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.verifySnackBarText
@@ -362,15 +362,11 @@ class DownloadTest {
     @SmokeTest
     @Test
     fun saveAsPdfFunctionalityTest() {
-        val genericURL = mockWebServer.getGenericAsset(3)
-        downloadFile = "pdfForm.pdf"
+        val genericURL = mockWebServer.loremIpsumAsset
+        downloadFile = "Lorem"
 
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
-            clickPageObject(composeTestRule, itemWithText("PDF form file"))
-            waitForPageToLoad()
-            clickPageObject(composeTestRule, itemContainingText("Cancel"))
-            fillPdfForm("Firefox")
         }.openThreeDotMenu {
         }.clickShareButton {
         }.clickSaveAsPDF(composeTestRule) {
