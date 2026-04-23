@@ -43,3 +43,7 @@ aiwindow-applied-memories-popover =
 aiwindow-jump-to-bottom =
     .tooltiptext = Jump to bottom
     .aria-label = Jump to bottom of chat
+
+## Natural Language Action
+
+smartwindow-nl-thinking = Looking for matching tabs…
