@@ -15728,20 +15728,19 @@ function SectionsMgmtPanel({
     const following = sectionPersonalization[sectionKey]?.isFollowed;
     return /*#__PURE__*/external_React_default().createElement("li", {
       key: sectionKey
-    }, /*#__PURE__*/external_React_default().createElement("label", {
-      id: `follow-topic-label-${sectionKey}`,
-      htmlFor: `follow-topic-${sectionKey}`
-    }, title), /*#__PURE__*/external_React_default().createElement("div", {
+    }, /*#__PURE__*/external_React_default().createElement("span", null, title), /*#__PURE__*/external_React_default().createElement("div", {
       className: following ? "section-follow following" : "section-follow"
     }, /*#__PURE__*/external_React_default().createElement("moz-button", {
       onClick: () => following ? onUnfollowClick(sectionKey, receivedRank) : onFollowClick(sectionKey, receivedRank),
       type: "default",
       index: receivedRank,
       section: sectionKey,
-      id: `follow-topic-${sectionKey}`
-      // Compose accessible label from the localized "Following" span and the topic title label.
-      ,
-      "aria-labelledby": `follow-state-${sectionKey} follow-topic-label-${sectionKey}`
+      id: `follow-topic-${sectionKey}`,
+      "data-l10n-id": following ? "newtab-section-unfollow-topic" : "newtab-section-follow-topic",
+      "data-l10n-args": JSON.stringify({
+        topic: title
+      }),
+      "data-l10n-attrs": "aria-label"
     }, /*#__PURE__*/external_React_default().createElement("span", {
       className: "section-button-follow-text",
       "data-l10n-id": "newtab-section-follow-button"
@@ -15762,20 +15761,19 @@ function SectionsMgmtPanel({
     const blocked = sectionPersonalization[sectionKey]?.isBlocked;
     return /*#__PURE__*/external_React_default().createElement("li", {
       key: sectionKey
-    }, /*#__PURE__*/external_React_default().createElement("label", {
-      id: `blocked-topic-label-${sectionKey}`,
-      htmlFor: `blocked-topic-${sectionKey}`
-    }, title), /*#__PURE__*/external_React_default().createElement("div", {
+    }, /*#__PURE__*/external_React_default().createElement("span", null, title), /*#__PURE__*/external_React_default().createElement("div", {
       className: blocked ? "section-block blocked" : "section-block"
     }, /*#__PURE__*/external_React_default().createElement("moz-button", {
       onClick: () => blocked ? onUnblockClick(sectionKey, receivedRank) : onBlockClick(sectionKey, receivedRank),
       type: "default",
       index: receivedRank,
       section: sectionKey,
-      id: `blocked-topic-${sectionKey}`
-      // Compose accessible label from the localized "Blocked" span and the topic title label.
-      ,
-      "aria-labelledby": `blocked-state-${sectionKey} blocked-topic-label-${sectionKey}`
+      id: `blocked-topic-${sectionKey}`,
+      "data-l10n-id": blocked ? "newtab-section-unblock-topic" : "newtab-section-block-topic",
+      "data-l10n-args": JSON.stringify({
+        topic: title
+      }),
+      "data-l10n-attrs": "aria-label"
     }, /*#__PURE__*/external_React_default().createElement("span", {
       className: "section-button-block-text",
       "data-l10n-id": "newtab-section-block-button"
