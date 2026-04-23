@@ -68,10 +68,6 @@ const APP_ICON_ATTR_NAME = "appHandlerIcon";
 const OPEN_EXTERNAL_LINK_NEXT_TO_ACTIVE_TAB_VALUE =
   Ci.nsIBrowserDOMWindow.OPEN_NEWTAB_AFTER_CURRENT;
 
-ChromeUtils.defineLazyGetter(this, "gIsPackagedApp", () => {
-  return Services.sysinfo.getProperty("isPackagedApp");
-});
-
 /**
  * @param {Setting} featureSetting
  * @param {Setting} defaultSetting
@@ -1477,7 +1473,12 @@ Preferences.addSetting({
 
 const UpdatesHelpers = {
   get showUpdatesSettings() {
-    return AppConstants.MOZ_UPDATER && !gIsPackagedApp;
+    // When we're running inside an app package, there's no point in
+    // displaying any update content here, and it would get confusing if we
+    // did, because our updater is not enabled.
+    return (
+      AppConstants.MOZ_UPDATER && !Services.sysinfo.getProperty("isPackagedApp")
+    );
   },
 
   get showUpdatesInstallation() {
@@ -1589,6 +1590,45 @@ Preferences.addSetting({
   id: "updateApp",
   visible: () => UpdatesHelpers.showUpdatesSettings,
 });
+
+if (AppConstants.MOZ_UPDATER && typeof appUpdater === "undefined") {
+  Services.scriptloader.loadSubScript(
+    "chrome://browser/content/aboutDialog-appUpdater.js",
+    this
+  );
+}
+
+Preferences.addSetting(
+  /** @type {{ _panel: string, _options: {linkURL?: string, updateVersion?: string, transfer?: string} } & SettingConfig} */ ({
+    id: "updateState",
+    _panel: "",
+    _options: {},
+    setup(emitChange) {
+      if (gAppUpdater) {
+        gAppUpdater.destroy();
+      }
+      gAppUpdater = new appUpdater({
+        selectPanel: /** @param {string} panel */ (panel, options = {}) => {
+          this._panel = panel;
+          this._options = options;
+          emitChange();
+        },
+      });
+      return () => gAppUpdater.destroy();
+    },
+    get() {
+      return this._panel;
+    },
+    getControlConfig(config) {
+      config.controlAttrs = {
+        ".linkURL": this._options.linkURL ?? "",
+        ".updateVersion": this._options.updateVersion ?? "",
+        ".transfer": this._options.transfer ?? "",
+      };
+      return config;
+    },
+  })
+);
 
 Preferences.addSetting({
   id: "updateAppInfo",
@@ -2846,6 +2886,10 @@ SettingGroupManager.registerGroups({
         control: "moz-box-group",
         items: [
           {
+            id: "updateState",
+            control: "update-state",
+          },
+          {
             id: "updateAppInfo",
             control: "update-information",
           },
@@ -3353,27 +3397,6 @@ var gMainPane = {
     setEventListener("manageBrowserLanguagesButton", "command", function () {
       gMainPane.showBrowserLanguagesSubDialog({ search: false });
     });
-    if (AppConstants.MOZ_UPDATER) {
-      // These elements are only compiled in when the updater is enabled
-      setEventListener("checkForUpdatesButton", "command", function () {
-        gAppUpdater.checkForUpdates();
-      });
-      setEventListener("downloadAndInstallButton", "command", function () {
-        gAppUpdater.startDownload();
-      });
-      setEventListener("updateButton", "command", function () {
-        gAppUpdater.buttonRestartAfterDownload();
-      });
-      setEventListener("checkForUpdatesButton2", "command", function () {
-        gAppUpdater.checkForUpdates();
-      });
-      setEventListener("checkForUpdatesButton3", "command", function () {
-        gAppUpdater.checkForUpdates();
-      });
-      setEventListener("checkForUpdatesButton4", "command", function () {
-        gAppUpdater.checkForUpdates();
-      });
-    }
 
     setEventListener("chooseLanguage", "command", gMainPane.showLanguages);
     // TODO (Bug 1817084) Remove this code when we disable the extension
@@ -3395,26 +3418,6 @@ var gMainPane = {
     if (!Services.prefs.getBoolPref(fxtranslationsDisabledPrefName, true)) {
       let fxtranslationRow = document.getElementById("fxtranslationsBox");
       fxtranslationRow.hidden = false;
-    }
-
-    // Initialize the Firefox Updates section.
-
-    if (AppConstants.MOZ_UPDATER) {
-      gAppUpdater = new appUpdater();
-
-      if (gIsPackagedApp) {
-        // When we're running inside an app package, there's no point in
-        // displaying any update content here, and it would get confusing if we
-        // did, because our updater is not enabled.
-        // We can't rely on the hidden attribute for the toplevel elements,
-        // because of the pane hiding/showing code interfering.
-        document
-          .getElementById("updatesCategory")
-          .setAttribute("style", "display: none !important");
-        document
-          .getElementById("updateApp")
-          .setAttribute("style", "display: none !important");
-      }
     }
 
     // Initilize Application section.

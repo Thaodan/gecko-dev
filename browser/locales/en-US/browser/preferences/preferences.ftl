@@ -706,10 +706,6 @@ update-application-heading =
 update-application-suppress-prompts-heading =
     .label = Notifications
 
-update-application-title = { -brand-short-name } Updates
-
-update-application-description = Keep { -brand-short-name } up to date for the best performance, stability, and security.
-
 # Variables:
 # $version (string) - Firefox version
 update-application-version = Version { $version } <a data-l10n-name="learn-more">What’s new</a>
