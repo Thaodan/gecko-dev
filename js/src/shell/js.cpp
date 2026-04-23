@@ -9237,6 +9237,10 @@ static bool TransplantObject(JSContext* cx, unsigned argc, Value* vp) {
   RootedObject proto(cx);
   if (JS::GetClass(source) == GetDomClass()) {
     proto = GetDOMPrototype(cx, newGlobal);
+    if (proto == source) {
+      JS_ReportErrorASCII(cx, "Cannot transplant the FakeDOMObject prototype");
+      return false;
+    }
   } else {
     proto = JS::GetRealmObjectPrototype(cx);
   }

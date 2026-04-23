@@ -1239,6 +1239,14 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b,
   bool aIsUsedAsPrototype = a->isUsedAsPrototype();
   bool bIsUsedAsPrototype = b->isUsedAsPrototype();
 
+  // Verify that swapping does not result in an object becoming its own proto.
+  if (aIsUsedAsPrototype && b->hasStaticPrototype()) {
+    MOZ_RELEASE_ASSERT(b->staticPrototype() != a);
+  }
+  if (bIsUsedAsPrototype && a->hasStaticPrototype()) {
+    MOZ_RELEASE_ASSERT(a->staticPrototype() != b);
+  }
+
   // Swap element associations.
   Zone* zone = a->zone();
 
