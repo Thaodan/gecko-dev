@@ -5933,6 +5933,13 @@ bool WarpCacheIRTranspiler::emitDateSecondsFromSecondsIntoYearResult(
   return true;
 }
 
+bool WarpCacheIRTranspiler::emitDateNow(NumberOperandId resultId) {
+  auto* ins = MDateNow::New(alloc());
+  add(ins);
+
+  return defineOperand(resultId, ins);
+}
+
 bool WarpCacheIRTranspiler::emitTruthyResult(OperandId inputId) {
   MDefinition* input = getOperand(inputId);
 

@@ -3832,6 +3832,13 @@
   args:
     secondsIntoYear: ValId
 
+- name: DateNow
+  shared: true
+  transpile: true
+  cost_estimate: 4
+  args:
+    result: NumberId
+
 - name: ArrayFromArgumentsObjectResult
   shared: true
   transpile: true

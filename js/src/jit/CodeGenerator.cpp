@@ -22643,6 +22643,17 @@ void CodeGenerator::visitDateSecondsFromSecondsIntoYear(
   masm.dateSecondsFromSecondsIntoYear(secondsIntoYear, output, temp0, temp1);
 }
 
+void CodeGenerator::visitDateNow(LDateNow* ins) {
+  Register temp0 = ToRegister(ins->temp0());
+  MOZ_ASSERT(ToFloatRegister(ins->output()) == ReturnDoubleReg);
+
+  using Fn = double (*)(JSContext*);
+  masm.setupAlignedABICall();
+  masm.loadJSContext(temp0);
+  masm.passABIArg(temp0);
+  masm.callWithABI<Fn, jit::DateNow>(ABIType::Float64);
+}
+
 void CodeGenerator::visitCanonicalizeNaND(LCanonicalizeNaND* ins) {
   auto output = ToFloatRegister(ins->output());
   MOZ_ASSERT(output == ToFloatRegister(ins->input()));

@@ -706,6 +706,7 @@ float Float16ToFloat32(int32_t value);
 int32_t Float32ToFloat16(float value);
 
 void DateFillLocalTimeSlots(DateObject* dateObj);
+double DateNow(JSContext* cx);
 
 JSAtom* AtomizeStringNoGC(JSContext* cx, JSString* str);
 

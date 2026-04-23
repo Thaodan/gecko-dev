@@ -2204,6 +2204,9 @@ static ClippedTime NowAsMillis(JSContext* cx) {
   if (cx->realm()->behaviors().clampAndJitterTime()) {
     auto reducePrecisionCallback = *sReduceMicrosecondTimePrecisionCallback;
     if (reducePrecisionCallback) {
+      // The callback isn't allowed to perform GC.
+      JS::AutoSuppressGCAnalysis nogc;
+
       double reducedPrecision = reducePrecisionCallback(
           now,
           cx->realm()->behaviors().reduceTimerPrecisionCallerType().value(),
@@ -4563,7 +4566,7 @@ static bool date_toTemporalInstant(JSContext* cx, unsigned argc, Value* vp) {
 static const JSFunctionSpec date_static_methods[] = {
     JS_FN("UTC", date_UTC, 7, 0),
     JS_FN("parse", date_parse, 1, 0),
-    JS_FN("now", date_now, 0, 0),
+    JS_INLINABLE_FN("now", date_now, 0, 0, DateNow),
     JS_FS_END,
 };
 

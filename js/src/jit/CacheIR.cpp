@@ -11290,6 +11290,27 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDateGet(
   return AttachDecision::Attach;
 }
 
+AttachDecision InlinableNativeIRGenerator::tryAttachDateNow() {
+  // Expecting no arguments.
+  if (argsLength() != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  // Initialize the input operand.
+  Int32OperandId argcId = initializeInputOperand();
+
+  // Guard callee is the 'now' native function.
+  emitNativeCalleeGuard(argcId);
+
+  NumberOperandId nowId = writer.dateNow();
+  writer.loadDoubleResult(nowId);
+
+  writer.returnFromIC();
+
+  trackAttached("DateNow");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CallIRGenerator::tryAttachFunCall(HandleFunction callee) {
   MOZ_ASSERT(callee->isNativeWithoutJitEntry());
 
@@ -13611,6 +13632,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachDateGet(DateComponent::Minutes);
     case InlinableNative::DateGetSeconds:
       return tryAttachDateGet(DateComponent::Seconds);
+    case InlinableNative::DateNow:
+      return tryAttachDateNow();
 
     // WeakMap/WeakSet natives.
     case InlinableNative::WeakMapGet:

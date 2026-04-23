@@ -11678,6 +11678,30 @@ bool CacheIRCompiler::emitDateSecondsFromSecondsIntoYearResult(
   return true;
 }
 
+bool CacheIRCompiler::emitDateNow(NumberOperandId resultId) {
+  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
+
+  ValueOperand output = allocator.defineValueRegister(masm, resultId);
+  AutoScratchRegister scratch(allocator, masm);
+  AutoScratchFloatRegister scratchFloat(this);
+
+  LiveRegisterSet volatileRegs = liveVolatileRegs();
+  volatileRegs.takeUnchecked(scratchFloat);
+  masm.PushRegsInMask(volatileRegs);
+
+  using Fn = double (*)(JSContext* cx);
+  masm.setupUnalignedABICall(scratch);
+  masm.loadJSContext(scratch);
+  masm.passABIArg(scratch);
+  masm.callWithABI<Fn, jit::DateNow>(ABIType::Float64);
+  masm.storeCallFloatResult(scratchFloat);
+
+  masm.PopRegsInMask(volatileRegs);
+
+  masm.boxDouble(scratchFloat, output, scratchFloat);
+  return true;
+}
+
 bool CacheIRCompiler::emitArrayFromArgumentsObjectResult(ObjOperandId objId,
                                                          uint32_t shapeOffset) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);

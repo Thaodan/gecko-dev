@@ -8304,6 +8304,11 @@ void LIRGenerator::visitDateSecondsFromSecondsIntoYear(
   defineBox(lir, ins);
 }
 
+void LIRGenerator::visitDateNow(MDateNow* ins) {
+  auto* lir = new (alloc()) LDateNow(tempFixed(CallTempReg0));
+  defineReturn(lir, ins);
+}
+
 void LIRGenerator::visitPostIntPtrConversion(MPostIntPtrConversion* ins) {
   // This operation is a no-op.
   redefine(ins, ins->input());

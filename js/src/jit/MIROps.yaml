@@ -4556,6 +4556,13 @@
   generate_lir: true
   lir_temps: 2
 
+- name: DateNow
+  result_type: Double
+  alias_set: none
+  possibly_calls: true
+  generate_lir: true
+  lir_temps: 1
+
 - name: PostIntPtrConversion
   gen_boilerplate: false
 

@@ -90,6 +90,7 @@
   _(DateGetHours)                                  \
   _(DateGetMinutes)                                \
   _(DateGetSeconds)                                \
+  _(DateNow)                                       \
                                                    \
   _(FunctionBind)                                  \
                                                    \

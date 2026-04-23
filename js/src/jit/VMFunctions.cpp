@@ -6,6 +6,7 @@
 
 #include "mozilla/FloatingPoint.h"
 
+#include "builtin/Date.h"
 #include "builtin/MapObject.h"
 #include "builtin/String.h"
 #include "gc/Cell.h"
@@ -3267,6 +3268,13 @@ int32_t Float32ToFloat16(float value) {
 void DateFillLocalTimeSlots(DateObject* dateObj) {
   AutoUnsafeCallWithABI unsafe;
   dateObj->fillLocalTimeSlots();
+}
+
+double DateNow(JSContext* cx) {
+  AutoUnsafeCallWithABI unsafe;
+
+  // ClippedTime can return non-canonical NaN, so canonicalize explicitly.
+  return JS::CanonicalizeNaN(js::DateNow(cx).toDouble());
 }
 
 JSAtom* AtomizeStringNoGC(JSContext* cx, JSString* str) {
