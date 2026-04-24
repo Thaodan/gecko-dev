@@ -2171,6 +2171,12 @@ void MacroAssembler::branchTestMagic(Condition cond, const Address& valaddr,
   B(label, cond);
 }
 
+void MacroAssembler::branchTestMagic(Condition cond, const BaseIndex& valaddr,
+                                     JSWhyMagic why, Label* label) {
+  uint64_t magic = MagicValue(why).asRawBits();
+  branchPtr(cond, valaddr, ImmWord(magic), label);
+}
+
 template <typename T>
 void MacroAssembler::branchTestValue(Condition cond, const T& lhs,
                                      const ValueOperand& rhs, Label* label) {

@@ -2028,6 +2028,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   inline void branchTestMagic(Condition cond, const Address& valaddr,
                               JSWhyMagic why, Label* label) PER_ARCH;
+  inline void branchTestMagic(Condition cond, const BaseIndex& valaddr,
+                              JSWhyMagic why, Label* label) PER_ARCH;
 
   inline void branchTestMagicValue(Condition cond, const ValueOperand& val,
                                    JSWhyMagic why, Label* label);
