@@ -361,7 +361,6 @@ static constexpr auto AsmBufSettings = js::jit::AssemblerBufferSettings{
     .instSize = InstSize,
     .guardSize = 1,
     .headerSize = 1,
-    .instBufferAlign = 0,
     .pcBias = 0,
     .alignFillInst = Instr::AlignFiller(0),
     .nopFillInst = Instr::NoopFiller(0),

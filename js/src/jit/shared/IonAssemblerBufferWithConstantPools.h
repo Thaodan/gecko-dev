@@ -512,9 +512,6 @@ struct AssemblerBufferSettings {
   // instruction sized units.
   unsigned headerSize;
 
-  // The buffer should be aligned to this address.
-  size_t instBufferAlign;
-
   // The bias on pc relative addressing mode offsets, in units of bytes. The
   // ARM has a bias of 8 bytes.
   unsigned pcBias;
@@ -596,9 +593,6 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
 
   // The current working pool. Copied out as needed before resetting.
   Pool pool_;
-
-  // The buffer should be aligned to this address.
-  static constexpr size_t InstBufferAlign = settings.instBufferAlign;
 
   struct PoolInfo {
     // The index of the first entry in this pool.
