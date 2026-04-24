@@ -79,7 +79,7 @@ export class SelectControlBaseElement extends MozLitElement {
   }
 
   get hasValue() {
-    return this.value === 0 || !!this.value;
+    return this.value === 0 || this.value === false || !!this.value;
   }
 
   set focusedIndex(newIndex) {
@@ -100,6 +100,11 @@ export class SelectControlBaseElement extends MozLitElement {
     }
   }
 
+  focus() {
+    this.childElements[this.focusableIndex]?.focus();
+    this.#focusedIndex = undefined;
+  }
+
   get focusableIndex() {
     let activeEl = this.getRootNode().activeElement;
     let childElFocused =
@@ -107,8 +112,10 @@ export class SelectControlBaseElement extends MozLitElement {
 
     if (
       this.#checkedIndex != undefined &&
-      this.#value &&
-      (this.type == "radio" || !childElFocused)
+      this.hasValue &&
+      (this.type == "radio" ||
+        !childElFocused ||
+        this.#focusedIndex == undefined)
     ) {
       return this.#checkedIndex;
     }

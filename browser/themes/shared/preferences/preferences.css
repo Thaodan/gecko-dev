@@ -385,11 +385,6 @@ setting-group:has(> moz-card).spotlight {
   margin-inline-start: 6px !important;
 }
 
-#updateRadioGroup > radio {
-  min-height: 30px;
-  margin: 2px 0;
-}
-
 #filter {
   flex: 1;
   margin: 4px 0 8px;
@@ -1187,15 +1182,6 @@ menulist[indicator="true"] > menupopup menuitem[indicator="true"]:not([image]) >
 /* Menulist styles */
 .label-item {
   font-size: 0.8em;
-}
-
-.updateSettingCrossUserWarningContainer {
-  margin-block-end: 17px;
-}
-
-#updateSettingCrossUserWarningDesc {
-  padding-inline-start: calc(16px + 6px); /* radio-check's width + margin-inline-end */
-  margin-block-start: 20px;
 }
 
 richlistitem .text-link {
