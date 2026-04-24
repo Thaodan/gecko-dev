@@ -1792,9 +1792,8 @@ void BrowserChild::HandleRealMouseButtonEvent(
   Maybe<WidgetPointerEvent> pointerEvent;
   Maybe<WidgetMouseEvent> mouseEvent;
   if (aMouseOrPointerEvent.mClass == ePointerEventClass) {
-    MOZ_DIAGNOSTIC_ASSERT(aMouseOrPointerEvent.AsPointerEvent());
     pointerEvent.emplace(
-        static_cast<const WidgetPointerEvent&>(aMouseOrPointerEvent));
+        WidgetPointerEvent::MakeCopyFromMouseEvent(aMouseOrPointerEvent));
   } else {
     MOZ_DIAGNOSTIC_ASSERT(!aMouseOrPointerEvent.AsPointerEvent());
     MOZ_DIAGNOSTIC_ASSERT(!aMouseOrPointerEvent.AsDragEvent());
