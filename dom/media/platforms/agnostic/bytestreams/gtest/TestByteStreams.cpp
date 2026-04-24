@@ -1528,16 +1528,16 @@ static nsTArray<uint8_t> BuildSEINALU(bool aInclude137, bool aInclude144) {
     nalu.AppendElement(137);  // payloadType
     nalu.AppendElement(24);   // payloadSize
     // H.265 primary order: G[0], B[1], R[2] — values chosen as 50000 = 1.0f
-    AppendU16BE(nalu, 50000);    // G x
-    AppendU16BE(nalu, 25000);    // G y
-    AppendU16BE(nalu, 15000);    // B x
-    AppendU16BE(nalu, 7500);     // B y
-    AppendU16BE(nalu, 35000);    // R x
-    AppendU16BE(nalu, 17500);    // R y
-    AppendU16BE(nalu, 15635);    // white point x
-    AppendU16BE(nalu, 16450);    // white point y
-    AppendU32BE(nalu, 10000000); // max luminance (10000000/10000 = 1000.0f)
-    AppendU32BE(nalu, 100);      // min luminance (100/10000 = 0.01f)
+    AppendU16BE(nalu, 50000);     // G x
+    AppendU16BE(nalu, 25000);     // G y
+    AppendU16BE(nalu, 15000);     // B x
+    AppendU16BE(nalu, 7500);      // B y
+    AppendU16BE(nalu, 35000);     // R x
+    AppendU16BE(nalu, 17500);     // R y
+    AppendU16BE(nalu, 15635);     // white point x
+    AppendU16BE(nalu, 16450);     // white point y
+    AppendU32BE(nalu, 10000000);  // max luminance (10000000/10000 = 1000.0f)
+    AppendU32BE(nalu, 100);       // min luminance (100/10000 = 0.01f)
   }
 
   if (aInclude144) {

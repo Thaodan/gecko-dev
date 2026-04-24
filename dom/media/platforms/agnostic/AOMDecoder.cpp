@@ -832,9 +832,8 @@ mozilla::Maybe<mozilla::gfx::HDRMetadata> AOMDecoder::ReadMetadataOBUHDR(
       float maxLuminance = maxL.unwrap() / kMaxLuminanceDivisor;
       float minLuminance = minL.unwrap() / kMinLuminanceDivisor;
 
-      hdr.mSmpte2086 = Some(gfx::Smpte2086Metadata{red, green, blue,
-                                                    whitePoint, maxLuminance,
-                                                    minLuminance});
+      hdr.mSmpte2086 = Some(gfx::Smpte2086Metadata{red, green, blue, whitePoint,
+                                                   maxLuminance, minLuminance});
       hasMDCV = true;
     } else if (metadataType == kMetadataTypeCLL) {
       if (payloadLen < 4) {

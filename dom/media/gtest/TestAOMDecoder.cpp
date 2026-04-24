@@ -11,7 +11,8 @@ using namespace mozilla;
 
 // AV1 §6.7.4: primary_chromaticity is 0.16 fixed-point (2^16 = 65536).
 static constexpr float kAV1PrimariesDivisor = 65536.0f;
-// luminance_max is 24.8 fixed-point (2^8 = 256), luminance_min is 18.14 (2^14 = 16384).
+// luminance_max is 24.8 fixed-point (2^8 = 256), luminance_min is 18.14 (2^14 =
+// 16384).
 static constexpr float kAV1MaxLumDivisor = 256.0f;
 static constexpr float kAV1MinLumDivisor = 16384.0f;
 
@@ -60,16 +61,16 @@ static nsTArray<uint8_t> BuildMDCVPayload() {
   //         WP=(15635,16450), maxLum=10000000, minLum=100
   // Expected: R.x=35000/65536, maxLum=10000000/256, minLum=100/16384
   nsTArray<uint8_t> p;
-  AppendU16BE(p, 35000);    // R x
-  AppendU16BE(p, 17500);    // R y
-  AppendU16BE(p, 50000);    // G x
-  AppendU16BE(p, 25000);    // G y
-  AppendU16BE(p, 15000);    // B x
-  AppendU16BE(p, 7500);     // B y
-  AppendU16BE(p, 15635);    // white point x
-  AppendU16BE(p, 16450);    // white point y
-  AppendU32BE(p, 10000000); // max luminance (24.8 fixed-point)
-  AppendU32BE(p, 100);      // min luminance (18.14 fixed-point)
+  AppendU16BE(p, 35000);     // R x
+  AppendU16BE(p, 17500);     // R y
+  AppendU16BE(p, 50000);     // G x
+  AppendU16BE(p, 25000);     // G y
+  AppendU16BE(p, 15000);     // B x
+  AppendU16BE(p, 7500);      // B y
+  AppendU16BE(p, 15635);     // white point x
+  AppendU16BE(p, 16450);     // white point y
+  AppendU32BE(p, 10000000);  // max luminance (24.8 fixed-point)
+  AppendU32BE(p, 100);       // min luminance (18.14 fixed-point)
   return p;
 }
 

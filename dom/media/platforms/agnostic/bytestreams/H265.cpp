@@ -1323,9 +1323,8 @@ mozilla::Maybe<mozilla::gfx::HDRMetadata> H265::ParseSEIHDRMetadata(
       float maxLuminance = maxL.unwrap() / kLuminanceDivisor;
       float minLuminance = minL.unwrap() / kLuminanceDivisor;
 
-      hdr.mSmpte2086 = Some(gfx::Smpte2086Metadata{red, green, blue,
-                                                    whitePoint, maxLuminance,
-                                                    minLuminance});
+      hdr.mSmpte2086 = Some(gfx::Smpte2086Metadata{red, green, blue, whitePoint,
+                                                   maxLuminance, minLuminance});
       hasMasteringDisplay = true;
     } else if (payloadType == kSEIContentLightLevelType) {
       if (payloadSize != 4) {

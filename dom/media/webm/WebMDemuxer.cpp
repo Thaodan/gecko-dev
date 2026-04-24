@@ -418,10 +418,8 @@ static Maybe<gfx::HDRMetadata> ParseWebMMasteringMetadata(
         static_cast<float>(aParams.primary_b_chromacity_x);
     smpte.displayPrimaryBlue.y =
         static_cast<float>(aParams.primary_b_chromacity_y);
-    smpte.whitePoint.x =
-        static_cast<float>(aParams.white_point_chromaticity_x);
-    smpte.whitePoint.y =
-        static_cast<float>(aParams.white_point_chromaticity_y);
+    smpte.whitePoint.x = static_cast<float>(aParams.white_point_chromaticity_x);
+    smpte.whitePoint.y = static_cast<float>(aParams.white_point_chromaticity_y);
     smpte.maxLuminance = static_cast<float>(aParams.luminance_max);
     smpte.minLuminance = static_cast<float>(aParams.luminance_min);
     hdr.mSmpte2086 = Some(smpte);
