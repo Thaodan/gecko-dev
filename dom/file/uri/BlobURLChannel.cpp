@@ -11,6 +11,7 @@
 #include "mozilla/dom/BlobImpl.h"
 #include "mozilla/dom/BlobURL.h"
 #include "mozilla/dom/BlobURLInputStream.h"
+#include "nsQueryObject.h"
 
 using namespace mozilla::dom;
 
@@ -54,8 +55,7 @@ nsresult BlobURLChannel::OpenContentStream(bool aAsync,
   nsresult rv = GetURI(getter_AddRefs(uri));
   NS_ENSURE_SUCCESS(rv, NS_ERROR_MALFORMED_URI);
 
-  RefPtr<BlobURL> blobURL;
-  rv = uri->QueryInterface(kHOSTOBJECTURICID, getter_AddRefs(blobURL));
+  RefPtr<BlobURL> blobURL = do_QueryObject(uri);
 
   if (NS_WARN_IF(NS_FAILED(rv)) || NS_WARN_IF(!blobURL)) {
     return NS_ERROR_MALFORMED_URI;

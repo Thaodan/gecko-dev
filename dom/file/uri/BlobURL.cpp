@@ -10,11 +10,9 @@
 #include "nsIClassInfoImpl.h"
 #include "nsIObjectInputStream.h"
 #include "nsIObjectOutputStream.h"
+#include "nsQueryObject.h"
 
 using namespace mozilla::dom;
-
-static NS_DEFINE_CID(kThisSimpleURIImplementationCID,
-                     NS_THIS_SIMPLEURI_IMPLEMENTATION_CID);
 
 NS_IMPL_ADDREF_INHERITED(BlobURL, mozilla::net::nsSimpleURI)
 NS_IMPL_RELEASE_INHERITED(BlobURL, mozilla::net::nsSimpleURI)
@@ -25,16 +23,16 @@ NS_IMPL_CLASSINFO(BlobURL, nullptr, nsIClassInfo::THREADSAFE,
 NS_IMPL_CI_INTERFACE_GETTER0(BlobURL)
 
 NS_INTERFACE_MAP_BEGIN(BlobURL)
-  if (aIID.Equals(kHOSTOBJECTURICID))
-    foundInterface = static_cast<nsIURI*>(this);
-  else if (aIID.Equals(kThisSimpleURIImplementationCID)) {
+  if (aIID.Equals(NS_GET_IID(nsSimpleURI))) {
     // Need to return explicitly here, because if we just set foundInterface
     // to null the NS_INTERFACE_MAP_END_INHERITING will end up calling into
-    // nsSimplURI::QueryInterface and finding something for this CID.
+    // nsSimpleURI::QueryInterface and finding something for this CID.
     *aInstancePtr = nullptr;
     return NS_NOINTERFACE;
-  } else
-    NS_IMPL_QUERY_CLASSINFO(BlobURL)
+  }
+
+  NS_IMPL_QUERY_CLASSINFO(BlobURL)
+  NS_INTERFACE_MAP_ENTRY_CONCRETE(BlobURL)
 NS_INTERFACE_MAP_END_INHERITING(mozilla::net::nsSimpleURI)
 
 BlobURL::BlobURL() : mRevoked(false) {}
@@ -117,8 +115,7 @@ nsresult BlobURL::EqualsInternal(
     return NS_OK;
   }
 
-  RefPtr<BlobURL> otherUri;
-  aOther->QueryInterface(kHOSTOBJECTURICID, getter_AddRefs(otherUri));
+  RefPtr<BlobURL> otherUri = do_QueryObject(aOther);
   if (!otherUri) {
     *aResult = false;
     return NS_OK;

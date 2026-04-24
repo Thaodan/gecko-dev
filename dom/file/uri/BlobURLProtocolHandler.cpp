@@ -33,6 +33,7 @@
 #include "nsIPrincipal.h"
 #include "nsIUUIDGenerator.h"
 #include "nsNetUtil.h"
+#include "nsQueryObject.h"
 #include "nsReadableUtils.h"
 
 #define RELEASING_TIMER 5000
@@ -865,10 +866,8 @@ bool BlobURLProtocolHandler::GetBlobURLPrincipal(nsIURI* aURI,
   MOZ_ASSERT(aURI);
   MOZ_ASSERT(aPrincipal);
 
-  RefPtr<BlobURL> blobURL;
-  nsresult rv =
-      aURI->QueryInterface(kHOSTOBJECTURICID, getter_AddRefs(blobURL));
-  if (NS_FAILED(rv) || !blobURL) {
+  RefPtr<BlobURL> blobURL = do_QueryObject(aURI);
+  if (!blobURL) {
     return false;
   }
 
