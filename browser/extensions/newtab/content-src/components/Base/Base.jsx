@@ -1054,7 +1054,7 @@ export class BaseContent extends React.PureComponent {
             </main>
           </div>
           <ConfirmDialog />
-          <menu className="personalizeButtonWrapper">
+          <menu className="personalizeButtonWrapper nova-enabled">
             <CustomizeMenu
               onClose={this.closeCustomizationMenu}
               onOpen={this.openCustomizationMenu}
@@ -1084,6 +1084,17 @@ export class BaseContent extends React.PureComponent {
               widgetsEnabled={prefs["widgets.enabled"]}
               dispatch={this.props.dispatch}
             />
+            {shouldShowOMCHighlight(
+              this.props.Messages,
+              "CustomWallpaperHighlight"
+            ) && (
+              <MessageWrapper dispatch={this.props.dispatch}>
+                <WallpaperFeatureHighlight
+                  position="inset-block-start inset-inline-start"
+                  dispatch={this.props.dispatch}
+                />
+              </MessageWrapper>
+            )}
           </menu>
           {this.props.Notifications?.showNotifications && (
             <ErrorBoundary>

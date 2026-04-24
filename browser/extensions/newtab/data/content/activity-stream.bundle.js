@@ -18545,6 +18545,8 @@ function WallpaperFeatureHighlight({
   handleClick,
   handleBlock
 }) {
+  // @nova-cleanup(remove-pref): Remove the nova.enabled pref check and keep the Nova copy and image path as the default once Nova ships.
+  const isNova = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values["nova.enabled"]);
   const onDismiss = (0,external_React_namespaceObject.useCallback)(() => {
     handleDismiss();
     handleBlock();
@@ -18571,40 +18573,43 @@ function WallpaperFeatureHighlight({
     "data-l10n-id": "feature-highlight-wallpaper",
     feature: messageData.content.feature,
     dispatch: dispatch,
+    modalClassName: "wallpaper-feature-highlight-modal",
     message: /*#__PURE__*/external_React_default().createElement("div", {
       className: "wallpaper-feature-highlight-content"
     }, /*#__PURE__*/external_React_default().createElement("picture", {
-      className: "follow-section-button-highlight-image"
+      className: isNova ? "wallpaper-feature-highlight-image" : "follow-section-button-highlight-image"
     }, /*#__PURE__*/external_React_default().createElement("source", {
-      srcSet: messageData.content?.darkModeImageURL || "chrome://newtab/content/data/content/assets/highlights/omc-newtab-wallpapers.svg",
+      srcSet: messageData.content?.darkModeImageURL || (isNova ? "chrome://newtab/content/data/content/assets/highlights/firefox-mascot-prop-paintbucket-rgb.svg" : "chrome://newtab/content/data/content/assets/highlights/omc-newtab-wallpapers.svg"),
       media: "(prefers-color-scheme: dark)"
     }), /*#__PURE__*/external_React_default().createElement("source", {
-      srcSet: messageData.content?.imageURL || "chrome://newtab/content/data/content/assets/highlights/omc-newtab-wallpapers.svg",
+      srcSet: messageData.content?.imageURL || (isNova ? "chrome://newtab/content/data/content/assets/highlights/firefox-mascot-prop-paintbucket-rgb.svg" : "chrome://newtab/content/data/content/assets/highlights/omc-newtab-wallpapers.svg"),
       media: "(prefers-color-scheme: light)"
     }), /*#__PURE__*/external_React_default().createElement("img", {
-      width: "320",
-      height: "195",
+      width: isNova ? "207" : "320",
+      height: isNova ? "156" : "195",
       alt: ""
-    })), messageData.content?.cardTitle ? /*#__PURE__*/external_React_default().createElement("p", {
+    })), /*#__PURE__*/external_React_default().createElement("div", {
+      className: "wallpaper-feature-highlight-copy"
+    }, !isNova && messageData.content?.cardTitle ? /*#__PURE__*/external_React_default().createElement("p", {
       className: "title"
     }, messageData.content.cardTitle) : /*#__PURE__*/external_React_default().createElement("p", {
       className: "title",
-      "data-l10n-id": messageData.content.title || "newtab-new-user-custom-wallpaper-title"
-    }), messageData.content?.cardMessage ? /*#__PURE__*/external_React_default().createElement("p", {
+      "data-l10n-id": isNova ? "newtab-wallpaper-feature-highlight-title" : messageData.content.title || "newtab-new-user-custom-wallpaper-title"
+    }), !isNova && messageData.content?.cardMessage ? /*#__PURE__*/external_React_default().createElement("p", {
       className: "subtitle"
     }, messageData.content.cardMessage) : /*#__PURE__*/external_React_default().createElement("p", {
       className: "subtitle",
-      "data-l10n-id": messageData.content.subtitle || "newtab-new-user-custom-wallpaper-subtitle"
-    }), /*#__PURE__*/external_React_default().createElement("span", {
+      "data-l10n-id": isNova ? "newtab-wallpaper-feature-highlight-subtitle" : messageData.content.subtitle || "newtab-new-user-custom-wallpaper-subtitle"
+    })), /*#__PURE__*/external_React_default().createElement("span", {
       className: "button-wrapper"
-    }, messageData.content?.cardCta ? /*#__PURE__*/external_React_default().createElement("moz-button", {
-      type: "default",
+    }, !isNova && messageData.content?.cardCta ? /*#__PURE__*/external_React_default().createElement("moz-button", {
+      type: isNova ? "primary" : "default",
       onClick: () => onToggleClick("open-customize-menu"),
       label: messageData.content.cardCta
     }) : /*#__PURE__*/external_React_default().createElement("moz-button", {
-      type: "default",
+      type: isNova ? "primary" : "default",
       onClick: () => onToggleClick("open-customize-menu"),
-      "data-l10n-id": messageData.content.cta || "newtab-new-user-custom-wallpaper-cta"
+      "data-l10n-id": isNova ? "newtab-wallpaper-feature-highlight-cta" : messageData.content.cta || "newtab-new-user-custom-wallpaper-cta"
     }))),
     toggle: /*#__PURE__*/external_React_default().createElement("div", {
       className: "icon icon-help"
@@ -19452,7 +19457,7 @@ class BaseContent extends (external_React_default()).PureComponent {
         locale: props.App.locale,
         spocsLoading: this.isSpocsOnDemandExpired
       })))), /*#__PURE__*/external_React_default().createElement(ConfirmDialog, null), /*#__PURE__*/external_React_default().createElement("menu", {
-        className: "personalizeButtonWrapper"
+        className: "personalizeButtonWrapper nova-enabled"
       }, /*#__PURE__*/external_React_default().createElement(CustomizeMenu, {
         onClose: this.closeCustomizationMenu,
         onOpen: this.openCustomizationMenu,
@@ -19479,7 +19484,12 @@ class BaseContent extends (external_React_default()).PureComponent {
         toggleWidgetsManagementPanel: this.toggleWidgetsManagementPanel,
         widgetsEnabled: prefs["widgets.enabled"],
         dispatch: this.props.dispatch
-      })), this.props.Notifications?.showNotifications && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(Notifications_Notifications, {
+      }), shouldShowOMCHighlight(this.props.Messages, "CustomWallpaperHighlight") && /*#__PURE__*/external_React_default().createElement(MessageWrapper, {
+        dispatch: this.props.dispatch
+      }, /*#__PURE__*/external_React_default().createElement(WallpaperFeatureHighlight, {
+        position: "inset-block-start inset-inline-start",
+        dispatch: this.props.dispatch
+      }))), this.props.Notifications?.showNotifications && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(Notifications_Notifications, {
         dispatch: this.props.dispatch
       })));
     }
