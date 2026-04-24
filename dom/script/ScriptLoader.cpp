@@ -3598,7 +3598,10 @@ void ScriptLoader::TryCacheRequest(ScriptLoadRequest* aRequest) {
   MOZ_ASSERT(mCache);
 
   if (mCache->IsLowMemory()) {
+    // If we're in the low-memory situation, do not create new cache entries.
+    // The stencil is no longer necessary after this point.
     TRACE_FOR_TEST(aRequest, "memorycache:memorypressure");
+    aRequest->ClearStencil();
     return;
   }
 
