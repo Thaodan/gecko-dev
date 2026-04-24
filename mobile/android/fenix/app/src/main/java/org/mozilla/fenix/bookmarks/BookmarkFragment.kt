@@ -151,6 +151,12 @@ class BookmarkFragment : Fragment(), SystemInsetsPaddedFragment {
                                             ),
                                         )
                                 },
+                                navigateToImportDialog = {
+                                    ImportBookmarksDialogFragment().show(
+                                        childFragmentManager,
+                                        ImportBookmarksDialogFragment.TAG,
+                                    )
+                                },
                                 shareBookmarks = { bookmarks ->
                                     navController.nav(
                                         R.id.bookmarkFragment,

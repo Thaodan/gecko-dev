@@ -85,6 +85,7 @@ class EditBookmarkFragment : Fragment(R.layout.fragment_edit_bookmark), SystemIn
                                                 ),
                                             )
                                     },
+                                    navigateToImportDialog = {},
                                     shareBookmarks = { bookmarks ->
                                         navController.nav(
                                             R.id.bookmarkFragment,

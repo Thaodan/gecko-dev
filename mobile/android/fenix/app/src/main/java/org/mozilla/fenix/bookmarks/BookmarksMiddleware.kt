@@ -36,6 +36,7 @@ private const val WARN_OPEN_ALL_SIZE = 15
  * @param navigateToBrowser Invoked when handling [BookmarkClicked] to navigate to the browser.
  * @param navigateToSearch Navigate to search.
  * @param navigateToSignIntoSync Invoked when handling [SignIntoSyncClicked].
+ * @param navigateToImportDialog Invoked to navigate to the import bookmarks dialog.
  * @param shareBookmarks Invoked when the share option is selected from a menu. Allows sharing of
  * one or more bookmarks
  * @param showTabsTray Invoked after opening tabs from menus.
@@ -59,6 +60,7 @@ internal class BookmarksMiddleware(
     private val navigateToBrowser: () -> Unit,
     private val navigateToSearch: () -> Unit,
     private val navigateToSignIntoSync: () -> Unit,
+    private val navigateToImportDialog: () -> Unit,
     private val shareBookmarks: (List<BookmarkItem.Bookmark>) -> Unit = {},
     private val showTabsTray: (isPrivateMode: Boolean) -> Unit,
     private val resolveFolderTitle: (BookmarkNode) -> String,
@@ -364,6 +366,9 @@ internal class BookmarksMiddleware(
                         store.dispatch(SelectFolderAction.FilteredFoldersLoaded(it))
                     }
                 }
+            }
+            ImportFileClicked -> {
+                navigateToImportDialog()
             }
             RootOverflowMenuClicked,
             RootOverflowMenuDismissed,

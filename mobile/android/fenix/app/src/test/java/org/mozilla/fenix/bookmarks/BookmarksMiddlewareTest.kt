@@ -44,6 +44,7 @@ class BookmarksMiddlewareTest {
     private lateinit var navigateToBrowser: () -> Unit
     private lateinit var navigateToSearch: () -> Unit
     private lateinit var navigateToSignIntoSync: () -> Unit
+    private lateinit var navigateToImportDialog: () -> Unit
     private lateinit var shareBookmarks: (List<BookmarkItem.Bookmark>) -> Unit
     private lateinit var showTabsTray: (Boolean) -> Unit
     private lateinit var getBrowsingMode: () -> BrowsingMode
@@ -97,6 +98,7 @@ class BookmarksMiddlewareTest {
         navigateToBrowser = { }
         navigateToSearch = { }
         navigateToSignIntoSync = { }
+        navigateToImportDialog = { }
         shareBookmarks = { }
         showTabsTray = { _ -> }
         getBrowsingMode = { BrowsingMode.Normal }
@@ -3349,6 +3351,7 @@ class BookmarksMiddlewareTest {
         navigateToBrowser = navigateToBrowser,
         navigateToSearch = navigateToSearch,
         navigateToSignIntoSync = navigateToSignIntoSync,
+        navigateToImportDialog = navigateToImportDialog,
         shareBookmarks = shareBookmarks,
         showTabsTray = showTabsTray,
         resolveFolderTitle = resolveFolderTitle,
