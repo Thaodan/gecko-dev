@@ -15516,14 +15516,14 @@ CodeGenerator::ToAddressOrBaseObjectElementIndex(Register elements,
 
 void CodeGenerator::emitStoreHoleCheck(Address dest, LSnapshot* snapshot) {
   Label bail;
-  masm.branchTestMagic(Assembler::Equal, dest, &bail);
+  masm.branchTestMagic(Assembler::Equal, dest, JS_ELEMENTS_HOLE, &bail);
   bailoutFrom(&bail, snapshot);
 }
 
 void CodeGenerator::emitStoreHoleCheck(BaseObjectElementIndex dest,
                                        LSnapshot* snapshot) {
   Label bail;
-  masm.branchTestMagic(Assembler::Equal, dest, &bail);
+  masm.branchTestMagic(Assembler::Equal, dest, JS_ELEMENTS_HOLE, &bail);
   bailoutFrom(&bail, snapshot);
 }
 
@@ -16363,7 +16363,7 @@ void CodeGenerator::visitIsNoIterAndBranch(LIsNoIterAndBranch* lir) {
   Label* ifTrue = getJumpLabelForBranch(lir->ifTrue());
   Label* ifFalse = getJumpLabelForBranch(lir->ifFalse());
 
-  masm.branchTestMagic(Assembler::Equal, input, ifTrue);
+  masm.branchTestMagicValue(Assembler::Equal, input, JS_NO_ITER_VALUE, ifTrue);
 
   if (!isNextBlock(lir->ifFalse()->lir())) {
     masm.jump(ifFalse);
@@ -18959,7 +18959,8 @@ void CodeGenerator::visitLoadElementV(LLoadElementV* load) {
 
   if (load->mir()->needsHoleCheck()) {
     Label testMagic;
-    masm.branchTestMagic(Assembler::Equal, out, &testMagic);
+    masm.branchTestMagicValue(Assembler::Equal, out, JS_ELEMENTS_HOLE,
+                              &testMagic);
     bailoutFrom(&testMagic, load->snapshot());
   } else {
 #ifdef DEBUG
@@ -18987,7 +18988,7 @@ void CodeGenerator::visitLoadElementHole(LLoadElementHole* lir) {
   masm.loadValue(BaseObjectElementIndex(elements, index), out);
 
   // If the value wasn't a hole, we're done. Otherwise, we'll load undefined.
-  masm.branchTestMagic(Assembler::NotEqual, out, &done);
+  masm.branchTestMagicValue(Assembler::NotEqual, out, JS_ELEMENTS_HOLE, &done);
 
   if (mir->needsNegativeIntCheck()) {
     Label loadUndefined;
@@ -19707,7 +19708,8 @@ void CodeGenerator::visitInArray(LInArray* lir) {
 
     NativeObject::elementsSizeMustNotOverflow();
     Address address = Address(elements, index * sizeof(Value));
-    masm.branchTestMagic(Assembler::Equal, address, &falseBranch);
+    masm.branchTestMagic(Assembler::Equal, address, JS_ELEMENTS_HOLE,
+                         &falseBranch);
   } else {
     Register index = ToRegister(lir->index());
 
@@ -19720,7 +19722,8 @@ void CodeGenerator::visitInArray(LInArray* lir) {
     masm.branch32(Assembler::BelowOrEqual, initLength, index, failedInitLength);
 
     BaseObjectElementIndex address(elements, index);
-    masm.branchTestMagic(Assembler::Equal, address, &falseBranch);
+    masm.branchTestMagic(Assembler::Equal, address, JS_ELEMENTS_HOLE,
+                         &falseBranch);
 
     if (mir->needsNegativeIntCheck()) {
       masm.jump(&trueBranch);
@@ -19749,7 +19752,8 @@ void CodeGenerator::visitGuardElementNotHole(LGuardElementNotHole* lir) {
 
   Label testMagic;
   source.match([&](const auto& source) {
-    masm.branchTestMagic(Assembler::Equal, source, &testMagic);
+    masm.branchTestMagic(Assembler::Equal, source, JS_ELEMENTS_HOLE,
+                         &testMagic);
   });
   bailoutFrom(&testMagic, lir->snapshot());
 }
@@ -21374,7 +21378,8 @@ void CodeGenerator::visitCheckReturn(LCheckReturn* ins) {
   Label noChecks;
   masm.branchTestObject(Assembler::Equal, returnValue, &noChecks);
   masm.branchTestUndefined(Assembler::NotEqual, returnValue, ool->entry());
-  masm.branchTestMagic(Assembler::Equal, thisValue, ool->entry());
+  masm.branchTestMagicValue(Assembler::Equal, thisValue,
+                            JS_UNINITIALIZED_LEXICAL, ool->entry());
   masm.moveValue(thisValue, output);
   masm.jump(ool->rejoin());
   masm.bind(&noChecks);
@@ -21429,7 +21434,8 @@ void CodeGenerator::visitCheckThis(LCheckThis* ins) {
   using Fn = bool (*)(JSContext*);
   OutOfLineCode* ool =
       oolCallVM<Fn, ThrowUninitializedThis>(ins, ArgList(), StoreNothing());
-  masm.branchTestMagic(Assembler::Equal, thisValue, ool->entry());
+  masm.branchTestMagicValue(Assembler::Equal, thisValue,
+                            JS_UNINITIALIZED_LEXICAL, ool->entry());
   masm.bind(ool->rejoin());
 }
 
@@ -21439,7 +21445,8 @@ void CodeGenerator::visitCheckThisReinit(LCheckThisReinit* ins) {
   using Fn = bool (*)(JSContext*);
   OutOfLineCode* ool =
       oolCallVM<Fn, ThrowInitializedThis>(ins, ArgList(), StoreNothing());
-  masm.branchTestMagic(Assembler::NotEqual, thisValue, ool->entry());
+  masm.branchTestMagicValue(Assembler::NotEqual, thisValue,
+                            JS_UNINITIALIZED_LEXICAL, ool->entry());
   masm.bind(ool->rejoin());
 }
 
@@ -22000,7 +22007,7 @@ void CodeGenerator::visitGuardIndexIsNotDenseElement(
   masm.spectreBoundsCheck32(index, capacity, spectreTemp, &notDense);
 
   BaseObjectElementIndex element(temp, index);
-  masm.branchTestMagic(Assembler::Equal, element, &notDense);
+  masm.branchTestMagic(Assembler::Equal, element, JS_ELEMENTS_HOLE, &notDense);
 
   bailout(lir->snapshot());
 

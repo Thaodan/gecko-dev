@@ -5266,7 +5266,8 @@ bool CacheIRCompiler::emitLoadDenseElementResult(ObjOperandId objId,
 
   // If we did not check the packed flag, we must check for a hole value.
   if (!expectPackedElements) {
-    masm.branchTestMagic(Assembler::Equal, element, failure->label());
+    masm.branchTestMagic(Assembler::Equal, element, JS_ELEMENTS_HOLE,
+                         failure->label());
   }
 
   masm.loadTypedOrValue(element, output);
@@ -5321,7 +5322,7 @@ bool CacheIRCompiler::emitGuardIndexIsNotDenseElement(ObjOperandId objId,
   masm.spectreBoundsCheck32(index, capacity, spectreScratch, &notDense);
 
   BaseValueIndex element(scratch, index);
-  masm.branchTestMagic(Assembler::Equal, element, &notDense);
+  masm.branchTestMagic(Assembler::Equal, element, JS_ELEMENTS_HOLE, &notDense);
 
   masm.jump(failure->label());
 
@@ -5619,7 +5620,8 @@ bool CacheIRCompiler::emitLoadDenseElementHoleResult(ObjOperandId objId,
   // Load the value.
   Label done;
   masm.loadValue(BaseObjectElementIndex(scratch1, index), output.valueReg());
-  masm.branchTestMagic(Assembler::NotEqual, output.valueReg(), &done);
+  masm.branchTestMagicValue(Assembler::NotEqual, output.valueReg(),
+                            JS_ELEMENTS_HOLE, &done);
 
   // Load undefined for the hole.
   masm.bind(&hole);
@@ -5688,7 +5690,8 @@ bool CacheIRCompiler::emitLoadDenseElementExistsResult(ObjOperandId objId,
 
   // Hole check.
   BaseObjectElementIndex element(scratch, index);
-  masm.branchTestMagic(Assembler::Equal, element, failure->label());
+  masm.branchTestMagic(Assembler::Equal, element, JS_ELEMENTS_HOLE,
+                       failure->label());
 
   EmitStoreBoolean(masm, true, output);
   return true;
@@ -5721,7 +5724,7 @@ bool CacheIRCompiler::emitLoadDenseElementHoleExistsResult(
   // Load value and replace with true.
   Label done;
   BaseObjectElementIndex element(scratch, index);
-  masm.branchTestMagic(Assembler::Equal, element, &hole);
+  masm.branchTestMagic(Assembler::Equal, element, JS_ELEMENTS_HOLE, &hole);
   EmitStoreBoolean(masm, true, output);
   masm.jump(&done);
 
@@ -7308,7 +7311,8 @@ bool CacheIRCompiler::emitStoreDenseElement(ObjOperandId objId,
                       Imm32(ObjectElements::NON_PACKED), failure->label());
   } else {
     // Hole check.
-    masm.branchTestMagic(Assembler::Equal, element, failure->label());
+    masm.branchTestMagic(Assembler::Equal, element, JS_ELEMENTS_HOLE,
+                         failure->label());
   }
 
   // Perform the store.
