@@ -655,11 +655,14 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
         }
 
         fun togglePrivateBrowsingMode(switchPBModeOn: Boolean = true) {
+            Log.i(TAG, "togglePrivateBrowsingMode: Waiting for $waitingTime ms for private browsing button to exist")
+            if (!privateBrowsingButton().waitForExists(waitingTime)) {
+                throw AssertionError("togglePrivateBrowsingMode: Private browsing button not found after $waitingTime ms")
+            }
+            Log.i(TAG, "togglePrivateBrowsingMode: Waited for $waitingTime ms for private browsing button to exist")
+
             // Switch to private browsing homescreen
             if (switchPBModeOn && !isPrivateModeEnabled()) {
-                Log.i(TAG, "togglePrivateBrowsingMode: Waiting for $waitingTime ms for private browsing button to exist")
-                privateBrowsingButton().waitForExists(waitingTime)
-                Log.i(TAG, "togglePrivateBrowsingMode: Waited for $waitingTime ms for private browsing button to exist")
                 Log.i(TAG, "togglePrivateBrowsingMode: Trying to click private browsing button")
                 privateBrowsingButton().click()
                 Log.i(TAG, "togglePrivateBrowsingMode: Clicked private browsing button")
@@ -667,11 +670,7 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
 
             // Switch to normal browsing homescreen
             if (!switchPBModeOn && isPrivateModeEnabled()) {
-                Log.i(TAG, "togglePrivateBrowsingMode: Waiting for $waitingTime ms for private browsing button to exist")
-                privateBrowsingButton().waitForExists(waitingTime)
-                Log.i(TAG, "togglePrivateBrowsingMode: Waited for $waitingTime ms for private browsing button to exist")
                 Log.i(TAG, "togglePrivateBrowsingMode: Trying to click private browsing button")
-                privateBrowsingButton().click()
                 privateBrowsingButton().click()
                 Log.i(TAG, "togglePrivateBrowsingMode: Clicked private browsing button")
             }
