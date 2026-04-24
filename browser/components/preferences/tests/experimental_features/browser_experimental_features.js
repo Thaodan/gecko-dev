@@ -20,19 +20,19 @@ add_task(async function testCanOpenWithPref() {
   ok(experimentalCategory, "The category exists");
   ok(!experimentalCategory.hidden, "The category is not hidden");
 
-  let settingPane = await TestUtils.waitForCondition(
-    () => doc.querySelector('setting-pane[data-category="paneExperimental"]'),
-    "Waiting for experimental setting-pane to get registered"
+  let categoryHeader = await TestUtils.waitForCondition(
+    () => doc.getElementById("firefoxExperimentalCategory"),
+    "Waiting for experimental features category to get initialized"
   );
   ok(
-    settingPane.hidden,
-    "The setting-pane should be hidden when Home is selected"
+    categoryHeader.hidden,
+    "The category header should be hidden when Home is selected"
   );
 
   EventUtils.synthesizeMouseAtCenter(experimentalCategory, {}, doc.ownerGlobal);
   await TestUtils.waitForCondition(
-    () => !settingPane.hidden,
-    "Waiting until pane is visible"
+    () => !categoryHeader.hidden,
+    "Waiting until category is visible"
   );
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
