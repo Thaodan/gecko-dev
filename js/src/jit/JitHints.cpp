@@ -77,7 +77,6 @@ bool JitHintsMap::recordIonCompilation(JSScript* script) {
   // Don't lower an existing threshold.
   if (threshold > hint->threshold()) {
     hint->setThreshold(threshold);
-    script->jitScript()->setIonThreshold(threshold);
   }
   return true;
 }
@@ -129,9 +128,6 @@ void JitHintsMap::recordInvalidation(JSScript* script) {
     auto p = ionHintMap_.lookup(key);
     if (p) {
       p->value()->incThreshold(InvalidationThresholdIncrement);
-      if (script->hasJitScript()) {
-        script->jitScript()->setIonThreshold(p->value()->threshold());
-      }
     }
   }
 }
