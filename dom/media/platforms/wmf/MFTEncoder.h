@@ -8,6 +8,7 @@
 #include <wrl.h>
 
 #include <deque>
+#include <queue>
 
 #include "EncoderConfig.h"
 #include "WMF.h"

@@ -22,6 +22,7 @@
 #include "nsISupports.h"
 #include "nsIRFPService.h"
 #include "nsStringFwd.h"
+#include <queue>
 
 // Defines regarding spoofed values of Navigator object. These spoofed values
 // are returned when 'privacy.resistFingerprinting' is true.
