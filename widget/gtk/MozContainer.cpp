@@ -6,6 +6,7 @@
 
 #include <glib.h>
 #include <gtk/gtk.h>
+#include <stdio.h>
 #include "mozilla/WidgetUtilsGtk.h"
 #include "nsWindow.h"
 #ifdef MOZ_WAYLAND

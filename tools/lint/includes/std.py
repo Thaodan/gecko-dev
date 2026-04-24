@@ -735,7 +735,6 @@ capi = {
         "puts",
         "putw",
         "remove",
-        "rename",
         "rewind",
         "scanf",
         "setbuf",

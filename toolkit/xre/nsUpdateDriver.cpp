@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <stdlib.h>
+#include <stdio.h>
 #include "nsUpdateDriver.h"
 
 #include "nsDebug.h"

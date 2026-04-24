@@ -9,6 +9,7 @@
 #include <IOKit/hid/IOHIDBase.h>
 #include <IOKit/hid/IOHIDKeys.h>
 #include <IOKit/hid/IOHIDManager.h>
+#include <stdio.h>
 
 #include <vector>
 
