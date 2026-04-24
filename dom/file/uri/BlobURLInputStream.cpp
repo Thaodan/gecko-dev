@@ -361,7 +361,9 @@ void BlobURLInputStream::RetrieveBlobData(const MutexAutoLock& aProofOfLock) {
 
   auto cleanupOnEarlyExit = MakeScopeExit([&] {
     mState = State::ERROR;
-    mError = NS_ERROR_FAILURE;
+    if (NS_SUCCEEDED(mError)) {
+      mError = NS_ERROR_FAILURE;
+    }
     NS_ReleaseOnMainThread("BlobURLInputStream::mChannel", mChannel.forget());
     NotifyWaitTargets(aProofOfLock);
   });
@@ -388,14 +390,9 @@ void BlobURLInputStream::RetrieveBlobData(const MutexAutoLock& aProofOfLock) {
   nsAutoString partKey;
   cookieJarSettings->GetPartitionKey(partKey);
 
-  bool ok = XRE_IsParentProcess();
-  if (!ok) {
-    // check if inner scheme of blobURL is not http and https
-    ok = !StringBeginsWith(mBlobURLSpec, "blob:http://"_ns) &&
-         !StringBeginsWith(mBlobURLSpec, "blob:https://"_ns);
-  }
-
-  if (ok) {
+  // If we're in the parent process, perform the fetch directly from the store.
+  // If we're in a content process, we'll instead perform the fetch over IPC.
+  if (XRE_IsParentProcess()) {
     RefPtr<BlobImpl> blobImpl;
 
     // Since revoked blobs are also retrieved, it is possible that the blob no
@@ -409,8 +406,8 @@ void BlobURLInputStream::RetrieveBlobData(const MutexAutoLock& aProofOfLock) {
       return;
     }
 
-    if (NS_WARN_IF(
-            NS_FAILED(StoreBlobImplStream(blobImpl.forget(), aProofOfLock)))) {
+    mError = StoreBlobImplStream(blobImpl.forget(), aProofOfLock);
+    if (NS_WARN_IF(NS_FAILED(mError))) {
       return;
     }
 
@@ -446,16 +443,19 @@ void BlobURLInputStream::RetrieveBlobData(const MutexAutoLock& aProofOfLock) {
               if (self->mState == State::WAITING) {
                 RefPtr<BlobImpl> blobImpl =
                     IPCBlobUtils::Deserialize(aResult.get_IPCBlob());
-                if (blobImpl && self->StoreBlobImplStream(blobImpl.forget(),
-                                                          lock) == NS_OK) {
-                  self->mState = State::READY;
-                  // By design, execution can only reach here when a caller has
-                  // called AsyncWait or AsyncLengthWait on this stream. The
-                  // underlying stream is valid, but the caller should not be
-                  // informed until that stream has data to read or it is
-                  // closed.
-                  self->WaitOnUnderlyingStream(lock);
-                  return;
+                if (blobImpl) {
+                  self->mError =
+                      self->StoreBlobImplStream(blobImpl.forget(), lock);
+                  if (NS_SUCCEEDED(self->mError)) {
+                    self->mState = State::READY;
+                    // By design, execution can only reach here when a caller
+                    // has called AsyncWait or AsyncLengthWait on this stream.
+                    // The underlying stream is valid, but the caller should not
+                    // be informed until that stream has data to read or it is
+                    // closed.
+                    self->WaitOnUnderlyingStream(lock);
+                    return;
+                  }
                 }
               } else {
                 MOZ_ASSERT(self->mState == State::CLOSED);
@@ -463,12 +463,14 @@ void BlobURLInputStream::RetrieveBlobData(const MutexAutoLock& aProofOfLock) {
                 self->NotifyWaitTargets(lock);
                 return;
               }
+            } else if (aResult.type() == BlobURLDataRequestResult::Tnsresult) {
+              self->mError = aResult.get_nsresult();
             }
             NS_WARNING("Blob data was not retrieved!");
             self->mState = State::ERROR;
-            self->mError = aResult.type() == BlobURLDataRequestResult::Tnsresult
-                               ? aResult.get_nsresult()
-                               : NS_ERROR_FAILURE;
+            if (NS_SUCCEEDED(self->mError)) {
+              self->mError = NS_ERROR_FAILURE;
+            }
             NS_ReleaseOnMainThread("BlobURLInputStream::mChannel",
                                    self->mChannel.forget());
             self->NotifyWaitTargets(lock);
@@ -515,7 +517,7 @@ nsresult BlobURLInputStream::StoreBlobImplStream(
     uint64_t end = contentRange->End();
     RefPtr<BlobImpl> slice =
         blobImpl->CreateSlice(start, end - start + 1, blobContentType, result);
-    if (!result.Failed()) {
+    if (NS_WARN_IF(result.Failed())) {
       return NS_ERROR_NET_PARTIAL_TRANSFER;
     }
 
