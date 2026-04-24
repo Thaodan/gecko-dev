@@ -491,20 +491,35 @@ nsresult BlobURLInputStream::StoreBlobImplStream(
   nsAutoString blobContentType;
   nsAutoCString channelContentType;
 
-  // If a Range header was in the request then fetch/XHR will have set a
-  // ContentRange on the channel earlier so we may slice the blob now.
   blobImpl->GetType(blobContentType);
-  const RefPtr<mozilla::net::ContentRange>& contentRange =
-      mChannel->ContentRange();
-  if (contentRange) {
+
+  // If a Range header was in the request then fetch/XHR will have set a request
+  // content range on the channel earlier so we may slice the blob now.
+  if (mChannel->GetRequestContentRange()) {
+    // Convert the requested content range into a response ContentRange. This
+    // ensures the range is within the blobImpl's size.
     IgnoredErrorResult result;
+    uint64_t size = blobImpl->GetSize(result);
+    if (NS_WARN_IF(result.Failed())) {
+      return NS_ERROR_NO_CONTENT;
+    }
+    auto contentRange = MakeRefPtr<mozilla::net::ContentRange>(
+        *mChannel->GetRequestContentRange(), size);
+    if (NS_WARN_IF(!contentRange->IsValid())) {
+      return NS_ERROR_NET_PARTIAL_TRANSFER;
+    }
+    MOZ_ALWAYS_SUCCEEDS(mChannel->SetResponseContentRange(contentRange));
+
+    // Using this content range, perform a slice over the BlobImpl.
     uint64_t start = contentRange->Start();
     uint64_t end = contentRange->End();
     RefPtr<BlobImpl> slice =
         blobImpl->CreateSlice(start, end - start + 1, blobContentType, result);
     if (!result.Failed()) {
-      blobImpl = slice;
+      return NS_ERROR_NET_PARTIAL_TRANSFER;
     }
+
+    blobImpl = slice;
   }
 
   mChannel->GetContentType(channelContentType);

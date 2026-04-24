@@ -117,8 +117,4 @@ bool IsBlobURI(nsIURI* aUri);
 }  // namespace dom
 }  // namespace mozilla
 
-extern nsresult NS_SetChannelContentRangeForBlobURI(nsIChannel* aChannel,
-                                                    nsIURI* aURI,
-                                                    nsACString& aRangeHeader);
-
 #endif /* mozilla_dom_BlobURLProtocolHandler_h */

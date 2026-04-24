@@ -926,13 +926,14 @@ nsresult FetchDriver::HttpFetch(
 
   // Should set a Content-Range header for blob scheme, and also slice the
   // blob appropriately, so we process the Range header here for later use.
-  if (IsBlobURI(uri)) {
+  RefPtr<BlobURLChannel> blobChan = do_QueryObject(chan);
+  if (blobChan) {
     ErrorResult result;
     nsAutoCString range;
     mRequest->Headers()->Get("Range"_ns, range, result);
     MOZ_ASSERT(!result.Failed());
     if (!range.IsVoid()) {
-      rv = NS_SetChannelContentRangeForBlobURI(chan, uri, range);
+      rv = blobChan->SetRequestContentRangeHeader(range);
       if (NS_FAILED(rv)) {
         return rv;
       }
@@ -1158,12 +1159,9 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest) {
     // Should set a Content-Range header for blob scheme
     // (https://fetch.spec.whatwg.org/#scheme-fetch)
     nsAutoCString contentRange(VoidCString());
-    nsCOMPtr<nsIBaseChannel> baseChan = do_QueryInterface(mChannel);
-    if (baseChan) {
-      RefPtr<mozilla::net::ContentRange> range = baseChan->ContentRange();
-      if (range) {
-        range->AsHeader(contentRange);
-      }
+    RefPtr<BlobURLChannel> blobChan = do_QueryObject(mChannel);
+    if (blobChan && blobChan->GetResponseContentRange()) {
+      blobChan->GetResponseContentRange()->AsHeader(contentRange);
     }
 
     response = MakeSafeRefPtr<InternalResponse>(
@@ -1177,6 +1175,7 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest) {
       MOZ_ASSERT(!result.Failed());
     }
 
+    nsCOMPtr<nsIBaseChannel> baseChan = do_QueryInterface(mChannel);
     if (baseChan) {
       RefPtr<CMimeType> fullMimeType(baseChan->FullMimeType());
       if (fullMimeType) {
