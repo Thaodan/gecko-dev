@@ -328,7 +328,6 @@ enum class VideoRotation {
   kDegree_90 = 90,
   kDegree_180 = 180,
   kDegree_270 = 270,
-  // Keep in sync with VideoRotationValidator.
 };
 
 // Stores info relevant to presenting media frames.

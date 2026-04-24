@@ -211,20 +211,13 @@ struct ParamTraits<mozilla::MFMediaEngineError>
           mozilla::MFMediaEngineError::MF_MEDIA_ENGINE_ERR_ABORTED,
           mozilla::MFMediaEngineError::MF_MEDIA_ENGINE_ERR_ENCRYPTED> {};
 
-struct MFMediaEngineEventValidator {
-  using IntegralType = std::underlying_type_t<MFMediaEngineEvent>;
-
-  static bool IsLegalValue(const IntegralType e) {
-    // This enum is non-contiguous and the valid values could be changed by
-    // Microsoft.
-    return true;
-  }
-};
-
 template <>
 struct ParamTraits<mozilla::MFMediaEngineEvent>
-    : public EnumSerializer<mozilla::MFMediaEngineEvent,
-                            MFMediaEngineEventValidator> {};
+    : public ContiguousEnumSerializerInclusive<
+          mozilla::MFMediaEngineEvent,
+          mozilla::MFMediaEngineEvent::MF_MEDIA_ENGINE_EVENT_LOADSTART,
+          mozilla::MFMediaEngineEvent::
+              MF_MEDIA_ENGINE_EVENT_AUDIOENDPOINTCHANGE> {};
 
 }  // namespace IPC
 

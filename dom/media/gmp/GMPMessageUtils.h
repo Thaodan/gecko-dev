@@ -51,8 +51,8 @@ struct ParamTraits<GMPVideoCodecMode>
 
 template <>
 struct ParamTraits<GMPLogLevel>
-    : public ContiguousEnumSerializer<GMPLogLevel, kGMPLogDefault,
-                                      kGMPLogInvalid> {};
+    : public ContiguousEnumSerializerInclusive<GMPLogLevel, kGMPLogDefault,
+                                               kGMPLogInvalid> {};
 
 template <>
 struct ParamTraits<GMPLevel>
