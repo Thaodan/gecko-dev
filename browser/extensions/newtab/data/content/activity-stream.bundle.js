@@ -17190,6 +17190,7 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
       className: `open-customization-button${activationWindowClass ? ` ${activationWindowClass}` : ""}`,
       "data-l10n-id": "newtab-customize-panel-label",
       "aria-haspopup": "dialog",
+      "aria-expanded": this.props.showing ? "true" : "false",
       onClick: () => this.props.onOpen(),
       iconsrc: "chrome://global/skin/icons/edit-outline.svg",
       iconposition: "end",
@@ -17199,6 +17200,7 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
       className: `${activationWindowClass} personalize-button`,
       "data-l10n-id": "newtab-customize-panel-icon-button",
       "aria-haspopup": "dialog",
+      "aria-expanded": this.props.showing,
       onClick: () => this.props.onOpen()
     }, /*#__PURE__*/external_React_default().createElement("label", {
       "data-l10n-id": "newtab-customize-panel-icon-button-label"
