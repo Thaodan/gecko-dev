@@ -368,10 +368,19 @@ GeckoMediaPluginServiceChild::Observe(nsISupports* aSubject, const char* aTopic,
   GMP_LOG_DEBUG("%s::%s: aTopic=%s", __CLASS__, __FUNCTION__, aTopic);
   if (!strcmp(NS_XPCOM_SHUTDOWN_THREADS_OBSERVER_ID, aTopic)) {
     if (mServiceChild) {
-      MutexAutoLock lock(mMutex);
-      mozilla::SyncRunnable::DispatchToThread(
-          mGMPThread,
-          WrapRunnable(mServiceChild.get(), &PGMPServiceChild::Close));
+      // Resolve the GMP thread without holding mMutex across the
+      // SyncRunnable-dispatch. GetThread() acquires and releases the mutex
+      // internally, so this call site stays lock-free. The GMP thread may
+      // be processing RecvBeginShutdown, whose BeginShutdown() calls
+      // AssertOnGMPThread() which also takes mMutex in debug builds -
+      // holding the mutex across the sync dispatch would deadlock there.
+      nsCOMPtr<nsIThread> gmpThread;
+      nsresult rv = GetThread(getter_AddRefs(gmpThread));
+      if (NS_SUCCEEDED(rv) && gmpThread) {
+        mozilla::SyncRunnable::DispatchToThread(
+            gmpThread,
+            WrapRunnable(mServiceChild.get(), &PGMPServiceChild::Close));
+      }
       mServiceChild = nullptr;
     }
     ShutdownGMPThread();
