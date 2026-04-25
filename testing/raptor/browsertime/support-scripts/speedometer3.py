@@ -108,6 +108,10 @@ class Speedometer3Support(BasePythonSupport):
                 continue
             if self.is_additional_metric(measurement_name):
                 continue
+            # Only report suite-level totals (e.g. "Perf-Dashboard/total"),
+            # not per-task breakdowns (e.g. "Perf-Dashboard/Render/Async").
+            if measurement_name.count("/") > 1:
+                continue
             suite["subtests"].append(
                 self._build_subtest(measurement_name, replicates, test)
             )
