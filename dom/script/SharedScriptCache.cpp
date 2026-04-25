@@ -349,7 +349,7 @@ bool SharedScriptCache::GetCachedScriptSource(
     JS::loader::LoadedScript* loadedScript = lookup.Data().mResource;
     // NOTE: We don't check the SRIMetadata here, because this is not a
     //       request from <script> element.
-    stencil = loadedScript->GetStencil();
+    stencil = loadedScript->GetCachedStencil();
   } else {
     aRetval.setUndefined();
     return true;
@@ -392,7 +392,7 @@ static bool ShouldSave(JS::loader::LoadedScript* aLoadedScript,
   }
 
   if (aStrategy.mHasSourceLengthMin) {
-    size_t len = JS::GetScriptSourceLength(aLoadedScript->GetStencil());
+    size_t len = JS::GetScriptSourceLength(aLoadedScript->GetCachedStencil());
     if (len < aStrategy.mSourceLengthMin) {
       return false;
     }
@@ -527,7 +527,7 @@ void SharedScriptCache::UpdateDiskCache() {
       continue;
     }
 
-    if (!mEncodeItems.emplaceBack(loadedScript->GetStencil(),
+    if (!mEncodeItems.emplaceBack(loadedScript->GetCachedStencil(),
                                   std::move(loadedScript->SRI()),
                                   loadedScript)) {
       continue;

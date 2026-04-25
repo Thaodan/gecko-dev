@@ -205,18 +205,18 @@ class LoadedScript : public nsIMemoryReporter {
 
     // This script is received as a serialized stencil from the channel,
     // mSRIAndSerializedStencil holds the SRI and the serialized stencil, and
-    // mStencil holds the decoded stencil.
+    // mCachedStencil is unused.
     eSerializedStencil,
 
     // This script is cached from the previous load.
-    // mStencil holds the cached stencil, and mSRIAndSerializedStencil holds
-    // the SRI. mScriptData is unused.
+    // mCachedStencil holds the cached stencil, and mSRIAndSerializedStencil
+    // holds the SRI. mScriptData is unused.
     eCachedStencil,
 
     // This is a wasm module, which is used when the response mime type essence
     // is application/wasm.
     // mScriptData holds the wasm source as uint8_t from the channel.
-    // mStencil and mSRIAndSerializedStencil are unused.
+    // mCachedStencil and mSRIAndSerializedStencil are unused.
     eWasmBytes,
   };
 
@@ -257,11 +257,13 @@ class LoadedScript : public nsIMemoryReporter {
     mDataType = DataType::eSerializedStencil;
   }
 
-  void ConvertToCachedStencil(mozilla::dom::ReferrerPolicy aReferrerPolicy,
+  void ConvertToCachedStencil(JS::Stencil* aStencil,
+                              mozilla::dom::ReferrerPolicy aReferrerPolicy,
                               nsIURI* aBaseURL) {
-    MOZ_ASSERT(HasStencil());
+    MOZ_ASSERT(!IsCachedStencil());
     SetUnknownDataType();
     mDataType = DataType::eCachedStencil;
+    mCachedStencil = aStencil;
     mCachedReferrerPolicy = aReferrerPolicy;
     mCachedBaseURL = aBaseURL;
   }
@@ -385,21 +387,10 @@ class LoadedScript : public nsIMemoryReporter {
 
   // ==== Methods to access the stencil ====
 
-  bool HasStencil() const { return mStencil; }
-
-  Stencil* GetStencil() const {
-    MOZ_ASSERT(!IsUnknownDataType());
-    MOZ_ASSERT(HasStencil());
-    return mStencil;
+  Stencil* GetCachedStencil() const {
+    MOZ_ASSERT(IsCachedStencil());
+    return mCachedStencil;
   }
-
-  void SetStencil(Stencil* aStencil) {
-    MOZ_ASSERT(aStencil);
-    MOZ_ASSERT(!HasStencil());
-    mStencil = aStencil;
-  }
-
-  void ClearStencil() { mStencil = nullptr; }
 
   // ==== Methods to access the disk cache reference ====
 
@@ -560,8 +551,8 @@ class LoadedScript : public nsIMemoryReporter {
   //     or, if compression is enabled, ScriptBytecodeCompressedDataLayout.
   TranscodeBuffer mSRIAndSerializedStencil;
 
-  // Holds the stencil for the script.  This field is used in all DataType.
-  RefPtr<Stencil> mStencil;
+  // Holds the stencil for the script, cached for the subsequent requests.
+  RefPtr<Stencil> mCachedStencil;
 
   // The cache info channel used when saving the serialized Stencil to the
   // necko cache.

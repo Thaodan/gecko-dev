@@ -166,12 +166,12 @@ LoadedScript::LoadedScript(const LoadedScript& aOther)
       mIsEverHitFromMemoryCache(aOther.mIsEverHitFromMemoryCache),
       mURI(aOther.mURI),
       mReceivedScriptTextLength(0),
-      mStencil(aOther.mStencil) {
+      mCachedStencil(aOther.mCachedStencil) {
   MOZ_ASSERT(mURI);
   // NOTE: This is only for the cached stencil case.
   //       The script text and the serialized stencil are not reflected.
   MOZ_DIAGNOSTIC_ASSERT(aOther.mDataType == DataType::eCachedStencil);
-  MOZ_DIAGNOSTIC_ASSERT(mStencil);
+  MOZ_DIAGNOSTIC_ASSERT(mCachedStencil);
   MOZ_ASSERT(!mScriptData);
   MOZ_ASSERT(mSRIAndSerializedStencil.empty());
 
@@ -237,8 +237,8 @@ size_t LoadedScript::SizeOfIncludingThis(
 
   bytes += mSRIAndSerializedStencil.sizeOfExcludingThis(aMallocSizeOf);
 
-  if (mStencil) {
-    bytes += JS::SizeOfStencil(mStencil, aMallocSizeOf);
+  if (mCachedStencil) {
+    bytes += JS::SizeOfStencil(mCachedStencil, aMallocSizeOf);
   }
 
   return bytes;

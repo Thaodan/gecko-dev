@@ -274,14 +274,8 @@ class ScriptLoadRequest : public nsISupports,
 
   bool HasStencil() const { return !!mStencil; }
   JS::Stencil* GetStencil() const { return mStencil; }
-  void SetStencil(JS::Stencil* aStencil) {
-    mStencil = aStencil;
-    getLoadedScript()->SetStencil(aStencil);
-  }
-  void ClearStencil() {
-    mStencil = nullptr;
-    getLoadedScript()->ClearStencil();
-  }
+  void SetStencil(JS::Stencil* aStencil) { mStencil = aStencil; }
+  void ClearStencil() { mStencil = nullptr; }
 
   bool HasSourceMapURL() const { return mHasSourceMapURL_; }
   const nsString& GetSourceMapURL() const {

@@ -3568,7 +3568,6 @@ ScriptLoader::CacheBehavior ScriptLoader::GetCacheBehavior(
 
 void ScriptLoader::TryCacheRequest(ScriptLoadRequest* aRequest) {
   MOZ_ASSERT(aRequest->HasStencil());
-  MOZ_ASSERT(!aRequest->IsCachedStencil());
   MOZ_ASSERT(!aRequest->IsWasmBytes());
 
   if (aRequest->IsMarkedNotCacheable()) {
@@ -3589,8 +3588,7 @@ void ScriptLoader::TryCacheRequest(ScriptLoadRequest* aRequest) {
   }
 
   if (cacheBehavior == CacheBehavior::DoNothingExisting) {
-    // If there's a compatible cache entry, we'll keep the existing entry,
-    // and the current request's stencil is no longer necessary.
+    // If there's a compatible cache entry, we'll keep the existing entry.
     aRequest->ClearStencil();
     return;
   }
@@ -3599,7 +3597,6 @@ void ScriptLoader::TryCacheRequest(ScriptLoadRequest* aRequest) {
 
   if (mCache->IsLowMemory()) {
     // If we're in the low-memory situation, do not create new cache entries.
-    // The stencil is no longer necessary after this point.
     TRACE_FOR_TEST(aRequest, "memorycache:memorypressure");
     aRequest->ClearStencil();
     return;
@@ -3615,7 +3612,8 @@ void ScriptLoader::TryCacheRequest(ScriptLoadRequest* aRequest) {
   if (cacheBehavior == CacheBehavior::Insert) {
     loadedScript->SetSRIMetadata(aRequest->mIntegrity);
     auto loadData = MakeRefPtr<ScriptLoadData>(this, aRequest, loadedScript);
-    loadedScript->ConvertToCachedStencil(aRequest->ReferrerPolicy(),
+    loadedScript->ConvertToCachedStencil(aRequest->GetStencil(),
+                                         aRequest->ReferrerPolicy(),
                                          aRequest->BaseURL());
     if (loadedScript->mFetchCount == 0) {
       loadedScript->mFetchCount = 1;
@@ -3627,8 +3625,7 @@ void ScriptLoader::TryCacheRequest(ScriptLoadRequest* aRequest) {
     TRACE_FOR_TEST(aRequest, "memorycache:saved");
   } else {
     // The server response is not cacheable.
-    // Evict any existing cache, and also clear the current request's
-    // stencil, which is no longer necessary.
+    // Evict any existing cache.
 
     MOZ_ASSERT(cacheBehavior == CacheBehavior::Evict);
     ScriptHashKey key(this, aRequest, aRequest->ReferrerPolicy(),
@@ -3637,9 +3634,10 @@ void ScriptLoader::TryCacheRequest(ScriptLoadRequest* aRequest) {
     LOG(("ScriptLoader (%p): Evicting in-memory cache for %s.", this,
          aRequest->URI()->GetSpecOrDefault().get()));
 
-    aRequest->ClearStencil();
     TRACE_FOR_TEST(aRequest, "memorycache:evict");
   }
+
+  aRequest->ClearStencil();
 }
 
 /* static */
@@ -3835,9 +3833,11 @@ void ScriptLoader::RegisterForDiskCache(ScriptLoadRequest* aRequest) {
              "Web extension scripts are not compatible with the disk cache");
 
   LoadedScript* loadedScript = aRequest->getLoadedScript();
-  loadedScript->ConvertToCachedStencil(aRequest->ReferrerPolicy(),
-                                       aRequest->BaseURL());
+  loadedScript->ConvertToCachedStencil(
+      aRequest->GetStencil(), aRequest->ReferrerPolicy(), aRequest->BaseURL());
   mDiskCacheQueue.AppendElement(loadedScript);
+
+  aRequest->ClearStencil();
 }
 
 void ScriptLoader::LoadEventFired() {
@@ -3991,10 +3991,10 @@ void ScriptLoader::UpdateDiskCache() {
       continue;
     }
 
-    MOZ_ASSERT(loadedScript->HasStencil());
+    MOZ_ASSERT(loadedScript->IsCachedStencil());
 
     Vector<uint8_t> compressed;
-    if (!EncodeAndCompress(fc, loadedScript, loadedScript->GetStencil(),
+    if (!EncodeAndCompress(fc, loadedScript, loadedScript->GetCachedStencil(),
                            loadedScript->SRI(), compressed)) {
       loadedScript->DropDiskCacheReference();
       loadedScript->DropSRIOrSRIAndSerializedStencil();
@@ -4005,7 +4005,7 @@ void ScriptLoader::UpdateDiskCache() {
     // The pref being -1 means "no limit".
     if (diskCacheMaxSizeInKb > 0) {
       size_t sourceLength =
-          JS::GetScriptSourceLength(loadedScript->GetStencil());
+          JS::GetScriptSourceLength(loadedScript->GetCachedStencil());
       size_t expectedDiskCacheSize = sourceLength + compressed.length();
       if (expectedDiskCacheSize > size_t(diskCacheMaxSizeInKb) * 1024) {
         loadedScript->DropDiskCacheReference();
