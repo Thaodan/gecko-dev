@@ -439,8 +439,7 @@ bool nsBlockReflowContext::PlaceBlock(const ReflowInput& aReflowInput,
     }
   }
 
-  aLine->SetBounds(mWritingMode, mICoord,
-                   fragmentBStart,
+  aLine->SetBounds(mWritingMode, mICoord, fragmentBStart,
                    mMetrics.ISize(mWritingMode), mMetrics.BSize(mWritingMode),
                    mContainerSize);
 
