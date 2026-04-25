@@ -8,6 +8,7 @@
 #include "CrashAnnotations.h"
 #include "chrome/common/ipc_message_utils.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/IntegerTypeTraits.h"
 #include "nsExceptionHandler.h"
 #include "nsLiteralString.h"
