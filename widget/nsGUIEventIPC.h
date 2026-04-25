@@ -866,8 +866,7 @@ struct ParamTraits<mozilla::widget::IMENotification::MouseButtonEventData> {
 };
 
 template <>
-struct MOZ_ENUM_SERIALIZER_ALLOW_MIN_MISMATCH
-    ParamTraits<mozilla::widget::IMEMessage>
+struct ParamTraits<mozilla::widget::IMEMessage>
     : ContiguousEnumSerializerInclusive<
           mozilla::widget::IMEMessage,
           // FYI: mozilla::widget::NOTIFY_IME_OF_NOTHING is the actual lowest
@@ -1360,16 +1359,14 @@ struct ParamTraits<mozilla::PanGestureInput>
 };
 
 template <>
-struct MOZ_ENUM_SERIALIZER_ALLOW_SENTINEL_UPPER_BOUND
-    ParamTraits<mozilla::PinchGestureInput::PinchGestureType>
+struct ParamTraits<mozilla::PinchGestureInput::PinchGestureType>
     : public ContiguousEnumSerializerInclusive<
           mozilla::PinchGestureInput::PinchGestureType,
           mozilla::PinchGestureInput::PinchGestureType::PINCHGESTURE_START,
           mozilla::PinchGestureInput::sHighestPinchGestureType> {};
 
 template <>
-struct MOZ_ENUM_SERIALIZER_ALLOW_MIN_MISMATCH
-    ParamTraits<mozilla::PinchGestureInput::PinchGestureSource>
+struct ParamTraits<mozilla::PinchGestureInput::PinchGestureSource>
     : public ContiguousEnumSerializerInclusive<
           mozilla::PinchGestureInput::PinchGestureSource,
           // Set the min to TOUCH, to ensure UNKNOWN is never sent over IPC

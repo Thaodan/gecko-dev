@@ -65,8 +65,7 @@ struct ParamTraits<nsCursor>
     : ContiguousEnumSerializer<nsCursor, eCursor_standard, eCursorCount> {};
 
 template <>
-struct MOZ_ENUM_SERIALIZER_ALLOW_SENTINEL_UPPER_BOUND
-    ParamTraits<nsIWidget::TouchpadGesturePhase>
+struct ParamTraits<nsIWidget::TouchpadGesturePhase>
     : ContiguousEnumSerializerInclusive<
           nsIWidget::TouchpadGesturePhase,
           nsIWidget::TouchpadGesturePhase::PHASE_BEGIN,
