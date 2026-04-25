@@ -179,6 +179,10 @@ void ScriptLoadRequest::CacheEntryRevived(LoadedScript* aLoadedScript) {
 
 void ScriptLoadRequest::SetCacheEntry(LoadedScript* aLoadedScript,
                                       ScriptFetchOptions* aFetchOptions) {
+  // NOTE: Replace with SetStencil once the code to sync LoadedScript::mStencil
+  //       is removed.
+  mStencil = aLoadedScript->GetStencil();
+
   mFetchInfo =
       new ScriptFetchInfo(mKind, aLoadedScript->CachedReferrerPolicy(),
                           aFetchOptions, aLoadedScript->CachedBaseURL());

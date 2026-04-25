@@ -676,13 +676,6 @@ class LoadedScriptDelegate {
     GetLoadedScript()->DropSRIOrSRIAndSerializedStencil();
   }
 
-  bool HasStencil() const { return GetLoadedScript()->HasStencil(); }
-  Stencil* GetStencil() const { return GetLoadedScript()->GetStencil(); }
-  void SetStencil(Stencil* aStencil) {
-    GetLoadedScript()->SetStencil(aStencil);
-  }
-  void ClearStencil() { GetLoadedScript()->ClearStencil(); }
-
   void SetTookLongInPreviousRuns() {
     GetLoadedScript()->SetTookLongInPreviousRuns();
   }
