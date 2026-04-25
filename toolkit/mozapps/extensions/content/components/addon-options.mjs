@@ -1,10 +1,14 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-/* globals hasPermission, isAbuseReportSupported, getOptionsType,
-   isAddonOptionsUIAllowed */
 
-import { AboutAddonsHTMLElement } from "../aboutaddons-utils.mjs";
+import {
+  AboutAddonsHTMLElement,
+  hasPermission,
+  isAbuseReportSupported,
+  getOptionsType,
+  isAddonOptionsUIAllowed,
+} from "../aboutaddons-utils.mjs";
 
 export class AddonOptions extends AboutAddonsHTMLElement {
   static get markup() {

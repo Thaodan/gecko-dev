@@ -1,9 +1,8 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-/* globals openAmoInTab */
 
-import { AboutAddonsHTMLElement } from "../aboutaddons-utils.mjs";
+import { AboutAddonsHTMLElement, openAmoInTab } from "../aboutaddons-utils.mjs";
 
 const PREF_PRIVACY_POLICY_URL = "extensions.recommendations.privacyPolicyUrl";
 

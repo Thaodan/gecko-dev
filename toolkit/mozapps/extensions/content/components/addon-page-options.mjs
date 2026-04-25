@@ -1,11 +1,34 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-/* globals AddonManagerListenerHandler, PREFER_UPDATE_OVER_INSTALL_FOR_EXISTING_ADDON,
-   XPINSTALL_ENABLED, gViewController, installAddonsFromFilePicker,
-   checkForUpdates */
 
-import { AboutAddonsHTMLElement } from "../aboutaddons-utils.mjs";
+import {
+  AboutAddonsHTMLElement,
+  AddonManagerListenerHandler,
+  checkForUpdates,
+  installAddonsFromFilePicker,
+} from "../aboutaddons-utils.mjs";
+import { gViewController } from "../view-controller.mjs";
+
+const { AddonManager } = ChromeUtils.importESModule(
+  "resource://gre/modules/AddonManager.sys.mjs"
+);
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
+const lazy = {};
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "XPINSTALL_ENABLED",
+  "xpinstall.enabled",
+  true
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "PREFER_UPDATE_OVER_INSTALL_FOR_EXISTING_ADDON",
+  "extensions.webextensions.prefer-update-over-install-for-existing-addon",
+  false
+);
 
 class AddonPageOptions extends AboutAddonsHTMLElement {
   static get markup() {
@@ -100,11 +123,11 @@ class AddonPageOptions extends AboutAddonsHTMLElement {
     } else if (e.type === "showing") {
       this.installFromFile.setAttribute(
         "data-l10n-id",
-        PREFER_UPDATE_OVER_INSTALL_FOR_EXISTING_ADDON
+        lazy.PREFER_UPDATE_OVER_INSTALL_FOR_EXISTING_ADDON
           ? "addon-install-or-update-from-file"
           : "addon-install-from-file"
       );
-      this.installFromFile.hidden = !XPINSTALL_ENABLED;
+      this.installFromFile.hidden = !lazy.XPINSTALL_ENABLED;
     }
   }
 
@@ -117,7 +140,7 @@ class AddonPageOptions extends AboutAddonsHTMLElement {
         gViewController.loadView("updates/recent");
         break;
       case "install-from-file":
-        if (XPINSTALL_ENABLED) {
+        if (lazy.XPINSTALL_ENABLED) {
           installAddonsFromFilePicker();
         }
         break;

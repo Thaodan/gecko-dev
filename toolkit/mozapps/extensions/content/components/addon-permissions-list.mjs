@@ -1,7 +1,12 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-/* globals Extension, ExtensionPermissions */
+
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  Extension: "resource://gre/modules/Extension.sys.mjs",
+  ExtensionPermissions: "resource://gre/modules/ExtensionPermissions.sys.mjs",
+});
 
 import { AboutAddonsHTMLElement } from "../aboutaddons-utils.mjs";
 import { AddonCard } from "./addon-card.mjs";
@@ -43,7 +48,7 @@ class AddonPermissionsList extends AboutAddonsHTMLElement {
     let empty = { origins: [], permissions: [], data_collection: [] };
     let requiredPerms = { ...(this.addon.userPermissions ?? empty) };
     let optionalPerms = { ...(this.addon.optionalPermissions ?? empty) };
-    let grantedPerms = await ExtensionPermissions.get(this.addon.id);
+    let grantedPerms = await lazy.ExtensionPermissions.get(this.addon.id);
 
     // If optional permissions include <all_urls>, extension can request and
     // be granted permission for individual sites not listed in the manifest.
@@ -54,7 +59,7 @@ class AddonPermissionsList extends AboutAddonsHTMLElement {
     ];
     optionalPerms.origins = [...new Set(origins)];
 
-    let permissions = Extension.formatPermissionStrings(
+    let permissions = lazy.Extension.formatPermissionStrings(
       {
         permissions: requiredPerms,
         optionalPermissions: optionalPerms,
@@ -138,7 +143,7 @@ class AddonPermissionsList extends AboutAddonsHTMLElement {
           grantedPerms.data_collection.includes(perm);
 
         // If this is one of the "all sites" permissions
-        if (Extension.isAllSitesPermission(perm)) {
+        if (lazy.Extension.isAllSitesPermission(perm)) {
           // mark it as checked if ANY of the "all sites" permission is granted.
           checked = await AddonCard.optionalAllSitesGranted(this.addon.id);
           toggle.toggleAttribute("permission-all-sites", true);

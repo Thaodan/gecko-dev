@@ -1,15 +1,40 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-/* globals windowRoot, gViewController, getUpdateInstall, isInState,
-   ExtensionPermissions, shouldShowPermissionsPrompt, showPermissionsPrompt,
-   checkForUpdate, attachUpdateHandler, detachUpdateHandler, openAbuseReport,
-   openOptionsInTab, hasPermission, getScreenshotUrlForAddon, getOptionsType,
-   isAllowedInPrivateBrowsing, getAddonMessageInfo, ExtensionCommon,
-   Extension, recordRemoveInitiatedTelemetry, recordRemoveConfirmationTelemetry,
-   recordListItemManageTelemetry */
+/* globals windowRoot */
 
-import { AboutAddonsHTMLElement } from "../aboutaddons-utils.mjs";
+import { openAbuseReport } from "../abuse-reports.mjs";
+import {
+  AboutAddonsHTMLElement,
+  attachUpdateHandler,
+  checkForUpdate,
+  detachUpdateHandler,
+  getAddonMessageInfo,
+  getOptionsType,
+  getScreenshotUrlForAddon,
+  getUpdateInstall,
+  hasPermission,
+  isAllowedInPrivateBrowsing,
+  isInState,
+  openOptionsInTab,
+  shouldShowPermissionsPrompt,
+  showPermissionsPrompt,
+} from "../aboutaddons-utils.mjs";
+import { gViewController } from "../view-controller.mjs";
+
+const { AddonManager } = ChromeUtils.importESModule(
+  "resource://gre/modules/AddonManager.sys.mjs"
+);
+
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  Extension: "resource://gre/modules/Extension.sys.mjs",
+  ExtensionCommon: "resource://gre/modules/ExtensionCommon.sys.mjs",
+  ExtensionPermissions: "resource://gre/modules/ExtensionPermissions.sys.mjs",
+  recordListItemManageTelemetry: "chrome://global/content/ml/Utils.sys.mjs",
+  recordRemoveConfirmationTelemetry: "chrome://global/content/ml/Utils.sys.mjs",
+  recordRemoveInitiatedTelemetry: "chrome://global/content/ml/Utils.sys.mjs",
+});
 
 const PLUGIN_ICON_URL = "chrome://global/skin/icons/plugin.svg";
 const EXTENSION_ICON_URL =
@@ -202,13 +227,13 @@ export class AddonCard extends AboutAddonsHTMLElement {
       throw new Error("unknown permission type changed");
     }
 
-    let normalized = ExtensionPermissions.normalizeOptional(
+    let normalized = lazy.ExtensionPermissions.normalizeOptional(
       perms,
       addon.optionalPermissions
     );
 
     let policy = WebExtensionPolicy.getByID(addon.id);
-    ExtensionPermissions[action](addon.id, normalized, policy?.extension);
+    lazy.ExtensionPermissions[action](addon.id, normalized, policy?.extension);
   }
 
   async handleEvent(e) {
@@ -295,13 +320,13 @@ export class AddonCard extends AboutAddonsHTMLElement {
             }
             if (addon.type == "mlmodel") {
               const source = e.target.nodeName == "BUTTON" ? "details" : "list";
-              recordRemoveInitiatedTelemetry(addon, source);
+              lazy.recordRemoveInitiatedTelemetry(addon, source);
             }
             let { BrowserAddonUI } = windowRoot.ownerGlobal;
             let { remove, report } =
               await BrowserAddonUI.promptRemoveExtension(addon);
             if (addon.type == "mlmodel") {
-              recordRemoveConfirmationTelemetry(addon, remove);
+              lazy.recordRemoveConfirmationTelemetry(addon, remove);
             }
             if (remove) {
               await addon.uninstall(true);
@@ -319,7 +344,7 @@ export class AddonCard extends AboutAddonsHTMLElement {
           break;
         case "expand":
           if (addon.type == "mlmodel") {
-            recordListItemManageTelemetry(addon);
+            lazy.recordListItemManageTelemetry(addon);
           }
           gViewController.loadView(`detail/${this.addon.id}`);
           break;
@@ -369,13 +394,13 @@ export class AddonCard extends AboutAddonsHTMLElement {
           let extension = policy && policy.extension;
 
           if (e.target.value == "1") {
-            await ExtensionPermissions.add(
+            await lazy.ExtensionPermissions.add(
               addon.id,
               PRIVATE_BROWSING_PERMS,
               extension
             );
           } else {
-            await ExtensionPermissions.remove(
+            await lazy.ExtensionPermissions.remove(
               addon.id,
               PRIVATE_BROWSING_PERMS,
               extension
@@ -650,7 +675,7 @@ export class AddonCard extends AboutAddonsHTMLElement {
     this.setAttribute("addon-id", addon.id);
 
     this.card = AddonCard.fragment.firstElementChild;
-    let headingId = ExtensionCommon.makeWidgetId(`${addon.id}-heading`);
+    let headingId = lazy.ExtensionCommon.makeWidgetId(`${addon.id}-heading`);
     this.card.setAttribute("aria-labelledby", headingId);
 
     // Remove the toggle-disabled button(s) based on type.
@@ -779,7 +804,7 @@ export class AddonCard extends AboutAddonsHTMLElement {
     let perms = data.added || data.removed;
     let hasAllSites = false;
     for (let permission of perms.permissions.concat(perms.origins)) {
-      if (Extension.isAllSitesPermission(permission)) {
+      if (lazy.Extension.isAllSitesPermission(permission)) {
         hasAllSites = true;
         continue;
       }
@@ -799,8 +824,10 @@ export class AddonCard extends AboutAddonsHTMLElement {
 
   // Only covers optional_permissions in MV2 and all host permissions in MV3.
   static async optionalAllSitesGranted(addonId) {
-    let granted = await ExtensionPermissions.get(addonId);
-    return granted.origins.some(perm => Extension.isAllSitesPermission(perm));
+    let granted = await lazy.ExtensionPermissions.get(addonId);
+    return granted.origins.some(perm =>
+      lazy.Extension.isAllSitesPermission(perm)
+    );
   }
 }
 customElements.define("addon-card", AddonCard);

@@ -1,10 +1,18 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-/* globals gViewController, isManualUpdate, getUpdateInstall,
-   AddonManagerListenerHandler */
 
-const PREF_UI_LASTCATEGORY = "extensions.ui.lastCategory";
+import {
+  AddonManagerListenerHandler,
+  getUpdateInstall,
+  isManualUpdate,
+  PREF_UI_LASTCATEGORY,
+} from "../aboutaddons-utils.mjs";
+import { gViewController } from "../view-controller.mjs";
+
+const { AddonManager } = ChromeUtils.importESModule(
+  "resource://gre/modules/AddonManager.sys.mjs"
+);
 
 // Create the button-group element so it gets loaded.
 document.createElement("button-group");
