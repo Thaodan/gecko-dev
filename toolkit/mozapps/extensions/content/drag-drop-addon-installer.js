@@ -1,24 +1,9 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+/* import-globals-from aboutaddonsCommon.js */
 
-import { getBrowserElement } from "../aboutaddons-utils.mjs";
-
-const { AddonManager } = ChromeUtils.importESModule(
-  "resource://gre/modules/AddonManager.sys.mjs"
-);
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-
-const lazy = {};
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "XPINSTALL_ENABLED",
-  "xpinstall.enabled",
-  true
-);
+"use strict";
 
 class DragDropAddonInstaller extends HTMLElement {
   connectedCallback() {
@@ -39,7 +24,7 @@ class DragDropAddonInstaller extends HTMLElement {
   }
 
   handleEvent(e) {
-    if (!lazy.XPINSTALL_ENABLED) {
+    if (!XPINSTALL_ENABLED) {
       // Nothing to do if we can't install add-ons.
       return;
     }
