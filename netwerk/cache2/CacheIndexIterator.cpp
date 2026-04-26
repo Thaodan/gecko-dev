@@ -32,12 +32,14 @@ nsresult CacheIndexIterator::GetNextHash(SHA1Sum::Hash* aHash) {
     return mStatus;
   }
 
-  if (!mRecords.Length()) {
+  if (mRecords.IsEmpty()) {
     CloseInternal(NS_ERROR_NOT_AVAILABLE);
     return mStatus;
   }
 
-  memcpy(aHash, mRecords.PopLastElement()->Get()->mHash, sizeof(SHA1Sum::Hash));
+  auto it = mRecords.begin();
+  memcpy(aHash, (*it)->Get()->mHash, sizeof(SHA1Sum::Hash));
+  mRecords.Remove(*it);
 
   return NS_OK;
 }
@@ -80,7 +82,7 @@ void CacheIndexIterator::AddRecord(CacheIndexRecordWrapper* aRecord,
                                    const StaticMutexAutoLock& aProofOfLock) {
   LOG(("CacheIndexIterator::AddRecord() [this=%p, record=%p]", this, aRecord));
 
-  mRecords.AppendElement(aRecord);
+  mRecords.Insert(aRecord);
 }
 
 bool CacheIndexIterator::RemoveRecord(CacheIndexRecordWrapper* aRecord,
@@ -88,7 +90,7 @@ bool CacheIndexIterator::RemoveRecord(CacheIndexRecordWrapper* aRecord,
   LOG(("CacheIndexIterator::RemoveRecord() [this=%p, record=%p]", this,
        aRecord));
 
-  return mRecords.RemoveElement(aRecord);
+  return mRecords.EnsureRemoved(aRecord);
 }
 
 bool CacheIndexIterator::ReplaceRecord(
