@@ -215,58 +215,75 @@ class JSTerm extends Component {
     if (this.node) {
       const onArrowUp = () => {
         let inputUpdated;
-        if (this.autocompletePopup.isOpen) {
-          this.autocompletePopup.selectPreviousItem();
-          return true;
+        // TODO: Add auto complete support for CM6  (Bug 2013481)
+        if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+          if (this.autocompletePopup.isOpen) {
+            this.autocompletePopup.selectPreviousItem();
+            return null;
+          }
         }
 
         if (this.props.editorMode === false && this.canCaretGoPrevious()) {
           inputUpdated = this.historyPeruse(HISTORY_BACK);
         }
 
-        return inputUpdated ? true : passToNextHandler();
+        return inputUpdated ? null : passToNextHandler();
       };
 
       const onArrowDown = () => {
         let inputUpdated;
-        if (this.autocompletePopup.isOpen) {
-          this.autocompletePopup.selectNextItem();
-          return true;
+        // TODO: Add auto complete support for CM6  (Bug 2013481)
+        if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+          if (this.autocompletePopup.isOpen) {
+            this.autocompletePopup.selectNextItem();
+            return null;
+          }
         }
 
         if (this.props.editorMode === false && this.canCaretGoNext()) {
           inputUpdated = this.historyPeruse(HISTORY_FORWARD);
         }
 
-        return inputUpdated ? true : passToNextHandler();
+        return inputUpdated ? null : passToNextHandler();
       };
 
       const onArrowLeft = () => {
-        if (this.autocompletePopup.isOpen || this.getAutoCompletionText()) {
-          this.clearCompletion();
+        // TODO: Add auto complete support for CM6  (Bug 2013481)
+        if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+          if (this.autocompletePopup.isOpen || this.getAutoCompletionText()) {
+            this.clearCompletion();
+          }
+          return passToNextHandler();
         }
-        return passToNextHandler();
+        return null;
       };
 
       const onArrowRight = () => {
-        // We only want to complete on Right arrow if the completion text is
-        // displayed.
-        if (this.getAutoCompletionText()) {
-          this.acceptProposedCompletion();
-          return true;
-        }
+        // TODO: Add auto complete support for CM6  (Bug 2013481)
+        if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+          // We only want to complete on Right arrow if the completion text is
+          // displayed.
+          if (this.getAutoCompletionText()) {
+            this.acceptProposedCompletion();
+            return null;
+          }
 
-        this.clearCompletion();
-        return passToNextHandler();
+          this.clearCompletion();
+          return passToNextHandler();
+        }
+        return null;
       };
 
       const onCtrlCmdEnter = () => {
-        if (this.hasAutocompletionSuggestion()) {
-          return this.acceptProposedCompletion();
+        // TODO: Add auto complete support for CM6  (Bug 2013481)
+        if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+          if (this.hasAutocompletionSuggestion()) {
+            return this.acceptProposedCompletion();
+          }
         }
 
         this._execute();
-        return true;
+        return null;
       };
 
       /**
@@ -283,20 +300,27 @@ class JSTerm extends Component {
         Enter: () => {
           // No need to handle shift + Enter as it's natively handled by CodeMirror.
 
-          const hasSuggestion = this.hasAutocompletionSuggestion();
-          if (!hasSuggestion && !Debugger.isCompilableUnit(this._getValue())) {
-            // incomplete statement
-            return passToNextHandler();
-          }
+          // TODO: Add auto complete support for CM6  (Bug 2013481)
+          if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+            const hasSuggestion = this.hasAutocompletionSuggestion();
+            if (
+              !hasSuggestion &&
+              !Debugger.isCompilableUnit(this._getValue())
+            ) {
+              // incomplete statement
+              return passToNextHandler();
+            }
 
-          if (hasSuggestion) {
-            this.acceptProposedCompletion();
-            return true;
+            if (hasSuggestion) {
+              return this.acceptProposedCompletion();
+            }
           }
 
           if (!this.props.editorMode) {
             this._execute();
-            return true;
+            return Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)
+              ? true
+              : null;
           }
           return passToNextHandler();
         },
@@ -307,7 +331,7 @@ class JSTerm extends Component {
         [Editor.accel("S")]: () => {
           const value = this._getValue();
           if (!value) {
-            return true;
+            return null;
           }
 
           const date = new Date();
@@ -332,28 +356,31 @@ class JSTerm extends Component {
             return false;
           }
 
-          if (
-            this.props.autocompleteData &&
-            this.props.autocompleteData.getterPath
-          ) {
-            this.props.autocompleteUpdate(
-              true,
+          // TODO: Add auto complete support for CM6  (Bug 2013481)
+          if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+            if (
+              this.props.autocompleteData &&
               this.props.autocompleteData.getterPath
-            );
-            return false;
-          }
+            ) {
+              this.props.autocompleteUpdate(
+                true,
+                this.props.autocompleteData.getterPath
+              );
+              return false;
+            }
 
-          const isSomethingSelected = this.editor.isTextSelected();
-          const hasSuggestion = this.hasAutocompletionSuggestion();
+            const isSomethingSelected = this.editor.isTextSelected();
+            const hasSuggestion = this.hasAutocompletionSuggestion();
 
-          if (hasSuggestion && !isSomethingSelected) {
-            this.acceptProposedCompletion();
-            return false;
-          }
+            if (hasSuggestion && !isSomethingSelected) {
+              this.acceptProposedCompletion();
+              return false;
+            }
 
-          if (!isSomethingSelected) {
-            this.editor.insertStringAtCursor("\t", 0, JSTERM_CODEMIRROR_ORIGIN);
-            return false;
+            if (!isSomethingSelected) {
+              this.insertStringAtCursor("\t");
+              return false;
+            }
           }
 
           // Something is selected, let the editor handle the indent.
@@ -366,9 +393,13 @@ class JSTerm extends Component {
             return false;
           }
 
-          const hasSuggestion = this.hasAutocompletionSuggestion();
-          if (hasSuggestion) {
-            return false;
+          // TODO: Add auto complete support for CM6  (Bug 2013481)
+          if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+            const hasSuggestion = this.hasAutocompletionSuggestion();
+
+            if (hasSuggestion) {
+              return false;
+            }
           }
 
           return passToNextHandler();
@@ -393,108 +424,136 @@ class JSTerm extends Component {
         "Alt-Right": onArrowRight,
 
         "Ctrl-N": () => {
-          // Control-N differs from down arrow: it ignores autocomplete state.
-          // Note that we preserve the default 'down' navigation within
-          // multiline text.
-          if (
-            Services.appinfo.OS === "Darwin" &&
-            this.props.editorMode === false &&
-            this.canCaretGoNext() &&
-            this.historyPeruse(HISTORY_FORWARD)
-          ) {
-            return true;
+          // TODO: Add auto complete support for CM6  (Bug 2013481)
+          if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+            // Control-N differs from down arrow: it ignores autocomplete state.
+            // Note that we preserve the default 'down' navigation within
+            // multiline text.
+            if (
+              Services.appinfo.OS === "Darwin" &&
+              this.props.editorMode === false &&
+              this.canCaretGoNext() &&
+              this.historyPeruse(HISTORY_FORWARD)
+            ) {
+              return null;
+            }
+
+            this.clearCompletion();
           }
-          this.clearCompletion();
           return passToNextHandler();
         },
 
         "Ctrl-P": () => {
-          // Control-P differs from up arrow: it ignores autocomplete state.
-          // Note that we preserve the default 'up' navigation within
-          // multiline text.
-          if (
-            Services.appinfo.OS === "Darwin" &&
-            this.props.editorMode === false &&
-            this.canCaretGoPrevious() &&
-            this.historyPeruse(HISTORY_BACK)
-          ) {
-            return true;
+          // TODO: Add auto complete support for CM6  (Bug 2013481)
+          if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+            // Control-P differs from up arrow: it ignores autocomplete state.
+            // Note that we preserve the default 'up' navigation within
+            // multiline text.
+            if (
+              Services.appinfo.OS === "Darwin" &&
+              this.props.editorMode === false &&
+              this.canCaretGoPrevious() &&
+              this.historyPeruse(HISTORY_BACK)
+            ) {
+              return null;
+            }
+
+            this.clearCompletion();
           }
-          this.clearCompletion();
           return passToNextHandler();
         },
 
         PageUp: () => {
-          if (this.autocompletePopup.isOpen) {
-            this.autocompletePopup.selectPreviousPageItem();
-          } else {
-            const { outputScroller } = this.webConsoleUI;
-            const { scrollTop, clientHeight } = outputScroller;
-            outputScroller.scrollTop = Math.max(0, scrollTop - clientHeight);
+          // TODO: Add auto complete support for CM6  (Bug 2013481)
+          if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+            if (this.autocompletePopup.isOpen) {
+              this.autocompletePopup.selectPreviousPageItem();
+            } else {
+              const { outputScroller } = this.webConsoleUI;
+              const { scrollTop, clientHeight } = outputScroller;
+              outputScroller.scrollTop = Math.max(0, scrollTop - clientHeight);
+            }
+            return null;
           }
+
           return true;
         },
 
         PageDown: () => {
-          if (this.autocompletePopup.isOpen) {
-            this.autocompletePopup.selectNextPageItem();
-          } else {
-            const { outputScroller } = this.webConsoleUI;
-            const { scrollTop, scrollHeight, clientHeight } = outputScroller;
-            outputScroller.scrollTop = Math.min(
-              scrollHeight,
-              scrollTop + clientHeight
-            );
+          // TODO: Add auto complete support for CM6  (Bug 2013481)
+          if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+            if (this.autocompletePopup.isOpen) {
+              this.autocompletePopup.selectNextPageItem();
+            } else {
+              const { outputScroller } = this.webConsoleUI;
+              const { scrollTop, scrollHeight, clientHeight } = outputScroller;
+              outputScroller.scrollTop = Math.min(
+                scrollHeight,
+                scrollTop + clientHeight
+              );
+            }
+            return null;
           }
           return true;
         },
 
         Home: () => {
-          if (this.autocompletePopup.isOpen) {
-            this.autocompletePopup.selectItemAtIndex(0);
-            return true;
+          // TODO: Add auto complete support for CM6  (Bug 2013481)
+          if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+            if (this.autocompletePopup.isOpen) {
+              this.autocompletePopup.selectItemAtIndex(0);
+              return null;
+            }
+
+            if (!this._getValue()) {
+              this.webConsoleUI.outputScroller.scrollTop = 0;
+              return null;
+            }
+
+            if (this.getAutoCompletionText()) {
+              this.clearCompletion();
+            }
           }
 
-          if (!this._getValue()) {
-            this.webConsoleUI.outputScroller.scrollTop = 0;
-            return true;
-          }
-
-          if (this.getAutoCompletionText()) {
-            this.clearCompletion();
-          }
           return passToNextHandler();
         },
 
         End: () => {
-          if (this.autocompletePopup.isOpen) {
-            this.autocompletePopup.selectItemAtIndex(
-              this.autocompletePopup.itemCount - 1
-            );
-            return true;
-          }
+          // TODO: Add auto complete support for CM6  (Bug 2013481)
+          if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+            if (this.autocompletePopup.isOpen) {
+              this.autocompletePopup.selectItemAtIndex(
+                this.autocompletePopup.itemCount - 1
+              );
+              return null;
+            }
 
-          if (!this._getValue()) {
-            const { outputScroller } = this.webConsoleUI;
-            outputScroller.scrollTop = outputScroller.scrollHeight;
-            return true;
-          }
+            if (!this._getValue()) {
+              const { outputScroller } = this.webConsoleUI;
+              outputScroller.scrollTop = outputScroller.scrollHeight;
+              return null;
+            }
 
-          if (this.getAutoCompletionText()) {
-            this.clearCompletion();
+            if (this.getAutoCompletionText()) {
+              this.clearCompletion();
+            }
           }
 
           return Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)
-            ? true
+            ? null
             : passToNextHandler();
         },
 
         "Ctrl-Space": async () => {
-          if (!this.autocompletePopup.isOpen) {
-            const variables = await this.editor.getExpressionVariables();
-            this.props.autocompleteUpdate(true, null, variables);
-            return true;
+          // TODO: Add auto complete support for CM6  (Bug 2013481)
+          if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+            if (!this.autocompletePopup.isOpen) {
+              const variables = await this.editor.getExpressionVariables();
+              this.props.autocompleteUpdate(true, null, variables);
+              return null;
+            }
           }
+
           return passToNextHandler();
         },
 
@@ -635,11 +694,14 @@ class JSTerm extends Component {
       return;
     }
 
-    if (
-      nextProps.autocompleteData !== this.props.autocompleteData &&
-      nextProps.autocompleteData.pendingRequestId === null
-    ) {
-      this.updateAutocompletionPopup(nextProps.autocompleteData);
+    // TODO: Add auto complete support for CM6  (Bug 2013481)
+    if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+      if (
+        nextProps.autocompleteData !== this.props.autocompleteData &&
+        nextProps.autocompleteData.pendingRequestId === null
+      ) {
+        this.updateAutocompletionPopup(nextProps.autocompleteData);
+      }
     }
 
     if (nextProps.editorMode !== this.props.editorMode) {
@@ -660,17 +722,23 @@ class JSTerm extends Component {
         this.setEditorWidth(null);
       }
 
-      if (this.autocompletePopup.isOpen) {
-        this.autocompletePopup.hidePopup();
+      // TODO: Add auto complete support for CM6  (Bug 2013481)
+      if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+        if (this.autocompletePopup.isOpen) {
+          this.autocompletePopup.hidePopup();
+        }
       }
     }
 
-    if (
-      nextProps.autocompletePopupPosition !==
-        this.props.autocompletePopupPosition &&
-      this.autocompletePopup
-    ) {
-      this.autocompletePopup.position = nextProps.autocompletePopupPosition;
+    // TODO: Add auto complete support for CM6  (Bug 2013481)
+    if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+      if (
+        nextProps.autocompletePopupPosition !==
+          this.props.autocompletePopupPosition &&
+        this.autocompletePopup
+      ) {
+        this.autocompletePopup.position = nextProps.autocompletePopupPosition;
+      }
     }
 
     if (
@@ -790,7 +858,6 @@ class JSTerm extends Component {
       if (Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
         this.editor.setText(newValue);
         this.editor.setCursorAt(lines.length, ch);
-        this.editor.setAutoCompletionText();
       } else {
         // In order to get the autocomplete popup to work properly, we need to set the
         // editor text and the cursor in the same operation. If we don't, the text change
@@ -815,7 +882,7 @@ class JSTerm extends Component {
    * @returns string
    */
   _getValue() {
-    return this.editor ? this.editor.getText() : "";
+    return this.editor ? this.editor.getText() || "" : "";
   }
 
   /**
@@ -877,7 +944,7 @@ class JSTerm extends Component {
       ? "column"
       : "ch";
     const isAddedText =
-      from.line === to.line && from[col] <= to[col] && origin === "+input";
+      from.line === to.line && from[col] === to[col] && origin === "+input";
 
     // if there was no changes (hitting delete on an empty input, or suppr when at the end
     // of the input), we bail out.
@@ -893,29 +960,31 @@ class JSTerm extends Component {
     // text is a string for CM6 and and array of characters for CM5
     const addedText = Array.isArray(text) ? text.join("") : text;
 
-    const completionText = this.getAutoCompletionText();
-    const addedCharacterMatchCompletion =
-      isAddedText && completionText.startsWith(addedText);
-
-    const addedCharacterMatchPopupItem =
-      isAddedText &&
-      this.autocompletePopup.items.some(({ preLabel, label }) =>
-        label.startsWith(preLabel + addedText)
-      );
-    const nextSelectedAutocompleteItemIndex =
-      addedCharacterMatchPopupItem &&
-      this.autocompletePopup.items.findIndex(({ preLabel, label }) =>
-        label.startsWith(preLabel + addedText)
-      );
-
-    if (addedCharacterMatchPopupItem) {
-      this.autocompletePopup.selectItemAtIndex(
-        nextSelectedAutocompleteItemIndex,
-        { preventSelectCallback: true }
-      );
-    }
-
+    // TODO: Add auto complete support for CM6  (Bug 2013481)
     if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+      const completionText = this.getAutoCompletionText();
+
+      const addedCharacterMatchCompletion =
+        isAddedText && completionText.startsWith(addedText);
+
+      const addedCharacterMatchPopupItem =
+        isAddedText &&
+        this.autocompletePopup.items.some(({ preLabel, label }) =>
+          label.startsWith(preLabel + addedText)
+        );
+      const nextSelectedAutocompleteItemIndex =
+        addedCharacterMatchPopupItem &&
+        this.autocompletePopup.items.findIndex(({ preLabel, label }) =>
+          label.startsWith(preLabel + addedText)
+        );
+
+      if (addedCharacterMatchPopupItem) {
+        this.autocompletePopup.selectItemAtIndex(
+          nextSelectedAutocompleteItemIndex,
+          { preventSelectCallback: true }
+        );
+      }
+
       if (
         !completionText ||
         change.canceled ||
@@ -923,27 +992,27 @@ class JSTerm extends Component {
       ) {
         this.setAutoCompletionText("");
       }
-    }
 
-    if (!addedCharacterMatchCompletion && !addedCharacterMatchPopupItem) {
-      this.autocompletePopup.hidePopup();
-    } else if (
-      !change.canceled &&
-      (completionText ||
-        addedCharacterMatchCompletion ||
-        addedCharacterMatchPopupItem)
-    ) {
-      // The completion text will be updated when the debounced autocomplete update action
-      // is done, so in the meantime we set the pending value to pendingCompletionText.
-      // See Bug 1595068 for more information.
-      this.pendingCompletionText = completionText.substring(text.length);
-      // And we update the preLabel of the matching autocomplete items that may be used
-      // in the acceptProposedAutocompletion function.
-      this.autocompletePopup.items.forEach(item => {
-        if (item.label.startsWith(item.preLabel + addedText)) {
-          item.preLabel += addedText;
-        }
-      });
+      if (!addedCharacterMatchCompletion && !addedCharacterMatchPopupItem) {
+        this.autocompletePopup.hidePopup();
+      } else if (
+        !change.canceled &&
+        (completionText ||
+          addedCharacterMatchCompletion ||
+          addedCharacterMatchPopupItem)
+      ) {
+        // The completion text will be updated when the debounced autocomplete update action
+        // is done, so in the meantime we set the pending value to pendingCompletionText.
+        // See Bug 1595068 for more information.
+        this.pendingCompletionText = completionText.substring(text.length);
+        // And we update the preLabel of the matching autocomplete items that may be used
+        // in the acceptProposedAutocompletion function.
+        this.autocompletePopup.items.forEach(item => {
+          if (item.label.startsWith(item.preLabel + addedText)) {
+            item.preLabel += addedText;
+          }
+        });
+      }
     }
   }
 
@@ -954,13 +1023,8 @@ class JSTerm extends Component {
     if (this.editor.isTextSelected()) {
       // If there's a selection when the input is blurred, then we remove it by setting
       // the cursor at the position that matches the start of the first selection.
-      if (Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
-        const range = cm.state.selection.ranges[0];
-        this.editor.setCursorAtPosition(range.head, false);
-      } else {
-        const [{ head }] = cm.listSelections();
-        cm.setCursor(head, { scroll: false });
-      }
+      const [{ head }] = cm.listSelections();
+      cm.setCursor(head, { scroll: false });
     }
   }
 
@@ -993,27 +1057,29 @@ class JSTerm extends Component {
     const value = this._getValue();
 
     if (this.lastInputValue !== value) {
-      // We don't autocomplete if the changes were made by JsTerm (e.g. autocomplete was
-      // accepted). isJsTermChangeOnly is not useful for CM6 so should be false
-      const isJsTermChangeOnly = Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)
-        ? false
-        : changes.every(({ origin }) => origin === JSTERM_CODEMIRROR_ORIGIN);
+      // TODO: Add auto complete support for CM6  (Bug 2013481)
+      if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+        // We don't autocomplete if the changes were made by JsTerm (e.g. autocomplete was
+        // accepted).
+        const isJsTermChangeOnly = changes.every(
+          ({ origin }) => origin === JSTERM_CODEMIRROR_ORIGIN
+        );
 
-      if (
-        !isJsTermChangeOnly &&
-        (this.props.autocomplete || this.hasAutocompletionSuggestion())
-      ) {
-        const variables = await this.editor.getExpressionVariables();
+        if (
+          !isJsTermChangeOnly &&
+          (this.props.autocomplete || this.hasAutocompletionSuggestion())
+        ) {
+          const variables = await this.editor.getExpressionVariables();
 
-        // If JSTerm was destroyed during the async operation, bail out
-        // immediately before triggering additional actions.
-        if (this.#destroyed) {
-          return;
+          // If JSTerm was destroyed during the async operation, bail out
+          // immediately before triggering additional actions.
+          if (this.#destroyed) {
+            return;
+          }
+
+          this.autocompleteUpdate(false, null, variables);
         }
-
-        this.autocompleteUpdate(false, null, variables);
       }
-
       this.lastInputValue = value;
       this.terminalInputChanged(value);
     }
@@ -1306,15 +1372,17 @@ class JSTerm extends Component {
     }
 
     if (completionText) {
-      this.editor.insertStringAtCursor(
+      this.insertStringAtCursor(
         completionText,
-        numberOfCharsToReplaceCharsBeforeCursor,
-        JSTERM_CODEMIRROR_ORIGIN
+        numberOfCharsToReplaceCharsBeforeCursor
       );
 
       if (numberOfCharsToMoveTheCursorForward) {
         const { line, ch } = this.editor.getCursorPos();
-        this.editor.setCursorAt(line, ch + numberOfCharsToMoveTheCursorForward);
+        this.editor.setCursor({
+          line,
+          ch: ch + numberOfCharsToMoveTheCursorForward,
+        });
       }
     }
   }
@@ -1416,6 +1484,29 @@ class JSTerm extends Component {
   }
 
   /**
+   * Insert a string into the console at the cursor location,
+   * moving the cursor to the end of the string.
+   *
+   * @param {string} str
+   * @param {int} numberOfCharsToReplaceCharsBeforeCursor - defaults to 0
+   */
+  insertStringAtCursor(str, numberOfCharsToReplaceCharsBeforeCursor = 0) {
+    if (!this.editor) {
+      return;
+    }
+
+    const cursor = this.editor.getCursorPos();
+    const from = {
+      line: cursor.line,
+      ch: cursor.ch - numberOfCharsToReplaceCharsBeforeCursor,
+    };
+
+    this.editor
+      .getDoc()
+      .replaceRange(str, from, cursor, JSTERM_CODEMIRROR_ORIGIN);
+  }
+
+  /**
    * Set the autocompletion text of the input.
    *
    * @param string suffix
@@ -1468,7 +1559,9 @@ class JSTerm extends Component {
       return false;
     }
 
-    const textAfterCursor = this.editor.getTextAfterCursor();
+    const { ch, line } = this.editor.getCursorPos();
+    const lineContent = this.editor.getLine(line);
+    const textAfterCursor = lineContent.substring(ch);
     return textAfterCursor === "";
   }
 
