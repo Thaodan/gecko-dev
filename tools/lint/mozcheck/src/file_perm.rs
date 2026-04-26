@@ -27,6 +27,7 @@ pub fn check_file(path: &str, allow_shebang: bool, fix: bool, linter: &str) -> O
     };
 
     let mode = metadata.permissions().mode();
+    // not executable
     if mode & 0o111 == 0 {
         return None;
     }
