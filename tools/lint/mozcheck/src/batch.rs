@@ -123,7 +123,7 @@ fn run_rejected_words(files: &[String], linter: &LinterEntry) {
     };
 
     common::par_map_lint(files, |path| {
-        rejected_words::run_lint_in_parallel(path, &re, &linter.name, message, rule)
+        rejected_words::check_reject_words(path, &re, &linter.name, message, rule)
     });
 }
 

@@ -20,12 +20,12 @@ pub fn run(
 
     let paths = common::read_paths_from_stdin();
     common::par_map_lint(&paths, |path| {
-        run_lint_in_parallel(path, &re, linter, message, rule)
+        check_reject_words(path, &re, linter, message, rule)
     });
     Ok(())
 }
 
-pub fn run_lint_in_parallel(
+pub fn check_reject_words(
     path: &str,
     re: &regex::Regex,
     linter: &str,
@@ -63,7 +63,7 @@ mod tests {
     use std::io::Write;
 
     #[test]
-    fn test_run_lint_in_parallel_finds_matches() {
+    fn test_check_reject_words_finds_matches() {
         let dir = tempfile::tempdir().unwrap();
         let file_path = dir.path().join("test.txt");
         {
@@ -78,7 +78,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let issues = run_lint_in_parallel(
+        let issues = check_reject_words(
             file_path.to_str().unwrap(),
             &re,
             "test-linter",
@@ -94,7 +94,7 @@ mod tests {
     }
 
     #[test]
-    fn test_run_lint_in_parallel_no_matches() {
+    fn test_check_reject_words_no_matches() {
         let dir = tempfile::tempdir().unwrap();
         let file_path = dir.path().join("clean.txt");
         std::fs::write(&file_path, "nothing bad here\n").unwrap();
@@ -104,7 +104,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let issues = run_lint_in_parallel(
+        let issues = check_reject_words(
             file_path.to_str().unwrap(),
             &re,
             "test-linter",
@@ -116,11 +116,11 @@ mod tests {
     }
 
     #[test]
-    fn test_run_lint_in_parallel_missing_file() {
+    fn test_check_reject_words_missing_file() {
         let re = RegexBuilder::new(r"te.t").build().unwrap();
 
         let issues =
-            run_lint_in_parallel("/nonexistent/path.txt", &re, "test-linter", "msg", "rule");
+            check_reject_words("/nonexistent/path.txt", &re, "test-linter", "msg", "rule");
 
         assert!(issues.is_empty());
     }
