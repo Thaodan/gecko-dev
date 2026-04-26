@@ -2,10 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
-"use strict";
-
-const React = require("devtools/client/shared/vendor/react");
-const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+import React from "devtools/client/shared/vendor/react";
+import PropTypes from "devtools/client/shared/vendor/react-prop-types";
 
 const classnames = require("resource://devtools/client/shared/classnames.js");
 
@@ -33,4 +31,4 @@ DebuggerImage.propTypes = {
   className: PropTypes.string,
 };
 
-module.exports = DebuggerImage;
+export default DebuggerImage;

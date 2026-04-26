@@ -13,8 +13,6 @@ const { div } = require("devtools/client/shared/vendor/react-dom-factories");
 const { PluralForm } = require("resource://devtools/shared/plural-form.js");
 const { debounce } = require("resource://devtools/shared/debounce.js");
 
-const SearchInput = require("devtools/client/shared/components/SearchInput");
-
 const { LocalizationHelper } = require("resource://devtools/shared/l10n.js");
 const locale = new LocalizationHelper(
   "devtools/client/locales/components.properties"
@@ -34,6 +32,8 @@ class FileSearchBar extends Component {
       setActiveSearch: PropTypes.func.isRequired,
       querySearchWorker: PropTypes.func.isRequired,
       shortcuts: PropTypes.object,
+      SearchInput: PropTypes.oneOfType([PropTypes.func, PropTypes.object])
+        .isRequired,
       searchKey: PropTypes.string.isRequired,
       shouldScroll: PropTypes.bool.isRequired,
       scrollList: PropTypes.func.isRequired,
@@ -41,8 +41,6 @@ class FileSearchBar extends Component {
       find: PropTypes.func.isRequired,
       findNext: PropTypes.func.isRequired,
       findPrev: PropTypes.func.isRequired,
-      setSearchOptions: PropTypes.func.isRequired,
-      searchOptions: PropTypes.object.isRequired,
     };
   }
 
@@ -331,8 +329,7 @@ class FileSearchBar extends Component {
   }
 
   render() {
-    const { searchInFileEnabled, searchKey, setSearchOptions, searchOptions } =
-      this.props;
+    const { searchInFileEnabled, searchKey, SearchInput } = this.props;
 
     const {
       results: { count },
@@ -367,8 +364,6 @@ class FileSearchBar extends Component {
         showSearchModifiers: true,
         searchKey,
         onToggleSearchModifier: () => this.doSearch(this.state.query),
-        setSearchOptions,
-        searchOptions,
       })
     );
   }

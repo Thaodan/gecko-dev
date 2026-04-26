@@ -16,7 +16,7 @@ import {
 import PropTypes from "devtools/client/shared/vendor/react-prop-types";
 import { connect } from "devtools/client/shared/vendor/react-redux";
 import { features } from "../../utils/prefs";
-import DebuggerImage from "devtools/client/shared/components/DebuggerImage";
+import DebuggerImage from "../shared/DebuggerImage";
 
 import * as objectInspector from "resource://devtools/client/shared/components/object-inspector/index.js";
 
@@ -32,7 +32,7 @@ import {
 } from "../../selectors/index";
 import { getExpressionResultGripAndFront } from "../../utils/expressions";
 
-import CloseButton from "devtools/client/shared/components/CloseButton";
+import { CloseButton } from "../shared/Button/index";
 
 const { debounce } = require("resource://devtools/shared/debounce.js");
 

@@ -12,6 +12,7 @@ import {
   button,
   footer,
 } from "devtools/client/shared/vendor/react-dom-factories";
+import SearchInput from "../shared/SearchInput";
 import EventListeners from "../shared/EventListeners";
 import { connect } from "devtools/client/shared/vendor/react-redux";
 import {
@@ -32,8 +33,6 @@ import {
   getIsTracingValues,
 } from "../../selectors/index";
 import { NO_SEARCH_VALUE } from "../../reducers/tracer-frames";
-
-import SearchInput from "devtools/client/shared/components/SearchInput";
 
 const { throttle } = require("resource://devtools/shared/throttle.js");
 const VirtualizedTree = require("resource://devtools/client/shared/components/VirtualizedTree.js");
@@ -830,30 +829,23 @@ export class Tracer extends Component {
       this.props;
     return [
       React.createElement(SearchInput, {
-        query:
-          searchValueOrGrip == NO_SEARCH_VALUE ? "" : String(searchValueOrGrip),
         count: tracesMatchingSearch.length,
+
         placeholder: this.props.traceValues
           ? `Search for function call argument values ("foo", 42, $0, $("canvas"), …)`
           : "Enable tracing values to search for values",
         disabled: !this.props.traceValues,
         size: "small",
         showClose: false,
-        showExcludePatterns: false,
-        showSearchModifiers: false,
-        showErrorEmoji: false,
-        isLoading: false,
         onChange: this.searchInputOnChange,
         onKeyDown: e => {
           if (e.key == "Enter") {
+            // Shift key will reverse the selection direction
             this.selectNextMatchingTrace(!e.shiftKey);
           }
         },
         handlePrev: () => this.selectNextMatchingTrace(false),
         handleNext: () => this.selectNextMatchingTrace(true),
-        searchKey: "TRACER_SEARCH_TEMP",
-        searchOptions: {},
-        setSearchOptions: () => {},
       }),
 
       // When this isn't a valid primitive type, we try to evaluate on the server

@@ -66,6 +66,7 @@ import {
 
 import { searchKeys } from "../../constants";
 import { scrollList } from "../../utils/result-list";
+import SearchInput from "../shared/SearchInput";
 
 import { updateEditorSizeCssVariables } from "../../utils/ui";
 
@@ -814,8 +815,6 @@ class Editor extends PureComponent {
       closeFileSearch,
       querySearchWorker,
       selectLocation,
-      searchOptions,
-      setSearchOptions,
     } = this.props;
 
     if (!selectedSource) {
@@ -833,8 +832,8 @@ class Editor extends PureComponent {
       closeFileSearch,
       querySearchWorker,
       selectLocation,
-      searchOptions,
-      setSearchOptions,
+      searchKey: searchKeys.FILE_SEARCH,
+      SearchInput,
       scrollList,
       createLocation,
       clearSearchEditor,
@@ -906,7 +905,6 @@ const mapStateToProps = state => {
     shouldHighlightSelectedLocation: getShouldHighlightSelectedLocation(state),
     selectedTraceLocation: getSelectedTraceLocation(state),
     modifiers: getSearchOptions(state, "file-search"),
-    searchOptions: getSearchOptions(state, searchKeys.FILE_SEARCH),
   };
 };
 
@@ -928,7 +926,6 @@ const mapDispatchToProps = dispatch => ({
       setActiveSearch: actions.setActiveSearch,
       closeFileSearch: actions.closeFileSearch,
       querySearchWorker: actions.querySearchWorker,
-      setSearchOptions: actions.setSearchOptions,
     },
     dispatch
   ),

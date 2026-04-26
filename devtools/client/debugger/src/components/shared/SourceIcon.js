@@ -7,7 +7,7 @@ import PropTypes from "devtools/client/shared/vendor/react-prop-types";
 
 import { connect } from "devtools/client/shared/vendor/react-redux";
 
-import DebuggerImage from "devtools/client/shared/components/DebuggerImage";
+import DebuggerImage from "./DebuggerImage";
 
 import { getSourceClassnames } from "../../utils/source";
 import { isSourceBlackBoxed } from "../../selectors/index";
