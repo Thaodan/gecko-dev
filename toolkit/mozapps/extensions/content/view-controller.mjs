@@ -2,14 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-"use strict";
-
-/* import-globals-from /toolkit/content/customElements.js */
-/* import-globals-from aboutaddonsCommon.js */
-/* exported loadView */
+import { isDiscoverEnabled } from "./aboutaddons-utils.mjs";
 
 // Used by external callers to load a specific view into the manager
-function loadView(viewId) {
+export function loadView(viewId) {
   if (!gViewController.readyForLoadView) {
     throw new Error("loadView called before about:addons is initialized");
   }
@@ -20,7 +16,7 @@ function loadView(viewId) {
  * Helper for saving and restoring the scroll offsets when a previously loaded
  * view is accessed again.
  */
-var ScrollOffsets = {
+export var ScrollOffsets = {
   _key: null,
   _offsets: new Map(),
   canRestore: true,
@@ -50,7 +46,7 @@ var ScrollOffsets = {
   },
 };
 
-var gViewController = {
+export var gViewController = {
   currentViewId: null,
   readyForLoadView: false,
   get defaultViewId() {

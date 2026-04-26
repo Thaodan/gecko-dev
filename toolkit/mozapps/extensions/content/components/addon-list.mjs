@@ -1,8 +1,23 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-/* globals AddonManagerListenerHandler, isPending, shouldSkipAnimations,
-   BuiltInThemes, recordListViewTelemetry */
+
+import {
+  AddonManagerListenerHandler,
+  isPending,
+  shouldSkipAnimations,
+} from "../aboutaddons-utils.mjs";
+
+const { AddonManager } = ChromeUtils.importESModule(
+  "resource://gre/modules/AddonManager.sys.mjs"
+);
+
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
+  BuiltInThemes: "resource:///modules/BuiltInThemes.sys.mjs",
+  recordListViewTelemetry: "chrome://global/content/ml/Utils.sys.mjs",
+});
 
 /**
  * A list view for add-ons of a certain type. It should be initialized with the
@@ -113,11 +128,11 @@ export class AddonList extends HTMLElement {
     let addons = await AddonManager.getAddonsByTypes(type);
 
     if (type == "theme") {
-      await BuiltInThemes.ensureBuiltInThemes();
+      await lazy.BuiltInThemes.ensureBuiltInThemes();
     }
 
     if (type == "mlmodel") {
-      recordListViewTelemetry(addons.length);
+      lazy.recordListViewTelemetry(addons.length);
     }
 
     // Put the add-ons into the sections, an add-on goes in the first section

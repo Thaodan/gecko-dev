@@ -1,7 +1,11 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-/* globals Extension */
+
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  Extension: "resource://gre/modules/Extension.sys.mjs",
+});
 
 import { AboutAddonsHTMLElement } from "../aboutaddons-utils.mjs";
 
@@ -31,7 +35,7 @@ class AddonSitePermissionsList extends AboutAddonsHTMLElement {
   }
 
   async render() {
-    let permissions = Extension.formatPermissionStrings({
+    let permissions = lazy.Extension.formatPermissionStrings({
       sitePermissions: this.addon.sitePermissions,
       siteOrigin: this.addon.siteOrigin,
     });

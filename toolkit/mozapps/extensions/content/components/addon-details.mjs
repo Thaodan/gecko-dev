@@ -1,11 +1,33 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-/* globals ScrollOffsets, getOptionsType, isAddonOptionsUIAllowed,
-   hasPermission, isAllowedInPrivateBrowsing, getUpdateInstall,
-   formatUTMParams, nl2br, DATA_COLLECTION_PERMISSIONS_ENABLED */
 
-import { AboutAddonsHTMLElement } from "../aboutaddons-utils.mjs";
+import {
+  AboutAddonsHTMLElement,
+  formatUTMParams,
+  getOptionsType,
+  getUpdateInstall,
+  hasPermission,
+  isAddonOptionsUIAllowed,
+  isAllowedInPrivateBrowsing,
+  nl2br,
+} from "../aboutaddons-utils.mjs";
+import { ScrollOffsets } from "../view-controller.mjs";
+
+const { AddonManager } = ChromeUtils.importESModule(
+  "resource://gre/modules/AddonManager.sys.mjs"
+);
+
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
+const lazy = {};
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "DATA_COLLECTION_PERMISSIONS_ENABLED",
+  "extensions.dataCollectionPermissions.enabled",
+  false
+);
 
 export class AddonDetails extends AboutAddonsHTMLElement {
   static get markup() {
@@ -361,7 +383,7 @@ export class AddonDetails extends AboutAddonsHTMLElement {
 
     // Override the deck button string when the feature is enabled, which isn't
     // the case by default for now.
-    if (DATA_COLLECTION_PERMISSIONS_ENABLED) {
+    if (lazy.DATA_COLLECTION_PERMISSIONS_ENABLED) {
       permsBtn.setAttribute("data-l10n-id", "permissions-data-addon-button");
     }
 

@@ -1,7 +1,18 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-/* globals FORCED_COLORS_OVERRIDE_ENABLED */
+
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
+
+const lazy = {};
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "FORCED_COLORS_OVERRIDE_ENABLED",
+  "browser.theme.forced-colors-override.enabled",
+  true
+);
 
 import { AboutAddonsHTMLElement } from "../aboutaddons-utils.mjs";
 
@@ -26,7 +37,8 @@ class ForcedColorsNotice extends AboutAddonsHTMLElement {
 
   render() {
     let shouldShowNotice =
-      FORCED_COLORS_OVERRIDE_ENABLED && this.forcedColorsMediaQuery.matches;
+      lazy.FORCED_COLORS_OVERRIDE_ENABLED &&
+      this.forcedColorsMediaQuery.matches;
     this.hidden = !shouldShowNotice;
     if (shouldShowNotice && this.childElementCount == 0) {
       this.appendChild(ForcedColorsNotice.fragment);

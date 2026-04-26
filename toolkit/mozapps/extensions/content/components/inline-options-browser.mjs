@@ -1,7 +1,15 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-/* globals DeferredTask, ExtensionParent, E10SUtils, promiseEvent */
+
+import { promiseEvent } from "../aboutaddons-utils.mjs";
+
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
+  E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
+  ExtensionParent: "resource://gre/modules/ExtensionParent.sys.mjs",
+});
 
 class InlineOptionsBrowser extends HTMLElement {
   constructor() {
@@ -11,7 +19,7 @@ class InlineOptionsBrowser extends HTMLElement {
     // scrolled (See Bug 1390445 for rationale).
     // Also force a repaint to fix an issue where the click location was
     // getting out of sync (see bug 1548687).
-    this.updatePositionTask = new DeferredTask(() => {
+    this.updatePositionTask = new lazy.DeferredTask(() => {
       if (this.browser && this.browser.isRemoteBrowser) {
         // Select boxes can appear in the wrong spot after scrolling, this will
         // clear that up. Bug 1390445.
@@ -95,7 +103,7 @@ class InlineOptionsBrowser extends HTMLElement {
 
     let { optionsURL, optionsBrowserStyle } = addon;
     if (addon.isWebExtension) {
-      let policy = ExtensionParent.WebExtensionPolicy.getByID(addon.id);
+      let policy = lazy.ExtensionParent.WebExtensionPolicy.getByID(addon.id);
       browser.setAttribute(
         "initialBrowsingContextGroupId",
         policy.browsingContextGroupId
@@ -109,16 +117,16 @@ class InlineOptionsBrowser extends HTMLElement {
     // For now originAttributes have no effect, which will change if the
     // optionsURL becomes anything but moz-extension* or we start considering
     // OA for extensions.
-    var oa = E10SUtils.predictOriginAttributes({ browser });
-    let loadRemote = E10SUtils.canLoadURIInRemoteType(
+    var oa = lazy.E10SUtils.predictOriginAttributes({ browser });
+    let loadRemote = lazy.E10SUtils.canLoadURIInRemoteType(
       optionsURL,
       remoteSubframes,
-      E10SUtils.EXTENSION_REMOTE_TYPE,
+      lazy.E10SUtils.EXTENSION_REMOTE_TYPE,
       oa
     );
     if (loadRemote) {
       browser.setAttribute("remote", "true");
-      browser.setAttribute("remoteType", E10SUtils.EXTENSION_REMOTE_TYPE);
+      browser.setAttribute("remoteType", lazy.E10SUtils.EXTENSION_REMOTE_TYPE);
 
       readyPromise = promiseEvent("XULFrameLoaderCreated", browser);
     } else {
@@ -142,7 +150,7 @@ class InlineOptionsBrowser extends HTMLElement {
       return;
     }
 
-    ExtensionParent.apiManager.emit("extension-browser-inserted", browser);
+    lazy.ExtensionParent.apiManager.emit("extension-browser-inserted", browser);
 
     await new Promise(resolve => {
       let messageListener = {
