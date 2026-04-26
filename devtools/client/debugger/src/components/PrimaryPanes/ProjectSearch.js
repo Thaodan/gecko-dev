@@ -21,8 +21,8 @@ import {
   getNavigateCounter,
 } from "../../selectors/index";
 
-import SearchInput from "../shared/SearchInput";
 import DebuggerImage from "../shared/DebuggerImage";
+import SearchInput from "devtools/client/shared/components/SearchInput";
 
 const { PluralForm } = require("resource://devtools/shared/plural-form.js");
 const classnames = require("resource://devtools/client/shared/classnames.js");
@@ -412,10 +412,12 @@ export class ProjectSearch extends Component {
       excludePatternsPlaceholder: L10N.getStr(
         "projectTextSearch.excludePatterns.placeholder"
       ),
-      ref: "searchInput",
-      showSearchModifiers: true,
       searchKey: searchKeys.PROJECT_SEARCH,
       onToggleSearchModifier: this.doSearch,
+      searchOptions: {},
+      setSearchOptions: () => {},
+      expanded: false,
+      hasPrefix: false,
     });
   }
 
