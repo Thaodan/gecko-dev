@@ -5,7 +5,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
         ASCII_s,     ASCII_p,     ASCII_a,      ASCII_c,      ASCII_e,
         '\0'};
  
-+/* BEGIN MOZILLA CHANGE (we already set a salt through XML_SetHashSalt) */
++/* BEGIN MOZILLA CHANGE (we already set a salt through XML_SetHashSalt16Bytes) */
 +#if 0
  #if ! defined(HAVE_ARC4RANDOM_BUF) && ! defined(HAVE_ARC4RANDOM)
  
@@ -19,7 +19,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  
  static struct sipkey
  ENTROPY_DEBUG(const char *label, struct sipkey entropy_128) {
-+/* BEGIN MOZILLA CHANGE (we already set a salt through XML_SetHashSalt) */
++/* BEGIN MOZILLA CHANGE (we already set a salt through XML_SetHashSalt16Bytes) */
 +  (void)label;
 +#if 0
    if (getDebugLevel("EXPAT_ENTROPY_DEBUG", 0) >= 1u) {
@@ -36,7 +36,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  
  static struct sipkey
  generate_hash_secret_salt(void) {
-+/* BEGIN MOZILLA CHANGE (we already set a salt through XML_SetHashSalt) */
++/* BEGIN MOZILLA CHANGE (we already set a salt through XML_SetHashSalt16Bytes) */
 +  abort();
 +#if 0
    struct sipkey entropy;
