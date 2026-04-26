@@ -19,6 +19,7 @@ import {
   resolveWidgetSize,
   resolveWidgetOrder,
   resolveWidgetHasSidebar,
+  getHideAllTargets,
 } from "./WidgetsRegistry.mjs";
 import { WIDGET_ROW_COMPONENTS } from "./WidgetsComponentRegistry.jsx";
 
@@ -213,10 +214,9 @@ function Widgets() {
 
   function hideAllWidgets() {
     batch(() => {
-      for (const widget of WIDGET_REGISTRY) {
-        if (widget.id !== "weather" || widgetEnabledMap.weather) {
-          dispatch(ac.SetPref(widget.enabledPref, false));
-        }
+      const targets = getHideAllTargets(prefs, widgetEnabledMap);
+      for (const target of targets) {
+        dispatch(ac.SetPref(target.enabledPref, false));
       }
       // @nova-cleanup(remove-conditional): Remove the !novaEnabled guard and this branch
       if (!novaEnabled && weatherForecastEnabled) {
@@ -225,30 +225,10 @@ function Widgets() {
 
       dispatch(
         ac.OnlyToMain({
-          type: at.WIDGETS_CONTAINER_ACTION,
-          data: {
-            action_type: CONTAINER_ACTION_TYPES.HIDE_ALL,
-            widget_size: widgetSize,
-          },
+          type: at.WIDGETS_HIDE_ALL,
+          data: { targets, widget_size: widgetSize },
         })
       );
-
-      for (const widget of WIDGET_REGISTRY) {
-        if (widgetEnabledMap[widget.id]) {
-          dispatch(
-            ac.OnlyToMain({
-              type: at.WIDGETS_ENABLED,
-              data: {
-                widget_name:
-                  widget.id === "focusTimer" ? "focus_timer" : widget.id,
-                widget_source: "widget",
-                enabled: false,
-                widget_size: widgetSize,
-              },
-            })
-          );
-        }
-      }
       // @nova-cleanup(remove-conditional): Remove once weatherForecastEnabled path is removed
       if (!novaEnabled && weatherForecastEnabled) {
         dispatch(

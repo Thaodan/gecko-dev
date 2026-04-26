@@ -336,7 +336,7 @@ describe("<Widgets>", () => {
       }
     });
 
-    it("should dispatch WIDGETS_CONTAINER_ACTION telemetry when hide button is clicked", () => {
+    it("should dispatch WIDGETS_HIDE_ALL with correct data when hide button is clicked", () => {
       const hideButton = wrapper.find("#hide-all-widgets-button");
       hideButton.prop("onClick")({ preventDefault: () => {} });
 
@@ -344,28 +344,30 @@ describe("<Widgets>", () => {
         .getCalls()
         .map(call => call.args[0]);
 
-      const containerAction = dispatchedActions.find(
-        action => action.type === at.WIDGETS_CONTAINER_ACTION
+      const hideAllAction = dispatchedActions.find(
+        action => action.type === at.WIDGETS_HIDE_ALL
       );
 
-      assert.ok(
-        containerAction,
-        "should dispatch WIDGETS_CONTAINER_ACTION event"
-      );
-      assert.equal(containerAction.data.action_type, "hide_all");
+      assert.ok(hideAllAction, "should dispatch WIDGETS_HIDE_ALL event");
       assert.equal(
-        containerAction.data.widget_size,
+        hideAllAction.data.widget_size,
         "medium",
         "widget_size should be medium when widgets.system.maximized is false"
       );
-      assert.equal(
-        containerAction.data.action_value,
-        undefined,
-        "hide_all should not have action_value"
+
+      const listsTarget = hideAllAction.data.targets.find(
+        t => t.telemetryName === "lists"
       );
+      const timerTarget = hideAllAction.data.targets.find(
+        t => t.telemetryName === "focus_timer"
+      );
+      assert.ok(listsTarget, "targets should include lists");
+      assert.ok(timerTarget, "targets should include focus_timer");
+      assert.equal(listsTarget.active, true);
+      assert.equal(timerTarget.active, true);
     });
 
-    it("should dispatch WIDGETS_CONTAINER_ACTION with medium size when widgets are maximized", () => {
+    it("should dispatch WIDGETS_HIDE_ALL with medium size when widgets are maximized", () => {
       const maximizedState = {
         ...state,
         Prefs: {
@@ -395,20 +397,20 @@ describe("<Widgets>", () => {
         .getCalls()
         .map(call => call.args[0]);
 
-      const containerAction = dispatchedActions.find(
-        action => action.type === at.WIDGETS_CONTAINER_ACTION
+      const hideAllAction = dispatchedActions.find(
+        action => action.type === at.WIDGETS_HIDE_ALL
       );
 
-      assert.ok(containerAction, "should dispatch WIDGETS_CONTAINER_ACTION");
+      assert.ok(hideAllAction, "should dispatch WIDGETS_HIDE_ALL");
       assert.equal(
-        containerAction.data.widget_size,
+        hideAllAction.data.widget_size,
         "medium",
         "should report medium size when maximized"
       );
       maximizedStore.dispatch.restore();
     });
 
-    it("should dispatch WIDGETS_ENABLED for each enabled widget when hide button is clicked", () => {
+    it("should dispatch WIDGETS_HIDE_ALL with active=true only for enabled widgets", () => {
       const hideButton = wrapper.find("#hide-all-widgets-button");
       hideButton.prop("onClick")({ preventDefault: () => {} });
 
@@ -416,41 +418,29 @@ describe("<Widgets>", () => {
         .getCalls()
         .map(call => call.args[0]);
 
-      const widgetsEnabledActions = dispatchedActions.filter(
-        action => action.type === at.WIDGETS_ENABLED
+      const hideAllAction = dispatchedActions.find(
+        action => action.type === at.WIDGETS_HIDE_ALL
       );
 
-      assert.equal(
-        widgetsEnabledActions.length,
-        2,
-        "should dispatch WIDGETS_ENABLED for both lists and timer"
+      assert.ok(hideAllAction, "should dispatch WIDGETS_HIDE_ALL");
+
+      const listsTarget = hideAllAction.data.targets.find(
+        t => t.telemetryName === "lists"
+      );
+      const timerTarget = hideAllAction.data.targets.find(
+        t => t.telemetryName === "focus_timer"
       );
 
-      const listsEnabledAction = widgetsEnabledActions.find(
-        action => action.data.widget_name === "lists"
-      );
-      const timerEnabledAction = widgetsEnabledActions.find(
-        action => action.data.widget_name === "focus_timer"
-      );
+      assert.ok(listsTarget, "targets should include lists");
+      assert.equal(listsTarget.active, true);
+      assert.equal(listsTarget.enabledPref, PREF_WIDGETS_LISTS_ENABLED);
 
-      assert.ok(
-        listsEnabledAction,
-        "should dispatch WIDGETS_ENABLED for lists"
-      );
-      assert.equal(listsEnabledAction.data.widget_source, "widget");
-      assert.equal(listsEnabledAction.data.enabled, false);
-      assert.equal(listsEnabledAction.data.widget_size, "medium");
-
-      assert.ok(
-        timerEnabledAction,
-        "should dispatch WIDGETS_ENABLED for timer"
-      );
-      assert.equal(timerEnabledAction.data.widget_source, "widget");
-      assert.equal(timerEnabledAction.data.enabled, false);
-      assert.equal(timerEnabledAction.data.widget_size, "medium");
+      assert.ok(timerTarget, "targets should include focus_timer");
+      assert.equal(timerTarget.active, true);
+      assert.equal(timerTarget.enabledPref, PREF_WIDGETS_TIMER_ENABLED);
     });
 
-    it("should dispatch WIDGETS_ENABLED only for enabled widgets", () => {
+    it("should dispatch WIDGETS_HIDE_ALL with active=false for disabled widgets", () => {
       const partialState = {
         ...state,
         Prefs: {
@@ -475,31 +465,30 @@ describe("<Widgets>", () => {
       const hideButton = partialWrapper.find("#hide-all-widgets-button");
       hideButton.prop("onClick")({ preventDefault: () => {} });
 
-      const widgetsEnabledActions = partialStore.dispatch
+      const hideAllAction = partialStore.dispatch
         .getCalls()
         .map(call => call.args[0])
-        .filter(action => action.type === at.WIDGETS_ENABLED);
+        .find(action => action.type === at.WIDGETS_HIDE_ALL);
 
-      assert.equal(
-        widgetsEnabledActions.length,
-        1,
-        "should only dispatch WIDGETS_ENABLED for lists (timer is already disabled)"
+      assert.ok(hideAllAction, "should dispatch WIDGETS_HIDE_ALL");
+
+      const listsTarget = hideAllAction.data.targets.find(
+        t => t.telemetryName === "lists"
+      );
+      const timerTarget = hideAllAction.data.targets.find(
+        t => t.telemetryName === "focus_timer"
       );
 
-      const listsEnabledAction = widgetsEnabledActions.find(
-        action => action.data.widget_name === "lists"
-      );
+      assert.ok(listsTarget, "targets should include lists");
+      assert.equal(listsTarget.active, true, "lists should be active");
 
-      assert.ok(
-        listsEnabledAction,
-        "should dispatch WIDGETS_ENABLED for lists"
-      );
-      assert.equal(listsEnabledAction.data.enabled, false);
+      assert.ok(timerTarget, "targets should include focus_timer");
+      assert.equal(timerTarget.active, false, "timer should not be active");
 
       partialStore.dispatch.restore();
     });
 
-    it("should dispatch WIDGETS_ENABLED with correct widget_size when maximized", () => {
+    it("should dispatch WIDGETS_HIDE_ALL with correct widget_size when maximized", () => {
       const maximizedState = {
         ...state,
         Prefs: {
@@ -525,61 +514,44 @@ describe("<Widgets>", () => {
       const hideButton = maximizedWrapper.find("#hide-all-widgets-button");
       hideButton.prop("onClick")({ preventDefault: () => {} });
 
-      const widgetsEnabledActions = maximizedStore.dispatch
+      const hideAllAction = maximizedStore.dispatch
         .getCalls()
         .map(call => call.args[0])
-        .filter(action => action.type === at.WIDGETS_ENABLED);
+        .find(action => action.type === at.WIDGETS_HIDE_ALL);
 
-      assert.equal(widgetsEnabledActions.length, 2);
-
-      widgetsEnabledActions.forEach(action => {
-        assert.equal(
-          action.data.widget_size,
-          "medium",
-          "widget_size should be medium when maximized"
-        );
-      });
+      assert.ok(hideAllAction, "should dispatch WIDGETS_HIDE_ALL");
+      assert.equal(
+        hideAllAction.data.widget_size,
+        "medium",
+        "widget_size should be medium when maximized"
+      );
 
       maximizedStore.dispatch.restore();
     });
 
-    it("should dispatch WIDGETS_ENABLED for each enabled widget when Enter key is pressed", () => {
+    it("should dispatch WIDGETS_HIDE_ALL when Enter key is pressed", () => {
       const hideButton = wrapper.find("#hide-all-widgets-button");
       hideButton.prop("onKeyDown")({ key: "Enter", preventDefault: () => {} });
 
-      const widgetsEnabledActions = store.dispatch
+      const hideAllAction = store.dispatch
         .getCalls()
         .map(call => call.args[0])
-        .filter(action => action.type === at.WIDGETS_ENABLED);
+        .find(action => action.type === at.WIDGETS_HIDE_ALL);
 
-      assert.equal(
-        widgetsEnabledActions.length,
-        2,
-        "should dispatch WIDGETS_ENABLED for both lists and timer"
-      );
+      assert.ok(hideAllAction, "should dispatch WIDGETS_HIDE_ALL");
 
-      const listsEnabledAction = widgetsEnabledActions.find(
-        action => action.data.widget_name === "lists"
+      const listsTarget = hideAllAction.data.targets.find(
+        t => t.telemetryName === "lists"
       );
-      const timerEnabledAction = widgetsEnabledActions.find(
-        action => action.data.widget_name === "focus_timer"
+      const timerTarget = hideAllAction.data.targets.find(
+        t => t.telemetryName === "focus_timer"
       );
 
-      assert.ok(
-        listsEnabledAction,
-        "should dispatch WIDGETS_ENABLED for lists"
-      );
-      assert.equal(listsEnabledAction.data.widget_source, "widget");
-      assert.equal(listsEnabledAction.data.enabled, false);
-      assert.equal(listsEnabledAction.data.widget_size, "medium");
+      assert.ok(listsTarget, "targets should include lists");
+      assert.equal(listsTarget.active, true);
 
-      assert.ok(
-        timerEnabledAction,
-        "should dispatch WIDGETS_ENABLED for timer"
-      );
-      assert.equal(timerEnabledAction.data.widget_source, "widget");
-      assert.equal(timerEnabledAction.data.enabled, false);
-      assert.equal(timerEnabledAction.data.widget_size, "medium");
+      assert.ok(timerTarget, "targets should include focus_timer");
+      assert.equal(timerTarget.active, true);
     });
   });
 

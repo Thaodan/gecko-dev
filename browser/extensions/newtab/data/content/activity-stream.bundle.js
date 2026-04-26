@@ -298,6 +298,7 @@ for (const type of [
   "WIDGETS_CONTAINER_ACTION",
   "WIDGETS_ENABLED",
   "WIDGETS_ERROR",
+  "WIDGETS_HIDE_ALL",
   "WIDGETS_IMPRESSION",
   "WIDGETS_LISTS_CHANGE_SELECTED",
   "WIDGETS_LISTS_SET",
@@ -12149,6 +12150,26 @@ function resolveWidgetHasSidebar(widget, prefs) {
   return widget.hasSidebar;
 }
 
+/**
+ * Returns the list of widgets to disable when "hide all" is triggered.
+ * A widget is included if it has no sidebar variant OR if it is currently
+ * in the row (not the sidebar). Each entry carries the pref to disable,
+ * the telemetry name, and whether it was active (for telemetry filtering).
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @param {object} widgetEnabledMap - map of widget id → boolean (currently active in row)
+ * @returns {{ enabledPref: string, telemetryName: string, active: boolean }[]}
+ */
+function getHideAllTargets(prefs, widgetEnabledMap) {
+  return WIDGET_REGISTRY.filter(
+    w => !resolveWidgetHasSidebar(w, prefs) || widgetEnabledMap[w.id]
+  ).map(w => ({
+    enabledPref: w.enabledPref,
+    telemetryName: w.telemetryName,
+    active: !!widgetEnabledMap[w.id],
+  }));
+}
+
 ;// CONCATENATED MODULE: ./content-src/components/Widgets/Lists/Lists.jsx
 function Lists_extends() { return Lists_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, Lists_extends.apply(null, arguments); }
 /* This Source Code Form is subject to the terms of the Mozilla Public
@@ -15154,35 +15175,21 @@ function Widgets() {
   }, [timerEnabled, timerData, dispatch, timerType]);
   function hideAllWidgets() {
     (0,external_ReactRedux_namespaceObject.batch)(() => {
-      for (const widget of WIDGET_REGISTRY) {
-        if (widget.id !== "weather" || widgetEnabledMap.weather) {
-          dispatch(actionCreators.SetPref(widget.enabledPref, false));
-        }
+      const targets = getHideAllTargets(prefs, widgetEnabledMap);
+      for (const target of targets) {
+        dispatch(actionCreators.SetPref(target.enabledPref, false));
       }
       // @nova-cleanup(remove-conditional): Remove the !novaEnabled guard and this branch
       if (!novaEnabled && weatherForecastEnabled) {
         dispatch(actionCreators.SetPref("showWeather", false));
       }
       dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_CONTAINER_ACTION,
+        type: actionTypes.WIDGETS_HIDE_ALL,
         data: {
-          action_type: CONTAINER_ACTION_TYPES.HIDE_ALL,
+          targets,
           widget_size: widgetSize
         }
       }));
-      for (const widget of WIDGET_REGISTRY) {
-        if (widgetEnabledMap[widget.id]) {
-          dispatch(actionCreators.OnlyToMain({
-            type: actionTypes.WIDGETS_ENABLED,
-            data: {
-              widget_name: widget.id === "focusTimer" ? "focus_timer" : widget.id,
-              widget_source: "widget",
-              enabled: false,
-              widget_size: widgetSize
-            }
-          }));
-        }
-      }
       // @nova-cleanup(remove-conditional): Remove once weatherForecastEnabled path is removed
       if (!novaEnabled && weatherForecastEnabled) {
         dispatch(actionCreators.OnlyToMain({
