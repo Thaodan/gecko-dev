@@ -625,7 +625,6 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
                 settings = components.settings,
             ),
             searchSelectorController = DefaultSearchSelectorController(
-                activity = activity,
                 navController = findNavController(),
             ),
             toolbarController = DefaultToolbarController(

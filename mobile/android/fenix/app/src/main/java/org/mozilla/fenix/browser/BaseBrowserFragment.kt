@@ -2006,9 +2006,7 @@ abstract class BaseBrowserFragment :
     @CallSuper
     override fun onPause() {
         super.onPause()
-        if (findNavController().currentDestination?.id != R.id.searchDialogFragment) {
-            view?.hideKeyboard()
-        }
+        view?.hideKeyboard()
     }
 
     override fun onStart() {

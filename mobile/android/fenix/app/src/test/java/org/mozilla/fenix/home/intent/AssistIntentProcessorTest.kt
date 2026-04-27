@@ -22,7 +22,7 @@ import org.robolectric.RobolectricTestRunner
 class AssistIntentProcessorTest {
     private val navController: NavController = mockk(relaxed = true)
     private val out: Intent = mockk(relaxed = true)
-    private val settings: Settings = mockk()
+    private val settings: Settings = mockk(relaxed = true)
 
     @Test
     fun `GIVEN an intent with wrong action WHEN it is processed THEN nothing should happen`() {

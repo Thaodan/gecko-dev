@@ -1860,8 +1860,7 @@ class Settings(
     )
 
     /**
-     * Used in [SearchDialogFragment.kt], [SearchFragment.kt] (deprecated), and [PairFragment.kt]
-     * to see if we need to check for camera permissions before using the QR code scanner.
+     * Tracks whether we need to check for camera permissions before using the QR code scanner.
      */
     var shouldShowCameraPermissionPrompt by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_camera_permissions_needed),
