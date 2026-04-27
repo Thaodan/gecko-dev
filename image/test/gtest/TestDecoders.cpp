@@ -777,6 +777,24 @@ TEST_F(ImageDecoders, WebPTransparentNoAlphaHeaderSingleChunk) {
   CheckDecoderSingleChunk(TransparentNoAlphaHeaderWebPTestCase());
 }
 
+TEST_F(ImageDecoders, AVIFTransparentSingleChunk) {
+  CheckDecoderSingleChunk(TransparentAVIFTestCase());
+}
+
+TEST_F(ImageDecoders, PNGTransparentSingleChunk) {
+  CheckDecoderSingleChunk(TransparentPNGTestCase());
+}
+
+TEST_F(ImageDecoders, GIFTransparentSingleChunk) {
+  CheckDecoderSingleChunk(TransparentGIFTestCase());
+}
+
+#ifdef MOZ_JXL
+TEST_F(ImageDecoders, JXLTransparentSingleChunk) {
+  CheckDecoderSingleChunk(TransparentJXLTestCase());
+}
+#endif
+
 TEST_F(ImageDecoders, AVIFSingleChunkNonzeroReserved) {
   CheckDecoderSingleChunk(NonzeroReservedAVIFTestCase());
 }

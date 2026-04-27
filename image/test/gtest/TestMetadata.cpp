@@ -236,6 +236,10 @@ TEST_F(ImageDecoderMetadata, Icon) { CheckMetadata(GreenIconTestCase()); }
 TEST_F(ImageDecoderMetadata, WebP) { CheckMetadata(GreenWebPTestCase()); }
 TEST_F(ImageDecoderMetadata, AVIF) { CheckMetadata(GreenAVIFTestCase()); }
 
+TEST_F(ImageDecoderMetadata, TransparentWebP) {
+  CheckMetadata(TransparentWebPTestCase());
+}
+
 #ifdef MOZ_JXL
 TEST_F(ImageDecoderMetadata, JXL) { CheckMetadata(GreenJXLTestCase()); }
 TEST_F(ImageDecoderMetadata, TransparentJXL) {

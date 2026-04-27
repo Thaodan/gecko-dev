@@ -833,24 +833,30 @@ ImageTestCase CorruptAVIFTestCase() {
 }
 
 ImageTestCase TransparentAVIFTestCase() {
-  return ImageTestCase("transparent.avif", "image/avif", IntSize(1200, 1200),
-                       TEST_CASE_IS_TRANSPARENT);
+  auto testCase = ImageTestCase("transparent.avif", "image/avif",
+                                IntSize(100, 100), TEST_CASE_IS_TRANSPARENT);
+  testCase.mColor = BGRAColor(0x00, 0xFF, 0x00, 0x80);
+  return testCase;
 }
 
 ImageTestCase TransparentPNGTestCase() {
-  return ImageTestCase("transparent.png", "image/png", IntSize(32, 32),
-                       TEST_CASE_IS_TRANSPARENT);
+  auto testCase = ImageTestCase("transparent.png", "image/png",
+                                IntSize(100, 100), TEST_CASE_IS_TRANSPARENT);
+  testCase.mColor = BGRAColor(0x00, 0xFF, 0x00, 0x80);
+  return testCase;
 }
 
 ImageTestCase TransparentGIFTestCase() {
-  return ImageTestCase("transparent.gif", "image/gif", IntSize(16, 16),
-                       TEST_CASE_IS_TRANSPARENT);
+  auto testCase = ImageTestCase("transparent.gif", "image/gif",
+                                IntSize(100, 100), TEST_CASE_IS_TRANSPARENT);
+  testCase.mColor = BGRAColor::Transparent();
+  return testCase;
 }
 
 ImageTestCase TransparentWebPTestCase() {
   ImageTestCase test("transparent.webp", "image/webp", IntSize(100, 100),
                      TEST_CASE_IS_TRANSPARENT);
-  test.mColor = BGRAColor::Transparent();
+  test.mColor = BGRAColor(0x00, 0xFF, 0x00, 0x80);
   return test;
 }
 
@@ -862,7 +868,7 @@ ImageTestCase TransparentNoAlphaHeaderWebPTestCase() {
 }
 
 ImageTestCase FirstFramePaddingGIFTestCase() {
-  return ImageTestCase("transparent.gif", "image/gif", IntSize(16, 16),
+  return ImageTestCase("first-frame-padding.gif", "image/gif", IntSize(16, 16),
                        TEST_CASE_IS_TRANSPARENT);
 }
 
@@ -1043,8 +1049,10 @@ ImageTestCase LargeJXLTestCase() {
 }
 
 ImageTestCase TransparentJXLTestCase() {
-  return ImageTestCase("transparent.jxl", "image/jxl", IntSize(1200, 1200),
-                       TEST_CASE_IS_TRANSPARENT);
+  auto testCase = ImageTestCase("transparent.jxl", "image/jxl",
+                                IntSize(100, 100), TEST_CASE_IS_TRANSPARENT);
+  testCase.mColor = BGRAColor(0x00, 0xFF, 0x00, 0x80);
+  return testCase;
 }
 
 ImageTestCase CorruptJXLTestCase() {
