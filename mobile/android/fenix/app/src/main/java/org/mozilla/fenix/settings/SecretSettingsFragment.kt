@@ -239,11 +239,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_top_sites_pager).apply {
-            isChecked = context.settings().topSitesPager
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_add_shortcuts_improvement).apply {
             isChecked = context.settings().enableAddShortcutsImprovement
             onPreferenceChangeListener = SharedPreferenceUpdater()
