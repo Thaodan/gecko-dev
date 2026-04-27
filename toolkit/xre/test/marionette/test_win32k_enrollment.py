@@ -34,6 +34,7 @@ class Prefs:
         "security.sandbox.content.win32k-experiment.startupEnrollmentStatus"
     )
     WIN32K = "security.sandbox.content.win32k-disable"
+    WEBGL = "webgl.out-of-process"
 
 
 ENV_DISABLE_WIN32K = "MOZ_ENABLE_WIN32K"
@@ -335,7 +336,7 @@ class TestWin32kAutostart(MarionetteTestCase):
         )
 
     def test_5(self):
-        # [D=F] Nothing [A#1] -> On -> Bad Requirements [A SS=Disable...
+        # [D=F] Nothing [A#1] -> On -> Bad Requirements [A S=MissingRemoteWebGL SS=Disable...
 
         if self.default_is is not False:
             return
@@ -350,8 +351,10 @@ class TestWin32kAutostart(MarionetteTestCase):
 
         self.marionette.set_pref(Prefs.WIN32K, True)
 
+        self.marionette.set_pref(Prefs.WEBGL, False)
+
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.EnabledByUserPref,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
             sessionStatus=ContentWin32kLockdownState.DisabledByDefault,
             experimentStatus=ExperimentStatus.UNENROLLED,
             pref=True,
@@ -361,8 +364,8 @@ class TestWin32kAutostart(MarionetteTestCase):
         self.restart()
 
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.EnabledByUserPref,
-            sessionStatus=ContentWin32kLockdownState.EnabledByUserPref,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
+            sessionStatus=ContentWin32kLockdownState.MissingRemoteWebGL,
             experimentStatus=ExperimentStatus.UNENROLLED,
             pref=True,
             enrollmentStatusPref=ExperimentStatus.UNENROLLED,
@@ -566,7 +569,7 @@ class TestWin32kAutostart(MarionetteTestCase):
         )
 
     def test_12(self):
-        # [D=T] Nothing [A#1T] -> On -> Bad Requirements [A SS=Enable...
+        # [D=T] Nothing [A#1T] -> On -> Bad Requirements [A S=MissingRemoteWebGL SS=Enable...
 
         if self.default_is is not True:
             return
@@ -581,8 +584,10 @@ class TestWin32kAutostart(MarionetteTestCase):
 
         self.marionette.set_pref(Prefs.WIN32K, True)
 
+        self.marionette.set_pref(Prefs.WEBGL, False)
+
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.EnabledByDefault,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
             sessionStatus=ContentWin32kLockdownState.EnabledByDefault,
             experimentStatus=ExperimentStatus.UNENROLLED,
             pref=True,
@@ -592,8 +597,8 @@ class TestWin32kAutostart(MarionetteTestCase):
         self.restart()
 
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.EnabledByDefault,
-            sessionStatus=ContentWin32kLockdownState.EnabledByDefault,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
+            sessionStatus=ContentWin32kLockdownState.MissingRemoteWebGL,
             experimentStatus=ExperimentStatus.UNENROLLED,
             pref=True,
             enrollmentStatusPref=ExperimentStatus.UNENROLLED,
@@ -799,7 +804,7 @@ class TestWin32kAutostart(MarionetteTestCase):
         )
 
     def test_18(self):
-        # [D=F] On [A#3] -> Restart [A#4] -> Bad Requirements [A SS=E...
+        # [D=F] On [A#3] -> Restart [A#4] -> Bad Requirements [A S=MissingRemoteWebGL SS=E...
 
         if self.default_is is not False:
             return
@@ -818,6 +823,16 @@ class TestWin32kAutostart(MarionetteTestCase):
 
         self.check_win32k_status(
             status=ContentWin32kLockdownState.EnabledByUserPref,
+            sessionStatus=ContentWin32kLockdownState.EnabledByUserPref,
+            experimentStatus=ExperimentStatus.UNENROLLED,
+            pref=True,
+            enrollmentStatusPref=ExperimentStatus.UNENROLLED,
+        )
+
+        self.marionette.set_pref(Prefs.WEBGL, False)
+
+        self.check_win32k_status(
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
             sessionStatus=ContentWin32kLockdownState.EnabledByUserPref,
             experimentStatus=ExperimentStatus.UNENROLLED,
             pref=True,
@@ -1056,7 +1071,7 @@ class TestWin32kAutostart(MarionetteTestCase):
         )
 
     def test_24(self):
-        # [D=T] On [A#3T] -> Restart [A#4T] -> Bad Requirements [A SS...
+        # [D=T] On [A#3T] -> Restart [A#4T] -> Bad Requirements [A S=MissingRemoteWebGL SS...
 
         if self.default_is is not True:
             return
@@ -1075,6 +1090,16 @@ class TestWin32kAutostart(MarionetteTestCase):
 
         self.check_win32k_status(
             status=ContentWin32kLockdownState.EnabledByDefault,
+            sessionStatus=ContentWin32kLockdownState.EnabledByDefault,
+            experimentStatus=ExperimentStatus.UNENROLLED,
+            pref=True,
+            enrollmentStatusPref=ExperimentStatus.UNENROLLED,
+        )
+
+        self.marionette.set_pref(Prefs.WEBGL, False)
+
+        self.check_win32k_status(
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
             sessionStatus=ContentWin32kLockdownState.EnabledByDefault,
             experimentStatus=ExperimentStatus.UNENROLLED,
             pref=True,
@@ -1287,8 +1312,10 @@ class TestWin32kAutostart(MarionetteTestCase):
         # Re-set enrollment pref, like Normandy would do
         self.set_enrollment_status(ExperimentStatus.ENROLLED_CONTROL)
 
+        self.marionette.set_pref(Prefs.WEBGL, False)
+
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.DisabledByControlGroup,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
             sessionStatus=ContentWin32kLockdownState.DisabledByControlGroup,
             experimentStatus=ExperimentStatus.ENROLLED_CONTROL,
             pref=False,
@@ -1298,8 +1325,8 @@ class TestWin32kAutostart(MarionetteTestCase):
         self.restart()
 
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.DisabledByControlGroup,
-            sessionStatus=ContentWin32kLockdownState.DisabledByControlGroup,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
+            sessionStatus=ContentWin32kLockdownState.MissingRemoteWebGL,
             experimentStatus=ExperimentStatus.DISQUALIFIED,
             pref=False,
             enrollmentStatusPref=ExperimentStatus.DISQUALIFIED,
@@ -1521,8 +1548,10 @@ class TestWin32kAutostart(MarionetteTestCase):
         # Re-set enrollment pref, like Normandy would do
         self.set_enrollment_status(ExperimentStatus.ENROLLED_CONTROL)
 
+        self.marionette.set_pref(Prefs.WEBGL, False)
+
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.DisabledByControlGroup,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
             sessionStatus=ContentWin32kLockdownState.DisabledByControlGroup,
             experimentStatus=ExperimentStatus.ENROLLED_CONTROL,
             pref=True,
@@ -1532,11 +1561,11 @@ class TestWin32kAutostart(MarionetteTestCase):
         self.restart()
 
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.DisabledByControlGroup,
-            sessionStatus=ContentWin32kLockdownState.DisabledByControlGroup,
-            experimentStatus=ExperimentStatus.ENROLLED_CONTROL,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
+            sessionStatus=ContentWin32kLockdownState.MissingRemoteWebGL,
+            experimentStatus=ExperimentStatus.DISQUALIFIED,
             pref=True,
-            enrollmentStatusPref=ExperimentStatus.ENROLLED_CONTROL,
+            enrollmentStatusPref=ExperimentStatus.DISQUALIFIED,
         )
 
     def test_35(self):
@@ -1768,8 +1797,10 @@ class TestWin32kAutostart(MarionetteTestCase):
         # Re-set enrollment pref, like Normandy would do
         self.set_enrollment_status(ExperimentStatus.ENROLLED_TREATMENT)
 
+        self.marionette.set_pref(Prefs.WEBGL, False)
+
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.EnabledByTreatmentGroup,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
             sessionStatus=ContentWin32kLockdownState.EnabledByTreatmentGroup,
             experimentStatus=ExperimentStatus.ENROLLED_TREATMENT,
             pref=False,
@@ -1779,8 +1810,8 @@ class TestWin32kAutostart(MarionetteTestCase):
         self.restart()
 
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.EnabledByTreatmentGroup,
-            sessionStatus=ContentWin32kLockdownState.EnabledByTreatmentGroup,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
+            sessionStatus=ContentWin32kLockdownState.MissingRemoteWebGL,
             experimentStatus=ExperimentStatus.DISQUALIFIED,
             pref=False,
             enrollmentStatusPref=ExperimentStatus.DISQUALIFIED,
@@ -2015,8 +2046,10 @@ class TestWin32kAutostart(MarionetteTestCase):
         # Re-set enrollment pref, like Normandy would do
         self.set_enrollment_status(ExperimentStatus.ENROLLED_TREATMENT)
 
+        self.marionette.set_pref(Prefs.WEBGL, False)
+
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.EnabledByTreatmentGroup,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
             sessionStatus=ContentWin32kLockdownState.EnabledByTreatmentGroup,
             experimentStatus=ExperimentStatus.ENROLLED_TREATMENT,
             pref=True,
@@ -2026,11 +2059,11 @@ class TestWin32kAutostart(MarionetteTestCase):
         self.restart()
 
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.EnabledByTreatmentGroup,
-            sessionStatus=ContentWin32kLockdownState.EnabledByTreatmentGroup,
-            experimentStatus=ExperimentStatus.ENROLLED_TREATMENT,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
+            sessionStatus=ContentWin32kLockdownState.MissingRemoteWebGL,
+            experimentStatus=ExperimentStatus.DISQUALIFIED,
             pref=True,
-            enrollmentStatusPref=ExperimentStatus.ENROLLED_TREATMENT,
+            enrollmentStatusPref=ExperimentStatus.DISQUALIFIED,
         )
 
     def test_45(self):
@@ -2144,9 +2177,21 @@ class TestWin32kAutostart(MarionetteTestCase):
         if self.default_is is not False:
             return
 
+        self.marionette.set_pref(Prefs.WEBGL, False)
+
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.DisabledByDefault,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
             sessionStatus=ContentWin32kLockdownState.DisabledByDefault,
+            experimentStatus=ExperimentStatus.UNENROLLED,
+            pref=False,
+            enrollmentStatusPref=ExperimentStatus.UNENROLLED,
+        )
+
+        self.restart()
+
+        self.check_win32k_status(
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
+            sessionStatus=ContentWin32kLockdownState.MissingRemoteWebGL,
             experimentStatus=ExperimentStatus.UNENROLLED,
             pref=False,
             enrollmentStatusPref=ExperimentStatus.UNENROLLED,
@@ -2154,8 +2199,8 @@ class TestWin32kAutostart(MarionetteTestCase):
         self.set_enrollment_status(ExperimentStatus.ENROLLED_CONTROL)
 
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.DisabledByDefault,
-            sessionStatus=ContentWin32kLockdownState.DisabledByDefault,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
+            sessionStatus=ContentWin32kLockdownState.MissingRemoteWebGL,
             experimentStatus=ExperimentStatus.UNENROLLED,
             pref=False,
             enrollmentStatusPref=ExperimentStatus.ENROLLED_CONTROL,
@@ -2164,8 +2209,8 @@ class TestWin32kAutostart(MarionetteTestCase):
         self.restart()
 
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.DisabledByDefault,
-            sessionStatus=ContentWin32kLockdownState.DisabledByDefault,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
+            sessionStatus=ContentWin32kLockdownState.MissingRemoteWebGL,
             experimentStatus=ExperimentStatus.DISQUALIFIED,
             pref=False,
             enrollmentStatusPref=ExperimentStatus.DISQUALIFIED,
@@ -2177,9 +2222,21 @@ class TestWin32kAutostart(MarionetteTestCase):
         if self.default_is is not False:
             return
 
+        self.marionette.set_pref(Prefs.WEBGL, False)
+
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.DisabledByDefault,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
             sessionStatus=ContentWin32kLockdownState.DisabledByDefault,
+            experimentStatus=ExperimentStatus.UNENROLLED,
+            pref=False,
+            enrollmentStatusPref=ExperimentStatus.UNENROLLED,
+        )
+
+        self.restart()
+
+        self.check_win32k_status(
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
+            sessionStatus=ContentWin32kLockdownState.MissingRemoteWebGL,
             experimentStatus=ExperimentStatus.UNENROLLED,
             pref=False,
             enrollmentStatusPref=ExperimentStatus.UNENROLLED,
@@ -2187,8 +2244,8 @@ class TestWin32kAutostart(MarionetteTestCase):
         self.set_enrollment_status(ExperimentStatus.ENROLLED_TREATMENT)
 
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.DisabledByDefault,
-            sessionStatus=ContentWin32kLockdownState.DisabledByDefault,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
+            sessionStatus=ContentWin32kLockdownState.MissingRemoteWebGL,
             experimentStatus=ExperimentStatus.UNENROLLED,
             pref=False,
             enrollmentStatusPref=ExperimentStatus.ENROLLED_TREATMENT,
@@ -2197,22 +2254,34 @@ class TestWin32kAutostart(MarionetteTestCase):
         self.restart()
 
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.DisabledByDefault,
-            sessionStatus=ContentWin32kLockdownState.DisabledByDefault,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
+            sessionStatus=ContentWin32kLockdownState.MissingRemoteWebGL,
             experimentStatus=ExperimentStatus.DISQUALIFIED,
             pref=False,
             enrollmentStatusPref=ExperimentStatus.DISQUALIFIED,
         )
 
     def test_49(self):
-        # [D=F] Bad Requirements [A#9] -> Restart [A#10] -> On [A SS=...
+        # [D=F] Bad Requirements [A#9] -> Restart [A#10] -> On [A S=MissingRemoteWebGL SS=...
 
         if self.default_is is not False:
             return
 
+        self.marionette.set_pref(Prefs.WEBGL, False)
+
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.DisabledByDefault,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
             sessionStatus=ContentWin32kLockdownState.DisabledByDefault,
+            experimentStatus=ExperimentStatus.UNENROLLED,
+            pref=False,
+            enrollmentStatusPref=ExperimentStatus.UNENROLLED,
+        )
+
+        self.restart()
+
+        self.check_win32k_status(
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
+            sessionStatus=ContentWin32kLockdownState.MissingRemoteWebGL,
             experimentStatus=ExperimentStatus.UNENROLLED,
             pref=False,
             enrollmentStatusPref=ExperimentStatus.UNENROLLED,
@@ -2221,22 +2290,34 @@ class TestWin32kAutostart(MarionetteTestCase):
         self.marionette.set_pref(Prefs.WIN32K, True)
 
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.EnabledByUserPref,
-            sessionStatus=ContentWin32kLockdownState.EnabledByUserPref,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
+            sessionStatus=ContentWin32kLockdownState.MissingRemoteWebGL,
             experimentStatus=ExperimentStatus.UNENROLLED,
             pref=True,
             enrollmentStatusPref=ExperimentStatus.UNENROLLED,
         )
 
     def test_50(self):
-        # [D=F] Bad Requirements [A#9] -> Restart [A#10] -> Off [A SS...
+        # [D=F] Bad Requirements [A#9] -> Restart [A#10] -> Off [A S=MissingRemoteWebGL SS...
 
         if self.default_is is not False:
             return
 
+        self.marionette.set_pref(Prefs.WEBGL, False)
+
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.DisabledByDefault,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
             sessionStatus=ContentWin32kLockdownState.DisabledByDefault,
+            experimentStatus=ExperimentStatus.UNENROLLED,
+            pref=False,
+            enrollmentStatusPref=ExperimentStatus.UNENROLLED,
+        )
+
+        self.restart()
+
+        self.check_win32k_status(
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
+            sessionStatus=ContentWin32kLockdownState.MissingRemoteWebGL,
             experimentStatus=ExperimentStatus.UNENROLLED,
             pref=False,
             enrollmentStatusPref=ExperimentStatus.UNENROLLED,
@@ -2245,8 +2326,8 @@ class TestWin32kAutostart(MarionetteTestCase):
         self.marionette.set_pref(Prefs.WIN32K, False)
 
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.DisabledByUserPref,
-            sessionStatus=ContentWin32kLockdownState.DisabledByUserPref,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
+            sessionStatus=ContentWin32kLockdownState.MissingRemoteWebGL,
             experimentStatus=ExperimentStatus.UNENROLLED,
             pref=False,
             enrollmentStatusPref=ExperimentStatus.UNENROLLED,
@@ -2258,19 +2339,30 @@ class TestWin32kAutostart(MarionetteTestCase):
         if self.default_is is not True:
             return
 
+        self.marionette.set_pref(Prefs.WEBGL, False)
+
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.EnabledByDefault,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
             sessionStatus=ContentWin32kLockdownState.EnabledByDefault,
             experimentStatus=ExperimentStatus.UNENROLLED,
             pref=True,
             enrollmentStatusPref=ExperimentStatus.UNENROLLED,
         )
 
+        self.restart()
+
+        self.check_win32k_status(
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
+            sessionStatus=ContentWin32kLockdownState.MissingRemoteWebGL,
+            experimentStatus=ExperimentStatus.UNENROLLED,
+            pref=True,
+            enrollmentStatusPref=ExperimentStatus.UNENROLLED,
+        )
         self.set_enrollment_status(ExperimentStatus.ENROLLED_CONTROL)
 
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.EnabledByDefault,
-            sessionStatus=ContentWin32kLockdownState.EnabledByDefault,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
+            sessionStatus=ContentWin32kLockdownState.MissingRemoteWebGL,
             experimentStatus=ExperimentStatus.UNENROLLED,
             pref=True,
             enrollmentStatusPref=ExperimentStatus.ENROLLED_CONTROL,
@@ -2279,11 +2371,11 @@ class TestWin32kAutostart(MarionetteTestCase):
         self.restart()
 
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.DisabledByControlGroup,
-            sessionStatus=ContentWin32kLockdownState.DisabledByControlGroup,
-            experimentStatus=ExperimentStatus.ENROLLED_CONTROL,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
+            sessionStatus=ContentWin32kLockdownState.MissingRemoteWebGL,
+            experimentStatus=ExperimentStatus.DISQUALIFIED,
             pref=True,
-            enrollmentStatusPref=ExperimentStatus.ENROLLED_CONTROL,
+            enrollmentStatusPref=ExperimentStatus.DISQUALIFIED,
         )
 
     def test_52(self):
@@ -2292,19 +2384,30 @@ class TestWin32kAutostart(MarionetteTestCase):
         if self.default_is is not True:
             return
 
+        self.marionette.set_pref(Prefs.WEBGL, False)
+
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.EnabledByDefault,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
             sessionStatus=ContentWin32kLockdownState.EnabledByDefault,
             experimentStatus=ExperimentStatus.UNENROLLED,
             pref=True,
             enrollmentStatusPref=ExperimentStatus.UNENROLLED,
         )
 
+        self.restart()
+
+        self.check_win32k_status(
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
+            sessionStatus=ContentWin32kLockdownState.MissingRemoteWebGL,
+            experimentStatus=ExperimentStatus.UNENROLLED,
+            pref=True,
+            enrollmentStatusPref=ExperimentStatus.UNENROLLED,
+        )
         self.set_enrollment_status(ExperimentStatus.ENROLLED_TREATMENT)
 
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.EnabledByDefault,
-            sessionStatus=ContentWin32kLockdownState.EnabledByDefault,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
+            sessionStatus=ContentWin32kLockdownState.MissingRemoteWebGL,
             experimentStatus=ExperimentStatus.UNENROLLED,
             pref=True,
             enrollmentStatusPref=ExperimentStatus.ENROLLED_TREATMENT,
@@ -2313,22 +2416,34 @@ class TestWin32kAutostart(MarionetteTestCase):
         self.restart()
 
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.EnabledByTreatmentGroup,
-            sessionStatus=ContentWin32kLockdownState.EnabledByTreatmentGroup,
-            experimentStatus=ExperimentStatus.ENROLLED_TREATMENT,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
+            sessionStatus=ContentWin32kLockdownState.MissingRemoteWebGL,
+            experimentStatus=ExperimentStatus.DISQUALIFIED,
             pref=True,
-            enrollmentStatusPref=ExperimentStatus.ENROLLED_TREATMENT,
+            enrollmentStatusPref=ExperimentStatus.DISQUALIFIED,
         )
 
     def test_53(self):
-        # [D=T] Bad Requirements [A#9T] -> Restart [A#10T] -> On [A S...
+        # [D=T] Bad Requirements [A#9T] -> Restart [A#10T] -> On [A S=MissingRemoteWebGL S...
 
         if self.default_is is not True:
             return
 
+        self.marionette.set_pref(Prefs.WEBGL, False)
+
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.EnabledByDefault,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
             sessionStatus=ContentWin32kLockdownState.EnabledByDefault,
+            experimentStatus=ExperimentStatus.UNENROLLED,
+            pref=True,
+            enrollmentStatusPref=ExperimentStatus.UNENROLLED,
+        )
+
+        self.restart()
+
+        self.check_win32k_status(
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
+            sessionStatus=ContentWin32kLockdownState.MissingRemoteWebGL,
             experimentStatus=ExperimentStatus.UNENROLLED,
             pref=True,
             enrollmentStatusPref=ExperimentStatus.UNENROLLED,
@@ -2337,22 +2452,34 @@ class TestWin32kAutostart(MarionetteTestCase):
         self.marionette.set_pref(Prefs.WIN32K, True)
 
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.EnabledByDefault,
-            sessionStatus=ContentWin32kLockdownState.EnabledByDefault,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
+            sessionStatus=ContentWin32kLockdownState.MissingRemoteWebGL,
             experimentStatus=ExperimentStatus.UNENROLLED,
             pref=True,
             enrollmentStatusPref=ExperimentStatus.UNENROLLED,
         )
 
     def test_54(self):
-        # [D=T] Bad Requirements [A#9T] -> Restart [A#10T] -> Off [A ...
+        # [D=T] Bad Requirements [A#9T] -> Restart [A#10T] -> Off [A S=MissingRemoteWebGL ...
 
         if self.default_is is not True:
             return
 
+        self.marionette.set_pref(Prefs.WEBGL, False)
+
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.EnabledByDefault,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
             sessionStatus=ContentWin32kLockdownState.EnabledByDefault,
+            experimentStatus=ExperimentStatus.UNENROLLED,
+            pref=True,
+            enrollmentStatusPref=ExperimentStatus.UNENROLLED,
+        )
+
+        self.restart()
+
+        self.check_win32k_status(
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
+            sessionStatus=ContentWin32kLockdownState.MissingRemoteWebGL,
             experimentStatus=ExperimentStatus.UNENROLLED,
             pref=True,
             enrollmentStatusPref=ExperimentStatus.UNENROLLED,
@@ -2361,8 +2488,8 @@ class TestWin32kAutostart(MarionetteTestCase):
         self.marionette.set_pref(Prefs.WIN32K, False)
 
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.DisabledByUserPref,
-            sessionStatus=ContentWin32kLockdownState.EnabledByDefault,
+            status=ContentWin32kLockdownState.MissingRemoteWebGL,
+            sessionStatus=ContentWin32kLockdownState.MissingRemoteWebGL,
             experimentStatus=ExperimentStatus.UNENROLLED,
             pref=False,
             enrollmentStatusPref=ExperimentStatus.UNENROLLED,
