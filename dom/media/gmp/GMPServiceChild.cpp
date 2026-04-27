@@ -296,6 +296,19 @@ void GeckoMediaPluginServiceChild::BeginShutdown() {
   // It's possible this gets called twice if the parent sends us a message to
   // shutdown and we block shutdown in content in close proximity.
   mShuttingDownOnGMPThread = true;
+
+  // Drain any in-flight GetServiceChild promises. After this point we will
+  // not call SetServiceChild (the only thing that resolves them), so any
+  // stranded holder would keep mPendingGetContentParents>0 forever and wedge
+  // xpcom-will-shutdown.
+  nsTArray<MozPromiseHolder<GetServiceChildPromise>> holders =
+      std::move(mGetServiceChildPromises);
+  for (auto& holder : holders) {
+    holder.Reject(MediaResult(NS_ERROR_ABORT,
+                              "GeckoMediaPluginServiceChild shutting down"_ns),
+                  __func__);
+  }
+
   RemoveShutdownBlockerIfNeeded();
 }
 
