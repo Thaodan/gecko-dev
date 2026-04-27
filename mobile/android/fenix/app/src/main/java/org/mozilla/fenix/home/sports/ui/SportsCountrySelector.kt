@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -39,6 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.compose.base.badge.CheckmarkBadge
 import mozilla.components.compose.base.theme.surfaceDimVariant
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.BottomSheetHandle
@@ -164,7 +166,6 @@ private fun RegionSection(
     }
 }
 
-@Suppress("UnusedParameter")
 @Composable
 private fun CountryFlagItem(
     country: Country,
@@ -176,14 +177,25 @@ private fun CountryFlagItem(
         modifier = modifier.clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box {
+        Box(
+            modifier = Modifier.size(width = 60.dp, height = 40.dp),
+        ) {
             Image(
                 painter = painterResource(country.flagResId),
                 contentDescription = null,
                 modifier = Modifier
-                    .size(width = 60.dp, height = 40.dp)
+                    .matchParentSize()
                     .clip(RoundedCornerShape(4.dp)),
             )
+
+            if (isSelected) {
+                CheckmarkBadge(
+                    contentDescription = null,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .offset(x = 8.dp, y = 8.dp),
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static50))
@@ -207,7 +219,7 @@ private fun CountrySelectorContentPreview() {
     FirefoxTheme {
         Surface {
             CountrySelectorContent(
-                selectedCountryCode = "US",
+                selectedCountryCode = "USA",
                 onCountrySelected = {},
             )
         }
