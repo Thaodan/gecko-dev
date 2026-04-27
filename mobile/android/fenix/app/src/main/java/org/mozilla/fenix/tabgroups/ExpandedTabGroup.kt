@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -37,6 +36,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.compose.base.button.IconButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.controller.NoOpTabInteractionHandler
@@ -164,19 +164,20 @@ private fun ViewTabGroupHeader(
         )
 
         IconButton(
-            modifier = Modifier
-                .testTag(TabsTrayTestTag.BOTTOM_SHEET_SHARE_BUTTON),
             onClick = {
             },
+            contentDescription = pluralStringResource(
+                id = R.plurals.share_tab_group_button_content_description,
+                count = groupTabsSize,
+                title,
+                groupTabsSize,
+            ),
+            modifier = Modifier
+                .testTag(TabsTrayTestTag.BOTTOM_SHEET_SHARE_BUTTON),
         ) {
             Icon(
                 painter = painterResource(id = iconsR.drawable.mozac_ic_share_android_24),
-                contentDescription = pluralStringResource(
-                    id = R.plurals.share_tab_group_button_content_description,
-                    count = groupTabsSize,
-                    title,
-                    groupTabsSize,
-                ),
+                contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurface,
             )
         }

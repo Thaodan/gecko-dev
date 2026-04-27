@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -48,6 +47,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.RadioCheckmark
 import mozilla.components.compose.base.RadioCheckmarkColors
+import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.modifier.thenConditional
@@ -191,6 +191,7 @@ fun TabGroupMenuButton(
         onClick = {
             showDropdownMenu = true
         },
+        contentDescription = PLACEHOLDER_THREE_DOT_MENU_CONTENT_DESCRIPTION,
         modifier = modifier
             .testTag(TabsTrayTestTag.TAB_GROUP_THREE_DOT_BUTTON),
         colors = IconButtonDefaults.iconButtonColors(
@@ -199,7 +200,7 @@ fun TabGroupMenuButton(
     ) {
         Icon(
             painter = painterResource(id = iconsR.drawable.mozac_ic_ellipsis_vertical_24),
-            contentDescription = PLACEHOLDER_THREE_DOT_MENU_CONTENT_DESCRIPTION,
+            contentDescription = null,
         )
 
         DropdownMenu(

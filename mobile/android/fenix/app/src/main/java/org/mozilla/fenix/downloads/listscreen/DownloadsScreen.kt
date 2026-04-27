@@ -27,7 +27,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -59,6 +58,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.FloatingActionButton
+import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.button.RadioButton
 import mozilla.components.compose.base.button.TextButton
 import mozilla.components.compose.base.menu.DropdownMenu
@@ -181,12 +181,15 @@ fun DownloadsScreen(
                 },
                 navigationIcon = {
                     if (!uiState.isSearchFieldVisible) {
-                        IconButton(onClick = {
-                            downloadsStore.dispatch(DownloadUIAction.NavigationIconClicked)
-                        }) {
+                        IconButton(
+                            onClick = {
+                                downloadsStore.dispatch(DownloadUIAction.NavigationIconClicked)
+                            },
+                            contentDescription = stringResource(R.string.download_navigate_back_description),
+                        ) {
                             Icon(
                                 painter = painterResource(iconsR.drawable.mozac_ic_back_24),
-                                contentDescription = stringResource(R.string.download_navigate_back_description),
+                                contentDescription = null,
                                 tint = toolbarConfig.iconColor,
                             )
                         }
@@ -194,12 +197,15 @@ fun DownloadsScreen(
                 },
                 actions = {
                     if (uiState.isSettingsIconVisible) {
-                        IconButton(onClick = {
-                            downloadsStore.dispatch(DownloadUIAction.SettingsIconClicked)
-                        }) {
+                        IconButton(
+                            onClick = {
+                                downloadsStore.dispatch(DownloadUIAction.SettingsIconClicked)
+                            },
+                            contentDescription = stringResource(R.string.download_navigate_settings_description),
+                        ) {
                             Icon(
                                 painter = painterResource(iconsR.drawable.mozac_ic_settings_24),
-                                contentDescription = stringResource(R.string.download_navigate_settings_description),
+                                contentDescription = null,
                                 tint = toolbarConfig.iconColor,
                             )
                         }
@@ -312,12 +318,15 @@ private fun ToolbarEditActions(
     Row {
         var showMenu by remember { mutableStateOf(false) }
 
-        IconButton(onClick = { showMenu = true }) {
+        IconButton(
+            onClick = { showMenu = true },
+            contentDescription = stringResource(
+                R.string.content_description_menu,
+            ),
+        ) {
             Icon(
                 painter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),
-                contentDescription = stringResource(
-                    R.string.content_description_menu,
-                ),
+                contentDescription = null,
                 tint = toolbarConfig.iconColor,
             )
         }
