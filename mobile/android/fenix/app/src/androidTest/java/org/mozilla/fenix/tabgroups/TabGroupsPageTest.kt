@@ -33,6 +33,7 @@ class TabGroupsPageTest {
             FirefoxTheme {
                 TabGroupsPage(
                     groups = emptyList(),
+                    onTabGroupClick = {},
                     onDeleteTabGroup = {},
                     editTabGroupClick = {},
                 )
@@ -41,6 +42,33 @@ class TabGroupsPageTest {
 
         composeTestRule.onNodeWithTag(TabsTrayTestTag.EMPTY_TAB_GROUPS_LIST)
             .assertIsDisplayed()
+    }
+
+    @Test
+    fun verifyTabGroupClick() {
+        val group = createTabGroup(title = "Group 1")
+        var groupClicked = false
+        var clickedGroup: TabsTrayItem.TabGroup? = null
+
+        composeTestRule.setContent {
+            FirefoxTheme {
+                TabGroupsPage(
+                    groups = listOf(group),
+                    onTabGroupClick = {
+                        groupClicked = true
+                        clickedGroup = it
+                    },
+                    onDeleteTabGroup = {},
+                    editTabGroupClick = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_GROUP_ROOT)
+            .performClick()
+
+        assertTrue(groupClicked)
+        assertEquals(group, clickedGroup)
     }
 
     @Test
@@ -53,6 +81,7 @@ class TabGroupsPageTest {
             FirefoxTheme {
                 TabGroupsPage(
                     groups = listOf(group),
+                    onTabGroupClick = {},
                     onDeleteTabGroup = {
                         deleteClicked = true
                         clickedGroup = it
@@ -81,6 +110,7 @@ class TabGroupsPageTest {
             FirefoxTheme {
                 TabGroupsPage(
                     groups = listOf(group),
+                    onTabGroupClick = {},
                     onDeleteTabGroup = {},
                     editTabGroupClick = {
                         editClicked = true

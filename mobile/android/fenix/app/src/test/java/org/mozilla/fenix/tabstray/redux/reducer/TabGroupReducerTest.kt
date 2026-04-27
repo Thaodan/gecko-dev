@@ -15,6 +15,7 @@ import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination.DeleteTabG
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination.EditTabGroup
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination.ExpandedTabGroup
 import org.mozilla.fenix.tabstray.redux.action.TabGroupAction
+import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabGroupFormState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.Mode
@@ -167,6 +168,28 @@ class TabGroupReducerTest {
         )
 
         assertEquals(expectedBackStack, resultState.backStack)
+    }
+
+    @Test
+    fun `WHEN open tab group is clicked from tab groups page THEN switch to normal tabs, reopen group, and show expanded sheet`() {
+        val tabGroup = createTabGroup(closed = true)
+        val initialState = TabsTrayState(
+            selectedPage = Page.TabGroups,
+            backStack = TabsTrayState().backStack,
+        )
+
+        val resultState = TabGroupActionReducer.reduce(
+            state = initialState,
+            action = TabGroupAction.OpenTabGroupClicked(group = tabGroup),
+        )
+
+        val expectedState = initialState.copy(
+            selectedPage = Page.NormalTabs,
+            mode = Mode.Normal,
+            backStack = initialState.backStack + ExpandedTabGroup(group = tabGroup.copy(closed = false)),
+        )
+
+        assertEquals(expectedState, resultState)
     }
 
     @Test

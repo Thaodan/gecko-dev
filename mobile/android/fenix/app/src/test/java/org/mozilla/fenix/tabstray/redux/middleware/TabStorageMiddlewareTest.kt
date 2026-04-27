@@ -35,7 +35,9 @@ import org.mozilla.fenix.tabstray.data.TabData
 import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.data.createTabGroup
+import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination.ExpandedTabGroup
 import org.mozilla.fenix.tabstray.redux.action.TabGroupAction
+import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabGroupFormState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.Mode
@@ -763,6 +765,57 @@ class TabStorageMiddlewareTest {
     }
 
     @Test
+    fun `WHEN a tab group is opened from tab groups page THEN reopen the tab group in the repository`() = runTest {
+        val closedGroup = StoredTabGroup(
+            title = "Name",
+            theme = TabGroupTheme.Red.name,
+            closed = true,
+            lastModified = 0L,
+        )
+        val displayGroup = createTabGroup(
+            id = closedGroup.id,
+            title = closedGroup.title,
+            theme = TabGroupTheme.valueOf(closedGroup.theme),
+            closed = false,
+        )
+        val store = createStore(
+            initialState = TabsTrayState(
+                selectedPage = Page.TabGroups,
+            ),
+            tabGroupsEnabled = true,
+            tabGroupRepository = createRepository(
+                tabGroupFlow = MutableStateFlow(listOf(closedGroup)),
+            ),
+            scope = backgroundScope,
+        )
+        val expectedState = TabsTrayState(
+            selectedPage = Page.NormalTabs,
+            normalTabsState = TabsTrayState.NormalTabsState(),
+            tabGroupState = TabsTrayState.TabGroupState(
+                groups = listOf(displayGroup),
+            ),
+            backStack = TabsTrayState().backStack + ExpandedTabGroup(group = displayGroup),
+        )
+
+        store.dispatch(
+            TabGroupAction.OpenTabGroupClicked(
+                group = TabsTrayItem.TabGroup(
+                    id = closedGroup.id,
+                    title = closedGroup.title,
+                    theme = TabGroupTheme.Red,
+                    tabs = mutableListOf(),
+                    closed = true,
+                ),
+            ),
+        )
+
+        runCurrent()
+        advanceUntilIdle()
+
+        assertEquals(expectedState, store.state)
+    }
+
+    @Test
     fun `Given the tab groups feature is disabled WHEN initializing THEN the tab group data is not emitted`() = runTest {
         val expectedTab = createTab("test1")
         val initialState = TabData(
@@ -1138,7 +1191,7 @@ class TabStorageMiddlewareTest {
         initialState: TabsTrayState = TabsTrayState(),
         inactiveTabsEnabled: Boolean = false,
         tabGroupsEnabled: Boolean = false,
-        tabDataFlow: Flow<TabData> = flowOf(),
+        tabDataFlow: Flow<TabData> = flowOf(TabData()),
         tabGroupRepository: TabGroupRepository = createRepository(),
         removeTabsUseCase: RemoveTabsUseCase = TabsUseCases(store = BrowserStore()).removeTabs,
         moveTabsUseCase: MoveTabsUseCase = TabsUseCases(store = BrowserStore()).moveTabs,

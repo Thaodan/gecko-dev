@@ -36,6 +36,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
  *
  * @param groups The list of tab groups to display.
  * @param modifier: The Modifier applied to the tab group list.
+ * @param onTabGroupClick Invoked when the user clicks on a tab group.
  * @param onDeleteTabGroup Invoked when the user clicks on delete tab group.
  * @param editTabGroupClick Invoked when the user clicks to edit the tab group.
  */
@@ -43,6 +44,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
 fun TabGroupList(
     groups: List<TabsTrayItem.TabGroup>,
     modifier: Modifier = Modifier,
+    onTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onDeleteTabGroup: (TabsTrayItem.TabGroup) -> Unit,
     editTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
 ) {
@@ -74,9 +76,7 @@ fun TabGroupList(
 
                 TabGroupRow(
                     tabGroup = group,
-                    onClick = {
-                        // Bug 2033481
-                    },
+                    onClick = { onTabGroupClick(group) },
                     modifier = Modifier
                         .clip(itemShape)
                         .background(MaterialTheme.colorScheme.surfaceContainerLowest),
@@ -126,6 +126,7 @@ private fun TabGroupListPreview() {
                     tabs = secondGroupTabs,
                 ),
             ),
+            onTabGroupClick = {},
             onDeleteTabGroup = {},
             editTabGroupClick = {},
         )
