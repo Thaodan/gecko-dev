@@ -60,6 +60,7 @@
 #include "mozilla/DocumentStyleRootIterator.h"
 #include "mozilla/EditorBase.h"
 #include "mozilla/EditorCommands.h"
+#include "mozilla/EnumeratedRange.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventListenerManager.h"
@@ -17542,8 +17543,7 @@ void Document::ReportDocumentUseCounters() {
   }
 
   // Report our per-document use counters.
-  for (int32_t c = 0; c < eUseCounter_Count; ++c) {
-    auto uc = static_cast<UseCounter>(c);
+  for (const UseCounter uc : MakeEnumeratedRange(eUseCounter_Count)) {
     if (!mUseCounters[uc]) {
       continue;
     }
