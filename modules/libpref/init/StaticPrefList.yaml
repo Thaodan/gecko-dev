@@ -7825,11 +7825,6 @@
   value: false
   mirror: always
 
-- name: gfx.will-change.ignore-opacity
-  type: RelaxedAtomicBool
-  value: true
-  mirror: always
-
 # Should we override the blocklist to enable WebGPU?
 - name: gfx.webgpu.ignore-blocklist
   type: bool

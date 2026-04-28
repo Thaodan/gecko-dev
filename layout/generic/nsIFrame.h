@@ -758,7 +758,6 @@ class nsIFrame : public nsQueryFrame {
         mFrameIsModified(false),
         mHasModifiedDescendants(false),
         mHasOverrideDirtyRegion(false),
-        mMayHaveWillChangeBudget(false),
 #ifdef DEBUG
         mWasVisitedByAutoFrameConstructionPageName(false),
 #endif
@@ -5123,11 +5122,6 @@ class nsIFrame : public nsQueryFrame {
     mHasOverrideDirtyRegion = aHasDirtyRegion;
   }
 
-  bool MayHaveWillChangeBudget() const { return mMayHaveWillChangeBudget; }
-  void SetMayHaveWillChangeBudget(const bool aHasBudget) {
-    mMayHaveWillChangeBudget = aHasBudget;
-  }
-
   bool HasBSizeChange() const { return mHasBSizeChange; }
   void SetHasBSizeChange(const bool aHasBSizeChange) {
     mHasBSizeChange = aHasBSizeChange;
@@ -5348,12 +5342,6 @@ class nsIFrame : public nsQueryFrame {
    * during partial display list builds.
    */
   bool mHasOverrideDirtyRegion : 1;
-
-  /**
-   * True if frame has will-change, and currently has display
-   * items consuming some of the will-change budget.
-   */
-  bool mMayHaveWillChangeBudget : 1;
 
 #ifdef DEBUG
  public:

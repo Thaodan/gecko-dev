@@ -4032,12 +4032,6 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   // to AppendScrollPartsTo(..., true) further down.
   AppendScrollPartsTo(aBuilder, aLists, createLayersForScrollbars, false);
 
-  const nsStyleDisplay* disp = StyleDisplay();
-  if (aBuilder->IsForPainting() &&
-      disp->mWillChange.bits & StyleWillChangeBits::SCROLL) {
-    aBuilder->AddToWillChangeBudget(this, GetVisualViewportSize());
-  }
-
   mScrollParentID = aBuilder->GetCurrentScrollParentId();
 
   AutoContainsBlendModeCapturer blendCapture(*aBuilder);
