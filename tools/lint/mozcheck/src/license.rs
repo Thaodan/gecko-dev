@@ -20,15 +20,12 @@ pub fn run(files: &[String], fix: bool, linter: &str, root: &str) {
     };
 
     let license_html_path = Path::new(root).join("toolkit/content/license.html");
-    let license_html_str = match license_html_path.to_str() {
-        Some(s) => s.to_string(),
-        None => {
-            eprintln!(
-                "Warning: license.html path is not valid UTF-8: {}",
-                license_html_path.display()
-            );
-            return;
-        }
+    let Some(license_html_str) = license_html_path.to_str().map(str::to_string) else {
+        eprintln!(
+            "Warning: license.html path is not valid UTF-8: {}",
+            license_html_path.display()
+        );
+        return;
     };
 
     common::par_map_lint_results(files, |path| check_license(path, &licenses, fix, linter));
@@ -206,7 +203,7 @@ fn build_c_style_header(template: &[&str]) -> String {
     for (i, line) in template.iter().enumerate() {
         let start = if i == 0 { "/" } else { " " };
         let end = if i == template.len() - 1 { " */" } else { "" };
-        let _ = writeln!(result, "{}* {}{}", start, line, end);
+        let _ = writeln!(result, "{start}* {line}{end}");
     }
     result
 }
@@ -214,7 +211,7 @@ fn build_c_style_header(template: &[&str]) -> String {
 fn build_hash_header(template: &[&str]) -> String {
     let mut result = String::new();
     for line in template {
-        let _ = writeln!(result, "# {}", line);
+        let _ = writeln!(result, "# {line}");
     }
     result
 }
@@ -225,7 +222,7 @@ fn build_xml_header(template: &[&str], ext: &str, is_test: bool) -> String {
     for (i, line) in template.iter().enumerate() {
         let start = if i == 0 { "<!-- " } else { "   - " };
         let end = if i == last_idx { " -->" } else { "" };
-        let _ = write!(result, "{}{}{}", start, line, end);
+        let _ = write!(result, "{start}{line}{end}");
         // When dealing with an svg, we should not have a space between
         // the license and the content
         if ext != "svg" || end.is_empty() {
