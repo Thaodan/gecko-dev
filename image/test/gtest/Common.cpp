@@ -759,6 +759,12 @@ ImageTestCase GreenFirstFrameAnimatedJXLTestCase() {
                        TEST_CASE_IS_TRANSPARENT | TEST_CASE_IS_ANIMATED,
                        /* aFrameCount */ 2);
 }
+
+ImageTestCase LongAnimatedJXLTestCase() {
+  return ImageTestCase("long-animated.jxl", "image/jxl", IntSize(100, 100),
+                       TEST_CASE_IS_TRANSPARENT | TEST_CASE_IS_ANIMATED,
+                       /* aFrameCount */ 1000);
+}
 #endif
 
 ImageTestCase BlendAnimatedGIFTestCase() {

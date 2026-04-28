@@ -528,6 +528,7 @@ ImageTestCase GreenFirstFrameAnimatedWebPTestCase();
 ImageTestCase GreenFirstFrameAnimatedAVIFTestCase();
 #ifdef MOZ_JXL
 ImageTestCase GreenFirstFrameAnimatedJXLTestCase();
+ImageTestCase LongAnimatedJXLTestCase();
 #endif
 
 ImageTestCase BlendAnimatedGIFTestCase();
