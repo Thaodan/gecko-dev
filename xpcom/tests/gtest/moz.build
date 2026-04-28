@@ -160,7 +160,6 @@ if CONFIG["MOZ_MEMORY"]:
     ]
 
 SOURCES += [
-    "TestAsyncPlatformPipes.cpp",
     "TestCOMArray.cpp",
     "TestCOMPtr.cpp",  # Redefines IFoo and IBar
     "TestHashtables.cpp",  # Redefines IFoo
