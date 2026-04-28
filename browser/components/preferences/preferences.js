@@ -363,6 +363,7 @@ const CONFIG_PANES = Object.freeze({
       "translationsDownloadLanguages",
     ],
     iconSrc: "chrome://browser/skin/translations.svg",
+    module: "chrome://browser/content/preferences/config/translations.mjs",
   },
 });
 
