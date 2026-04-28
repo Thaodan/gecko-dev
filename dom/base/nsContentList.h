@@ -126,10 +126,11 @@ class nsSimpleContentList : public nsBaseContentList {
 
 // Used for returning lists that will always be empty, such as the applets list
 // in HTML Documents
-class nsEmptyContentList final : public nsIHTMLCollection,
-                                 public nsBaseContentList {
+class nsEmptyContentList final : public nsBaseContentList,
+                                 public nsIHTMLCollection {
  public:
-  explicit nsEmptyContentList(nsINode* aRoot) : mRoot(aRoot) {}
+  explicit nsEmptyContentList(nsINode* aRoot)
+      : nsBaseContentList(), mRoot(aRoot) {}
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(nsEmptyContentList,
@@ -195,8 +196,8 @@ struct nsContentListKey {
  * Class that implements a possibly live NodeList that matches Elements
  * in the tree based on some criterion.
  */
-class nsContentList : public nsIHTMLCollection,
-                      public nsBaseContentList,
+class nsContentList : public nsBaseContentList,
+                      public nsIHTMLCollection,
                       public nsStubMultiMutationObserver {
  protected:
   enum class State : uint8_t {
@@ -234,13 +235,10 @@ class nsContentList : public nsIHTMLCollection,
    *              our root.
    * @param aLiveList Whether the created list should be a live list observing
    *                  mutations to the DOM tree.
-   * @param aKnownParserCreated Whether the element is known to be parser
-   *                  created, even if not in the document yet.
    */
   nsContentList(nsINode* aRootNode, int32_t aMatchNameSpaceId,
                 nsAtom* aHTMLMatchAtom, nsAtom* aXMLMatchAtom,
-                bool aDeep = true, bool aLiveList = true,
-                bool aKnownParserCreated = false);
+                bool aDeep = true, bool aLiveList = true);
 
   /**
    * @param aRootNode The node under which to limit our search.
@@ -259,24 +257,18 @@ class nsContentList : public nsIHTMLCollection,
    *                             sensitive to attribute changes.
    * @param aLiveList Whether the created list should be a live list observing
    *                  mutations to the DOM tree.
-   * @param aKnownParserCreated Whether the element is known to be parser
-   *                  created, even if not in the document yet.
    */
   nsContentList(nsINode* aRootNode, nsContentListMatchFunc aFunc,
                 nsContentListDestroyFunc aDestroyFunc, void* aData,
                 bool aDeep = true, nsAtom* aMatchAtom = nullptr,
                 int32_t aMatchNameSpaceId = kNameSpaceID_None,
-                bool aFuncMayDependOnAttr = true, bool aLiveList = true,
-                bool aKnownParserCreated = false);
+                bool aFuncMayDependOnAttr = true, bool aLiveList = true);
 
   // nsWrapperCache
-  using nsWrapperCache::GetWrapper;
   using nsWrapperCache::GetWrapperPreserveColor;
   using nsWrapperCache::PreserveWrapper;
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
-
-  using nsIHTMLCollection::IndexedGetter;
 
  protected:
   virtual ~nsContentList();
@@ -438,7 +430,7 @@ class nsContentList : public nsIHTMLCollection,
    * If state is not LIST_UP_TO_DATE, fully populate ourselves with
    * all the nodes we can find.
    */
-  void BringSelfUpToDate(bool aDoFlush);
+  inline void BringSelfUpToDate(bool aDoFlush);
 
   /**
    * To be called from non-destructor locations that want to remove from caches.

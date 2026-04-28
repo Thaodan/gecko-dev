@@ -618,7 +618,7 @@ uint32_t nsListControlFrame::GetNumberOfOptions() {
 
 void nsListControlFrame::DoneAddingChildren() { ResetList(true); }
 
-void nsListControlFrame::OptionsAdded() {
+void nsListControlFrame::AddOption(int32_t aIndex) {
   // Make sure we scroll to the selected option as needed
   mNeedToReset = true;
 
@@ -713,7 +713,8 @@ bool nsListControlFrame::UpdateSelection() {
   return true;
 }
 
-void nsListControlFrame::OnSetSelectedIndex(int32_t aNewIndex) {
+void nsListControlFrame::OnSetSelectedIndex(int32_t aOldIndex,
+                                            int32_t aNewIndex) {
 #ifdef ACCESSIBILITY
   nsCOMPtr<nsIContent> prevOption = GetCurrentOption();
 #endif
@@ -723,11 +724,12 @@ void nsListControlFrame::OnSetSelectedIndex(int32_t aNewIndex) {
   if (!weakFrame.IsAlive()) {
     return;
   }
-  mStartSelectionIndex = mEndSelectionIndex = aNewIndex;
+  mStartSelectionIndex = aNewIndex;
+  mEndSelectionIndex = aNewIndex;
   InvalidateFocus();
 
 #ifdef ACCESSIBILITY
-  if (prevOption != GetCurrentOption()) {
+  if (aOldIndex != aNewIndex) {
     FireMenuItemActiveEvent(prevOption);
   }
 #endif
