@@ -365,6 +365,8 @@ export class NetErrorCard extends MozLitElement {
       mitmName: this.errorInfo?.issuerCommonName ?? "",
       offline: gOffline,
       filePath: getFilePath(),
+      showOSXPermissionWarning:
+        !gIsCertError && RPMShowOSXLocalNetworkPermissionWarning(),
     });
 
     if (errorConfig.checkClockSkew && gIsCertError) {
