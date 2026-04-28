@@ -1173,6 +1173,20 @@ Preferences.addSetting({
 });
 
 Preferences.addSetting({
+  id: "useSystemLocale",
+  pref: "intl.regional_prefs.use_os_locales",
+  visible() {
+    let appLocale = Services.locale.appLocaleAsBCP47;
+    let regionalPrefsLocales = Services.locale.regionalPrefsLocales;
+    if (!regionalPrefsLocales.length) {
+      return false;
+    }
+    let systemLocale = regionalPrefsLocales[0];
+    return appLocale.split("-u-")[0] != systemLocale.split("-u-")[0];
+  },
+});
+
+Preferences.addSetting({
   id: "acceptLanguages",
   pref: "intl.accept_languages",
   get(prefVal, _, setting) {
@@ -3278,6 +3292,23 @@ SettingGroupManager.registerGroups({
         id: "browserLanguageFallback",
         l10nId: "browser-language-fallback-label",
         control: "moz-select",
+      },
+      {
+        id: "useSystemLocale",
+        l10nId: "use-system-locale",
+        get l10nArgs() {
+          let regionalPrefsLocales = Services.locale.regionalPrefsLocales;
+          if (!regionalPrefsLocales.length) {
+            return { localeName: "und" };
+          }
+          let [systemLocale] = regionalPrefsLocales;
+          let [displayName] = Services.intl.getLocaleDisplayNames(
+            undefined,
+            [systemLocale],
+            { preferNative: true }
+          );
+          return { localeName: displayName || systemLocale };
+        },
       },
       {
         id: "browserLanguageMessage",
