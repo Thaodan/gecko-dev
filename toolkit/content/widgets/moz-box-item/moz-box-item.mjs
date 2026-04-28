@@ -36,7 +36,6 @@ const NAVIGATION_VALUE = {
  * @property {string} description - Descriptive text for the button.
  * @property {string} iconSrc - The src for an optional icon shown next to the label.
  * @property {string} supportPage - The name of the SUMO support page to link to.
- * @property {"default"|"medium-icon"|"large-icon"} layout - Layout style for the box content.
  * @slot default - Slot for the box item's content, which overrides label and description.
  * @slot support-link - Slot for custom support link element.
  * @slot description - Slot for custom description content.
@@ -47,7 +46,6 @@ export default class MozBoxItem extends MozBoxBase {
   #actionEls = [];
 
   static properties = {
-    layout: { type: String, reflect: true },
     supportPage: { type: String, attribute: "support-page" },
     _hasSlottedSupportLink: { type: Boolean, state: true },
     _hasSlottedDescription: { type: Boolean, state: true },
@@ -62,7 +60,6 @@ export default class MozBoxItem extends MozBoxBase {
 
   constructor() {
     super();
-    this.layout = "default";
     this._hasSlottedDescription = false;
     this.addEventListener("keydown", e => this.handleKeydown(e));
   }
