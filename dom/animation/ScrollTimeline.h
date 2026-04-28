@@ -90,12 +90,18 @@ class ScrollTimeline : public AnimationTimeline,
     Type mType = Type::Root;
 
    private:
-    // This may be the target being animated, or source (i.e. Providing the
-    // scroll progress). See construction functions `Named` and `Anonymous`
-    OwningAnimationTarget mTarget;
+    // This is the target (that is being animade) for:
+    //   - Type::Root
+    //   - Type::Nearest
+    //   - Type::Self
+    // It is the source (of the scroll progress) for:
+    //   - Type::Provided
+    //   - Type::Named
+    // (In which case the scroll source is resolved lazily in Source().)
+    OwningAnimationTarget mSourceOrTarget;
     ScrollerInfo(Type aType, Element* aElement,
                  const PseudoStyleRequest& aPseudoRequest)
-        : mType{aType}, mTarget{aElement, aPseudoRequest} {}
+        : mType{aType}, mSourceOrTarget{aElement, aPseudoRequest} {}
 
    public:
     ScrollerInfo() = default;
@@ -136,7 +142,7 @@ class ScrollTimeline : public AnimationTimeline,
     }
 
     NonOwningAnimationTarget Source() const;
-    RefPtr<Element>& ElementForCycleCollection() { return mTarget.mElement; }
+    RefPtr<Element>& ElementForCycleCollection() { return mSourceOrTarget.mElement; }
   };
 
  public:

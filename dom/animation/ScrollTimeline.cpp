@@ -413,15 +413,15 @@ void ScrollTimeline::NotifyAnimationContentVisibilityChanged(
 NonOwningAnimationTarget ScrollTimeline::ScrollerInfo::Source() const {
   switch (mType) {
     case Type::Name:
-      return NonOwningAnimationTarget{mTarget};
+      return NonOwningAnimationTarget{mSourceOrTarget};
     case Type::Nearest: {
       auto [element, pseudo] =
-          FindNearestScroller(mTarget.mElement, mTarget.mPseudoRequest);
+          FindNearestScroller(mSourceOrTarget.mElement, mSourceOrTarget.mPseudoRequest);
       return {const_cast<Element*>(element), pseudo};
     }
     case Type::Provided:
     case Type::Self:
-      return NonOwningAnimationTarget{mTarget};
+      return NonOwningAnimationTarget{mSourceOrTarget};
     case Type::Root:
       break;
     default:
@@ -432,7 +432,7 @@ NonOwningAnimationTarget ScrollTimeline::ScrollerInfo::Source() const {
   // We use the owner doc of the animation target. This may be different
   // from |mDocument| after we implement ScrollTimeline interface for
   // script.
-  return {mTarget.mElement->OwnerDoc()->GetDocumentElement(),
+  return {mSourceOrTarget.mElement->OwnerDoc()->GetDocumentElement(),
           PseudoStyleRequest{}};
 }
 
