@@ -1556,10 +1556,7 @@ Preferences.addSetting({
 
 Preferences.addSetting({
   id: "showUpdatePrompts",
-  pref:
-    AppConstants.MOZ_UPDATER && AppConstants.NIGHTLY_BUILD
-      ? "app.update.suppressPrompts"
-      : undefined,
+  pref: "app.update.suppressPrompts",
 });
 
 // Firefox support settings
