@@ -21,6 +21,7 @@
 #include "nsIClassOfService.h"
 #include "nsIEarlyHintObserver.h"
 #include "nsIInterfaceRequestor.h"
+#include "nsIThrottledInputChannel.h"
 #include "nsITLSSocketControl.h"
 #include "nsITimer.h"
 #include "nsIWebTransport.h"
@@ -374,9 +375,12 @@ class nsHttpTransaction final : public nsAHttpTransaction,
 
   uint64_t mChannelId{0};
 
-  nsCString mReqHeaderBuf;  // flattened request headers
-  nsCOMPtr<nsIInputStream> mRequestStream;
+  nsCOMPtr<nsIInputStream> mHeaderStream;
+  bool mHeadersSerialized{false};
+  nsCOMPtr<nsIInputStream> mRequestStream;  // request body stream
+  nsCOMPtr<nsIInputChannelThrottleQueue> mThrottleQueue;
   int64_t mRequestSize{0};
+  int64_t mRequestHeadersSize{0};
 
   RefPtr<nsAHttpConnection> mConnection;
   RefPtr<nsHttpConnectionInfo> mConnInfo;
@@ -391,6 +395,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   // 2. If only some records have echConfig and some not, we always fallback to
   // this origin conn info.
   RefPtr<nsHttpConnectionInfo> mOrigConnInfo;
+
   nsHttpRequestHead* mRequestHead{nullptr};    // weak ref
   nsHttpResponseHead* mResponseHead{nullptr};  // owning pointer
 

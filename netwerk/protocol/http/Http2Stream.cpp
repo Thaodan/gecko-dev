@@ -96,11 +96,6 @@ nsresult Http2Stream::GenerateHeaders(nsCString& aCompressedData,
 
   nsDependentCString scheme(head->IsHTTPS() ? "https" : "http");
 
-  nsAutoCString method;
-  nsAutoCString path;
-  head->Method(method);
-  head->Path(path);
-
   bool mayAddTEHeader = true;
   nsAutoCString teHeader;
   rv = head->GetHeader(nsHttp::TE, teHeader);
@@ -112,10 +107,18 @@ nsresult Http2Stream::GenerateHeaders(nsCString& aCompressedData,
     mayAddTEHeader = false;
   }
 
+  nsAutoCString method;
+  nsAutoCString path;
+  head->Method(method);
+  head->Path(path);
+
   rv = session->Compressor()->EncodeHeaderBlock(
-      mFlatHttpRequestHeaders, method, path, authorityHeader, scheme,
-      EmptyCString(), false, aCompressedData, mayAddTEHeader);
+      method, path, authorityHeader, scheme, EmptyCString(), false,
+      aCompressedData, mayAddTEHeader, head);
   NS_ENSURE_SUCCESS(rv, rv);
+
+  // Add header size to request size
+  mTransaction->AddRequestHeadersSize(aCompressedData.Length());
 
   int64_t clVal = session->Compressor()->GetParsedContentLength();
   if (clVal != -1) {

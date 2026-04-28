@@ -1523,13 +1523,10 @@ void Http3Session::RemoveStreamFromQueues(Http3StreamBase* aStream) {
   mSlowConsumersReadyForRead.RemoveElement(aStream);
 }
 
-// This is called by Http3Stream::OnReadSegment.
-// ProcessOutput will be called in Http3Session::ReadSegment that
-// calls Http3Stream::OnReadSegment.
-nsresult Http3Session::TryActivating(
-    const nsACString& aMethod, const nsACString& aScheme,
-    const nsACString& aAuthorityHeader, const nsACString& aPathQuery,
-    const nsACString& aHeaders, uint64_t* aStreamId, Http3StreamBase* aStream) {
+nsresult Http3Session::TryActivating(nsHttpRequestHead* aRequestHead,
+                                     const nsACString& aAuthorityHeader,
+                                     uint64_t* aStreamId,
+                                     Http3StreamBase* aStream) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   MOZ_ASSERT(*aStreamId == UINT64_MAX);
 
@@ -1551,8 +1548,6 @@ nsresult Http3Session::TryActivating(
 
   if (mState == ZERORTT) {
     if (!aStream->Do0RTT()) {
-      // Stream can't do 0RTT - queue it for activation when the session
-      // reaches CONNECTED state via Finish0Rtt.
       if (!mCannotDo0RTTStreams.Contains(aStream)) {
         LOG(("Http3Session %p queuing stream %p for post-0RTT activation", this,
              aStream));
@@ -1562,45 +1557,96 @@ nsresult Http3Session::TryActivating(
     }
   }
 
+  struct NeqoHeaderArrayDeleter {
+    void operator()(NeqoHeaderArray* ptr) const {
+      if (ptr) {
+        neqo_header_array_free(ptr);
+      }
+    }
+  };
+
+  UniquePtr<NeqoHeaderArray, NeqoHeaderArrayDeleter> headers(
+      neqo_header_array_new(0));
+
+  if (aRequestHead) {
+    aRequestHead->Enter();
+    const nsHttpHeaderArray& headerArray = aRequestHead->Headers();
+    uint32_t headerCount = headerArray.Count();
+
+    for (uint32_t i = 0; i < headerCount; ++i) {
+      nsHttpAtom headerAtom;
+      nsAutoCString headerNameOriginal;
+      const char* headerValue =
+          headerArray.PeekHeaderAt(i, headerAtom, headerNameOriginal);
+
+      if (!headerValue) {
+        continue;
+      }
+
+      nsAutoCString headerName(headerAtom.get());
+      ToLowerCase(headerName);
+
+      // Filter out HTTP/1-specific headers that are forbidden in HTTP/3.
+      if (headerName.EqualsLiteral("connection") ||
+          headerName.EqualsLiteral("host") ||
+          headerName.EqualsLiteral("keep-alive") ||
+          headerName.EqualsLiteral("proxy-connection") ||
+          headerName.EqualsLiteral("te") ||
+          headerName.EqualsLiteral("transfer-encoding") ||
+          headerName.EqualsLiteral("upgrade")) {
+        continue;
+      }
+
+      nsAutoCString headerVal(headerValue);
+      neqo_header_array_add(headers.get(), &headerName, &headerVal);
+    }
+    aRequestHead->Exit();
+  }
+
   nsresult rv = NS_OK;
-  // The order of these checks is important: Http3StreamTunnel inherits from
-  // Http3Stream, so a tunnel will also match conditions for a regular stream.
-  // Ensure we handle Http3StreamTunnel cases before generic Http3Stream logic.
   if (RefPtr<Http3StreamTunnel> streamTunnel =
           aStream->GetHttp3StreamTunnel()) {
-    rv = mHttp3Connection->Connect(aAuthorityHeader, aHeaders, aStreamId, 3,
-                                   false);
+    rv = mHttp3Connection->Connect(aAuthorityHeader, headers.get(), aStreamId,
+                                   3, false);
   } else if (RefPtr<Http3Stream> httpStream = aStream->GetHttp3Stream()) {
+    MOZ_ASSERT(aRequestHead);
+    nsAutoCString method;
+    nsAutoCString path;
+    aRequestHead->Method(method);
+    aRequestHead->Path(path);
+
+    nsDependentCString scheme(aRequestHead->IsHTTPS() ? "https" : "http");
+
     rv = mHttp3Connection->Fetch(
-        aMethod, aScheme, aAuthorityHeader, aPathQuery, aHeaders, aStreamId,
+        method, scheme, aAuthorityHeader, path, headers.get(), aStreamId,
         httpStream->PriorityUrgency(), httpStream->PriorityIncremental());
   } else if (RefPtr<Http3ConnectUDPStream> udpStream =
                  aStream->GetHttp3ConnectUDPStream()) {
     if (DeferIfNegotiating(ExtendedConnectKind::ConnectUDP, aStream)) {
       return NS_BASE_STREAM_WOULD_BLOCK;
     }
-    rv = mHttp3Connection->CreateConnectUdp(aAuthorityHeader, aPathQuery,
-                                            aHeaders, aStreamId);
-  } else {
-    MOZ_RELEASE_ASSERT(aStream->GetHttp3WebTransportSession(),
-                       "It must be a WebTransport session");
-    // Don't call CreateWebTransport if we are still waiting for the negotiation
-    // result.
+    rv = mHttp3Connection->CreateConnectUdp(
+        aAuthorityHeader, udpStream->PathQuery(), headers.get(), aStreamId);
+  } else if (aStream->GetHttp3WebTransportSession()) {
     if (DeferIfNegotiating(ExtendedConnectKind::WebTransport, aStream)) {
       return NS_BASE_STREAM_WOULD_BLOCK;
     }
-    rv = mHttp3Connection->CreateWebTransport(aAuthorityHeader, aPathQuery,
-                                              aHeaders, aStreamId);
+    nsAutoCString path;
+    aRequestHead->Path(path);
+    rv = mHttp3Connection->CreateWebTransport(aAuthorityHeader, path,
+                                              headers.get(), aStreamId);
+  } else {
+    return NS_ERROR_UNEXPECTED;
   }
 
   if (NS_FAILED(rv)) {
-    LOG(("Http3Session::TryActivating returns error=0x%" PRIx32 "[stream=%p, "
-         "this=%p]",
+    LOG(("Http3Session::TryActivating returns error=0x%" PRIx32
+         "[stream=%p, this=%p]",
          static_cast<uint32_t>(rv), aStream, this));
     if (rv == NS_BASE_STREAM_WOULD_BLOCK) {
       LOG3(
-          ("Http3Session::TryActivating %p stream=%p no room for more "
-           "concurrent streams\n",
+          ("Http3Session::TryActivating %p stream=%p no room for "
+           "more concurrent streams\n",
            this, aStream));
       mTransactionsBlockedByStreamLimitCount++;
       if (mQueuedStreams.GetSize() == 0) {
@@ -1610,9 +1656,6 @@ nsresult Http3Session::TryActivating(
       return rv;
     }
 
-    // Previously we always returned NS_OK here, which caused the
-    // transaction to wait until the quic connection timed out
-    // after which it was retried without quic.
     if (StaticPrefs::network_http_http3_fallback_to_h2_on_error()) {
       return NS_ERROR_HTTP2_FALLBACK_TO_HTTP1;
     }

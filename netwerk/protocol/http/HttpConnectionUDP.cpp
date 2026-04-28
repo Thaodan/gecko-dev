@@ -168,6 +168,7 @@ class Http3ConnectTransaction : public ConnectUDPTransaction {
   }
 
   void Close(nsresult reason) override { mConnection = nullptr; }
+  nsHttpRequestHead* RequestHead() override { return nullptr; }
 
  private:
   virtual ~Http3ConnectTransaction() {

@@ -240,6 +240,8 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
 
   virtual void InvokeCallback() {}
   virtual bool IsForFallback() { return false; }
+
+  virtual void AddRequestHeadersSize(int64_t aHeadersSize) {}
 };
 
 #define NS_DECL_NSAHTTPTRANSACTION                                             \
@@ -290,6 +292,11 @@ class nsAHttpSegmentReader {
                                                      bool forceCommitment) {
     return NS_ERROR_FAILURE;
   }
+
+  // Returns true if this reader expects serialized headers in the request
+  // stream (HTTP/1.x), false if headers should be encoded separately
+  // (HTTP/2, HTTP/3).
+  virtual bool WantsSerializedHeaders() const { return true; }
 };
 
 #define NS_DECL_NSAHTTPSEGMENTREADER                                     \

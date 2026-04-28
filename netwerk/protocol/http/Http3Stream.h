@@ -24,6 +24,10 @@ class Http3Stream : public nsAHttpSegmentReader,
   // for RefPtr
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(Http3Stream, override)
 
+  // HTTP/3 streams don't want serialized headers in the request stream.
+  // Headers are encoded directly from nsHttpRequestHead using QPACK.
+  bool WantsSerializedHeaders() const override { return false; }
+
   Http3Stream(nsAHttpTransaction*, Http3Session*, const ClassOfService&,
               uint64_t);
 
@@ -64,7 +68,6 @@ class Http3Stream : public nsAHttpSegmentReader,
  protected:
   ~Http3Stream() = default;
 
-  bool GetHeadersString(const char* buf, uint32_t avail, uint32_t* countUsed);
   nsresult StartRequest();
 
   void SetIncremental(bool incremental);
@@ -72,14 +75,13 @@ class Http3Stream : public nsAHttpSegmentReader,
   /**
    * SendStreamState:
    *  While sending request:
-   *  - PREPARING_HEADERS:
-   *      In this state we are collecting the headers and in some cases also
-   *      waiting to be able to create a new stream.
-   *      We need to read all headers into a buffer before calling
-   *      Http3Session::TryActivating. Neqo may not have place for a new
-   *      stream if it hits MAX_STREAMS limit. In that case the steam will be
-   *      queued and dequeue when neqo can again create new stream
-   *      (RequestsCreatable will be called).
+   *  - WAITING_TO_ACTIVATE:
+   *      In this state we are waiting to be able to create a new stream.
+   *      Headers are encoded directly from nsHttpRequestHead using QPACK
+   *      when calling Http3Session::TryActivating.
+   *      Neqo may not have space for a new stream if it hits MAX_STREAMS
+   *      limit. In that case the stream will be queued and dequeued when
+   *      neqo can again create new streams (RequestsCreatable will be called).
    *      If transaction has data to send state changes to SENDING_BODY,
    *      otherwise the state transfers to READING_HEADERS.
    *  - SENDING_BODY:
@@ -93,12 +95,11 @@ class Http3Stream : public nsAHttpSegmentReader,
    *      body. In this state the server will just ignore the request body.
    **/
   enum SendStreamState {
-    PREPARING_HEADERS,
     WAITING_TO_ACTIVATE,
     SENDING_BODY,
     EARLY_RESPONSE,
     SEND_DONE
-  } mSendState{PREPARING_HEADERS};
+  } mSendState{WAITING_TO_ACTIVATE};
 
   /**
    * RecvStreamState:
@@ -133,7 +134,6 @@ class Http3Stream : public nsAHttpSegmentReader,
     RECV_DONE
   } mRecvState{BEFORE_HEADERS};
 
-  nsCString mFlatHttpRequestHeaders;
   bool mDataReceived{false};
   nsTArray<uint8_t> mFlatResponseHeaders;
   uint64_t mTransactionBrowserId{0};

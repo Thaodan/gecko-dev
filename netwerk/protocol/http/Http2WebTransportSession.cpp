@@ -580,9 +580,12 @@ nsresult Http2WebTransportSession::GenerateHeaders(nsCString& aCompressedData,
   head->Path(path);
 
   rv = session->Compressor()->EncodeHeaderBlock(
-      mFlatHttpRequestHeaders, "CONNECT"_ns, path, authorityHeader, "https"_ns,
-      "webtransport"_ns, false, aCompressedData, true);
+      "CONNECT"_ns, path, authorityHeader, "https"_ns, "webtransport"_ns, false,
+      aCompressedData, false, head);
   NS_ENSURE_SUCCESS(rv, rv);
+
+  // Add header size to request size
+  mTransaction->AddRequestHeadersSize(aCompressedData.Length());
 
   mRequestBodyLenRemaining = 0x0fffffffffffffffULL;
 
