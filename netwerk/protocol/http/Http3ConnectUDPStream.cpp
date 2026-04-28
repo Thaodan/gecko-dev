@@ -121,7 +121,7 @@ nsresult Http3ConnectUDPStream::TryActivating() {
   LOG(("Http3ConnectUDPStream::TryActivating [host=%s pathQuery=%s]",
        info->Host().get(), mPathQuery.get()));
 
-  nsHttpRequestHead* head = mTransaction->RequestHead();
+  const nsHttpRequestHead* head = mTransaction->RequestHead();
   return mSession->TryActivating(head, info->Host(), &mStreamId, this);
 }
 

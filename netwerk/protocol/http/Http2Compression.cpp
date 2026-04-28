@@ -1026,7 +1026,7 @@ nsresult Http2Compressor::EncodeHeaderBlock(
     const nsACString& method, const nsACString& path, const nsACString& host,
     const nsACString& scheme, const nsACString& protocol,
     bool simpleConnectForm, nsACString& output, bool addTEHeader,
-    nsHttpRequestHead* requestHead) {
+    const nsHttpRequestHead* requestHead) {
   MOZ_ASSERT(requestHead);
 
   mSetInitialMaxBufferSizeAllowed = false;

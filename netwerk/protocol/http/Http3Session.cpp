@@ -1523,7 +1523,7 @@ void Http3Session::RemoveStreamFromQueues(Http3StreamBase* aStream) {
   mSlowConsumersReadyForRead.RemoveElement(aStream);
 }
 
-nsresult Http3Session::TryActivating(nsHttpRequestHead* aRequestHead,
+nsresult Http3Session::TryActivating(const nsHttpRequestHead* aRequestHead,
                                      const nsACString& aAuthorityHeader,
                                      uint64_t* aStreamId,
                                      Http3StreamBase* aStream) {
@@ -2179,7 +2179,7 @@ void Http3Session::SetProxyConnectFailed() {
   MOZ_ASSERT(false, "Http3Session::SetProxyConnectFailed()");
 }
 
-nsHttpRequestHead* Http3Session::RequestHead() {
+const nsHttpRequestHead* Http3Session::RequestHead() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   MOZ_ASSERT(false,
              "Http3Session::RequestHead() "

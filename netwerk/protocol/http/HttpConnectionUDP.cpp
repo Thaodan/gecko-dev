@@ -109,7 +109,7 @@ class ConnectUDPTransaction : public nsAHttpTransaction {
   void SetProxyConnectFailed() override {
     mTransaction->SetProxyConnectFailed();
   }
-  nsHttpRequestHead* RequestHead() override {
+  const nsHttpRequestHead* RequestHead() override {
     return mTransaction->RequestHead();
   }
   uint32_t Http1xTransactionCount() override { return 0; }
@@ -168,7 +168,7 @@ class Http3ConnectTransaction : public ConnectUDPTransaction {
   }
 
   void Close(nsresult reason) override { mConnection = nullptr; }
-  nsHttpRequestHead* RequestHead() override { return nullptr; }
+  const nsHttpRequestHead* RequestHead() override { return nullptr; }
 
  private:
   virtual ~Http3ConnectTransaction() {

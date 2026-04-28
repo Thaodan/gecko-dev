@@ -165,7 +165,7 @@ class Http2Compressor final : public Http2BaseCompressor {
       const nsACString& method, const nsACString& path, const nsACString& host,
       const nsACString& scheme, const nsACString& protocol,
       bool simpleConnectForm, nsACString& output, bool addTEHeader,
-      nsHttpRequestHead* requestHead);
+      const nsHttpRequestHead* requestHead);
 
   int64_t GetParsedContentLength() {
     return mParsedContentLength;

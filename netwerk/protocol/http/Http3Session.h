@@ -121,7 +121,7 @@ class Http3SessionBase {
  public:
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
-  virtual nsresult TryActivating(nsHttpRequestHead* aRequestHead,
+  virtual nsresult TryActivating(const nsHttpRequestHead* aRequestHead,
                                  const nsACString& aAuthorityHeader,
                                  uint64_t* aStreamId,
                                  Http3StreamBase* aStream) = 0;
@@ -201,7 +201,7 @@ class Http3Session final : public Http3SessionBase,
 
   bool CanReuse();
 
-  nsresult TryActivating(nsHttpRequestHead* aRequestHead,
+  nsresult TryActivating(const nsHttpRequestHead* aRequestHead,
                          const nsACString& aAuthorityHeader,
                          uint64_t* aStreamId,
                          Http3StreamBase* aStream) override;
