@@ -811,7 +811,7 @@ Preferences.addSetting({
 });
 
 /**
- * @param {Locale} locale The locale object
+ * @param {Locale} locale
  * @returns {SettingOptionConfig}
  */
 function makeBrowserLanguageOption({ code, name }) {
@@ -949,9 +949,26 @@ class BrowserLanguagesSetting extends Preferences.AsyncSetting {
       Multilingual.recordTelemetry("reorder");
     }
     let newLocales = Array.from(
-      new Set([code, ...Services.locale.appLocalesAsBCP47]).values()
+      new Set([code, ...Services.locale.requestedLocales]).values()
     );
     this.#updateLocales(newLocales);
+  }
+
+  async getFallback() {
+    let locales = await this.get();
+    if (locales[1]) {
+      return locales[1];
+    }
+    return null;
+  }
+
+  /**
+   * @param {LocaleCode} code
+   */
+  async setFallback(code) {
+    let locales = await this.get();
+    Multilingual.recordTelemetry("reorder");
+    this.#updateLocales([locales[0], code]);
   }
 
   applyAndRestart() {
@@ -1071,6 +1088,66 @@ class BrowserLanguagePreferredSetting extends Preferences.AsyncSetting {
   }
 }
 Preferences.addSetting(BrowserLanguagePreferredSetting);
+
+class BrowserLanguageFallbackSetting extends Preferences.AsyncSetting {
+  static id = "browserLanguageFallback";
+
+  #browserLanguages = Preferences.getSetting("browserLanguages");
+
+  /** @type {BrowserLanguagesSetting} */
+  get #languages() {
+    return /** @type {BrowserLanguagesSetting} */ (
+      /** @type {unknown} */ (
+        /** @type {AsyncSettingHandler} */ (this.#browserLanguages.config)
+          .asyncSetting
+      )
+    );
+  }
+
+  setup() {
+    this.#browserLanguages.on("change", this.emitChange);
+    return () => this.#browserLanguages.off("change", this.emitChange);
+  }
+
+  async get() {
+    return this.#languages.getFallback();
+  }
+
+  /**
+   * @param {LocaleCode} code
+   */
+  async set(code) {
+    return this.#languages.setFallback(code);
+  }
+
+  async disabled() {
+    return this.#languages.installing;
+  }
+
+  async visible() {
+    if (!this.#browserLanguages.visible) {
+      return false;
+    }
+    if (
+      (await this.#languages.getPreferred()) == Services.locale.defaultLocale
+    ) {
+      return false;
+    }
+    let installed = await this.#languages.installedLocales;
+    return installed.length >= 2;
+  }
+
+  async getControlConfig() {
+    let installed = await this.#languages.installedLocales;
+    let locales = await this.#languages.get();
+    let options = installed.map(locale => ({
+      ...makeBrowserLanguageOption(locale),
+      hidden: locale.code === locales[0],
+    }));
+    return { options };
+  }
+}
+Preferences.addSetting(BrowserLanguageFallbackSetting);
 
 Preferences.addSetting({
   id: "browserLanguageRestart",
@@ -3186,6 +3263,11 @@ SettingGroupManager.registerGroups({
       {
         id: "browserLanguagePreferred",
         l10nId: "browser-language-preferred-label",
+        control: "moz-select",
+      },
+      {
+        id: "browserLanguageFallback",
+        l10nId: "browser-language-fallback-label",
         control: "moz-select",
       },
       {

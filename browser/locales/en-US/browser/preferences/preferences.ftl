@@ -455,6 +455,9 @@ browser-language-heading =
   .description = Choose the language used to display menus, messages, and notifications from { -brand-short-name }.
 browser-language-preferred-label =
   .label = Preferred language
+browser-language-fallback-label =
+  .label = Fallback language
+  .description = Used when preferred language localization is incomplete.
 
 fx-translate-web-pages = { -translations-brand-name }
 
