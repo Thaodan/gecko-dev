@@ -211,7 +211,7 @@ class Components(private val context: Context) {
     val remoteSettingsSyncScheduler by lazyMonitored {
         DefaultRemoteSettingsSyncScheduler(
             context,
-            Frequency(24, TimeUnit.HOURS),
+            Frequency(2, TimeUnit.HOURS),
         )
     }
 
