@@ -33,7 +33,11 @@ apply plugin: 'androidx.navigation.safeargs.kotlin'
 apply plugin: 'kotlinx-serialization'
 apply plugin: 'com.google.devtools.ksp'
 
-if (gradle.mozconfig.substs.MOZILLA_OFFICIAL) {
+// The OSS-licenses plugin is only needed for shipping builds and is incompatible
+// with Gradle's configuration cache, which causes a fresh configuration phase on
+// every lint invocation. Skip it during `mach lint` (which always passes
+// `-Pandroid-lint`) so the configuration cache stays storable/reusable.
+if (gradle.mozconfig.substs.MOZILLA_OFFICIAL && !project.hasProperty('android-lint')) {
     apply plugin: 'com.google.android.gms.oss-licenses-plugin'
 }
 
