@@ -27,15 +27,17 @@ add_task(async function test_mp3_dataurl_duration() {
   const audio = document.getElementById("a");
   audio.src = dataUrl;
 
-  const duration = await new Promise((resolve, reject) => {
-    audio.addEventListener("loadedmetadata", () => resolve(audio.duration), { once: true });
+  // Wait for canplaythrough so any late metadata-vs-buffered race has
+  // settled before we assert on the duration.
+  await new Promise((resolve, reject) => {
+    audio.addEventListener("canplaythrough", resolve, { once: true });
     audio.addEventListener("error", () => reject(audio.error), { once: true });
   });
 
-  ok(Number.isFinite(duration),
-     "data: URL mp3 duration should be finite, got " + duration);
-  ok(Math.abs(duration - EXPECTED) < 0.1,
-     "data: URL mp3 duration should be ~" + EXPECTED + "s, got " + duration);
+  ok(Number.isFinite(audio.duration),
+     "data: URL mp3 duration should be finite, got " + audio.duration);
+  ok(Math.abs(audio.duration - EXPECTED) < 0.1,
+     "data: URL mp3 duration should be ~" + EXPECTED + "s, got " + audio.duration);
 });
 </script>
 </body>

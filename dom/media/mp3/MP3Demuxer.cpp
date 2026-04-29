@@ -119,7 +119,14 @@ bool MP3TrackDemuxer::Init() {
   mInfo->mChannels = mChannels;
   mInfo->mBitDepth = 16;
   mInfo->mMimeType = "audio/mpeg";
-  mInfo->mDuration = Duration().valueOr(TimeUnit::FromInfinity());
+  // If we don't know the duration yet (e.g. the resource hasn't reported its
+  // length), leave mDuration at its default zero rather than latching
+  // Infinity. That keeps mInfo.mMetadataDuration unset in MediaFormatReader,
+  // so the state machine won't overwrite a finite mDuration produced from
+  // buffered ranges with Infinity from metadata.
+  if (auto duration = Duration(); duration && !duration->IsInfinite()) {
+    mInfo->mDuration = *duration;
+  }
 
   MP3LOG("Init mInfo={mRate=%d mChannels=%d mBitDepth=%d mDuration=%s (%lfs)}",
          mInfo->mRate, mInfo->mChannels, mInfo->mBitDepth,
