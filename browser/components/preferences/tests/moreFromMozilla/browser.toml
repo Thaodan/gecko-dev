@@ -7,8 +7,6 @@ tags = "os_integration"
 
 ["browser_moreFromMozilla.js"]
 
-["browser_moreFromMozilla_config.js"]
-
 ["browser_moreFromMozilla_locales.js"]
 
 ["browser_moreFromMozilla_monitor.js"]

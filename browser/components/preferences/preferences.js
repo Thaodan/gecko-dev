@@ -368,14 +368,6 @@ const CONFIG_PANES = Object.freeze({
     module: "chrome://browser/content/preferences/config/account-sync.mjs",
     replaces: "sync",
   },
-  moreFromMozilla: {
-    l10nId: "more-from-moz-page-header",
-    iconSrc: "chrome://browser/skin/preferences/mozilla-16.svg",
-    groupIds: ["moreFromMozillaPromo", "moreFromMozillaProducts"],
-    module: "chrome://browser/content/preferences/config/moreFromMozilla.mjs",
-    visible: () => NimbusFeatures.moreFromMozilla.getVariable("enabled"),
-    replaces: "moreFromMozilla",
-  },
   translations: {
     parent: srdSectionEnabled("languages") ? "languages" : "general",
     l10nId: "settings-translations-subpage-header",
@@ -453,6 +445,13 @@ function init_all() {
       );
   }
 
+  NimbusFeatures.moreFromMozilla.recordExposureEvent({ once: true });
+  if (NimbusFeatures.moreFromMozilla.getVariable("enabled")) {
+    document.getElementById("category-more-from-mozilla").hidden = false;
+    gMoreFromMozillaPane.option =
+      NimbusFeatures.moreFromMozilla.getVariable("template");
+    register_module("paneMoreFromMozilla", gMoreFromMozillaPane);
+  }
   // The Sync category needs to be the last of the "real" categories
   // registered and inititalized since many tests wait for the
   // "sync-pane-loaded" observer notification before starting the test.
@@ -482,14 +481,6 @@ function init_all() {
       groupIds: ["customHomepage"],
       module: "chrome://browser/content/preferences/config/home-startup.mjs",
     });
-  } else {
-    NimbusFeatures.moreFromMozilla.recordExposureEvent({ once: true });
-    if (NimbusFeatures.moreFromMozilla.getVariable("enabled")) {
-      document.getElementById("category-more-from-mozilla").hidden = false;
-      gMoreFromMozillaPane.option =
-        NimbusFeatures.moreFromMozilla.getVariable("template");
-      register_module("paneMoreFromMozilla", gMoreFromMozillaPane);
-    }
   }
 
   gSearchResultsPane.init();
