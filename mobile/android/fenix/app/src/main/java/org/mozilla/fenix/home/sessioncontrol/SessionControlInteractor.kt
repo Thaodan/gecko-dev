@@ -443,6 +443,10 @@ class SessionControlInteractor(
         sportsController.handleSportsWidgetDismissed()
     }
 
+    override fun onViewScheduleClicked() {
+        sportsController.handleViewScheduleClicked()
+    }
+
     override fun onPrivacyReportTapped() {
         Homepage.privacyReportTapped.record(NoExtras())
     }
