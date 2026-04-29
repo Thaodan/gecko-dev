@@ -1156,9 +1156,7 @@ DEFINE_STABLE_CELL_HASHER(WeakHeapPtr);
     static bool match(const Key& k, Lookup l) {                            \
       return k.unbarrieredGet() == l;                                      \
     }                                                                      \
-    static void rekey(Key& k, const Key& newKey) {                         \
-      k.unbarrieredSet(newKey.unbarrieredGet());                           \
-    }                                                                      \
+    static void rekey(Key& k, T newKey) { k.unbarrieredSet(newKey); }      \
   }
 
 DEFINE_BARRIERED_PTR_HASHER(PreBarrieredHasher, PreBarriered);
