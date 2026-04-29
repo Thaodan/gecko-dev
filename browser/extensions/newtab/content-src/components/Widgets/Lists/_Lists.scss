@@ -83,9 +83,7 @@
     grid-column: span 1;
     width: var(--newtab-card-grid-layout-width);
     height: var(--newtab-card-height);
-
-    // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-    box-shadow: var(--card-box-shadow, var(--box-shadow-card));
+    box-shadow: var(--card-box-shadow);
 
     // Match the new card width if sections are enabled
     .has-sections-grid & {
