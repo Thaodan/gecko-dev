@@ -7,7 +7,7 @@ import React, { useEffect } from "react";
 import { Localized } from "./MSLocalized";
 import { TileButton } from "./TileButton";
 import { TileList } from "./TileList";
-import { MultiStageUtils } from "../lib/multistage-utils.mjs";
+import { AboutWelcomeUtils } from "../lib/aboutwelcome-utils.mjs";
 
 // This component was formerly "Themes" and continues to support theme
 export const SingleSelect = ({
@@ -149,7 +149,7 @@ export const SingleSelect = ({
                     className={`select-item ${type}`}
                     onKeyDown={e => handleKeyDown(e)}
                     style={{
-                      ...MultiStageUtils.getValidStyle(
+                      ...AboutWelcomeUtils.getValidStyle(
                         style,
                         CONFIGURABLE_STYLES
                       ),
@@ -178,7 +178,7 @@ export const SingleSelect = ({
                     </Localized>
                     <div
                       className={`icon ${selected ? " selected" : ""} ${value}`}
-                      style={MultiStageUtils.getValidStyle(
+                      style={AboutWelcomeUtils.getValidStyle(
                         icon,
                         CONFIGURABLE_STYLES
                       )}

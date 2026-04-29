@@ -4,7 +4,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Localized } from "./MSLocalized";
-import { MultiStageUtils } from "../lib/multistage-utils.mjs";
+import { AboutWelcomeUtils } from "../lib/aboutwelcome-utils.mjs";
 import {
   SecondaryCTA,
   StepsIndicator,
@@ -60,7 +60,7 @@ export const MultiStageProtonScreen = props => {
     let minMs = advanceOnExperimentLoad?.minDisplayMs ?? minMsDefault;
     let maxMs = advanceOnExperimentLoad?.maxDisplayMs ?? maxMsDefault;
 
-    // Ensure max >= min.
+    // Ensure max ≥ min.
     if (maxMs < minMs) {
       maxMs = minMs;
     }
@@ -90,7 +90,7 @@ export const MultiStageProtonScreen = props => {
       } else {
         reason = "nimbus_ready";
       }
-      MultiStageUtils.sendActionTelemetry(
+      AboutWelcomeUtils.sendActionTelemetry(
         messageId,
         "advance_on_experiment_load",
         "SPLASH_DISMISSED",
@@ -198,8 +198,6 @@ export const MultiStageProtonScreen = props => {
       isSingleScreen={props.isSingleScreen}
       previousOrder={props.previousOrder}
       autoAdvance={props.autoAdvance}
-      advanceOnExperimentLoad={props.advanceOnExperimentLoad}
-      navigate={props.navigate}
       isRtamo={props.isRtamo}
       addonId={props.addonId}
       addonType={props.addonType}
@@ -469,7 +467,7 @@ export class ProtonScreen extends React.PureComponent {
         reducedMotionImageURL,
         darkModeReducedMotionImageURL,
       ]) {
-        if (MultiStageUtils.getLoadingStrategyFor(url) === "lazy") {
+        if (AboutWelcomeUtils.getLoadingStrategyFor(url) === "lazy") {
           return "lazy";
         }
       }
@@ -486,19 +484,19 @@ export class ProtonScreen extends React.PureComponent {
       <picture className={className} style={pictureStyle}>
         {darkModeReducedMotionImageURL ? (
           <source
-            srcSet={darkModeReducedMotionImageURL}
+            srcset={darkModeReducedMotionImageURL}
             media="(prefers-color-scheme: dark) and (prefers-reduced-motion: reduce)"
           />
         ) : null}
         {darkModeImageURL ? (
           <source
-            srcSet={darkModeImageURL}
+            srcset={darkModeImageURL}
             media="(prefers-color-scheme: dark)"
           />
         ) : null}
         {reducedMotionImageURL ? (
           <source
-            srcSet={reducedMotionImageURL}
+            srcset={reducedMotionImageURL}
             media="(prefers-reduced-motion: reduce)"
           />
         ) : null}
@@ -726,7 +724,7 @@ export class ProtonScreen extends React.PureComponent {
               ? themeScreenshots[0].url
               : addonIconURL
           }
-          loading={MultiStageUtils.getLoadingStrategyFor(addonIconURL)}
+          loading={AboutWelcomeUtils.getLoadingStrategyFor(addonIconURL)}
           alt=""
           role="presentation"
         />
@@ -751,8 +749,10 @@ export class ProtonScreen extends React.PureComponent {
       : content.main_content_style_narrow || {};
 
     const validInnerStyles =
-      MultiStageUtils.getValidStyle(innerContentStyles, CONFIGURABLE_STYLES) ||
-      {};
+      AboutWelcomeUtils.getValidStyle(
+        innerContentStyles,
+        CONFIGURABLE_STYLES
+      ) || {};
 
     return {
       ...validInnerStyles,
@@ -841,7 +841,7 @@ export class ProtonScreen extends React.PureComponent {
         fullscreen={content.fullscreen ? "" : null}
         style={
           content.screen_style &&
-          MultiStageUtils.getValidStyle(content.screen_style, [
+          AboutWelcomeUtils.getValidStyle(content.screen_style, [
             "overflow",
             "display",
           ])
@@ -870,7 +870,7 @@ export class ProtonScreen extends React.PureComponent {
           role="document"
           style={
             content.screen_style &&
-            MultiStageUtils.getValidStyle(content.screen_style, [
+            AboutWelcomeUtils.getValidStyle(content.screen_style, [
               "width",
               "padding",
               "height",

@@ -3,7 +3,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import React, { useEffect, useCallback, useMemo, useState } from "react";
-import { MultiStageUtils } from "../lib/multistage-utils.mjs";
+import { AboutWelcomeUtils } from "../lib/aboutwelcome-utils.mjs";
 
 const CONFIGURABLE_STYLES = [
   "color",
@@ -66,7 +66,7 @@ export const TextAreaTile = ({
   return (
     <div
       className="textarea-container"
-      style={MultiStageUtils.getValidStyle(
+      style={AboutWelcomeUtils.getValidStyle(
         data.container_style,
         CONFIGURABLE_STYLES,
         true
@@ -75,7 +75,7 @@ export const TextAreaTile = ({
       {data.character_limit && (
         <div
           className={`textarea-char-counter ${isValid ? "" : "invalid"}`}
-          style={MultiStageUtils.getValidStyle(
+          style={AboutWelcomeUtils.getValidStyle(
             data.char_counter_style,
             CONFIGURABLE_STYLES,
             true
@@ -92,7 +92,7 @@ export const TextAreaTile = ({
         onChange={handleChange}
         value={textInput?.value || ""}
         placeholder={data.placeholder}
-        style={MultiStageUtils.getValidStyle(
+        style={AboutWelcomeUtils.getValidStyle(
           data.textarea_style,
           CONFIGURABLE_STYLES,
           true

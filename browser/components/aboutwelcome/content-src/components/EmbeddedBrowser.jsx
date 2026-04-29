@@ -3,7 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import React, { useEffect, useRef } from "react";
-import { MultiStageUtils } from "../lib/multistage-utils.mjs";
+import { AboutWelcomeUtils } from "../lib/aboutwelcome-utils.mjs";
 
 const BROWSER_STYLES = [
   "height",
@@ -64,7 +64,10 @@ const EmbeddedBrowserInner = ({ url, style }) => {
 
   useEffect(() => {
     if (browserRef.current && style) {
-      const validStyles = MultiStageUtils.getValidStyle(style, BROWSER_STYLES);
+      const validStyles = AboutWelcomeUtils.getValidStyle(
+        style,
+        BROWSER_STYLES
+      );
       Object.keys(validStyles).forEach(key => {
         browserRef.current.style.setProperty(key, style[key]);
       });

@@ -4,7 +4,7 @@
 
 import React from "react";
 import { Localized } from "./MSLocalized";
-import { MultiStageUtils } from "../lib/multistage-utils.mjs";
+import { AboutWelcomeUtils } from "../lib/aboutwelcome-utils.mjs";
 const MS_STRING_PROP = "string_id";
 
 export const HelpText = props => {
@@ -21,7 +21,9 @@ export const HelpText = props => {
               data-l10n-name="help-img"
               className={`helptext-img ${props.position}`}
               src={props.hasImg.src}
-              loading={MultiStageUtils.getLoadingStrategyFor(props.hasImg.src)}
+              loading={AboutWelcomeUtils.getLoadingStrategyFor(
+                props.hasImg.src
+              )}
               alt=""
             ></img>
           </p>
@@ -35,7 +37,7 @@ export const HelpText = props => {
           <img
             className={`helptext-img ${props.position} end`}
             src={props.hasImg.src}
-            loading={MultiStageUtils.getLoadingStrategyFor(props.hasImg.src)}
+            loading={AboutWelcomeUtils.getLoadingStrategyFor(props.hasImg.src)}
             alt=""
           />
         </p>

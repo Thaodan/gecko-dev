@@ -4,7 +4,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Localized } from "./MSLocalized";
-import { MultiStageUtils } from "../lib/multistage-utils.mjs";
+import { AboutWelcomeUtils } from "../lib/aboutwelcome-utils.mjs";
 
 async function evaluateTargeting(targeting) {
   return await window.AWEvaluateAttributeTargeting(targeting);
@@ -122,10 +122,13 @@ export const ActionChecklist = ({
 
     setNumberOfCompletedActions(numberOfCompletedActions + 1);
 
-    MultiStageUtils.handleUserAction({ type, data });
-    MultiStageUtils.sendActionTelemetry(message_id, source_id, "CLICK_BUTTON", {
-      writeInMicrosurvey,
-    });
+    AboutWelcomeUtils.handleUserAction({ type, data });
+    AboutWelcomeUtils.sendActionTelemetry(
+      message_id,
+      source_id,
+      "CLICK_BUTTON",
+      { writeInMicrosurvey }
+    );
   }
 
   return (

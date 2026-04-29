@@ -10,8 +10,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AboutWelcomeTelemetry:
     "resource:///modules/aboutwelcome/AboutWelcomeTelemetry.sys.mjs",
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
-  ASRouterScreenUtils:
-    "resource:///modules/asrouter/ASRouterScreenUtils.sys.mjs",
+  AWScreenUtils: "resource:///modules/aboutwelcome/AWScreenUtils.sys.mjs",
   BackupService: "resource:///modules/backup/BackupService.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   BuiltInThemes: "resource:///modules/BuiltInThemes.sys.mjs",
@@ -344,11 +343,11 @@ export class AboutWelcomeParent extends JSWindowActorParent {
       case "AWPage:GET_APP_AND_SYSTEM_LOCALE_INFO":
         return lazy.LangPackMatcher.getAppAndSystemLocaleInfo();
       case "AWPage:EVALUATE_SCREEN_TARGETING":
-        return lazy.ASRouterScreenUtils.evaluateTargetingAndRemoveScreens(data);
+        return lazy.AWScreenUtils.evaluateTargetingAndRemoveScreens(data);
       case "AWPage:ADD_SCREEN_IMPRESSION":
-        return lazy.ASRouterScreenUtils.addScreenImpression(data);
+        return lazy.AWScreenUtils.addScreenImpression(data);
       case "AWPage:EVALUATE_ATTRIBUTE_TARGETING":
-        return lazy.ASRouterScreenUtils.evaluateScreenTargeting(data);
+        return lazy.AWScreenUtils.evaluateScreenTargeting(data);
       case "AWPage:NEGOTIATE_LANGPACK":
         return lazy.LangPackMatcher.negotiateLangPackForLanguageMismatch(data);
       case "AWPage:ENSURE_LANG_PACK_INSTALLED":
@@ -362,7 +361,7 @@ export class AboutWelcomeParent extends JSWindowActorParent {
         if (
           !Services.prefs.getBoolPref(DID_HANDLE_CAMAPAIGN_ACTION_PREF, false)
         ) {
-          return lazy.ASRouterScreenUtils.getUnhandledCampaignAction();
+          return lazy.AWScreenUtils.getUnhandledCampaignAction();
         }
         break;
       }

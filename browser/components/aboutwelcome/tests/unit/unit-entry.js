@@ -117,6 +117,17 @@ const TEST_GLOBAL = {
       prefix: "ASRouter",
     }),
   },
+  AWScreenUtils: {
+    evaluateTargetingAndRemoveScreens() {
+      return true;
+    },
+    async removeScreens() {
+      return true;
+    },
+    evaluateScreenTargeting() {
+      return true;
+    },
+  },
   BrowserUtils: {
     sendToDeviceEmailsSupported() {
       return true;

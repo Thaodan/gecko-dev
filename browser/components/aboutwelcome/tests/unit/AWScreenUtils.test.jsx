@@ -1,8 +1,8 @@
-import { ASRouterScreenUtils } from "modules/ASRouterScreenUtils.sys.mjs";
-import { GlobalOverrider } from "tests/unit/utils";
-import { ASRouter } from "modules/ASRouter.sys.mjs";
+import { AWScreenUtils } from "modules/AWScreenUtils.sys.mjs";
+import { GlobalOverrider } from "asrouter/tests/unit/utils";
+import { ASRouter } from "asrouter/modules/ASRouter.sys.mjs";
 
-describe("ASRouterScreenUtils", () => {
+describe("AWScreenUtils", () => {
   let sandbox;
   let globals;
 
@@ -25,13 +25,13 @@ describe("ASRouterScreenUtils", () => {
     it("should run callback function once for each array element", async () => {
       const callback = sandbox.stub().resolves(false);
       const arr = ["foo", "bar"];
-      await ASRouterScreenUtils.removeScreens(arr, callback);
+      await AWScreenUtils.removeScreens(arr, callback);
       assert.calledTwice(callback);
     });
     it("should remove screen when passed function evaluates true", async () => {
       const callback = sandbox.stub().resolves(true);
       const arr = ["foo", "bar"];
-      await ASRouterScreenUtils.removeScreens(arr, callback);
+      await AWScreenUtils.removeScreens(arr, callback);
       assert.deepEqual(arr, []);
     });
   });
@@ -44,7 +44,7 @@ describe("ASRouterScreenUtils", () => {
         },
       });
       const result =
-        await ASRouterScreenUtils.evaluateScreenTargeting("test expression");
+        await AWScreenUtils.evaluateScreenTargeting("test expression");
       assert.calledOnce(evalStub);
       assert.equal(result, false);
     });
@@ -56,7 +56,7 @@ describe("ASRouterScreenUtils", () => {
         },
       });
       const result =
-        await ASRouterScreenUtils.evaluateScreenTargeting("test expression");
+        await AWScreenUtils.evaluateScreenTargeting("test expression");
       assert.calledOnce(evalStub);
       assert.equal(result, true);
     });
@@ -89,7 +89,7 @@ describe("ASRouterScreenUtils", () => {
         };
       });
       const evaluatedStrings =
-        await ASRouterScreenUtils.evaluateTargetingAndRemoveScreens(screens);
+        await AWScreenUtils.evaluateTargetingAndRemoveScreens(screens);
       assert.deepEqual(evaluatedStrings, expectedScreens);
     });
     it("should not remove screens with no targeting", async () => {
@@ -109,7 +109,7 @@ describe("ASRouterScreenUtils", () => {
         },
       ];
       sandbox
-        .stub(ASRouterScreenUtils, "evaluateScreenTargeting")
+        .stub(AWScreenUtils, "evaluateScreenTargeting")
         .callsFake(targeting => {
           if (targeting === undefined) {
             return true;
@@ -117,7 +117,7 @@ describe("ASRouterScreenUtils", () => {
           return targeting;
         });
       const evaluatedStrings =
-        await ASRouterScreenUtils.evaluateTargetingAndRemoveScreens(screens);
+        await AWScreenUtils.evaluateTargetingAndRemoveScreens(screens);
       assert.deepEqual(evaluatedStrings, expectedScreens);
     });
   });
@@ -129,7 +129,7 @@ describe("ASRouterScreenUtils", () => {
         "addScreenImpression"
       );
       const testScreen = { id: "test" };
-      ASRouterScreenUtils.addScreenImpression(testScreen);
+      AWScreenUtils.addScreenImpression(testScreen);
 
       assert.calledOnce(addScreenImpressionStub);
       assert.equal(addScreenImpressionStub.firstCall.args[0].id, testScreen.id);
@@ -141,7 +141,7 @@ describe("ASRouterScreenUtils", () => {
         ASRouter,
         "evaluateExpression"
       );
-      ASRouterScreenUtils.getUnhandledCampaignAction();
+      AWScreenUtils.getUnhandledCampaignAction();
 
       assert.calledOnce(evaluateExpressionStub);
       assert.equal(

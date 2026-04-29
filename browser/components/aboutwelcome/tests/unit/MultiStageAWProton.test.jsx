@@ -3,8 +3,8 @@ import {
   MultiStageProtonScreen,
   ProtonScreenActionButtons,
 } from "content-src/components/MultiStageProtonScreen";
-import { ASRouterScreenUtils } from "modules/ASRouterScreenUtils.sys.mjs";
-import { MultiStageUtils } from "content-src/lib/multistage-utils.mjs";
+import { AWScreenUtils } from "modules/AWScreenUtils.sys.mjs";
+import { AboutWelcomeUtils } from "content-src/lib/aboutwelcome-utils.mjs";
 import React from "react";
 import { mount } from "enzyme";
 
@@ -563,6 +563,44 @@ describe("MultiStageAboutWelcomeProton module", () => {
       );
     });
 
+    it("Additional button with disabled: hasTextInput property", () => {
+      const SCREEN_PROPS = {
+        content: {
+          title: "test title",
+          tiles: {
+            type: "textarea",
+            data: {
+              id: "text-input-test",
+              character_limit: 20,
+            },
+          },
+          additional_button: {
+            label: "test additional button",
+            disabled: "hasTextInput",
+          },
+        },
+        setTextInput: sandbox.stub(),
+      };
+      const wrapper = mount(<MultiStageProtonScreen {...SCREEN_PROPS} />);
+      assert.ok(wrapper.exists());
+      assert.isTrue(
+        wrapper.find("button.additional-cta").prop("disabled"),
+        "Button is disabled when textInputs is empty"
+      );
+
+      // should be enabled when textInputs has input
+      wrapper.setProps({
+        textInputs: {
+          "text-input-test": { value: "Some input", isValid: true },
+        },
+      });
+      wrapper.update();
+      assert.isFalse(
+        wrapper.find("button.additional-cta").prop("disabled"),
+        "enabled when textInputs has input"
+      );
+    });
+
     it("Primary button should be disabled when activeSingleSelectSelections is undefined", () => {
       const SCREEN_PROPS = {
         content: {
@@ -616,44 +654,6 @@ describe("MultiStageAboutWelcomeProton module", () => {
       assert.isFalse(
         wrapper.find("button.primary").prop("disabled"),
         "Button is enabled when a tile is selected"
-      );
-    });
-
-    it("Additional button with disabled: hasTextInput property", () => {
-      const SCREEN_PROPS = {
-        content: {
-          title: "test title",
-          tiles: {
-            type: "textarea",
-            data: {
-              id: "text-input-test",
-              character_limit: 20,
-            },
-          },
-          additional_button: {
-            label: "test additional button",
-            disabled: "hasTextInput",
-          },
-        },
-        setTextInput: sandbox.stub(),
-      };
-      const wrapper = mount(<MultiStageProtonScreen {...SCREEN_PROPS} />);
-      assert.ok(wrapper.exists());
-      assert.isTrue(
-        wrapper.find("button.additional-cta").prop("disabled"),
-        "Button is disabled when textInputs is empty"
-      );
-
-      // should be enabled when textInputs has input
-      wrapper.setProps({
-        textInputs: {
-          "text-input-test": { value: "Some input", isValid: true },
-        },
-      });
-      wrapper.update();
-      assert.isFalse(
-        wrapper.find("button.additional-cta").prop("disabled"),
-        "enabled when textInputs has input"
       );
     });
 
@@ -1183,10 +1183,9 @@ describe("MultiStageAboutWelcomeProton module", () => {
             screen.targeting = false;
           }
         });
-        data.screens =
-          await ASRouterScreenUtils.evaluateTargetingAndRemoveScreens(
-            data.screens
-          );
+        data.screens = await AWScreenUtils.evaluateTargetingAndRemoveScreens(
+          data.screens
+        );
       }
 
       return AboutWelcomeDefaults.prepareContentForReact({
@@ -1196,17 +1195,15 @@ describe("MultiStageAboutWelcomeProton module", () => {
     }
     beforeEach(() => {
       sandbox.stub(global.Services.prefs, "getBoolPref").returns(true);
-      sandbox
-        .stub(ASRouterScreenUtils, "evaluateScreenTargeting")
-        .returnsArg(0);
+      sandbox.stub(AWScreenUtils, "evaluateScreenTargeting").returnsArg(0);
       // This is necessary because there are still screens being removed with
       // `removeScreens` in `prepareContentForReact()`. Once we've migrated
       // to using screen targeting instead of manually removing screens,
       // we can remove this stub.
       sandbox
-        .stub(global.ASRouterScreenUtils, "removeScreens")
+        .stub(global.AWScreenUtils, "removeScreens")
         .callsFake((screens, callback) =>
-          ASRouterScreenUtils.removeScreens(screens, callback)
+          AWScreenUtils.removeScreens(screens, callback)
         );
     });
     it("should have a multi action primary button by default", async () => {
@@ -1564,6 +1561,7 @@ describe("MultiStageAboutWelcomeProton module", () => {
         content: {
           title: "Loading screen",
         },
+        // No legacy autoAdvance
         autoAdvance: null,
         advanceOnExperimentLoad: {
           minDisplayMs: 1000,
@@ -1577,10 +1575,12 @@ describe("MultiStageAboutWelcomeProton module", () => {
 
       sinon.assert.calledOnce(awWaitStub);
 
+      // Before minDisplayMs we should not advance
       clock.tick(999);
       await Promise.resolve();
       sinon.assert.notCalled(navigateStub);
 
+      // After minDisplayMs (and Nimbus already resolved) we should advance
       clock.tick(1);
       await Promise.resolve();
       sinon.assert.calledOnce(navigateStub);
@@ -1592,6 +1592,7 @@ describe("MultiStageAboutWelcomeProton module", () => {
     it("should force advance at maxDisplayMs even if Nimbus never resolves", async () => {
       const navigateStub = sandbox.stub();
 
+      // Nimbus never resolves
       sandbox.stub(global, "AWWaitForNimbus").returns(new Promise(() => {}));
 
       SCREEN_PROPS = {
@@ -1609,10 +1610,12 @@ describe("MultiStageAboutWelcomeProton module", () => {
       const wrapper = mount(<MultiStageProtonScreen {...SCREEN_PROPS} />);
       assert.ok(wrapper.exists());
 
+      // Before maxDisplayMs we should not advance
       clock.tick(1999);
       await Promise.resolve();
       sinon.assert.notCalled(navigateStub);
 
+      // At maxDisplayMs we should advance
       clock.tick(1);
       await Promise.resolve();
       sinon.assert.calledOnce(navigateStub);
@@ -1648,6 +1651,7 @@ describe("MultiStageAboutWelcomeProton module", () => {
       sinon.assert.notCalled(handleActionStub);
       sinon.assert.notCalled(navigateStub);
 
+      // At 20s legacy autoAdvance should fire via handleAction
       clock.tick(1);
       await Promise.resolve();
 
@@ -1664,7 +1668,7 @@ describe("MultiStageAboutWelcomeProton module", () => {
     it("should send telemetry with reason nimbus_ready when Nimbus resolves before minDisplayMs", async () => {
       const navigateStub = sandbox.stub();
       const telemetryStub = sandbox.stub(
-        MultiStageUtils,
+        AboutWelcomeUtils,
         "sendActionTelemetry"
       );
       sandbox.stub(global, "AWWaitForNimbus").resolves("ready");
@@ -1701,7 +1705,7 @@ describe("MultiStageAboutWelcomeProton module", () => {
     it("should send telemetry with reason max_display_timeout when max timer fires before Nimbus", async () => {
       const navigateStub = sandbox.stub();
       const telemetryStub = sandbox.stub(
-        MultiStageUtils,
+        AboutWelcomeUtils,
         "sendActionTelemetry"
       );
       sandbox.stub(global, "AWWaitForNimbus").returns(new Promise(() => {}));
@@ -1738,7 +1742,7 @@ describe("MultiStageAboutWelcomeProton module", () => {
     it("should send telemetry with reason nimbus_error when Nimbus resolves with error", async () => {
       const navigateStub = sandbox.stub();
       const telemetryStub = sandbox.stub(
-        MultiStageUtils,
+        AboutWelcomeUtils,
         "sendActionTelemetry"
       );
       sandbox.stub(global, "AWWaitForNimbus").resolves("error");

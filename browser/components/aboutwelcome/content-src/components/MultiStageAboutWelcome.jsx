@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Localized } from "./MSLocalized";
-import { MultiStageUtils } from "../lib/multistage-utils.mjs";
+import { AboutWelcomeUtils } from "../lib/aboutwelcome-utils.mjs";
 import { MultiStageProtonScreen } from "./MultiStageProtonScreen";
 import { useLanguageSwitcher } from "./LanguageSwitcher";
 import { SubmenuButton } from "./SubmenuButton";
@@ -75,7 +75,7 @@ export const MultiStageAboutWelcome = props => {
         .AWGetUnhandledCampaignAction?.()
         .then(action => {
           if (typeof action === "string") {
-            MultiStageUtils.handleCampaignAction(action, props.message_id, {
+            AboutWelcomeUtils.handleCampaignAction(action, props.message_id, {
               writeInMicrosurvey: props.writeInMicrosurvey,
             });
           }
@@ -93,7 +93,7 @@ export const MultiStageAboutWelcome = props => {
         if (index === order) {
           const messageId = `${props.message_id}_${order}_${screen.id}_${screenInitials}`;
 
-          MultiStageUtils.sendImpressionTelemetry(messageId, {
+          AboutWelcomeUtils.sendImpressionTelemetry(messageId, {
             screen_family: props.message_id,
             screen_index: order,
             screen_id: screen.id,
@@ -120,7 +120,7 @@ export const MultiStageAboutWelcome = props => {
   useEffect(() => {
     (async () => {
       if (metricsFlowUri) {
-        setFlowParams(await MultiStageUtils.fetchFlowParams(metricsFlowUri));
+        setFlowParams(await AboutWelcomeUtils.fetchFlowParams(metricsFlowUri));
       }
     })();
   }, [metricsFlowUri]);
@@ -353,7 +353,6 @@ export const MultiStageAboutWelcome = props => {
               content={currentScreen.content}
               navigate={handleTransition}
               autoAdvance={currentScreen.auto_advance}
-              advanceOnExperimentLoad={currentScreen.advance_on_experiment_load}
               messageId={`${props.message_id}_${order}_${currentScreen.id}`}
               writeInMicrosurvey={props.writeInMicrosurvey}
               UTMTerm={props.utm_term}
@@ -366,6 +365,7 @@ export const MultiStageAboutWelcome = props => {
               setScreenMultiSelects={setScreenMultiSelects}
               activeMultiSelect={activeMultiSelects[currentScreen.id]}
               setActiveMultiSelect={setActiveMultiSelect}
+              advanceOnExperimentLoad={currentScreen.advance_on_experiment_load}
               activeSingleSelectSelections={
                 activeSingleSelectSelections[currentScreen.id]
               }
@@ -638,11 +638,11 @@ export class WelcomeScreen extends React.PureComponent {
       }
       data = { ...data, args: url.toString() };
     }
-    return MultiStageUtils.handleUserAction({ type, data });
+    return AboutWelcomeUtils.handleUserAction({ type, data });
   }
 
   logTelemetry({ value, event, source, props }) {
-    MultiStageUtils.sendActionTelemetry(props.messageId, source, event.name, {
+    AboutWelcomeUtils.sendActionTelemetry(props.messageId, source, event.name, {
       writeInMicrosurvey: props.writeInMicrosurvey,
     });
 
@@ -650,7 +650,7 @@ export class WelcomeScreen extends React.PureComponent {
     // dismissed via the dismiss button. Other causes of dismissal will be
     // handled separately by the messaging surface's own code.
     if (value === "dismiss_button" && !event.name) {
-      MultiStageUtils.sendDismissTelemetry(props.messageId, source, {
+      AboutWelcomeUtils.sendDismissTelemetry(props.messageId, source, {
         writeInMicrosurvey: props.writeInMicrosurvey,
       });
     }
@@ -663,7 +663,7 @@ export class WelcomeScreen extends React.PureComponent {
 
     if (hasMigrate(action)) {
       await window.AWWaitForMigrationClose();
-      MultiStageUtils.sendActionTelemetry(
+      AboutWelcomeUtils.sendActionTelemetry(
         props.messageId,
         "migrate_close",
         "CLICK_BUTTON",
@@ -698,7 +698,7 @@ export class WelcomeScreen extends React.PureComponent {
 
       for (const opt of tile.data) {
         if (opt.id === value) {
-          MultiStageUtils.handleUserAction(opt.action);
+          AboutWelcomeUtils.handleUserAction(opt.action);
           return;
         }
       }
@@ -769,14 +769,14 @@ export class WelcomeScreen extends React.PureComponent {
         props.addonURL && props.isRtamo ? props.addonURL : action.data?.url;
       // Set add-on url in action.data.url property from JSON
       action.data = { ...action.data, url };
-      MultiStageUtils.handleUserAction(action);
+      AboutWelcomeUtils.handleUserAction(action);
     } else if (action.type) {
-      let actionPromise = MultiStageUtils.handleUserAction(action);
+      let actionPromise = AboutWelcomeUtils.handleUserAction(action);
       if (action.needsAwait) {
         actionResult = await actionPromise;
       }
       if (action.type === "FXA_SIGNIN_FLOW") {
-        MultiStageUtils.sendActionTelemetry(
+        AboutWelcomeUtils.sendActionTelemetry(
           props.messageId,
           actionResult ? "sign_in" : "sign_in_cancel",
           "FXA_SIGNIN_FLOW",
@@ -903,7 +903,7 @@ export class WelcomeScreen extends React.PureComponent {
 
     for (const value of Object.values(props.activeMultiSelect)) {
       // Send telemetry with selected checkbox ids
-      MultiStageUtils.sendActionTelemetry(
+      AboutWelcomeUtils.sendActionTelemetry(
         props.messageId,
         value.flat(),
         "SELECT_CHECKBOX",
@@ -957,7 +957,7 @@ export class WelcomeScreen extends React.PureComponent {
         if (tile.data.action) {
           collectedActions.push(tile.data.action);
         }
-        MultiStageUtils.sendActionTelemetry(
+        AboutWelcomeUtils.sendActionTelemetry(
           props.messageId,
           inputId,
           "TEXT_INPUT",
@@ -1014,7 +1014,6 @@ export class WelcomeScreen extends React.PureComponent {
         startsWithCorner={this.props.startsWithCorner}
         autoAdvance={this.props.autoAdvance}
         advanceOnExperimentLoad={this.props.advanceOnExperimentLoad}
-        navigate={this.props.navigate}
         forceHideStepsIndicator={this.props.forceHideStepsIndicator}
         ariaRole={this.props.ariaRole}
         requireAction={this.props.requireAction}
@@ -1025,6 +1024,7 @@ export class WelcomeScreen extends React.PureComponent {
         addonURL={this.props.addonURL}
         addonIconURL={this.props.addonIconURL}
         themeScreenshots={this.props.themeScreenshots}
+        navigate={this.props.navigate}
         isRtamo={this.props.content.isRtamo}
       />
     );

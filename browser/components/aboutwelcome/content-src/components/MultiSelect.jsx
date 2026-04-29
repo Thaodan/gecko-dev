@@ -4,7 +4,7 @@
 
 import React, { useEffect, useCallback, useMemo, useRef } from "react";
 import { Localized, CONFIGURABLE_STYLES } from "./MSLocalized";
-import { MultiStageUtils } from "../lib/multistage-utils.mjs";
+import { AboutWelcomeUtils } from "../lib/aboutwelcome-utils.mjs";
 
 const MULTI_SELECT_STYLES = [
   ...CONFIGURABLE_STYLES,
@@ -99,7 +99,7 @@ export const MultiSelect = ({
   );
 
   const containerStyle = useMemo(
-    () => MultiStageUtils.getTileStyle(content.tiles, MULTI_SELECT_STYLES),
+    () => AboutWelcomeUtils.getTileStyle(content.tiles, MULTI_SELECT_STYLES),
     [content.tiles]
   );
 
@@ -190,7 +190,7 @@ export const MultiSelect = ({
           <div
             key={id + label}
             className="checkbox-container multi-select-item"
-            style={MultiStageUtils.getValidStyle(style, MULTI_SELECT_STYLES)}
+            style={AboutWelcomeUtils.getValidStyle(style, MULTI_SELECT_STYLES)}
             tabIndex={isPicker ? "0" : null}
             onClick={isPicker ? handleCheckboxContainerInteraction : null}
             onKeyDown={isPicker ? handleCheckboxContainerInteraction : null}
@@ -203,7 +203,7 @@ export const MultiSelect = ({
               value={id}
               name={group}
               checked={activeMultiSelect?.includes(id)}
-              style={MultiStageUtils.getValidStyle(
+              style={AboutWelcomeUtils.getValidStyle(
                 icon?.style,
                 MULTI_SELECT_ICON_STYLES
               )}

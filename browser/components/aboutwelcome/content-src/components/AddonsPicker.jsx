@@ -3,7 +3,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import React from "react";
-import { MultiStageUtils } from "../lib/multistage-utils.mjs";
+import { AboutWelcomeUtils } from "../lib/aboutwelcome-utils.mjs";
 import { Localized } from "./MSLocalized";
 import { InstallButton } from "./InstallButton";
 
@@ -25,14 +25,17 @@ export const AddonsPicker = props => {
     }
 
     handleAction(event, action);
-    MultiStageUtils.sendActionTelemetry(message_id, source_id, "CLICK_BUTTON", {
-      writeInMicrosurvey,
-    });
+    AboutWelcomeUtils.sendActionTelemetry(
+      message_id,
+      source_id,
+      "CLICK_BUTTON",
+      { writeInMicrosurvey }
+    );
   }
 
   function handleAuthorClick(event, authorId) {
     event.stopPropagation();
-    MultiStageUtils.handleUserAction({
+    AboutWelcomeUtils.handleUserAction({
       type: "OPEN_URL",
       data: {
         args: `https://addons.mozilla.org/firefox/user/${authorId}/`,

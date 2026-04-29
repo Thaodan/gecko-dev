@@ -4,8 +4,8 @@
 
 import React from "react";
 import ReactDOM from "react-dom";
-import { MultiStageUtils } from "../../asrouter/content-src/lib/multistage-utils.mjs";
-import { MultiStageAboutWelcome } from "../../asrouter/content-src/components/MultiStageAboutWelcome";
+import { AboutWelcomeUtils } from "./lib/aboutwelcome-utils.mjs";
+import { MultiStageAboutWelcome } from "./components/MultiStageAboutWelcome";
 
 class AboutWelcome extends React.PureComponent {
   constructor(props) {
@@ -29,7 +29,7 @@ class AboutWelcome extends React.PureComponent {
         const { domComplete, domInteractive } = performance
           .getEntriesByType("navigation")
           .pop();
-        MultiStageUtils.sendImpressionTelemetry(this.props.messageId, {
+        AboutWelcomeUtils.sendImpressionTelemetry(this.props.messageId, {
           domComplete,
           domInteractive,
           mountStart: performance.getEntriesByName("mount").pop().startTime,
