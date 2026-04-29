@@ -2210,6 +2210,8 @@ export class UrlbarView {
 
     item._content.id = item.id + "-inner";
 
+    item.toggleAttribute("is-top-pick", !!result.isBestMatch);
+
     if (result.isBottomUrlSuggestion) {
       this.#updateRowContentForBottomUrl(item, result);
       return;
@@ -2238,7 +2240,8 @@ export class UrlbarView {
     if (
       result.type == lazy.UrlbarUtils.RESULT_TYPE.SEARCH &&
       !result.payload.providesSearchMode &&
-      !result.payload.inPrivateWindow
+      !result.payload.inPrivateWindow &&
+      result.providerName != lazy.UrlbarProviderQuickSuggest.name
     ) {
       item.setAttribute(
         "type",
