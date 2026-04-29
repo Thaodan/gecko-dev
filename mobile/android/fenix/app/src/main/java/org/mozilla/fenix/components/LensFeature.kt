@@ -9,6 +9,7 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import androidx.activity.result.ActivityResultLauncher
+import androidx.annotation.VisibleForTesting
 import androidx.fragment.app.Fragment
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -20,6 +21,7 @@ import kotlinx.coroutines.launch
 import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
+import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.fenix.components.appstate.AppAction.LensAction
 import org.mozilla.fenix.components.lens.LensCameraActivity
 import org.mozilla.fenix.ext.components
@@ -40,6 +42,7 @@ class LensFeature(
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : LifecycleAwareFeature {
 
+    private val logger = Logger("LensFeature")
     private var scope: CoroutineScope? = null
 
     override fun start() {
@@ -57,8 +60,13 @@ class LensFeature(
                 .distinctUntilChangedBy { it.isRequesting }
                 .collect { lensState ->
                     if (lensState.isRequesting) {
+                        val pendingImageUrl = lensState.pendingImageUrl
                         appStore.dispatch(LensAction.LensRequestConsumed)
-                        launchCamera()
+                        if (pendingImageUrl != null) {
+                            uploadFromImageUrl(pendingImageUrl)
+                        } else {
+                            launchCamera()
+                        }
                     }
                 }
         }
@@ -70,6 +78,34 @@ class LensFeature(
             lensLauncher.launch(intent)
         } catch (e: ActivityNotFoundException) {
             appStore.dispatch(LensAction.LensDismissed)
+        }
+    }
+
+    @VisibleForTesting
+    internal fun uploadFromImageUrl(imageUrl: String) {
+        val currentScope = scope
+        if (currentScope == null) {
+            appStore.dispatch(LensAction.LensDismissed)
+            return
+        }
+
+        currentScope.launch {
+            try {
+                val resultUrl = uploader.uploadFromUrl(imageUrl)
+                if (resultUrl != null) {
+                    context.components.useCases.tabsUseCases.addTab(
+                        url = resultUrl,
+                        selectTab = true,
+                        startLoading = true,
+                        private = appStore.state.mode.isPrivate,
+                    )
+                    appStore.dispatch(LensAction.LensResultAvailable(resultUrl))
+                }
+            } catch (e: IOException) {
+                logger.debug("uploadFromImageUrl failed for $imageUrl", e)
+            } finally {
+                appStore.dispatch(LensAction.LensDismissed)
+            }
         }
     }
 
