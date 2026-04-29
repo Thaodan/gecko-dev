@@ -16,12 +16,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
 const DEFAULT_HOMEPAGE_URL = "about:home";
 const BLANK_HOMEPAGE_URL = "chrome://browser/content/blanktab.html";
 
-/**
- * @backward-compat { version 150 }
- * `home-pane-loaded` is fired by home-startup.mjs (chrome, baked at build time).
- * This notification was introduced in Firefox 150, so the redesign path in
- * observe() cannot be train-hopped on earlier releases.
- */
 export const PREFERENCES_LOADED_EVENT = "home-pane-loaded";
 export const PREFERENCES_LOADED_EVENT_SUBPANE = "customHomepage-pane-loaded";
 
@@ -170,20 +164,13 @@ export class AboutPreferences {
     if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
       const { SettingGroupManager } = window;
 
-      /**
-       * @backward-compat { version 150 }
-       * On Firefox < 150, the preferences component was registering Home & New Tab groups
-       * itself before firing `home-pane-loaded`. Skip re-registration on those versions.
-       */
-      if (!SettingGroupManager._data?.has("homepage")) {
-        this._registerPreferences(window);
+      this._registerPreferences(window);
 
-        SettingGroupManager.registerGroups({
-          homepage: this._setupHomepageGroup(window),
-          customHomepage: this._setupCustomHomepageGroup(window),
-          home: this._setupHomeGroup(window),
-        });
-      }
+      SettingGroupManager.registerGroups({
+        homepage: this._setupHomepageGroup(window),
+        customHomepage: this._setupCustomHomepageGroup(window),
+        home: this._setupHomeGroup(window),
+      });
       return;
     }
 
