@@ -1629,19 +1629,30 @@ class Element : public FragmentOrElement {
   already_AddRefed<ShadowRoot> AttachShadow(const ShadowRootInit&,
                                             ErrorResult&);
   bool CanAttachShadowDOM() const;
+  virtual void GetSlotNameFor(const ShadowRoot&, const nsIContent& aContent,
+                              nsAString& aName) const {
+    if (const Element* element = Element::FromNode(aContent)) {
+      element->GetAttr(nsGkAtoms::slot, aName);
+    }
+  }
+  virtual void OnChildBeforeSlotted(ShadowRoot&, nsIContent&) {}
+  virtual void OnChildUnslotted(ShadowRoot&, nsIContent&) {}
 
   enum class DelegatesFocus : bool { No, Yes };
   enum class ShadowRootClonable : bool { No, Yes };
   enum class ShadowRootSerializable : bool { No, Yes };
+  enum class CustomSlotDispatch : bool { No, Yes };
 
   // https://dom.spec.whatwg.org/#concept-attach-a-shadow-root
   already_AddRefed<ShadowRoot> AttachShadowWithoutNameChecks(
-      const ShadowRootInit&, bool aNotify = true);
+      const ShadowRootInit&, bool aNotify = true,
+      CustomSlotDispatch = CustomSlotDispatch::No);
 
   // Attach UA Shadow Root if it is not attached.
   enum class NotifyUAWidget : bool { No, Yes };
   void AttachAndSetUAShadowRoot(NotifyUAWidget = NotifyUAWidget::Yes,
                                 DelegatesFocus = DelegatesFocus::No,
+                                CustomSlotDispatch = CustomSlotDispatch::No,
                                 bool aNotify = true);
 
   // Dispatch an event to UAWidgetsChild, triggering construction
