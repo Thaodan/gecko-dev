@@ -303,7 +303,7 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
   AUTO_PROFILER_LABEL("XRE_InitChildProcess", OTHER);
 
 #ifdef XP_MACOSX
-  auto _supplementalFontThread = gfxPlatformMac::RegisterSupplementalFonts();
+  gfxPlatformMac::RegisterSupplementalFonts();
 #endif
 
   // Ensure AbstractThread is minimally setup, so async IPC messages

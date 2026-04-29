@@ -81,8 +81,7 @@ PRThread* gfxPlatformMac::sFontRegistrationThread = nullptr;
    thread, and hope that it'll be finished by the time we're ready to build
    our font list. */
 /* static */
-gfxPlatformMac::SupplementalFontThread
-gfxPlatformMac::RegisterSupplementalFonts() {
+void gfxPlatformMac::RegisterSupplementalFonts() {
   if (XRE_GetProcessType() == GeckoProcessType_Default) {
     // We activate the fonts on a separate thread, to minimize the startup-
     // time cost.
@@ -90,7 +89,6 @@ gfxPlatformMac::RegisterSupplementalFonts() {
         PR_USER_THREAD, FontRegistrationCallback, nullptr, PR_PRIORITY_NORMAL,
         PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
   }
-  return SupplementalFontThread();
 }
 
 /* static */

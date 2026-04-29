@@ -21,16 +21,11 @@ class gfxPlatformMac : public gfxPlatform {
   gfxPlatformMac();
   virtual ~gfxPlatformMac();
 
-  struct SupplementalFontThread {
-    ~SupplementalFontThread() { WaitForFontRegistration(); }
-  };
-
   // Call early in startup to register the macOS supplemental language fonts
   // so that they're usable by the browser. This is intended to be called as
   // early as possible, before most services etc are initialized; it starts
   // a separate thread to register the fonts, because this is quite slow.
-  // Return an RAII object to ensure that the thread is joined before shutdown.
-  static SupplementalFontThread RegisterSupplementalFonts();
+  static void RegisterSupplementalFonts();
 
   // Call from the main thread at the point where we need to start using the
   // font list; this will wait (if necessary) for the registration thread to
