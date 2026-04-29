@@ -691,8 +691,6 @@ def handle_tier(config, tasks):
                 "macosx1470-64/debug",
                 "macosx1470-64-shippable/opt",
                 "macosx1470-64-devedition/opt",
-                "macosx1400-64-shippable-qr/opt",
-                "macosx1400-64-qr/debug",
                 "macosx1500-64/opt",
                 "macosx1500-64/debug",
                 "macosx1500-64-shippable/opt",
