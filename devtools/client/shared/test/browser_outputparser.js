@@ -649,16 +649,14 @@ function testParseShape(doc, parser) {
             `<span class="inspector-shape-point" data-point="2">` +
               `<span class="inspector-shape-point" data-point="2" data-pair="x">30%</span>` +
               `<span class="inspector-shape-point" data-point="2" data-pair="y">30%</span>` +
-              ` ` +
             `</span>` +
-            `, ` +
+            ` , ` +
             `<span class="inspector-shape-point" data-point="3">` +
               `<span class="inspector-shape-point" data-point="3" data-pair="x">calc(250px - 10px)</span>` +
               ` ` +
               `<span class="inspector-shape-point" data-point="3" data-pair="y">0</span>` +
-              ` ` +
             `</span>` +
-            `,\n ` +
+            ` ,\n ` +
             `<span class="inspector-shape-point" data-point="4">` +
               `<span class="inspector-shape-point" data-point="4" data-pair="x">12em</span>` +
               ` ` +
@@ -701,16 +699,14 @@ function testParseShape(doc, parser) {
             `<span class="inspector-shape-point" data-point="2">` +
               `<span class="inspector-shape-point" data-point="2" data-pair="x">30%</span>` +
               `<span class="inspector-shape-point" data-point="2" data-pair="y">30%</span>` +
-              ` ` +
             `</span>` +
-            `, ` +
+            ` , ` +
             `<span class="inspector-shape-point" data-point="3">` +
               `<span class="inspector-shape-point" data-point="3" data-pair="x">calc(250px - 10px)</span>` +
               ` ` +
               `<span class="inspector-shape-point" data-point="3" data-pair="y">0</span>` +
-              ` ` +
             `</span>` +
-            `,\n ` +
+            ` ,\n ` +
             `<span class="inspector-shape-point" data-point="4">` +
               `<span class="inspector-shape-point" data-point="4" data-pair="x">12em</span>` +
               ` ` +
@@ -822,11 +818,11 @@ function testParseShape(doc, parser) {
             `<span class="inspector-shape-point" data-point="center">` +
               `<span class="inspector-shape-point" data-point="center" data-pair="x">left</span>` +
               ` ` +
-              `<span class="inspector-shape-point" data-point="center" data-pair="y">10px</span>` +
+              `<span class="inspector-shape-point" data-point="center">10px</span>` +
               ` ` +
-              `<span class="inspector-shape-point" data-point="center" data-pair="x">top</span>` +
+              `<span class="inspector-shape-point" data-point="center" data-pair="y">top</span>` +
               ` ` +
-              `<span class="inspector-shape-point" data-point="center" data-pair="y">15px</span>` +
+              `<span class="inspector-shape-point" data-point="center">15px</span>` +
             `</span>` +
             `)` +
           `</span>` +
