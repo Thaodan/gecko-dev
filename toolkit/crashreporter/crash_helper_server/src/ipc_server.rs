@@ -6,11 +6,11 @@ use anyhow::{bail, Result};
 use crash_helper_common::{
     messages::{self, ChildProcessRendezVousReply, Header, Message},
     AncillaryData, GeckoChildId, IPCConnector, IPCConnectorKey, IPCEvent, IPCListener, IPCQueue,
-    Pid,
+    Pid, ProcessHandle,
 };
 use std::{collections::HashMap, ffi::OsString, process, rc::Rc};
 
-use crate::crash_generation::{CrashGenerator, PlatformData};
+use crate::crash_generation::CrashGenerator;
 
 #[derive(PartialEq)]
 pub enum IPCServerState {
@@ -62,7 +62,7 @@ struct IPCConnection {
     /// Platform-specific data associated with this connection. Currently used
     /// on macOS/iOS to store the send right to the mach task on the other end
     /// of this connection.
-    platform_data: Option<PlatformData>,
+    process_handle: Option<ProcessHandle>,
 }
 
 pub(crate) struct IPCServer {
@@ -92,7 +92,7 @@ impl IPCServer {
                 process: Some(ProcessId::for_parent(client_pid)),
                 // TODO: This needs to be populated when we move main process
                 // crash generation OOP.
-                platform_data: None,
+                process_handle: None,
             },
         );
 
@@ -111,7 +111,7 @@ impl IPCServer {
                             connector,
                             endpoint: IPCEndpoint::External,
                             process: None,
-                            platform_data: None,
+                            process_handle: None,
                         },
                     );
                 }
@@ -210,7 +210,7 @@ impl IPCServer {
                             connector,
                             endpoint: IPCEndpoint::Child,
                             process: Some(ProcessId::for_child(reply.child_pid, reply.id)),
-                            platform_data: get_platform_data(reply)?,
+                            process_handle: get_process_handle(reply)?,
                         },
                     );
                 }
@@ -268,9 +268,9 @@ impl IPCServer {
     }
 }
 
-fn get_platform_data(
+fn get_process_handle(
     #[allow(unused)] child_rendezvous: ChildProcessRendezVousReply,
-) -> Result<Option<PlatformData>> {
+) -> Result<Option<ProcessHandle>> {
     #[cfg(not(any(target_os = "ios", target_os = "macos")))]
     {
         Ok(None)
