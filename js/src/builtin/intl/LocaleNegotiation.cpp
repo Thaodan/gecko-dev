@@ -235,7 +235,7 @@ static bool LookupSupportedLocales(
   MOZ_ASSERT(supportedLocales.empty());
 
   auto defaultLocale = LanguageId::und();
-  if (!cx->global()->globalIntlData().defaultLocale(cx, &defaultLocale)) {
+  if (!DefaultLocale(cx, &defaultLocale)) {
     return false;
   }
 
@@ -434,7 +434,7 @@ static bool LookupMatcher(JSContext* cx, AvailableLocaleKind availableLocales,
   MOZ_RELEASE_ASSERT(IsPackedArray(locales));
 
   auto defaultLocale = LanguageId::und();
-  if (!cx->global()->globalIntlData().defaultLocale(cx, &defaultLocale)) {
+  if (!DefaultLocale(cx, &defaultLocale)) {
     return false;
   }
 
@@ -837,6 +837,13 @@ static bool IsSupportedNumberingSystem(const JSLinearString* string) {
   const auto* chars = string->twoByteChars(nogc);
   std::u16string_view sv{chars, string->length()};
   return IsSupportedNumberingSystem(sv);
+}
+
+/**
+ * Return the default locale.
+ */
+bool js::intl::DefaultLocale(JSContext* cx, LanguageId* result) {
+  return cx->global()->globalIntlData().defaultLocale(cx, result);
 }
 
 /**
