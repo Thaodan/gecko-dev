@@ -584,7 +584,7 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
                                  JSUseCounter::LEGACY_LANG_SUBTAG);
   }
 
-  // Step 12. (Optimized to only perform base-name canonicalization.)
+  // Steps 12-13. (Optimized to only perform base-name canonicalization.)
   if (auto result = tag.CanonicalizeBaseName(); result.isErr()) {
     if (result.unwrapErr() ==
         mozilla::intl::Locale::CanonicalizationError::DuplicateVariant) {
@@ -597,15 +597,15 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   if (options) {
-    // Step 13.
+    // Step 14.
     if (!ApplyOptionsToTag(cx, tag, options)) {
       return false;
     }
 
-    // Step 14.
+    // Step 15.
     JS::RootedVector<UnicodeExtensionKeyword> keywords(cx);
 
-    // Steps 15-17.
+    // Steps 16-18.
     Rooted<JSLinearString*> calendar(cx);
     if (!GetUnicodeExtensionOption(cx, options, UnicodeExtensionKey::Calendar,
                                    &calendar)) {
@@ -617,7 +617,7 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
       }
     }
 
-    // Steps 18-20.
+    // Steps 19-21.
     Rooted<JSLinearString*> collation(cx);
     if (!GetUnicodeExtensionOption(cx, options, UnicodeExtensionKey::Collation,
                                    &collation)) {
@@ -629,7 +629,7 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
       }
     }
 
-    // Step 21.
+    // Step 25.
     static constexpr auto hourCycles = MapOptions<LocaleHourCycleToString>(
         LocaleHourCycle::H11, LocaleHourCycle::H12, LocaleHourCycle::H23,
         LocaleHourCycle::H24);
@@ -639,14 +639,14 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
       return false;
     }
 
-    // Step 22.
+    // Step 26.
     if (hourCycle) {
       if (!keywords.emplaceBack("hc", ToUnicodeValue(cx, *hourCycle))) {
         return false;
       }
     }
 
-    // Step 23.
+    // Step 27.
     static constexpr auto caseFirsts = MapOptions<LocaleCaseFirstToString>(
         LocaleCaseFirst::Upper, LocaleCaseFirst::Lower, LocaleCaseFirst::False);
     mozilla::Maybe<LocaleCaseFirst> caseFirst{};
@@ -655,27 +655,27 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
       return false;
     }
 
-    // Step 24.
+    // Step 28.
     if (caseFirst) {
       if (!keywords.emplaceBack("kf", ToUnicodeValue(cx, *caseFirst))) {
         return false;
       }
     }
 
-    // Steps 25-26.
+    // Step 29.
     mozilla::Maybe<bool> numeric{};
     if (!GetBooleanOption(cx, options, cx->names().numeric, &numeric)) {
       return false;
     }
 
-    // Step 27.
+    // Step 30-31.
     if (numeric) {
       if (!keywords.emplaceBack("kn", BooleanToString(cx, *numeric))) {
         return false;
       }
     }
 
-    // Steps 28-30.
+    // Steps 32-34.
     Rooted<JSLinearString*> numberingSystem(cx);
     if (!GetUnicodeExtensionOption(cx, options,
                                    UnicodeExtensionKey::NumberingSystem,
@@ -688,7 +688,7 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
       }
     }
 
-    // Step 31.
+    // Step 35.
     if (!ApplyUnicodeExtensionToTag(cx, tag, keywords)) {
       return false;
     }
@@ -706,13 +706,13 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  // Steps 6, 32-38.
+  // Steps 6, 36-43.
   JSObject* obj = CreateLocaleObject(cx, proto, tag);
   if (!obj) {
     return false;
   }
 
-  // Step 39.
+  // Step 44.
   args.rval().setObject(*obj);
   return true;
 }
