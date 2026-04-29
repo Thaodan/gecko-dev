@@ -1273,6 +1273,9 @@ Preferences.addSetting(
     _panel: "",
     _options: {},
     setup(emitChange) {
+      if (!AppConstants.MOZ_UPDATER) {
+        return () => {};
+      }
       if (gAppUpdater) {
         gAppUpdater.destroy();
       }
@@ -1366,7 +1369,9 @@ Preferences.addSetting({
 
 Preferences.addSetting({
   id: "disableShowUpdateHistory",
-  pref: "app.update.disable_button.showUpdateHistory",
+  pref: AppConstants.MOZ_UPDATER
+    ? "app.update.disable_button.showUpdateHistory"
+    : undefined,
 });
 Preferences.addSetting({
   id: "showUpdateHistory",
