@@ -297,6 +297,7 @@ pref("media.videocontrols.keyboard-tab-to-all-controls", true);
   pref("media.peerconnection.default_iceservers", "[]");
   #ifdef NIGHTLY_BUILD
     pref("media.peerconnection.allow_old_setParameters", false);
+    pref("media.peerconnection.allow_old_setParameters.allowlist", "*.google.com");
   #else
     pref("media.peerconnection.allow_old_setParameters", true);
   #endif
