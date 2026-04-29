@@ -3,7 +3,7 @@ import {
   MultiStageProtonScreen,
   ProtonScreenActionButtons,
 } from "content-src/components/MultiStageProtonScreen";
-import { AWScreenUtils } from "modules/AWScreenUtils.sys.mjs";
+import { ASRouterScreenUtils } from "modules/ASRouterScreenUtils.sys.mjs";
 import { MultiStageUtils } from "content-src/lib/multistage-utils.mjs";
 import React from "react";
 import { mount } from "enzyme";
@@ -1183,9 +1183,10 @@ describe("MultiStageAboutWelcomeProton module", () => {
             screen.targeting = false;
           }
         });
-        data.screens = await AWScreenUtils.evaluateTargetingAndRemoveScreens(
-          data.screens
-        );
+        data.screens =
+          await ASRouterScreenUtils.evaluateTargetingAndRemoveScreens(
+            data.screens
+          );
       }
 
       return AboutWelcomeDefaults.prepareContentForReact({
@@ -1195,15 +1196,17 @@ describe("MultiStageAboutWelcomeProton module", () => {
     }
     beforeEach(() => {
       sandbox.stub(global.Services.prefs, "getBoolPref").returns(true);
-      sandbox.stub(AWScreenUtils, "evaluateScreenTargeting").returnsArg(0);
+      sandbox
+        .stub(ASRouterScreenUtils, "evaluateScreenTargeting")
+        .returnsArg(0);
       // This is necessary because there are still screens being removed with
       // `removeScreens` in `prepareContentForReact()`. Once we've migrated
       // to using screen targeting instead of manually removing screens,
       // we can remove this stub.
       sandbox
-        .stub(global.AWScreenUtils, "removeScreens")
+        .stub(global.ASRouterScreenUtils, "removeScreens")
         .callsFake((screens, callback) =>
-          AWScreenUtils.removeScreens(screens, callback)
+          ASRouterScreenUtils.removeScreens(screens, callback)
         );
     });
     it("should have a multi action primary button by default", async () => {
