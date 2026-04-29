@@ -56,7 +56,8 @@ pub fn check_file(path: &str, fix: bool, linter: &str) -> Vec<FileResult> {
         let trimmed_len = line
             .iter()
             .rposition(|&b| b != b' ' && b != b'\t')
-            .map_or(0, |p| p + 1);
+            .map(|p| p + 1)
+            .unwrap_or(0);
         if trimmed_len < line.len() {
             if fix {
                 fixed_lines.push(&line[..trimmed_len]);
