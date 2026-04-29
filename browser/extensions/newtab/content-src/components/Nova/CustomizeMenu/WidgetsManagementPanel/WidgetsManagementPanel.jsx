@@ -108,7 +108,9 @@ function WidgetsManagementPanel({
   const { weatherEnabled } = enabledSections;
   const { timerEnabled, listsEnabled } = enabledWidgets;
   const isRTL = typeof document !== "undefined" && document.dir === "rtl";
-  const arrowIconSrc = `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
+  // @backward-compat { version 151 } Switch to chrome://global/skin/icons/shaft-arrow-${dir}.svg
+  // once Firefox 151 reaches Release (icons not available in toolkit until then).
+  const arrowIconSrc = `chrome://newtab/content/data/content/assets/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
 
   return (
     <div id="widgets-management-panel" className="widgets-mgmt-panel-container">
