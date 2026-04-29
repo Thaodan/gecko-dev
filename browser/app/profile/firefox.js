@@ -2376,6 +2376,8 @@ pref("media.videocontrols.picture-in-picture.video-toggle.visibility-threshold",
 pref("media.videocontrols.picture-in-picture.keyboard-controls.enabled", true);
 pref("media.videocontrols.picture-in-picture.urlbar-button.enabled", true);
 pref("media.videocontrols.picture-in-picture.enable-when-switching-tabs.enabled", false);
+pref("media.videocontrols.picture-in-picture.auto-close.enabled", true);
+pref("media.videocontrols.picture-in-picture.auto-close.timeoutMs", 1000);
 
 // TODO (Bug 1817084) - This pref is used for managing translation preferences
 // in the Firefox Translations addon. It should be removed when the addon is
