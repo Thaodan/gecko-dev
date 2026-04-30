@@ -71,7 +71,6 @@ import org.mozilla.fenix.settings.sitepermissions.AUTOPLAY_BLOCK_ALL
 import org.mozilla.fenix.settings.sitepermissions.AUTOPLAY_BLOCK_AUDIBLE
 import org.mozilla.fenix.tabstray.DefaultTabManagementFeatureHelper
 import org.mozilla.fenix.termsofuse.TOU_VERSION
-import org.mozilla.fenix.termsofuse.getApplicationInstalledTime
 import org.mozilla.fenix.wallpapers.Wallpaper
 import java.security.InvalidParameterException
 import java.util.concurrent.TimeUnit.MILLISECONDS
