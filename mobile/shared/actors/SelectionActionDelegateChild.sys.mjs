@@ -221,7 +221,7 @@ export class SelectionActionDelegateChild extends GeckoViewActorChild {
       // <input> element. Use vertical center position of input element.
       const bounds = focus.getBoundingClientRect();
       const rect = lazy.LayoutUtils.rectToScreenRect(
-        aEvent.target.ownerGlobal,
+        aEvent.target.documentGlobal,
         {
           left: aEvent.clientX,
           top: bounds.top,
@@ -262,7 +262,7 @@ export class SelectionActionDelegateChild extends GeckoViewActorChild {
     })();
 
     const rect = lazy.LayoutUtils.rectToScreenRect(
-      aEvent.target.ownerGlobal,
+      aEvent.target.documentGlobal,
       bounds
     );
     return { x: rect.left, y: rect.top };
@@ -343,7 +343,7 @@ export class SelectionActionDelegateChild extends GeckoViewActorChild {
           return null;
         }
         const rect = lazy.LayoutUtils.rectToScreenRect(
-          aEvent.target.ownerGlobal,
+          aEvent.target.documentGlobal,
           boundingRect
         );
         return {
