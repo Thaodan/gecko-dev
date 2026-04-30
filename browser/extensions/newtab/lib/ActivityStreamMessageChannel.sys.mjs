@@ -276,7 +276,7 @@ export class ActivityStreamMessageChannel {
 
   setRenderLayers(browser) {
     if (this.isPreloadedBrowser(browser)) {
-      const win = browser.documentGlobal;
+      const win = browser.ownerGlobal;
       if (!win || win.closed) {
         return;
       }
@@ -319,7 +319,7 @@ export class ActivityStreamMessageChannel {
 
       const cleanup = () => {
         const b = browserRef.deref();
-        const w = b?.documentGlobal;
+        const w = b?.ownerGlobal;
         w?.removeEventListener("sizemodechange", onSizeModeChange);
         w?.removeEventListener("occlusionstatechange", onOcclusionStateChange);
         if (b) {
@@ -327,7 +327,7 @@ export class ActivityStreamMessageChannel {
         }
       };
 
-      const win = browser.documentGlobal;
+      const win = browser.ownerGlobal;
       win.addEventListener("sizemodechange", onSizeModeChange);
       win.addEventListener("occlusionstatechange", onOcclusionStateChange);
       win.addEventListener("unload", cleanup, { once: true });
@@ -355,7 +355,7 @@ export class ActivityStreamMessageChannel {
     const listeners = this._renderLayersListeners.get(browser);
     if (listeners) {
       const { onSizeModeChange, onOcclusionStateChange, cleanup } = listeners;
-      const win = browser.documentGlobal;
+      const win = browser.ownerGlobal;
 
       if (win && !win.closed) {
         win.removeEventListener("sizemodechange", onSizeModeChange);

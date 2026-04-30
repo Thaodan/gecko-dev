@@ -114,7 +114,7 @@ export class nsContextMenu {
   #newFeatureBadgeL10nString;
 
   constructor(aXulMenu, aIsShift) {
-    this.window = aXulMenu.documentGlobal;
+    this.window = aXulMenu.ownerGlobal;
     this.document = aXulMenu.ownerDocument;
 
     // Get contextual info.
@@ -279,7 +279,7 @@ export class nsContextMenu {
 
       this.browser = this.ownerDoc.defaultView.docShell.chromeEventHandler;
       this.selectionInfo = SelectionUtils.getSelectionDetails(
-        this.browser.documentGlobal
+        this.browser.ownerGlobal
       );
       this.actor =
         this.browser.browsingContext.currentWindowGlobal.getActor(

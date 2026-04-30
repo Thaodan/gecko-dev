@@ -35,7 +35,7 @@ export default class IPProtectionLocationsElement extends MozLitElement {
   }
 
   handlePromoButtonClick(event) {
-    event.target.documentGlobal.openWebLinkIn(LINKS.PRODUCT_URL, "tab");
+    event.target.ownerGlobal.openWebLinkIn(LINKS.PRODUCT_URL, "tab");
   }
 
   promoTemplate() {
