@@ -1,6 +1,6 @@
-diff --git a/media/libjpeg/jmorecfg.h b/media/libjpeg/jmorecfg.h
---- a/media/libjpeg/jmorecfg.h
-+++ b/media/libjpeg/jmorecfg.h
+diff --git a/jmorecfg.h b/jmorecfg.h
+--- a/jmorecfg.h
++++ b/jmorecfg.h
 @@ -9,16 +9,17 @@
   * For conditions of distribution and use, see the accompanying README.ijg
   * file.
