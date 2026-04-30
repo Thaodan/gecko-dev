@@ -9,7 +9,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ASRouterTargeting: "resource:///modules/asrouter/ASRouterTargeting.sys.mjs",
 });
 
-export const AWScreenUtils = {
+export const ASRouterScreenUtils = {
   /**
    * Filter the given screens in place with a predicate.
    *

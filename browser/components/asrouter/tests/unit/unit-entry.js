@@ -125,7 +125,7 @@ const TEST_GLOBAL = {
       prefix: "ASRouter",
     }),
   },
-  AWScreenUtils: {
+  ASRouterScreenUtils: {
     evaluateTargetingAndRemoveScreens() {
       return true;
     },
