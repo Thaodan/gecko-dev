@@ -5300,10 +5300,12 @@ export class BackupService extends EventTarget {
     }
 
     let profilesEnabledOn = JSON.parse(
-      Services.prefs.getStringPref(BACKUP_ENABLED_ON_PROFILES_PREF_NAME, "{}")
+      Services.prefs.getStringPref(BACKUP_ENABLED_ON_PROFILES_PREF_NAME, "[]")
     );
 
-    profilesEnabledOn[profileID] = true;
+    if (!profilesEnabledOn.includes(profileID)) {
+      profilesEnabledOn.push(profileID);
+    }
 
     Services.prefs.setStringPref(
       BACKUP_ENABLED_ON_PROFILES_PREF_NAME,
@@ -5320,9 +5322,9 @@ export class BackupService extends EventTarget {
     }
 
     let profilesEnabledOn = JSON.parse(
-      Services.prefs.getStringPref(BACKUP_ENABLED_ON_PROFILES_PREF_NAME, "{}")
+      Services.prefs.getStringPref(BACKUP_ENABLED_ON_PROFILES_PREF_NAME, "[]")
     );
-    delete profilesEnabledOn[profileID];
+    profilesEnabledOn = profilesEnabledOn.filter(id => id !== profileID);
     Services.prefs.setStringPref(
       BACKUP_ENABLED_ON_PROFILES_PREF_NAME,
       JSON.stringify(profilesEnabledOn)
