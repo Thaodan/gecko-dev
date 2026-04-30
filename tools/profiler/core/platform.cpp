@@ -7920,7 +7920,7 @@ bool profiler_backtrace_into_buffer(ProfileChunkedBuffer& aChunkedBuffer,
         ProfileBufferCollector collector(profileBuffer, samplePos,
                                          bufferRangeStart);
 
-        for (int nativeIndex = (int)(aNativeStack.mCount); nativeIndex >= 0;
+        for (int nativeIndex = (int)(aNativeStack.mCount) - 1; nativeIndex >= 0;
              --nativeIndex) {
           collector.CollectNativeLeafAddr(
               (void*)aNativeStack.mPCs[nativeIndex]);
