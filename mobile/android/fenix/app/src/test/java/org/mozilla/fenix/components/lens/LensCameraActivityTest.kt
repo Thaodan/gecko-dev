@@ -22,6 +22,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows
 import org.robolectric.shadows.ShadowToast
 import java.io.File
+import kotlin.test.assertIs
 
 @RunWith(RobolectricTestRunner::class)
 class LensCameraActivityTest {
@@ -80,7 +81,7 @@ class LensCameraActivityTest {
         val fragment = activity.supportFragmentManager
             .findFragmentById(R.id.lens_fragment_container_view)
         assertNotNull(fragment)
-        assertTrue(fragment is LensCameraFragment)
+        assertIs<LensCameraFragment>(fragment)
     }
 
     @Test
@@ -111,6 +112,6 @@ class LensCameraActivityTest {
         val fragment = activity.supportFragmentManager
             .findFragmentById(R.id.lens_fragment_container_view)
         assertNotNull(fragment)
-        assertTrue(fragment is LensCameraFragment)
+        assertIs<LensCameraFragment>(fragment)
     }
 }
