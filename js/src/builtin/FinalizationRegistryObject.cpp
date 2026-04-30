@@ -673,9 +673,7 @@ FinalizationQueueObject* FinalizationQueueObject::create(
   // back. Instead store a CCW to a plain object in the same compartment as the
   // global (this uses Object.prototype).
   Rooted<JSObject*> incumbentGlobalRepresentative(cx);
-  Rooted<JSObject*> optionalHostDefinedData(cx);
-  if (!GetObjectFromHostDefinedData(cx, &incumbentGlobalRepresentative,
-                                    &optionalHostDefinedData)) {
+  if (!GetIncumbentGlobalRepresentative(cx, &incumbentGlobalRepresentative)) {
     return nullptr;
   }
 

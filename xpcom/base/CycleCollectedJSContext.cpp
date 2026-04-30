@@ -235,21 +235,16 @@ void CycleCollectedJSContext::traceNonGCThingMicroTask(JSTracer* trc,
 bool CycleCollectedJSContext::getHostDefinedData(
     JSContext* aCx, JS::MutableHandle<JSObject*> aIncumbentGlobal,
     JS::MutableHandle<JSObject*> aOptionalHostDefinedData) const {
-  nsIGlobalObject* global = mozilla::dom::GetIncumbentGlobal();
-  if (!global) {
-    aIncumbentGlobal.set(nullptr);
-    aOptionalHostDefinedData.set(nullptr);
-    return true;
+  aIncumbentGlobal.set(nullptr);
+  aOptionalHostDefinedData.set(nullptr);
+
+  if (!getHostDefinedGlobal(aCx, aIncumbentGlobal)) {
+    return false;
   }
 
-  JS::Rooted<JSObject*> incumbentGlobal(aCx, global->GetGlobalJSObject());
-  if (!incumbentGlobal) {
-    aIncumbentGlobal.set(nullptr);
-    aOptionalHostDefinedData.set(nullptr);
+  if (!aIncumbentGlobal) {
     return true;
   }
-
-  aIncumbentGlobal.set(incumbentGlobal);
 
   // A performance note: On promise heavy benchmarks the allocation of an
   // object can be heavy, which is why this is conditional on the existence
@@ -264,6 +259,7 @@ bool CycleCollectedJSContext::getHostDefinedData(
       aCx, JS_NewObjectWithGivenProto(aCx, &sSchedulingStateClass, nullptr));
   if (!schedulingStateResult) {
     aOptionalHostDefinedData.set(nullptr);
+    aIncumbentGlobal.set(nullptr);
     return false;
   }
 
