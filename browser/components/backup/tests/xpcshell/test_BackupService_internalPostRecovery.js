@@ -24,8 +24,6 @@ add_setup(async function () {
 });
 
 add_task(async function test_internal_post_recovery() {
-  Services.prefs.setBoolPref("datareporting.healthreport.uploadEnabled", true);
-
   let bs = new BackupService({});
 
   const testBackupPath = (
@@ -45,7 +43,7 @@ add_task(async function test_internal_post_recovery() {
     backup_legacy_client_id: bs.state.backupFileInfo.legacyClientID,
   };
 
-  let recoveredProfile = await bs.recoverFromBackupArchive(
+  await bs.recoverFromBackupArchive(
     testBackupPath,
     null,
     false,
@@ -53,14 +51,6 @@ add_task(async function test_internal_post_recovery() {
     recoveredProfilePath,
     true
   );
-
-  let { ProfileAge } = ChromeUtils.importESModule(
-    "resource://gre/modules/ProfileAge.sys.mjs"
-  );
-  let profileAge = await ProfileAge();
-  expectedRestoreAttributes.intermediate_profile_creation_date =
-    await profileAge.created;
-  expectedRestoreAttributes.restore_source = null;
 
   // Intercept the telemetry that we want to check for before it gets submitted
   // and cleared out.
@@ -84,7 +74,7 @@ add_task(async function test_internal_post_recovery() {
     Math.round(Date.now() / 1000)
   );
   bs = new BackupService({});
-  await bs.checkForPostRecovery(recoveredProfile.rootDir.path);
+  await bs.checkForPostRecovery(recoveredProfilePath);
 
   Assert.equal(
     restoredProfileLaunchedEvents.length,
@@ -97,12 +87,8 @@ add_task(async function test_internal_post_recovery() {
     "Restore profile launch event should have the right data"
   );
 
-  await bs.postRecoveryComplete;
-
   Assert.deepEqual(
     Glean.browserBackup.restoredProfileData.testGetValue(),
     expectedRestoreAttributes
   );
-
-  Services.prefs.clearUserPref("datareporting.healthreport.uploadEnabled");
 });

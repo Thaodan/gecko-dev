@@ -93,12 +93,11 @@ export class BackupUIChild extends JSWindowActorChild {
         backupFile,
       });
     } else if (event.type == "BackupUI:RestoreFromBackupFile") {
-      let { backupFile, backupPassword, restoreType, source } = event.detail;
+      let { backupFile, backupPassword, restoreType } = event.detail;
       let result = await this.sendQuery("RestoreFromBackupFile", {
         backupFile,
         backupPassword,
         restoreType,
-        source,
       });
 
       if (result.success) {
@@ -137,8 +136,6 @@ export class BackupUIChild extends JSWindowActorChild {
       this.sendAsyncMessage("FlushEmbeddedComponentPersistentData");
     } else if (event.type == "BackupUI:ErrorBarDismissed") {
       this.sendAsyncMessage("ErrorBarDismissed");
-    } else if (event.type == "BackupUI:FindBackupsInWellKnownLocations") {
-      this.sendAsyncMessage("FindBackupsInWellKnownLocations", event.detail);
     }
   }
 

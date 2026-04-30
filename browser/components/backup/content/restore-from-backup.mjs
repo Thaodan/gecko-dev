@@ -264,7 +264,6 @@ export default class RestoreFromBackup extends MozLitElement {
           backupFile,
           backupPassword,
           restoreType: this._restoreType,
-          source: this.aboutWelcomeEmbedded ? "onboarding" : "preferences",
         },
       })
     );
