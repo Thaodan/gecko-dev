@@ -3259,7 +3259,7 @@
 # https://html.spec.whatwg.org/multipage/embedded-content.html#allows-auto-sizes
 - name: dom.image.sizes_auto.enabled
   type: bool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
 
 # W3C draft ImageCapture API
