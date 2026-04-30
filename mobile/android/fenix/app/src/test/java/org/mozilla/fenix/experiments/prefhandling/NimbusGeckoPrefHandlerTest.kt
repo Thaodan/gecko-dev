@@ -172,7 +172,7 @@ class NimbusGeckoPrefHandlerTest {
 
         val capturedPrefState = slot<GeckoPrefState>()
         val capturedReason = slot<PrefUnenrollReason>()
-        every { mockNimbusApi.unenrollForGeckoPref(capture(capturedPrefState), capture(capturedReason)) } returns emptyList()
+        every { mockNimbusApi.unenrollForGeckoPref(capture(capturedPrefState), capture(capturedReason)) } returns Unit
 
         handler.setGeckoPrefsState(listOf(prefState))
         testScheduler.advanceUntilIdle()
@@ -209,7 +209,7 @@ class NimbusGeckoPrefHandlerTest {
 
         val capturedPrefState = slot<GeckoPrefState>()
         val capturedReason = slot<PrefUnenrollReason>()
-        every { mockNimbusApi.unenrollForGeckoPref(capture(capturedPrefState), capture(capturedReason)) } returns emptyList()
+        every { mockNimbusApi.unenrollForGeckoPref(capture(capturedPrefState), capture(capturedReason)) } returns Unit
 
         handler.setGeckoPrefsState(listOf(prefState))
         testScheduler.advanceUntilIdle()
