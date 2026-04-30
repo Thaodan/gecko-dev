@@ -3439,8 +3439,9 @@ pref("cookiebanners.ui.desktop.showCallout", false);
   pref("browser.swipe.navigation-icon-max-radius", 20);
 #endif
 
-#ifdef NIGHTLY_BUILD
-  pref("dom.security.credentialmanagement.identity.enabled", true);
+// Trigger FOG's Artifact Build support on artifact builds.
+#ifdef MOZ_ARTIFACT_BUILDS
+  pref("telemetry.fog.artifact_build", true);
 #endif
 
 pref("ui.new-webcompat-reporter.enabled", true);
