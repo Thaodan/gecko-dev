@@ -7,7 +7,6 @@
 #include <windows.h>
 
 #include "mozilla/Logging.h"
-#include "mozilla/UniquePtrExtensions.h"  // For getter_Transfers()
 #include "mozilla/Vector.h"
 #include "nsExceptionHandler.h"
 #include "nsStringFwd.h"

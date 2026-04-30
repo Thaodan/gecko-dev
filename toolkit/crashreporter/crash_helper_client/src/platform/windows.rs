@@ -4,8 +4,8 @@
 
 use anyhow::{bail, Result};
 use crash_helper_common::{
-    messages::ProcessRendezVous, BreakpadChar, BreakpadData, BreakpadString, GeckoChildId,
-    IPCChannel, IPCConnector, IPCListener, Pid, ProcessHandle,
+    messages::ChildProcessRendezVousReply, BreakpadChar, BreakpadData, BreakpadString,
+    GeckoChildId, IPCChannel, IPCConnector, IPCListener, Pid, ProcessHandle,
 };
 use std::{
     ffi::{OsStr, OsString},
@@ -14,16 +14,14 @@ use std::{
         ffi::{OsStrExt, OsStringExt},
         io::{FromRawHandle, OwnedHandle, RawHandle},
     },
+    process,
     ptr::{null, null_mut},
 };
 use windows_sys::Win32::{
-    Foundation::{
-        CloseHandle, DuplicateHandle, DUPLICATE_SAME_ACCESS, FALSE, HANDLE, INVALID_HANDLE_VALUE,
-        TRUE,
-    },
+    Foundation::{CloseHandle, FALSE, TRUE},
     System::Threading::{
-        CreateProcessW, GetCurrentProcess, GetCurrentProcessId, CREATE_UNICODE_ENVIRONMENT,
-        DETACHED_PROCESS, PROCESS_INFORMATION, STARTUPINFOW,
+        CreateProcessW, GetCurrentProcessId, CREATE_UNICODE_ENVIRONMENT, DETACHED_PROCESS,
+        PROCESS_INFORMATION, STARTUPINFOW,
     },
 };
 
@@ -56,7 +54,6 @@ impl CrashHelperClient {
         Ok(CrashHelperClient {
             connector: client_endpoint,
             spawner_thread: Some(spawner_thread),
-            pid: 0, // Unused on Windows
         })
     }
 
@@ -69,7 +66,6 @@ impl CrashHelperClient {
     ) -> Result<ProcessHandle> {
         // SAFETY: `GetCurrentProcessId()` takes no arguments and should always work
         let pid = OsString::from(unsafe { GetCurrentProcessId() }.to_string());
-        let handle = clone_current_process_handle()?;
 
         let mut cmd_line = escape_cmd_line_arg(&program);
         cmd_line.push(" ");
@@ -82,8 +78,6 @@ impl CrashHelperClient {
         cmd_line.push(escape_cmd_line_arg(&endpoint.serialize()?));
         cmd_line.push(" ");
         cmd_line.push(escape_cmd_line_arg(&listener.serialize()?));
-        cmd_line.push(" ");
-        cmd_line.push(escape_cmd_line_arg(&handle.serialize()?));
         cmd_line.push("\0");
         let mut cmd_line: Vec<u16> = cmd_line.encode_wide().collect();
 
@@ -126,35 +120,11 @@ impl CrashHelperClient {
     }
 
     pub(crate) fn prepare_for_minidump(
-        _crash_helper_pid: Option<Pid>,
-        _id: GeckoChildId,
-    ) -> Option<ProcessRendezVous> {
-        None
+        _crash_helper_pid: Pid,
+        id: GeckoChildId,
+    ) -> ChildProcessRendezVousReply {
+        ChildProcessRendezVousReply::new(/* dumpable */ true, process::id() as Pid, id, [])
     }
-}
-
-// Clone the handle to the current process into an inheritable handle
-fn clone_current_process_handle() -> Result<ProcessHandle> {
-    let mut handle: HANDLE = INVALID_HANDLE_VALUE;
-    let res = unsafe {
-        DuplicateHandle(
-            GetCurrentProcess(),
-            GetCurrentProcess(),
-            GetCurrentProcess(),
-            &mut handle,
-            /* dwDesiredAccess */ 0,
-            /* bInheritHandle */ TRUE,
-            DUPLICATE_SAME_ACCESS,
-        )
-    };
-
-    if res == 0 {
-        bail!("Could not clone the process handle");
-    }
-
-    Ok(ProcessHandle(unsafe {
-        OwnedHandle::from_raw_handle(handle as RawHandle)
-    }))
 }
 
 /// Escape an argument so that it is suitable for use in the command line
