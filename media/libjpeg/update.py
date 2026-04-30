@@ -139,29 +139,36 @@ def check_source_lists():
 
     text = cmake_path.read_text()
     resolved = {}
-    resolved["JPEG16_SOURCES"] = parse_cmake_var(text, "JPEG16_SOURCES", resolved)
-    resolved["JPEG12_SOURCES"] = parse_cmake_var(text, "JPEG12_SOURCES", resolved)
     # Use only the first set() call for JPEG_SOURCES; subsequent ones add arithmetic
     # files conditionally. Filter those via UPSTREAM_SOURCES_NOT_BUILT as well.
     base_jpeg = parse_cmake_var(text, "JPEG_SOURCES", resolved)
-    resolved["JPEG_SOURCES"] = [f for f in base_jpeg if f not in UPSTREAM_SOURCES_NOT_BUILT]
+    jpeg_sources = [f for f in base_jpeg if os.path.basename(f) not in UPSTREAM_SOURCES_NOT_BUILT]
 
-    checks = [
-        ("JPEG16_SOURCES", VENDOR_DIR / "jpeg16" / "moz.build", None),
-        ("JPEG12_SOURCES", VENDOR_DIR / "jpeg12" / "moz.build", None),
-        ("JPEG_SOURCES",   VENDOR_DIR / "moz.build",            "simd/"),
-    ]
+    # Split into direct src/*.c files and wrapper files.
+    # Wrapper files live under src/wrapper/ and have -8/-12/-16 suffixes.
+    cmake_direct = set()   # basenames of src/*.c compiled directly
+    cmake_wrapper = set()  # basenames of src/wrapper/*.c files
+
+    for f in jpeg_sources:
+        base = os.path.basename(f)
+        if "wrapper" in f:
+            cmake_wrapper.add(base)
+        else:
+            cmake_direct.add(base)
+
+    moz_main = parse_moz_build_sources(VENDOR_DIR / "moz.build", exclude_prefix="simd/")
+    moz_wrapper = parse_moz_build_sources(VENDOR_DIR / "src" / "wrapper" / "moz.build")
 
     ok = True
-    for var_name, moz_build_path, exclude_prefix in checks:
-        cmake_set = {os.path.basename(f) for f in resolved[var_name]}
-        moz_set = parse_moz_build_sources(moz_build_path, exclude_prefix)
+    for cmake_set, moz_set, label in [
+        (cmake_direct,  moz_main,    "JPEG direct sources (moz.build)"),
+        (cmake_wrapper, moz_wrapper, "JPEG wrapper sources (src/wrapper/moz.build)"),
+    ]:
         added = cmake_set - moz_set
         removed = moz_set - cmake_set
         if added or removed:
             ok = False
-            rel = moz_build_path.relative_to(VENDOR_DIR)
-            print(f"\nSource list mismatch: {var_name} vs {rel}:")
+            print(f"\nSource list mismatch: {label}:")
             for f in sorted(added):
                 print(f"  + {f}  (in CMakeLists.txt but not moz.build)")
             for f in sorted(removed):

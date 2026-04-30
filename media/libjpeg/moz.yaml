@@ -88,6 +88,18 @@ vendoring:
     - test
     - testimages
     - win
+    # Wrapper template and utility wrappers not needed by Firefox
+    - src/wrapper/template.c
+    - src/wrapper/rdcolmap-8.c
+    - src/wrapper/rdcolmap-12.c
+    - src/wrapper/rdppm-8.c
+    - src/wrapper/rdppm-12.c
+    - src/wrapper/rdppm-16.c
+    - src/wrapper/wrgif-8.c
+    - src/wrapper/wrgif-12.c
+    - src/wrapper/wrppm-8.c
+    - src/wrapper/wrppm-12.c
+    - src/wrapper/wrppm-16.c
 
   keep:
     - jconfig.h
@@ -96,6 +108,7 @@ vendoring:
     - simd/arm/neon-compat.h
     - MOZCHANGES
     - update.py
+    - src/wrapper/moz.build
 
   patches:
     - mozilla.diff
