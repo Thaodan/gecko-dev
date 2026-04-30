@@ -170,22 +170,17 @@ size_t CycleCollectedJSContext::SizeOfExcludingThis(
   return 0;
 }
 
-enum {
-  SCHEDULING_STATE_SLOT,
-  SCHEDULING_STATE_SLOT_COUNT
-};
+enum { SCHEDULING_STATE_SLOT, SCHEDULING_STATE_SLOT_COUNT };
 
 void FinalizeSchedulingStateWrapper(JS::GCContext* aGCX, JSObject* aObjSelf) {
-  JS::Value slotEvent = JS::GetReservedSlot(
-      aObjSelf, SCHEDULING_STATE_SLOT);
+  JS::Value slotEvent = JS::GetReservedSlot(aObjSelf, SCHEDULING_STATE_SLOT);
   if (slotEvent.isUndefined()) {
     return;
   }
 
   WebTaskSchedulingState* schedulingState =
       static_cast<WebTaskSchedulingState*>(slotEvent.toPrivate());
-  JS_SetReservedSlot(aObjSelf, SCHEDULING_STATE_SLOT,
-                     JS::UndefinedValue());
+  JS_SetReservedSlot(aObjSelf, SCHEDULING_STATE_SLOT, JS::UndefinedValue());
   schedulingState->Release();
 }
 
@@ -265,8 +260,7 @@ bool CycleCollectedJSContext::getHostDefinedData(
 
   // This ref will be removed by FinalizeSchedulingStateWrapper.
   schedulingState->AddRef();
-  JS_SetReservedSlot(schedulingStateResult,
-                     SCHEDULING_STATE_SLOT,
+  JS_SetReservedSlot(schedulingStateResult, SCHEDULING_STATE_SLOT,
                      JS::PrivateValue(schedulingState));
   aOptionalHostDefinedData.set(schedulingStateResult);
 
@@ -801,8 +795,7 @@ void ExtractIncumbentAndSchedulingState(
       MOZ_ASSERT(JS::GetClass(aOptionalHostDefinedData) ==
                  &sSchedulingStateClass);
       JS::Value state =
-          JS::GetReservedSlot(aOptionalHostDefinedData,
-                              SCHEDULING_STATE_SLOT);
+          JS::GetReservedSlot(aOptionalHostDefinedData, SCHEDULING_STATE_SLOT);
       if (!state.isUndefined()) {
         aSchedulingState =
             static_cast<WebTaskSchedulingState*>(state.toPrivate());
