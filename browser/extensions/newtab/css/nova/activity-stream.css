@@ -4589,6 +4589,7 @@ button.arrow-button:dir(rtl) {
   grid-column: span 1;
   width: var(--newtab-card-grid-layout-width);
   height: var(--newtab-card-height);
+  padding: var(--space-medium);
   box-shadow: var(--card-box-shadow);
 }
 .has-sections-grid .classic-enabled .lists {
