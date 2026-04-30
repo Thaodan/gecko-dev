@@ -295,8 +295,7 @@ let STUBS = {
   isCheckingEntitlement: undefined,
   updateEntitlement: undefined,
   refetchEntitlement: undefined,
-  enrollWithFxa: undefined,
-  fetchUserInfo: undefined,
+  enrollAndEntitle: undefined,
   fetchProxyPass: undefined,
   fetchProxyUsage: undefined,
   getEntitlement: undefined,
@@ -412,16 +411,18 @@ function setupStubs(stubs = STUBS) {
     .stub(IPPEnrollAndEntitleManager, "refetchEntitlement")
     .resolves();
 
-  const guardianStub = {
-    enrollWithFxa: setupSandbox.stub(),
-    fetchUserInfo: setupSandbox.stub(),
-    fetchProxyPass: setupSandbox.stub(),
-    fetchProxyUsage: setupSandbox.stub(),
-  };
-  stubs.enrollWithFxa = guardianStub.enrollWithFxa;
-  stubs.fetchUserInfo = guardianStub.fetchUserInfo;
-  stubs.fetchProxyPass = guardianStub.fetchProxyPass;
-  stubs.fetchProxyUsage = guardianStub.fetchProxyUsage;
+  stubs.enrollAndEntitle = setupSandbox.stub(
+    IPPFxaAuthProvider,
+    "enrollAndEntitle"
+  );
+  stubs.fetchProxyPass = setupSandbox.stub(
+    IPPFxaAuthProvider,
+    "fetchProxyPass"
+  );
+  stubs.fetchProxyUsage = setupSandbox.stub(
+    IPPFxaAuthProvider,
+    "fetchProxyUsage"
+  );
   stubs.getEntitlement = setupSandbox
     .stub(IPPFxaAuthProvider, "getEntitlement")
     .resolves({ entitlement: DEFAULT_SERVICE_STATUS.entitlement?.entitlement });
@@ -429,8 +430,6 @@ function setupStubs(stubs = STUBS) {
     SpecialMessageActions,
     "fxaSignInFlow"
   );
-
-  setupSandbox.stub(IPProtectionService, "guardian").get(() => guardianStub);
 }
 /* exported setupStubs */
 
@@ -460,16 +459,16 @@ function setupService(
   }
 
   if (typeof canEnroll != "undefined") {
-    stubs.enrollWithFxa.resolves({
-      ok: canEnroll,
+    stubs.enrollAndEntitle.resolves({
+      isEnrolledAndEntitled: canEnroll,
+      entitlement: canEnroll
+        ? DEFAULT_SERVICE_STATUS.entitlement?.entitlement
+        : undefined,
     });
   }
 
   if (typeof entitlement != "undefined") {
-    stubs.fetchUserInfo.resolves(entitlement);
     stubs.getEntitlement.resolves({ entitlement: entitlement?.entitlement });
-  } else {
-    stubs.fetchUserInfo.resolves(DEFAULT_SERVICE_STATUS.entitlement);
   }
 
   if (typeof proxyPass != "undefined") {

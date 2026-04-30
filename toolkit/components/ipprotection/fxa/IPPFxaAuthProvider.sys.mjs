@@ -3,7 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { IPPAuthProvider } from "moz-src:///toolkit/components/ipprotection/IPPAuthProvider.sys.mjs";
-import { GUARDIAN_EXPERIMENT_TYPE } from "moz-src:///toolkit/components/ipprotection/GuardianClient.sys.mjs";
+import {
+  GuardianClient,
+  GUARDIAN_EXPERIMENT_TYPE,
+} from "moz-src:///toolkit/components/ipprotection/fxa/GuardianClient.sys.mjs";
 
 const lazy = {};
 
@@ -17,8 +20,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/ipprotection/fxa/IPPEnrollAndEntitleManager.sys.mjs",
   IPPSignInWatcher:
     "moz-src:///toolkit/components/ipprotection/fxa/IPPSignInWatcher.sys.mjs",
-  IPProtectionService:
-    "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
 });
 
 const CLIENT_ID_MAP = {
@@ -41,6 +42,7 @@ const GUARDIAN_ENDPOINT_DEFAULT = "https://vpn.mozilla.com";
 class IPPFxaAuthProviderSingleton extends IPPAuthProvider {
   #signInWatcher = null;
   #enrollAndEntitleFn = null;
+  #guardian = new GuardianClient();
 
   /**
    * @param {object} [signInWatcher] - Custom sign-in watcher. Defaults to IPPSignInWatcher.
@@ -54,6 +56,10 @@ class IPPFxaAuthProviderSingleton extends IPPAuthProvider {
       IPPFxaAuthProviderSingleton.#defaultEnrollAndEntitle;
   }
 
+  get guardian() {
+    return this.#guardian;
+  }
+
   get signInWatcher() {
     return this.#signInWatcher ?? lazy.IPPSignInWatcher;
   }
@@ -63,12 +69,20 @@ class IPPFxaAuthProviderSingleton extends IPPAuthProvider {
    * @returns {Promise<{isEnrolledAndEntitled: boolean, entitlement?: object, error?: string}>}
    */
   async enrollAndEntitle(abortSignal) {
-    return this.#enrollAndEntitleFn(abortSignal);
+    return this.#enrollAndEntitleFn(
+      this.guardian,
+      this.getToken.bind(this),
+      abortSignal
+    );
   }
 
-  static async #defaultEnrollAndEntitle(abortSignal = null) {
+  static async #defaultEnrollAndEntitle(
+    guardian,
+    getToken,
+    abortSignal = null
+  ) {
     try {
-      const result = await lazy.IPProtectionService.guardian.enrollWithFxa(
+      const result = await guardian.enrollWithFxa(
         GUARDIAN_EXPERIMENT_TYPE,
         abortSignal
       );
@@ -78,8 +92,12 @@ class IPPFxaAuthProviderSingleton extends IPPAuthProvider {
     } catch (error) {
       return { isEnrolledAndEntitled: false, error: error?.message };
     }
+    using tokenHandle = await getToken(abortSignal);
     const { entitlement, error } =
-      await IPPFxaAuthProviderSingleton.#fetchEntitlement();
+      await IPPFxaAuthProviderSingleton.#fetchEntitlement(
+        guardian,
+        tokenHandle
+      );
     if (error || !entitlement) {
       return { isEnrolledAndEntitled: false, error };
     }
@@ -95,7 +113,11 @@ class IPPFxaAuthProviderSingleton extends IPPAuthProvider {
     if (!isLinked) {
       return {};
     }
-    return IPPFxaAuthProviderSingleton.#fetchEntitlement();
+    using tokenHandle = await this.getToken();
+    return IPPFxaAuthProviderSingleton.#fetchEntitlement(
+      this.guardian,
+      tokenHandle
+    );
   }
 
   async #isLinkedToGuardian(useCache = true) {
@@ -122,10 +144,10 @@ class IPPFxaAuthProviderSingleton extends IPPAuthProvider {
     }
   }
 
-  static async #fetchEntitlement() {
+  static async #fetchEntitlement(guardian, tokenHandle) {
     try {
       const { status, entitlement, error } =
-        await lazy.IPProtectionService.guardian.fetchUserInfo();
+        await guardian.fetchUserInfo(tokenHandle);
       if (error || !entitlement || status != 200) {
         return { error: error || `Status: ${status}` };
       }
@@ -201,6 +223,16 @@ class IPPFxaAuthProviderSingleton extends IPPAuthProvider {
       return { error: result?.error };
     }
     return null;
+  }
+
+  async fetchProxyPass(abortSignal = null) {
+    using tokenHandle = await this.getToken(abortSignal);
+    return this.#guardian.fetchProxyPass(tokenHandle, abortSignal);
+  }
+
+  async fetchProxyUsage(abortSignal = null) {
+    using tokenHandle = await this.getToken(abortSignal);
+    return this.#guardian.fetchProxyUsage(tokenHandle, abortSignal);
   }
 
   get excludedUrlPrefs() {

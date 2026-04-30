@@ -6,8 +6,6 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   EventDispatcher: "resource://gre/modules/Messaging.sys.mjs",
-  IPProtectionService:
-    "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
 });
 
 /**
@@ -17,14 +15,14 @@ ChromeUtils.defineESModuleGetters(lazy, {
  * The Android layer must open the loginUrl in a Custom Tab or WebView, monitor
  * for a redirect to successUrl or errorUrl, and resolve or reject accordingly.
  *
+ * @param {import("moz-src:///toolkit/components/ipprotection/fxa/GuardianClient.sys.mjs").GuardianClient} guardian
  * @param {AbortSignal} [abortSignal=null]
  * @returns {Promise<{isEnrolledAndEntitled: boolean, entitlement?: object, error?: string}>}
  */
-export async function androidEnrollAndEntitle(abortSignal = null) {
+export async function androidEnrollAndEntitle(guardian, abortSignal = null) {
   try {
     abortSignal?.throwIfAborted();
-    const { loginURL, successURL, errorURL } =
-      lazy.IPProtectionService.guardian.enrollmentURLs();
+    const { loginURL, successURL, errorURL } = guardian.enrollmentURLs();
 
     let tasks = [
       lazy.EventDispatcher.instance.sendRequestForResult(
@@ -60,8 +58,7 @@ export async function androidEnrollAndEntitle(abortSignal = null) {
   }
 
   try {
-    const { status, entitlement, error } =
-      await lazy.IPProtectionService.guardian.fetchUserInfo();
+    const { status, entitlement, error } = await guardian.fetchUserInfo();
     if (error || !entitlement || status != 200) {
       return {
         isEnrolledAndEntitled: false,

@@ -566,7 +566,7 @@ class IPPProxyManagerSingleton extends EventTarget {
    */
   async #getPassAndUsage(abortSignal = null) {
     let { status, error, pass, usage } =
-      await lazy.IPProtectionService.guardian.fetchProxyPass(abortSignal);
+      await lazy.IPProtectionService.authProvider.fetchProxyPass(abortSignal);
     lazy.logConsole.debug("ProxyPass:", {
       status,
       valid: pass?.isValid(),
@@ -690,7 +690,7 @@ class IPPProxyManagerSingleton extends EventTarget {
     let newUsage;
     try {
       newUsage =
-        await lazy.IPProtectionService.guardian.fetchProxyUsage(signal);
+        await lazy.IPProtectionService.authProvider.fetchProxyUsage(signal);
     } catch (error) {
       lazy.logConsole.error("Error refreshing usage:", error);
     } finally {

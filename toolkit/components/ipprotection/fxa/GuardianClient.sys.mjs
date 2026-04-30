@@ -11,10 +11,6 @@ import {
 
 const lazy = {};
 
-ChromeUtils.defineESModuleGetters(lazy, {
-  IPProtectionService:
-    "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
-});
 ChromeUtils.defineLazyGetter(
   lazy,
   "hiddenBrowserManager",
@@ -148,6 +144,7 @@ export class GuardianClient {
   /**
    * Fetches a proxy pass from the Guardian service.
    *
+   * @param {{token: string}} tokenHandle - short-lived OAuth token obtained from fxAccounts
    * @param {AbortSignal} [abortSignal=null] - a signal to indicate the fetch should be aborted
    * @returns {Promise<{error?: string, status?:number, pass?: ProxyPass, usage?: ProxyUsage|null, retryAfter?: string|null}>} Resolves with an object containing either an error string or the proxy pass data and a status code.
    *
@@ -165,9 +162,7 @@ export class GuardianClient {
    * - 401: The auth token was rejected.
    * - 5xx: Internal guardian error.
    */
-  async fetchProxyPass(abortSignal = null) {
-    using tokenHandle =
-      await lazy.IPProtectionService.authProvider.getToken(abortSignal);
+  async fetchProxyPass(tokenHandle, abortSignal = null) {
     const response = await fetch(this.#tokenURL, {
       method: "GET",
       cache: "no-cache",
@@ -216,6 +211,7 @@ export class GuardianClient {
   /**
    * Fetches the user's entitlement information.
    *
+   * @param {{token: string}} tokenHandle - short-lived OAuth token obtained from fxAccounts
    * @param {AbortSignal} [abortSignal=null] - a signal to indicate the fetch should be aborted
    * @returns {Promise<{status?: number, entitlement?: Entitlement|null, error?:string}>} A promise that resolves to an object containing the HTTP status code and the user's entitlement information.
    *
@@ -224,9 +220,7 @@ export class GuardianClient {
    * - 404: User is not a proxy user, no entitlement information available.
    * - 401: The auth token was rejected, probably a guardian/auth provider environment mismatch.
    */
-  async fetchUserInfo(abortSignal = null) {
-    using tokenHandle =
-      await lazy.IPProtectionService.authProvider.getToken(abortSignal);
+  async fetchUserInfo(tokenHandle, abortSignal = null) {
     const response = await fetch(this.#statusURL, {
       method: "GET",
       headers: {
@@ -257,12 +251,11 @@ export class GuardianClient {
   /**
    * Returns the user's proxy usage information, without fetching a new proxy pass.
    *
+   * @param {{token: string}} tokenHandle - short-lived OAuth token obtained from fxAccounts
    * @param {AbortSignal} abortSignal - Signal for when this function should be aborted
    * @returns {ProxyUsage | null}
    */
-  async fetchProxyUsage(abortSignal) {
-    using tokenHandle =
-      await lazy.IPProtectionService.authProvider.getToken(abortSignal);
+  async fetchProxyUsage(tokenHandle, abortSignal) {
     const response = await fetch(this.#tokenURL, {
       method: "HEAD",
       cache: "no-cache",
@@ -290,12 +283,11 @@ export class GuardianClient {
    * Activates the current FxA account with Guardian by presenting the FxA
    * Bearer token directly.
    *
+   * @param {{token: string}} tokenHandle - short-lived OAuth token obtained from fxAccounts
    * @param {AbortSignal} [abortSignal=null]
    * @returns {Promise<{ok: boolean, entitlement?: object, error?: string}>}
    */
-  async activate(abortSignal = null) {
-    using tokenHandle =
-      await lazy.IPProtectionService.authProvider.getToken(abortSignal);
+  async activate(tokenHandle, abortSignal = null) {
     if (!tokenHandle) {
       return { ok: false, error: "login_needed" };
     }
