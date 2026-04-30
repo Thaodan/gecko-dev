@@ -20,7 +20,7 @@ class RsdparsaSdpMediaSection final : public SdpMediaSection {
   friend class RsdparsaSdp;
 
  public:
-  ~RsdparsaSdpMediaSection() {}
+  ~RsdparsaSdpMediaSection() = default;
 
   MediaType GetMediaType() const override { return mMediaType; }
 

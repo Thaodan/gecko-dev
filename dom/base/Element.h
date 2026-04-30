@@ -2551,6 +2551,10 @@ class Element : public FragmentOrElement {
    */
   virtual void RegUnRegAccessKey(bool aDoReg);
 
+  // Prevent people from doing pointless checks/casts on Element instances.
+  void IsElement() = delete;
+  void AsElement() = delete;
+
  private:
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   void AssertInvariantsOnNodeInfoChange();
@@ -2582,10 +2586,6 @@ class Element : public FragmentOrElement {
    */
   template <class T>
   void GetCustomInterface(nsGetterAddRefs<T> aResult);
-
-  // Prevent people from doing pointless checks/casts on Element instances.
-  void IsElement() = delete;
-  void AsElement() = delete;
 
   // Data members
   ElementState mState;

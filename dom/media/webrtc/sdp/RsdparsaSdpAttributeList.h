@@ -75,6 +75,10 @@ class RsdparsaSdpAttributeList : public SdpAttributeList {
 
   virtual ~RsdparsaSdpAttributeList();
 
+  RsdparsaSdpAttributeList(const RsdparsaSdpAttributeList& orig) = delete;
+  RsdparsaSdpAttributeList& operator=(const RsdparsaSdpAttributeList& rhs) =
+      delete;
+
  private:
   explicit RsdparsaSdpAttributeList(RsdparsaSessionHandle session)
       : mSession(std::move(session)),
@@ -144,10 +148,6 @@ class RsdparsaSdpAttributeList : public SdpAttributeList {
                                    uint32_t lineNumber, SdpParser& errorHolder);
 
   SdpAttribute* mAttributes[kNumAttributeTypes];
-
-  RsdparsaSdpAttributeList(const RsdparsaSdpAttributeList& orig) = delete;
-  RsdparsaSdpAttributeList& operator=(const RsdparsaSdpAttributeList& rhs) =
-      delete;
 };
 
 }  // namespace mozilla
