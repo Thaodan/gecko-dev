@@ -4,8 +4,8 @@
 
 import { IPPFxaAuthProviderSingleton } from "moz-src:///toolkit/components/ipprotection/fxa/IPPFxaAuthProvider.sys.mjs";
 import { IPPFxaActivateAuthProviderSingleton } from "moz-src:///toolkit/components/ipprotection/fxa/IPPFxaActivateAuthProvider.sys.mjs";
-import { androidEnrollAndEntitle } from "moz-src:///toolkit/components/ipprotection/android/IPPAndroidEnrollAndEntitle.sys.mjs";
-import { IPPAndroidSignInWatcher } from "moz-src:///toolkit/components/ipprotection/android/IPPAndroidSignInWatcher.sys.mjs";
+import { androidEnrollAndEntitle } from "moz-src:///toolkit/components/ipprotection/fxa/IPPAndroidEnrollAndEntitle.sys.mjs";
+import { IPPAndroidSignInWatcher } from "moz-src:///toolkit/components/ipprotection/fxa/IPPAndroidSignInWatcher.sys.mjs";
 
 const IPPAndroidAuthProvider = Services.prefs.getBoolPref(
   "toolkit.ipProtection.fxa.useActivateFlow",
