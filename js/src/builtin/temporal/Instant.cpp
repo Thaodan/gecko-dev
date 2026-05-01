@@ -81,10 +81,9 @@ static bool AbsoluteValueIsLessOrEqual(const BigInt* bigInt) {
   }
 
   // Compare each digit when the input has the same number of digits.
-  auto bigIntDigits = bigInt->digits();
   size_t index = std::size(digits);
   for (auto digit : digits) {
-    auto d = bigIntDigits[--index];
+    auto d = bigInt->digit(--index);
     if (d < digit) {
       return true;
     }
@@ -232,10 +231,10 @@ static BigInt* CreateBigInt(JSContext* cx,
       return nullptr;
     }
     if (length > 1) {
-      result->setIndividualDigit(1, y);
+      result->setDigit(1, y);
     }
     if (length > 0) {
-      result->setIndividualDigit(0, x);
+      result->setDigit(0, x);
     }
     return result;
   } else {
@@ -244,9 +243,8 @@ static BigInt* CreateBigInt(JSContext* cx,
     if (!result) {
       return nullptr;
     }
-    auto resultDigits = result->digits();
     while (length--) {
-      resultDigits[length] = digits[length];
+      result->setDigit(length, digits[length]);
     }
     return result;
   }

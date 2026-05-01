@@ -2693,11 +2693,8 @@ BigInt* JSStructuredCloneReader::readBigInt(uint32_t data) {
   if (!result) {
     return nullptr;
   }
-  {
-    auto digits = result->unguardedDigits();
-    if (!in.readArray(digits.data(), length)) {
-      return nullptr;
-    }
+  if (!in.readArray(result->digits().data(), length)) {
+    return nullptr;
   }
   return JS::BigInt::destructivelyTrimHighZeroDigits(context(), result);
 }
