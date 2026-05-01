@@ -3445,11 +3445,6 @@ pref("cookiebanners.ui.desktop.showCallout", false);
   pref("browser.swipe.navigation-icon-max-radius", 20);
 #endif
 
-// Trigger FOG's Artifact Build support on artifact builds.
-#ifdef MOZ_ARTIFACT_BUILDS
-  pref("telemetry.fog.artifact_build", true);
-#endif
-
 pref("ui.new-webcompat-reporter.enabled", true);
 
 #if defined(EARLY_BETA_OR_EARLIER)
