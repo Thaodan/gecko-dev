@@ -12,6 +12,7 @@ import { WeatherForecast } from "./WeatherForecast/WeatherForecast";
 import { Weather as WeatherWidget } from "./Weather/Weather";
 import { MessageWrapper } from "content-src/components/MessageWrapper/MessageWrapper";
 import { WidgetsFeatureHighlight } from "../DiscoveryStreamComponents/FeatureHighlight/WidgetsFeatureHighlight";
+import { WidgetsRowFeatureHighlight } from "../DiscoveryStreamComponents/FeatureHighlight/WidgetsRowFeatureHighlight";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import {
   WIDGET_REGISTRY,
@@ -517,6 +518,13 @@ function Widgets() {
             );
           })}
         </div>
+        {messageData?.content?.messageType === "NovaWidgetMessage" && (
+          <div className="widgets-row-highlight-anchor">
+            <MessageWrapper dispatch={dispatch}>
+              <WidgetsRowFeatureHighlight dispatch={dispatch} />
+            </MessageWrapper>
+          </div>
+        )}
         {feedbackEnabled && !novaEnabled && (
           <a
             className="widgets-feedback-link"

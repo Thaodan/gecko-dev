@@ -15702,6 +15702,64 @@ function WidgetsFeatureHighlight({
   });
 }
 
+;// CONCATENATED MODULE: ./content-src/components/DiscoveryStreamComponents/FeatureHighlight/WidgetsRowFeatureHighlight.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+
+
+
+function WidgetsRowFeatureHighlight({
+  handleDismiss,
+  handleBlock,
+  dispatch
+}) {
+  const {
+    messageData
+  } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Messages);
+  const onDismiss = (0,external_React_namespaceObject.useCallback)(() => {
+    handleDismiss();
+    handleBlock();
+  }, [handleDismiss, handleBlock]);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "widgets-row-feature-highlight"
+  }, /*#__PURE__*/React.createElement(FeatureHighlight, {
+    position: "inset-inline-center inset-block-end",
+    arrowPosition: "arrow-top-start",
+    openedOverride: true,
+    showButtonIcon: false,
+    feature: messageData.content.feature,
+    modalClassName: "widgets-row-highlight-modal",
+    message: /*#__PURE__*/React.createElement("div", {
+      className: "widgets-row-highlight-content"
+    }, messageData.content.cardTitle ? /*#__PURE__*/React.createElement("h3", {
+      className: "title"
+    }, messageData.content.cardTitle) : /*#__PURE__*/React.createElement("h3", {
+      className: "title",
+      "data-l10n-id": messageData.content.title || "newtab-widget-message-title"
+    }), messageData.content.cardMessage ? /*#__PURE__*/React.createElement("p", {
+      className: "subtitle"
+    }, messageData.content.cardMessage) : /*#__PURE__*/React.createElement("p", {
+      className: "subtitle",
+      "data-l10n-id": messageData.content.subtitle || "newtab-widget-message-copy"
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "button-wrapper"
+    }, messageData.content.cardCta ? /*#__PURE__*/React.createElement("moz-button", {
+      type: "primary",
+      onClick: onDismiss,
+      label: messageData.content.cardCta
+    }) : /*#__PURE__*/React.createElement("moz-button", {
+      type: "primary",
+      onClick: onDismiss,
+      "data-l10n-id": messageData.content.cta || "newtab-wallpaper-feature-highlight-button"
+    }))),
+    dispatch: dispatch,
+    dismissCallback: onDismiss,
+    outsideClickCallback: handleDismiss
+  }));
+}
+
 ;// CONCATENATED MODULE: ./content-src/components/Widgets/SportsWidget/SportsWidget.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -16088,6 +16146,7 @@ const WIDGET_SIDEBAR_COMPONENTS = {
 
 // Bug 2034542: these per-widget imports can be removed once the non-Nova render
 // path (@nova-cleanup) is gone and all widgets render via WIDGET_ROW_COMPONENTS.
+
 
 
 
@@ -16485,7 +16544,13 @@ function Widgets() {
       isMaximized,
       widgetsMayBeMaximized
     }));
-  })), feedbackEnabled && !novaEnabled && /*#__PURE__*/external_React_default().createElement("a", {
+  })), messageData?.content?.messageType === "NovaWidgetMessage" && /*#__PURE__*/external_React_default().createElement("div", {
+    className: "widgets-row-highlight-anchor"
+  }, /*#__PURE__*/external_React_default().createElement(MessageWrapper, {
+    dispatch: dispatch
+  }, /*#__PURE__*/external_React_default().createElement(WidgetsRowFeatureHighlight, {
+    dispatch: dispatch
+  }))), feedbackEnabled && !novaEnabled && /*#__PURE__*/external_React_default().createElement("a", {
     className: "widgets-feedback-link",
     href: feedbackUrl,
     "data-l10n-id": "newtab-widget-section-feedback",
