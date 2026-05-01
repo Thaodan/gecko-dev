@@ -175,8 +175,7 @@ already_AddRefed<Animation> Animation::Constructor(
   }
 
   RefPtr<Animation> animation = new Animation(global);
-  // JS side can't refer to timeline by name.
-  animation->SetTimelineNoUpdate(timeline, nullptr);
+  animation->SetTimelineNoUpdate(timeline);
   animation->SetEffectNoUpdate(aEffect);
 
   return animation.forget();
@@ -272,45 +271,17 @@ static TimeStamp EnsurePaintIsScheduled(Document& aDoc) {
   return rd->MostRecentRefresh();
 }
 
-void Animation::RemovedNamedTimelineReferenceFromJS(const nsAtom* aName) {
-  if (!AsCSSAnimation()) {
-    MOZ_ASSERT_UNREACHABLE("How?");
-    return;
-  }
-  auto* animationManager = [&]() -> nsAnimationManager* {
-    auto* doc = GetRenderedDocument();
-    if (!doc) {
-      return nullptr;
-    }
-    auto* presContext = doc->GetPresContext();
-    if (!presContext) {
-      return nullptr;
-    }
-    return presContext->AnimationManager();
-  }();
-  if (!animationManager) {
-    return;
-  }
-  animationManager->RemoveNamedTimelineAnimation(aName, AsCSSAnimation());
-}
-
-void Animation::SetTimeline(AnimationTimeline* aTimeline,
-                            const nsAtom* aTimelineName) {
-  SetTimelineNoUpdate(aTimeline, aTimelineName);
+void Animation::SetTimeline(AnimationTimeline* aTimeline) {
+  SetTimelineNoUpdate(aTimeline);
   PostUpdate();
 }
 
 // https://drafts.csswg.org/web-animations-2/#setting-the-timeline
-void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
-                                    const nsAtom* aTimelineName) {
+void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline) {
   // 1. Let old timeline be the current timeline of animation, if any.
   // 2. If new timeline is the same object as old timeline, abort this
   // procedure.
   if (mTimeline == aTimeline) {
-    // nullptr -> nullptr but going from/to named timeline is significant.
-    if (mTimelineName != aTimelineName) {
-      mTimelineName = aTimelineName;
-    }
     return;
   }
 
@@ -355,7 +326,6 @@ void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
     oldTimeline->RemoveAnimation(this);
   }
   mTimeline = aTimeline;
-  mTimelineName = aTimelineName;
   // Update the normalized timing because we are using the new timeline.
   if (mEffect) {
     mEffect->UpdateNormalizedTiming();
@@ -405,15 +375,6 @@ void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
     // procedure to set the current time to previous progress * end time.
     SetCurrentTimeNoUpdate(
         TimeDuration(EffectEnd().MultDouble(previousProgress.Value())));
-  }
-  if (fromFiniteTimeline && !aTimeline && mTimelineName) {
-    // Make sure to remove any pending playing task, if we stopped referring to
-    // an existing named timeline.
-    Document* doc = GetRenderedDocument();
-    auto* tracker = doc ? doc->GetScrollTimelineAnimationTracker() : nullptr;
-    if (tracker) {
-      tracker->RemovePending(*this);
-    }
   }
 
   // 10. If the start time of animation is resolved, make animation’s hold time

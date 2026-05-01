@@ -117,20 +117,12 @@ class Animation : public DOMEventTargetHelper,
                                                     : do_AddRef(mTimeline);
   }
   void SetTimelineFromJS(AnimationTimeline* aTimeline) {
-    // Can't refer to timeline by name from JS side.
-    const auto prevTimelineName = GetTimelineName();
-    SetTimeline(aTimeline, nullptr);
-    if (prevTimelineName) {
-      RemovedNamedTimelineReferenceFromJS(prevTimelineName);
-    }
+    SetTimeline(aTimeline);
   }
 
-  void RemovedNamedTimelineReferenceFromJS(const nsAtom* aName);
-
   AnimationTimeline* GetTimeline() const { return mTimeline; }
-  void SetTimeline(AnimationTimeline* aTimeline, const nsAtom* aTimelineName);
-  void SetTimelineNoUpdate(AnimationTimeline* aTimeline,
-                           const nsAtom* aTimelineName);
+  void SetTimeline(AnimationTimeline* aTimeline);
+  void SetTimelineNoUpdate(AnimationTimeline* aTimeline);
 
   const AnimationRange& GetTimelineRange() const { return mTimelineRange; }
   void SetTimelineRange(AnimationRange&& aRange);
@@ -453,8 +445,6 @@ class Animation : public DOMEventTargetHelper,
 
   void AutoAlignStartTime();
 
-  const nsAtom* GetTimelineName() const { return mTimelineName; }
-
  protected:
   void SilentlySetCurrentTime(const TimeDuration& aNewCurrentTime);
   void CancelNoUpdate();
@@ -635,11 +625,6 @@ class Animation : public DOMEventTargetHelper,
   // calculated until post layout since the start time is to align with the
   // start or end of the animation range.
   bool mAutoAlignStartTime = false;
-
-  // The name of the timeline this animation is referring to, if one exists.
-  // Note that animations can have a null timeline but have this set, if it
-  // refers to a timeline that does not exist by name.
-  RefPtr<const nsAtom> mTimelineName;
 };
 
 }  // namespace dom

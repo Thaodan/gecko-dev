@@ -82,27 +82,25 @@ void TimelineManager::RemoveTimelineTargetByName(
 }
 
 template <typename TimelineType>
-nsTArray<RefPtr<const nsAtom>> TimelineManager::TryDestroyTimeline(
+void TimelineManager::TryDestroyTimeline(
     Element* aElement, const PseudoStyleRequest& aPseudoRequest,
     TimelineNameMap<TimelineType>& aTimelineNameMap) {
   auto* collection =
       TimelineCollection<TimelineType>::Get(aElement, aPseudoRequest);
   if (!collection) {
-    return {};
+    return;
   }
-  nsTArray<RefPtr<const nsAtom>> result{collection->Timelines().Count()};
   for (const auto& name : collection->Timelines().Keys()) {
-    result.AppendElement(name);
     RemoveTimelineTargetByName(name, aElement, aPseudoRequest,
                                aTimelineNameMap);
   }
   collection->Destroy();
-  return result;
 }
 
-nsTArray<RefPtr<const nsAtom>> TimelineManager::UpdateTimelines(
-    Element* aElement, const PseudoStyleRequest& aPseudoRequest,
-    const ComputedStyle* aComputedStyle, ProgressTimelineType aType) {
+void TimelineManager::UpdateTimelines(Element* aElement,
+                                      const PseudoStyleRequest& aPseudoRequest,
+                                      const ComputedStyle* aComputedStyle,
+                                      ProgressTimelineType aType) {
   MOZ_ASSERT(
       aElement->IsInComposedDoc(),
       "No need to update timelines that are not attached to the document tree");
@@ -118,28 +116,30 @@ nsTArray<RefPtr<const nsAtom>> TimelineManager::UpdateTimelines(
   switch (aType) {
     case ProgressTimelineType::Scroll:
       if (shouldDestroyTimelines) {
-        return TryDestroyTimeline<ScrollTimeline>(aElement, aPseudoRequest,
-                                                  mScrollTimelineNameMap);
+        TryDestroyTimeline<ScrollTimeline>(aElement, aPseudoRequest,
+                                           mScrollTimelineNameMap);
+        return;
       }
-      return DoUpdateTimelines<StyleScrollTimeline, ScrollTimeline>(
+      DoUpdateTimelines<StyleScrollTimeline, ScrollTimeline>(
           mPresContext, aElement, aPseudoRequest,
           aComputedStyle->StyleUIReset()->mScrollTimelines,
           aComputedStyle->StyleUIReset()->mScrollTimelineNameCount,
           mScrollTimelineNameMap);
+      break;
 
     case ProgressTimelineType::View:
       if (shouldDestroyTimelines) {
-        return TryDestroyTimeline<ViewTimeline>(aElement, aPseudoRequest,
-                                                mViewTimelineNameMap);
+        TryDestroyTimeline<ViewTimeline>(aElement, aPseudoRequest,
+                                         mViewTimelineNameMap);
+        return;
       }
-      return DoUpdateTimelines<StyleViewTimeline, ViewTimeline>(
+      DoUpdateTimelines<StyleViewTimeline, ViewTimeline>(
           mPresContext, aElement, aPseudoRequest,
           aComputedStyle->StyleUIReset()->mViewTimelines,
           aComputedStyle->StyleUIReset()->mViewTimelineNameCount,
           mViewTimelineNameMap);
+      break;
   }
-  MOZ_ASSERT_UNREACHABLE("Unhandled timelinetype?");
-  return {};
 }
 
 void TimelineManager::UpdateTimelineScopes(
@@ -342,7 +342,7 @@ ViewTimelineCollection& EnsureTimelineCollection<ViewTimeline>(
 }
 
 template <typename StyleType, typename TimelineType>
-nsTArray<RefPtr<const nsAtom>> TimelineManager::DoUpdateTimelines(
+void TimelineManager::DoUpdateTimelines(
     nsPresContext* aPresContext, Element* aElement,
     const PseudoStyleRequest& aPseudoRequest,
     const nsStyleAutoArray<StyleType>& aStyleTimelines, size_t aTimelineCount,
@@ -351,7 +351,7 @@ nsTArray<RefPtr<const nsAtom>> TimelineManager::DoUpdateTimelines(
       TimelineCollection<TimelineType>::Get(aElement, aPseudoRequest);
   if (!collection && aTimelineCount == 1 &&
       aStyleTimelines[0].GetName() == nsGkAtoms::_empty) {
-    return {};
+    return;
   }
 
   // We create a new timeline list based on its computed style and the existing
@@ -361,16 +361,14 @@ nsTArray<RefPtr<const nsAtom>> TimelineManager::DoUpdateTimelines(
       collection);
 
   if (newTimelines.IsEmpty()) {
-    nsTArray<RefPtr<const nsAtom>> result{collection->Timelines().Count()};
     if (collection) {
       for (const auto& name : collection->Timelines().Keys()) {
-        result.AppendElement(name);
         RemoveTimelineTargetByName(name, aElement, aPseudoRequest,
                                    aTimelineNameMap);
       }
       collection->Destroy();
     }
-    return result;
+    return;
   }
 
   if (!collection) {
@@ -381,10 +379,7 @@ nsTArray<RefPtr<const nsAtom>> TimelineManager::DoUpdateTimelines(
     }
   }
 
-  nsTArray<RefPtr<const nsAtom>> result{collection->Timelines().Count() +
-                                        newTimelines.Count()};
   for (const auto& removed : collection->Timelines().Keys()) {
-    result.AppendElement(removed);
     RemoveTimelineTargetByName(removed, aElement, aPseudoRequest,
                                aTimelineNameMap);
   }
@@ -404,14 +399,12 @@ nsTArray<RefPtr<const nsAtom>> TimelineManager::DoUpdateTimelines(
 #endif
       continue;
     }
-    result.AppendElement(addedOrExisting.Key());
     targets.AppendElement(addedOrExisting.Data());
   }
 
   // FIXME: Bug 1774060. We may have to restyle the animations which use the
   // dropped timelines. Or rely on restyling the subtree and the following
   // siblings when mutating {scroll|view}-timeline-name.
-  return result;
 }
 
 }  // namespace mozilla
