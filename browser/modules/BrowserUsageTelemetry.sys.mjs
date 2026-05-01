@@ -156,7 +156,6 @@ const PREFERENCES_PANES = [
   "paneAi",
   "paneAbout",
   "paneAccessibility",
-  "paneAppearance",
   "paneLanguages",
 ];
 

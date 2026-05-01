@@ -60,7 +60,6 @@ For the purposes of this telemetry a set of areas are defined:
   * ``preferences-paneSync``
   * ``preferences-paneContainers``
   * ``preferences-paneAccessibility``
-  * ``preferences-paneAppearance``
   * ``preferences-paneLanguages``
   * ``preferences-paneAbout``
 
