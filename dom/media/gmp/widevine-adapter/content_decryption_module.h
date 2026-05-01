@@ -10,8 +10,6 @@
 
 #include "content_decryption_module_export.h"
 
-#include "mozilla/DefineEnum.h"
-
 // The version number must be rolled when the exported functions are updated!
 // If the CDM and the adapter use different versions of these functions, the
 // adapter will fail to load or crash!
@@ -69,15 +67,15 @@ CDM_API const char* GetCdmVersion();
 
 namespace cdm {
 
-MOZ_DEFINE_ENUM_WITH_BASE_AND_TOSTRING(Status, uint32_t, (
-  kSuccess,
+enum Status : uint32_t {
+  kSuccess = 0,
   kNeedMoreData,  // Decoder needs more data to produce a decoded frame/sample.
   kNoKey,         // The required decryption key is not available.
   kInitializationError,    // Initialization error.
   kDecryptError,           // Decryption failed.
   kDecodeError,            // Error decoding audio or video.
   kDeferredInitialization  // Decoder is not ready for initialization.
-));
+};
 CHECK_TYPE(Status, 4, 4);
 
 // Exceptions used by the CDM to reject promises.
@@ -993,8 +991,12 @@ class CDM_CLASS_API ContentDecryptionModule_11 {
                             const char* session_id,
                             uint32_t session_id_size) = 0;
 
-  // Removes any stored session data associated with this session. Will only be
-  // called for persistent sessions. The CDM must respond by calling either
+  // Removes any stored session data associated with this session. Removes all
+  // license(s) and key(s) associated with the session, whether they are in
+  // memory, persistent store, or both. For persistent session types, other
+  // session data (e.g. record of license destruction) will be cleared as
+  // defined for each session type once a release message acknowledgment is
+  // processed by UpdateSession(). The CDM must respond by calling either
   // Host::OnResolvePromise() or Host::OnRejectPromise() when the request has
   // been processed.
   virtual void RemoveSession(uint32_t promise_id,
