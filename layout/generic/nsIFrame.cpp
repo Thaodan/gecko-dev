@@ -4990,11 +4990,19 @@ nsresult nsIFrame::MoveCaretToEventPoint(nsPresContext* aPresContext,
   }
 
   if (nsIContent* dragGestureContent = esm->GetTrackingDragGestureContent()) {
-    if (dragGestureContent != this->GetContent()) {
-      // When the current tracked dragging gesture is different
-      // than this frame, it means this frame was being dragged, however
-      // it got moved/destroyed. So we should consider the drag is
-      // still happening, so return early here.
+    // When the current tracked dragging gesture is different than this frame,
+    // it means this frame was being dragged, however it got moved/destroyed. So
+    // we should consider the drag is still happening, so return early here.
+    // Additionally, when dragGestureContent is a `Text` and the text frame is
+    // reframed by a preceding event listener, we're the parent element frame.
+    // In that case, we need to treat this as a normal mouse button down.
+    // Therefore, we should compare the inclusive flattened tree ancestor
+    // element of dragGestureContent and our content.
+    const bool isDragGestureContent =
+        mContent == dragGestureContent ||
+        mContent ==
+            dragGestureContent->GetInclusiveFlattenedTreeAncestorElement();
+    if (!isDragGestureContent) {
       return NS_OK;
     }
   }
