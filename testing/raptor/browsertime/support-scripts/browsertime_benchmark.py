@@ -225,12 +225,8 @@ class BenchmarkSupport(PageloadSupport):
                         },
                     )["replicates"].append(subtest_result["value"])
 
-            for subtest_name in results[test_name]:
-                for subtest_name in result:
-                    subtest_result_name = f"{test_name} - {subtest_name}"
-                    _subtests[subtest_result_name]["value"] = filters.median(
-                        _subtests[subtest_result_name]["replicates"]
-                    )
+        for subtest in _subtests.values():
+            subtest["value"] = filters.median(subtest["replicates"])
 
         subtests = sorted(_subtests.values(), key=lambda x: x["name"], reverse=True)
         for subtest in subtests:
