@@ -531,9 +531,7 @@ tasks:
             by-variant:
                 wmf-media-engine:
                     by-test-platform:
-                        .*-asan.*: []
-                        windows11-64.*/debug: []  # Bug 1805736
-                        windows1.*-64.*: ['autoland', 'mozilla-central']
+                        windows11.*: built-projects
                         default: []
                 default:
                     by-test-platform:
@@ -971,8 +969,7 @@ tasks:
                 wmf-media-engine:
                     by-test-platform:
                         .*hw-ref.*: []
-                        windows1.*-ccov.*: []
-                        windows1.*64.*: ['autoland', 'mozilla-central']
+                        windows11.*: built-projects
                         default: []
                 msix:
                     by-test-platform:
