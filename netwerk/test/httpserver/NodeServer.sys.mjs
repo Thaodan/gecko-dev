@@ -157,46 +157,11 @@ export class BaseNodeServer {
       rootDir = parent;
     }
 
-    function findCertPath(dir) {
-      let candidates = [
-        `netwerk/test/unit/${filename}`,
-        // This one works for xpcshell mochitests
-        `_tests/xpcshell/netwerk/test/unit/${filename}`,
-      ];
-      for (let candidate of candidates) {
-        let certpath = dir.clone().QueryInterface(Ci.nsIFile);
-        for (let component of candidate.split("/")) {
-          certpath.append(component);
-        }
-        if (certpath.exists()) {
-          return certpath;
-        }
-      }
-      // For mochitest browser-chrome, resolve the cert via the chrome
-      // registry since it is packaged as a support file.
-      try {
-        let chromeReg = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(
-          Ci.nsIChromeRegistry
-        );
-        let chromeURI = Services.io.newURI(
-          `chrome://mochitests/content/browser/netwerk/test/browser/${filename}`
-        );
-        let fileURI = chromeReg.convertChromeURL(chromeURI);
-        let certpath = fileURI.QueryInterface(Ci.nsIFileURL).file;
-        if (certpath.exists()) {
-          return certpath;
-        }
-      } catch (e) {
-        // Not in a mochitest context; chrome package unavailable.
-      }
-      return null;
-    }
-
-    let certFile = findCertPath(rootDir);
-    if (!certFile) {
-      console.log(`Error installing cert: file not found.}`);
-      return;
-    }
+    let certFile = rootDir.clone();
+    certFile.append("netwerk");
+    certFile.append("test");
+    certFile.append("unit");
+    certFile.append(filename);
 
     try {
       let pem = readFile(certFile)
@@ -206,7 +171,7 @@ export class BaseNodeServer {
       certdb.addCertFromBase64(pem, "CTu,u,u");
     } catch (e) {
       let errStr = e.toString();
-      console.log(`Error installing cert ${errStr} path:${certFile.path}`);
+      console.log(`Error installing cert ${errStr}`);
       if (errStr.includes("0x805a1fe8")) {
         // Can't install the cert without a profile
         // Let's show an error, otherwise this will be difficult to diagnose.
