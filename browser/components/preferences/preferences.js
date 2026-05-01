@@ -216,6 +216,19 @@ const CONFIG_PANES = Object.freeze({
     visible: () =>
       Services.prefs.getBoolPref("browser.settings-redesign.enabled", false),
   },
+  appearance: {
+    l10nId: "preferences-appearance-header",
+    groupIds: [
+      "appearance",
+      "browserTheme",
+      "browserLayout",
+      "relatedSettings",
+    ],
+    module: "chrome://browser/content/preferences/config/appearance.mjs",
+    iconSrc: "chrome://global/skin/icons/eye.svg",
+    visible: () =>
+      Services.prefs.getBoolPref("browser.settings-redesign.enabled", false),
+  },
   ai: {
     l10nId: "preferences-ai-controls-header",
     iconSrc: "chrome://global/skin/icons/highlights.svg",
