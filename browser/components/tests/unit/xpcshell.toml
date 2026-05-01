@@ -43,3 +43,5 @@ skip-if = [
 run-if = [
   "os == 'win'",
 ]
+
+["test_startupTelemetry_launchOnLoginState.js"]
