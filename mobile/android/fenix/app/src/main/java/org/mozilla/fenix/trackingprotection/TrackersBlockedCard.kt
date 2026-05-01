@@ -65,19 +65,19 @@ private const val CURSOR_BLINK_MS = 500L
  * @param trackersBlockedCount The number of trackers blocked to display.
  * @param interactor [TrackingProtectionInteractor] for handling interactions.
  * @param modifier Modifier to be applied to the card.
- * @param animate Whether to animate the fox peeking. Set to false to disable animation.
+ * @param showLongfoxEntryPoint Whether to show the fox animation and typewriter text.
  */
 @Composable
 fun TrackersBlockedCard(
     trackersBlockedCount: Int,
     interactor: TrackingProtectionInteractor,
     modifier: Modifier = Modifier,
-    animate: Boolean = true,
+    showLongfoxEntryPoint: Boolean = false,
 ) {
-    val foxOffsetY = remember { Animatable(if (animate) 1f else 0f) }
+    val foxOffsetY = remember { Animatable(1f) }
 
-    LaunchedEffect(animate) {
-        if (animate) {
+    LaunchedEffect(showLongfoxEntryPoint) {
+        if (showLongfoxEntryPoint) {
             foxOffsetY.animateTo(
                 targetValue = 0f,
                 animationSpec = tween(durationMillis = FOX_ANIMATION_DURATION, easing = Ease),
@@ -95,16 +95,18 @@ fun TrackersBlockedCard(
         Box(
             contentAlignment = Alignment.TopStart,
         ) {
-            Image(
-                painter = painterResource(R.drawable.expressive_firefox),
-                contentDescription = null,
-                modifier = Modifier.offset {
-                    IntOffset(
-                        x = foxHorizontalOffset.toPx().roundToInt(),
-                        y = ((-peekHeight.toPx()) + (foxOffsetY.value * peekHeight.toPx())).roundToInt(),
-                    )
-                },
-            )
+            if (showLongfoxEntryPoint) {
+                Image(
+                    painter = painterResource(R.drawable.expressive_firefox),
+                    contentDescription = null,
+                    modifier = Modifier.offset {
+                        IntOffset(
+                            x = foxHorizontalOffset.toPx().roundToInt(),
+                            y = ((-peekHeight.toPx()) + (foxOffsetY.value * peekHeight.toPx())).roundToInt(),
+                        )
+                    },
+                )
+            }
 
             ProtectionStatusPill(
                 trackersBlockedCount = trackersBlockedCount,
@@ -112,11 +114,13 @@ fun TrackersBlockedCard(
             )
         }
 
-        Spacer(modifier = Modifier.height(6.dp))
+        if (showLongfoxEntryPoint) {
+            Spacer(modifier = Modifier.height(6.dp))
 
-        TypewriterText(
-            text = stringResource(R.string.help_catch_trackers),
-        )
+            TypewriterText(
+                text = stringResource(R.string.help_catch_trackers),
+            )
+        }
     }
 }
 
@@ -220,7 +224,7 @@ private fun TrackersBlockedCardPreview() {
             interactor = object : TrackingProtectionInteractor {
                 override fun onPrivacyReportTapped() = Unit
             },
-            animate = false,
+            showLongfoxEntryPoint = true,
         )
     }
 }
@@ -234,7 +238,7 @@ private fun TrackersBlockedCardEmptyPreview() {
             interactor = object : TrackingProtectionInteractor {
                 override fun onPrivacyReportTapped() = Unit
             },
-            animate = false,
+            showLongfoxEntryPoint = false,
         )
     }
 }

@@ -214,6 +214,7 @@ internal fun Homepage(
                                     trackersBlockedCount = trackersBlockedCount,
                                     interactor = interactor,
                                     modifier = Modifier.padding(top = 16.dp),
+                                    showLongfoxEntryPoint = showLongfoxEntryPoint,
                                 )
                             }
 
@@ -633,6 +634,7 @@ private fun HomepagePreview() {
                     showPocketStoriesCarousel = true,
                     showCollections = true,
                     showPrivacyReport = true,
+                    showLongfoxEntryPoint = false,
                     trackersBlockedCount = 754,
                     sportsWidgetState = SportsWidgetState(),
                     headerState = HeaderState.Normal(
@@ -687,6 +689,7 @@ private fun HomepageBannerPreview() {
                     showPocketStoriesCarousel = true,
                     showCollections = true,
                     showPrivacyReport = true,
+                    showLongfoxEntryPoint = false,
                     trackersBlockedCount = 754,
                     sportsWidgetState = SportsWidgetState(),
                     headerState = HeaderState.Normal(
@@ -741,6 +744,7 @@ private fun HomepagePreviewCollections() {
                     showPocketStoriesCarousel = true,
                     showCollections = true,
                     showPrivacyReport = true,
+                    showLongfoxEntryPoint = false,
                     trackersBlockedCount = 754,
                     sportsWidgetState = SportsWidgetState(),
                     headerState = HeaderState.Normal(
@@ -795,6 +799,7 @@ private fun MinimalHomepagePreview() {
                     showPocketStoriesCarousel = true,
                     showCollections = false,
                     showPrivacyReport = true,
+                    showLongfoxEntryPoint = false,
                     trackersBlockedCount = 754,
                     sportsWidgetState = SportsWidgetState(),
                     headerState = HeaderState.Normal(
