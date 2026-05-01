@@ -13,6 +13,8 @@ import { useCallback, useState } from "react";
  *    `celebrationFrame` are truthy, and pass `completeCelebration` to the
  *    component's `onComplete` prop.
  * 3. Call `triggerCelebration()` when the widget reaches its completion state.
+ *    Returns `false` if the animation was skipped (reduced motion or no
+ *    widget ref) so the caller can run its completion handler inline.
  *
  * Example:
  * const widgetRef = useRef(null);
@@ -46,13 +48,13 @@ export const useWidgetCelebration = widgetRef => {
       typeof window.matchMedia === "function" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches
     ) {
-      return;
+      return false;
     }
 
     const widget = widgetRef.current;
 
     if (!widget) {
-      return;
+      return false;
     }
 
     const { width, height } = widget.getBoundingClientRect();
@@ -69,6 +71,7 @@ export const useWidgetCelebration = widgetRef => {
     setCelebrationFrame(frame);
     setCelebrationId(currentValue => currentValue + 1);
     setIsCelebrating(true);
+    return true;
   }, [widgetRef]);
 
   const completeCelebration = useCallback(() => {
