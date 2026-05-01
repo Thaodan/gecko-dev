@@ -205,7 +205,7 @@ static void ResetDirtyPageModifier() {
   moz_set_max_dirty_page_modifier(0);
 
   wr::RenderThread* renderThread = wr::RenderThread::Get();
-  if (renderThread) {
+  if (renderThread && !renderThread->HasShutdown()) {
     renderThread->NotifyIdle();
   }
 
