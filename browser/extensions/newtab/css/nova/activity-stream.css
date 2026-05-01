@@ -4761,6 +4761,8 @@ button.arrow-button:dir(rtl) {
   inset: 0;
   width: 100%;
   height: 100%;
+  border-radius: inherit;
+  overflow: hidden;
   pointer-events: none;
   z-index: 3;
 }
@@ -4920,6 +4922,9 @@ button.arrow-button:dir(rtl) {
   margin: 0;
   min-height: 24px;
   min-width: 24px;
+}
+.lists .lists-header #lists-switcher-panel panel-item::part(button) {
+  padding-inline-start: var(--space-xxlarge);
 }
 .lists .lists-header .lists-title {
   color: var(--lists-text-color);
@@ -5201,6 +5206,11 @@ button.arrow-button:dir(rtl) {
   overflow: hidden;
   position: relative;
   text-decoration: none;
+  word-break: break-word;
+}
+.lists .task-item .task-label:is(a) {
+  color: var(--link-color);
+  text-decoration: underline;
 }
 .lists .task-item input:checked ~ .task-label {
   color: var(--lists-text-color);
@@ -5459,6 +5469,8 @@ button.arrow-button:dir(rtl) {
   inset: 0;
   width: 100%;
   height: 100%;
+  border-radius: inherit;
+  overflow: hidden;
   pointer-events: none;
   z-index: 3;
 }
