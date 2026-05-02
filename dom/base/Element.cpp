@@ -4906,12 +4906,6 @@ already_AddRefed<Animation> Element::Animate(
   GlobalObject global(aContext, relevantGlobal->GetGlobalJSObject());
   MOZ_ASSERT(!global.Failed());
 
-  // Implements:
-  // <https://drafts.csswg.org/web-animations-1/#dom-animatable-animate>
-
-  // Step 1. target is this.
-
-  // Step 2. Construct a new KeyframeEffect object.
   // KeyframeEffect constructor doesn't follow the standard Xray calling
   // convention and needs to be called in caller's compartment.
   // This should match to RunConstructorInCallerCompartment attribute in
@@ -4926,34 +4920,17 @@ already_AddRefed<Animation> Element::Animate(
   // needs to be called in the target element's realm.
   JSAutoRealm ar(aContext, global.Get());
 
-  // Step 3. If options is a KeyframeAnimationOptions object, let timeline be
-  // the timeline member of options or, if missing, the default document
-  // timeline of the node document.
-  AnimationTimeline* timeline = nullptr;
-  if (aOptions.IsKeyframeAnimationOptions()) {
-    const auto& kfOpts = aOptions.GetAsKeyframeAnimationOptions();
-    if (kfOpts.mTimeline.WasPassed()) {
-      timeline = kfOpts.mTimeline.Value();
-    }
-  }
-  if (!timeline) {
-    timeline = OwnerDoc()->Timeline();
-  }
-
-  // Step 4. Construct a new Animation object.
+  AnimationTimeline* timeline = OwnerDoc()->Timeline();
   RefPtr<Animation> animation = Animation::Constructor(
       global, effect, Optional<AnimationTimeline*>(timeline), aError);
   if (aError.Failed()) {
     return nullptr;
   }
 
-  // Step 5. If options is a KeyframeAnimationOptions object, assign the value
-  // of the id member of options to animation's id attribute.
   if (aOptions.IsKeyframeAnimationOptions()) {
     animation->SetId(aOptions.GetAsKeyframeAnimationOptions().mId);
   }
 
-  // Step 6. Play animation.
   animation->Play(aError, Animation::LimitBehavior::AutoRewind);
   if (aError.Failed()) {
     return nullptr;
