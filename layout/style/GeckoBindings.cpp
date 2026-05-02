@@ -877,13 +877,18 @@ bool Gecko_IsSelectListBox(const Element* aElement) {
 }
 
 bool Gecko_LookupAttrValue(const Element* aElement, nsAtom& aNamespace,
-                           const nsAtom& aName, nsAString& aResult) {
+                           nsAtom& aName, nsAString& aResult) {
   int32_t attrNameSpace = kNameSpaceID_None;
   if (!aNamespace.IsEmpty()) {
     attrNameSpace = nsNameSpaceManager::GetInstance()->GetNameSpaceID(
         &aNamespace, nsContentUtils::IsChromeDoc(aElement->OwnerDoc()));
   }
-  return aElement->GetAttr(attrNameSpace, &aName, aResult);
+  if (aName.IsAsciiLowercase() || !aElement->OwnerDoc()->IsHTMLDocument()) {
+    return aElement->GetAttr(attrNameSpace, &aName, aResult);
+  }
+  RefPtr<nsAtom> lowercaseName(&aName);
+  ToLowerCaseASCII(lowercaseName);
+  return aElement->GetAttr(attrNameSpace, lowercaseName, aResult);
 }
 
 template <typename Implementor>
