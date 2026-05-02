@@ -7044,8 +7044,6 @@ StyleDirection ScrollContainerFrame::GetScrolledFrameDir(
       auto sr = aScrolledFrame->ScrollableOverflowRectRelativeToSelf();
       auto leftOverflow = -sr.x;
       auto rightOverflow = sr.XMost() - aScrolledFrame->GetRect().Width();
-      MOZ_ASSERT(leftOverflow >= 0);
-      MOZ_ASSERT(rightOverflow >= 0);
       return leftOverflow > rightOverflow ? StyleDirection::Rtl
                                           : StyleDirection::Ltr;
     }
