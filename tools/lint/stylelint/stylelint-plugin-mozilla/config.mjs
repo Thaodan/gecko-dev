@@ -377,7 +377,7 @@ const Opacity = {
 const TextColor = {
   allow: ["currentColor", "white", "black"],
   allowAlias: [...SYSTEM_COLORS],
-  allowedTokens: [...versatileColorTokens],
+  allowedTokens: [...versatileColorTokens, "--toolbarseparator-color"],
   tokenTypes: ["text-color", "icon-color"],
   aliasTokenTypes: ["color", "background-color", "border-color"],
   customFixes: customColorFixes,
