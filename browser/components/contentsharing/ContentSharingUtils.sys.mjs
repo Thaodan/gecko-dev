@@ -53,7 +53,7 @@ async function loadContentSharingSchema() {
   return schema;
 }
 
-export const ERRORS = Object.freeze({
+const ERRORS = Object.freeze({
   GENERIC: "generic-error",
   MAX_RETRY_ATTEMPTS: "max-retry-attempts-error",
   UNAUTHORIZED: "unauthorized-error",
@@ -305,9 +305,6 @@ class ContentSharingUtilsClass {
     } catch (e) {
       console.error(`ContentSharingUtils: failed to share ${context}`, e);
     }
-
-    result.isSignedIn =
-      this.isSignedIn() && result.error !== ERRORS.UNAUTHORIZED;
 
     const window = Services.wm.getMostRecentBrowserWindow();
     window.gDialogBox.open(CONTENT_SHARING_MODAL_URL, { share, ...result });
