@@ -892,18 +892,42 @@ DictionaryCacheEntry::OnCacheEntryAvailable(nsICacheEntry* entry, bool isNew,
     nsCOMPtr<nsIInputStream> stream;
     entry->OpenInputStream(0, getter_AddRefs(stream));
     if (!stream) {
+      DICTIONARY_LOG(("OpenInputStream failed for %s", mURI.get()));
+      nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
+          "DictionaryCacheEntry::OnCacheEntryAvailable",
+          [self = RefPtr{this}]() {
+            self->CleanupOnCacheData(NS_ERROR_FAILURE);
+            DictionaryCache::RemoveDictionary(self->mURI);
+          });
+      NS_DispatchToMainThread(runnable);
       return NS_OK;
     }
 
     RefPtr<nsInputStreamPump> pump;
     nsresult rv = nsInputStreamPump::Create(getter_AddRefs(pump), stream);
     if (NS_FAILED(rv)) {
-      return NS_OK;  // just ignore
+      DICTIONARY_LOG(("nsInputStreamPump::Create failed for %s", mURI.get()));
+      nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
+          "DictionaryCacheEntry::OnCacheEntryAvailable",
+          [self = RefPtr{this}]() {
+            self->CleanupOnCacheData(NS_ERROR_FAILURE);
+            DictionaryCache::RemoveDictionary(self->mURI);
+          });
+      NS_DispatchToMainThread(runnable);
+      return NS_OK;
     }
 
     rv = pump->AsyncRead(this);
     if (NS_FAILED(rv)) {
-      return NS_OK;  // just ignore
+      DICTIONARY_LOG(("AsyncRead failed for %s", mURI.get()));
+      nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
+          "DictionaryCacheEntry::OnCacheEntryAvailable",
+          [self = RefPtr{this}]() {
+            self->CleanupOnCacheData(NS_ERROR_FAILURE);
+            DictionaryCache::RemoveDictionary(self->mURI);
+          });
+      NS_DispatchToMainThread(runnable);
+      return NS_OK;
     }
     DICTIONARY_LOG(("Waiting for data"));
   } else {
