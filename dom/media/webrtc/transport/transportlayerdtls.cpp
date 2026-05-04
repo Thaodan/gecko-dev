@@ -1493,7 +1493,7 @@ SECStatus TransportLayerDtls::AuthCertificateHook(PRFileDesc* fd,
 
       // Checking functions call PR_SetError()
       SECStatus rv = SECFailure;
-      for (auto digest : digests_) {
+      for (const auto& digest : digests_) {
         rv = CheckDigest(digest, peer_cert);
 
         // Matches a digest, we are good to go
