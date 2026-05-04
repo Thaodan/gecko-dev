@@ -349,12 +349,16 @@ ModuleScript::ModuleScript(const LoadedScript& aOther,
 already_AddRefed<ModuleScript> ModuleScript::FromCache(
     const LoadedScript& aScript, ScriptFetchInfo* aFetchInfo) {
   MOZ_DIAGNOSTIC_ASSERT(aScript.IsModuleScript());
+  // IsInvalidatedCachedStencil case shouldn't reach here, because that case
+  // should be filtered out immediately after the cache lookup, and then
+  // this should be called synchronously and immediately after that.
   MOZ_DIAGNOSTIC_ASSERT(aScript.IsCachedStencil());
 
   return mozilla::MakeRefPtr<ModuleScript>(aScript, aFetchInfo).forget();
 }
 
 already_AddRefed<LoadedScript> ModuleScript::ToCache() {
+  // TODO: Refactor and use this in bug 2036190.
   MOZ_DIAGNOSTIC_ASSERT(IsCachedStencil());
   MOZ_DIAGNOSTIC_ASSERT(!HasParseError());
   MOZ_DIAGNOSTIC_ASSERT(!HasErrorToRethrow());

@@ -355,8 +355,7 @@ bool SharedScriptCache::GetCachedScriptSource(
   JS::Stencil* stencil = nullptr;
   if (auto lookup = sSingleton->mComplete.Lookup(*maybeKey)) {
     JS::loader::LoadedScript* loadedScript = lookup.Data().mResource;
-    if (!loadedScript->IsCachedStencil()) {
-      // The cache is getting invalidated.
+    if (loadedScript->IsInvalidatedCachedStencil()) {
       aRetval.setUndefined();
       return true;
     }
@@ -431,8 +430,7 @@ bool SharedScriptCache::MaybeScheduleUpdateDiskCache() {
   bool hasSaveable = false;
   for (auto iter = mComplete.Iter(); !iter.Done(); iter.Next()) {
     JS::loader::LoadedScript* loadedScript = iter.Data().mResource;
-    if (!loadedScript->IsCachedStencil()) {
-      // The cache is getting invalidated.
+    if (loadedScript->IsInvalidatedCachedStencil()) {
       continue;
     }
 
@@ -544,8 +542,7 @@ void SharedScriptCache::UpdateDiskCache() {
 
   for (auto iter = mComplete.Iter(); !iter.Done(); iter.Next()) {
     JS::loader::LoadedScript* loadedScript = iter.Data().mResource;
-    if (!loadedScript->IsCachedStencil()) {
-      // The cache is getting invalidated.
+    if (loadedScript->IsInvalidatedCachedStencil()) {
       continue;
     }
 
