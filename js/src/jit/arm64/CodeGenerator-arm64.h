@@ -43,9 +43,11 @@ class CodeGeneratorARM64 : public CodeGeneratorShared {
       if (rhs.value == 0) {
         switch (c) {
           case Assembler::Equal:
+          case Assembler::BelowOrEqual:
             bailoutIfTest(Assembler::Zero, ARMRegister(lhs, 64), snapshot);
             return;
           case Assembler::NotEqual:
+          case Assembler::Above:
             bailoutIfTest(Assembler::NonZero, ARMRegister(lhs, 64), snapshot);
             return;
           case Assembler::LessThan:
@@ -69,9 +71,11 @@ class CodeGeneratorARM64 : public CodeGeneratorShared {
       if (rhs.value == 0) {
         switch (c) {
           case Assembler::Equal:
+          case Assembler::BelowOrEqual:
             bailoutIfTest(Assembler::Zero, ARMRegister(lhs, 32), snapshot);
             return;
           case Assembler::NotEqual:
+          case Assembler::Above:
             bailoutIfTest(Assembler::NonZero, ARMRegister(lhs, 32), snapshot);
             return;
           case Assembler::LessThan:

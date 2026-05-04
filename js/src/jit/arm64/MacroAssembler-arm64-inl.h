@@ -1248,9 +1248,11 @@ void MacroAssembler::branch32(Condition cond, Register lhs, Imm32 imm,
   if (imm.value == 0) {
     switch (cond) {
       case Assembler::Equal:
+      case Assembler::BelowOrEqual:
         Cbz(ARMRegister(lhs, 32), label);
         return;
       case Assembler::NotEqual:
+      case Assembler::Above:
         Cbnz(ARMRegister(lhs, 32), label);
         return;
       case Assembler::LessThan:
@@ -1385,9 +1387,11 @@ void MacroAssembler::branchPtr(Condition cond, Register lhs, Imm32 rhs,
   if (rhs.value == 0) {
     switch (cond) {
       case Assembler::Equal:
+      case Assembler::BelowOrEqual:
         Cbz(ARMRegister(lhs, 64), label);
         return;
       case Assembler::NotEqual:
+      case Assembler::Above:
         Cbnz(ARMRegister(lhs, 64), label);
         return;
       case Assembler::LessThan:
@@ -1430,9 +1434,11 @@ void MacroAssembler::branchPtr(Condition cond, Register lhs, ImmWord rhs,
   if (rhs.value == 0) {
     switch (cond) {
       case Assembler::Equal:
+      case Assembler::BelowOrEqual:
         Cbz(ARMRegister(lhs, 64), label);
         return;
       case Assembler::NotEqual:
+      case Assembler::Above:
         Cbnz(ARMRegister(lhs, 64), label);
         return;
       case Assembler::LessThan:
