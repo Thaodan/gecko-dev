@@ -3990,8 +3990,8 @@ void Element::OnAttrSetButNotChanged(int32_t aNamespaceID, nsAtom* aName,
       LifecycleCallbackArgs args;
       args.mName = aName;
       args.mOldValue = value;
-      args.mNewValue = value;
-      args.mNamespaceURI = ns.IsEmpty() ? VoidString() : ns;
+      args.mNewValue = std::move(value);
+      args.mNamespaceURI = ns.IsEmpty() ? VoidString() : std::move(ns);
 
       nsContentUtils::EnqueueLifecycleCallback(
           ElementCallbackType::eAttributeChanged, this, args, definition);

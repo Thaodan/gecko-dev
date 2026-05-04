@@ -1192,11 +1192,11 @@ void nsContentUtils::InitializeModifierStrings() {
     bundle->GetStringFromName("MODIFIER_SEPARATOR", modifierSeparator);
   }
   // if any of these don't exist, we get  an empty string
-  sShiftText = new nsString(shiftModifier);
-  sCommandOrWinText = new nsString(commandOrWinModifier);
-  sAltText = new nsString(altModifier);
-  sControlText = new nsString(controlModifier);
-  sModifierSeparator = new nsString(modifierSeparator);
+  sShiftText = new nsString(std::move(shiftModifier));
+  sCommandOrWinText = new nsString(std::move(commandOrWinModifier));
+  sAltText = new nsString(std::move(altModifier));
+  sControlText = new nsString(std::move(controlModifier));
+  sModifierSeparator = new nsString(std::move(modifierSeparator));
 }
 
 mozilla::EventClassID nsContentUtils::GetEventClassIDFromMessage(
@@ -7767,7 +7767,7 @@ nsresult nsContentUtils::GetWebExposedOriginSerialization(nsIURI* aURI,
     rv = uri->GetPrePath(prePath);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    aOrigin = prePath;
+    aOrigin = std::move(prePath);
   } else {
     aOrigin.AssignLiteral("null");
   }
