@@ -23,7 +23,7 @@ add_task(async function applicationXmlHandleInternally() {
 
   let appHandlerInitialized = TestUtils.topicObserved("app-handler-loaded");
 
-  await openPreferencesViaOpenPreferencesAPI("downloads", { leaveOpen: true });
+  await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
 
   await appHandlerInitialized;
 

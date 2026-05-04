@@ -35,11 +35,11 @@ add_task(async function () {
 
   let appHandlerInitialized = TestUtils.topicObserved("app-handler-loaded");
 
-  let prefs = await openPreferencesViaOpenPreferencesAPI("downloads", {
+  let prefs = await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
     leaveOpen: true,
   });
 
-  is(prefs.selectedPane, "paneDownloads", "Downloads pane was selected");
+  is(prefs.selectedPane, "paneGeneral", "General pane was selected");
   let win = gBrowser.selectedBrowser.contentWindow;
 
   await appHandlerInitialized;
