@@ -225,7 +225,7 @@ struct DeviceState {
   // true if mDevice is currently muted.
   // A device that is either muted or disabled is turned off and not capturing.
   // MainThread only.
-  bool mDeviceMuted;
+  bool mDeviceMuted = false;
 
   // true if the application has currently enabled mDevice.
   // MainThread only.

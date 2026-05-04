@@ -1460,11 +1460,11 @@ class JsepApplicationCodecDescription final : public JsepCodecDescription {
   void ApplyConfigToFmtp(
       UniquePtr<SdpFmtpAttributeList::Parameters>& aFmtp) const override {};
 
-  uint16_t mLocalPort;
-  uint32_t mLocalMaxMessageSize;
-  uint16_t mRemotePort;
-  uint32_t mRemoteMaxMessageSize;
-  bool mRemoteMMSSet;
+  uint16_t mLocalPort = 0;
+  uint32_t mLocalMaxMessageSize = 0;
+  uint16_t mRemotePort = 0;
+  uint32_t mRemoteMaxMessageSize = 0;
+  bool mRemoteMMSSet = false;
 };
 
 }  // namespace mozilla
