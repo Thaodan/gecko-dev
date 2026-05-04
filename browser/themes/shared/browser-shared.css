@@ -640,7 +640,7 @@ menupopup::part(drop-indicator) {
     background-image: linear-gradient(var(--toolbar-bgcolor)), var(--toolbox-background-image);
     background-repeat: no-repeat, var(--toolbox-background-repeat);
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    background-position: auto, var(--toolbox-background-position);
+    background-position: top left, var(--toolbox-background-position);
     background-position-y: bottom !important;
   }
 
