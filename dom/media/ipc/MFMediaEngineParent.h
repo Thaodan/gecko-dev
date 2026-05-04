@@ -5,7 +5,7 @@
 #ifndef DOM_MEDIA_IPC_MFMEDIAENGINEPARENT_H_
 #define DOM_MEDIA_IPC_MFMEDIAENGINEPARENT_H_
 
-#include <Mfidl.h>
+#include <mfidl.h>
 #include <winnt.h>
 #include <wrl.h>
 
