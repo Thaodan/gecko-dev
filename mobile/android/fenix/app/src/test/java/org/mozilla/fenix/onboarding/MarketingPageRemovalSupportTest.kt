@@ -27,7 +27,7 @@ import org.mozilla.fenix.onboarding.view.OnboardingPageUiData
 import org.mozilla.fenix.utils.Settings
 
 @RunWith(AndroidJUnit4::class)
-class MarketingPageRemovalManagerTest {
+class MarketingPageRemovalSupportTest {
 
     private lateinit var pages: MutableList<OnboardingPageUiData>
     private lateinit var settings: Settings
