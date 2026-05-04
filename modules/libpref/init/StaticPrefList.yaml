@@ -12254,12 +12254,6 @@
     mirror: always
 #endif
 
-# Allow ffmpeg decoder to decode directly onto shmem buffer
-- name: media.ffmpeg.customized-buffer-allocation
-  type: RelaxedAtomicBool
-  value: true
-  mirror: always
-
 # Disable falling back to software decoders in case of frame drop
 - name: media.ffmpeg.disable-software-fallback
   type: RelaxedAtomicBool
