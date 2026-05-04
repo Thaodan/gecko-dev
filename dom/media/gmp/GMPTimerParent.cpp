@@ -18,8 +18,8 @@ extern LogModule* GetGMPLog();
 
 namespace gmp {
 
-GMPTimerParent::GMPTimerParent(nsCOMPtr<nsISerialEventTarget>&& aGMPEventTarget)
-    : mGMPEventTarget(std::move(aGMPEventTarget)), mIsOpen(true) {}
+GMPTimerParent::GMPTimerParent(nsISerialEventTarget* aGMPEventTarget)
+    : mGMPEventTarget(aGMPEventTarget), mIsOpen(true) {}
 
 mozilla::ipc::IPCResult GMPTimerParent::RecvSetTimer(
     const uint32_t& aTimerId, const uint32_t& aTimeoutMs) {

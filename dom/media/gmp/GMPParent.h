@@ -166,8 +166,15 @@ class GMPParent final : public PGMPParent,
   void GetCrashID(nsString& aResult);
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
-  already_AddRefed<PGMPStorageParent> AllocPGMPStorageParent();
-  already_AddRefed<PGMPTimerParent> AllocPGMPTimerParent();
+  mozilla::ipc::IPCResult RecvPGMPStorageConstructor(
+      PGMPStorageParent* actor) override;
+  PGMPStorageParent* AllocPGMPStorageParent();
+  bool DeallocPGMPStorageParent(PGMPStorageParent* aActor);
+
+  mozilla::ipc::IPCResult RecvPGMPTimerConstructor(
+      PGMPTimerParent* actor) override;
+  PGMPTimerParent* AllocPGMPTimerParent();
+  bool DeallocPGMPTimerParent(PGMPTimerParent* aActor);
 
   mozilla::ipc::IPCResult RecvPGMPContentChildDestroyed();
 
@@ -223,6 +230,8 @@ class GMPParent final : public PGMPParent,
 
   bool mCanDecrypt;
 
+  nsTArray<RefPtr<GMPTimerParent>> mTimers;
+  nsTArray<RefPtr<GMPStorageParent>> mStorage;
   // NodeId the plugin is assigned to, or empty if the the plugin is not
   // assigned to a NodeId.
   nsCString mNodeId;

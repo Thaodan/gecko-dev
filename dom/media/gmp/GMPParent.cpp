@@ -536,14 +536,16 @@ void GMPParent::CloseIfUnused() {
        mState == GMPState::Unloading) &&
       !IsUsed()) {
     // Ensure all timers are killed.
-    for (auto* timer : ManagedPGMPTimerParent()) {
-      static_cast<GMPTimerParent*>(timer)->Shutdown();
+    for (uint32_t i = mTimers.Length(); i > 0; i--) {
+      mTimers[i - 1]->Shutdown();
     }
 
     // Shutdown GMPStorage. Given that all protocol actors must be shutdown
     // (!Used() is true), all storage operations should be complete.
-    for (auto* storage : ManagedPGMPStorageParent()) {
-      static_cast<GMPStorageParent*>(storage)->Shutdown();
+    GMP_PARENT_LOG_DEBUG("%p shutdown storage (sz=%zu)", this,
+                         mStorage.Length());
+    for (size_t i = mStorage.Length(); i > 0; i--) {
+      mStorage[i - 1]->Shutdown();
     }
     Shutdown();
   }
@@ -879,17 +881,49 @@ void GMPParent::ActorDestroy(ActorDestroyReason aWhy) {
   }
 }
 
-already_AddRefed<PGMPStorageParent> GMPParent::AllocPGMPStorageParent() {
-  auto p = MakeRefPtr<GMPStorageParent>(mNodeId, this);
-  if (NS_WARN_IF(NS_FAILED(p->Init()))) {
-    return nullptr;
-  }
-  return p.forget();
+PGMPStorageParent* GMPParent::AllocPGMPStorageParent() {
+  GMPStorageParent* p = new GMPStorageParent(mNodeId, this);
+  mStorage.AppendElement(p);  // Addrefs, released in DeallocPGMPStorageParent.
+  return p;
 }
 
-already_AddRefed<PGMPTimerParent> GMPParent::AllocPGMPTimerParent() {
+bool GMPParent::DeallocPGMPStorageParent(PGMPStorageParent* aActor) {
+  GMPStorageParent* p = static_cast<GMPStorageParent*>(aActor);
+  p->Shutdown();
+  mStorage.RemoveElement(p);
+  return true;
+}
+
+mozilla::ipc::IPCResult GMPParent::RecvPGMPStorageConstructor(
+    PGMPStorageParent* aActor) {
+  GMPStorageParent* p = (GMPStorageParent*)aActor;
+  if (NS_FAILED(p->Init())) {
+    // TODO: Verify if this is really a good reason to IPC_FAIL.
+    // There might be shutdown edge cases here.
+    return IPC_FAIL(this,
+                    "GMPParent::RecvPGMPStorageConstructor: p->Init() failed.");
+  }
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult GMPParent::RecvPGMPTimerConstructor(
+    PGMPTimerParent* actor) {
+  return IPC_OK();
+}
+
+PGMPTimerParent* GMPParent::AllocPGMPTimerParent() {
   nsCOMPtr<nsISerialEventTarget> target = GMPEventTarget();
-  return MakeAndAddRef<GMPTimerParent>(std::move(target));
+  GMPTimerParent* p = new GMPTimerParent(target);
+  mTimers.AppendElement(
+      p);  // Released in DeallocPGMPTimerParent, or on shutdown.
+  return p;
+}
+
+bool GMPParent::DeallocPGMPTimerParent(PGMPTimerParent* aActor) {
+  GMPTimerParent* p = static_cast<GMPTimerParent*>(aActor);
+  p->Shutdown();
+  mTimers.RemoveElement(p);
+  return true;
 }
 
 bool ReadInfoField(GMPInfoFileParser& aParser, const nsCString& aKey,
