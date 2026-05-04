@@ -29,7 +29,7 @@ class CodeGeneratorARM64 : public CodeGeneratorShared {
   MoveOperand toMoveOperand(const LAllocation a) const;
 
   void bailoutIf(Assembler::Condition condition, LSnapshot* snapshot);
-  void bailoutIfZero(Assembler::Condition condition, ARMRegister rt,
+  void bailoutIfTest(Assembler::Condition condition, ARMRegister rt,
                      LSnapshot* snapshot);
   void bailoutFrom(Label* label, LSnapshot* snapshot);
   void bailout(LSnapshot* snapshot);
@@ -41,13 +41,21 @@ class CodeGeneratorARM64 : public CodeGeneratorShared {
                   (std::is_same_v<T2, Imm32> || std::is_same_v<T2, Imm64> ||
                    std::is_same_v<T2, ImmWord> || std::is_same_v<T2, ImmPtr>)) {
       if (rhs.value == 0) {
-        if (c == Assembler::Equal) {
-          bailoutIfZero(Assembler::Zero, ARMRegister(lhs, 64), snapshot);
-          return;
-        }
-        if (c == Assembler::NotEqual) {
-          bailoutIfZero(Assembler::NonZero, ARMRegister(lhs, 64), snapshot);
-          return;
+        switch (c) {
+          case Assembler::Equal:
+            bailoutIfTest(Assembler::Zero, ARMRegister(lhs, 64), snapshot);
+            return;
+          case Assembler::NotEqual:
+            bailoutIfTest(Assembler::NonZero, ARMRegister(lhs, 64), snapshot);
+            return;
+          case Assembler::LessThan:
+            bailoutIfTest(Assembler::Signed, ARMRegister(lhs, 64), snapshot);
+            return;
+          case Assembler::GreaterThanOrEqual:
+            bailoutIfTest(Assembler::NotSigned, ARMRegister(lhs, 64), snapshot);
+            return;
+          default:
+            break;
         }
       }
     }
@@ -59,13 +67,21 @@ class CodeGeneratorARM64 : public CodeGeneratorShared {
                     LSnapshot* snapshot) {
     if constexpr (std::is_same_v<T1, Register> && std::is_same_v<T2, Imm32>) {
       if (rhs.value == 0) {
-        if (c == Assembler::Equal) {
-          bailoutIfZero(Assembler::Zero, ARMRegister(lhs, 32), snapshot);
-          return;
-        }
-        if (c == Assembler::NotEqual) {
-          bailoutIfZero(Assembler::NonZero, ARMRegister(lhs, 32), snapshot);
-          return;
+        switch (c) {
+          case Assembler::Equal:
+            bailoutIfTest(Assembler::Zero, ARMRegister(lhs, 32), snapshot);
+            return;
+          case Assembler::NotEqual:
+            bailoutIfTest(Assembler::NonZero, ARMRegister(lhs, 32), snapshot);
+            return;
+          case Assembler::LessThan:
+            bailoutIfTest(Assembler::Signed, ARMRegister(lhs, 32), snapshot);
+            return;
+          case Assembler::GreaterThanOrEqual:
+            bailoutIfTest(Assembler::NotSigned, ARMRegister(lhs, 32), snapshot);
+            return;
+          default:
+            break;
         }
       }
     }
@@ -77,9 +93,17 @@ class CodeGeneratorARM64 : public CodeGeneratorShared {
                      LSnapshot* snapshot) {
     if constexpr (std::is_same_v<T1, Register> &&
                   std::is_same_v<T2, Register>) {
-      if (lhs == rhs && (c == Assembler::Zero || c == Assembler::NonZero)) {
-        bailoutIfZero(c, ARMRegister(lhs, 32), snapshot);
-        return;
+      if (lhs == rhs) {
+        switch (c) {
+          case Assembler::Zero:
+          case Assembler::NonZero:
+          case Assembler::Signed:
+          case Assembler::NotSigned:
+            bailoutIfTest(c, ARMRegister(lhs, 32), snapshot);
+            return;
+          default:
+            break;
+        }
       }
     }
     masm.test32(lhs, rhs);
