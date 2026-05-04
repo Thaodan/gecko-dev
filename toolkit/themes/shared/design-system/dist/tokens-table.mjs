@@ -355,6 +355,18 @@ export const tokensTable = {
     },
     {
       value: "var(--button-background-color)",
+      name: "--select-background-color",
+    },
+    {
+      value: "var(--button-background-color-hover)",
+      name: "--select-background-color-hover",
+    },
+    {
+      value: "var(--button-background-color-disabled)",
+      name: "--select-background-color-disabled",
+    },
+    {
+      value: "var(--button-background-color)",
       name: "--toggle-background-color",
     },
     {
@@ -679,6 +691,14 @@ export const tokensTable = {
       name: "--promo-border-color",
     },
     { value: "var(--color-violet-30)", name: "--promo-border-color-vibrant" },
+    {
+      value: "var(--button-border-color-hover)",
+      name: "--select-border-color-hover",
+    },
+    {
+      value: "var(--button-border-color-disabled)",
+      name: "--select-border-color-disabled",
+    },
     { value: "var(--border-color-interactive)", name: "--toggle-border-color" },
     {
       value: {
@@ -718,6 +738,7 @@ export const tokensTable = {
       name: "--message-bar-border-radius",
     },
     { value: "var(--border-radius-medium)", name: "--promo-border-radius" },
+    { value: "var(--button-border-radius)", name: "--select-border-radius" },
     { value: "var(--border-radius-circle)", name: "--toggle-border-radius" },
     {
       value: "var(--border-radius-medium)",
@@ -1183,6 +1204,7 @@ export const tokensTable = {
     { value: "var(--font-size-large)", name: "--font-size-heading-medium" },
     { value: "var(--font-size-root)", name: "--button-font-size" },
     { value: "var(--font-size-small)", name: "--button-font-size-small" },
+    { value: "var(--button-font-size)", name: "--select-font-size" },
   ],
   "font-weight": [
     { value: "normal", name: "--font-weight" },
@@ -1190,6 +1212,8 @@ export const tokensTable = {
     { value: 700, name: "--font-weight-bold" },
     { value: "var(--font-weight-semibold)", name: "--font-weight-heading" },
     { value: "var(--font-weight-semibold)", name: "--button-font-weight" },
+    { value: "var(--button-font-weight)", name: "--select-font-weight" },
+    { value: "var(--font-weight)", name: "--select-option-font-weight" },
   ],
   size: [
     { value: "var(--dimension-40)", name: "--size-image-xsmall" },
@@ -1234,6 +1258,7 @@ export const tokensTable = {
       name: "--promo-image-size-large",
     },
     { value: "2px", name: "--reorderable-list-indicator-size" },
+    { value: "var(--button-min-height)", name: "--select-min-height" },
     { value: "var(--size-item-small)", name: "--toggle-height" },
     { value: "var(--size-item-large)", name: "--toggle-width" },
     {
@@ -1645,6 +1670,16 @@ export const tokensTable = {
       },
       name: "--promo-message-text-color-vibrant",
     },
+    { value: "var(--text-color)", name: "--select-option-text-color" },
+    { value: "var(--button-text-color)", name: "--select-text-color" },
+    {
+      value: "var(--button-text-color-hover)",
+      name: "--select-text-color-hover",
+    },
+    {
+      value: "var(--button-text-color-disabled)",
+      name: "--select-text-color-disabled",
+    },
     { value: "var(--button-text-color-menu)", name: "--box-button-text-color" },
     {
       value: "var(--button-text-color-menu-hover)",
@@ -1668,6 +1703,7 @@ export const tokensTable = {
       value: "var(--promo-border-width) solid var(--promo-border-color)",
       name: "--promo-border",
     },
+    { value: "var(--button-border)", name: "--select-border" },
     {
       value: "var(--box-border-width) solid var(--box-border-color)",
       name: "--box-border",
@@ -1752,6 +1788,7 @@ export const tokensTable = {
       value: "var(--icon-color-information)",
       name: "--message-bar-icon-color",
     },
+    { value: "var(--button-icon-fill)", name: "--select-icon-fill" },
     { value: "var(--icon-color)", name: "--box-icon-fill" },
     { value: "var(--box-icon-fill)", name: "--box-icon-stroke" },
     { value: "var(--color-blue-50)", name: "--tab-loading-fill" },
@@ -1775,6 +1812,10 @@ export const tokensTable = {
         prefersContrast: 0.3,
       },
       name: "--toolbarbutton-opacity-disabled",
+    },
+    {
+      value: "var(--button-opacity-disabled)",
+      name: "--select-opacity-disabled",
     },
   ],
   "icon-size": [
@@ -2882,6 +2923,23 @@ export const variableLookupTable = {
   "reorderable-list-indicator-background-color": "var(--color-accent-primary)",
   "reorderable-list-indicator-margin": "var(--reorderable-list-indicator-size)",
   "reorderable-list-indicator-size": "2px",
+  "select-background-color": "var(--button-background-color)",
+  "select-background-color-hover": "var(--button-background-color-hover)",
+  "select-background-color-disabled": "var(--button-background-color-disabled)",
+  "select-border": "var(--button-border)",
+  "select-border-color-hover": "var(--button-border-color-hover)",
+  "select-border-color-disabled": "var(--button-border-color-disabled)",
+  "select-border-radius": "var(--button-border-radius)",
+  "select-font-size": "var(--button-font-size)",
+  "select-font-weight": "var(--button-font-weight)",
+  "select-icon-fill": "var(--button-icon-fill)",
+  "select-min-height": "var(--button-min-height)",
+  "select-opacity-disabled": "var(--button-opacity-disabled)",
+  "select-option-font-weight": "var(--font-weight)",
+  "select-option-text-color": "var(--text-color)",
+  "select-text-color": "var(--button-text-color)",
+  "select-text-color-hover": "var(--button-text-color-hover)",
+  "select-text-color-disabled": "var(--button-text-color-disabled)",
   "toggle-background-color": "var(--button-background-color)",
   "toggle-background-color-hover": "var(--button-background-color-hover)",
   "toggle-background-color-active": "var(--button-background-color-active)",
