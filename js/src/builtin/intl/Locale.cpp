@@ -1041,6 +1041,65 @@ static mozilla::Maybe<IndexAndLength> GetLocaleVariants(
 
 #ifdef NIGHTLY_BUILD
 /**
+ * Create an array which holds a single item.
+ */
+static ArrayObject* CreateArrayFromValue(JSContext* cx,
+                                         Handle<JS::Value> item) {
+  auto* array = NewDenseFullyAllocatedArray(cx, 1);
+  if (!array) {
+    return nullptr;
+  }
+  array->setDenseInitializedLength(1);
+  array->initDenseElement(0, item);
+  return array;
+}
+
+/**
+ * NumberingSystemsOfLocale ( loc )
+ *
+ * Return the commonly used numbering systems of |locale| in preference order.
+ */
+static ArrayObject* NumberingSystemsOfLocale(JSContext* cx,
+                                             Handle<LocaleObject*> locale) {
+  // Step 1.
+  Rooted<JS::Value> preferred(cx);
+  if (!GetUnicodeExtension(cx, locale, "nu", &preferred)) {
+    return nullptr;
+  }
+  MOZ_ASSERT(preferred.isString() || preferred.isUndefined());
+
+  if (preferred.isString()) {
+    return CreateArrayFromValue(cx, preferred);
+  }
+
+  // Step 2.
+  mozilla::Maybe<LanguageId> foundLocale;
+  if (auto langId = ToLanguageId(cx, locale->getBaseName())) {
+    if (!LookupMatcher(cx, AvailableLocaleKind::NumberFormat, *langId,
+                       &foundLocale)) {
+      return nullptr;
+    }
+  } else {
+    MOZ_ASSERT(GetLocaleLanguage(locale).Length() > 3);
+  }
+
+  // Steps 3-4.
+  JSString* numberingSystem;
+  if (foundLocale) {
+    numberingSystem = DefaultNumberingSystem(cx, *foundLocale);
+  } else {
+    numberingSystem = NewStringCopyZ<CanGC>(cx, "latn");
+  }
+  if (!numberingSystem) {
+    return nullptr;
+  }
+
+  // Step 5.
+  Rooted<JS::Value> value(cx, JS::StringValue(numberingSystem));
+  return CreateArrayFromValue(cx, value);
+}
+
+/**
  * TextDirectionOfLocale ( loc )
  *
  * Return the text direction of |locale|.
@@ -1442,6 +1501,30 @@ static bool Locale_toSource(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 #ifdef NIGHTLY_BUILD
+// Intl.Locale.prototype.getNumberingSystems ( )
+static bool Locale_getNumberingSystems(JSContext* cx, const CallArgs& args) {
+  MOZ_ASSERT(IsLocale(args.thisv()));
+
+  Rooted<LocaleObject*> locale(cx, &args.thisv().toObject().as<LocaleObject>());
+
+  // Step 3.
+  auto* result = NumberingSystemsOfLocale(cx, locale);
+  if (!result) {
+    return false;
+  }
+
+  args.rval().setObject(*result);
+  return true;
+}
+
+// Intl.Locale.prototype.getNumberingSystems ( )
+static bool Locale_getNumberingSystems(JSContext* cx, unsigned argc,
+                                       Value* vp) {
+  // Steps 1-2.
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsLocale, Locale_getNumberingSystems>(cx, args);
+}
+
 // Intl.Locale.prototype.getTextInfo ( )
 static bool Locale_getTextInfo(JSContext* cx, const CallArgs& args) {
   MOZ_ASSERT(IsLocale(args.thisv()));
@@ -1482,6 +1565,7 @@ static const JSFunctionSpec locale_methods[] = {
     JS_FN("toString", Locale_toString, 0, 0),
     JS_FN("toSource", Locale_toSource, 0, 0),
 #ifdef NIGHTLY_BUILD
+    JS_FN("getNumberingSystems", Locale_getNumberingSystems, 0, 0),
     JS_FN("getTextInfo", Locale_getTextInfo, 0, 0),
 #endif
     JS_FS_END,

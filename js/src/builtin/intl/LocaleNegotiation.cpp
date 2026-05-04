@@ -473,6 +473,19 @@ static bool LookupMatcher(JSContext* cx, AvailableLocaleKind availableLocales,
   return true;
 }
 
+bool js::intl::LookupMatcher(JSContext* cx,
+                             AvailableLocaleKind availableLocales,
+                             LanguageId locale,
+                             mozilla::Maybe<LanguageId>* result) {
+  auto defaultLocale = LanguageId::und();
+  if (!DefaultLocale(cx, &defaultLocale)) {
+    return false;
+  }
+
+  return BestAvailableLocale(cx, availableLocales, locale,
+                             mozilla::Some(defaultLocale), result);
+}
+
 void js::intl::LocaleOptions::trace(JSTracer* trc) {
   for (auto& extension : extensions_) {
     TraceNullableRoot(trc, &extension, "LocaleOptions::extension");
@@ -878,11 +891,8 @@ JSLinearString* js::intl::DefaultCalendar(JSContext* cx,
  * Return the default numbering system of a locale.
  */
 JSLinearString* js::intl::DefaultNumberingSystem(JSContext* cx,
-                                                 const JSLinearString* locale) {
-  auto langId = ToLanguageId(cx, locale);
-  MOZ_RELEASE_ASSERT(langId, "locale expected to be a valid data locale");
-
-  auto localeStr = langId->toString();
+                                                 LanguageId locale) {
+  auto localeStr = locale.toString();
 
   auto numberingSystem =
       mozilla::intl::NumberingSystem::TryCreate(localeStr.c_str());
@@ -898,6 +908,17 @@ JSLinearString* js::intl::DefaultNumberingSystem(JSContext* cx,
   }
 
   return NewStringCopy<CanGC>(cx, name.unwrap());
+}
+
+/**
+ * Return the default numbering system of a locale.
+ */
+JSLinearString* js::intl::DefaultNumberingSystem(JSContext* cx,
+                                                 const JSLinearString* locale) {
+  auto langId = ToLanguageId(cx, locale);
+  MOZ_RELEASE_ASSERT(langId, "locale expected to be a valid data locale");
+
+  return DefaultNumberingSystem(cx, *langId);
 }
 
 /**

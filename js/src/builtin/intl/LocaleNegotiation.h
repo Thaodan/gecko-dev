@@ -69,6 +69,12 @@ mozilla::Maybe<LanguageId> ToLanguageId(JSContext* cx,
                                         const JSLinearString* locale);
 
 /**
+ * LookupMatchingLocaleByPrefix ( availableLocales, requestedLocales )
+ */
+bool LookupMatcher(JSContext* cx, AvailableLocaleKind availableLocales,
+                   LanguageId locale, mozilla::Maybe<LanguageId>* result);
+
+/**
  * Locale data selection for ResolveLocale.
  */
 enum class LocaleData {
@@ -202,6 +208,11 @@ bool DefaultLocale(JSContext* cx, LanguageId* result);
  * Return the default calendar of a locale.
  */
 JSLinearString* DefaultCalendar(JSContext* cx, const JSLinearString* locale);
+
+/**
+ * Return the default numbering system of a locale.
+ */
+JSLinearString* DefaultNumberingSystem(JSContext* cx, LanguageId locale);
 
 /**
  * Return the default numbering system of a locale.
