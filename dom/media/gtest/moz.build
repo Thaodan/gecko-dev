@@ -48,6 +48,7 @@ UNIFIED_SOURCES += [
     "TestDriftCompensation.cpp",
     "TestGMPUtils.cpp",
     "TestGroupId.cpp",
+    "TestHDRUtils.cpp",
     "TestImageConversion.cpp",
     "TestIntervalSet.cpp",
     "TestMediaCapabilities.cpp",
