@@ -7,6 +7,8 @@
 
 #include "jit/arm64/MacroAssembler-arm64.h"
 
+#include <bit>
+
 namespace js {
 namespace jit {
 
@@ -1243,14 +1245,26 @@ void MacroAssembler::branch32(Condition cond, Register lhs, Register rhs,
 
 void MacroAssembler::branch32(Condition cond, Register lhs, Imm32 imm,
                               Label* label) {
-  if (imm.value == 0 && cond == Assembler::Equal) {
-    Cbz(ARMRegister(lhs, 32), label);
-  } else if (imm.value == 0 && cond == Assembler::NotEqual) {
-    Cbnz(ARMRegister(lhs, 32), label);
-  } else {
-    cmp32(lhs, imm);
-    B(label, cond);
+  if (imm.value == 0) {
+    switch (cond) {
+      case Assembler::Equal:
+        Cbz(ARMRegister(lhs, 32), label);
+        return;
+      case Assembler::NotEqual:
+        Cbnz(ARMRegister(lhs, 32), label);
+        return;
+      case Assembler::LessThan:
+        Tbnz(ARMRegister(lhs, 32), 31, label);
+        return;
+      case Assembler::GreaterThanOrEqual:
+        Tbz(ARMRegister(lhs, 32), 31, label);
+        return;
+      default:
+        break;
+    }
   }
+  cmp32(lhs, imm);
+  B(label, cond);
 }
 
 void MacroAssembler::branch32(Condition cond, Register lhs, const Address& rhs,
@@ -1368,14 +1382,26 @@ void MacroAssembler::branchPtr(Condition cond, Register lhs, Register rhs,
 
 void MacroAssembler::branchPtr(Condition cond, Register lhs, Imm32 rhs,
                                Label* label) {
-  if (rhs.value == 0 && cond == Assembler::Equal) {
-    Cbz(ARMRegister(lhs, 64), label);
-  } else if (rhs.value == 0 && cond == Assembler::NotEqual) {
-    Cbnz(ARMRegister(lhs, 64), label);
-  } else {
-    cmpPtr(lhs, rhs);
-    B(label, cond);
+  if (rhs.value == 0) {
+    switch (cond) {
+      case Assembler::Equal:
+        Cbz(ARMRegister(lhs, 64), label);
+        return;
+      case Assembler::NotEqual:
+        Cbnz(ARMRegister(lhs, 64), label);
+        return;
+      case Assembler::LessThan:
+        Tbnz(ARMRegister(lhs, 64), 63, label);
+        return;
+      case Assembler::GreaterThanOrEqual:
+        Tbz(ARMRegister(lhs, 64), 63, label);
+        return;
+      default:
+        break;
+    }
   }
+  cmpPtr(lhs, rhs);
+  B(label, cond);
 }
 
 void MacroAssembler::branchPtr(Condition cond, Register lhs, ImmPtr rhs,
@@ -1401,14 +1427,26 @@ void MacroAssembler::branchPtr(Condition cond, Register lhs, ImmGCPtr rhs,
 
 void MacroAssembler::branchPtr(Condition cond, Register lhs, ImmWord rhs,
                                Label* label) {
-  if (rhs.value == 0 && cond == Assembler::Equal) {
-    Cbz(ARMRegister(lhs, 64), label);
-  } else if (rhs.value == 0 && cond == Assembler::NotEqual) {
-    Cbnz(ARMRegister(lhs, 64), label);
-  } else {
-    cmpPtr(lhs, rhs);
-    B(label, cond);
+  if (rhs.value == 0) {
+    switch (cond) {
+      case Assembler::Equal:
+        Cbz(ARMRegister(lhs, 64), label);
+        return;
+      case Assembler::NotEqual:
+        Cbnz(ARMRegister(lhs, 64), label);
+        return;
+      case Assembler::LessThan:
+        Tbnz(ARMRegister(lhs, 64), 63, label);
+        return;
+      case Assembler::GreaterThanOrEqual:
+        Tbz(ARMRegister(lhs, 64), 63, label);
+        return;
+      default:
+        break;
+    }
   }
+  cmpPtr(lhs, rhs);
+  B(label, cond);
 }
 
 void MacroAssembler::branchPtr(Condition cond, const Address& lhs, Register rhs,
@@ -1699,24 +1737,43 @@ void MacroAssembler::branchTest32(Condition cond, Register lhs, Register rhs,
              cond == NotSigned);
   // The x86-biased front end prefers |test foo, foo| to |cmp foo, #0|.  We look
   // for the former pattern and expand as Cbz/Cbnz/Tbz/Tbnz when possible.
-  if (lhs == rhs && cond == Zero) {
-    Cbz(ARMRegister(lhs, 32), label);
-  } else if (lhs == rhs && cond == NonZero) {
-    Cbnz(ARMRegister(lhs, 32), label);
-  } else if (lhs == rhs && cond == Signed) {
-    Tbnz(ARMRegister(lhs, 32), 31, label);
-  } else if (lhs == rhs && cond == NotSigned) {
-    Tbz(ARMRegister(lhs, 32), 31, label);
-  } else {
-    test32(lhs, rhs);
-    B(label, cond);
+  if (lhs == rhs) {
+    switch (cond) {
+      case Zero:
+        Cbz(ARMRegister(lhs, 32), label);
+        return;
+      case NonZero:
+        Cbnz(ARMRegister(lhs, 32), label);
+        return;
+      case Signed:
+        Tbnz(ARMRegister(lhs, 32), 31, label);
+        return;
+      case NotSigned:
+        Tbz(ARMRegister(lhs, 32), 31, label);
+        return;
+      default:
+        break;
+    }
   }
+  test32(lhs, rhs);
+  B(label, cond);
 }
 
 void MacroAssembler::branchTest32(Condition cond, Register lhs, Imm32 rhs,
                                   Label* label) {
   MOZ_ASSERT(cond == Zero || cond == NonZero || cond == Signed ||
              cond == NotSigned);
+  if (cond == Zero || cond == NonZero) {
+    if (std::has_single_bit(uint32_t(rhs.value))) {
+      uint32_t bitPosition = std::countr_zero(uint32_t(rhs.value));
+      if (cond == Zero) {
+        Tbz(ARMRegister(lhs, 32), bitPosition, label);
+      } else {
+        Tbnz(ARMRegister(lhs, 32), bitPosition, label);
+      }
+      return;
+    }
+  }
   test32(lhs, rhs);
   B(label, cond);
 }
@@ -1743,28 +1800,58 @@ void MacroAssembler::branchTestPtr(Condition cond, Register lhs, Register rhs,
   // See branchTest32.
   MOZ_ASSERT(cond == Zero || cond == NonZero || cond == Signed ||
              cond == NotSigned);
-  if (lhs == rhs && cond == Zero) {
-    Cbz(ARMRegister(lhs, 64), label);
-  } else if (lhs == rhs && cond == NonZero) {
-    Cbnz(ARMRegister(lhs, 64), label);
-  } else if (lhs == rhs && cond == Signed) {
-    Tbnz(ARMRegister(lhs, 64), 63, label);
-  } else if (lhs == rhs && cond == NotSigned) {
-    Tbz(ARMRegister(lhs, 64), 63, label);
-  } else {
-    Tst(ARMRegister(lhs, 64), Operand(ARMRegister(rhs, 64)));
-    B(label, cond);
+  if (lhs == rhs) {
+    switch (cond) {
+      case Zero:
+        Cbz(ARMRegister(lhs, 64), label);
+        return;
+      case NonZero:
+        Cbnz(ARMRegister(lhs, 64), label);
+        return;
+      case Signed:
+        Tbnz(ARMRegister(lhs, 64), 63, label);
+        return;
+      case NotSigned:
+        Tbz(ARMRegister(lhs, 64), 63, label);
+        return;
+      default:
+        break;
+    }
   }
+  Tst(ARMRegister(lhs, 64), Operand(ARMRegister(rhs, 64)));
+  B(label, cond);
 }
 
 void MacroAssembler::branchTestPtr(Condition cond, Register lhs, Imm32 rhs,
                                    Label* label) {
+  if (cond == Zero || cond == NonZero) {
+    if (std::has_single_bit(uint32_t(rhs.value))) {
+      uint32_t bitPosition = std::countr_zero(uint32_t(rhs.value));
+      if (cond == Zero) {
+        Tbz(ARMRegister(lhs, 64), bitPosition, label);
+      } else {
+        Tbnz(ARMRegister(lhs, 64), bitPosition, label);
+      }
+      return;
+    }
+  }
   Tst(ARMRegister(lhs, 64), Operand(rhs.value));
   B(label, cond);
 }
 
 void MacroAssembler::branchTestPtr(Condition cond, Register lhs, ImmWord rhs,
                                    Label* label) {
+  if (cond == Zero || cond == NonZero) {
+    if (std::has_single_bit(rhs.value)) {
+      uint32_t bitPosition = std::countr_zero(rhs.value);
+      if (cond == Zero) {
+        Tbz(ARMRegister(lhs, 64), bitPosition, label);
+      } else {
+        Tbnz(ARMRegister(lhs, 64), bitPosition, label);
+      }
+      return;
+    }
+  }
   Tst(ARMRegister(lhs, 64), Operand(rhs.value));
   B(label, cond);
 }
