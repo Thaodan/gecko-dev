@@ -98,30 +98,71 @@ add_task(async function () {
   });
 
   await selectNode(".color-mix", inspector);
+  const colorWithColorMixProperty = getRuleViewProperty(
+    view,
+    ".color-mix",
+    "color"
+  );
+  await checkColorPickerConstrastData({
+    view,
+    label: "Displays contrast information on resulting color from color-mix()",
+    // color: color-mix(in srgb, blue, var(--title-color) 50%);
+    ruleViewPropertyEl: colorWithColorMixProperty,
+    swatchIndex: 0,
+    expectVisibleContrast: true,
+    expectedContrastValueResult: "AAA",
+    expectedContrastValueTitle:
+      "Meets WCAG AAA standards for accessible text. Calculated against background: rgba(238,238,238,1)",
+    expectedContrastValueScore: "13.80",
+  });
   await checkColorPickerConstrastData({
     view,
     label:
       "Does not displays contrast information on color within color-mix function (#1)",
-    ruleViewPropertyEl: getRuleViewProperty(view, ".color-mix", "color"),
-    swatchIndex: 0,
+    // color: color-mix(in srgb, blue, var(--title-color) 50%);
+    ruleViewPropertyEl: colorWithColorMixProperty,
+    // This is for `blue`
+    swatchIndex: 1,
     expectVisibleContrast: false,
   });
   await checkColorPickerConstrastData({
     view,
     label:
       "Does not displays contrast information on color within color-mix function (#2)",
-    ruleViewPropertyEl: getRuleViewProperty(view, ".color-mix", "color"),
-    swatchIndex: 1,
+    // color: color-mix(in srgb, blue, var(--title-color) 50%);
+    ruleViewPropertyEl: colorWithColorMixProperty,
+    // This is for `var(--title-color)`
+    swatchIndex: 2,
     expectVisibleContrast: false,
   });
 
   await selectNode(".contrast-color", inspector);
+  const colorWithContrastColorProperty = getRuleViewProperty(
+    view,
+    ".contrast-color",
+    "color"
+  );
+  await checkColorPickerConstrastData({
+    view,
+    label:
+      "Displays contrast information on resulting color from contrast-color()",
+    // color: contrast-color(gold)
+    ruleViewPropertyEl: colorWithContrastColorProperty,
+    swatchIndex: 0,
+    expectVisibleContrast: true,
+    expectedContrastValueResult: "AAA",
+    expectedContrastValueTitle:
+      "Meets WCAG AAA standards for accessible text. Calculated against background: rgba(238,238,238,1)",
+    expectedContrastValueScore: "18.10",
+  });
   await checkColorPickerConstrastData({
     view,
     label:
       "Does not displays contrast information on color within `contrast-color` function",
-    ruleViewPropertyEl: getRuleViewProperty(view, ".contrast-color", "color"),
-    swatchIndex: 0,
+    // color: contrast-color(gold)
+    ruleViewPropertyEl: colorWithContrastColorProperty,
+    // This is for `gold`
+    swatchIndex: 1,
     expectVisibleContrast: false,
   });
 });
