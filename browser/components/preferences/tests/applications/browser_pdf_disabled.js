@@ -16,7 +16,9 @@ add_task(async function pdfIsAlwaysPresent() {
 
     let appHandlerInitialized = TestUtils.topicObserved("app-handler-loaded");
 
-    await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
+    await openPreferencesViaOpenPreferencesAPI("downloads", {
+      leaveOpen: true,
+    });
 
     await appHandlerInitialized;
 
