@@ -114,7 +114,7 @@ class IPPFxaAuthProviderSingleton extends IPPAuthProvider {
       return {};
     }
     using tokenHandle = await this.getToken();
-    return IPPFxaAuthProviderSingleton.#fetchEntitlement(
+    return await IPPFxaAuthProviderSingleton.#fetchEntitlement(
       this.guardian,
       tokenHandle
     );
@@ -227,12 +227,12 @@ class IPPFxaAuthProviderSingleton extends IPPAuthProvider {
 
   async fetchProxyPass(abortSignal = null) {
     using tokenHandle = await this.getToken(abortSignal);
-    return this.#guardian.fetchProxyPass(tokenHandle, abortSignal);
+    return await this.#guardian.fetchProxyPass(tokenHandle, abortSignal);
   }
 
   async fetchProxyUsage(abortSignal = null) {
     using tokenHandle = await this.getToken(abortSignal);
-    return this.#guardian.fetchProxyUsage(tokenHandle, abortSignal);
+    return await this.#guardian.fetchProxyUsage(tokenHandle, abortSignal);
   }
 
   get excludedUrlPrefs() {
