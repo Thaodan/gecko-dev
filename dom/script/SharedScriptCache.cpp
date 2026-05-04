@@ -237,8 +237,9 @@ NS_IMPL_ISUPPORTS(ScriptLoadData, nsISupports)
 
 ScriptLoadData::ScriptLoadData(ScriptLoader* aLoader,
                                JS::loader::ScriptLoadRequest* aRequest,
+                               CacheExpirationTime aExpirationTime,
                                JS::loader::LoadedScript* aLoadedScript)
-    : mExpirationTime(aRequest->ExpirationTime()),
+    : mExpirationTime(aExpirationTime),
       mLoader(aLoader),
       mKey(aLoader, aRequest, aRequest->ReferrerPolicy(),
            aRequest->FetchOptions(), aLoadedScript->GetURI()),

@@ -343,7 +343,7 @@ class LoadedScript : public nsISupports {
     return IsTextSource() || IsCachedStencil() || IsInvalidatedCachedStencil();
   }
 
-  bool HasSRI() {
+  bool HasSRI() const {
     MOZ_ASSERT(CanHaveSRIOnly());
     return !mSRIAndSerializedStencil.empty();
   }
@@ -458,6 +458,17 @@ class LoadedScript : public nsISupports {
   // Returns true if this script has compatible SRI metadata as the provided
   // one.
   bool IsSRIMetadataReusableBy(const mozilla::dom::SRIMetadata& aSRIMetadata);
+
+  // Clone an existing ModuleScript to a cache-able LoadedScript, which does
+  // not capture any GC references.
+  // SharedScriptCache is JSContext-agnostic, and it cannot hold any GC
+  // references.
+  //
+  // When putting a ModuleScript into the SharedScriptCache, it should be
+  // converted into LoadedScript with this method, and when the cached module
+  // is found in subsequent loads, the script should be cloned back to a new
+  // ModuleScript with ModuleScript::FromCache below.
+  LoadedScript* ModuleScriptToCache();
 
  public:
   // Fields.
@@ -757,7 +768,6 @@ class ModuleScript final : public LoadedScript {
   // mozilla::dom::SharedScriptCache.
   static already_AddRefed<ModuleScript> FromCache(const LoadedScript& aScript,
                                                   ScriptFetchInfo* aFetchInfo);
-  already_AddRefed<LoadedScript> ToCache();
 
   void SetModuleRecord(Handle<JSObject*> aModuleRecord);
   void SetParseError(const Value& aError);

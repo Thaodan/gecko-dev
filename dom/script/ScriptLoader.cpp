@@ -3615,16 +3615,21 @@ void ScriptLoader::TryCacheRequest(ScriptLoadRequest* aRequest) {
     cacheBehavior = CacheBehavior::Evict;
   }
 
-  LoadedScript* loadedScript = aRequest->getLoadedScript();
   if (cacheBehavior == CacheBehavior::Insert) {
-    loadedScript->SetSRIMetadata(aRequest->mIntegrity);
-    auto loadData = MakeRefPtr<ScriptLoadData>(this, aRequest, loadedScript);
+    LoadedScript* loadedScript = aRequest->getLoadedScript();
+    CacheExpirationTime expirationTime = aRequest->ExpirationTime();
     loadedScript->ConvertToCachedStencil(aRequest->GetStencil(),
                                          aRequest->ReferrerPolicy(),
                                          aRequest->BaseURL());
     if (loadedScript->mFetchCount == 0) {
       loadedScript->mFetchCount = 1;
     }
+    if (loadedScript->IsModuleScript()) {
+      loadedScript = loadedScript->ModuleScriptToCache();
+    }
+    loadedScript->SetSRIMetadata(aRequest->mIntegrity);
+    auto loadData = MakeRefPtr<ScriptLoadData>(this, aRequest, expirationTime,
+                                               loadedScript);
     mCache->Insert(*loadData);
     mCache->OnEntryInserted();
     LOG(("ScriptLoader (%p): Inserting in-memory cache for %s.", this,
@@ -3636,7 +3641,7 @@ void ScriptLoader::TryCacheRequest(ScriptLoadRequest* aRequest) {
 
     MOZ_ASSERT(cacheBehavior == CacheBehavior::Evict);
     ScriptHashKey key(this, aRequest, aRequest->ReferrerPolicy(),
-                      aRequest->FetchOptions(), loadedScript->GetURI());
+                      aRequest->FetchOptions(), aRequest->URI());
     mCache->Evict(key);
     LOG(("ScriptLoader (%p): Evicting in-memory cache for %s.", this,
          aRequest->URI()->GetSpecOrDefault().get()));
