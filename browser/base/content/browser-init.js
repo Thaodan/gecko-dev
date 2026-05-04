@@ -259,19 +259,26 @@ var gBrowserInit = {
       window
     );
 
-    gBrowser = new window.Tabbrowser();
-    gBrowser.init();
+    // This adds gBrowser to the global scope.
+    BrowserUtils.callModulesFromCategory(
+      {
+        categoryName: "browser-window-domcontentloaded-tabbrowser",
+        jsGlobal: globalThis,
+      },
+      window
+    );
     gURLBar.addGBrowserListeners();
     if (Services.prefs.getBoolPref("browser.search.widget.new", false)) {
       document.getElementById("searchbar-new")?.addGBrowserListeners();
     }
 
     BrowserUtils.callModulesFromCategory(
-      { categoryName: "browser-window-domcontentloaded" },
+      {
+        categoryName: "browser-window-domcontentloaded",
+        jsGlobal: globalThis,
+      },
       window
     );
-
-    FirefoxViewHandler.init();
 
     gURLBar.initPlaceHolder();
 
@@ -291,8 +298,6 @@ var gBrowserInit = {
     updateFxaToolbarMenu(gFxaToolbarEnabled, true);
 
     updatePrintCommands(gPrintEnabled);
-
-    gUnifiedExtensions.init();
 
     // Setting the focus will cause a style flush, it's preferable to call anything
     // that will modify the DOM from within this function before this call.
@@ -1198,7 +1203,6 @@ var gBrowserInit = {
     gSync.uninit();
 
     gExtensionsNotifications.uninit();
-    gUnifiedExtensions.uninit();
 
     try {
       gBrowser.removeProgressListener(window.XULBrowserWindow);
@@ -1227,7 +1231,10 @@ var gBrowserInit = {
       "moz-src:///browser/components/genai/LinkPreview.sys.mjs"
     ).LinkPreview.teardown(window);
 
-    FirefoxViewHandler.uninit();
+    BrowserUtils.callModulesFromCategory(
+      { categoryName: "browser-window-unload", jsGlobal: globalThis },
+      window
+    );
 
     // Now either cancel delayedStartup, or clean up the services initialized from
     // it.
@@ -1298,15 +1305,20 @@ var gBrowserInit = {
       PanelUI.uninit();
     }
 
-    // Final window teardown, do this last.
-    gBrowser.destroy();
+    BrowserUtils.callModulesFromCategory(
+      {
+        categoryName: "browser-window-unload-tabbrowser",
+        jsGlobal: globalThis,
+      },
+      window
+    );
     window.XULBrowserWindow = null;
     window.docShell.treeOwner
       .QueryInterface(Ci.nsIInterfaceRequestor)
       .getInterface(Ci.nsIAppWindow).XULBrowserWindow = null;
 
     BrowserUtils.callModulesFromCategory(
-      { categoryName: "browser-window-unload" },
+      { categoryName: "browser-window-final-unload", jsGlobal: globalThis },
       window
     );
   },
