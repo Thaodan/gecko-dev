@@ -28,8 +28,8 @@ toolbar[overflowable][customizing] > .customization-target {
 #customization-container {
   flex-direction: column;
   min-height: 0;
-  background-color: var(--toolbar-bgcolor);
-  color: var(--toolbar-color);
+  background-color: var(--toolbar-background-color);
+  color: var(--toolbar-text-color);
   color-scheme: var(--toolbar-color-scheme);
 
   &:not([hidden]) {

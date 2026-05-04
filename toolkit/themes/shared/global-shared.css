@@ -43,7 +43,7 @@
     }
   }
 
-  /* This color scheme should match --toolbar-color. However, note that
+  /* This color scheme should match --toolbar-text-color. However, note that
    * individual toolbars might override this (see ToolbarIconColor and the
    * brighttext attribute). */
   --toolbar-color-scheme: light dark;
