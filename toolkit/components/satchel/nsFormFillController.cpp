@@ -892,25 +892,18 @@ nsresult nsFormFillController::HandleFocus(Element* aElement) {
 
   bool shouldShowPopup = false;
 
-  if (mControlledElement && !mAutoCompleteActive) {
-    nsFocusManager* fm = nsFocusManager::GetFocusManager();
-    uint32_t focusMethod = fm ? fm->GetLastFocusMethod(nullptr) : 0;
-    if (focusMethod & nsIFocusManager::FLAG_BYKEY) {
-      // Focus arrived via Tab/keyboard navigation; don't show the popup.
-    } else if (mLastRightClickTimeStamp.IsNull()) {
-      // If this focus doesn't follow a right click within our specified
-      // threshold then show the autocomplete popup for all password fields.
-      // This is done to avoid showing both the context menu and the popup
-      // at the same time.
-      if (HasBeenTypePassword(mControlledElement)) {
+  // If we have not seen a right click yet, just show the popup.
+  if (mControlledElement) {
+    if (HasBeenTypePassword(mControlledElement)) {
+      if (mLastRightClickTimeStamp.IsNull()) {
         mPasswordPopupAutomaticallyOpened = true;
-      }
-      shouldShowPopup = true;
-    } else {
-      uint64_t timeDiff =
-          (TimeStamp::Now() - mLastRightClickTimeStamp).ToMilliseconds();
-      if (timeDiff > mFocusAfterRightClickThreshold) {
         shouldShowPopup = true;
+      } else {
+        uint64_t timeDiff =
+            (TimeStamp::Now() - mLastRightClickTimeStamp).ToMilliseconds();
+        if (timeDiff > mFocusAfterRightClickThreshold) {
+          shouldShowPopup = true;
+        }
       }
     }
   }

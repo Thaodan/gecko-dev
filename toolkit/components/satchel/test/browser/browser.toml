@@ -2,7 +2,6 @@
 support-files = [
   "!/toolkit/components/satchel/test/subtst_privbrowsing.html",
   "formhistory_autocomplete.sqlite",
-  "login_form.html",
 ]
 
 ["browser_autocomplete.js"]
@@ -14,8 +13,6 @@ support-files = [
 skip-if = [
   "verify-standalone",
 ]
-
-["browser_popup_no_open_on_tab.js"]
 
 ["browser_privbrowsing_perwindowpb.js"]
 skip-if = [
