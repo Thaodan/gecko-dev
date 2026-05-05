@@ -245,7 +245,7 @@ WASM_DECLARE_CACHEABLE_POD(FuncDesc);
 using FuncDescVector = Vector<FuncDesc, 0, SystemAllocPolicy>;
 
 struct CallRefMetricsRange {
-  explicit CallRefMetricsRange() {}
+  explicit CallRefMetricsRange() = default;
   explicit CallRefMetricsRange(uint32_t begin, uint32_t length)
       : begin(begin), length(length) {}
 
@@ -258,7 +258,7 @@ struct CallRefMetricsRange {
 };
 
 struct AllocSitesRange {
-  explicit AllocSitesRange() {}
+  explicit AllocSitesRange() = default;
   explicit AllocSitesRange(uint32_t begin, uint32_t length)
       : begin(begin), length(length) {}
 
