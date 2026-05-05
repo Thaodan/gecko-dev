@@ -407,6 +407,7 @@ class TabManagementFragment : Fragment() {
                                     handleContentDescription = stringResource(
                                         id = R.string.tab_group_sheet_dismiss_description,
                                     ),
+                                    showBetaLabel = true,
                                 ),
                             ) { args ->
                                 val expandedGroup by tabsTrayStore.observeTabGroup(tabGroup = args.group)
@@ -459,6 +460,7 @@ class TabManagementFragment : Fragment() {
                                     handleContentDescription = stringResource(
                                         id = R.string.edit_tab_group_bottom_sheet_grabber_content_description,
                                     ),
+                                    showBetaLabel = true,
                                 ),
                             ) {
                                 EditTabGroup(tabsTrayStore = tabsTrayStore)
@@ -469,6 +471,7 @@ class TabManagementFragment : Fragment() {
                                     handleContentDescription = stringResource(
                                         id = R.string.add_to_tab_group_bottom_sheet_grabber_content_description,
                                     ),
+                                    showBetaLabel = true,
                                 ),
                             ) {
                                 AddToTabGroup(
