@@ -35,6 +35,9 @@ extern uint32_t MIRTypeToABIResultSize(jit::MIRType);
 
 namespace jit {
 
+// For a defaultable wasm type, synthesize the default constant value.
+MInstruction* NewWasmDefaultConstant(TempAllocator& alloc, wasm::ValType type);
+
 class MWasmNullConstant : public MNullaryInstruction {
   mozilla::Maybe<wasm::RefTypeHierarchy> hierarchy_;
 
@@ -3382,33 +3385,6 @@ class MWasmRefConvertAnyExtern : public MUnaryInstruction,
   AliasSet getAliasSet() const override { return AliasSet::None(); }
 };
 
-// Represents the contents of all fields of a wasm struct.
-// This class will be used for scalar replacement of wasm structs.
-class MWasmStructState : public TempObject {
- private:
-  MDefinition* wasmStruct_;
-  // Represents the fields of this struct.
-  Vector<MDefinition*, 0, JitAllocPolicy> fields_;
-
-  explicit MWasmStructState(TempAllocator& alloc, MDefinition* structObject)
-      : wasmStruct_(structObject), fields_(alloc) {}
-
- public:
-  static MWasmStructState* New(TempAllocator& alloc, MDefinition* structObject);
-  static MWasmStructState* Copy(TempAllocator& alloc, MWasmStructState* state);
-
-  // Init the fields_ vector.
-  [[nodiscard]] bool init();
-
-  size_t numFields() const { return fields_.length(); }
-  MDefinition* wasmStruct() const { return wasmStruct_; }
-
-  // Get the field value based on the position of the field in the struct.
-  MDefinition* getField(uint32_t index) const { return fields_[index]; }
-  // Set the field offset based on the position of the field in the struct.
-  void setField(uint32_t index, MDefinition* def) { fields_[index] = def; }
-};
-
 class MWasmNewStructObject : public MBinaryInstruction,
                              public NoTypePolicy::Data {
  private:
@@ -3447,6 +3423,35 @@ class MWasmNewStructObject : public MBinaryInstruction,
   bool zeroFields() const { return zeroFields_; }
   const wasm::TrapSiteDesc& trapSiteDesc() const { return trapSiteDesc_; }
   gc::AllocKind allocKind() const { return typeDef_->structType().allocKind_; }
+};
+
+// Represents the contents of all fields of a wasm struct.
+// This class will be used for scalar replacement of wasm structs.
+class MWasmStructState : public TempObject {
+ private:
+  MWasmNewStructObject* wasmStruct_;
+  // Represents the fields of this struct.
+  Vector<MDefinition*, 0, JitAllocPolicy> fields_;
+
+  explicit MWasmStructState(TempAllocator& alloc,
+                            MWasmNewStructObject* structObject)
+      : wasmStruct_(structObject), fields_(alloc) {}
+
+  // Init the fields_ vector.
+  [[nodiscard]] bool init(TempAllocator& alloc);
+
+ public:
+  static MWasmStructState* New(TempAllocator& alloc,
+                               MWasmNewStructObject* structObject);
+  static MWasmStructState* Copy(TempAllocator& alloc, MWasmStructState* state);
+
+  size_t numFields() const { return fields_.length(); }
+  MWasmNewStructObject* wasmStruct() const { return wasmStruct_; }
+
+  // Get the field value based on the position of the field in the struct.
+  MDefinition* getField(uint32_t index) const { return fields_[index]; }
+  // Set the field offset based on the position of the field in the struct.
+  void setField(uint32_t index, MDefinition* def) { fields_[index] = def; }
 };
 
 class MWasmNewArrayObject : public MTernaryInstruction,
