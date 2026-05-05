@@ -243,6 +243,16 @@ void gfxPlatformGtk::InitPlatformHardwareVideoConfig() {
     return;
   }
 
+#ifdef MOZ_WIDGET_GTK
+  // On X11, query EGL for P010/NV12 modifiers now that we know hardware video
+  // decoding is enabled.  Doing this unconditionally at DMABuf init time causes
+  // an ~80 ms EGL initialisation cost on every startup even when video decoding
+  // is disabled (Bug 2036839).
+  if (!GdkIsWaylandDisplay()) {
+    GetGlobalDMABufFormats()->AppendEGLVideoModifiers();
+  }
+#endif
+
   // Configure zero-copy playback feature.
   FeatureState& featureZeroCopy =
       gfxConfig::GetFeature(Feature::HW_DECODED_VIDEO_ZERO_COPY);
