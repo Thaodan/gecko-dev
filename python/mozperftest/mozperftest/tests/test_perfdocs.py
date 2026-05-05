@@ -953,7 +953,7 @@ def test_perfdocs_logger_warning_restricted_skips_non_matching(structured_logger
     perfdocs_logger.warning("msg", ["/other/path/file.py"], restricted=True)  # noqa: PLE1205
 
     assert not mock_logger.lint_error.called
-    assert not PerfDocLogger.FAILED
+    assert PerfDocLogger.FAILED
 
 
 def test_perfdocs_logger_warning_unrestricted(structured_logger):

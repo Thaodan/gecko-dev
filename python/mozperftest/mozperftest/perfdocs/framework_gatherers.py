@@ -552,15 +552,20 @@ class TalosGatherer(FrameworkGatherer):
                     ).append(item)
 
     def get_test_list(self):
+        import inspect
+
         from talos import test as talos_test
 
         test_lists = talos_test.test_dict()
         mod = __import__("talos.test", fromlist=test_lists)
+        mod_path = inspect.getfile(mod)
 
         suite_name = "Talos Tests"
 
         for test in test_lists:
-            self._test_list.setdefault(suite_name, {}).update({test: {}})
+            self._test_list.setdefault(suite_name, {}).update({
+                test: {"path": mod_path}
+            })
 
             klass = getattr(mod, test)
             self._descriptions.setdefault(test, klass.__dict__)

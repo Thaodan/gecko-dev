@@ -92,3 +92,5 @@ def run_perfdocs(config, logger=None, paths=None, generate=True):
         # `generate` dictates whether or not the documentation is generated.
         generator = Generator(verifier, generate=generate, workspace=top_dir)
         generator.generate_perfdocs()
+
+    return PerfDocLogger.FAILED

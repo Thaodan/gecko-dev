@@ -79,7 +79,9 @@ class Gatherer:
         """
         exclude_dir = [
             str(pathlib.Path(self.workspace_dir, ".hg")),
-            str(pathlib.Path(self.workspace_dir, "python", "mozperftest")),
+            str(
+                pathlib.Path(self.workspace_dir, "python", "mozperftest", "mozperftest")
+            ),
             str(pathlib.Path(self.workspace_dir, "testing", "perfdocs")),
         ]
 
