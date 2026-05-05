@@ -148,9 +148,9 @@ add_task(
     });
 
     let hasUpgradedEventPromise = waitForEvent(
-      IPPEnrollAndEntitleManager,
-      "IPPEnrollAndEntitleManager:StateChanged",
-      () => IPPEnrollAndEntitleManager.hasUpgraded
+      IPProtectionService.authProvider,
+      "IPPAuthProvider:StateChanged",
+      () => IPProtectionService.authProvider.hasUpgraded
     );
 
     await IPPEnrollAndEntitleManager.refetchEntitlement();
@@ -158,7 +158,7 @@ add_task(
     await hasUpgradedEventPromise;
 
     Assert.ok(
-      IPPEnrollAndEntitleManager.hasUpgraded,
+      IPProtectionService.authProvider.hasUpgraded,
       "hasUpgraded should be true"
     );
 
@@ -183,8 +183,8 @@ add_task(
     IPPFxaAuthProvider.getEntitlement.resolves({ error: "invalid_response" });
 
     let hasUpgradedEventPromise = waitForEvent(
-      IPPEnrollAndEntitleManager,
-      "IPPEnrollAndEntitleManager:StateChanged"
+      IPProtectionService.authProvider,
+      "IPPAuthProvider:StateChanged"
     );
 
     await IPPEnrollAndEntitleManager.refetchEntitlement();
@@ -192,7 +192,7 @@ add_task(
     await hasUpgradedEventPromise;
 
     Assert.ok(
-      !IPPEnrollAndEntitleManager.hasUpgraded,
+      !IPProtectionService.authProvider.hasUpgraded,
       "hasUpgraded should be false"
     );
 
@@ -224,7 +224,7 @@ add_task(async function test_IPProtectionService_hasUpgraded_signed_out() {
   await signedOutEventPromise;
 
   Assert.ok(
-    !IPPEnrollAndEntitleManager.hasUpgraded,
+    !IPProtectionService.authProvider.hasUpgraded,
     "hasUpgraded should be false in after signing out"
   );
 
@@ -316,8 +316,8 @@ add_task(
     await IPPEnrollAndEntitleManager.updateEntitlement();
 
     let stateChangedFired = false;
-    IPPEnrollAndEntitleManager.addEventListener(
-      "IPPEnrollAndEntitleManager:StateChanged",
+    IPProtectionService.authProvider.addEventListener(
+      "IPPAuthProvider:StateChanged",
       () => {
         stateChangedFired = true;
       },
@@ -368,8 +368,8 @@ add_task(async function test_isEnrolling_during_maybeEnrollAndEntitle() {
   );
 
   let stateChangedFired = false;
-  IPPEnrollAndEntitleManager.addEventListener(
-    "IPPEnrollAndEntitleManager:StateChanged",
+  IPProtectionService.authProvider.addEventListener(
+    "IPPAuthProvider:StateChanged",
     () => {
       stateChangedFired = true;
     },

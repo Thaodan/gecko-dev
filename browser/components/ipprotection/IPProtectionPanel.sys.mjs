@@ -328,7 +328,7 @@ export class IPProtectionPanel {
       location: lazy.EGRESS_LOCATION || null,
       locationsList: lazy.IPProtectionServerlist.countries,
       error: "",
-      hasUpgraded: lazy.IPPEnrollAndEntitleManager.hasUpgraded,
+      hasUpgraded: lazy.IPProtectionService.authProvider.hasUpgraded,
       onboardingMessage: "",
       bandwidthWarning: false,
       paused: lazy.IPPProxyManager.state === lazy.IPPProxyStates.PAUSED,
@@ -832,8 +832,8 @@ export class IPProtectionPanel {
       "IPPUsageHelper:StateChanged",
       this.handleEvent
     );
-    lazy.IPPEnrollAndEntitleManager.addEventListener(
-      "IPPEnrollAndEntitleManager:StateChanged",
+    lazy.IPProtectionService.authProvider.addEventListener(
+      "IPPAuthProvider:StateChanged",
       this.handleEvent
     );
     lazy.IPPExceptionsManager.addEventListener(
@@ -847,8 +847,8 @@ export class IPProtectionPanel {
   }
 
   #removeProxyListeners() {
-    lazy.IPPEnrollAndEntitleManager.removeEventListener(
-      "IPPEnrollAndEntitleManager:StateChanged",
+    lazy.IPProtectionService.authProvider.removeEventListener(
+      "IPPAuthProvider:StateChanged",
       this.handleEvent
     );
     lazy.IPPProxyManager.removeEventListener(
@@ -1045,7 +1045,7 @@ export class IPProtectionPanel {
     } else if (
       event.type == "IPPProxyManager:StateChanged" ||
       event.type == "IPProtectionService:StateChanged" ||
-      event.type === "IPPEnrollAndEntitleManager:StateChanged"
+      event.type === "IPPAuthProvider:StateChanged"
     ) {
       let errorType = "";
       if (lazy.IPPProxyManager.state === lazy.IPPProxyStates.ERROR) {
@@ -1058,7 +1058,7 @@ export class IPProtectionPanel {
           lazy.IPProtectionStates.UNAUTHENTICATED,
         isProtectionEnabled:
           lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE,
-        hasUpgraded: lazy.IPPEnrollAndEntitleManager.hasUpgraded,
+        hasUpgraded: lazy.IPProtectionService.authProvider.hasUpgraded,
         error: errorType,
         isActivating:
           lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVATING,

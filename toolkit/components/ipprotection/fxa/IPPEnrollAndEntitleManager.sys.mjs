@@ -17,7 +17,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
  * Manages enrollment and entitlement for the IP Protection proxy service.
  * Delegates enrollment and entitlement fetching to the active auth provider.
  */
-class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
+class IPPEnrollAndEntitleManagerSingleton {
   #entitlement = null;
   #signInWatcher = null;
 
@@ -26,8 +26,6 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
   #entitlementPromise = null;
 
   constructor() {
-    super();
-
     this.handleEvent = this.#handleEvent.bind(this);
   }
 
@@ -106,8 +104,8 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
 
     // Notify listeners that an entitlement check has started so they can
     // react to isCheckingEntitlement becoming true.
-    this.dispatchEvent(
-      new CustomEvent("IPPEnrollAndEntitleManager:StateChanged", {
+    lazy.IPProtectionService.authProvider.dispatchEvent(
+      new CustomEvent("IPPAuthProvider:StateChanged", {
         bubbles: true,
         composed: true,
       })
@@ -124,8 +122,8 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
 
     // Notify listeners that the entitlement check has completed so they can
     // react to isCheckingEntitlement becoming false.
-    this.dispatchEvent(
-      new CustomEvent("IPPEnrollAndEntitleManager:StateChanged", {
+    lazy.IPProtectionService.authProvider.dispatchEvent(
+      new CustomEvent("IPPAuthProvider:StateChanged", {
         bubbles: true,
         composed: true,
       })
@@ -158,8 +156,8 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
 
     // By the time enrollingPromise is unset, notify listeners so that they
     // can react to isEnrolling becoming false.
-    this.dispatchEvent(
-      new CustomEvent("IPPEnrollAndEntitleManager:StateChanged", {
+    lazy.IPProtectionService.authProvider.dispatchEvent(
+      new CustomEvent("IPPAuthProvider:StateChanged", {
         bubbles: true,
         composed: true,
       })
@@ -237,8 +235,8 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
 
     lazy.IPProtectionService.updateState();
 
-    this.dispatchEvent(
-      new CustomEvent("IPPEnrollAndEntitleManager:StateChanged", {
+    lazy.IPProtectionService.authProvider.dispatchEvent(
+      new CustomEvent("IPPAuthProvider:StateChanged", {
         bubbles: true,
         composed: true,
       })
@@ -250,15 +248,6 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
    */
   get isEnrolledAndEntitled() {
     return !!this.#entitlement;
-  }
-
-  /**
-   * Checks if a user has upgraded.
-   *
-   * @returns {boolean}
-   */
-  get hasUpgraded() {
-    return this.#entitlement?.subscribed;
   }
 
   /**

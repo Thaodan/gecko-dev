@@ -9,9 +9,14 @@
  * The default implementations are safe no-ops that keep the service in an
  * unauthenticated/inactive state.
  */
-export class IPPAuthProvider {
+export class IPPAuthProvider extends EventTarget {
   /** Returns whether the user is authenticated and ready to use the proxy. */
   get isReady() {
+    return false;
+  }
+
+  /** Returns whether the user has a VPN subscription. */
+  get hasUpgraded() {
     return false;
   }
 
