@@ -72,7 +72,7 @@ class Gatherer:
                     "rst": Name of the RST file.
                     "static": Name of the static file.
                 }, ...
-            ]
+                ]
 
         This method doesn't return anything. The result can be found in
         the perfdocs_tree attribute.
