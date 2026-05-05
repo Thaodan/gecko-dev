@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { ASRouterPreferences } from "resource:///modules/asrouter/ASRouterPreferences.sys.mjs";
-import { ASRouterScreenUtils } from "resource:///modules/asrouter/ASRouterScreenUtils.sys.mjs";
 import { MESSAGE_TYPE_HASH as msg } from "resource:///modules/asrouter/ActorConstants.mjs";
 
 export class ASRouterParentProcessMessageHandler {
@@ -155,12 +154,6 @@ export class ASRouterParentProcessMessageHandler {
       case msg.EDIT_STATE: {
         const [[key, value]] = Object.entries(data);
         return this._router.editState(key, value);
-      }
-      case msg.AW_EVALUATE_SCREEN_TARGETING: {
-        return ASRouterScreenUtils.evaluateTargetingAndRemoveScreens(data);
-      }
-      case msg.AW_ADD_SCREEN_IMPRESSION: {
-        return ASRouterScreenUtils.addScreenImpression(data);
       }
       default: {
         return Promise.reject(new Error(`Unknown message received: ${name}`));
