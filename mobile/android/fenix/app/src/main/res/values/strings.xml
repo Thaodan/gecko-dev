@@ -314,8 +314,8 @@
     <string name="preferences_ai_controls">AI controls</string>
     <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
     <string name="ai_controls_banner_headline">You always have a choice in %s</string>
-    <!-- Supporting text for the AI controls banner -->
-    <string name="ai_controls_banner_supporting_text">That includes whether to use features enhanced with AI.</string>
+    <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+    <string name="ai_controls_banner_supporting_text_2">That includes whether to use features enhanced with AI. %s</string>
     <!-- Link text for learning more about AI controls -->
     <string name="ai_controls_learn_more">Learn more</string>
     <!-- Title for the block AI enhancements toggle -->

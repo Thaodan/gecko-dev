@@ -35,7 +35,7 @@ import mozilla.components.ui.icons.R as iconsR
 /**
  * Card for presenting promotional messages.
  *
- * @param description The primary piece of text.
+ * @param description The optional description text shown in the body of the card.
  * @param modifier The [Modifier] to be applied to the card.
  * @param title The optional header text shown above the [description].
  * @param footer An optional piece of text with a clickable link.
@@ -50,7 +50,7 @@ import mozilla.components.ui.icons.R as iconsR
  */
 @Composable
 fun PromoCard(
-    description: String,
+    description: String?,
     modifier: Modifier = Modifier,
     title: String? = null,
     footer: Pair<String, LinkTextState>? = null,
@@ -63,12 +63,15 @@ fun PromoCard(
     PromoCard(
         modifier = modifier,
         title = title?.let { titleText -> { Text(text = titleText) } },
-        message = { Text(text = remember(description) { parseHtml(description) }) },
+        message = { description?.let { Text(text = remember(description) { parseHtml(description) }) } },
         actions = footer?.let { (footerText, linkState) ->
             {
                 LinkText(
                     text = footerText,
                     linkTextStates = listOf(linkState),
+                    style = FirefoxTheme.typography.body2.copy(
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
                     linkTextColor = colors.actionsTextColor,
                     linkTextDecoration = TextDecoration.Underline,
                 )
