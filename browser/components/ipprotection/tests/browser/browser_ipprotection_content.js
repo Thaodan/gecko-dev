@@ -233,7 +233,7 @@ add_task(async function test_settings_button_closes_panel() {
 add_task(async function test_enrolling_skeleton() {
   let content = await openPanel({
     unauthenticated: false,
-    isCheckingEntitlement: true,
+    isEnrolling: true,
   });
 
   let container = content.shadowRoot.querySelector("#enrolling-container");
@@ -274,7 +274,7 @@ add_task(async function test_enrolling_skeleton() {
 add_task(async function test_enrolling_overrides_unauthenticated() {
   let content = await openPanel({
     unauthenticated: true,
-    isCheckingEntitlement: true,
+    isEnrolling: true,
   });
 
   Assert.ok(
@@ -309,7 +309,7 @@ add_task(async function test_enrolling_transitions_to_ready() {
   let content = await openPanel({
     unauthenticated: false,
     isProtectionEnabled: false,
-    isCheckingEntitlement: true,
+    isEnrolling: true,
   });
 
   Assert.ok(
@@ -320,7 +320,7 @@ add_task(async function test_enrolling_transitions_to_ready() {
   await setPanelState({
     unauthenticated: false,
     isProtectionEnabled: false,
-    isCheckingEntitlement: false,
+    isEnrolling: false,
   });
 
   Assert.ok(

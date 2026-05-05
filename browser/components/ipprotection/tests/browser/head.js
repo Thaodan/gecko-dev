@@ -111,7 +111,7 @@ async function openPanel(state, win = window) {
   let panel = IPProtection.getPanel(win);
   if (state) {
     panel.setState({
-      isCheckingEntitlement: false,
+      isEnrolling: false,
       unauthenticated: false,
       ...state,
     });
@@ -292,7 +292,6 @@ let STUBS = {
   isEnrolledAndEntitled: undefined,
   hasUpgraded: undefined,
   isEnrolling: undefined,
-  isCheckingEntitlement: undefined,
   updateEntitlement: undefined,
   checkForUpgrade: undefined,
   enrollAndEntitle: undefined,
@@ -396,13 +395,10 @@ function setupStubs(stubs = STUBS) {
     "isEnrolledAndEntitled"
   );
   stubs.hasUpgraded = setupSandbox.stub(IPPFxaAuthProvider, "hasUpgraded");
-  // Stub isEnrolling, isCheckingEntitlement, updateEntitlement, and checkForUpgrade
+  // Stub isEnrolling, updateEntitlement, and checkForUpgrade
   // to prevent loading skeleton from rendering unexpectedly during tests.
   stubs.isEnrolling = setupSandbox
-    .stub(IPPEnrollAndEntitleManager, "isEnrolling")
-    .get(() => false);
-  stubs.isCheckingEntitlement = setupSandbox
-    .stub(IPPEnrollAndEntitleManager, "isCheckingEntitlement")
+    .stub(IPPFxaAuthProvider, "isEnrolling")
     .get(() => false);
   stubs.updateEntitlement = setupSandbox
     .stub(IPPEnrollAndEntitleManager, "updateEntitlement")

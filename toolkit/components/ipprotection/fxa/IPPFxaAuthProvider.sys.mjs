@@ -169,6 +169,13 @@ class IPPFxaAuthProviderSingleton extends IPPAuthProvider {
     return lazy.IPPEnrollAndEntitleManager.entitlement?.maxBytes ?? null;
   }
 
+  get isEnrolling() {
+    return (
+      lazy.IPPEnrollAndEntitleManager.isEnrolling ||
+      lazy.IPPEnrollAndEntitleManager.isCheckingEntitlement
+    );
+  }
+
   async checkForUpgrade() {
     await lazy.IPPEnrollAndEntitleManager.refetchEntitlement();
   }

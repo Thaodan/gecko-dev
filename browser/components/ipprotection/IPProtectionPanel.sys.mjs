@@ -337,9 +337,7 @@ export class IPProtectionPanel {
       bandwidthUsage: this.#getBandwidthUsage(),
       isActivating:
         lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVATING,
-      isCheckingEntitlement:
-        lazy.IPPEnrollAndEntitleManager.isEnrolling ||
-        lazy.IPPEnrollAndEntitleManager.isCheckingEntitlement,
+      isEnrolling: lazy.IPProtectionService.authProvider.isEnrolling,
       showLocationButtonBadge: !Services.prefs.getBoolPref(
         LOCATION_BADGE_DISMISSED_PREF,
         false
@@ -1060,9 +1058,7 @@ export class IPProtectionPanel {
         error: errorType,
         isActivating:
           lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVATING,
-        isCheckingEntitlement:
-          lazy.IPPEnrollAndEntitleManager.isEnrolling ||
-          lazy.IPPEnrollAndEntitleManager.isCheckingEntitlement,
+        isEnrolling: lazy.IPProtectionService.authProvider.isEnrolling,
         bandwidthUsage: this.#getBandwidthUsage(),
         bandwidthWarning:
           lazy.IPProtectionService.state === lazy.IPProtectionStates.READY

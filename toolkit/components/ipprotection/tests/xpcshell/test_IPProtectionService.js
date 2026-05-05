@@ -261,10 +261,10 @@ add_task(async function test_guardian_endpoint_updates_on_reinit() {
 });
 
 /**
- * Tests that isCheckingEntitlement is true while updateEntitlement is in
+ * Tests that isEnrolling is true while updateEntitlement is in
  * progress and false once it completes.
  */
-add_task(async function test_isCheckingEntitlement_during_updateEntitlement() {
+add_task(async function test_isEnrolling_during_updateEntitlement() {
   const sandbox = sinon.createSandbox();
   setupStubs(sandbox);
 
@@ -272,7 +272,7 @@ add_task(async function test_isCheckingEntitlement_during_updateEntitlement() {
 
   let resolveEntitlement;
   // Slow down fetching entitlement info so that we can properly test
-  // isCheckingEntitlement. The promise only resolves when we call resolveEntitlement().
+  // isEnrolling. The promise only resolves when we call resolveEntitlement().
   IPPFxaAuthProvider.getEntitlement.returns(
     new Promise(resolve => {
       resolveEntitlement = resolve;
@@ -280,23 +280,23 @@ add_task(async function test_isCheckingEntitlement_during_updateEntitlement() {
   );
 
   Assert.ok(
-    !IPPEnrollAndEntitleManager.isCheckingEntitlement,
-    "isCheckingEntitlement should be false before updateEntitlement"
+    !IPProtectionService.authProvider.isEnrolling,
+    "isEnrolling should be false before updateEntitlement"
   );
 
   let updatePromise = IPPEnrollAndEntitleManager.updateEntitlement(true);
 
   Assert.ok(
-    IPPEnrollAndEntitleManager.isCheckingEntitlement,
-    "isCheckingEntitlement should be true while updateEntitlement is in progress"
+    IPProtectionService.authProvider.isEnrolling,
+    "isEnrolling should be true while updateEntitlement is in progress"
   );
 
   resolveEntitlement({ entitlement: createTestEntitlement() });
   await updatePromise;
 
   Assert.ok(
-    !IPPEnrollAndEntitleManager.isCheckingEntitlement,
-    "isCheckingEntitlement should be false after updateEntitlement completes"
+    !IPProtectionService.authProvider.isEnrolling,
+    "isEnrolling should be false after updateEntitlement completes"
   );
 
   IPProtectionService.uninit();

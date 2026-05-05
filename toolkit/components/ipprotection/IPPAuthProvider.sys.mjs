@@ -20,6 +20,11 @@ export class IPPAuthProvider extends EventTarget {
     return false;
   }
 
+  /** Returns true while enrollment or entitlement checks are in progress. */
+  get isEnrolling() {
+    return false;
+  }
+
   /** Returns the maximum bytes allowed for the current entitlement, or null if unknown. */
   get maxBytes() {
     return null;
