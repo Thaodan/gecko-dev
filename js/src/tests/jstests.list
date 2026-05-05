@@ -680,14 +680,6 @@ skip script test262/staging/top-level-await/tla-hang-entry.js
 # Missing localizations for Before Hijri era: <https://unicode-org.atlassian.net/browse/CLDR-19320>
 skip script test262/intl402/DateTimeFormat/prototype/formatToParts/era.js
 
-# See https://bugzilla.mozilla.org/show_bug.cgi?id=1693576
-skip script test262/intl402/Locale/prototype/getTimeZones/branding.js
-skip script test262/intl402/Locale/prototype/getTimeZones/name.js
-skip script test262/intl402/Locale/prototype/getTimeZones/output-array.js
-skip script test262/intl402/Locale/prototype/getTimeZones/output-array-sorted.js
-skip script test262/intl402/Locale/prototype/getTimeZones/output-array-undefined.js
-skip script test262/intl402/Locale/prototype/getTimeZones/prop-desc.js
-
 
 ###########################################################
 # Tests disabled due to issues in test262 importer script #

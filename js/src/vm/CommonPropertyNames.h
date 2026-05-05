@@ -213,6 +213,7 @@
   MACRO_(getPropertySuper, "getPropertySuper")                                 \
   MACRO_(getPrototypeOf, "getPrototypeOf")                                     \
   MACRO_(getTextInfo, "getTextInfo")                                           \
+  MACRO_(getTimeZones, "getTimeZones")                                         \
   MACRO_(GetTypeError, "GetTypeError")                                         \
   MACRO_(getWeekInfo, "getWeekInfo")                                           \
   MACRO_(global, "global")                                                     \
