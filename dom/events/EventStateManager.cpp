@@ -5923,18 +5923,16 @@ void EventStateManager::SetPointerLock(nsIWidget* aWidget,
     //     work only in the automation mode.
     sLastRefPoint = sLastRefPointOfRawUpdate =
         GetWindowClientRectCenter(aWidget);
+    aWidget->SynthesizeNativeMouseMove(
+        sLastRefPoint + aWidget->WidgetToScreenOffset(), nullptr);
 
     // Suppress DnD
     if (dragService) {
       dragService->Suppress();
     }
 
-    // Activate native pointer lock on platforms where it is required.
+    // Activate native pointer lock on platforms where it is required (Wayland)
     aWidget->LockNativePointer();
-
-    // Initialize the pointer position after pointer is locked.
-    aWidget->SynthesizeNativeMouseMove(
-        sLastRefPoint + aWidget->WidgetToScreenOffset(), nullptr);
   } else {
     if (aWidget) {
       // Deactivate native pointer lock on platforms where it is required
