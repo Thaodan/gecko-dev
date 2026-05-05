@@ -204,6 +204,7 @@
   MACRO_(GetBuiltinSymbol, "GetBuiltinSymbol")                                 \
   MACRO_(GetInternalError, "GetInternalError")                                 \
   MACRO_(GetIterator, "GetIterator")                                           \
+  MACRO_(getNumberingSystems, "getNumberingSystems")                           \
   MACRO_(getOwnPropertyDescriptor, "getOwnPropertyDescriptor")                 \
   MACRO_(getPropertySuper, "getPropertySuper")                                 \
   MACRO_(getPrototypeOf, "getPrototypeOf")                                     \
