@@ -80,29 +80,81 @@ for (let {type, valA, valB, jsA, jsB, jsDefault} of numericTypes) {
 // ==========================================================================
 
 const packedTypes = [
-  {type: "i8",  val: "42",   jsVal: 42},
-  {type: "i16", val: "1000", jsVal: 1000},
+  {type: "i8",  posVal: "42",   jsPosVal: 42,
+   allOnes: "0xFF",   mask: 255,
+   truncVal: "0x1234ABCD", truncS: -51,   truncU: 205},
+  {type: "i16", posVal: "1000", jsPosVal: 1000,
+   allOnes: "0xFFFF", mask: 65535,
+   truncVal: "0x1234ABCD", truncS: -21555, truncU: 43981},
 ];
 
-for (let {type, val, jsVal} of packedTypes) {
+for (let {type, posVal, jsPosVal, allOnes, mask, truncVal, truncS, truncU} of packedTypes) {
   // struct.new with packed field, read via struct.get_s and struct.get_u.
   // Values in the positive range where signed and unsigned reads agree.
   {
     let {testS, testU} = wasmEvalText(`(module
       (type $s (struct (field $v (mut ${type}))))
       (func (export "testS") (result i32)
+        (struct.get_s $s $v (struct.new $s (i32.const ${posVal})))
+      )
+      (func (export "testU") (result i32)
+        (struct.get_u $s $v (struct.new $s (i32.const ${posVal})))
+      )
+    )`).exports;
+    assertEq(testS(), jsPosVal);
+    assertEq(testU(), jsPosVal);
+  }
+
+  // All-ones value: struct.get_s should sign-extend to -1,
+  // struct.get_u should zero-extend to the mask value.
+  {
+    let {testS, testU} = wasmEvalText(`(module
+      (type $s (struct (field $v (mut ${type}))))
+      (func (export "testS") (result i32)
+        (struct.get_s $s $v (struct.new $s (i32.const ${allOnes})))
+      )
+      (func (export "testU") (result i32)
+        (struct.get_u $s $v (struct.new $s (i32.const ${allOnes})))
+      )
+    )`).exports;
+    assertEq(testS(), -1);
+    assertEq(testU(), mask);
+  }
+
+  // Mixed value with bits set in multiple bytes: verify sign/zero truncation.
+  {
+    let {testS, testU} = evalAndCountNewStruct(`(module
+      (type $s (struct (field $v (mut ${type}))))
+      (func (export "testS") (result i32)
+        (struct.get_s $s $v (struct.new $s (i32.const ${truncVal})))
+      )
+      (func (export "testU") (result i32)
+        (struct.get_u $s $v (struct.new $s (i32.const ${truncVal})))
+      )
+    )`, {0: 0, 1: 0});
+    assertEq(testS(), truncS);
+    assertEq(testU(), truncU);
+  }
+
+  // struct.new_default then struct.set to all-ones, verify sign/zero extend.
+  {
+    let {testS, testU} = wasmEvalText(`(module
+      (type $s (struct (field $v (mut ${type}))))
+      (func (export "testS") (result i32)
         (local $p (ref null $s))
-        (local.set $p (struct.new $s (i32.const ${val})))
+        (local.set $p (struct.new_default $s))
+        (struct.set $s $v (local.get $p) (i32.const ${allOnes}))
         (struct.get_s $s $v (local.get $p))
       )
       (func (export "testU") (result i32)
         (local $p (ref null $s))
-        (local.set $p (struct.new $s (i32.const ${val})))
+        (local.set $p (struct.new_default $s))
+        (struct.set $s $v (local.get $p) (i32.const ${allOnes}))
         (struct.get_u $s $v (local.get $p))
       )
     )`).exports;
-    assertEq(testS(), jsVal);
-    assertEq(testU(), jsVal);
+    assertEq(testS(), -1);
+    assertEq(testU(), mask);
   }
 
   // struct.new_default should give 0.
