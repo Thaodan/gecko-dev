@@ -7854,5 +7854,5 @@ void nsWindow::SessionRestoreFinished() {
   }
   gFocusRequestWindow->SetFocus(gFocusRequestWindowRaise,
                                 mozilla::dom::CallerType::System);
-  gFocusRequestWindow = nullptr;  
+  gFocusRequestWindow = nullptr;
 }
