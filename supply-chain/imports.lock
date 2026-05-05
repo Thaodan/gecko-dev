@@ -987,8 +987,8 @@ user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.zeitstempel]]
-version = "0.2.0"
-when = "2025-10-06"
+version = "0.2.1"
+when = "2026-05-05"
 user-id = 48
 user-login = "badboy"
 user-name = "Jan-Erik Rediger"
