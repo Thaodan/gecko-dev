@@ -1197,7 +1197,7 @@ class nsMathMLContainerFrame::RowChildFrameIterator {
   bool mAddOperatorSpacing;
   nsMargin mMargin;
 
-  nscoord mItalicCorrection;
+  nscoord mItalicCorrection = 0;
   MathMLFrameType mChildFrameType;
   int32_t mCarrySpace;
   MathMLFrameType mFromFrameType;
