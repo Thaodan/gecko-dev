@@ -1276,6 +1276,7 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
   mozilla::ipc::LoadInfoToParentLoadInfoForwarder(loadInfo,
                                                   &args.loadInfoForwarder());
 
+  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
   nsHttpResponseHead* responseHead = chan->GetResponseHead();
   bool useResponseHead = !!responseHead;
   nsHttpResponseHead cleanedUpResponseHead;
@@ -1357,6 +1358,10 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
   if (mIPCClosed) {
     rv = NS_ERROR_UNEXPECTED;
   } else {
+    MOZ_DIAGNOSTIC_ASSERT(
+        responseHead == &cleanedUpResponseHead ||
+            responseHead == chan->GetResponseHead(),
+        "mResponseHead changed between GetResponseHead and copy");
     nsHttpResponseHead newResponseHead = *responseHead;
     if (!mBgParent->OnStartRequest(
             std::move(newResponseHead), useResponseHead,
@@ -1918,6 +1923,7 @@ HttpChannelParent::StartRedirect(nsIChannel* newChannel, uint32_t redirectFlags,
   mozilla::ipc::LoadInfoToParentLoadInfoForwarder(loadInfo,
                                                   &loadInfoForwarderArg);
 
+  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
   nsHttpResponseHead* responseHead = mChannel->GetResponseHead();
 
   nsHttpResponseHead cleanedUpResponseHead;
