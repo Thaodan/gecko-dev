@@ -733,7 +733,7 @@ nsresult ExtensionPolicyService::GetGeneratedBackgroundPageUrl(
 
     url.Append(NS_EscapeURL(html, esc_Minimal, escaped));
 
-    aResult = url;
+    aResult = std::move(url);
     return NS_OK;
   }
   return NS_ERROR_INVALID_ARG;
