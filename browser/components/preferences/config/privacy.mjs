@@ -1067,7 +1067,6 @@ SettingGroupManager.registerGroups({
             value: "remember",
             l10nId: "history-remember-option-all2",
           },
-          { value: "dontremember", l10nId: "history-remember-option-never2" },
           {
             value: "custom",
             l10nId: "history-remember-option-custom2",
@@ -1079,6 +1078,7 @@ SettingGroupManager.registerGroups({
               },
             ],
           },
+          { value: "dontremember", l10nId: "history-remember-option-never2" },
         ],
         controlAttrs: {
           "search-l10n-ids": `
@@ -3163,13 +3163,23 @@ Preferences.addSetting({
       historyEnabled,
       formFillEnabled,
       sanitizeOnShutdown,
-    }
+    },
+    setting
   ) {
     let lastHistoryModeCustom = historyModeCustom.value;
     let lastHistoryEnabled = historyEnabled.value;
     let lastFormFillEnabled = formFillEnabled.value;
     let lastSanitizeOnShutdown = sanitizeOnShutdown.value;
     let lastPrivateBrowsingAutoStart = privateBrowsingAutoStart.value;
+
+    let lastValue = setting.value;
+    let optionGroupElement = document.activeElement?.parentElement;
+    if (optionGroupElement.localName != "moz-radio-group") {
+      optionGroupElement = null;
+    }
+    let cancelFocusElement = optionGroupElement?.childElements.find(
+      option => option.value == lastValue
+    );
 
     historyModeCustom.value = value == "custom";
 
@@ -3194,6 +3204,9 @@ Preferences.addSetting({
         formFillEnabled.value = lastFormFillEnabled;
         sanitizeOnShutdown.value = lastSanitizeOnShutdown;
         privateBrowsingAutoStart.value = lastPrivateBrowsingAutoStart;
+        if (cancelFocusElement) {
+          cancelFocusElement.focus();
+        }
       });
     }
   },
