@@ -109,6 +109,12 @@
       }
 
       id = "textarea_wrapped";
+      // synthFocus
+      {
+        let p = checkCaretMove(id, 10, true);
+        selectAllTextAndFocus(id);
+        await p;
+      }
 
       // setCaretOffset
       {
