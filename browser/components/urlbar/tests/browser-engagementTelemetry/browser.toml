@@ -12,7 +12,7 @@ support-files = [
   "head-n_chars_n_words.js",
   "head-sap.js",
   "head-search_mode.js",
-  "../../browser-tips/head.js",
+  "../browser-tips/head.js",
 ]
 prefs = ["browser.bookmarks.testing.skipDefaultBookmarksImport=true"]
 
@@ -69,7 +69,7 @@ skip-if = [
 ["browser_glean_telemetry_engagement_search_mode.js"]
 
 ["browser_glean_telemetry_engagement_selected_result.js"]
-support-files = ["../../../../search/test/browser/trendingSuggestionEngine.sjs"]
+support-files = ["../../../search/test/browser/trendingSuggestionEngine.sjs"]
 skip-if = [
   "verify", # Bug 1852375 - MerinoTestUtils.initWeather() doesn't play well with pushPrefEnv()
 ]

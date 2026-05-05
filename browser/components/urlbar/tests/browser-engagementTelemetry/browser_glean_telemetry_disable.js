@@ -45,8 +45,7 @@ add_setup(async function () {
   let oldDefaultEngine = await SearchService.getDefault();
 
   let root = gTestPath;
-  let engineURL = new URL("../../browser/searchSuggestionEngine.xml", root)
-    .href;
+  let engineURL = new URL("../browser/searchSuggestionEngine.xml", root).href;
 
   await SearchTestUtils.installOpenSearchEngine({
     url: engineURL,

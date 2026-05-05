@@ -5,11 +5,6 @@
 
 // Test engagement telemetry with persisted search terms disabled.
 
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/browser/components/urlbar/tests/engagementTelemetry/browser/head-interaction.js",
-  this
-);
-
 // Allow more time for Mac machines so they don't time out in verify mode.
 if (AppConstants.platform == "macosx") {
   requestLongerTimeout(3);
