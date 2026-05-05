@@ -141,6 +141,7 @@
 #include "wasm/WasmIonCompile.h"
 #include "wasm/WasmJS.h"
 #include "wasm/WasmModule.h"
+#include "wasm/WasmProcess.h"
 #include "wasm/WasmValType.h"
 #include "wasm/WasmValue.h"
 
@@ -1006,41 +1007,49 @@ static bool WasmHugeMemorySupported(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+static bool WasmHugeMemoryEnabled(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  wasm::AddressType addressType = wasm::AddressType::I32;
+  if (args.length() >= 1) {
+    if (!wasm::ToAddressType(cx, args.get(0), &addressType)) {
+      return false;
+    }
+  }
+
+  wasm::PageSize pageSize = wasm::PageSize::Standard;
+  if (args.length() >= 2) {
+    if (!wasm::ToPageSize(cx, args.get(1), &pageSize)) {
+      return false;
+    }
+  }
+
+  args.rval().setBoolean(wasm::IsHugeMemoryEnabled(addressType, pageSize));
+  return true;
+}
+
 static bool WasmMaxMemoryPages(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   if (args.length() < 1) {
     JS_ReportErrorASCII(cx, "not enough arguments");
     return false;
   }
-  if (!args.get(0).isString()) {
-    JS_ReportErrorASCII(cx, "address type must be a string");
+
+  wasm::AddressType addressType;
+  if (!wasm::ToAddressType(cx, args.get(0), &addressType)) {
     return false;
   }
-  RootedString s(cx, args.get(0).toString());
-  Rooted<JSLinearString*> ls(cx, s->ensureLinear(cx));
-  if (!ls) {
-    return false;
-  }
+
   wasm::PageSize pageSize = wasm::PageSize::Standard;
-  if (argc > 1 && args.get(1).isInt32()) {
-    uint32_t pageSizeBytes = args.get(1).toInt32();
-    if (pageSizeBytes != PageSizeInBytes(wasm::PageSize::Standard)) {
-      JS_ReportErrorASCII(cx, "bad page size");
+  if (args.length() >= 2) {
+    if (!wasm::ToPageSize(cx, args.get(1), &pageSize)) {
       return false;
     }
   }
-  if (StringEqualsLiteral(ls, "i32")) {
-    wasm::Pages pages = wasm::MaxMemoryPages(wasm::AddressType::I32, pageSize);
-    args.rval().setInt32(pages.pageCount());
-    return true;
-  }
-  if (StringEqualsLiteral(ls, "i64")) {
-    wasm::Pages pages = wasm::MaxMemoryPages(wasm::AddressType::I64, pageSize);
-    args.rval().setNumber(pages.pageCount());
-    return true;
-  }
-  JS_ReportErrorASCII(cx, "bad address type");
-  return false;
+
+  wasm::Pages pages = wasm::MaxMemoryPages(addressType, pageSize);
+  args.rval().setNumber(pages.pageCount());
+  return true;
 }
 
 static bool WasmThreadsEnabled(JSContext* cx, unsigned argc, Value* vp) {
@@ -10726,6 +10735,12 @@ gc::ZealModeHelpText),
 "wasmHugeMemorySupported()",
 "  Returns a boolean indicating whether WebAssembly supports using a large"
 "  virtual memory reservation in order to elide bounds checks on this platform."),
+
+    JS_FN_HELP("wasmHugeMemoryEnabled", WasmHugeMemoryEnabled, 0, 0,
+"wasmHugeMemoryEnabled([addressType[, pageSizeBytes]])",
+"  Returns a boolean indicating whether WebAssembly huge memory is enabled at"
+"  runtime for the given address type (\"i32\" or \"i64\", default \"i32\") and"
+"  page size in bytes (default 65536)."),
 
     JS_FN_HELP("wasmMaxMemoryPages", WasmMaxMemoryPages, 1, 0,
 "wasmMaxMemoryPages(addressType)",

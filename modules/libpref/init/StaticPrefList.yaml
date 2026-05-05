@@ -9546,6 +9546,14 @@
   mirror: always
   set_spidermonkey_pref: always
 
+# Whether we should try to report extra information about a trap in
+# wasm linear memory.
+- name: javascript.options.wasm_memory_debugging
+  type: bool
+  value: false
+  mirror: always
+  set_spidermonkey_pref: always
+
 - name: javascript.options.wasm_exception_force_stack_trace
   type: bool
   value: false
