@@ -3381,6 +3381,9 @@ class Document : public nsINode,
   // features values changing.
   void NotifyMediaFeatureValuesChanged();
 
+  // Returns cached value of dom.image.sizes_auto.enabled, so that
+  // changing the pref while the document is loaded doesn't cause issues.
+  bool AutoSizesEnabled() const { return mAutoSizesEnabled; }
   // Observe loading=lazy sizes=auto image for size changes.
   void ObserveAutoSizesImage(HTMLImageElement& aElement);
   void UnobserveAutoSizesImage(HTMLImageElement& aElement);
@@ -5286,6 +5289,9 @@ class Document : public nsINode,
 
   // https://html.spec.whatwg.org/#has-been-revealed
   bool mHasBeenRevealed : 1;
+
+  // Cached value of dom.image.sizes_auto.enabled
+  const bool mAutoSizesEnabled : 1;
 
   // The fingerprinting protections overrides for this document. The value will
   // override the default enabled fingerprinting protections for this document.
