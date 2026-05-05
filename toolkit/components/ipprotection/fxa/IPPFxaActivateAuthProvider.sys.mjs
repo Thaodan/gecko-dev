@@ -50,7 +50,13 @@ class IPPFxaActivateAuthProviderSingleton extends IPPFxaBaseAuthProvider {
     const { entitlement } = await this.guardian.fetchUserInfo(tokenHandle);
     if (entitlement) {
       this._setEntitlement(entitlement);
-      this.dispatchEvent(new CustomEvent("IPPAuthProvider:StateChanged"));
+      lazy.IPProtectionService.updateState();
+      this.dispatchEvent(
+        new CustomEvent("IPPAuthProvider:StateChanged", {
+          bubbles: true,
+          composed: true,
+        })
+      );
     }
   }
 

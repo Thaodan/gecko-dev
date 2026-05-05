@@ -25,10 +25,6 @@ const { IPPSignInWatcher } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/fxa/IPPSignInWatcher.sys.mjs"
 );
 
-const { IPPEnrollAndEntitleManager } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/ipprotection/fxa/IPPEnrollAndEntitleManager.sys.mjs"
-);
-
 const { IPPFxaAuthProvider } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/fxa/IPPFxaAuthProvider.sys.mjs"
 );
@@ -397,7 +393,7 @@ function setupStubs(stubs = STUBS) {
     .stub(IPPFxaAuthProvider, "isEnrolling")
     .get(() => false);
   stubs.updateEntitlement = setupSandbox
-    .stub(IPPEnrollAndEntitleManager, "updateEntitlement")
+    .stub(IPPFxaAuthProvider, "updateEntitlement")
     .resolves();
   stubs.checkForUpgrade = setupSandbox
     .stub(IPPFxaAuthProvider, "checkForUpgrade")

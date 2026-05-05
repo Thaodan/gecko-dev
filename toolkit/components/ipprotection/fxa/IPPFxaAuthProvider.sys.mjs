@@ -13,8 +13,10 @@ ChromeUtils.defineLazyGetter(lazy, "fxAccounts", () =>
   ).getFxAccountsSingleton()
 );
 ChromeUtils.defineESModuleGetters(lazy, {
-  IPPEnrollAndEntitleManager:
-    "moz-src:///toolkit/components/ipprotection/fxa/IPPEnrollAndEntitleManager.sys.mjs",
+  IPPProxyManager:
+    "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
+  IPProtectionService:
+    "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
 });
 
 const CLIENT_ID_MAP = {
@@ -36,6 +38,9 @@ const GUARDIAN_ENDPOINT_DEFAULT = "https://vpn.mozilla.com";
  */
 class IPPFxaAuthProviderSingleton extends IPPFxaBaseAuthProvider {
   #enrollAndEntitleFn = null;
+  // Promises to queue enrolling and entitling operations.
+  #enrollingPromise = null;
+  #entitlementPromise = null;
 
   /**
    * @param {object} [signInWatcher] - Custom sign-in watcher. Defaults to IPPSignInWatcher.
@@ -132,23 +137,142 @@ class IPPFxaAuthProviderSingleton extends IPPFxaBaseAuthProvider {
     return [this, this.signInWatcher];
   }
 
-  async updateEntitlement() {
-    await lazy.IPPEnrollAndEntitleManager.updateEntitlement();
+  /**
+   * Updates the entitlement status.
+   * This will run only one fetch at a time, and queue behind any ongoing enrollment.
+   *
+   * @param {boolean} forceRefetch - If true, will refetch the entitlement even when one is present.
+   * @returns {Promise<object>} status
+   * @returns {boolean} status.isEntitled - True if the user is entitled.
+   * @returns {string} [status.error] - Error message if entitlement fetch failed.
+   */
+  async updateEntitlement(forceRefetch = false) {
+    if (this.#entitlementPromise) {
+      return this.#entitlementPromise;
+    }
+
+    // Queue behind any ongoing enrollment.
+    if (this.#enrollingPromise) {
+      await this.#enrollingPromise;
+    }
+
+    let deferred = Promise.withResolvers();
+    this.#entitlementPromise = deferred.promise;
+
+    // Notify listeners that an entitlement check has started so they can
+    // react to isEnrolling becoming true.
+    this.dispatchEvent(
+      new CustomEvent("IPPAuthProvider:StateChanged", {
+        bubbles: true,
+        composed: true,
+      })
+    );
+
+    const entitled = { isEntitled: false, error: null };
+    if (this.entitlement && !forceRefetch) {
+      entitled.isEntitled = true;
+    } else {
+      const { entitlement, error } = await this.getEntitlement(forceRefetch);
+      if (error || !entitlement) {
+        this.#setEntitlement(null);
+        entitled.error = error;
+      } else {
+        this.#setEntitlement(entitlement);
+        entitled.isEntitled = true;
+      }
+    }
+
+    deferred.resolve(entitled);
+
+    if (entitled?.isEntitled) {
+      lazy.IPPProxyManager.refreshUsage();
+    }
+
+    this.#entitlementPromise = null;
+
+    // Notify listeners that the entitlement check has completed so they can
+    // react to isEnrolling becoming false.
+    this.dispatchEvent(
+      new CustomEvent("IPPAuthProvider:StateChanged", {
+        bubbles: true,
+        composed: true,
+      })
+    );
+
+    return entitled;
   }
 
-  get isEnrolling() {
-    return (
-      lazy.IPPEnrollAndEntitleManager.isEnrolling ||
-      lazy.IPPEnrollAndEntitleManager.isCheckingEntitlement
+  /**
+   * Enrolls and entitles the current Firefox account when possible.
+   * This is a long-running request that will set isEnrolling while in progress
+   * and will only run once until it completes.
+   *
+   * @returns {Promise<object>} result
+   * @returns {boolean} result.isEnrolledAndEntitled - True if the user is enrolled and entitled.
+   * @returns {string} [result.error] - Error message if enrollment or entitlement failed.
+   */
+  async enroll() {
+    if (this.#enrollingPromise) {
+      return this.#enrollingPromise;
+    }
+
+    let deferred = Promise.withResolvers();
+    this.#enrollingPromise = deferred.promise;
+
+    this.dispatchEvent(
+      new CustomEvent("IPPAuthProvider:StateChanged", {
+        bubbles: true,
+        composed: true,
+      })
+    );
+
+    const result = { isEnrolledAndEntitled: false, error: null };
+    if (this.entitlement) {
+      result.isEnrolledAndEntitled = true;
+    } else {
+      const { isEnrolledAndEntitled, entitlement, error } =
+        await this.enrollAndEntitle();
+      if (!isEnrolledAndEntitled) {
+        this.#setEntitlement(null);
+        result.error = error;
+      } else {
+        this.#setEntitlement(entitlement ?? null);
+        result.isEnrolledAndEntitled = true;
+      }
+    }
+
+    deferred.resolve(result);
+    this.#enrollingPromise = null;
+
+    // By the time enrollingPromise is unset, notify listeners so that they
+    // can react to isEnrolling becoming false.
+    this.dispatchEvent(
+      new CustomEvent("IPPAuthProvider:StateChanged", {
+        bubbles: true,
+        composed: true,
+      })
+    );
+
+    return result;
+  }
+
+  #setEntitlement(entitlement) {
+    this._setEntitlement(entitlement);
+    lazy.IPProtectionService.updateState();
+    this.dispatchEvent(
+      new CustomEvent("IPPAuthProvider:StateChanged", {
+        bubbles: true,
+        composed: true,
+      })
     );
   }
 
-  async checkForUpgrade() {
-    await lazy.IPPEnrollAndEntitleManager.updateEntitlement(true);
+  get isEnrolling() {
+    return !!this.#enrollingPromise || !!this.#entitlementPromise;
   }
 
-  async enroll() {
-    return lazy.IPPEnrollAndEntitleManager.maybeEnrollAndEntitle();
+  async checkForUpgrade() {
+    await this.updateEntitlement(true);
   }
 
   get isReady() {
@@ -161,7 +285,7 @@ class IPPFxaAuthProviderSingleton extends IPPFxaBaseAuthProvider {
     // If the current account is not enrolled and entitled, the UI is shown and
     // they have to opt-in.
     // If they are currently enrolling, they have already opted-in.
-    if (!this.entitlement && !lazy.IPPEnrollAndEntitleManager.isEnrolling) {
+    if (!this.entitlement && !this.#enrollingPromise) {
       return false;
     }
 
@@ -170,13 +294,17 @@ class IPPFxaAuthProviderSingleton extends IPPFxaBaseAuthProvider {
 
   async aboutToStart() {
     let result;
-    if (lazy.IPPEnrollAndEntitleManager.isEnrolling) {
-      result = await lazy.IPPEnrollAndEntitleManager.waitForEnrollment();
+    if (this.#enrollingPromise) {
+      result = await this.#enrollingPromise;
     }
     if (!this.entitlement) {
       return { error: result?.error };
     }
     return null;
+  }
+
+  resetEntitlement() {
+    this.#setEntitlement(null);
   }
 }
 

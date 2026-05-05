@@ -102,11 +102,11 @@ add_task(
     setupStubs(sandbox);
 
     IPProtectionService.init();
-    IPPEnrollAndEntitleManager.resetEntitlement();
+    IPPFxaAuthProvider.resetEntitlement();
 
     const refreshUsageStub = sandbox.stub(IPPProxyManager, "refreshUsage");
 
-    await IPPEnrollAndEntitleManager.updateEntitlement();
+    await IPPFxaAuthProvider.updateEntitlement();
 
     Assert.ok(
       IPPFxaAuthProvider.entitlement,
@@ -138,7 +138,7 @@ add_task(
     );
 
     IPProtectionService.init();
-    await IPPEnrollAndEntitleManager.maybeEnrollAndEntitle();
+    await IPPFxaAuthProvider.enroll();
     IPProtectionService.updateState();
 
     await waitForReady;
@@ -177,7 +177,7 @@ add_task(
     setupStubs(sandbox);
 
     await IPProtectionService.init();
-    await IPPEnrollAndEntitleManager.maybeEnrollAndEntitle();
+    await IPPFxaAuthProvider.enroll();
     IPProtectionService.updateState();
 
     IPPFxaAuthProvider.getEntitlement.resolves({ error: "invalid_response" });
@@ -210,7 +210,7 @@ add_task(async function test_IPProtectionService_hasUpgraded_signed_out() {
   setupStubs(sandbox);
 
   await IPProtectionService.init();
-  await IPPEnrollAndEntitleManager.maybeEnrollAndEntitle();
+  await IPPFxaAuthProvider.enroll();
   IPProtectionService.updateState();
 
   sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => false);
@@ -284,7 +284,7 @@ add_task(async function test_isEnrolling_during_updateEntitlement() {
     "isEnrolling should be false before updateEntitlement"
   );
 
-  let updatePromise = IPPEnrollAndEntitleManager.updateEntitlement(true);
+  let updatePromise = IPPFxaAuthProvider.updateEntitlement(true);
 
   Assert.ok(
     IPProtectionService.authProvider.isEnrolling,
@@ -313,7 +313,7 @@ add_task(
     setupStubs(sandbox);
 
     await IPProtectionService.init();
-    await IPPEnrollAndEntitleManager.updateEntitlement();
+    await IPPFxaAuthProvider.updateEntitlement();
 
     let stateChangedFired = false;
     IPProtectionService.authProvider.addEventListener(
@@ -324,7 +324,7 @@ add_task(
       { once: true }
     );
 
-    await IPPEnrollAndEntitleManager.updateEntitlement();
+    await IPPFxaAuthProvider.updateEntitlement();
 
     Assert.ok(
       stateChangedFired,
@@ -346,6 +346,11 @@ add_task(async function test_isEnrolling_during_maybeEnrollAndEntitle() {
 
   await IPProtectionService.init();
 
+  // initOnStartupCompleted() runs updateEntitlement() which sets the
+  // entitlement via the stubbed getEntitlement(). Reset it so that enroll()
+  // takes the slow path and isEnrolling stays true while in progress.
+  IPPFxaAuthProvider.resetEntitlement();
+
   let resolveEnroll;
   // Slow down enrolling step info so that we can properly test
   // isEnrolling. The promise only resolves when we call resolveEnroll().
@@ -356,14 +361,14 @@ add_task(async function test_isEnrolling_during_maybeEnrollAndEntitle() {
   );
 
   Assert.ok(
-    !IPPEnrollAndEntitleManager.isEnrolling,
+    !IPPFxaAuthProvider.isEnrolling,
     "isEnrolling should be false before maybeEnrollAndEntitle"
   );
 
-  let enrollPromise = IPPEnrollAndEntitleManager.maybeEnrollAndEntitle();
+  let enrollPromise = IPPFxaAuthProvider.enroll();
 
   Assert.ok(
-    IPPEnrollAndEntitleManager.isEnrolling,
+    IPPFxaAuthProvider.isEnrolling,
     "isEnrolling should be true while maybeEnrollAndEntitle is in progress"
   );
 
@@ -380,7 +385,7 @@ add_task(async function test_isEnrolling_during_maybeEnrollAndEntitle() {
   await enrollPromise;
 
   Assert.ok(
-    !IPPEnrollAndEntitleManager.isEnrolling,
+    !IPPFxaAuthProvider.isEnrolling,
     "isEnrolling should be false after maybeEnrollAndEntitle completes"
   );
   Assert.ok(
