@@ -463,6 +463,11 @@ void GlobalDMABufFormats::SetModifiersToGfxVars() {
     LOGDMABUF(("GBM_FORMAT_P010 is directly composited"));
     modsP010.Assign(*format->GetModifiers());
   }
+#if defined(MOZ_WIDGET_GTK)
+  if (!isWaylandDisplay) {
+    AppendDmaBufModifiersFromEGLIfEmpty(DRM_FORMAT_P010, modsP010);
+  }
+#endif
   if (!modsP010.IsEmpty()) {
     mFormatP010 = new DRMFormat(GBM_FORMAT_P010, modsP010);
     gfxVars::SetDMABufModifiersP010(modsP010);
@@ -474,6 +479,11 @@ void GlobalDMABufFormats::SetModifiersToGfxVars() {
     LOGDMABUF(("GBM_FORMAT_NV12 is directly composited"));
     modsNV12.Assign(*format->GetModifiers());
   }
+#if defined(MOZ_WIDGET_GTK)
+  if (!isWaylandDisplay) {
+    AppendDmaBufModifiersFromEGLIfEmpty(DRM_FORMAT_NV12, modsNV12);
+  }
+#endif
   if (!modsNV12.IsEmpty()) {
     mFormatNV12 = new DRMFormat(GBM_FORMAT_NV12, modsNV12);
     gfxVars::SetDMABufModifiersNV12(modsNV12);
@@ -483,28 +493,6 @@ void GlobalDMABufFormats::SetModifiersToGfxVars() {
     LOGDMABUF(("GBM_FORMAT_YUV420 is directly composited"));
     mFormatYUV420 = new DRMFormat(*format);
   }
-}
-
-void GlobalDMABufFormats::AppendEGLVideoModifiers() {
-#if defined(MOZ_WIDGET_GTK)
-  // On X11 there is no Wayland compositor feedback for video format modifiers,
-  // so we fall back to querying EGL directly.  This must only be called when
-  // hardware video decoding is actually enabled to avoid paying the EGL
-  // initialisation cost on every startup (Bug 2036839).
-  nsTArray<uint64_t> modsP010;
-  AppendDmaBufModifiersFromEGLIfEmpty(DRM_FORMAT_P010, modsP010);
-  if (!modsP010.IsEmpty()) {
-    mFormatP010 = new DRMFormat(GBM_FORMAT_P010, modsP010);
-    gfxVars::SetDMABufModifiersP010(modsP010);
-  }
-
-  nsTArray<uint64_t> modsNV12;
-  AppendDmaBufModifiersFromEGLIfEmpty(DRM_FORMAT_NV12, modsNV12);
-  if (!modsNV12.IsEmpty()) {
-    mFormatNV12 = new DRMFormat(GBM_FORMAT_NV12, modsNV12);
-    gfxVars::SetDMABufModifiersNV12(modsNV12);
-  }
-#endif
 }
 
 void GlobalDMABufFormats::GetModifiersFromGfxVars() {
