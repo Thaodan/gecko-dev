@@ -453,17 +453,17 @@ struct GlobalType {
 // location that is private to the module, and its initial value is copied into
 // that cell from the environment.  asm.js cannot export globals.
 class GlobalDesc {
-  GlobalKind kind_;
+  GlobalKind kind_ = GlobalKind::Constant;
   // Stores the value type of this global for all kinds, and the initializer
   // expression when `constant` or `variable`.
   InitExpr initial_;
   // Metadata for the global when `variable` or `import`.
-  unsigned offset_;
-  bool isMutable_;
-  bool isWasm_;
-  bool isExport_;
+  unsigned offset_ = 0;
+  bool isMutable_ = false;
+  bool isWasm_ = false;
+  bool isExport_ = false;
   // Metadata for the global when `import`.
-  uint32_t importIndex_;
+  uint32_t importIndex_ = 0;
 
   // Private, as they have unusual semantics.
 
@@ -600,7 +600,7 @@ using MutableTagType = RefPtr<TagType>;
 using SharedTagType = RefPtr<const TagType>;
 
 struct TagDesc {
-  TagKind kind;
+  TagKind kind = TagKind::Exception;
   SharedTagType type;
   bool isExport;
 

@@ -675,7 +675,7 @@ class DictionaryShape : public NativeShape {
 // Shape used for a ProxyObject.
 class ProxyShape : public Shape {
   // Needed to maintain the same size as other shapes.
-  uintptr_t padding_;
+  uintptr_t padding_ = 0;
 
   friend class js::gc::CellAllocator;
   ProxyShape(BaseShape* base, ObjectFlags objectFlags)

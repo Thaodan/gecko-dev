@@ -2222,7 +2222,7 @@ struct BuiltinThunks {
   CodeRangeVector codeRanges;
   TypedNativeToCodeRangeMap typedNativeToCodeRange;
   SymbolicAddressToCodeRangeArray symbolicAddressToCodeRange;
-  uint32_t provisionalLazyJitEntryOffset;
+  uint32_t provisionalLazyJitEntryOffset = 0;
 
   BuiltinThunks() : codeBase(nullptr), codeSize(0) {}
 

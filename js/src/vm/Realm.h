@@ -59,8 +59,8 @@ struct NativeIterator;
  * is erroneously included in the measurement; see bug 562553.
  */
 class DtoaCache {
-  double dbl;
-  int base;
+  double dbl = 0.0;
+  int base = 0;
   JSLinearString* str;  // if str==nullptr, dbl and base are not valid
 
  public:

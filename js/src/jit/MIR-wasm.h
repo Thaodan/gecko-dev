@@ -1847,7 +1847,7 @@ class MWasmStackResultArea : public MNullaryInstruction {
  public:
   class StackResult {
     // Offset in bytes from lowest address of stack result area.
-    uint32_t offset_;
+    uint32_t offset_ = 0;
     MIRType type_;
 
    public:
