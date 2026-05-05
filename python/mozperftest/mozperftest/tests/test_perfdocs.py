@@ -189,9 +189,7 @@ def test_perfdocs_start_and_fail(
     from mozperftest.perfdocs.perfdocs import run_perfdocs
 
     with temp_file("bad", content="foo") as temp:
-        run_perfdocs(
-            None, logger=structured_logger, paths=[str(temp)], generate=False
-        )
+        run_perfdocs(None, logger=structured_logger, paths=[str(temp)], generate=False)
         assert PerfDocsLoggerMock.LOGGER == structured_logger
         assert PerfDocsLoggerMock.PATHS == [temp]
         assert PerfDocsLoggerMock.FAILED
@@ -209,9 +207,7 @@ def test_perfdocs_start_and_pass(verifier, generator, structured_logger):
 
     PerfDocsLoggerMock.FAILED = False
     with temp_file("bad", content="foo") as temp:
-        run_perfdocs(
-            None, logger=structured_logger, paths=[str(temp)], generate=False
-        )
+        run_perfdocs(None, logger=structured_logger, paths=[str(temp)], generate=False)
         assert PerfDocsLoggerMock.LOGGER == structured_logger
         assert PerfDocsLoggerMock.PATHS == [temp]
         assert not PerfDocsLoggerMock.FAILED
@@ -891,3 +887,103 @@ def test_perfdocs_logger_failure():
     PerfDocLogger.PATHS = []
     with pytest.raises(Exception):
         PerfDocLogger()
+
+
+def test_perfdocs_logger_missing_paths(structured_logger):
+    from mozperftest.perfdocs.logger import PerfDocLogger
+
+    PerfDocLogger.LOGGER = structured_logger
+    PerfDocLogger.PATHS = []
+    with pytest.raises(Exception, match="Missing PATHS"):
+        PerfDocLogger()
+
+
+def test_perfdocs_logger_warning_string_file(structured_logger):
+    from unittest.mock import MagicMock
+
+    from mozperftest.perfdocs.logger import PerfDocLogger
+
+    mock_logger = MagicMock()
+    PerfDocLogger.LOGGER = mock_logger
+    PerfDocLogger.PATHS = ["/some/path"]
+    PerfDocLogger.TOP_DIR = "/top"
+    PerfDocLogger.FAILED = False
+
+    perfdocs_logger = PerfDocLogger()  # noqa: PLE1205
+    perfdocs_logger.warning("msg", "/some/path/file.py")  # noqa: PLE1205
+
+    assert mock_logger.lint_error.called
+    assert PerfDocLogger.FAILED
+
+
+def test_perfdocs_logger_warning_matching_path(structured_logger):
+    from unittest.mock import MagicMock
+
+    from mozperftest.perfdocs.logger import PerfDocLogger
+
+    mock_logger = MagicMock()
+    PerfDocLogger.LOGGER = mock_logger
+    PerfDocLogger.PATHS = ["/some/path"]
+    PerfDocLogger.TOP_DIR = "/top"
+    PerfDocLogger.FAILED = False
+
+    perfdocs_logger = PerfDocLogger()  # noqa: PLE1205
+    perfdocs_logger.warning("a warning", ["/some/path/file.py", "/some/path/other.py"])  # noqa: PLE1205
+
+    assert mock_logger.lint_error.call_count == 2
+    assert PerfDocLogger.FAILED
+
+    call_args = mock_logger.lint_error.call_args_list[0]
+    assert call_args.kwargs["message"] == "a warning"
+    assert call_args.kwargs["linter"] == "perfdocs"
+
+
+def test_perfdocs_logger_warning_restricted_skips_non_matching(structured_logger):
+    from unittest.mock import MagicMock
+
+    from mozperftest.perfdocs.logger import PerfDocLogger
+
+    mock_logger = MagicMock()
+    PerfDocLogger.LOGGER = mock_logger
+    PerfDocLogger.PATHS = ["/some/path"]
+    PerfDocLogger.TOP_DIR = "/top"
+    PerfDocLogger.FAILED = False
+
+    perfdocs_logger = PerfDocLogger()  # noqa: PLE1205
+    perfdocs_logger.warning("msg", ["/other/path/file.py"], restricted=True)  # noqa: PLE1205
+
+    assert not mock_logger.lint_error.called
+    assert not PerfDocLogger.FAILED
+
+
+def test_perfdocs_logger_warning_unrestricted(structured_logger):
+    from unittest.mock import MagicMock
+
+    from mozperftest.perfdocs.logger import PerfDocLogger
+
+    mock_logger = MagicMock()
+    PerfDocLogger.LOGGER = mock_logger
+    PerfDocLogger.PATHS = ["/some/path"]
+    PerfDocLogger.TOP_DIR = "/top"
+    PerfDocLogger.FAILED = False
+
+    perfdocs_logger = PerfDocLogger()  # noqa: PLE1205
+    perfdocs_logger.warning("msg", ["/other/path/file.py"], restricted=False)  # noqa: PLE1205
+
+    assert mock_logger.lint_error.called
+    assert PerfDocLogger.FAILED
+
+
+def test_perfdocs_logger_critical(structured_logger):
+    from unittest.mock import MagicMock
+
+    from mozperftest.perfdocs.logger import PerfDocLogger
+
+    mock_logger = MagicMock()
+    PerfDocLogger.LOGGER = mock_logger
+    PerfDocLogger.PATHS = ["/some/path"]
+
+    perfdocs_logger = PerfDocLogger()  # noqa: PLE1205
+    perfdocs_logger.critical("fatal message")  # noqa: PLE1205
+
+    mock_logger.critical.assert_called_once_with("fatal message")
