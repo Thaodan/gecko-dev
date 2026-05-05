@@ -5202,10 +5202,11 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
     const bool& aForPrinting, const bool& aForWindowDotPrint,
     const bool& aIsTopLevelCreatedByWebContent, nsIURI* aURIToLoad,
     const nsACString& aFeatures, const UserActivation::Modifiers& aModifiers,
-    BrowserParent* aNextRemoteBrowser, nsresult& aResult,
-    nsCOMPtr<nsIRemoteTab>& aNewRemoteTab, bool* aWindowIsNew,
-    int32_t& aOpenLocation, nsIPrincipal* aTriggeringPrincipal,
-    nsIReferrerInfo* aReferrerInfo, nsIPolicyContainer* aPolicyContainer,
+    BrowserParent* aNextRemoteBrowser, const nsAString& aName,
+    nsresult& aResult, nsCOMPtr<nsIRemoteTab>& aNewRemoteTab,
+    bool* aWindowIsNew, int32_t& aOpenLocation,
+    nsIPrincipal* aTriggeringPrincipal, nsIReferrerInfo* aReferrerInfo,
+    bool aLoadURI, nsIPolicyContainer* aPolicyContainer,
     const OriginAttributes& aOriginAttributes, bool aUserActivation,
     bool aTextDirectiveUserActivation) {
   // The content process should never be in charge of computing whether or
@@ -5337,9 +5338,15 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
 
     RefPtr<Element> el;
 
-    aResult = browserDOMWin->CreateContentWindowInFrame(
-        aURIToLoad, params, aOpenLocation, nsIBrowserDOMWindow::OPEN_NEW,
-        VoidString(), getter_AddRefs(el));
+    if (aLoadURI) {
+      aResult = browserDOMWin->OpenURIInFrame(aURIToLoad, params, aOpenLocation,
+                                              nsIBrowserDOMWindow::OPEN_NEW,
+                                              aName, getter_AddRefs(el));
+    } else {
+      aResult = browserDOMWin->CreateContentWindowInFrame(
+          aURIToLoad, params, aOpenLocation, nsIBrowserDOMWindow::OPEN_NEW,
+          aName, getter_AddRefs(el));
+    }
     RefPtr<nsFrameLoaderOwner> frameLoaderOwner = do_QueryObject(el);
     if (NS_SUCCEEDED(aResult) && frameLoaderOwner) {
       RefPtr<nsFrameLoader> frameLoader = frameLoaderOwner->GetFrameLoader();
@@ -5385,6 +5392,7 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
 
   MOZ_ASSERT(aNewRemoteTab);
   RefPtr<BrowserHost> newBrowserHost = BrowserHost::GetFrom(aNewRemoteTab);
+  RefPtr<BrowserParent> newBrowserParent = newBrowserHost->GetActor();
 
   // At this point, it's possible the inserted frameloader hasn't gone through
   // layout yet. To ensure that the dimensions that we send down when telling
@@ -5407,8 +5415,32 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
     frameLoader->ForceLayoutIfNecessary();
   }
 
+  // If we were passed a name for the window which would override the default,
+  // we should send it down to the new tab.
+  if (nsContentUtils::IsOverridingWindowName(aName)) {
+    MOZ_ALWAYS_SUCCEEDS(newBrowserHost->GetBrowsingContext()->SetName(aName));
+  }
+
   MOZ_ASSERT(newBrowserHost->GetBrowsingContext()->OriginAttributesRef() ==
              aOriginAttributes);
+
+  if (aURIToLoad && aLoadURI) {
+    nsCOMPtr<mozIDOMWindowProxy> openerWindow;
+    if (aSetOpener && topParent) {
+      openerWindow = topParent->GetParentWindowOuter();
+    }
+    nsCOMPtr<nsIBrowserDOMWindow> newBrowserDOMWin =
+        newBrowserParent->GetBrowserDOMWindow();
+    if (NS_WARN_IF(!newBrowserDOMWin)) {
+      aResult = NS_ERROR_ABORT;
+      return IPC_OK();
+    }
+    RefPtr<BrowsingContext> bc;
+    aResult = newBrowserDOMWin->OpenURI(
+        aURIToLoad, openInfo, nsIBrowserDOMWindow::OPEN_CURRENTWINDOW,
+        nsIBrowserDOMWindow::OPEN_NEW, aTriggeringPrincipal, aPolicyContainer,
+        getter_AddRefs(bc));
+  }
 
   return IPC_OK();
 }
@@ -5506,10 +5538,10 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateWindow(
   mozilla::ipc::IPCResult ipcResult = CommonCreateWindow(
       aThisTab, *parent, newBCOpenerId != 0, aChromeFlags, aCalledFromJS,
       aForPrinting, aForWindowDotPrint, aIsTopLevelCreatedByWebContent,
-      aURIToLoad, aFeatures, aModifiers, newTab, rv, newRemoteTab,
+      aURIToLoad, aFeatures, aModifiers, newTab, VoidString(), rv, newRemoteTab,
       &cwi.windowOpened(), openLocation, aTriggeringPrincipal, aReferrerInfo,
-      aPolicyContainer, aOriginAttributes, aUserActivation,
-      aTextDirectiveUserActivation);
+      /* aLoadUri = */ false, aPolicyContainer, aOriginAttributes,
+      aUserActivation, aTextDirectiveUserActivation);
   if (!ipcResult) {
     return ipcResult;
   }
@@ -5537,6 +5569,73 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateWindow(
   }
 
   cwi.maxTouchPoints() = newTab->GetMaxTouchPoints();
+
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult ContentParent::RecvCreateWindowInDifferentProcess(
+    PBrowserParent* aThisTab, const MaybeDiscarded<BrowsingContext>& aParent,
+    const uint32_t& aChromeFlags, const bool& aCalledFromJS,
+    const bool& aIsTopLevelCreatedByWebContent, nsIURI* aURIToLoad,
+    const nsACString& aFeatures, const UserActivation::Modifiers& aModifiers,
+    const nsAString& aName, nsIPrincipal* aTriggeringPrincipal,
+    nsIPolicyContainer* aPolicyContainer, nsIReferrerInfo* aReferrerInfo,
+    const OriginAttributes& aOriginAttributes, bool aUserActivation,
+    bool aTextDirectiveUserActivation) {
+  MOZ_DIAGNOSTIC_ASSERT(!nsContentUtils::IsSpecialName(aName));
+
+  // Don't continue to try to create a new window if we've been fully discarded.
+  RefPtr<BrowsingContext> parent = aParent.GetMaybeDiscarded();
+  if (NS_WARN_IF(!parent)) {
+    return IPC_OK();
+  }
+
+  nsCOMPtr<nsIRemoteTab> newRemoteTab;
+  bool windowIsNew;
+  int32_t openLocation = nsIBrowserDOMWindow::OPEN_NEWWINDOW;
+
+  // If we have enough data, check the schemes of the loader and loadee
+  // to make sure they make sense.
+  if (aURIToLoad && aURIToLoad->SchemeIs("file") &&
+      GetRemoteType() != FILE_REMOTE_TYPE &&
+      Preferences::GetBool("browser.tabs.remote.enforceRemoteTypeRestrictions",
+                           false)) {
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+#  ifdef DEBUG
+    nsAutoCString uriToLoadStr;
+    nsAutoCString triggeringUriStr;
+    aURIToLoad->GetAsciiSpec(uriToLoadStr);
+    aTriggeringPrincipal->GetAsciiSpec(triggeringUriStr);
+
+    NS_WARNING(nsPrintfCString(
+                   "RecvCreateWindowInDifferentProcess blocked loading file "
+                   "scheme from non-file remotetype: %s tried to load %s",
+                   triggeringUriStr.get(), uriToLoadStr.get())
+                   .get());
+#  endif
+    MOZ_CRASH(
+        "RecvCreateWindowInDifferentProcess blocked loading improper scheme");
+#endif
+    return IPC_OK();
+  }
+
+  nsresult rv;
+  mozilla::ipc::IPCResult ipcResult = CommonCreateWindow(
+      aThisTab, *parent, /* aSetOpener = */ false, aChromeFlags, aCalledFromJS,
+      /* aForPrinting = */ false,
+      /* aForWindowDotPrint = */ false, aIsTopLevelCreatedByWebContent,
+      aURIToLoad, aFeatures, aModifiers,
+      /* aNextRemoteBrowser = */ nullptr, aName, rv, newRemoteTab, &windowIsNew,
+      openLocation, aTriggeringPrincipal, aReferrerInfo,
+      /* aLoadUri = */ true, aPolicyContainer, aOriginAttributes,
+      aUserActivation, aTextDirectiveUserActivation);
+  if (!ipcResult) {
+    return ipcResult;
+  }
+
+  if (NS_FAILED(rv)) {
+    NS_WARNING("Call to CommonCreateWindow failed.");
+  }
 
   return IPC_OK();
 }
