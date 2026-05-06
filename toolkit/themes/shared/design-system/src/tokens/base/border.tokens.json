@@ -95,14 +95,6 @@
     },
     "large": {
       "value": "16px"
-    },
-    "xlarge": {
-      "override": true,
-      "value": "0"
-    },
-    "xxlarge": {
-      "override": true,
-      "value": "0"
     }
   },
   "width": {

@@ -2,8 +2,8 @@
   "color": {
     "@base": {
       "value": {
-        "light": "{color.gray.30}",
-        "dark": "{color.gray.50}",
+        "light": "{color.neutral.20}",
+        "dark": "{color.neutral.50}",
         "forcedColors": "CanvasText"
       }
     },
@@ -16,44 +16,20 @@
     "deemphasized": {
       "@base": {
         "value": {
-          "light": "{color.gray.20}",
-          "dark": "{color.gray.60}",
-          "forcedColors": "CanvasText"
+          "light": "{color.neutral.30}",
+          "dark": "{color.neutral.70}",
+          "forcedColors": "ButtonText"
         }
       }
     },
     "interactive": {
       "@base": {
         "value": {
-          "default": "{color.gray.40}",
+          "light": "{color.neutral.30}",
+          "dark": "{color.neutral.50}",
           "forcedColors": "ButtonText"
         }
-      },
-      "disabled": {
-        "value": {
-          "light": "{color.gray.25}",
-          "dark": "{color.gray.50}",
-          "forcedColors": "GrayText"
-        }
       }
-    },
-    "error": {
-      "value": {
-        "light": "{color.red.50}",
-        "dark": "{color.red.20}",
-        "forcedColors": "{border.color.@base}"
-      }
-    }
-  },
-  "radius": {
-    "large": {
-      "value": "12px"
-    },
-    "xlarge": {
-      "value": "16px"
-    },
-    "xxlarge": {
-      "value": "24px"
     }
   }
 }
