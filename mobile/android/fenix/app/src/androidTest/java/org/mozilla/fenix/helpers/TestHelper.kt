@@ -8,6 +8,8 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import android.view.View
+import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
@@ -272,4 +274,22 @@ object TestHelper {
 
     val snackbarButton: UiObject2?
         get() = mDevice.findObject(res(SNACKBAR_BUTTON_TEST_TAG))
+}
+
+/**
+ * Polls [node].assertIsDisplayed() until it succeeds or the timeout elapses.
+ *
+ * Use this after [performScrollToNode][androidx.compose.ui.test.performScrollToNode]
+ * for lazy-list items: scrolling establishes the node's existence in the semantics tree,
+ * but layout completion of its bounds can lag behind on slow Firebase shards. A plain
+ * [waitForIdle][ComposeTestRule.waitForIdle] does not always drain that, and
+ * [waitUntilAtLeastOneExists][androidx.compose.ui.test.waitUntilAtLeastOneExists] is a
+ * no-op once existence has been established.
+ */
+@OptIn(androidx.compose.ui.test.ExperimentalTestApi::class)
+fun ComposeTestRule.waitUntilDisplayed(
+    node: SemanticsNodeInteraction,
+    timeoutMillis: Long = waitingTime,
+) {
+    waitUntil(timeoutMillis) { runCatching { node.assertIsDisplayed() }.isSuccess }
 }

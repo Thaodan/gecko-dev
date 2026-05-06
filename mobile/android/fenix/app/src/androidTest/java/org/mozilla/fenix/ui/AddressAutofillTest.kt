@@ -31,9 +31,9 @@ class AddressAutofillTest {
         var name = "Mozilla Fenix Firefox"
         var streetAddress = "Harrison Street"
         var city = "San Francisco"
-        var state = "AK"
+        var state = "Alaska"
         var zipCode = "94105"
-        var country = "US"
+        var country = "United States"
         var phoneNumber = "555-5555"
         var emailAddress = "foo@bar.com"
     }
@@ -43,9 +43,9 @@ class AddressAutofillTest {
         var name = "Android Test Name"
         var streetAddress = "Fort Street"
         var city = "Alberta"
-        var state = "AZ"
+        var state = "Alberta"
         var zipCode = "95141"
-        var country = "CA"
+        var country = "Canada"
         var phoneNumber = "777-7777"
         var emailAddress = "fuu@bar.org"
     }
@@ -199,8 +199,7 @@ class AddressAutofillTest {
 
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(addressFormPage.url) {
-            clickPageObject(composeTestRule, itemWithResId("streetAddress"))
-            verifySelectAddressButtonExists(true)
+            clickAddressFormFieldAndVerifyAutofillSuggestionExists()
             closeSoftKeyboard()
             waitForAppWindowToBeUpdated()
         }.openThreeDotMenu {
@@ -364,12 +363,11 @@ class AddressAutofillTest {
         }.openAutofillSubMenu(composeTestRule) {
             verifyAddressAutofillSection(true, false)
             clickAddAddressButton()
-            clickCountryDropdown()
-            clickCountryOption("US")
+            waitForAddressFormReady()
+            clickCountryOption("United States")
             verifyCountryOption("United States")
             verifyStateOption("Alabama")
-            clickCountryDropdown()
-            clickCountryOption("CA")
+            clickCountryOption("Canada")
             verifyStateOption("Alberta")
         }
     }

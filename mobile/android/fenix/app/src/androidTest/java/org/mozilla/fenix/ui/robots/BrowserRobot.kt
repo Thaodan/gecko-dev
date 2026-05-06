@@ -634,6 +634,25 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
         }
     }
 
+    fun clickAddressFormFieldAndVerifyAutofillSuggestionExists() {
+        for (i in 1..RETRY_COUNT) {
+            try {
+                Log.i(TAG, "clickAddressFormFieldAndVerifyAutofillSuggestionExists: Started try #$i")
+                clickPageObject(composeTestRule, itemWithResId("streetAddress"))
+                assertUIObjectExists(selectAddressButton())
+                break
+            } catch (e: AssertionError) {
+                Log.i(TAG, "clickAddressFormFieldAndVerifyAutofillSuggestionExists: AssertionError caught on try #$i")
+                if (i == RETRY_COUNT) {
+                    throw e
+                } else {
+                    // De-focus streetAddress first so the next click re-triggers Gecko autofill
+                    clickPageObject(composeTestRule, itemWithResId("city"))
+                }
+            }
+        }
+    }
+
     fun verifySelectAddressButtonExists(exists: Boolean) = assertUIObjectExists(selectAddressButton(), exists = exists)
 
     fun changeCreditCardExpiryDate(expiryDate: String) {
