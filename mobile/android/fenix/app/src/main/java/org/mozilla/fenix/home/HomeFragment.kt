@@ -382,37 +382,9 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
         // DO NOT ADD ANYTHING ABOVE THIS getProfilerTime CALL!
         val profilerStartTime = requireComponents.core.engine.profiler?.getProfilerTime()
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
+
         val activity = activity as HomeActivity
-
-        initStoriesState()
-        initMessagingFeature()
-        initTopSitesBinding()
-        initRecentTabsListFeature()
-        initPrivacyReportFeature()
-        initBookmarksFeature()
-        initHistoryMetadataFeature()
-        initThumbnailsFeature()
-
-        privacyNoticeBannerStore = PrivacyNoticeBannerStore(
-            initialState = PrivacyNoticeBannerState(
-                visible = privacyNoticeBannerRepository.shouldShowPrivacyNoticeBanner(),
-            ),
-            middleware = listOf(
-                PrivacyNoticeBannerMiddleware(
-                    repository = privacyNoticeBannerRepository,
-                ),
-                PrivacyNoticeBannerTelemetryMiddleware(),
-            ),
-        )
-
-        initController()
-        initInteractor()
-
         nullableToolbarView = buildToolbar(activity)
-
-        if (requireContext().settings().microsurveyFeatureEnabled) {
-            listenForMicrosurveyMessage(requireContext())
-        }
 
         initComposeHomepage()
 
@@ -668,15 +640,41 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
         voiceSearchFeature = VoiceSearchFeature.register(this, voiceSearchLauncher)
         lensFeature = LensFeature.register(this, lensLauncher, lensCameraPermissionLauncher)
 
+        initStoriesState()
+        initMessagingFeature()
+        initTopSitesBinding()
+        initRecentTabsListFeature()
+        initPrivacyReportFeature()
+        initBookmarksFeature()
+        initHistoryMetadataFeature()
+        initThumbnailsFeature()
         initReviewPromptBinding(view = view)
+        initTabsCleanupFeature(view = view)
+        initSnackbarBinding(view = view)
+
+        privacyNoticeBannerStore = PrivacyNoticeBannerStore(
+            initialState = PrivacyNoticeBannerState(
+                visible = privacyNoticeBannerRepository.shouldShowPrivacyNoticeBanner(),
+            ),
+            middleware = listOf(
+                PrivacyNoticeBannerMiddleware(
+                    repository = privacyNoticeBannerRepository,
+                ),
+                PrivacyNoticeBannerTelemetryMiddleware(),
+            ),
+        )
+
+        initController()
+        initInteractor()
+
+        if (requireContext().settings().microsurveyFeatureEnabled) {
+            listenForMicrosurveyMessage(requireContext())
+        }
 
         continuousOnboardingFeature.maybeRunContinuousOnboarding(
             activity = requireActivity(),
             launcher = continuousOnboardingDefaultBrowserLauncher,
         )
-
-        initTabsCleanupFeature(view = view)
-        initSnackbarBinding(view = view)
 
         // DO NOT MOVE ANYTHING BELOW THIS addMarker CALL!
         requireComponents.core.engine.profiler?.addMarker(
