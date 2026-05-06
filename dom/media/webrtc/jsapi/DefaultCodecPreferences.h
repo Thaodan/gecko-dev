@@ -7,6 +7,7 @@
 
 #include "jsep/JsepCodecDescription.h"
 #include "mozilla/Preferences.h"
+#include "nsTArrayForwardDeclare.h"
 
 namespace mozilla {
 
@@ -15,6 +16,21 @@ enum class OverrideRtxPreference {
   OverrideWithEnabled,
   OverrideWithDisabled,
 };
+
+void EnumerateDefaultVideoCodecs(
+    nsTArray<UniquePtr<JsepCodecDescription>>& aSupportedCodecs,
+    const OverrideRtxPreference aOverrideRtxPreference);
+
+void EnumerateDefaultVideoCodecs(
+    nsTArray<UniquePtr<JsepCodecDescription>>& aSupportedCodecs,
+    const JsepCodecPreferences& aPrefs);
+
+void EnumerateDefaultAudioCodecs(
+    nsTArray<UniquePtr<JsepCodecDescription>>& aSupportedCodecs);
+
+void EnumerateDefaultAudioCodecs(
+    nsTArray<UniquePtr<JsepCodecDescription>>& aSupportedCodecs,
+    const JsepCodecPreferences& aPrefs);
 
 class DefaultCodecPreferences final : public JsepCodecPreferences {
  public:

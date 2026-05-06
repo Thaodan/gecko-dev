@@ -277,6 +277,13 @@ class JsepCodecDescription {
   VideoEncodingConstraints mConstraints;
 };
 
+struct CompareCodecPriority {
+  bool operator()(const UniquePtr<JsepCodecDescription>& aLHS,
+                  const UniquePtr<JsepCodecDescription>& aRHS) const {
+    return aLHS->mStronglyPreferred && !aRHS->mStronglyPreferred;
+  }
+};
+
 class JsepAudioCodecDescription final : public JsepCodecDescription {
  public:
   JsepAudioCodecDescription(const std::string& defaultPt,
