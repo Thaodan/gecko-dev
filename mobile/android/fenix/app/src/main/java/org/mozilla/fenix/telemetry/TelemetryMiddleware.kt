@@ -55,6 +55,15 @@ class TelemetryMiddleware(
 
     private val logger = Logger("TelemetryMiddleware")
 
+    // Tab IDs populated from TabListAction.RestoreAction (full app session restore).
+    // Used to distinguish session-restored creates from content-process-kill creates.
+    private val sessionRestoredTabIds = mutableSetOf<String>()
+
+    private enum class ReloadReason(val value: String) {
+        ContentProcessKill("content_process_kill"),
+        AppSessionRestore("app_session_restore"),
+    }
+
     @Suppress("TooGenericExceptionCaught", "CognitiveComplexMethod", "NestedBlockDepth", "LongMethod", "CyclomaticComplexMethod")
     override fun invoke(
         store: Store<BrowserState, BrowserAction>,
@@ -64,6 +73,10 @@ class TelemetryMiddleware(
         // Pre process actions
 
         when (action) {
+            is TabListAction.RestoreAction -> {
+                val restoredIds = action.tabs.map { it.state.id }
+                sessionRestoredTabIds.addAll(restoredIds)
+            }
             is ContentAction.UpdateLoadingStateAction -> {
                 store.state.findTab(action.sessionId)?.let { tab ->
                     val hasFinishedLoading = tab.content.loading && !action.loading
@@ -199,11 +212,20 @@ class TelemetryMiddleware(
             return
         }
 
-        // Record telemetry if the created tab was recently killed
-        if (state.recentlyKilledTabs.contains(tab.id)) {
+        val isFromSessionRestore = sessionRestoredTabIds.remove(tab.id)
+        val isFromProcessKill = state.recentlyKilledTabs.contains(tab.id)
+
+        val reason = when {
+            isFromProcessKill -> ReloadReason.ContentProcessKill
+            isFromSessionRestore -> ReloadReason.AppSessionRestore
+            else -> null
+        }
+
+        if (reason != null) {
             EngineMetrics.reloaded.record(
                 EngineMetrics.ReloadedExtra(
                     durationSinceLastVisibleSeconds = computeDurationSinceLastVisible(tab),
+                    reason = reason.value,
                 ),
             )
         }

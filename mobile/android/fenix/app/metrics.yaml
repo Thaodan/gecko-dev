@@ -11274,9 +11274,17 @@ engine_tab:
           (tab switched away or app backgrounded). -1 if unavailable (tab was never
           rendered, or is not a regular tab).
         type: quantity
+      reason:
+        description: |
+          Why the tab was reloaded. Either "content_process_kill" (the content
+          process was killed mid-session) or "app_session_restore" (the
+          entire app was killed and the tab was restored from a persisted
+          session on the next launch).
+        type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1938133
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1966918
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2008773
     data_reviews:
       - https://phabricator.services.mozilla.com/D240795
     notification_emails:

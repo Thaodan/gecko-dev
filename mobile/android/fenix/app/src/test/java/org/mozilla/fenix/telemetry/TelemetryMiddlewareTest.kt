@@ -13,6 +13,7 @@ import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.action.EngineAction
 import mozilla.components.browser.state.action.ExtensionsProcessAction
+import mozilla.components.browser.state.action.RestoreCompleteAction
 import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.action.TranslationsAction
 import mozilla.components.browser.state.engine.EngineMiddleware
@@ -324,7 +325,7 @@ class TelemetryMiddlewareTest {
         }
 
     @Test
-    fun `GIVEN an existing tab WHEN it reloads THEN telemetry is sent`() = runTest {
+    fun `GIVEN an existing tab WHEN its process is killed and it reloads THEN telemetry is sent with content_process_kill reason`() = runTest {
         val tabId = "test-tab-id"
 
         store.dispatch(
@@ -351,6 +352,7 @@ class TelemetryMiddlewareTest {
         assertNotNull(recordedEvents)
         assertEquals(1, recordedEvents!!.size)
         assertEquals("-1", recordedEvents[0].extra?.get("duration_since_last_visible_seconds"))
+        assertEquals("content_process_kill", recordedEvents[0].extra?.get("reason"))
 
         assertFalse(store.state.recentlyKilledTabs.contains(tabId))
     }
@@ -450,6 +452,30 @@ class TelemetryMiddlewareTest {
         }
 
     @Test
+    fun `GIVEN a tab restored from a previous session WHEN its engine session is created THEN telemetry is sent with app_session_restore reason`() = runTest {
+        val tabId = "test-tab-id"
+
+        store.dispatch(
+            TabListAction.RestoreAction(
+                tabs = listOf(RecoverableTab(null, TabState(url = "https://firefox.com", id = tabId))),
+                restoreLocation = TabListAction.RestoreAction.RestoreLocation.BEGINNING,
+            ),
+        )
+        store.dispatch(RestoreCompleteAction)
+
+        store.dispatch(
+            EngineAction.CreateEngineSessionAction(tabId),
+        )
+
+        ShadowLooper.idleMainLooper()
+
+        val recordedEvents = EngineMetrics.reloaded.testGetValue()
+        assertNotNull(recordedEvents)
+        assertEquals(1, recordedEvents!!.size)
+        assertEquals("app_session_restore", recordedEvents[0].extra?.get("reason"))
+    }
+
+    @Test
     fun `GIVEN a tab that was not recently killed WHEN it reloads THEN telemetry is NOT sent`() =
         runTest {
             val tabId = "test-tab-id"
@@ -527,13 +553,14 @@ class TelemetryMiddlewareTest {
             assertTrue(store.state.recentlyKilledTabs.contains(newTabId))
             assertEquals(50, store.state.recentlyKilledTabs.size)
 
-            // Verify the reload of the newest tab was recorded
+            // Verify the reload of the newest tab was recorded with process_kill reason
             val recordedEventsBefore = EngineMetrics.reloaded.testGetValue()?.size ?: 0
             store.dispatch(EngineAction.CreateEngineSessionAction(newTabId))
             ShadowLooper.idleMainLooper()
             val recordedEventsAfter = EngineMetrics.reloaded.testGetValue()
             assertNotNull(recordedEventsAfter)
             assertEquals(recordedEventsBefore + 1, recordedEventsAfter!!.size)
+            assertEquals("content_process_kill", recordedEventsAfter.last().extra?.get("reason"))
         }
 
     @Test
