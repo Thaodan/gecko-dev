@@ -57,6 +57,10 @@ skip-if = [
 ["browser_fullscreen_keyboard_lock_reserved.js"]
 
 ["browser_fullscreen_keyboard_lock_warning.js"]
+support-files = [
+  "fullscreen.html",
+  "fullscreen_frame.html",
+]
 
 ["browser_fullscreen_keydown_reservation.js"]
 
