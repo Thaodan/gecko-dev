@@ -5,6 +5,7 @@
 package org.mozilla.fenix.ui
 
 import androidx.core.net.toUri
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
@@ -43,6 +44,7 @@ class PwaTest {
     val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/845695
+    @Ignore("Bug 2036844: PWA pin-shortcut dialog never appears under v2 runTest dispatcher.")
     @Test
     fun externalLinkPWATest() {
         val externalLinkURL = "https://mozilla-mobile.github.io/testapp/downloads"
@@ -64,6 +66,7 @@ class PwaTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/845694
+    @Ignore("Bug 2036844: PWA pin-shortcut dialog never appears under v2 runTest dispatcher.")
     @Test
     fun appLikeExperiencePWATest() {
         navigationToolbar(composeTestRule) {
@@ -83,6 +86,7 @@ class PwaTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/834200
+    @Ignore("Bug 2036844: PWA pin-shortcut dialog never appears under v2 runTest dispatcher.")
     @SmokeTest
     @Test
     fun installPWAFromTheMainMenuTest() {
