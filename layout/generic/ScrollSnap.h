@@ -84,25 +84,6 @@ struct ScrollSnapUtils {
   static nsRect GetSnapAreaFor(const nsIFrame* aFrame,
                                const nsIFrame* aScrolledFrame,
                                const nsRect& aScrolledRect);
-
-  // Returns an |nsAutoCString| representation of an |nsTArray| that
-  // contains |ScrollInfo::SnapTarget|s.
-  template <typename T>
-  static nsAutoCString StringifySnapTargetList(
-      const nsTArray<T>& aSnapTargets) {
-    nsAutoCString string;
-    string.AppendPrintf("[ ");
-    bool first{true};
-    for (const auto& target : aSnapTargets) {
-      if (!first) {
-        string.AppendASCII(", ");
-      }
-      first = false;
-      string.Append(ToString(target).c_str());
-    }
-    string.AppendPrintf(" ]");
-    return string;
-  }
 };
 
 }  // namespace mozilla

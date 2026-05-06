@@ -636,16 +636,10 @@ static std::pair<Maybe<nscoord>, Maybe<nscoord>> GetCandidateInLastTargets(
       });
 
   if (MOZ_LOG_TEST(sApzScrollSnapLog, LogLevel::Debug)) {
-    const nsAutoCString allTargets =
-        ScrollSnapUtils::StringifySnapTargetList<SnapTarget>(
-            aSnapInfo.mSnapTargets);
-    const nsAutoCString inlineTargets =
-        ScrollSnapUtils::StringifySnapTargetList<const SnapTarget*>(inlineSet);
-    const nsAutoCString blockTargets =
-        ScrollSnapUtils::StringifySnapTargetList<const SnapTarget*>(blockSet);
-    SCROLL_SNAP_LOG("All snap targets: %s", allTargets.get());
-    SCROLL_SNAP_LOG("Inline snap targets: %s", inlineTargets.get());
-    SCROLL_SNAP_LOG("Block snap targets: %s", blockTargets.get());
+    SCROLL_SNAP_LOG("All snap targets: %s",
+                    ToString(aSnapInfo.mSnapTargets).c_str());
+    SCROLL_SNAP_LOG("Inline snap targets: %s", ToString(inlineSet).c_str());
+    SCROLL_SNAP_LOG("Block snap targets: %s", ToString(blockSet).c_str());
   }
 
   // Step 4.1: If the focused element is in a set, it's the only candidate.
