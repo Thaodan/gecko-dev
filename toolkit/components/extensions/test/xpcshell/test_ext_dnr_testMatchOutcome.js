@@ -217,7 +217,9 @@ add_task(async function url_validation() {
       const disallowedUrlsOrInitiators = [
         // about:-URI with system principal:
         "about:config",
-        // Unprivileged about:-URL:
+        // Unprivileged about:-URL.
+        // test_ext_dnr_system_restrictions.js tests this with a real request
+        // and custom about: URL.
         "about:mozilla",
         "chrome://extensions/content/dummy.xhtml",
         "resource://pdf.js/web/viewer.html",
