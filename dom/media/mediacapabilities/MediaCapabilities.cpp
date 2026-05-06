@@ -35,17 +35,162 @@
 #include "mozilla/layers/KnowsCompositor.h"
 #include "nsContentUtils.h"
 
+namespace mozilla::dom {
+struct VideoConfiguration;
+struct AudioConfiguration;
+bool MediaCapabilitiesKeySystemConfigurationToMediaKeySystemConfiguration(
+    const MediaDecodingConfiguration& aInConfig,
+    MediaKeySystemConfiguration& aOutConfig);
+}  // namespace mozilla::dom
+
+template <>
+struct fmt::formatter<mozilla::dom::VideoConfiguration>
+    : fmt::formatter<std::string_view> {
+  auto format(const mozilla::dom::VideoConfiguration& aConfig,
+              fmt::format_context& aCtx) const {
+    return fmt::format_to(
+        aCtx.out(),
+        "[contentType:{} width:{} height:{} bitrate:{} framerate:{} "
+        "hasAlphaChannel:{} hdrMetadataType:{} colorGamut:{} "
+        "transferFunction:{} scalabilityMode:{}]",
+        NS_ConvertUTF16toUTF8(aConfig.mContentType).get(), aConfig.mWidth,
+        aConfig.mHeight, aConfig.mBitrate, aConfig.mFramerate,
+        aConfig.mHasAlphaChannel.WasPassed()
+            ? (aConfig.mHasAlphaChannel.Value() ? "true" : "false")
+            : "?",
+        aConfig.mHdrMetadataType.WasPassed()
+            ? GetEnumString(aConfig.mHdrMetadataType.Value()).get()
+            : "?",
+        aConfig.mColorGamut.WasPassed()
+            ? GetEnumString(aConfig.mColorGamut.Value()).get()
+            : "?",
+        aConfig.mTransferFunction.WasPassed()
+            ? GetEnumString(aConfig.mTransferFunction.Value()).get()
+            : "?",
+        aConfig.mScalabilityMode.WasPassed()
+            ? NS_ConvertUTF16toUTF8(aConfig.mScalabilityMode.Value()).get()
+            : "?");
+  }
+};
+
+template <>
+struct fmt::formatter<mozilla::dom::AudioConfiguration>
+    : fmt::formatter<std::string_view> {
+  auto format(const mozilla::dom::AudioConfiguration& aConfig,
+              fmt::format_context& aCtx) const {
+    return fmt::format_to(
+        aCtx.out(), "[contentType:{} channels:{} bitrate:{} samplerate:{}]",
+        NS_ConvertUTF16toUTF8(aConfig.mContentType).get(),
+        aConfig.mChannels.WasPassed()
+            ? NS_ConvertUTF16toUTF8(aConfig.mChannels.Value()).get()
+            : "?",
+        aConfig.mBitrate.WasPassed() ? aConfig.mBitrate.Value() : 0,
+        aConfig.mSamplerate.WasPassed() ? aConfig.mSamplerate.Value() : 0);
+  }
+};
+
+template <>
+struct fmt::formatter<mozilla::dom::MediaCapabilitiesInfo>
+    : fmt::formatter<std::string_view> {
+  auto format(const mozilla::dom::MediaCapabilitiesInfo& aInfo,
+              fmt::format_context& aCtx) const {
+    return fmt::format_to(
+        aCtx.out(), "[supported:{} smooth:{} powerEfficient:{}]",
+        aInfo.mSupported ? "true" : "false", aInfo.mSmooth ? "true" : "false",
+        aInfo.mPowerEfficient ? "true" : "false");
+  }
+};
+
+template <>
+struct fmt::formatter<mozilla::dom::MediaEncodingConfiguration>
+    : fmt::formatter<std::string_view> {
+  auto format(const mozilla::dom::MediaEncodingConfiguration& aConfig,
+              fmt::format_context& aCtx) const {
+    auto out = aCtx.out();
+    out = fmt::format_to(out, "[video: ");
+    if (aConfig.mVideo.WasPassed()) {
+      out = fmt::format_to(out, "{}", aConfig.mVideo.Value());
+    } else {
+      out = fmt::format_to(out, "None");
+    }
+    out = fmt::format_to(out, ", audio: ");
+    if (aConfig.mAudio.WasPassed()) {
+      out = fmt::format_to(out, "{}", aConfig.mAudio.Value());
+    } else {
+      out = fmt::format_to(out, "None");
+    }
+    out = fmt::format_to(out, "]");
+    return out;
+  }
+};
+
+template <>
+struct fmt::formatter<mozilla::dom::MediaDecodingConfiguration>
+    : fmt::formatter<std::string_view> {
+  auto format(const mozilla::dom::MediaDecodingConfiguration& aConfig,
+              fmt::format_context& aCtx) const {
+    auto out = aCtx.out();
+    out = fmt::format_to(out, "[");
+
+    if (aConfig.mVideo.WasPassed()) {
+      out = fmt::format_to(out, "video:{}", aConfig.mVideo.Value());
+      if (aConfig.mAudio.WasPassed()) {
+        out = fmt::format_to(out, " ");
+      }
+    }
+
+    if (aConfig.mAudio.WasPassed()) {
+      out = fmt::format_to(out, "audio:{}", aConfig.mAudio.Value());
+    }
+
+    if (aConfig.mKeySystemConfiguration.WasPassed()) {
+      out =
+          fmt::format_to(out, "[keySystem:{}, ",
+                         NS_ConvertUTF16toUTF8(
+                             aConfig.mKeySystemConfiguration.Value().mKeySystem)
+                             .get());
+
+      mozilla::dom::MediaKeySystemConfiguration emeConfig;
+      if (mozilla::dom::
+              MediaCapabilitiesKeySystemConfigurationToMediaKeySystemConfiguration(
+                  aConfig, emeConfig)) {
+        nsCString emeStr =
+            mozilla::dom::MediaKeySystemAccess::ToCString(emeConfig);
+        out = std::copy(emeStr.BeginReading(), emeStr.EndReading(), out);
+      }
+      out = fmt::format_to(out, "]");
+    }
+
+    out = fmt::format_to(out, "]");
+    return out;
+  }
+};
+
+template <>
+struct fmt::formatter<mozilla::dom::MediaCapabilitiesDecodingInfo>
+    : fmt::formatter<std::string_view> {
+  auto format(const mozilla::dom::MediaCapabilitiesDecodingInfo& aInfo,
+              fmt::format_context& aCtx) const {
+    return fmt::format_to(
+        aCtx.out(),
+        "[supported:{} smooth:{} powerEfficient:{} keySystemAccess:{}]",
+        aInfo.mSupported ? "true" : "false", aInfo.mSmooth ? "true" : "false",
+        aInfo.mPowerEfficient ? "true" : "false",
+        aInfo.mKeySystemAccess ? "present" : "null");
+  }
+};
+
 mozilla::LazyLogModule sMediaCapabilitiesLog("MediaCapabilities");
 
-#define LOG(msg, ...) \
-  DDMOZ_LOG(sMediaCapabilitiesLog, LogLevel::Debug, msg, ##__VA_ARGS__)
+#define LOG(fmt, ...)                                          \
+  MOZ_LOG_FMT(sMediaCapabilitiesLog, mozilla::LogLevel::Debug, \
+              "[MediaCapabilities] {}: " fmt, __func__, __VA_ARGS__)
 
 namespace mozilla::dom {
 using mediacaps::IsValidMediaDecodingConfiguration;
 using mediacaps::IsValidMediaEncodingConfiguration;
 
-static bool
-MediaCapabilitiesKeySystemConfigurationToMediaKeySystemConfiguration(
+bool MediaCapabilitiesKeySystemConfigurationToMediaKeySystemConfiguration(
     const MediaDecodingConfiguration& aInConfig,
     MediaKeySystemConfiguration& aOutConfig) {
   if (!aInConfig.mKeySystemConfiguration.WasPassed()) {
@@ -97,88 +242,6 @@ MediaCapabilitiesKeySystemConfigurationToMediaKeySystemConfiguration(
     }
   }
   return true;
-}
-
-static nsCString VideoConfigurationToStr(const VideoConfiguration* aConfig) {
-  if (!aConfig) {
-    return nsCString();
-  }
-
-  auto str = nsPrintfCString(
-      "[contentType:%s width:%d height:%d bitrate:%" PRIu64
-      " framerate:%lf hasAlphaChannel:%s hdrMetadataType:%s colorGamut:%s "
-      "transferFunction:%s scalabilityMode:%s]",
-      NS_ConvertUTF16toUTF8(aConfig->mContentType).get(), aConfig->mWidth,
-      aConfig->mHeight, aConfig->mBitrate, aConfig->mFramerate,
-      aConfig->mHasAlphaChannel.WasPassed()
-          ? aConfig->mHasAlphaChannel.Value() ? "true" : "false"
-          : "?",
-      aConfig->mHdrMetadataType.WasPassed()
-          ? GetEnumString(aConfig->mHdrMetadataType.Value()).get()
-          : "?",
-      aConfig->mColorGamut.WasPassed()
-          ? GetEnumString(aConfig->mColorGamut.Value()).get()
-          : "?",
-      aConfig->mTransferFunction.WasPassed()
-          ? GetEnumString(aConfig->mTransferFunction.Value()).get()
-          : "?",
-      aConfig->mScalabilityMode.WasPassed()
-          ? NS_ConvertUTF16toUTF8(aConfig->mScalabilityMode.Value()).get()
-          : "?");
-  return std::move(str);
-}
-
-static nsCString AudioConfigurationToStr(const AudioConfiguration* aConfig) {
-  if (!aConfig) {
-    return nsCString();
-  }
-  auto str = nsPrintfCString(
-      "[contentType:%s channels:%s bitrate:%" PRIu64 " samplerate:%d]",
-      NS_ConvertUTF16toUTF8(aConfig->mContentType).get(),
-      aConfig->mChannels.WasPassed()
-          ? NS_ConvertUTF16toUTF8(aConfig->mChannels.Value()).get()
-          : "?",
-      aConfig->mBitrate.WasPassed() ? aConfig->mBitrate.Value() : 0,
-      aConfig->mSamplerate.WasPassed() ? aConfig->mSamplerate.Value() : 0);
-  return std::move(str);
-}
-
-static nsCString MediaCapabilitiesInfoToStr(
-    const MediaCapabilitiesInfo& aInfo) {
-  auto str = nsPrintfCString("[supported:%s smooth:%s powerEfficient:%s]",
-                             aInfo.mSupported ? "true" : "false",
-                             aInfo.mSmooth ? "true" : "false",
-                             aInfo.mPowerEfficient ? "true" : "false");
-  return std::move(str);
-}
-
-static nsCString MediaDecodingConfigurationToStr(
-    const MediaDecodingConfiguration& aConfig) {
-  nsCString str;
-  str += "["_ns;
-  if (aConfig.mVideo.WasPassed()) {
-    str += "video:"_ns + VideoConfigurationToStr(&aConfig.mVideo.Value());
-    if (aConfig.mAudio.WasPassed()) {
-      str += " "_ns;
-    }
-  }
-  if (aConfig.mAudio.WasPassed()) {
-    str += "audio:"_ns + AudioConfigurationToStr(&aConfig.mAudio.Value());
-  }
-  if (aConfig.mKeySystemConfiguration.WasPassed()) {
-    str += "[keySystem:"_ns +
-           NS_ConvertUTF16toUTF8(
-               aConfig.mKeySystemConfiguration.Value().mKeySystem) +
-           ", "_ns;
-    MediaKeySystemConfiguration emeConfig;
-    if (MediaCapabilitiesKeySystemConfigurationToMediaKeySystemConfiguration(
-            aConfig, emeConfig)) {
-      str += MediaKeySystemAccess::ToCString(emeConfig);
-    }
-    str += "]"_ns;
-  }
-  str += "]"_ns;
-  return str;
 }
 
 MediaCapabilities::MediaCapabilities(nsIGlobalObject* aParent)
@@ -242,7 +305,7 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
 void MediaCapabilities::CreateMediaCapabilitiesDecodingInfo(
     const MediaDecodingConfiguration& aConfiguration, ErrorResult& aRv,
     Promise* aPromise) {
-  LOG("Processing %s", MediaDecodingConfigurationToStr(aConfiguration).get());
+  LOG("Processing {}", aConfiguration);
 
   bool supported = true;
   Maybe<MediaContainerType> videoContainer;
@@ -283,8 +346,7 @@ void MediaCapabilities::CreateMediaCapabilitiesDecodingInfo(
     info.mSupported = false;
     info.mSmooth = false;
     info.mPowerEfficient = false;
-    LOG("%s -> %s", MediaDecodingConfigurationToStr(aConfiguration).get(),
-        MediaCapabilitiesInfoToStr(info).get());
+    LOG("{} -> {}", aConfiguration, info);
     aPromise->MaybeResolve(std::move(info));
     return;
   }
@@ -396,9 +458,8 @@ void MediaCapabilities::CreateMediaCapabilitiesDecodingInfo(
                 info.mSupported = false;
                 info.mSmooth = false;
                 info.mPowerEfficient = false;
-                LOG("DRM support check rejected: %s -> %s",
-                    MediaDecodingConfigurationToStr(aConfiguration).get(),
-                    MediaCapabilitiesInfoToStr(info).get());
+                LOG("DRM support check rejected: {} -> {}", aConfiguration,
+                    info);
                 promise->MaybeResolve(std::move(info));
                 return;
               }
@@ -420,18 +481,16 @@ void MediaCapabilities::CreateMediaCapabilitiesDecodingInfo(
                 } else {
                   drmInfo.mPowerEfficient = false;
                 }
-                LOG("RFP: suppressing DRM capabilities: %s -> %s",
-                    MediaDecodingConfigurationToStr(aConfiguration).get(),
-                    MediaCapabilitiesInfoToStr(drmInfo).get());
+                LOG("RFP: suppressing DRM capabilities: {} -> {}",
+                    aConfiguration, drmInfo);
                 promise->MaybeResolve(std::move(drmInfo));
                 return;
               }
 
               if (hwDRM || !videoInfo) {
                 drmInfo.mPowerEfficient = hwDRM && !!videoInfo;
-                LOG("DRM hardware decrypt or no video track: %s -> %s",
-                    MediaDecodingConfigurationToStr(aConfiguration).get(),
-                    MediaCapabilitiesInfoToStr(drmInfo).get());
+                LOG("DRM hardware decrypt or no video track: {} -> {}",
+                    aConfiguration, drmInfo);
                 promise->MaybeResolve(std::move(drmInfo));
                 return;
               }
@@ -451,10 +510,8 @@ void MediaCapabilities::CreateMediaCapabilitiesDecodingInfo(
                         } else {
                           drmInfo.mPowerEfficient = false;
                         }
-                        LOG("Software DRM decoder check: %s -> %s",
-                            MediaDecodingConfigurationToStr(aConfiguration)
-                                .get(),
-                            MediaCapabilitiesInfoToStr(drmInfo).get());
+                        LOG("Software DRM decoder check: {} -> {}",
+                            aConfiguration, drmInfo);
                         promise->MaybeResolve(std::move(drmInfo));
                       });
             });
@@ -528,8 +585,8 @@ void MediaCapabilities::CreateMediaCapabilitiesDecodingInfo(
   CapabilitiesPromise::All(taskQueue, promises)
       ->Then(targetThread, __func__,
              [promise = RefPtr<Promise>{aPromise}, tracks = std::move(tracks),
-              workerRef, holder, aConfiguration, self,
-              this](CapabilitiesPromise::AllPromiseType::ResolveOrRejectValue&&
+              workerRef, holder, aConfiguration,
+              self](CapabilitiesPromise::AllPromiseType::ResolveOrRejectValue&&
                         aValue) {
                holder->Complete();
                if (aValue.IsReject()) {
@@ -537,9 +594,7 @@ void MediaCapabilities::CreateMediaCapabilitiesDecodingInfo(
                  info.mSupported = false;
                  info.mSmooth = false;
                  info.mPowerEfficient = false;
-                 LOG("%s -> %s",
-                     MediaDecodingConfigurationToStr(aConfiguration).get(),
-                     MediaCapabilitiesInfoToStr(info).get());
+                 LOG("{} -> {}", aConfiguration, info);
                  promise->MaybeResolve(std::move(info));
                  return;
                }
@@ -553,9 +608,7 @@ void MediaCapabilities::CreateMediaCapabilitiesDecodingInfo(
                info.mSupported = true;
                info.mSmooth = smooth;
                info.mPowerEfficient = powerEfficient;
-               LOG("%s -> %s",
-                   MediaDecodingConfigurationToStr(aConfiguration).get(),
-                   MediaCapabilitiesInfoToStr(info).get());
+               LOG("{} -> {}", aConfiguration, info);
                promise->MaybeResolve(std::move(info));
              })
       ->Track(*holder);
