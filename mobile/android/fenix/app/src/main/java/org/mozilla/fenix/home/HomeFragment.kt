@@ -884,18 +884,8 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
         val profilerStartTime = requireComponents.core.engine.profiler?.getProfilerTime()
 
         super.onViewCreated(view, savedInstanceState)
-        HomeScreen.homeScreenDisplayed.record(NoExtras())
 
-        with(requireContext()) {
-            if (settings().isExperimentationEnabled) {
-                recordEventInNimbus("home_screen_displayed")
-            }
-        }
-
-        HomeScreen.homeScreenViewCount.add()
-        if (!browsingModeManager.mode.isPrivate) {
-            HomeScreen.standardHomepageViewCount.add()
-        }
+        recordHomepageTelemetry()
 
         observePrivateModeLock {
             findNavController().navigate(
@@ -1350,6 +1340,22 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
             owner = this,
             view = view,
         )
+    }
+
+    private fun recordHomepageTelemetry() {
+        HomeScreen.homeScreenDisplayed.record(NoExtras())
+
+        with(requireContext()) {
+            if (settings().isExperimentationEnabled) {
+                recordEventInNimbus("home_screen_displayed")
+            }
+        }
+
+        HomeScreen.homeScreenViewCount.add()
+
+        if (!browsingModeManager.mode.isPrivate) {
+            HomeScreen.standardHomepageViewCount.add()
+        }
     }
 
     companion object {
