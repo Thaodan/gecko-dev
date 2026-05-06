@@ -88,6 +88,10 @@ class MediaCapabilities final : public nsISupports, public nsWrapperCache {
       const MediaDecodingConfiguration& aConfiguration, ErrorResult& aRv,
       Promise* aPromise);
 
+  void CreateWebRTCDecodingInfo(
+      const MediaDecodingConfiguration& aConfiguration, Promise* aPromise,
+      Maybe<MediaContainerType> aVideoContainer,
+      Maybe<MediaContainerType> aAudioContainer);
   void CreateNonWebRTCDecodingInfo(
       const MediaDecodingConfiguration& aConfiguration, Promise* aPromise,
       Maybe<MediaContainerType> aVideoContainer,

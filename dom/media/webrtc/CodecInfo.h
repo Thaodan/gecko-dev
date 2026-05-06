@@ -33,16 +33,10 @@ class WebrtcCodecInfo {
   // Factory method. Samples preferences and gfxVars.
   [[nodiscard]] static std::unique_ptr<WebrtcCodecInfo> Create();
 
-  // Query if specific MIME type is supported for encoding/decoding.
-  [[nodiscard]] virtual bool SupportsMimeEncode(
+  // Query the cache if specific MIME type is supported for encoding/decoding.
+  [[nodiscard]] virtual bool CheckEncodeType(
       const MediaExtendedMIMEType& aMime) const = 0;
-  [[nodiscard]] virtual bool SupportsMimeDecode(
-      const MediaExtendedMIMEType& aMime) const = 0;
-
-  // Query if specific MIME type supports hardware acceleration.
-  [[nodiscard]] virtual bool SupportsMimeHWEncode(
-      const MediaExtendedMIMEType& aMime) const = 0;
-  [[nodiscard]] virtual bool SupportsMimeHWDecode(
+  [[nodiscard]] virtual bool CheckDecodeType(
       const MediaExtendedMIMEType& aMime) const = 0;
 };
 

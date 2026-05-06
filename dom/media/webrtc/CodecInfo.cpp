@@ -8,8 +8,6 @@
 #  include "jsapi/DefaultCodecPreferences.h"
 #  include "libwebrtcglue/WebrtcVideoCodecFactory.h"
 #  include "media/base/media_constants.h"
-#  include "mozilla/StaticPrefs_media.h"
-#  include "mozilla/gfx/gfxVars.h"
 #endif
 
 namespace mozilla {
@@ -57,56 +55,22 @@ class CodecInfoImpl final : public WebrtcCodecInfo {
           nsTArray<UniquePtr<JsepCodecDescription>> codecs;
           EnumerateDefaultVideoCodecs(codecs, mPrefs);
           return codecs;
-        }()),
-        mUseAV1HwEncode(gfx::gfxVars::GetUseAV1HwEncodeOrDefault()),
-        mUseAV1HwDecode(gfx::gfxVars::GetUseAV1HwDecodeOrDefault()),
-        mUseH264HwEncode(gfx::gfxVars::GetUseH264HwEncodeOrDefault()),
-        mUseH264HwDecode(gfx::gfxVars::GetUseH264HwDecodeOrDefault()),
-        mUseVP8HwEncode(gfx::gfxVars::GetUseVP8HwEncodeOrDefault()),
-        mUseVP8HwDecode(gfx::gfxVars::GetUseVP8HwDecodeOrDefault()),
-        mUseVP9HwEncode(gfx::gfxVars::GetUseVP9HwEncodeOrDefault()),
-        mUseVP9HwDecode(gfx::gfxVars::GetUseVP9HwDecodeOrDefault()),
-        mCanUseHardwareVideoEncoding(
-            gfx::gfxVars::GetCanUseHardwareVideoEncodingOrDefault()),
-        mCanUseHardwareVideoDecoding(
-            gfx::gfxVars::GetCanUseHardwareVideoDecodingOrDefault()),
-        mHardwareVideoEncodingEnabled([] {
-          return StaticPrefs::media_hardware_video_encoding_enabled_AtStartup();
-        }()),
-        mHardwareVideoDecodingEnabled([] {
-          return StaticPrefs::media_hardware_video_decoding_enabled_AtStartup();
         }()) {}
 
-  [[nodiscard]] bool SupportsMimeEncode(
+  [[nodiscard]] bool CheckEncodeType(
       const MediaExtendedMIMEType& aMime) const override {
-    return QueryCodecDetails(aMime, Direction::Send).mSupported;
+    return QueryCodecDetails<sdp::kSend>(aMime);
   }
 
-  [[nodiscard]] bool SupportsMimeDecode(
+  [[nodiscard]] bool CheckDecodeType(
       const MediaExtendedMIMEType& aMime) const override {
-    return QueryCodecDetails(aMime, Direction::Recv).mSupported;
-  }
-
-  [[nodiscard]] bool SupportsMimeHWEncode(
-      const MediaExtendedMIMEType& aMime) const override {
-    return QueryCodecDetails(aMime, Direction::Send).mAccelerated;
-  }
-
-  [[nodiscard]] bool SupportsMimeHWDecode(
-      const MediaExtendedMIMEType& aMime) const override {
-    return QueryCodecDetails(aMime, Direction::Recv).mAccelerated;
+    return QueryCodecDetails<sdp::kRecv>(aMime);
   }
 
  private:
-  enum class Direction : uint8_t { Send, Recv };
-
-  struct CodecDetails {
-    bool mSupported;
-    bool mAccelerated;
-  };
-
-  CodecDetails QueryCodecDetails(const MediaExtendedMIMEType& aMime,
-                                 const Direction aDirection) const {
+  template <sdp::Direction kDirection>
+  bool QueryCodecDetails(const MediaExtendedMIMEType& aMime) const {
+    static_assert(kDirection == sdp::kSend || kDirection == sdp::kRecv);
     const auto& type = aMime.Type();
     const bool isAudio = type.HasAudioMajorType();
     const bool isVideo = type.HasVideoMajorType();
@@ -115,92 +79,31 @@ class CodecInfoImpl final : public WebrtcCodecInfo {
       return {};
     }
 
-    const nsCString& norm = type.AsString();
-    const int32_t slash = norm.FindChar('/');
-    if (slash < 0) {
-      return {};
-    }
-    auto sub(Substring(norm, slash + 1));
+    auto payloadString = MimeTypeToPayloadString(aMime);
 
     // Codecs that are not standalone media codecs and not supported by WebRTC
-    if (sub.EqualsIgnoreCase(::webrtc::kRtxCodecName) ||
-        sub.EqualsIgnoreCase(::webrtc::kRedCodecName) ||
-        sub.EqualsIgnoreCase(::webrtc::kUlpfecCodecName) ||
-        sub.EqualsIgnoreCase(::webrtc::kFlexfecCodecName) ||
-        sub.EqualsIgnoreCase(::webrtc::kDtmfCodecName)) {
+    if (payloadString.EqualsIgnoreCase(webrtc::kRtxCodecName) ||
+        payloadString.EqualsIgnoreCase(webrtc::kRedCodecName) ||
+        payloadString.EqualsIgnoreCase(webrtc::kUlpfecCodecName) ||
+        payloadString.EqualsIgnoreCase(webrtc::kFlexfecCodecName) ||
+        payloadString.EqualsIgnoreCase(webrtc::kDtmfCodecName)) {
       return {};
     }
 
     const auto& codecs = isAudio ? mAudioCodecs : mVideoCodecs;
-    const bool isEncode = aDirection == Direction::Send;
-    const sdp::Direction direction = isEncode ? sdp::kSend : sdp::kRecv;
-
     for (const auto& c : codecs) {
-      if (!sub.EqualsIgnoreCase(c->mName) || !c->mEnabled ||
-          !c->DirectionSupported(direction)) {
-        continue;
+      // TODO(Bug 2024767): Handle fmtp parameters
+      if (payloadString.EqualsIgnoreCase(c->mName) && c->mEnabled &&
+          c->DirectionSupported(kDirection)) {
+        return true;
       }
-      bool supported = true;
-      bool accelerated = false;
-      // Check hardware acceleration for video encode/decode.
-      if (sub.EqualsIgnoreCase(::webrtc::kAv1CodecName)) {
-        supported = mPrefs.AV1Enabled();
-        if (isEncode) {
-          accelerated = mUseAV1HwEncode;
-        } else {
-          accelerated = mUseAV1HwDecode;
-        }
-      } else if (sub.EqualsIgnoreCase(::webrtc::kH264CodecName)) {
-        supported = mPrefs.H264Enabled();
-        if (isEncode) {
-          accelerated = mPrefs.HardwareH264Enabled();
-          accelerated &= mUseH264HwEncode;
-        } else {
-          accelerated = mPrefs.HardwareH264Enabled();
-          accelerated &= mUseH264HwDecode;
-        }
-      } else if (sub.EqualsIgnoreCase(::webrtc::kVp8CodecName)) {
-        if (isEncode) {
-          accelerated = mUseVP8HwEncode;
-        } else {
-          accelerated = mUseVP8HwDecode;
-        }
-      } else if (sub.EqualsIgnoreCase(::webrtc::kVp9CodecName)) {
-        if (isEncode) {
-          accelerated = mUseVP9HwEncode;
-        } else {
-          accelerated = mUseVP9HwDecode;
-        }
-      }
-      // Check whether accelerated decode/encode is blocked by prefs.
-      if (isEncode) {
-        accelerated &= mCanUseHardwareVideoEncoding;
-        accelerated &= mHardwareVideoEncodingEnabled;
-      } else {
-        accelerated &= mCanUseHardwareVideoDecoding;
-        accelerated &= mHardwareVideoDecodingEnabled;
-      }
-      return {.mSupported = supported, .mAccelerated = accelerated};
     }
-    return {};
+    return false;
   }
 
   const DefaultCodecPreferences mPrefs;
   const nsTArray<UniquePtr<JsepCodecDescription>> mAudioCodecs;
   const nsTArray<UniquePtr<JsepCodecDescription>> mVideoCodecs;
-
-  const bool mUseAV1HwEncode;
-  const bool mUseAV1HwDecode;
-  const bool mUseH264HwEncode;
-  const bool mUseH264HwDecode;
-  const bool mUseVP8HwEncode;
-  const bool mUseVP8HwDecode;
-  const bool mUseVP9HwEncode;
-  const bool mUseVP9HwDecode;
-  const bool mCanUseHardwareVideoEncoding;
-  const bool mCanUseHardwareVideoDecoding;
-  const bool mHardwareVideoEncodingEnabled;
-  const bool mHardwareVideoDecodingEnabled;
 };
 
 /* static */
@@ -219,16 +122,10 @@ media::DecodeSupportSet SupportsVideoMimeDecodeForWebrtc(
 
 class CodecInfoStub final : public WebrtcCodecInfo {
  public:
-  bool SupportsMimeEncode(const MediaExtendedMIMEType&) const override {
+  bool CheckEncodeType(const MediaExtendedMIMEType&) const override {
     return false;
   }
-  bool SupportsMimeDecode(const MediaExtendedMIMEType&) const override {
-    return false;
-  }
-  bool SupportsMimeHWEncode(const MediaExtendedMIMEType&) const override {
-    return false;
-  }
-  bool SupportsMimeHWDecode(const MediaExtendedMIMEType&) const override {
+  bool CheckDecodeType(const MediaExtendedMIMEType&) const override {
     return false;
   }
 };
