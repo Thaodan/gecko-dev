@@ -24,6 +24,8 @@ struct MediaDecodingConfiguration;
 struct MediaEncodingConfiguration;
 enum class MediaEncodingType : uint8_t;
 enum class MediaDecodingType : uint8_t;
+enum class ColorGamut : uint8_t;
+enum class TransferFunction : uint8_t;
 }  // namespace dom
 
 namespace mediacaps {
