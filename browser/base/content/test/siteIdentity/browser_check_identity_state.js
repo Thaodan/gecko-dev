@@ -105,7 +105,6 @@ add_task(async function chromeUITest() {
     "about:about",
     "about:credits",
     "about:home",
-    "about:logo",
     "about:memory",
     "about:mozilla",
     "about:networking",
