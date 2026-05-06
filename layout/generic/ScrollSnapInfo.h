@@ -5,6 +5,8 @@
 #ifndef mozilla_layout_ScrollSnapInfo_h_
 #define mozilla_layout_ScrollSnapInfo_h_
 
+#include <iosfwd>
+
 #include "mozilla/AppUnits.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/ScrollSnapTargetId.h"
@@ -149,6 +151,9 @@ struct ScrollSnapInfo {
   // Note: This snapport size has been already deflated by scroll-padding.
   nsSize mSnapportSize;
 };
+
+std::ostream& operator<<(std::ostream& aStream,
+                         const ScrollSnapInfo::SnapTarget& aTarget);
 
 }  // namespace mozilla
 

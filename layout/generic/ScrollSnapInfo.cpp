@@ -5,6 +5,8 @@
 #include "ScrollSnapInfo.h"
 
 #include "mozilla/WritingModes.h"
+#include "mozilla/dom/Element.h"
+#include "nsIContent.h"
 #include "nsPoint.h"
 #include "nsRect.h"
 #include "nsStyleStruct.h"
@@ -101,6 +103,18 @@ void ScrollSnapInfo::ForEachValidTargetFor(
       break;
     }
   }
+}
+
+std::ostream& operator<<(std::ostream& aStream,
+                         const ScrollSnapInfo::SnapTarget& aTarget) {
+  nsAutoString string;
+  const nsIContent* content = reinterpret_cast<nsIContent*>(aTarget.mTargetId);
+  if (content->IsElement()) {
+    content->AsElement()->Describe(string);
+  } else {
+    string.AppendPrintf("(not an element)");
+  }
+  return aStream << NS_LossyConvertUTF16toASCII(string).get();
 }
 
 }  // namespace mozilla

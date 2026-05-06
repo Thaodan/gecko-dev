@@ -87,10 +87,6 @@ struct ScrollSnapUtils {
                                const nsIFrame* aScrolledFrame,
                                const nsRect& aScrolledRect);
 
-  // Returns an |nsAutoCString| representation of a |ScrollSnapInfo::SnapTarget|
-  static nsAutoCString StringifySnapTarget(
-      const ScrollSnapInfo::SnapTarget& aSnapTarget);
-
   // Returns an |nsAutoCString| representation of an |nsTArray| that
   // contains |ScrollInfo::SnapTarget|s.
   template <typename T>
@@ -105,9 +101,9 @@ struct ScrollSnapUtils {
       }
       first = false;
       if constexpr (std::is_pointer_v<std::remove_cvref_t<decltype(target)>>) {
-        string.Append(StringifySnapTarget(*target));
+        string.Append(ToString(*target).c_str());
       } else {
-        string.Append(StringifySnapTarget(target));
+        string.Append(ToString(target).c_str());
       }
     }
     string.AppendPrintf(" ]");

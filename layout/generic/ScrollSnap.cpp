@@ -579,19 +579,6 @@ Maybe<SnapDestination> ScrollSnapUtils::GetSnapPointForDestination(
   return snapped ? Some(finalPos) : Nothing();
 }
 
-nsAutoCString ScrollSnapUtils::StringifySnapTarget(
-    const SnapTarget& aSnapTarget) {
-  nsAutoString string;
-  const nsIContent* content =
-      reinterpret_cast<nsIContent*>(aSnapTarget.mTargetId);
-  if (content->IsElement()) {
-    content->AsElement()->Describe(string);
-  } else {
-    string.AppendPrintf("(not an element)");
-  }
-  return NS_LossyConvertUTF16toASCII(string);
-}
-
 ScrollSnapTargetId ScrollSnapUtils::GetTargetIdFor(const nsIFrame* aFrame) {
   MOZ_ASSERT(aFrame && aFrame->GetContent());
   return ScrollSnapTargetId{reinterpret_cast<uintptr_t>(aFrame->GetContent())};
@@ -753,17 +740,15 @@ static std::pair<Maybe<nscoord>, Maybe<nscoord>> GetCandidateInLastTargets(
   if (aSnapInfo.StrictnessInline(aWM) != StyleScrollSnapStrictness::None) {
     pickFromInline();
     if (inlinePick && MOZ_LOG_TEST(sApzScrollSnapLog, LogLevel::Debug)) {
-      const nsAutoCString inlineString =
-          ScrollSnapUtils::StringifySnapTarget(*inlinePick);
-      SCROLL_SNAP_LOG("Inline snap target pick: %s", inlineString.get());
+      SCROLL_SNAP_LOG("Inline snap target pick: %s",
+                      ToString(*inlinePick).c_str());
     }
   }
   if (aSnapInfo.StrictnessBlock(aWM) != StyleScrollSnapStrictness::None) {
     pickFromBlock();
     if (blockPick && MOZ_LOG_TEST(sApzScrollSnapLog, LogLevel::Debug)) {
-      const nsAutoCString blockString =
-          ScrollSnapUtils::StringifySnapTarget(*blockPick);
-      SCROLL_SNAP_LOG("Block snap target pick: %s", blockString.get());
+      SCROLL_SNAP_LOG("Block snap target pick: %s",
+                      ToString(*blockPick).c_str());
     }
   }
 
