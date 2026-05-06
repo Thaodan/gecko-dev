@@ -306,7 +306,7 @@ struct arena_t : public BaseAllocClass {
   // and newly-dirtied chunks are placed at the end.  We assume that this makes
   // finding larger runs of dirty pages easier, it probably doesn't affect the
   // chance that a new allocation has a page fault since that is controlled by
-  // the order of mAvailRuns.
+  // the order of mRunsAvail.
   mozilla::DoublyLinkedList<arena_chunk_t, mozilla::DirtyChunkListTrait>
       mChunksDirty MOZ_GUARDED_BY(mLock);
 
