@@ -1803,6 +1803,8 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
       "about:srcdoc"_ns,
       // about:sync-log displays plain text only -> no CSP
       "about:sync-log"_ns,
+      // about:logo just displays the firefox logo -> no CSP
+      "about:logo"_ns,
       // about:sync is a special mozilla-signed developer addon with low usage
       // ->
       // no CSP

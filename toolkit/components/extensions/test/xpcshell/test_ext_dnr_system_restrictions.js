@@ -1,9 +1,5 @@
 "use strict";
 
-const { AboutPage } = ChromeUtils.importESModule(
-  "resource://testing-common/AboutPages.sys.mjs"
-);
-
 const server = createHttpServer({ hosts: ["example.com", "restricted"] });
 server.registerPathHandler("/", (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -199,37 +195,28 @@ add_task(
   // is triggered because of the loadFrameScript call at
   // https://searchfox.org/mozilla-central/rev/11dbac7f64f509b78037465cbb4427ed71f8b565/testing/modules/XPCShellContentUtils.sys.mjs#308
   //
-  // This test loads a custom about: URI in the parent, because it is registered
-  // without nsIAboutModule::URI_MUST_LOAD_IN_CHILD.
-  // When about:test-dnr-page is loaded, the ContentPage test helper also
-  // triggers the above error/crash at:
+  // This test loads about:logo in the parent, because nsAboutRedirector.cpp
+  // registers about:logo without nsIAboutModule::URI_MUST_LOAD_IN_CHILD.
+  // When about:logo is loaded, the ContentPage test helper also triggers the
+  // above error/crash at:
   // https://searchfox.org/mozilla-central/rev/11dbac7f64f509b78037465cbb4427ed71f8b565/testing/modules/XPCShellContentUtils.sys.mjs#224,242
   //
   // Opt out of the check/crash from ValidateScriptFilename:
   { pref_set: [["security.allow_parent_unrestricted_js_loads", true]] },
-  // See also test_ext_dnr_testMatchOutcome.js
   async function non_system_request_with_disallowed_scheme() {
-    const page = new AboutPage(
-      "test-dnr-page",
-      "chrome://branding/content/icon16.png",
-      Ci.nsIAboutModule.URI_SAFE_FOR_UNTRUSTED_CONTENT
-    );
-    page.register();
-
     let extension = await startDNRExtension();
     Assert.equal(
       await (await fetch("http://example.com/")).text(),
       "response from server",
       "DNR should not block requests from system principal"
     );
-    // We are loading about:test-dnr-page for the following reasons:
+    // We are loading about:logo for the following reasons:
     // - It is a regular content principal, NOT a system principal.
-    // - It is an about:-URL (required to test DNR's disallowed scheme behavior).
-    // - It does not have a CSP, because it's not a document with <meta> tags.
-    //   That enables us to send a fetch() request below.
-    let contentPage = await ExtensionTestUtils.loadContentPage(
-      "about:test-dnr-page?blockme"
-    );
+    // - It is an about:-URL that resolves across all builds (part of toolkit/).
+    // - It does not have a CSP (intentional - bug 1587417). That enables us to
+    //   send a fetch() request below.
+    let contentPage =
+      await ExtensionTestUtils.loadContentPage("about:logo?blockme");
     await contentPage.spawn([], async () => {
       const { document } = content;
       // To make sure that the test does not pass trivially, we verify that it
@@ -238,16 +225,56 @@ add_task(
       // to a void "initiator" in the DNR API, which would pass access checks).
       Assert.ok(
         document.nodePrincipal.isContentPrincipal,
-        "about:test-dnr-page has content principal (not system or NullPrincipal))"
+        "about:logo has content principal (not system or NullPrincipal))"
       );
-      Assert.equal(document.URL, "about:test-dnr-page?blockme", "Same URL");
+      Assert.equal(document.URL, "about:logo?blockme", "Same URL");
       Assert.equal(
         await (await content.fetch("http://example.com/")).text(),
         "response from server",
-        "fetch() at about:test-dnr-page not blocked by DNR"
+        "fetch() at about:logo not blocked by DNR"
       );
     });
     await contentPage.close();
+    await extension.unload();
+  }
+);
+
+add_task(
+  { pref_set: [["extensions.dnr.feedback", true]] },
+  async function testMatchOutcome_non_system_request_with_disallowed_scheme() {
+    let extension = ExtensionTestUtils.loadExtension({
+      async background() {
+        await browser.declarativeNetRequest.updateSessionRules({
+          addRules: [{ id: 1, condition: {}, action: { type: "block" } }],
+        });
+        const type = "other"; // matches the condition of the above rule.
+
+        browser.test.assertDeepEq(
+          { matchedRules: [] },
+          await browser.declarativeNetRequest.testMatchOutcome({
+            url: "about:logo",
+            type,
+          }),
+          "testMatchOutcome ignores url with disallowed schema"
+        );
+        browser.test.assertDeepEq(
+          { matchedRules: [] },
+          await browser.declarativeNetRequest.testMatchOutcome({
+            url: "http://example.com/",
+            initiator: "about:logo",
+            type,
+          }),
+          "testMatchOutcome ignores initiator with disallowed schema"
+        );
+        browser.test.sendMessage("done");
+      },
+      manifest: {
+        manifest_version: 3,
+        permissions: ["declarativeNetRequest", "declarativeNetRequestFeedback"],
+      },
+    });
+    await extension.startup();
+    await extension.awaitMessage("done");
     await extension.unload();
   }
 );

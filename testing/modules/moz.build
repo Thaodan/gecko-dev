@@ -6,7 +6,6 @@ XPCSHELL_TESTS_MANIFESTS += ["tests/xpcshell/xpcshell.toml"]
 BROWSER_CHROME_MANIFESTS += ["tests/browser/browser.toml"]
 
 TESTING_JS_MODULES += [
-    "AboutPages.sys.mjs",
     "AppData.sys.mjs",
     "AppInfo.sys.mjs",
     "Assert.sys.mjs",
