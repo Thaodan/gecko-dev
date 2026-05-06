@@ -14,34 +14,41 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import mozilla.components.browser.state.search.RegionState
 import mozilla.components.browser.state.store.BrowserStore
-import mozilla.components.feature.ipprotection.IPProtectionAvailabilityStorage
+import mozilla.components.feature.ipprotection.EligibilityStatus
+import mozilla.components.feature.ipprotection.IPProtectionEligibilityStorage
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.settings.registerOnSharedPreferenceChangeListener
 
 /**
- * Fenix's implementation of [IPProtectionAvailabilityStorage].
+ * Fenix's implementation of [IPProtectionEligibilityStorage].
  *
  * @param browserStore [BrowserStore] to access [RegionState].
  * @param sharedPref [SharedPreferences] to observe settings for changes.
  * @param prefKey key to observe [SharedPreferences] for.
  * @param lifecycleOwner A [LifecycleOwner] for observing [SharedPreferences].
  */
-class FenixIPProtectionAvailabilityStorage(
+class FenixIPProtectionEligibilityStorage(
     private val browserStore: BrowserStore,
     private val sharedPref: SharedPreferences,
     private val prefKey: String,
     private val lifecycleOwner: LifecycleOwner,
-) : IPProtectionAvailabilityStorage {
+) : IPProtectionEligibilityStorage {
 
     private val secretEnabled = MutableStateFlow(sharedPref.getBoolean(prefKey, false))
 
-    override val isFeatureAvailable: Flow<Boolean> =
+    override val eligibilityStatus: Flow<EligibilityStatus> =
         combine(
             browserStore.stateFlow.map { it.search.region }.distinctUntilChanged(),
             secretEnabled,
         ) { region, secretOverride ->
             val nimbus = FxNimbus.features.ipProtection.value()
-            secretOverride || (nimbus.enabled && region?.home in nimbus.allowedRegions)
+            val status = when {
+                secretOverride -> EligibilityStatus.Eligible
+                !nimbus.enabled -> EligibilityStatus.Ineligible
+                region?.home in nimbus.allowedRegions -> EligibilityStatus.Eligible
+                else -> EligibilityStatus.UnsupportedRegion
+            }
+            status
         }.distinctUntilChanged()
 
     @VisibleForTesting

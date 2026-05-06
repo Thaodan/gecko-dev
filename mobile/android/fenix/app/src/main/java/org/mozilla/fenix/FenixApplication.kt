@@ -107,7 +107,7 @@ import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.Core
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.initializeGlean
-import org.mozilla.fenix.components.ipprotection.FenixIPProtectionAvailabilityStorage
+import org.mozilla.fenix.components.ipprotection.FenixIPProtectionEligibilityStorage
 import org.mozilla.fenix.components.metrics.MozillaProductDetector
 import org.mozilla.fenix.components.startMetricsIfEnabled
 import org.mozilla.fenix.experiments.maybeFetchExperiments
@@ -664,7 +664,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         DefaultIPProtectionFeature(
             engine = components.core.engine,
             lazyAccountManager = lazy { components.backgroundServices.accountManager },
-            storage = FenixIPProtectionAvailabilityStorage(
+            storage = FenixIPProtectionEligibilityStorage(
                 browserStore = components.core.store,
                 sharedPref = components.settings.preferences,
                 prefKey = this.getString(R.string.pref_key_enable_ip_protection),

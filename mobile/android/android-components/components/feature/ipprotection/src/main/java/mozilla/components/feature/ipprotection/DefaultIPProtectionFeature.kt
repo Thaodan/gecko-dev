@@ -37,7 +37,7 @@ private const val TOKEN_SCOPE = "https://identity.mozilla.com/apps/vpn"
  * @param engine [Engine] used to register the IP protection delegate and obtain the handler.
  * @param lazyAccountManager [Lazy] wrapper around [FxaAccountManager] that is used to supply
  * FxA tokens to the proxy Guardian.
- * @param storage [IPProtectionAvailabilityStorage] exposes the availability of the feature.
+ * @param storage [IPProtectionEligibilityStorage] exposes the availability of the feature.
  * @param store [IPProtectionStore] holds the feature state.
  * @param browserStore [BrowserStore] to observe enrollment tab URL changes.
  * @param tabsUseCases [TabsUseCases] to open/remove the enrollment tab.
@@ -46,7 +46,7 @@ private const val TOKEN_SCOPE = "https://identity.mozilla.com/apps/vpn"
 class DefaultIPProtectionFeature(
     private val engine: Engine,
     private val lazyAccountManager: Lazy<FxaAccountManager>,
-    private val storage: IPProtectionAvailabilityStorage,
+    private val storage: IPProtectionEligibilityStorage,
     private val store: IPProtectionStore,
     private val browserStore: BrowserStore,
     private val tabsUseCases: TabsUseCases,
@@ -58,14 +58,17 @@ class DefaultIPProtectionFeature(
 
     private val accountObserver = object : AccountObserver {
         override fun onAuthenticated(account: OAuthAccount, authType: AuthType) {
+            store.dispatch(IPProtectionAction.AccountStateChanged(isSignedIn = true))
             scope.launch { setTokenProvider(account) }
         }
 
         override fun onLoggedOut() {
+            store.dispatch(IPProtectionAction.AccountStateChanged(isSignedIn = false))
             scope.launch { handler?.setTokenProvider(null) }
         }
 
         override fun onAuthenticationProblems() {
+            store.dispatch(IPProtectionAction.AccountStateChanged(isSignedIn = false))
             scope.launch { handler?.setTokenProvider(null) }
         }
     }
@@ -75,15 +78,25 @@ class DefaultIPProtectionFeature(
      */
     fun start() {
         scope.launch {
-            storage.isFeatureAvailable
+            storage.eligibilityStatus
                 .distinctUntilChanged()
-                .collect { isAvailable ->
-                    if (isAvailable) {
-                        setUp()
-                    } else {
-                        tearDown()
+                .collect { eligibilityStatus ->
+                    when (eligibilityStatus) {
+                        EligibilityStatus.Eligible -> {
+                            setUp()
+                        }
+
+                        EligibilityStatus.Ineligible,
+                        EligibilityStatus.UnsupportedRegion,
+                        -> {
+                            tearDown()
+                        }
+
+                        EligibilityStatus.Unknown -> {
+                            // no-op, initializing
+                        }
                     }
-                    store.dispatch(IPProtectionAction.AvailabilityChanged(isAvailable))
+                    store.dispatch(IPProtectionAction.EligibilityChanged(eligibilityStatus))
                 }
         }
         storage.init()
@@ -92,14 +105,8 @@ class DefaultIPProtectionFeature(
     private fun setUp() {
         handler = engine.registerIPProtectionDelegate(object : IPProtectionDelegate {
             override fun onStateChanged(info: IPProtectionHandler.StateInfo) {
-                val state = info.toState()
-                logger.debug(
-                    "onStateChanged: proxyState=${info.proxyState}" +
-                    " serviceState=${info.serviceState}" +
-                    " remaining=${info.remaining} max=${info.max}" +
-                    " → status=${state.status} isEnrollmentNeeded=${state.isEnrollmentNeeded}",
-                )
-                store.dispatch(IPProtectionAction.UpdateState(state))
+                logger.debug("onStateChanged: proxyState = $info")
+                store.dispatch(IPProtectionAction.EngineStateChanged(info))
             }
         })
 
@@ -167,17 +174,16 @@ class DefaultIPProtectionFeature(
         retriggerEnrollment()
 
         scope.launch {
-            val currentStatus = store.state.status
-            if (currentStatus == IPProtectionStatus.Ready) {
-                logger.debug("onEnrollmentSuccess: already Ready — activating")
+            if (store.state.proxyStatus is Authorized.Idle) {
+                logger.debug("onEnrollmentSuccess: already Idle — activating")
                 activate()
                 return@launch
             }
             store.flow()
-                .map { it.status }
-                .filter { it == IPProtectionStatus.Ready }
+                .map { it.proxyStatus }
+                .filter { it is Authorized.Idle }
                 .first()
-            logger.debug("onEnrollmentSuccess: proxy reached Ready — activating")
+            logger.debug("onEnrollmentSuccess: proxy reached Idle — activating")
             activate()
         }
     }
@@ -209,34 +215,10 @@ class DefaultIPProtectionFeature(
                 }
             },
             onInitialState = { info ->
-                val state = info.toState()
-                logger.debug(
-                    "setTokenProvider result: proxyState=${info.proxyState} serviceState=${info.serviceState}" +
-                    " remaining=${info.remaining} max=${info.max} → status=${state.status}" +
-                    " isEnrollmentNeeded=${state.isEnrollmentNeeded}",
-                )
-                store.dispatch(IPProtectionAction.UpdateState(state))
+                logger.debug("setTokenProvider result: serviceState = $info")
+                store.dispatch(IPProtectionAction.EngineStateChanged(info))
             },
         )
-    }
-
-    private fun IPProtectionHandler.StateInfo.toState() = IPProtectionState(
-        status = proxyStateToStatus(proxyState),
-        dataRemainingBytes = remaining,
-        dataMaxBytes = max,
-        resetDate = resetTime,
-        isEnrollmentNeeded = proxyState == IPProtectionHandler.StateInfo.PROXY_STATE_NOT_READY &&
-            serviceState == IPProtectionHandler.StateInfo.SERVICE_STATE_UNAUTHENTICATED &&
-            lazyAccountManager.value.authenticatedAccount() != null,
-    )
-
-    private fun proxyStateToStatus(proxyState: Int): IPProtectionStatus = when (proxyState) {
-        IPProtectionHandler.StateInfo.PROXY_STATE_ACTIVE -> IPProtectionStatus.Active
-        IPProtectionHandler.StateInfo.PROXY_STATE_ACTIVATING -> IPProtectionStatus.Activating
-        IPProtectionHandler.StateInfo.PROXY_STATE_READY -> IPProtectionStatus.Ready
-        IPProtectionHandler.StateInfo.PROXY_STATE_PAUSED -> IPProtectionStatus.Paused
-        IPProtectionHandler.StateInfo.PROXY_STATE_ERROR -> IPProtectionStatus.Error
-        else -> IPProtectionStatus.NotAvailable
     }
 
     companion object {
