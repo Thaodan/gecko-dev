@@ -7,7 +7,6 @@ package org.mozilla.fenix.ui
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
-import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.disableWifiNetworkConnection
 import org.mozilla.fenix.helpers.AppAndSystemHelper.enableDataSaverSystemSetting
@@ -28,7 +27,7 @@ class TranslationsTest {
 
     private val mockWebServer get() = fenixTestRule.mockWebServer
 
-    @get:Rule
+    @get:Rule(order = 1)
     val composeTestRule =
         AndroidComposeTestRuleV2(
             HomeActivityIntentTestRule(
@@ -38,13 +37,12 @@ class TranslationsTest {
             ),
         ) { it.activity }
 
-    @get:Rule
-    val memoryLeaksRule = DetectMemoryLeaksRule()
+    @get:Rule(order = 2)
+    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2436643
     @SmokeTest
     @Test
-    @SkipLeaks
     fun verifyTheFirstTranslationNotNowButtonFunctionalityTest() {
         val testPage = mockWebServer.firstForeignWebPageAsset
 
@@ -297,7 +295,6 @@ class TranslationsTest {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2437990
     @Test
-    @SkipLeaks
     fun verifyTheAlwaysOfferToTranslateOptionTest() {
         val firstTestPage = mockWebServer.firstForeignWebPageAsset
         val secondTestPage = mockWebServer.secondForeignWebPageAsset

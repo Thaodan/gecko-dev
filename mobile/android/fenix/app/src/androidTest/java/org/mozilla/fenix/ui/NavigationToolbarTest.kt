@@ -9,7 +9,6 @@ package org.mozilla.fenix.ui
 import androidx.core.net.toUri
 import org.junit.Rule
 import org.junit.Test
-import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.enableOrDisableBackGestureNavigationOnDevice
 import org.mozilla.fenix.helpers.FenixTestRule
@@ -37,7 +36,7 @@ class NavigationToolbarTest {
 
     private val mockWebServer get() = fenixTestRule.mockWebServer
 
-    @get:Rule
+    @get:Rule(order = 1)
     val composeTestRule =
         AndroidComposeTestRuleV2(
             HomeActivityIntentTestRule(
@@ -49,8 +48,8 @@ class NavigationToolbarTest {
             ),
         ) { it.activity }
 
-    @get:Rule
-    val memoryLeaksRule = DetectMemoryLeaksRule()
+    @get:Rule(order = 2)
+    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     @get:Rule
     val searchMockServerRule = SearchMockServerRule()
@@ -98,7 +97,6 @@ class NavigationToolbarTest {
     // Swipes the nav bar left/right to switch between tabs
     @SmokeTest
     @Test
-    @SkipLeaks
     fun swipeToSwitchTabTest() {
         val firstWebPage = mockWebServer.getGenericAsset(1)
         val secondWebPage = mockWebServer.getGenericAsset(2)

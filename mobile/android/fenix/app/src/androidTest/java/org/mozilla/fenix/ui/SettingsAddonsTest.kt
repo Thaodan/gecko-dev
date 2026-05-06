@@ -33,14 +33,14 @@ class SettingsAddonsTest {
 
     private val mockWebServer get() = fenixTestRule.mockWebServer
 
-    @get:Rule
+    @get:Rule(order = 1)
     val composeTestRule =
         AndroidComposeTestRuleV2(
             HomeActivityIntentTestRule.withDefaultSettingsOverrides(),
         ) { it.activity }
 
-    @get:Rule
-    val memoryLeaksRule = DetectMemoryLeaksRule()
+    @get:Rule(order = 2)
+    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/875780
     // Walks through settings add-ons menu to ensure all items are present

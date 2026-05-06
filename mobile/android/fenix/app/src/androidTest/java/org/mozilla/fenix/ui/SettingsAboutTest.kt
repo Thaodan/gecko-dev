@@ -29,14 +29,14 @@ class SettingsAboutTest {
     @get:Rule(order = 0)
     val fenixTestRule: FenixTestRule = FenixTestRule()
 
-    @get:Rule
+    @get:Rule(order = 1)
     val composeTestRule =
         AndroidComposeTestRuleV2(
             HomeActivityIntentTestRule.withDefaultSettingsOverrides(),
         ) { it.activity }
 
-    @get:Rule
-    val memoryLeaksRule = DetectMemoryLeaksRule()
+    @get:Rule(order = 2)
+    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // Walks through the About settings menu to ensure all items are present
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2092700

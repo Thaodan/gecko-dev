@@ -39,14 +39,14 @@ class PDFViewerTest {
     private val pdfFileURL = "storage.googleapis.com/mobile_test_assets/public/washington.pdf"
     private val pdfFileContent = "Washington Crossing the Delaware"
 
-    @get:Rule
+    @get:Rule(order = 1)
     val composeTestRule =
         AndroidComposeTestRuleV2(
             HomeActivityIntentTestRule.withDefaultSettingsOverrides(),
         ) { it.activity }
 
-    @get:Rule
-    val memoryLeaksRule = DetectMemoryLeaksRule()
+    @get:Rule(order = 2)
+    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2048140
     @SmokeTest

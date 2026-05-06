@@ -42,7 +42,7 @@ class SettingsDeleteBrowsingDataOnQuitTest {
 
     private val mockWebServer get() = fenixTestRule.mockWebServer
 
-    @get:Rule
+    @get:Rule(order = 1)
     val composeTestRule =
         AndroidComposeTestRuleV2(
             HomeActivityIntentTestRule.withDefaultSettingsOverrides(
@@ -50,11 +50,11 @@ class SettingsDeleteBrowsingDataOnQuitTest {
             ),
         ) { it.activity }
 
-    @get:Rule
-    val memoryLeaksRule = DetectMemoryLeaksRule()
+    @get:Rule(order = 2)
+    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // Automatically allows app permissions, avoiding a system dialog showing up.
-    @get:Rule(order = 1)
+    @get:Rule
     val grantPermissionRule: GrantPermissionRule = GrantPermissionRule.grant(
         Manifest.permission.RECORD_AUDIO,
     )

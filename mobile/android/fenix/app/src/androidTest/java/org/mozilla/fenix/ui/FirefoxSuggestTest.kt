@@ -28,7 +28,7 @@ class FirefoxSuggestTest {
     @get:Rule(order = 0)
     val fenixTestRule: FenixTestRule = FenixTestRule()
 
-    @get:Rule
+    @get:Rule(order = 1)
     val composeTestRule = AndroidComposeTestRuleV2(
         HomeActivityTestRule(
             skipOnboarding = true,
@@ -38,8 +38,8 @@ class FirefoxSuggestTest {
         ),
     ) { it.activity }
 
-    @get:Rule
-    val memoryLeaksRule = DetectMemoryLeaksRule()
+    @get:Rule(order = 2)
+    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     private val sponsoredKeyWords: Map<String, List<String>> =
         mapOf(

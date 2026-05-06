@@ -8,7 +8,6 @@ import androidx.test.espresso.Espresso.pressBack
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
-import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
@@ -41,10 +40,7 @@ class BookmarksTest {
 
     private val mockWebServer get() = fenixTestRule.mockWebServer
 
-    @get:Rule
-    val memoryLeaksRule = DetectMemoryLeaksRule()
-
-    @get:Rule
+    @get:Rule(order = 1)
     val composeTestRule =
         AndroidComposeTestRuleV2(
             HomeActivityIntentTestRule(
@@ -52,6 +48,9 @@ class BookmarksTest {
                 shouldUseBottomToolbar = true,
             ),
         ) { it.activity }
+
+    @get:Rule(order = 2)
+    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2833690
     @SmokeTest
@@ -454,7 +453,6 @@ class BookmarksTest {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2833707
     @Test
-    @SkipLeaks
     fun verifyOpenAllInPrivateTabsTest() {
         val webPages = listOf(
             mockWebServer.getGenericAsset(1),

@@ -10,7 +10,6 @@ import androidx.test.filters.SdkSuppress
 import mozilla.components.concept.engine.mediasession.MediaSession
 import org.junit.Rule
 import org.junit.Test
-import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.grantSystemPermission
 import org.mozilla.fenix.helpers.FenixTestRule
@@ -195,7 +194,6 @@ class SettingsSitePermissionsTest {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2095124
     @Test
-    @SkipLeaks
     fun verifyAutoplayAllowAudioVideoSettingOnNotMutedVideoTestTest() {
         val genericPage = mockWebServer.getGenericAsset(1)
         val videoTestPage = mockWebServer.videoPageAsset
@@ -257,7 +255,6 @@ class SettingsSitePermissionsTest {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2095126
     @Test
-    @SkipLeaks
     fun verifyAutoplayBlockAudioAndVideoSettingOnNotMutedVideoTest() {
         val videoTestPage = mockWebServer.videoPageAsset
 
@@ -289,7 +286,6 @@ class SettingsSitePermissionsTest {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2286808
     @Test
-    @SkipLeaks
     fun verifyAutoplayBlockAudioAndVideoSettingOnMutedVideoTest() {
         val mutedVideoTestPage = mockWebServer.mutedVideoPageAsset
 

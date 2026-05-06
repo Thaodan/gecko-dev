@@ -36,7 +36,7 @@ class NimbusMessagingSurveyTest {
     @get:Rule(order = 0)
     val fenixTestRule: FenixTestRule = FenixTestRule()
 
-    @get:Rule
+    @get:Rule(order = 1)
     val composeTestRule =
         AndroidComposeTestRuleV2(
             HomeActivityIntentTestRule.withDefaultSettingsOverrides(skipOnboarding = true),

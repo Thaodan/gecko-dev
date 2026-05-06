@@ -29,7 +29,7 @@ class SettingsPrivateBrowsingTest {
 
     private val pageShortcutName = DataGenerationHelper.generateRandomString(5)
 
-    @get:Rule
+    @get:Rule(order = 1)
     val composeTestRule =
         AndroidComposeTestRuleV2(
             HomeActivityIntentTestRule.withDefaultSettingsOverrides(
@@ -37,8 +37,8 @@ class SettingsPrivateBrowsingTest {
             ),
         ) { it.activity }
 
-    @get:Rule
-    val memoryLeaksRule = DetectMemoryLeaksRule()
+    @get:Rule(order = 2)
+    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/555822
     @Test

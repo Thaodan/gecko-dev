@@ -7,7 +7,6 @@ package org.mozilla.fenix.ui
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
-import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.helpers.FenixTestRule
@@ -53,7 +52,7 @@ class TabbedBrowsingTest {
 
     private val mockWebServer get() = fenixTestRule.mockWebServer
 
-    @get:Rule
+    @get:Rule(order = 1)
     val composeTestRule =
         AndroidComposeTestRuleV2(
             HomeActivityIntentTestRule.withDefaultSettingsOverrides(
@@ -61,8 +60,8 @@ class TabbedBrowsingTest {
             ),
         ) { it.activity }
 
-    @get:Rule
-    val memoryLeaksRule = DetectMemoryLeaksRule()
+    @get:Rule(order = 2)
+    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // @Rule(order = 2)
     // @JvmField
@@ -181,7 +180,6 @@ class TabbedBrowsingTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/903592
     @SmokeTest
     @Test
-    @SkipLeaks
     fun verifyCloseAllPrivateTabsNotificationTest() {
         val defaultWebPage = mockWebServer.getGenericAsset(1)
 

@@ -7,7 +7,6 @@ package org.mozilla.fenix.ui
 import android.content.res.Configuration
 import org.junit.Rule
 import org.junit.Test
-import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.enableOrDisableBackGestureNavigationOnDevice
 import org.mozilla.fenix.helpers.FenixTestRule
@@ -32,14 +31,14 @@ class SettingsCustomizeTest {
 
     private val mockWebServer get() = fenixTestRule.mockWebServer
 
-    @get:Rule
+    @get:Rule(order = 1)
     val composeTestRule =
         AndroidComposeTestRuleV2(
             HomeActivityIntentTestRule.withDefaultSettingsOverrides(),
         ) { it.activity }
 
-    @get:Rule
-    val memoryLeaksRule = DetectMemoryLeaksRule()
+    @get:Rule(order = 2)
+    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     private fun getUiTheme(): Boolean {
         val mode =
@@ -95,7 +94,6 @@ class SettingsCustomizeTest {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1058682
     @Test
-    @SkipLeaks
     fun turnOffSwipeToSwitchTabsPreferenceTest() {
         val firstWebPage = mockWebServer.getGenericAsset(1)
         val secondWebPage = mockWebServer.getGenericAsset(2)

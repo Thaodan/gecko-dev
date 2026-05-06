@@ -28,7 +28,7 @@ class ModifierTest {
     @get:Rule(order = 0)
     val fenixTestRule: FenixTestRule = FenixTestRule()
 
-    @get:Rule
+    @get:Rule(order = 1)
     val composeTestRule = createComposeRule()
 
     @Test

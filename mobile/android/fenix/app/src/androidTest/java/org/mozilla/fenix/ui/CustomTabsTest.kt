@@ -12,7 +12,6 @@ import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.IntentReceiverActivity
-import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.openAppFromExternalLink
 import org.mozilla.fenix.helpers.DataGenerationHelper.createCustomTabIntent
@@ -49,7 +48,7 @@ class CustomTabsTest {
     private val externalLinksPWAPage = "https://mozilla-mobile.github.io/testapp/v2.0/externalLinks.html"
     private val loginPage = "https://mozilla-mobile.github.io/testapp/loginForm"
 
-    @get:Rule
+    @get:Rule(order = 1)
     val composeTestRule =
         AndroidComposeTestRuleV2(
             HomeActivityIntentTestRule.withDefaultSettingsOverrides(),
@@ -62,8 +61,8 @@ class CustomTabsTest {
         false,
     )
 
-    @get:Rule
-    val memoryLeaksRule = DetectMemoryLeaksRule()
+    @get:Rule(order = 2)
+    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/249659
     @SmokeTest
@@ -258,7 +257,6 @@ class CustomTabsTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2239117
-    @SkipLeaks(reasons = ["https://bugzilla.mozilla.org/show_bug.cgi?id=2006672"])
     @Test
     fun verifyCustomTabETPSheetAndToggleTest() {
         val customTabPage = mockWebServer.getGenericAsset(1)

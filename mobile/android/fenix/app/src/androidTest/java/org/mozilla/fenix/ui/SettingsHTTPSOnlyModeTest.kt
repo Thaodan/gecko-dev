@@ -7,7 +7,6 @@ package org.mozilla.fenix.ui
 import androidx.core.net.toUri
 import org.junit.Rule
 import org.junit.Test
-import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
@@ -37,14 +36,14 @@ class SettingsHTTPSOnlyModeTest {
     private val httpsOnlyContinueButton = "Continue to HTTP Site"
     private val httpsOnlyBackButton = "Go Back (Recommended)"
 
-    @get:Rule
+    @get:Rule(order = 1)
     val composeTestRule =
         AndroidComposeTestRuleV2(
             HomeActivityIntentTestRule.withDefaultSettingsOverrides(),
         ) { it.activity }
 
-    @get:Rule
-    val memoryLeaksRule = DetectMemoryLeaksRule()
+    @get:Rule(order = 2)
+    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1724825
     @Test
@@ -120,7 +119,6 @@ class SettingsHTTPSOnlyModeTest {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2091057
     @Test
-    @SkipLeaks
     fun httpsOnlyModeExceptionPersistsForCurrentSessionTest() {
         homeScreen(composeTestRule) {
         }.openThreeDotMenu {
@@ -193,7 +191,6 @@ class SettingsHTTPSOnlyModeTest {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2091058
     @Test
-    @SkipLeaks
     fun turnOffHttpsOnlyModeTest() {
         homeScreen(composeTestRule) {
         }.openThreeDotMenu {

@@ -40,7 +40,7 @@ class WebControlsTest {
     private val emailLink = "mailto://example@example.com"
     private val phoneLink = "tel://1234567890"
 
-    @get:Rule
+    @get:Rule(order = 1)
     val composeTestRule = AndroidComposeTestRuleV2(
         HomeActivityTestRule(
         shouldUseBottomToolbar = true,
@@ -48,8 +48,8 @@ class WebControlsTest {
         ),
     ) { it.activity }
 
-    @get:Rule
-    val memoryLeaksRule = DetectMemoryLeaksRule()
+    @get:Rule(order = 2)
+    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2316067
     @Test

@@ -8,7 +8,6 @@ import androidx.test.filters.SdkSuppress
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
-import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.setNetworkEnabled
 import org.mozilla.fenix.helpers.FenixTestRule
@@ -38,7 +37,7 @@ class SettingsDeleteBrowsingDataTest {
 
     private val mockWebServer get() = fenixTestRule.mockWebServer
 
-    @get:Rule
+    @get:Rule(order = 1)
     val composeTestRule =
         AndroidComposeTestRuleV2(
             HomeActivityIntentTestRule.withDefaultSettingsOverrides(
@@ -46,8 +45,8 @@ class SettingsDeleteBrowsingDataTest {
             ),
         ) { it.activity }
 
-    @get:Rule
-    val memoryLeaksRule = DetectMemoryLeaksRule()
+    @get:Rule(order = 2)
+    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/937561
     @Test
@@ -186,7 +185,6 @@ class SettingsDeleteBrowsingDataTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/416041
     @SmokeTest
     @Test
-    @SkipLeaks
     fun deleteCookiesAndSiteDataTest() {
         val genericPage = mockWebServer.getGenericAsset(1)
         val storageWritePage = mockWebServer.storageWritePageAsset.url

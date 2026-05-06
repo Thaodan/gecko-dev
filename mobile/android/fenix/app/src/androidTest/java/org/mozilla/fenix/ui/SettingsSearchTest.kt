@@ -9,7 +9,6 @@ import androidx.test.filters.SdkSuppress
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
-import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.runWithAppLocaleChanged
 import org.mozilla.fenix.helpers.DataGenerationHelper.setTextToClipBoard
@@ -46,13 +45,13 @@ class SettingsSearchTest {
             "Google",
         )
 
-    @get:Rule
+    @get:Rule(order = 1)
     val composeTestRule = AndroidComposeTestRuleV2(
         HomeActivityIntentTestRule.withDefaultSettingsOverrides(),
     ) { it.activity }
 
-    @get:Rule
-    val memoryLeaksRule = DetectMemoryLeaksRule()
+    @get:Rule(order = 2)
+    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     @get:Rule
     val searchMockServerRule = SearchMockServerRule()
@@ -582,7 +581,6 @@ class SettingsSearchTest {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2233337
     @Test
-    @SkipLeaks
     fun verifyTheSearchEnginesListsRespectTheLocaleTest() {
         runWithAppLocaleChanged(Locale.CHINA, composeTestRule.activityRule) {
             navigationToolbar(composeTestRule) {
