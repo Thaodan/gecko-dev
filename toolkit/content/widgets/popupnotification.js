@@ -73,7 +73,7 @@
       <hbox align="start" class="popup-notification-body-container">
         <image class="popup-notification-icon"/>
         <vbox pack="start" class="popup-notification-body">
-          <a class="popup-notification-origin header" crop="center"></a>
+          <label class="popup-notification-origin header" crop="center"></label>
           <!-- These need to be on the same line to avoid creating
               whitespace between them (whitespace is added in the
               localization file, if necessary). -->
@@ -94,7 +94,8 @@
           <menupopup position="after_end" data-l10n-id="popup-notification-more-actions-button">
           </menupopup>
         </button>
-        <button class="popup-notification-primary-button primary footer-button" data-l10n-id="popup-notification-default-button2"/>      </html:moz-button-group>
+        <button class="popup-notification-primary-button primary footer-button" data-l10n-id="popup-notification-default-button2"/>
+      </html:moz-button-group>
       `;
     }
 
