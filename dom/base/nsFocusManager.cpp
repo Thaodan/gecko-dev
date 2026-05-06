@@ -1042,12 +1042,13 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
       // inside, we don't need to do anything.
       return NS_OK;
     }
-    if (!nsContentUtils::ContentIsFlattenedTreeDescendantOf(
-            previousFocusedElementPtr, focusWithinElement)) {
-      return NS_OK;
-    }
     // Even if there's no :focus state on the node, we need to clear focus,
     // previousFocusedElementPtr could be an <iframe> for example.
+  }
+
+  if (!nsContentUtils::ContentIsHostIncludingDescendantOf(
+          previousFocusedElementPtr, focusWithinElement)) {
+    return NS_OK;
   }
 
   RefPtr previousFocusedElement = previousFocusedElementPtr;
