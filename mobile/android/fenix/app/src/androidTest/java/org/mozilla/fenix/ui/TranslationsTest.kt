@@ -242,8 +242,10 @@ class TranslationsTest {
     fun verifyTheSiteDeletionFromTheNeverTranslateListTest() {
         val firstTestPage = mockWebServer.firstForeignWebPageAsset
 
-        navigationToolbar(composeTestRule) {
-        }.enterURLAndEnterToBrowser(firstTestPage.url) {
+        browserScreen(composeTestRule) {
+        }.openTabDrawer(composeTestRule) {
+        }.openNewTab {
+        }.submitQuery(firstTestPage.url.toString()) {
         }
         translationsRobot(composeTestRule) {
             verifyTranslationSheetIsDisplayed(isDisplayed = true)
