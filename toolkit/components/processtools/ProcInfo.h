@@ -281,4 +281,5 @@ nsresult CopySysProcInfoToDOM(const ProcInfo& source, T* dest) {
 }
 
 }  // namespace mozilla
-#endif  // ProcInfo_h
+
+#endif  // _mozilla_ProcInfo_h
