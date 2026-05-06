@@ -886,9 +886,8 @@ void FontFaceSetImpl::DoRebuildUserFontSet() { MarkUserFontSetDirty(); }
 already_AddRefed<gfxUserFontEntry> FontFaceSetImpl::CreateUserFontEntry(
     nsTArray<gfxFontFaceSrc>&& aFontFaceSrcList,
     gfxUserFontAttributes&& aAttr) {
-  RefPtr<gfxUserFontEntry> entry = new FontFaceImpl::Entry(
-      this, std::move(aFontFaceSrcList), std::move(aAttr));
-  return entry.forget();
+  return MakeAndAddRef<FontFaceImpl::Entry>(this, std::move(aFontFaceSrcList),
+                                            std::move(aAttr));
 }
 
 void FontFaceSetImpl::ForgetLocalFaces() {

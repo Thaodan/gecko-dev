@@ -330,13 +330,11 @@ uint32_t FontFaceSet::SizeIncludingNonAuthorOrigins() {
 }
 
 already_AddRefed<FontFaceSetIterator> FontFaceSet::Entries() {
-  RefPtr<FontFaceSetIterator> it = new FontFaceSetIterator(this, true);
-  return it.forget();
+  return MakeAndAddRef<FontFaceSetIterator>(this, true);
 }
 
 already_AddRefed<FontFaceSetIterator> FontFaceSet::Values() {
-  RefPtr<FontFaceSetIterator> it = new FontFaceSetIterator(this, false);
-  return it.forget();
+  return MakeAndAddRef<FontFaceSetIterator>(this, false);
 }
 
 void FontFaceSet::ForEach(JSContext* aCx, FontFaceSetForEachCallback& aCallback,
