@@ -12,6 +12,9 @@ const LANGUAGE_GROUP_IDS = [
 ];
 
 add_task(async function testLanguagesPaneHostsAllGroups() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.settings-redesign.enabled", true]],
+  });
   await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
     leaveOpen: true,
   });
