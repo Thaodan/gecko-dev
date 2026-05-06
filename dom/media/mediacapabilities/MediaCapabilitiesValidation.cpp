@@ -121,13 +121,20 @@ static ValidationResult CheckMIMETypeValidity(
   //         single media codec and the parameters member of mimeType is not
   //         empty, return false.
   //
-  // (NOTE: WEBRTC EXCEPTION, SEE ISSUE)
+  // NOTE: For WebRTC, this rejects fmtp attributes (e.g., profile-level-id,
+  // packetization-mode) passed as MIME type parameters on single-codec types.
+  // The spec requires this rejection, but the examples used in the WPTs
+  // contradict it by using fmtp attributes. Chrome also allows them through.
+  // We reject per spec for now; a followup will handle fmtp attributes
+  // once the spec is updated. See: bug 2024767 and the following discussions:
+  // https://github.com/w3c/media-capabilities/issues/235
   // https://github.com/w3c/media-capabilities/issues/238
-  // TODO bug 1825286 (WebRTC)
   const size_t numParams = aMime.GetParameterCount();
   if (IsSingleCodecType(aMime) && numParams != 0) {
     ValidationResult err = Err(ValidationError::SingleCodecHasParams);
-    LOG(("[Invalid MIME Validity #2, %s] Rejecting '%s'",
+    LOG(
+        ("[Invalid MIME Validity #2, %s] Rejecting '%s' (single codec type "
+         "has params)",
          EnumValueToString(err.unwrapErr()), aMime.OriginalString().get()));
     return err;
   }
@@ -479,6 +486,16 @@ static bool IsContainerType(const MediaExtendedMIMEType& aMime) {
 }
 static bool IsSingleCodecType(const MediaExtendedMIMEType& aMime) {
   return MimePrefixStartsWith(aMime, kSingleWebRTCCodecTypes);
+}
+
+bool IsMediaTypeWebRTC(const MediaType& aType) {
+  return aType.match(
+      [&](const MediaEncodingType& aType) {
+        return aType == MediaEncodingType::Webrtc;
+      },
+      [&](const MediaDecodingType& aType) {
+        return aType == MediaDecodingType::Webrtc;
+      });
 }
 
 static nsAutoCString GetMIMEDebugString(const MediaConfiguration& aConfig) {

@@ -53,6 +53,9 @@ ValidationResult IsValidMediaEncodingConfiguration(
 void RejectWithValidationResult(dom::Promise* aPromise,
                                 const ValidationError aErr);
 void ThrowWithValidationResult(ErrorResult& aRv, const ValidationError aErr);
+
+// Used in MediaCapabilities.cpp WebRTC checks
+bool IsMediaTypeWebRTC(const MediaType& aType);
 }  // namespace mediacaps
 }  // namespace mozilla
 
