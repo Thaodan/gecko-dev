@@ -564,23 +564,6 @@ private fun CollectionsSection(
         }
 
         CollectionsState.Gone -> {} // no-op. Nothing is shown where there are no collections.
-
-        is CollectionsState.Placeholder -> {
-            Box(
-                modifier = Modifier.padding(
-                    start = horizontalMargin,
-                    end = horizontalMargin,
-                    top = 40.dp,
-                    bottom = 12.dp,
-                ),
-            ) {
-                CollectionsPlaceholder(
-                    showAddTabsToCollection = collectionsState.showSaveTabsToCollection,
-                    colors = collectionsState.colors,
-                    interactor = interactor,
-                )
-            }
-        }
     }
 }
 
@@ -642,7 +625,7 @@ private fun HomepagePreview() {
                     syncedTab = FakeHomepagePreview.recentSyncedTab(),
                     bookmarks = FakeHomepagePreview.bookmarks(),
                     recentlyVisited = FakeHomepagePreview.recentHistory(),
-                    collectionsState = FakeHomepagePreview.collectionsPlaceholder(),
+                    collectionsState = CollectionsState.Gone,
                     pocketState = FakeHomepagePreview.pocketState(),
                     showTopSites = true,
                     showRecentTabs = true,
@@ -697,7 +680,7 @@ private fun HomepageBannerPreview() {
                     syncedTab = FakeHomepagePreview.recentSyncedTab(),
                     bookmarks = FakeHomepagePreview.bookmarks(),
                     recentlyVisited = FakeHomepagePreview.recentHistory(),
-                    collectionsState = FakeHomepagePreview.collectionsPlaceholder(),
+                    collectionsState = CollectionsState.Gone,
                     pocketState = FakeHomepagePreview.pocketState(),
                     showTopSites = true,
                     showRecentTabs = true,
