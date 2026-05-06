@@ -847,7 +847,7 @@ nsresult PlanarYCbCrImage::BuildSurfaceDescriptorBuffer(
       pdata->mPictureRect, ySize, pdata->mYStride, cbcrSize, pdata->mCbCrStride,
       yOffset, cbOffset, crOffset, pdata->mStereoMode, pdata->mColorDepth,
       pdata->mYUVColorSpace, pdata->mColorRange, pdata->mTransferFunction,
-      pdata->mChromaSubsampling);
+      pdata->mChromaSubsampling, pdata->mHDRMetadata);
 
   CopyPlane(buffer + yOffset, pdata->mYChannel, ySize, pdata->mYStride,
             pdata->mYSkip);
