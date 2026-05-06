@@ -8,6 +8,7 @@ import mozilla.components.concept.engine.mediasession.MediaSession
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.MatcherHelper
@@ -15,6 +16,7 @@ import org.mozilla.fenix.helpers.RetryTestRule
 import org.mozilla.fenix.helpers.RetryableComposeTestRule
 import org.mozilla.fenix.helpers.TestAssetHelper.audioPageAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.videoPageAsset
+import org.mozilla.fenix.helpers.TestHelper.appContext
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.verifySnackBarText
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
@@ -126,6 +128,12 @@ class MediaNotificationTest {
     @Test
     fun mediaSystemNotificationInPrivateModeTest() {
         val audioTestPage = mockWebServer.audioPageAsset
+
+        // RetryTestRule.cleanup() does not clear tabs between retries (its removeTabs
+        // parameter is hardcoded to false at the call site), so tabs from a failed
+        // attempt accumulate and break closeTab()'s single-tab assumption. Clear them
+        // explicitly here so the tab drawer starts with a single tab on every attempt.
+        appContext.components.useCases.tabsUseCases.removeAllTabs()
 
         homeScreen(composeTestRule) {
         }.openTabDrawer {
