@@ -7352,7 +7352,7 @@ dialog:dir(rtl)::after {
   background-color: light-dark(var(--color-violet-0), var(--color-violet-80));
 }
 .nova-enabled .clocks-widget .clocks-label-chip.clocks-chip-neutral {
-  background-color: light-dark(var(--color-neutral-0), var(--color-neutral-80));
+  background-color: light-dark(var(--color-gray-0), var(--color-gray-80));
 }
 .nova-enabled .clocks-widget.large-widget[data-clock-count="1"] .clocks-meta, .nova-enabled .clocks-widget.large-widget[data-clock-count="2"] .clocks-meta {
   flex-direction: column;
