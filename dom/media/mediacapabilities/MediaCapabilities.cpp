@@ -193,6 +193,14 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
     return nullptr;
   }
 
+  // If WebRTC type is used and the pref is disabled, reject with a TypeError.
+  if (aConfiguration.mType == MediaDecodingType::Webrtc &&
+      !StaticPrefs::media_mediacapabilities_webrtc_enabled()) {
+    promise->MaybeRejectWithTypeError<MSG_INVALID_ENUM_VALUE>(
+        "type", "webrtc", "MediaDecodingType");
+    return promise.forget();
+  }
+
   // Step 1: If configuration is not a valid MediaDecodingConfiguration,
   // return a Promise rejected with a newly created TypeError.
   if (auto configCheck = IsValidMediaDecodingConfiguration(aConfiguration);
@@ -703,6 +711,15 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
   RefPtr<Promise> promise = Promise::Create(mParent, aRv);
   if (aRv.Failed()) {
     return nullptr;
+  }
+
+  // If WebRTC type is used and the pref is disabled, reject with a TypeError.
+  if (aConfiguration.mType == MediaEncodingType::Webrtc &&
+      !StaticPrefs::media_mediacapabilities_webrtc_enabled()) {
+    promise->MaybeRejectWithTypeError<MSG_INVALID_ENUM_VALUE>(
+        "type", "webrtc", "MediaDecodingType");
+
+    return promise.forget();
   }
 
   // If configuration is not a valid MediaConfiguration, return a Promise

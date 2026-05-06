@@ -11779,6 +11779,12 @@
   value: @IS_NIGHTLY_BUILD@
   mirror: always
 
+# Enable WebRTC type support in Media Capabilities API.
+- name: media.mediacapabilities.webrtc.enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
 # AudioSink
 - name: media.resampling.enabled
   type: RelaxedAtomicBool
