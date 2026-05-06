@@ -263,9 +263,20 @@ ValidationResult IsValidVideoConfiguration(const VideoConfiguration& aConfig,
     }
   }
 
-  // ScalabilityMode is only applicable to MediaEncodingConfiguration
-  // for type webrtc.
-  // TODO bug 1825286
+  if constexpr (std::is_same_v<CodingType, MediaEncodingType>) {
+    // ScalabilityMode is only applicable to MediaEncodingConfiguration
+    // for type webrtc.
+    if (aConfig.mScalabilityMode.WasPassed() &&
+        aType != MediaEncodingType::Webrtc) {
+      ValidationResult err = Err(ValidationError::InapplicableMember);
+      LOG(
+          ("[Invalid VideoConfiguration (Scalability Mode, %s) #2] Rejecting "
+           "'%s'\n",
+           EnumValueToString(err.unwrapErr()),
+           NS_ConvertUTF16toUTF8(aConfig.mContentType).get()));
+      return err;
+    }
+  }
 
   // Step 3: Let mimeType be the result of running parse a MIME type with
   // configuration’s contentType.
