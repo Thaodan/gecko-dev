@@ -7,9 +7,6 @@
 package org.mozilla.fenix.ui.robots
 
 import android.util.Log
-import android.view.View
-import android.widget.TextView
-import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed

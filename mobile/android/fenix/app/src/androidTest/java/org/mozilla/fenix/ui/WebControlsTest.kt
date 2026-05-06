@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.ui
 
-import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.helpers.AppAndSystemHelper.assertNativeAppOpens
@@ -22,6 +21,7 @@ import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.clickPageObject
 import org.mozilla.fenix.ui.robots.navigationToolbar
 import java.time.LocalDate
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 /**
  *  Tests for verifying basic interactions with web control elements
@@ -41,7 +41,7 @@ class WebControlsTest {
     private val phoneLink = "tel://1234567890"
 
     @get:Rule
-    val composeTestRule = AndroidComposeTestRule(
+    val composeTestRule = AndroidComposeTestRuleV2(
         HomeActivityTestRule(
         shouldUseBottomToolbar = true,
         isOpenInAppBannerEnabled = false,

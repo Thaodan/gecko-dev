@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.ui
 
-import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.core.net.toUri
 import org.junit.Rule
 import org.junit.Test
@@ -19,6 +18,7 @@ import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.clickPageObject
 import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.navigationToolbar
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 class CrashReportingTest {
     @get:Rule(order = 0)
@@ -27,7 +27,7 @@ class CrashReportingTest {
     private val mockWebServer get() = fenixTestRule.mockWebServer
 
     @get:Rule
-    val composeTestRule = AndroidComposeTestRule(
+    val composeTestRule = AndroidComposeTestRuleV2(
         HomeActivityIntentTestRule(
             isPocketEnabled = false,
             isWallpaperOnboardingEnabled = false,

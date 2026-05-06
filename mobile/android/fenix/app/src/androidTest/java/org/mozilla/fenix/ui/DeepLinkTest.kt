@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.ui
 
-import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Rule
 import org.junit.Test
@@ -12,6 +11,7 @@ import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.DeepLinkRobot
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 /**
  *  Tests for verifying basic functionality of deep links
@@ -32,10 +32,8 @@ class DeepLinkTest {
 
     @get:Rule
     val composeTestRule =
-        AndroidComposeTestRule(
-            HomeActivityIntentTestRule(
-                isMenuRedesignCFREnabled = false,
-            ),
+        AndroidComposeTestRuleV2(
+            HomeActivityIntentTestRule(isMenuRedesignCFREnabled = false),
         ) { it.activity }
 
     @get:Rule

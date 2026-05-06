@@ -5,13 +5,11 @@
 package org.mozilla.fenix.ui
 
 import android.content.Intent
-import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import mozilla.components.service.nimbus.messaging.FxNimbusMessaging
 import mozilla.components.service.nimbus.messaging.MessageData
 import mozilla.components.service.nimbus.messaging.Messaging
 import mozilla.components.service.nimbus.messaging.StyleData
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.experiments.nimbus.Res
@@ -19,10 +17,13 @@ import org.mozilla.fenix.FenixApplication
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.RetryTestRule
+import org.mozilla.fenix.helpers.RetryableComposeTestRule
+import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.nimbus.HomeScreenSection
 import org.mozilla.fenix.nimbus.Homescreen
 import org.mozilla.fenix.ui.robots.homeScreen
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 /**
  *  Tests for verifying basic functionality of the Nimbus Home Screen message
@@ -37,21 +38,26 @@ class NimbusMessagingHomescreenTest {
     @get:Rule(order = 0)
     val fenixTestRule: FenixTestRule = FenixTestRule()
 
-    @get:Rule
-    val homeActivityTestRule = HomeActivityIntentTestRule.withDefaultSettingsOverrides(
-        skipOnboarding = true,
-    ).withIntent(
-        Intent().apply {
-            action = Intent.ACTION_VIEW
-        },
-    )
-
-    @Rule
-    @JvmField
+    @get:Rule(order = 1)
     val retryTestRule = RetryTestRule(3)
 
-    val composeTestRule =
-        AndroidComposeTestRule(HomeActivityIntentTestRule.withDefaultSettingsOverrides()) { it.activity }
+    @get:Rule(order = 2)
+    val retryableComposeTestRule = RetryableComposeTestRule {
+        AndroidComposeTestRuleV2(
+            HomeActivityIntentTestRule.withDefaultSettingsOverrides(
+                skipOnboarding = true,
+            ).withIntent(
+                Intent().apply {
+                    action = Intent.ACTION_VIEW
+                },
+            ),
+        ) { it.activity }
+    }
+
+    private val composeTestRule get() = retryableComposeTestRule.current
+
+    @get:Rule(order = 3)
+    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     @Before
     fun setUp() {
@@ -96,7 +102,7 @@ class NimbusMessagingHomescreenTest {
             )
         }
         // refresh message store
-        val application = (homeActivityTestRule.activity.application as FenixApplication)
+        val application = (composeTestRule.activity.application as FenixApplication)
         application.restoreMessaging()
     }
 

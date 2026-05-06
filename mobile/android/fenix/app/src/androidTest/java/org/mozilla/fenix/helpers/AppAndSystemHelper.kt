@@ -736,7 +736,7 @@ object AppAndSystemHelper {
      * Wrapper to launch the app using the launcher intent.
      */
     fun runWithLauncherIntent(
-        activityTestRule: AndroidComposeTestRule<HomeActivityIntentTestRule, HomeActivity>,
+        activityTestRule: HomeActivityIntentTestRule,
         testBlock: () -> Unit,
     ) {
         val launcherIntent = Intent(Intent.ACTION_MAIN).apply {
@@ -744,7 +744,7 @@ object AppAndSystemHelper {
         }
 
         Log.i(TAG, "runWithLauncherIntent: Trying to launch the activity from an intent: $launcherIntent.")
-        activityTestRule.activityRule.withIntent(launcherIntent).launchActivity(launcherIntent)
+        activityTestRule.withIntent(launcherIntent).launchActivity(launcherIntent)
         Log.i(TAG, "runWithLauncherIntent: Launched the activity from an intent: $launcherIntent.")
         try {
             Log.i(TAG, "runWithLauncherIntent: Trying run the test block.")
