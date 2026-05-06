@@ -19,6 +19,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   ""
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "CONTENT_SHARING_DEBUG",
+  "browser.contentsharing.debug",
+  false
+);
+
 const DEFAULT_COPY_ICON = "chrome://global/skin/icons/edit-copy.svg";
 const DEFAULT_COPY_L10N_ID = "content-sharing-modal-copy-link";
 
@@ -107,7 +114,7 @@ export class ContentSharingModal extends MozLitElement {
 
   handleViewPageClick() {
     this.close();
-    this.documentGlobal.frameElement.documentGlobal.openTrustedLinkIn(
+    this.documentGlobal.frameElement.documentGlobal.openWebLinkIn(
       this.url,
       "tab"
     );
@@ -126,9 +133,13 @@ export class ContentSharingModal extends MozLitElement {
   }
 
   handleSignInClick() {
+    const accountSlug = lazy.CONTENT_SHARING_DEBUG
+      ? "/accounts/dummy/login/"
+      : "/accounts/fxa/login/";
+    const signInURL = lazy.CONTENT_SHARING_SERVER_URL + accountSlug;
     this.close();
-    this.documentGlobal.frameElement.documentGlobal.openTrustedLinkIn(
-      lazy.CONTENT_SHARING_SERVER_URL,
+    this.documentGlobal.frameElement.documentGlobal.openWebLinkIn(
+      signInURL,
       "tab"
     );
   }

@@ -11,16 +11,48 @@ ChromeUtils.defineLazyGetter(this, "ContentSharingMockServer", () => {
 });
 
 /**
+ * Sets a cookie for test purposes.
+ *
+ * @param {string} name Name of the cookie (ours will usually be "auth")
+ * @param {string} value Value of the cookie
+ * @param {number} [expiry] Optional, Cookie expiry time in milliseconds in
+ *                          the future (or past), defaults to 5 minutes.
+ * @param {string} [host] Optional, defaults to "localhost".
+ */
+function setCookie(name, value, expiry = 1000 * 60 * 5, host = "localhost") {
+  Services.cookies.add(
+    host,
+    "/",
+    name,
+    value,
+    true, // isSecure
+    false, // isHttpOnly
+    false, // isSession
+    Date.now() + expiry,
+    {}, // originAttributes
+    Ci.nsICookie.SAMESITE_LAX,
+    Ci.nsICookie.SCHEME_HTTPS
+  );
+}
+
+function clearCookies() {
+  Services.cookies.removeAll();
+}
+
+/**
  * Starts the mock content sharing server, runs task, then stops it.
  * The server is stopped in a finally block so cleanup always runs.
+ * Now with auth cookie support.
  *
  * @param {Function} task - Async function receiving the mock server instance.
  */
 async function withContentSharingMockServer(task) {
+  setCookie("auth", "1");
   await ContentSharingMockServer.start();
   try {
     await task(ContentSharingMockServer);
   } finally {
+    clearCookies();
     await ContentSharingMockServer.stop();
   }
 }

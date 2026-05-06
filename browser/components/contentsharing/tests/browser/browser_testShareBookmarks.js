@@ -82,7 +82,7 @@ add_task(async function test_createShareableLink() {
     await assertContentSharingModal(window, {
       share: body,
       url: server.mockResponse.url,
-      isSignedIn: false,
+      isSignedIn: true,
     });
 
     Assert.equal(body.type, "bookmarks", "Share type is 'bookmarks'");
