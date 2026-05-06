@@ -52,9 +52,9 @@ static const std::array kSingleWebRTCCodecTypes = {
     "video/vp9"_ns,
 };
 
-static const std::array kContainerTypes = {"video/mkv"_ns,  "video/mp4"_ns,
-                                           "video/webm"_ns, "audio/ogg"_ns,
-                                           "audio/mp4"_ns,  "audio/webm"_ns};
+static const std::array kContainerTypes = {
+    "video/mkv"_ns, "video/mp4"_ns, "video/webm"_ns, "video/mpeg"_ns,
+    "audio/ogg"_ns, "audio/mp4"_ns, "audio/webm"_ns, "audio/mpeg"_ns};
 
 // https://w3c.github.io/media-capabilities/#check-mime-type-support
 ValidationResult CheckMIMETypeSupport(const MediaExtendedMIMEType& aMime,
