@@ -229,11 +229,8 @@ FormAutofillUtils = {
     return Array.from(element.querySelectorAll(types.join(",")));
   },
 
-  useMLInference() {
-    return (
-      AppConstants.MOZ_UPDATE_CHANNEL == "nightly" &&
-      AppConstants.platform !== "android"
-    );
+  get useMLInference() {
+    return AppConstants.NIGHTLY_BUILD && AppConstants.platform !== "android";
   },
 
   /**
@@ -1563,5 +1560,5 @@ XPCOMUtils.defineLazyPreferenceGetter(
   FormAutofillUtils,
   "enableMLAutofill",
   "extensions.formautofill.addresses.useml",
-  0
+  false
 );
