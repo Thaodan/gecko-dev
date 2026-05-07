@@ -32,8 +32,10 @@
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/layers/KnowsCompositor.h"
+#include "mozilla/media/MediaUtils.h"
 #include "mozilla/media/webrtc/CodecInfo.h"
 #include "nsContentUtils.h"
+#include "nsIPrincipal.h"
 
 namespace mozilla::dom {
 enum class CodecSupport : uint8_t { Supported, Unsupported, Unknown };
@@ -55,8 +57,17 @@ bool MediaCapabilitiesKeySystemConfigurationToMediaKeySystemConfiguration(
     MediaKeySystemConfiguration& aOutConfig);
 
 static mediacaps::BehaviorConfig GetBehaviorConfig(nsIGlobalObject* aParent) {
+  nsAutoCString host;
+  if (nsIPrincipal* p = aParent ? aParent->PrincipalOrNull() : nullptr) {
+    p->GetAsciiHost(host);
+  }
+  // DataMutex operator* is deleted on rvalues; the lock must be a named
+  // variable.
+  auto legacyAllowlist =
+      StaticPrefs::media_mediacapabilities_legacy_allowlist();
   return {
-      .mLegacy = StaticPrefs::media_mediacapabilities_legacy_enabled(),
+      .mLegacy = StaticPrefs::media_mediacapabilities_legacy_enabled() ||
+                 media::HostnameInValue(*legacyAllowlist, host),
       .mWebRTCEnabled = StaticPrefs::media_mediacapabilities_webrtc_enabled(),
   };
 }
