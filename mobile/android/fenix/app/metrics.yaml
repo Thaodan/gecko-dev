@@ -15635,10 +15635,18 @@ vpn:
     type: event
     description:
       Triggered when the VPN feature onboarding card is shown to the user.
+    extra_keys:
+      entrypoint:
+        description: >
+          The surface from which the user started the flow.
+          Possible values: Homepage, Browser.
+        type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2031198
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2036176
     data_reviews:
       - https://phabricator.services.mozilla.com/D293774
+      - https://phabricator.services.mozilla.com/D297821
     data_sensitivity:
       - interaction
     notification_emails:
@@ -15648,10 +15656,18 @@ vpn:
     type: event
     description:
       Triggered when the user taps "Not Now" on the VPN onboarding card.
+    extra_keys:
+      entrypoint:
+        description: >
+          The surface from which the user started the flow.
+          Possible values: Homepage, Browser.
+        type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2031198
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2036176
     data_reviews:
       - https://phabricator.services.mozilla.com/D293774
+      - https://phabricator.services.mozilla.com/D297821
     data_sensitivity:
       - interaction
     notification_emails:
@@ -15661,10 +15677,18 @@ vpn:
     type: event
     description:
       Triggered when the user dismisses the VPN onboarding card.
+    extra_keys:
+      entrypoint:
+        description: >
+          The surface from which the user started the flow.
+          Possible values: Homepage, Browser.
+        type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2031198
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2036176
     data_reviews:
       - https://phabricator.services.mozilla.com/D293774
+      - https://phabricator.services.mozilla.com/D297821
     data_sensitivity:
       - interaction
     notification_emails:
@@ -15674,10 +15698,18 @@ vpn:
     type: event
     description:
       Triggered when the user taps "Browse with extra protection" on the VPN onboarding page.
+    extra_keys:
+      entrypoint:
+        description: >
+          The surface from which the user started the flow.
+          Possible values: Homepage, Browser.
+        type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2031198
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2036176
     data_reviews:
       - https://phabricator.services.mozilla.com/D293774
+      - https://phabricator.services.mozilla.com/D297821
     data_sensitivity:
       - interaction
     notification_emails:
@@ -15725,12 +15757,14 @@ vpn:
       entrypoint:
         description: >
           The surface from which the user started the flow.
-          Possible values: "onboarding", "settings".
+          Possible values: Homepage, Browser.
         type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2031198
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2036176
     data_reviews:
       - https://phabricator.services.mozilla.com/D293774
+      - https://phabricator.services.mozilla.com/D297821
     data_sensitivity:
       - interaction
     notification_emails:
