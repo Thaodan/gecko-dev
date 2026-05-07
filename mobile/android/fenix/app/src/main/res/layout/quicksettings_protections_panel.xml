@@ -26,8 +26,8 @@
         app:layout_constraintTop_toBottomOf="@id/cookieBannerItem"
         app:switchDescriptionOff="@string/etp_panel_off"
         app:switchDescriptionOn="@string/etp_panel_on"
-        app:switchIconOff="@drawable/ic_tracking_protection_disabled"
-        app:switchIconOn="@drawable/ic_tracking_protection_enabled"
+        app:switchIconOff="@drawable/mozac_ic_shield_slash_24"
+        app:switchIconOn="@drawable/mozac_ic_shield_24"
         app:switchTitle="@string/preference_enhanced_tracking_protection" />
 
     <TextView
