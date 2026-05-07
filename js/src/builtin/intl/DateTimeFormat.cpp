@@ -1171,15 +1171,6 @@ static bool ResolveLocale(JSContext* cx,
         return false;
       }
       dateTimeFormat->setCalendar(str);
-    } else if (StringEqualsLiteral(ca, "islamic-rgsa")) {
-      // Fallback to "islamic-tbla" calendar for 147 uplift compatibility.
-      // The above warning text isn't suitable, and per 2025-12 TG2 meeting
-      // treatment as unknown is expected going forward (bug 2005702).
-      auto* str = NewStringCopyZ<CanGC>(cx, "islamic-tbla");
-      if (!str) {
-        return false;
-      }
-      dateTimeFormat->setCalendar(str);
     } else {
       dateTimeFormat->setCalendar(ca);
     }

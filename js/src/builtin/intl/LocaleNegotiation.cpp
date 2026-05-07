@@ -695,6 +695,11 @@ static bool IsSupportedCalendar(JSContext* cx, LanguageId locale,
     }
     auto calendar = keyword.unwrap();
 
+    // Skip deprecated calendar variants.
+    if (calendar == mozilla::MakeStringSpan("islamic-rgsa")) {
+      continue;
+    }
+
     if (StringEqualsAscii(string, calendar.data(), calendar.size())) {
       *result = true;
       return true;
