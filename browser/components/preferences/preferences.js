@@ -311,11 +311,12 @@ const CONFIG_PANES = Object.freeze({
     visible: () => srdSectionEnabled("languages"),
   },
   manageAddresses: {
-    parent: "privacy",
+    parent: "passwordsAutofill",
     l10nId: "autofill-addresses-manage-addresses-title",
     groupIds: ["manageAddresses"],
     iconSrc: "chrome://browser/skin/notification-icons/geo.svg",
-    replaces: "privacy",
+    module:
+      "chrome://browser/content/preferences/config/passwords-autofill.mjs",
   },
   manageMemories: {
     parent: "personalizeSmartWindow",
@@ -325,11 +326,12 @@ const CONFIG_PANES = Object.freeze({
     supportPage: "smart-window-memories",
   },
   managePayments: {
-    parent: "privacy",
+    parent: "passwordsAutofill",
     l10nId: "autofill-payment-methods-manage-payments-title",
     groupIds: ["managePayments"],
     iconSrc: "chrome://browser/skin/payment-methods-16.svg",
-    replaces: "privacy",
+    module:
+      "chrome://browser/content/preferences/config/passwords-autofill.mjs",
   },
   profiles: {
     parent: srdSectionEnabled("sync") ? "sync" : "general",
@@ -351,6 +353,14 @@ const CONFIG_PANES = Object.freeze({
     groupIds: ["assistantDefaultGroup", "assistantModelGroup", "memoriesGroup"],
     module: "chrome://browser/content/preferences/config/aiFeatures.mjs",
   },
+  passwordsAutofill: {
+    l10nId: "preferences-passwords-autofill-header",
+    iconSrc: "chrome://browser/skin/login.svg",
+    groupIds: ["passwords", "addresses", "payments"],
+    module:
+      "chrome://browser/content/preferences/config/passwords-autofill.mjs",
+    visible: () => srdSectionEnabled("passwordsAutofill"),
+  },
   privacy: {
     l10nId: "pane-privacy-section",
     iconSrc: "chrome://browser/skin/preferences/category-privacy-security.svg",
@@ -360,12 +370,6 @@ const CONFIG_PANES = Object.freeze({
       "etpStatus",
       "ipprotection",
       "cookiesAndSiteData2",
-      // Bug 1968111: move this elsewhere
-      "passwords",
-      // Bug 1968111: move this elsewhere
-      "addresses",
-      // Bug 1968111: move this elsewhere
-      "payments",
       "history2",
       "nonTechnicalPrivacy2",
       "dnsOverHttps",

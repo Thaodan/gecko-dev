@@ -1782,6 +1782,12 @@ address-moz-box-item =
   .label = { $name }
   .description = { $address }
 
+category-passwords-autofill =
+    .tooltiptext = Passwords and autofill settings
+pane-passwords-autofill-title = Passwords and autofill
+preferences-passwords-autofill-header =
+   .heading = Passwords and autofill
+
 ## Privacy Section - History
 
 history-group =
