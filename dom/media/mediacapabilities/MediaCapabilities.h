@@ -38,6 +38,7 @@ namespace mediacaps {
 // Pref-driven behaviour flags resolved once per MediaCapabilities request.
 struct BehaviorConfig {
   bool mLegacy = false;
+  bool mWebRTCEnabled = true;
 };
 }  // namespace mediacaps
 namespace dom {

@@ -55,7 +55,10 @@ bool MediaCapabilitiesKeySystemConfigurationToMediaKeySystemConfiguration(
     MediaKeySystemConfiguration& aOutConfig);
 
 static mediacaps::BehaviorConfig GetBehaviorConfig(nsIGlobalObject* aParent) {
-  return {.mLegacy = StaticPrefs::media_mediacapabilities_legacy_enabled()};
+  return {
+      .mLegacy = StaticPrefs::media_mediacapabilities_legacy_enabled(),
+      .mWebRTCEnabled = StaticPrefs::media_mediacapabilities_webrtc_enabled(),
+  };
 }
 }  // namespace mozilla::dom
 
@@ -645,7 +648,7 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
 
   // If WebRTC type is used and the pref is disabled, reject with a TypeError.
   if (aConfiguration.mType == MediaDecodingType::Webrtc &&
-      !StaticPrefs::media_mediacapabilities_webrtc_enabled()) {
+      !behavior.mWebRTCEnabled) {
     promise->MaybeRejectWithTypeError<MSG_INVALID_ENUM_VALUE>(
         "type", "webrtc", "MediaDecodingType");
     return promise.forget();
@@ -1167,7 +1170,7 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
 
   // If WebRTC type is used and the pref is disabled, reject with a TypeError.
   if (aConfiguration.mType == MediaEncodingType::Webrtc &&
-      !StaticPrefs::media_mediacapabilities_webrtc_enabled()) {
+      !behavior.mWebRTCEnabled) {
     encodePromise->MaybeRejectWithTypeError<MSG_INVALID_ENUM_VALUE>(
         "type", "webrtc", "MediaEncodingType");
     return encodePromise.forget();
