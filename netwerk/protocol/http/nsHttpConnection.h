@@ -120,6 +120,8 @@ class nsHttpConnection final : public HttpConnectionBase,
   int64_t MaxBytesRead() { return mMaxBytesRead; }
   HttpVersion GetLastHttpResponseVersion() { return mLastHttpResponseVersion; }
 
+  nsresult HandshakeError() const { return mHandshakeError; }
+
   friend class HttpConnectionForceIO;
   friend class TlsHandshaker;
 
@@ -338,6 +340,12 @@ class nsHttpConnection final : public HttpConnectionBase,
 
   // mLastHttpResponseVersion stores the last response's http version seen.
   HttpVersion mLastHttpResponseVersion{HttpVersion::v1_1};
+
+  // Set by PostProcessNPNSetup on TLS handshake failure (translated from
+  // the security info's PRErrorCode via psm::GetXPCOMFromNSSError). Read
+  // by HappyEyeballsTransaction::ReadSegments to surface the cert/TLS
+  // error instead of NS_BASE_STREAM_CLOSED.
+  nsresult mHandshakeError{NS_OK};
 
   // If a large keepalive has been requested for any trans,
   // scale the default by this factor

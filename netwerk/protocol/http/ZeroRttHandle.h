@@ -60,7 +60,7 @@ class ZeroRttHandle {
   // Corresponds to nsAHttpTransaction::Do0RTT. Returns true if the
   // caller is eligible and has been accepted into the 0-RTT flow —
   // the caller's m0RttRequestStreamOffset is set to Some(0).
-  bool Do0RTT(HappyEyeballsTransaction* aCaller);
+  bool Do0RTT(HappyEyeballsTransaction* aCaller, bool aCanSendEarlyData);
 
   // Corresponds to nsAHttpTransaction::ReadSegments. Seeks the real
   // transaction's request stream to aOffset, forwards bytes to aReader,

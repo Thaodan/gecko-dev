@@ -47,16 +47,23 @@ static nsHttpTransaction* ResolveRealTxn(const nsWeakPtr& aHet) {
   return IsUsableRealTxn(realTxn) ? realTxn : nullptr;
 }
 
-bool ZeroRttHandle::Do0RTT(HappyEyeballsTransaction* aCaller) {
+bool ZeroRttHandle::Do0RTT(HappyEyeballsTransaction* aCaller,
+                           bool aCanSendEarlyData) {
   LOG(("ZeroRttHandle::Do0RTT %p caller=%p", this, aCaller));
+
+  nsHttpTransaction* realTxn = ResolveRealTxn(mHet);
+  if (!realTxn) {
+    return false;
+  }
+
+  if (!aCanSendEarlyData) {
+    (void)realTxn->Do0RTT(false);
+    return false;
+  }
 
   if (aCaller->Request0RttStreamOffset().isSome()) {
     // Already opted in — TlsHandshaker asked twice. Stay consistent.
     return true;
-  }
-  nsHttpTransaction* realTxn = ResolveRealTxn(mHet);
-  if (!realTxn) {
-    return false;
   }
   if (mWinner) {
     // Race already has a winner — don't start new 0-RTT now.

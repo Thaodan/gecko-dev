@@ -126,7 +126,9 @@ class HappyEyeballsTransaction final : public SpeculativeTransaction {
 
   // 0-RTT interface — delegates to the shared ZeroRttHandle (always,
   // regardless of adoption state).
-  bool Do0RTT() override { return mZeroRttHandle->Do0RTT(this); }
+  bool Do0RTT(bool aCanSendEarlyData) override {
+    return mZeroRttHandle->Do0RTT(this, aCanSendEarlyData);
+  }
   nsresult Finish0RTT(bool aRestart, bool aAlpnChanged) override {
     return mZeroRttHandle->Finish0RTT(this, aRestart, aAlpnChanged);
   }

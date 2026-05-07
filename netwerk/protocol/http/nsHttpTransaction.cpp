@@ -3250,7 +3250,7 @@ nsresult nsHttpTransaction::Finish0RTT(bool aRestart,
 
 void nsHttpTransaction::FinishAdopted0RTT(bool aRestart) {
   LOG(("nsHttpTransaction::FinishAdopted0RTT %p restart=%d\n", this, aRestart));
-  mEarlyDataWasAvailable = true;
+  mResumptionAttempted = true;
   if (!aRestart) {
     // Mirror nsHttpTransaction::Finish0RTT: only promote when the
     // pre-state is EARLY_SENT (i.e. ZeroRttHandle::ReadSegments

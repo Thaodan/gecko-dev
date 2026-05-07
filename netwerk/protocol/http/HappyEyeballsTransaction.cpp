@@ -13,6 +13,8 @@
 #include "Http3Session.h"
 #include "nsHttpConnection.h"
 #include "nsHttpTransaction.h"
+#include "nsITLSSocketControl.h"
+#include "nsITransportSecurityInfo.h"
 #include "nsQueryObject.h"
 
 // Log on level :5, instead of default :4.
@@ -68,6 +70,37 @@ nsresult HappyEyeballsTransaction::ReadSegments(nsAHttpSegmentReader* aReader,
     return mZeroRttHandle->ReadSegments(Request0RttStreamOffset(), aReader,
                                         aCount, aCountRead);
   }
+
+  // If the connection's TLS handshake failed (see
+  // nsHttpConnection::PostProcessNPNSetup), surface the captured NSS
+  // error here.
+  // We also forward the failed-handshake security info onto the real
+  // transaction here.
+  if (nsAHttpConnection* aHandle = Connection()) {
+    RefPtr<HttpConnectionBase> base = aHandle->HttpConnection();
+    if (RefPtr<nsHttpConnection> conn = do_QueryObject(base)) {
+      if (nsresult tlsErr = conn->HandshakeError(); NS_FAILED(tlsErr)) {
+        nsHttpTransaction* real =
+            mZeroRttHandle ? mZeroRttHandle->RealTxn() : nullptr;
+        nsCOMPtr<nsITLSSocketControl> tlsCtrl;
+        conn->GetTLSSocketControl(getter_AddRefs(tlsCtrl));
+        nsCOMPtr<nsITransportSecurityInfo> secInfo;
+        if (tlsCtrl) {
+          tlsCtrl->GetSecurityInfo(getter_AddRefs(secInfo));
+        }
+        if (real && secInfo) {
+          real->SetSecurityInfo(secInfo);
+        }
+        LOG(
+            ("HappyEyeballsTransaction::ReadSegments %p surfacing handshake "
+             "error rv=%" PRIx32 " real=%p secInfo=%p",
+             this, static_cast<uint32_t>(tlsErr), real, secInfo.get()));
+        *aCountRead = 0;
+        return tlsErr;
+      }
+    }
+  }
+
   return SpeculativeTransaction::ReadSegments(aReader, aCount, aCountRead);
 }
 

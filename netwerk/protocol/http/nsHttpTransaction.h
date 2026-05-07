@@ -247,6 +247,16 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   void SetIsTRRTransaction() override { mIsTRRTransaction = true; }
   bool IsTRRTransaction() { return mIsTRRTransaction; }
 
+  // Used by the HE speculative path to propagate the failed-handshake
+  // security info onto the real transaction whose mConnection was never
+  // set (so its own MaybeRefreshSecurityInfo skips). Without this the
+  // channel's GetSecurityInfo returns null on TLS handshake failures
+  // routed through the speculative racer.
+  void SetSecurityInfo(nsITransportSecurityInfo* aSecurityInfo) {
+    MutexAutoLock lock(mLock);
+    mSecurityInfo = aSecurityInfo;
+  }
+
  private:
   friend class DeleteHttpTransaction;
   virtual ~nsHttpTransaction();

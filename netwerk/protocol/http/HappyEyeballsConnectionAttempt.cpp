@@ -9,6 +9,7 @@
 
 #include "HappyEyeballsConnectionAttempt.h"
 #include "ConnectionEntry.h"
+#include "NSSErrorsService.h"
 #include "mozilla/net/NeckoChannelParams.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "nsIHttpActivityObserver.h"
@@ -20,6 +21,7 @@
 #include "nsHttpConnectionMgr.h"
 #include "nsHttpHandler.h"
 #include "nsQueryObject.h"
+#include "nsSocketTransport2.h"
 #include "nsSocketTransportService2.h"
 
 // Log on level :5, instead of default :4.
@@ -186,8 +188,35 @@ nsresult HappyEyeballsConnectionAttempt::ProcessConnectionResult(
     if (mTransaction) {
       mTransaction->Close(aStatus);
     }
-    // Save entry before Abandon() clears mEntry.
+    Abandon();
+    if (entry) {
+      entry->RemoveConnectionAttempt(this, false);
+    }
+    return NS_OK;
+  }
+
+  // NSS / TLS errors are server-state-specific (cert verification, PSK
+  // resumption alert, transport-level alert during handshake, ...).
+  // Trying another resolved address won't help — they'll all fail the
+  // same way.
+  if (NS_ERROR_GET_MODULE(aStatus) == NS_ERROR_MODULE_SECURITY) {
+    nsresult closeReason = aStatus;
+    PRErrorCode prCode = -static_cast<PRErrorCode>(NS_ERROR_GET_CODE(aStatus));
+    if (!mozilla::psm::IsNSSErrorCode(prCode)) {
+      // NSPR-base error (e.g. PR_END_OF_FILE_ERROR). Translate to the
+      // network-module nsresult that nsSocketTransport would have
+      // produced.
+      closeReason = ErrorAccordingToNSPR(prCode);
+    }
     RefPtr<ConnectionEntry> entry(mEntry);
+    if (mTransaction) {
+      if (nsHttpTransaction* trans = mTransaction->QueryHttpTransaction()) {
+        if (entry) {
+          entry->RemoveTransFromPendingQ(trans);
+        }
+      }
+      mTransaction->Close(closeReason);
+    }
     Abandon();
     if (entry) {
       entry->RemoveConnectionAttempt(this, false);
