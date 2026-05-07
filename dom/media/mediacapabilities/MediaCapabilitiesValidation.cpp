@@ -133,8 +133,6 @@ ValidationResult CheckMIMETypeSupport(
 
 // Checks MIME type validity as per:
 // https://w3c.github.io/media-capabilities/#check-mime-type-validity
-// NOTE: Open issue, https://github.com/w3c/media-capabilities/issues/238
-// "Do WebRTC encoding/decoding types have the single-codec restrictions?"
 static ValidationResult CheckMIMETypeValidity(
     const MediaExtendedMIMEType& aMime, const AVType& aAVType,
     const MediaType& aMediaType) {
@@ -180,16 +178,17 @@ static ValidationResult CheckMIMETypeValidity(
   //         single media codec and the parameters member of mimeType is not
   //         empty, return false.
   //
-  // NOTE: For WebRTC, this rejects fmtp attributes (e.g., profile-level-id,
-  // packetization-mode) passed as MIME type parameters on single-codec types.
-  // The spec requires this rejection, but the examples used in the WPTs
-  // contradict it by using fmtp attributes. Chrome also allows them through.
-  // We reject per spec for now; a followup will handle fmtp attributes
-  // once the spec is updated. See: bug 2024767 and the following discussions:
-  // https://github.com/w3c/media-capabilities/issues/235
-  // https://github.com/w3c/media-capabilities/issues/238
+  // NOTE: WebRTC single-codec types (e.g. video/h264, audio/opus) commonly
+  // carry fmtp attributes as MIME parameters (e.g. profile-level-id,
+  // packetization-mode). The older (≈2024) spec text and WPT examples both
+  // treat these as valid, and Chrome accepts them. We therefore skip this
+  // rejection for WebRTC types and only enforce it for non-WebRTC types
+  // (file, media-source) where such parameters have no defined semantics.
+  // See: bug 2024767, https://github.com/w3c/media-capabilities/issues/235, and
+  // https://github.com/w3c/media-capabilities/issues/238.
   const size_t numParams = aMime.GetParameterCount();
-  if (IsSingleCodecType(aMime) && numParams != 0) {
+  if (IsSingleCodecType(aMime) && numParams != 0 &&
+      !IsMediaTypeWebRTC(aMediaType)) {
     ValidationResult err = Err(ValidationError::SingleCodecHasParams);
     LOG(
         ("[Invalid MIME Validity #2, %s] Rejecting '%s' (single codec type "
