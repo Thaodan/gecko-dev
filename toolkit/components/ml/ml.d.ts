@@ -41,7 +41,6 @@ export type EngineRequests = EnsureAllFeatures<{
   "smart-intent": UntypedEngineRequest;
   "smart-tab-embedding": UntypedEngineRequest;
   "smart-tab-topic": UntypedEngineRequest;
-  "formfill-classification": UntypedEngineRequest;
 
   "suggest-intent-classification": {
     /**
@@ -80,7 +79,6 @@ export type EngineFeatureIds =
   | "smart-intent"
   | "smart-tab-embedding"
   | "smart-tab-topic"
-  | "formfill-classification"
   | "suggest-intent-classification"
   | "suggest-NER";
 
@@ -109,7 +107,6 @@ export type EngineCreateOptions = EnsureAllFeatures<{
   "smart-intent": BasicEngineOptions;
   "smart-tab-embedding": BasicEngineOptions;
   "smart-tab-topic": BasicEngineOptions;
-  "formfill-classification": BasicEngineOptions;
   "suggest-intent-classification": BasicEngineOptions;
   "suggest-NER": BasicEngineOptions;
 }>;
@@ -162,7 +159,6 @@ export type EngineResponses = EnsureAllFeatures<{
   "smart-intent": UntypedEngineResponse;
   "smart-tab-embedding": UntypedEngineResponse;
   "smart-tab-topic": UntypedEngineResponse;
-  "formfill-classification": UntypedEngineResponse;
   "suggest-intent-classification": Array<{
     label: string;
     score: number;
