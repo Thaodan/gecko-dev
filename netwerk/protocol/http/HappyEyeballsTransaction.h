@@ -111,6 +111,14 @@ class HappyEyeballsTransaction final : public SpeculativeTransaction {
   void Close(nsresult aReason) override;
   nsHttpTransaction* QueryHttpTransaction() override;
 
+  // Forward to the real nsHttpTransaction this race is being run for so
+  // the deferred LNA check in nsHttpConnection::HandshakeDoneInternal
+  // sees the same answer it would on the non-HE path. Pre-Adopt the
+  // real txn is reachable through the shared ZeroRttHandle; post-Adopt
+  // mRealTxn is set and used directly.
+  bool AllowedToConnectToIpAddressSpace(
+      nsILoadInfo::IPAddressSpace aTargetIpAddressSpace) override;
+
   // Pre-adopt, Http3Stream / Http2Stream reads pseudo-header values
   // off RequestHead() when encoding the 0-RTT HEADERS frame; we have
   // to return the real txn's head so :method/:authority/:path/:scheme

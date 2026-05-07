@@ -2571,25 +2571,29 @@ void nsHttpConnection::HandshakeDoneInternal() {
   // before StartSpdy keeps us from spinning up an Http2Session (and its
   // static HPACK tables) just to tear it down. Local targets are handled
   // pre-TLS; plaintext HTTP is handled in Activate.
+  //
+  // For the HE path mTransaction is a HappyEyeballsTransaction; its
+  // override of AllowedToConnectToIpAddressSpace forwards to the real
+  // nsHttpTransaction this race is running for. Closing mTransaction on
+  // failure tears down the HE attempt and propagates
+  // NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED to the real txn so the channel
+  // can run its prompt-and-replay path.
   if (mTransaction && mConnInfo->FirstHopSSL() && !mConnInfo->UsingProxy() &&
       StaticPrefs::network_lna_blocking() &&
       StaticPrefs::network_lna_defer_https_check()) {
-    nsHttpTransaction* httpTrans = mTransaction->QueryHttpTransaction();
-    if (httpTrans) {
-      NetAddr peerAddr;
-      if (NS_SUCCEEDED(GetPeerAddr(&peerAddr))) {
-        auto addrSpace = peerAddr.GetIpAddressSpace();
-        if (addrSpace == nsILoadInfo::IPAddressSpace::Private &&
-            !httpTrans->AllowedToConnectToIpAddressSpace(addrSpace)) {
-          DontReuse();
-          mTransaction->Close(NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED);
-          // Drop the transaction reference before FinishNPNSetup so the
-          // PostProcessNPNSetup path doesn't touch it (e.g. Finish0RTT)
-          // after Close.
-          mTransaction = nullptr;
-          mTlsHandshaker->FinishNPNSetup(true, true);
-          return;
-        }
+    NetAddr peerAddr;
+    if (NS_SUCCEEDED(GetPeerAddr(&peerAddr))) {
+      auto addrSpace = peerAddr.GetIpAddressSpace();
+      if (addrSpace == nsILoadInfo::IPAddressSpace::Private &&
+          !mTransaction->AllowedToConnectToIpAddressSpace(addrSpace)) {
+        DontReuse();
+        mTransaction->Close(NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED);
+        // Drop the transaction reference before FinishNPNSetup so the
+        // PostProcessNPNSetup path doesn't touch it (e.g. Finish0RTT)
+        // after Close.
+        mTransaction = nullptr;
+        mTlsHandshaker->FinishNPNSetup(true, true);
+        return;
       }
     }
   }

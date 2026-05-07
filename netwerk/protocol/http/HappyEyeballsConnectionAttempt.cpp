@@ -171,8 +171,8 @@ nsresult HappyEyeballsConnectionAttempt::ProcessConnectionResult(
        this, aAddr.ToString().get(), aId, static_cast<uint32_t>(aStatus)));
 
   // For 0RTT errors, we should restart the transaction.
+  RefPtr<ConnectionEntry> entry(mEntry);
   if (PossibleZeroRTTRetryError(aStatus)) {
-    RefPtr<ConnectionEntry> entry(mEntry);
     RefPtr<HappyEyeballsConnectionAttempt> self(this);
     if (entry) {
       entry->RemoveConnectionAttempt(this, true);
@@ -185,7 +185,17 @@ nsresult HappyEyeballsConnectionAttempt::ProcessConnectionResult(
 
   // LNA error should stop all connection attempts immediately.
   if (aStatus == NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED) {
+    // Remove the real txn from the pending queue before closing it;
+    // otherwise ProcessPendingQForEntry will re-dispatch it and spin up
+    // another HE attempt (and another TCP connect) for the same denied
+    // peer. Mirrors the Output::Tag::Failed branch in
+    // ProcessHappyEyeballsOutput.
     if (mTransaction) {
+      if (nsHttpTransaction* trans = mTransaction->QueryHttpTransaction()) {
+        if (entry) {
+          entry->RemoveTransFromPendingQ(trans);
+        }
+      }
       mTransaction->Close(aStatus);
     }
     Abandon();
@@ -436,10 +446,6 @@ void HappyEyeballsConnectionAttempt::MaybeSendTransportStatus(
 
 nsresult HappyEyeballsConnectionAttempt::CheckLNA(
     nsISocketTransport* aTransport) {
-  if (!mConnInfo->FirstHopSSL() || mConnInfo->UsingProxy()) {
-    return NS_OK;
-  }
-
   if (!aTransport) {
     return NS_OK;
   }
@@ -449,7 +455,15 @@ nsresult HappyEyeballsConnectionAttempt::CheckLNA(
     return NS_OK;
   }
 
-  auto addrSpace = peerAddr.GetIpAddressSpace();
+  return CheckLNAForAddr(peerAddr);
+}
+
+nsresult HappyEyeballsConnectionAttempt::CheckLNAForAddr(const NetAddr& aAddr) {
+  if (!mConnInfo->FirstHopSSL() || mConnInfo->UsingProxy()) {
+    return NS_OK;
+  }
+
+  auto addrSpace = aAddr.GetIpAddressSpace();
   // Local targets are always checked pre-TLS. Private targets on HTTPS can
   // be deferred until after the TLS handshake succeeds (see
   // nsHttpConnection::HandshakeDoneInternal) when
@@ -466,7 +480,7 @@ nsresult HappyEyeballsConnectionAttempt::CheckLNA(
   if (mTransaction &&
       !mTransaction->AllowedToConnectToIpAddressSpace(addrSpace)) {
     LOG((
-        "HappyEyeballsConnectionAttempt::CheckLNA %p "
+        "HappyEyeballsConnectionAttempt::CheckLNAForAddr %p "
         "blocking connection to %s address space",
         this,
         addrSpace == nsILoadInfo::IPAddressSpace::Local ? "local" : "private"));
@@ -641,6 +655,13 @@ HappyEyeballsConnectionAttempt::CreateAttemptTransaction(
 nsresult HappyEyeballsConnectionAttempt::EstablishTCPConnection(
     NetAddr aAddr, uint16_t aPort, nsTArray<uint8_t>&& aEchConfig,
     uint64_t aId) {
+  // Run the LNA check on the resolved address before opening any socket
+  // so we don't leak SNI / TCP SYNs to LNA-denied peers.
+  if (nsresult lna = CheckLNAForAddr(aAddr); NS_FAILED(lna)) {
+    ProcessConnectionResult(aAddr, lna, aId);
+    return NS_OK;
+  }
+
   // TODO: we always use happy_eyeballs::ConnectionAttemptHttpVersions::H2OrH1
   // for now. Do we really want to race H2 and H1?
   RefPtr<nsHttpConnectionInfo> info = mConnInfo->CloneAndAdoptPortAndAlpn(
@@ -687,6 +708,12 @@ nsresult HappyEyeballsConnectionAttempt::EstablishTCPConnection(
 nsresult HappyEyeballsConnectionAttempt::EstablishUDPConnection(
     NetAddr aAddr, uint16_t aPort, nsTArray<uint8_t>&& aEchConfig,
     uint64_t aId) {
+  // Same pre-connect LNA check as EstablishTCPConnection.
+  if (nsresult lna = CheckLNAForAddr(aAddr); NS_FAILED(lna)) {
+    ProcessConnectionResult(aAddr, lna, aId);
+    return NS_OK;
+  }
+
   RefPtr<nsHttpConnectionInfo> info = mConnInfo->CloneAndAdoptPortAndAlpn(
       aPort, happy_eyeballs::ConnectionAttemptHttpVersions::H3);
   if (!aEchConfig.IsEmpty()) {

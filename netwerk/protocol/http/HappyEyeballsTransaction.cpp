@@ -43,7 +43,6 @@ HappyEyeballsTransaction::~HappyEyeballsTransaction() {
 }
 
 void HappyEyeballsTransaction::Adopt(nsHttpTransaction* aRealTxn) {
-  MOZ_ASSERT(OnSocketThread());
   MOZ_ASSERT(aRealTxn, "Adopt with null real transaction");
   LOG(("HappyEyeballsTransaction::Adopt %p realTxn=%p entered0RTT=%d", this,
        aRealTxn, Entered0RTT()));
@@ -137,7 +136,6 @@ void HappyEyeballsTransaction::Close(nsresult aReason) {
 void HappyEyeballsTransaction::Transition(State aNext,
                                           nsHttpTransaction* aRealTxn,
                                           nsresult aReason) {
-  MOZ_ASSERT(OnSocketThread());
   LOG(("HappyEyeballsTransaction::Transition %p mState=%d aNext=%d", this,
        static_cast<int>(mState), static_cast<int>(aNext)));
   switch (aNext) {
@@ -204,6 +202,25 @@ void HappyEyeballsTransaction::Transition(State aNext,
 
 nsHttpTransaction* HappyEyeballsTransaction::QueryHttpTransaction() {
   return mRealTxn;
+}
+
+bool HappyEyeballsTransaction::AllowedToConnectToIpAddressSpace(
+    nsILoadInfo::IPAddressSpace aTargetIpAddressSpace) {
+  // Resolve the real transaction this race is running on behalf of.
+  // Post-Adopt we already have it; pre-Adopt go through the shared
+  // ZeroRttHandle, which keeps a weak ref to the owning HET and the
+  // txn currently claimed onto it.
+  nsHttpTransaction* real = mRealTxn;
+  if (!real && mZeroRttHandle) {
+    real = mZeroRttHandle->RealTxn();
+  }
+  if (!real) {
+    // No real txn has been claimed onto this race yet (pure
+    // speculative). Allow — the deferred check will re-run when the
+    // real txn is eventually dispatched.
+    return true;
+  }
+  return real->AllowedToConnectToIpAddressSpace(aTargetIpAddressSpace);
 }
 
 nsHttpRequestHead* HappyEyeballsTransaction::RequestHead() {

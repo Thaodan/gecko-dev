@@ -136,6 +136,7 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
       UDPConnectionEstablisher* aEstablisher, uint64_t aId);
 
   nsresult CheckLNA(nsISocketTransport* aTransport);
+  nsresult CheckLNAForAddr(const NetAddr& aAddr);
 
   // Timer
   void SetupTimer(uint64_t aTimeout);
