@@ -165,5 +165,5 @@ export const ThemeContentPropertyList = [
   "sidebar_highlight_text",
   "sidebar_text",
   "zap_gradient",
-  "ai_gradient",
+  "ai_background_color",
 ];
