@@ -30,7 +30,7 @@ export const ThemeVariableMap = [
     },
   ],
   [
-    "--tab-selected-bgcolor",
+    "--tab-background-color-selected",
     {
       lwtProperty: "tab_selected",
     },
