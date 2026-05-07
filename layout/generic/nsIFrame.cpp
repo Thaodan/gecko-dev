@@ -6387,6 +6387,12 @@ void nsIFrame::MarkSubtreeDirty() {
   }
 }
 
+void nsIFrame::MarkPrincipalChildrenDirty() {
+  for (nsIFrame* childFrame : PrincipalChildList()) {
+    childFrame->MarkSubtreeDirty();
+  }
+}
+
 /* virtual */
 void nsIFrame::AddInlineMinISize(const IntrinsicSizeInput& aInput,
                                  InlineMinISizeData* aData) {
