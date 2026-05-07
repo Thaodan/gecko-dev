@@ -2769,6 +2769,14 @@ class Settings(
     )
 
     /**
+     * Indicates if the user has already toggled the VPN on.
+     */
+    var hasAlreadyUsedVpn by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_has_used_ip_protection),
+        default = false,
+    )
+
+    /**
      * Indicates if the IPProtection onboarding bottom sheet has been already shown to the user.
      *
      * `true` makes the IPProtection bottom sheet appear, while `false` ensures the user does not see

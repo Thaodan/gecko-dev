@@ -39,6 +39,13 @@ interface IPProtectionPromptRepository {
      * if they dismiss it in anyway (e.g. tap on "Not now" or "Get started") then they will never see it again.
      */
     var hasShownPrompt: Boolean
+
+    /**
+     * A boolean that indicates if the user has already toggled the VPN on. This is used to determine if we should show
+     * the onboarding card to them, because if the user has already toggled the VPN on, they should not see
+     * the onboarding card again.
+     */
+    val hasAlreadyUsedIPProtection: Boolean
 }
 
 /**
@@ -60,11 +67,12 @@ class DefaultIPProtectionPromptRepository(
             settings.hasShownIPProtectionPrompt = value
         }
 
-    // This logic is incomplete. We do not show the onboarding card to a user who has used the VPN feature before
-    // This will be implemented in https://bugzilla.mozilla.org/show_bug.cgi?id=2035408
+    override val hasAlreadyUsedIPProtection: Boolean
+        get() = settings.hasAlreadyUsedVpn
+
     override fun canShowIPProtectionPrompt(currentTimeMillis: Long): Boolean =
         settings.isIPProtectionAvailable && isInstalledAtLeastAWeekAgo(currentTimeMillis) &&
-            !isShowingPrompt && !hasShownPrompt
+            !isShowingPrompt && !hasShownPrompt && !hasAlreadyUsedIPProtection
 
     private fun isInstalledAtLeastAWeekAgo(currentTimeMillis: Long): Boolean =
         currentTimeMillis - installedTimeMillis() >= ONE_WEEK_MS
