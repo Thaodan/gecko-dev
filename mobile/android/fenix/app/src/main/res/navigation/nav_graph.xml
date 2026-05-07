@@ -54,6 +54,11 @@
         app:launchSingleTop="true" />
 
     <action
+      android:id="@+id/action_global_ip_protection_dialog"
+      app:destination="@+id/ipProtectionOnboardingDialogFragment"
+      app:launchSingleTop="true" />
+
+    <action
         android:id="@+id/action_global_recently_closed"
         app:destination="@id/recentlyClosedFragment" />
 

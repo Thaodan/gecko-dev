@@ -181,6 +181,7 @@ import org.mozilla.fenix.utils.getUndoDelay
 import org.mozilla.fenix.utils.showAddSearchWidgetPromptIfSupported
 import org.mozilla.fenix.wallpapers.Wallpaper
 import java.lang.ref.WeakReference
+import org.mozilla.fenix.ipprotection.store.Surface as IPProtectionSurface
 
 /**
  * The home screen.
@@ -923,6 +924,10 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
         if (requireComponents.termsOfUseManager.shouldShowTermsOfUsePromptOnHomepage()) {
             findNavController().navigate(
                 BrowserFragmentDirections.actionGlobalTermsOfUseDialog(Surface.HOMEPAGE_NEW_TAB),
+            )
+        } else if (requireComponents.ipProtectionManager.shouldShowIPProtectionPrompt()) {
+            findNavController().navigate(
+                BrowserFragmentDirections.actionGlobalIpProtectionDialog(IPProtectionSurface.HOMEPAGE),
             )
         }
     }
