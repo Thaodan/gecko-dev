@@ -81,6 +81,7 @@ import org.mozilla.fenix.home.middleware.HomeTelemetryMiddleware
 import org.mozilla.fenix.home.setup.store.DefaultSetupChecklistRepository
 import org.mozilla.fenix.home.setup.store.SetupChecklistPreferencesMiddleware
 import org.mozilla.fenix.home.setup.store.SetupChecklistTelemetryMiddleware
+import org.mozilla.fenix.ipprotection.IPProtectionManager
 import org.mozilla.fenix.ipprotection.store.DefaultIPProtectionPromptRepository
 import org.mozilla.fenix.messaging.state.MessagingMiddleware
 import org.mozilla.fenix.nimbus.FxNimbus
@@ -444,6 +445,10 @@ class Components(private val context: Context) {
                 )
             },
         )
+    }
+
+    val ipProtectionManager by lazyMonitored {
+        IPProtectionManager(ipProtectionPromptRepository)
     }
 
     val ads by lazyMonitored {

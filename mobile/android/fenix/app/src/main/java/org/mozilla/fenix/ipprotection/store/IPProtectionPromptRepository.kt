@@ -14,13 +14,15 @@ interface IPProtectionPromptRepository {
     /**
      * Determines whether the IP Protection prompt can be shown.
      *
+     * @param currentTimeMillis the current time in milliseconds.
+     *
      * @return `true` if the following conditions are met:
      *
      * - The user has not used the built-in VPN before.
      * - The IP Protection feature flag is enabled.
      * - Application has been installed for at least 7 days.
      */
-    fun canShowIPProtectionPrompt(): Boolean
+    fun canShowIPProtectionPrompt(currentTimeMillis: Long): Boolean
 
     /**
      * A boolean to track if we are currently showing the IP protection bottom sheet prompt.
@@ -35,23 +37,21 @@ interface IPProtectionPromptRepository {
  *
  * @param settings the preferences settings
  * @param installedTimeMillis returns the application installation timestamp (epoch milliseconds).
- * @param currentTimeMillis returns the current epoch time in milliseconds.
  */
 class DefaultIPProtectionPromptRepository(
     private val settings: Settings,
     private val installedTimeMillis: () -> Long,
-    private val currentTimeMillis: () -> Long = { System.currentTimeMillis() },
 ) : IPProtectionPromptRepository {
 
     override var isShowingPrompt = false
 
     // This logic is incomplete. We do not show the onboarding card to a user who has used the VPN feature before
     // This will be implemented in https://bugzilla.mozilla.org/show_bug.cgi?id=2035408
-    override fun canShowIPProtectionPrompt(): Boolean =
+    override fun canShowIPProtectionPrompt(currentTimeMillis: Long): Boolean =
         settings.isIPProtectionAvailable &&
-            isInstalledAtLeastAWeekAgo() &&
+            isInstalledAtLeastAWeekAgo(currentTimeMillis) &&
             !isShowingPrompt
 
-    private fun isInstalledAtLeastAWeekAgo(): Boolean =
-        currentTimeMillis() - installedTimeMillis() >= ONE_WEEK_MS
+    private fun isInstalledAtLeastAWeekAgo(currentTimeMillis: Long): Boolean =
+        currentTimeMillis - installedTimeMillis() >= ONE_WEEK_MS
 }

@@ -28,7 +28,6 @@ class IPProtectionPromptRepositoryTest {
         repository = DefaultIPProtectionPromptRepository(
             settings = settings,
             installedTimeMillis = { CURRENT_TIME_MILLIS - ONE_WEEK_MS },
-            currentTimeMillis = { CURRENT_TIME_MILLIS },
         )
     }
 
@@ -39,7 +38,7 @@ class IPProtectionPromptRepositoryTest {
 
         assertTrue(settings.isIPProtectionAvailable)
 
-        assertTrue(repository.canShowIPProtectionPrompt())
+        assertTrue(repository.canShowIPProtectionPrompt(CURRENT_TIME_MILLIS))
     }
 
     @Test
@@ -49,7 +48,7 @@ class IPProtectionPromptRepositoryTest {
 
         assertTrue(settings.isIPProtectionAvailable)
 
-        assertFalse(repository.canShowIPProtectionPrompt())
+        assertFalse(repository.canShowIPProtectionPrompt(CURRENT_TIME_MILLIS))
     }
 
     @Test
@@ -59,7 +58,7 @@ class IPProtectionPromptRepositoryTest {
 
         assertFalse(settings.isIPProtectionAvailable)
 
-        assertFalse(repository.canShowIPProtectionPrompt())
+        assertFalse(repository.canShowIPProtectionPrompt(CURRENT_TIME_MILLIS))
     }
 
     @Test
@@ -67,14 +66,13 @@ class IPProtectionPromptRepositoryTest {
         repository = DefaultIPProtectionPromptRepository(
             settings = settings,
             installedTimeMillis = { CURRENT_TIME_MILLIS - (ONE_WEEK_MS - 1) },
-            currentTimeMillis = { CURRENT_TIME_MILLIS },
         )
         settings.isIPProtectionEnabled = true
         repository.isShowingPrompt = false
 
         assertTrue(settings.isIPProtectionAvailable)
 
-        assertFalse(repository.canShowIPProtectionPrompt())
+        assertFalse(repository.canShowIPProtectionPrompt(CURRENT_TIME_MILLIS))
     }
 
     @Test
@@ -82,14 +80,13 @@ class IPProtectionPromptRepositoryTest {
         repository = DefaultIPProtectionPromptRepository(
             settings = settings,
             installedTimeMillis = { CURRENT_TIME_MILLIS - ONE_WEEK_MS },
-            currentTimeMillis = { CURRENT_TIME_MILLIS },
         )
         settings.isIPProtectionEnabled = true
         repository.isShowingPrompt = false
 
         assertTrue(settings.isIPProtectionAvailable)
 
-        assertTrue(repository.canShowIPProtectionPrompt())
+        assertTrue(repository.canShowIPProtectionPrompt(CURRENT_TIME_MILLIS))
     }
 
     @Test
@@ -97,13 +94,12 @@ class IPProtectionPromptRepositoryTest {
         repository = DefaultIPProtectionPromptRepository(
             settings = settings,
             installedTimeMillis = { CURRENT_TIME_MILLIS - (ONE_WEEK_MS + 1) },
-            currentTimeMillis = { CURRENT_TIME_MILLIS },
         )
         settings.isIPProtectionEnabled = true
         repository.isShowingPrompt = false
 
         assertTrue(settings.isIPProtectionAvailable)
 
-        assertTrue(repository.canShowIPProtectionPrompt())
+        assertTrue(repository.canShowIPProtectionPrompt(CURRENT_TIME_MILLIS))
     }
 }
