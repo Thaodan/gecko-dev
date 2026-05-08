@@ -88,9 +88,9 @@ class IPProtectionBottomSheetFragment : BottomSheetDialogFragment() {
                             IPProtectionPromptAction.OnBrowseWithExtraProtectionClicked(args.surface),
                         )
                         SupportUtils.launchSandboxCustomTab(
-                            requireActivity().applicationContext,
+                            requireActivity(),
                             SupportUtils.getSumoURLForTopic(
-                                requireActivity().applicationContext,
+                                requireActivity(),
                                 SupportUtils.SumoTopic.VPN,
                                 useMobilePage = false,
                             ),
