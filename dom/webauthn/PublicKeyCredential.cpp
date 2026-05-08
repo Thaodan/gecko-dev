@@ -233,7 +233,7 @@ already_AddRefed<Promise> PublicKeyCredential::GetClientCapabilities(
 
   entry = capabilities.Entries().AppendElement();
   entry->mKey = u"relatedOrigins"_ns;
-  entry->mValue = true;
+  entry->mValue = false;
 
   entry = capabilities.Entries().AppendElement();
   entry->mKey = u"signalAllAcceptedCredentials"_ns;
