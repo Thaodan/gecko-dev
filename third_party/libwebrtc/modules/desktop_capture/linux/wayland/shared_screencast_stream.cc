@@ -36,13 +36,13 @@ bool IsDMABufEnabled();
 
 namespace webrtc {
 
-const int kBytesPerPixel = 4;
-const int kVideoDamageRegionCount = 16;
+constexpr int kBytesPerPixel = 4;
+constexpr int kMaxCursorSize = 1024;
+constexpr int kVideoDamageRegionCount = 16;
 
-constexpr int kCursorBpp = 4;
 constexpr int CursorMetaSize(int w, int h) {
   return (sizeof(struct spa_meta_cursor) + sizeof(struct spa_meta_bitmap) +
-          w * h * kCursorBpp);
+          w * h * kBytesPerPixel);
 }
 
 constexpr PipeWireVersion kDmaBufModifierMinVersion = {0, 3, 33};
@@ -702,7 +702,9 @@ void SharedScreenCastStreamPrivate::ProcessBuffer(pw_buffer* buffer) {
           bitmap =
               SPA_MEMBER(cursor, cursor->bitmap_offset, struct spa_meta_bitmap);
 
-        if (bitmap && bitmap->size.width > 0 && bitmap->size.height > 0) {
+        if (bitmap && bitmap->size.width > 0 &&
+            bitmap->size.width <= kMaxCursorSize && bitmap->size.height > 0 &&
+            bitmap->size.height <= kMaxCursorSize) {
           const uint8_t* bitmap_data =
               SPA_MEMBER(bitmap, bitmap->offset, uint8_t);
           BasicDesktopFrame* mouse_frame = new BasicDesktopFrame(
