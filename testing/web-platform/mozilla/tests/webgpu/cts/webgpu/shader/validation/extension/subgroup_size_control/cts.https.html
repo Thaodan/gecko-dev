@@ -33,9 +33,6 @@
 </script>
 <script type=module src=/_mozilla/webgpu/common/runtime/wpt.js></script>
 
-<meta name=variant content='?q=webgpu:shader,execution,shader_io,compute_builtins:inputs:*'>
-<meta name=variant content='?q=webgpu:shader,execution,shader_io,compute_builtins:num_subgroups:*'>
-<meta name=variant content='?q=webgpu:shader,execution,shader_io,compute_builtins:subgroup_id:*'>
-<meta name=variant content='?q=webgpu:shader,execution,shader_io,compute_builtins:subgroup_invocation_id:*'>
-<meta name=variant content='?q=webgpu:shader,execution,shader_io,compute_builtins:subgroup_size:*'>
-<meta name=variant content='?q=webgpu:shader,execution,shader_io,compute_builtins:subgroup_size_attribute:*'>
+<meta name=variant content='?q=webgpu:shader,validation,extension,subgroup_size_control:enable_subgroup_size_control_requires_subgroups:*'>
+<meta name=variant content='?q=webgpu:shader,validation,extension,subgroup_size_control:subgroup_size_attribute_only_valid_in_compute_stage:*'>
+<meta name=variant content='?q=webgpu:shader,validation,extension,subgroup_size_control:use_subgroup_size_attribute_requires_subgroup_size_control_extension_enabled:*'>
