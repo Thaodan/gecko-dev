@@ -28,8 +28,8 @@ async function run_test() {
 
   await checkPostUpdateAppLog({
     expectedContents: gIsServiceTest
-      ? "2: /DesktopLauncher\n2: /DesktopLauncher"
-      : "2: /DesktopLauncher\n",
+      ? "2: /DesktopLauncher\n3: /PostUpdateTarget:Installation\n2: /DesktopLauncher\n3: /PostUpdateTarget:CurrentUser\n"
+      : "2: /DesktopLauncher\n3: /PostUpdateTarget:Installation\n",
   });
 
   checkAppBundleModTime();
