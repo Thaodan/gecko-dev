@@ -912,8 +912,7 @@ class UrlbarInputTestUtils {
    *   A task function to run. Gets the contextmenu popup as argument.
    */
   async withContextMenu(win, task) {
-    let textBox = this.#urlbar(win).querySelector("moz-input-box");
-    let cxmenu = textBox.menupopup;
+    let cxmenu = win.EditContextMenu.popup;
     let openPromise = lazy.BrowserTestUtils.waitForEvent(cxmenu, "popupshown");
     this.EventUtils.synthesizeMouseAtCenter(
       this.#urlbar(win).inputField,
@@ -954,8 +953,7 @@ class UrlbarInputTestUtils {
    */
   async activateContextMenuItem(win, anonid) {
     await this.withContextMenu(win, popup => {
-      let mozInputBox = popup.parentNode;
-      let menuitem = mozInputBox.getMenuItem(anonid);
+      let menuitem = popup.querySelector(`[anonid="${anonid}"]`);
       this.Assert.ok(
         lazy.BrowserTestUtils.isVisible(menuitem),
         "Menu item is visible"
@@ -983,8 +981,7 @@ class UrlbarInputTestUtils {
   async getContextMenuItem(win, anonid) {
     let menuitem;
     await this.withContextMenu(win, popup => {
-      let mozInputBox = popup.parentNode;
-      menuitem = mozInputBox.getMenuItem(anonid);
+      menuitem = popup.querySelector(`[anonid="${anonid}"]`);
     });
     return menuitem;
   }

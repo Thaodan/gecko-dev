@@ -263,8 +263,7 @@ async function doPasteAndGo(data) {
   await SimpleTest.promiseClipboardChange(data, () => {
     clipboardHelper.copyString(data);
   });
-  const inputBox = gURLBar.querySelector("moz-input-box");
-  const contextMenu = inputBox.menupopup;
+  const contextMenu = window.EditContextMenu.popup;
   const onPopup = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
   EventUtils.synthesizeMouseAtCenter(gURLBar.inputField, {
     type: "contextmenu",
@@ -272,7 +271,7 @@ async function doPasteAndGo(data) {
   });
   await onPopup;
   const onLoad = BrowserTestUtils.browserLoaded(browser);
-  const menuitem = inputBox.getMenuItem("paste-and-go");
+  const menuitem = contextMenu.querySelector('[anonid="paste-and-go"]');
   contextMenu.activateItem(menuitem);
   await onLoad;
 }
