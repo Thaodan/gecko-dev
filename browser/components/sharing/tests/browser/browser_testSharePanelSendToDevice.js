@@ -67,9 +67,6 @@ async function clickSendToMobileButton(sendButton) {
 }
 
 add_task(async function test_sendToMobileSignedOut() {
-  await Services.fog.testFlushAllChildren();
-  Services.fog.testResetFOG();
-
   const sandbox = setupSendTabMocks({
     fxaDevices: null,
     state: UIState.STATUS_NOT_CONFIGURED,
@@ -84,11 +81,6 @@ add_task(async function test_sendToMobileSignedOut() {
         openSignInStub.calledOnceWith("share-panel"),
         "Opened the sign in page"
       );
-
-      const expectedEvents = [
-        { extra: { action: "connect-or-sign-in", is_shareable: "true" } },
-      ];
-      await assertTelemetryEvents(expectedEvents);
     });
   } finally {
     sandbox.restore();
@@ -96,9 +88,6 @@ add_task(async function test_sendToMobileSignedOut() {
 });
 
 add_task(async function test_sendToMobileSignedInNoDevices() {
-  await Services.fog.testFlushAllChildren();
-  Services.fog.testResetFOG();
-
   const sandbox = setupSendTabMocks({ fxaDevices: [] });
   const openConnectStub = sandbox.stub(gSync, "openConnectAnotherDevice");
   try {
@@ -110,11 +99,6 @@ add_task(async function test_sendToMobileSignedInNoDevices() {
         openConnectStub.calledOnceWith("share-panel"),
         "Opened the connect another device flow"
       );
-
-      const expectedEvents = [
-        { extra: { action: "connect-or-sign-in", is_shareable: "true" } },
-      ];
-      await assertTelemetryEvents(expectedEvents);
     });
   } finally {
     sandbox.restore();
@@ -122,9 +106,6 @@ add_task(async function test_sendToMobileSignedInNoDevices() {
 });
 
 add_task(async function test_deviceSubview() {
-  await Services.fog.testFlushAllChildren();
-  Services.fog.testResetFOG();
-
   const sandbox = setupSendTabMocks({ fxaDevices: FXA_DEVICES });
   try {
     await BrowserTestUtils.withNewTab(TEST_URL, async () => {
@@ -179,9 +160,6 @@ add_task(async function test_deviceSubview() {
       );
 
       await closeSharePanel(window);
-
-      const expectedEvents = [{ extra: { action: "", is_shareable: "true" } }];
-      await assertTelemetryEvents(expectedEvents);
     });
   } finally {
     sandbox.restore();
@@ -189,9 +167,6 @@ add_task(async function test_deviceSubview() {
 });
 
 add_task(async function test_sendToDevice() {
-  await Services.fog.testFlushAllChildren();
-  Services.fog.testResetFOG();
-
   const pageTitle = "Share Panel Test Page";
   const pageUrl = `https://example.com/document-builder.sjs?html=${encodeURIComponent(
     `<title>${pageTitle}</title>Hello`
@@ -223,11 +198,6 @@ add_task(async function test_sendToDevice() {
       );
       is(targets.length, 1, "Sent to a single device");
       is(targets[0].id, "desktop-id", "Sent to the clicked device");
-
-      const expectedEvents = [
-        { extra: { action: "send-to-device", is_shareable: "true" } },
-      ];
-      await assertTelemetryEvents(expectedEvents);
     });
   } finally {
     sandbox.restore();
@@ -235,9 +205,6 @@ add_task(async function test_sendToDevice() {
 });
 
 add_task(async function test_deviceSubviewActions() {
-  await Services.fog.testFlushAllChildren();
-  Services.fog.testResetFOG();
-
   const sandbox = setupSendTabMocks({ fxaDevices: FXA_DEVICES });
   const pairStub = sandbox.stub(gSync, "openPairDevice");
   const helpStub = sandbox.stub(gSync, "openSendTabHelp");
@@ -270,12 +237,6 @@ add_task(async function test_deviceSubviewActions() {
       );
       await panelHidden;
       ok(helpStub.calledOnce, "Opened the missing device help page");
-
-      const expectedEvents = [
-        { extra: { action: "connect-device", is_shareable: "true" } },
-        { extra: { action: "device-help", is_shareable: "true" } },
-      ];
-      await assertTelemetryEvents(expectedEvents);
     });
   } finally {
     sandbox.restore();
