@@ -10,15 +10,7 @@ const TEST_URL = "https://example.com/";
 
 async function pickHeuristic(browser, modifiers) {
   await searchInNewTabPage(browser, TEST_URL);
-  await TestUtils.waitForCondition(
-    () =>
-      SpecialPowers.spawn(
-        browser,
-        [],
-        () => !!content.document.querySelector("moz-urlbar .urlbarView-row")
-      ),
-    "waiting for the heuristic row"
-  );
+  await waitForResults(browser);
   await BrowserTestUtils.synthesizeKey("KEY_Enter", modifiers, browser);
 }
 
