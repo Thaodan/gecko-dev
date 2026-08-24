@@ -1558,6 +1558,12 @@ static int32_t RoundDown(double aDouble) {
                      : static_cast<int32_t>(ceil(aDouble));
 }
 
+// This reports Windows' logical DPI (96 times the display scale the user
+// selected), whereas the nsIWidget default reports the display's physical DPI.
+// As a result, AppUnitsPerPhysicalInch matches AppUnitsPerCSSInch here but not
+// on other platforms.
+// FIXME: It's unclear whether this divergence is intentional. If it isn't,
+// this override should be removed in favour of the default implementation.
 float nsWindow::GetDPI() { return GetDefaultScaleInternal() * 96.0f; }
 
 double nsWindow::GetDefaultScaleInternal() {
