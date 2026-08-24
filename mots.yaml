@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2026-08-24T17:24:24.592118+00:00'
+updated_at: '2026-08-24T17:25:03.222617+00:00'
 export:
   path: ./docs/mots/index.md
   format: md
@@ -1504,6 +1504,7 @@ modules:
       url: '{ref}`Build System`'
       components:
         - Core::Build Config
+      review_group: firefox-build-system-reviewers
     owners:
       - *glandium
     peers:
@@ -1896,6 +1897,7 @@ modules:
       components:
         - Developer Infrastructure::Source Documentation
       url: <https://firefox-source-docs.mozilla.org/>
+      review_group: firefox-source-docs-reviewers
   - name: 'Core: Gecko Profiler'
     description: Gecko's built-in profiler
     includes:
@@ -2068,6 +2070,7 @@ modules:
       url: '{ref}`Internationalization`'
       components:
         - Core::Internationalization
+      review_group: platform-i18n-reviewers
     owners:
       - *hsivonen
       - *jfkthame
@@ -4131,6 +4134,7 @@ modules:
         meta:
           components:
             - Firefox::Tabbed Browser
+          review_group: tabbrowser-reviewers
           peers_emeritus:
             - Jared Wein
             - Matthew N
@@ -4358,6 +4362,7 @@ modules:
       components:
         - Remote Protocol
       url: <https://firefox-source-docs.mozilla.org/remote/>
+      review_group: webdriver-reviewers
     owners:
       - *whimboo
     peers:
@@ -4509,6 +4514,7 @@ modules:
       components:
         - 'Testing :: geckodriver'
       group: dev-webdriver
+      review_group: webdriver-reviewers
 
   - machine_name: testing_gtest
     name: gtest
@@ -4536,6 +4542,7 @@ modules:
         - David Burns
       components:
         - 'Testing :: Marionette Client & Harness'
+      review_group: webdriver-reviewers
     owners:
       - *whimboo
     peers:
@@ -4572,6 +4579,7 @@ modules:
       components:
         - 'Testing :: Mozbase'
         - 'Testing :: Mozbase Rust'
+      review_group: mozbase
       peers_emeritus:
         - *ato
         - *bc
@@ -4737,6 +4745,7 @@ modules:
             - Neil Deakin
           peers_emeritus:
             - Andrew Swan
+          review_group: reusable-components-reviewers
         owners:
           - *mstriemer
         peers:
@@ -4859,5 +4868,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: 2dcf52c120a3a737243179cae7c67cfa4666ff21
-  export: 290ce29a3a82b29d1d28d8327f05698c55db1334
+  config: 9d469683f9bad0bb961fac970c35b5cd0740325b
+  export: 3351e39ae160bc11f18d12c59fbcd1246c49c264
