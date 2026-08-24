@@ -3760,6 +3760,12 @@ void AsyncPanZoomController::HandlePanningUpdate(
 
 void AsyncPanZoomController::HandlePinchLocking(
     const PinchGestureInput& aEvent) {
+  // Pinch locking is only applicable to PinchGestureInput events
+  // created from multi-touch input.
+  if (aEvent.mSource != PinchGestureInput::TOUCH) {
+    return;
+  }
+
   // Focus change and span distance calculated from an event buffer
   // Used to handle pinch locking irrespective of touch screen sensitivity
   // Note: both values fall back to the same value as
