@@ -640,7 +640,8 @@ class TestInfoReport(TestInfo):
 
         trunk = False
         if (
-            os.environ.get("GECKO_HEAD_REPOSITORY", "") in [
+            os.environ.get("GECKO_HEAD_REPOSITORY", "")
+            in [
                 "https://hg.mozilla.org/mozilla-central",
                 "https://hg.mozilla.org/try",
             ]
