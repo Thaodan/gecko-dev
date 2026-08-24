@@ -2573,6 +2573,39 @@ class ScriptDecodeTask final : public StencilCompileOrDecodeTask {
   JS::TranscodeRange mRange;
 };
 
+nsresult WasmCompileTask::Init(JSContext* aCx, JS::CompileOptions& aOptions) {
+  mCompileArgs = JS::BuildCompileArgsForESM(aCx, aOptions);
+  if (!mCompileArgs) {
+    mIsCancelled = true;
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+
+  return NS_OK;
+}
+
+Task::TaskResult WasmCompileTask::Run() {
+  MutexAutoLock lock(mMutex);
+
+  if (IsCancelled(lock)) {
+    return TaskResult::Complete;
+  }
+
+  mCompileResult =
+      JS::CompileForESM(*mCompileArgs, mBytes.begin(), mBytes.length());
+
+  return TaskResult::Complete;
+}
+
+JSObject* WasmCompileTask::StealResult(JSContext* aCx) {
+  JS::Rooted<JSObject*> wasmModuleObject(aCx);
+  if (!JS::FinishCompileForESM(aCx, *mCompileArgs, mCompileResult,
+                               &wasmModuleObject)) {
+    return nullptr;
+  }
+
+  return JS::CreateWasmSourcePhaseModule(aCx, wasmModuleObject);
+}
+
 nsresult ScriptLoader::CreateOffThreadTask(
     JSContext* aCx, ScriptLoadRequest* aRequest, JS::CompileOptions& aOptions,
     StencilCompileOrDecodeTask** aCompileOrDecodeTask) {
