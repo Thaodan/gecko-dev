@@ -6,8 +6,8 @@
 const { InfoBar } = ChromeUtils.importESModule(
   "resource:///modules/asrouter/InfoBar.sys.mjs"
 );
-const { CFRMessageProvider } = ChromeUtils.importESModule(
-  "resource:///modules/asrouter/CFRMessageProvider.sys.mjs"
+const { PanelTestProvider } = ChromeUtils.importESModule(
+  "resource:///modules/asrouter/PanelTestProvider.sys.mjs"
 );
 const { ASRouter } = ChromeUtils.importESModule(
   "resource:///modules/asrouter/ASRouter.sys.mjs"
@@ -51,7 +51,7 @@ registerCleanupFunction(() => {
 });
 
 add_task(async function show_and_send_telemetry() {
-  let message = (await CFRMessageProvider.getMessages()).find(
+  let message = (await PanelTestProvider.getMessages()).find(
     m => m.id === "INFOBAR_ACTION_86"
   );
 
@@ -105,7 +105,7 @@ add_task(async function show_and_send_telemetry() {
 
 add_task(async function dismiss_telemetry() {
   let message = {
-    ...(await CFRMessageProvider.getMessages()).find(
+    ...(await PanelTestProvider.getMessages()).find(
       m => m.id === "INFOBAR_ACTION_86"
     ),
   };
@@ -172,7 +172,7 @@ add_task(async function dismiss_telemetry() {
 });
 
 add_task(async function prevent_multiple_messages() {
-  let message = (await CFRMessageProvider.getMessages()).find(
+  let message = (await PanelTestProvider.getMessages()).find(
     m => m.id === "INFOBAR_ACTION_86"
   );
 
@@ -216,7 +216,7 @@ add_task(async function prevent_multiple_messages() {
 });
 
 add_task(async function default_dismissable_button_shows() {
-  let message = (await CFRMessageProvider.getMessages()).find(
+  let message = (await PanelTestProvider.getMessages()).find(
     m => m.id === "INFOBAR_ACTION_86"
   );
   Assert.ok(message, "Found the message");
@@ -243,7 +243,7 @@ add_task(async function default_dismissable_button_shows() {
 
 add_task(
   async function non_dismissable_notification_does_not_show_close_button() {
-    let baseMessage = (await CFRMessageProvider.getMessages()).find(
+    let baseMessage = (await PanelTestProvider.getMessages()).find(
       m => m.id === "INFOBAR_ACTION_86"
     );
     Assert.ok(baseMessage, "Found the base message");
@@ -436,7 +436,7 @@ add_task(async function test_showInfoBarMessage_skipsPrivateWindow() {
 });
 
 add_task(async function test_non_dismissable_button_action() {
-  let baseMessage = (await CFRMessageProvider.getMessages()).find(
+  let baseMessage = (await PanelTestProvider.getMessages()).find(
     m => m.id === "INFOBAR_ACTION_86"
   );
   Assert.ok(baseMessage, "Found the base message");
@@ -505,7 +505,7 @@ add_task(async function test_non_dismissable_button_action() {
 
 // Default experience
 add_task(async function test_dismissable_button_action() {
-  let baseMessage = (await CFRMessageProvider.getMessages()).find(
+  let baseMessage = (await PanelTestProvider.getMessages()).find(
     m => m.id === "INFOBAR_ACTION_86"
   );
   Assert.ok(baseMessage, "Found the base message");
@@ -718,7 +718,7 @@ add_task(async function test_disconnected_telemetry_source() {
 });
 
 add_task(async function clear_activeInfobar_on_window_close() {
-  let message = (await CFRMessageProvider.getMessages()).find(
+  let message = (await PanelTestProvider.getMessages()).find(
     m => m.id === "INFOBAR_ACTION_86"
   );
   Assert.ok(message.id, "Found the message");
@@ -1068,7 +1068,7 @@ add_task(async function test_infobar_css_background_fallback_var() {
 add_task(async function test_impression_action_handling() {
   const handleStub = sinon.stub(SpecialMessageActions, "handleAction");
 
-  let message = (await CFRMessageProvider.getMessages()).find(
+  let message = (await PanelTestProvider.getMessages()).find(
     m => m.id === "INFOBAR_ACTION_86"
   );
   Assert.ok(message, "Found base message");
@@ -1115,7 +1115,7 @@ add_task(
   async function test_impression_action_once_allowed_only_on_first_impression() {
     const handleStub = sinon.stub(SpecialMessageActions, "handleAction");
 
-    let message = (await CFRMessageProvider.getMessages()).find(
+    let message = (await PanelTestProvider.getMessages()).find(
       m => m.id === "INFOBAR_ACTION_86"
     );
     Assert.ok(message, "Found base message");
@@ -1177,7 +1177,7 @@ add_task(
 add_task(async function test_impression_action_multi_action_once_and_every() {
   const handleStub = sinon.stub(SpecialMessageActions, "handleAction");
 
-  let message = (await CFRMessageProvider.getMessages()).find(
+  let message = (await PanelTestProvider.getMessages()).find(
     m => m.id === "INFOBAR_ACTION_86"
   );
   Assert.ok(message, "Found base message");
