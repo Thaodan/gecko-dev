@@ -251,8 +251,13 @@ nsresult ModuleLoader::CompileJavaScriptOrWasmModule(
     MOZ_ASSERT(aRequest->IsWasmBytes());
     JSObject* wasmModule;
     if (aRequest->IsSourcePhaseRequest(aCx)) {
-      wasmModule =
-          JS::CompileWasmModuleAsSource(aCx, aOptions, aRequest->WasmBytes());
+      if (aRequest->GetScriptLoadContext()->mWasCompiledOMT) {
+        wasmModule =
+            aRequest->GetScriptLoadContext()->StealOffThreadWasmResult(aCx);
+      } else {
+        wasmModule =
+            JS::CompileWasmModuleAsSource(aCx, aOptions, aRequest->WasmBytes());
+      }
     } else {
       wasmModule = JS::CompileWasmModule(aCx, aOptions, aRequest->WasmBytes());
     }

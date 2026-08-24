@@ -2212,6 +2212,8 @@ class OffThreadCompilationCompleteTask : public Task {
       ProfilerString8View scriptSourceString;
       if (mRequest->IsFetchedAsTextSource()) {
         scriptSourceString = "ScriptCompileOffThread";
+      } else if (mRequest->IsWasmBytes()) {
+        scriptSourceString = "WasmCompileOffThread";
       } else {
         MOZ_ASSERT(mRequest->IsRetrievedAsSerializedStencil());
         scriptSourceString = "DecodeStencilOffThread";
@@ -2257,6 +2259,7 @@ class OffThreadCompilationCompleteTask : public Task {
 //       (bug 1846160).
 static constexpr size_t OffThreadMinimumTextLength = 5 * 1000;
 static constexpr size_t OffThreadMinimumSerializedStencilLength = 5 * 1000;
+static constexpr size_t OffThreadMinimumWasmLength = 16 * 1024;
 
 nsresult ScriptLoader::AttemptOffThreadScriptCompile(
     ScriptLoadRequest* aRequest, bool* aCouldCompileOut) {
@@ -2315,9 +2318,18 @@ nsresult ScriptLoader::AttemptOffThreadScriptCompile(
       return NS_OK;
     }
   } else if (aRequest->IsWasmBytes()) {
-    // See Bug 2007696, off-thread compilation of wasm modules is
-    // not yet implemented.
-    return NS_OK;
+    if (!StaticPrefs::javascript_options_parallel_parsing() ||
+        aRequest->WasmBytes().length() < OffThreadMinimumWasmLength) {
+      TRACE_FOR_TEST(aRequest, "compile:main thread");
+      return NS_OK;
+    }
+
+    // Only source phase modules are compiled off-thread. Compilation of
+    // evaluation phase modules is not yet implemented (Bug 2030454).
+    if (!aRequest->AsModuleRequest()->IsSourcePhaseRequest(cx)) {
+      TRACE_FOR_TEST(aRequest, "compile:main thread");
+      return NS_OK;
+    }
   } else {
     MOZ_ASSERT(aRequest->IsRetrievedAsSerializedStencil());
 
@@ -2328,7 +2340,7 @@ nsresult ScriptLoader::AttemptOffThreadScriptCompile(
     }
   }
 
-  RefPtr<StencilCompileOrDecodeTask> compileOrDecodeTask;
+  RefPtr<CompileOrDecodeTask> compileOrDecodeTask;
   rv = CreateOffThreadTask(cx, aRequest, options,
                            getter_AddRefs(compileOrDecodeTask));
   NS_ENSURE_SUCCESS(rv, rv);
@@ -2343,6 +2355,8 @@ nsresult ScriptLoader::AttemptOffThreadScriptCompile(
 
   TaskController::Get()->AddTask(compileOrDecodeTask.forget());
   TaskController::Get()->AddTask(completeTask.forget());
+
+  TRACE_FOR_TEST(aRequest, "compile:off thread");
 
   aRequest->GetScriptLoadContext()->BlockOnload(mDocument);
 
@@ -2367,9 +2381,10 @@ nsresult ScriptLoader::AttemptOffThreadScriptCompile(
   return NS_OK;
 }
 
-CompileOrDecodeTask::CompileOrDecodeTask()
+CompileOrDecodeTask::CompileOrDecodeTask(Type aType)
     : Task(Kind::OffMainThreadOnly, EventQueuePriority::Normal),
-      mMutex("CompileOrDecodeTask") {}
+      mMutex("CompileOrDecodeTask"),
+      mType(aType) {}
 
 void CompileOrDecodeTask::Cancel() {
   MOZ_ASSERT(NS_IsMainThread());
@@ -2380,7 +2395,8 @@ void CompileOrDecodeTask::Cancel() {
 }
 
 StencilCompileOrDecodeTask::StencilCompileOrDecodeTask()
-    : mOptions(JS::OwningCompileOptions::ForFrontendContext()) {}
+    : CompileOrDecodeTask(Type::Stencil),
+      mOptions(JS::OwningCompileOptions::ForFrontendContext()) {}
 
 StencilCompileOrDecodeTask::~StencilCompileOrDecodeTask() {
   if (mFrontendContext) {
@@ -2608,7 +2624,16 @@ JSObject* WasmCompileTask::StealResult(JSContext* aCx) {
 
 nsresult ScriptLoader::CreateOffThreadTask(
     JSContext* aCx, ScriptLoadRequest* aRequest, JS::CompileOptions& aOptions,
-    StencilCompileOrDecodeTask** aCompileOrDecodeTask) {
+    CompileOrDecodeTask** aCompileOrDecodeTask) {
+  if (aRequest->IsWasmBytes()) {
+    RefPtr<WasmCompileTask> compileTask =
+        new WasmCompileTask(std::move(aRequest->WasmBytes()));
+    nsresult rv = compileTask->Init(aCx, aOptions);
+    NS_ENSURE_SUCCESS(rv, rv);
+    compileTask.forget(aCompileOrDecodeTask);
+    return NS_OK;
+  }
+
   if (aRequest->IsRetrievedAsSerializedStencil()) {
     JS::TranscodeRange range = aRequest->SerializedStencil();
     JS::DecodeOptions decodeOptions(aOptions);

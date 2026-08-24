@@ -281,10 +281,18 @@ void ScriptLoadContext::GetProfilerLabel(nsACString& aOutString) {
 
 already_AddRefed<JS::Stencil> ScriptLoadContext::StealOffThreadResult(
     JSContext* aCx, JS::InstantiationStorage* aInstantiationStorage) {
-  RefPtr<StencilCompileOrDecodeTask> compileOrDecodeTask =
+  RefPtr<CompileOrDecodeTask> compileOrDecodeTask =
       mCompileOrDecodeTask.forget();
 
-  return compileOrDecodeTask->StealResult(aCx, aInstantiationStorage);
+  return compileOrDecodeTask->AsStencilCompileOrDecodeTask()->StealResult(
+      aCx, aInstantiationStorage);
+}
+
+JSObject* ScriptLoadContext::StealOffThreadWasmResult(JSContext* aCx) {
+  RefPtr<CompileOrDecodeTask> compileOrDecodeTask =
+      mCompileOrDecodeTask.forget();
+
+  return compileOrDecodeTask->AsWasmCompileTask()->StealResult(aCx);
 }
 
 }  // namespace mozilla::dom
