@@ -5,12 +5,14 @@
 #include "ImageContainer.h"
 #include "ImageConversion.h"
 #include "SourceSurfaceRawData.h"
+#include "YUVBufferGenerator.h"
 #include "gtest/gtest.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/ImageBitmapBinding.h"
 #include "mozilla/dom/ImageUtils.h"
 
 using mozilla::ConvertToI420;
+using mozilla::ConvertToNV12;
 using mozilla::ConvertToRGBA;
 using mozilla::MakeAndAddRef;
 using mozilla::MakeRefPtr;
@@ -23,6 +25,7 @@ using mozilla::gfx::DataSourceSurface;
 using mozilla::gfx::IntSize;
 using mozilla::gfx::SourceSurfaceAlignedRawData;
 using mozilla::gfx::SurfaceFormat;
+using mozilla::layers::Image;
 using mozilla::layers::PlanarYCbCrImage;
 using mozilla::layers::SourceSurfaceImage;
 
@@ -92,6 +95,12 @@ class TestRedPlanarYCbCrImage2x2 final : public PlanarYCbCrImage {
   uint8_t mU[4] = {0x5A, 0x5A, 0x5A, 0x5A};
   uint8_t mV[4] = {0xEF, 0xEF, 0xEF, 0xEF};
 };
+
+static already_AddRefed<Image> GenerateI420(int32_t aWidth, int32_t aHeight) {
+  YUVBufferGenerator generator;
+  generator.Init(IntSize(aWidth, aHeight));
+  return generator.GenerateI420Image();
+}
 
 static already_AddRefed<SourceSurfaceImage> CreateRedSurfaceImage2x2(
     SurfaceFormat aFormat) {
@@ -263,4 +272,54 @@ TEST(MediaImageConversion, ConvertToI420)
   auto imgYuvNv21 =
       MakeRefPtr<TestRedPlanarYCbCrImage2x2>(ImageBitmapFormat::YUV420SP_NV21);
   checkImage(imgYuvNv21, Some(ImageBitmapFormat::YUV420SP_NV21));
+}
+
+// The smallest of the pair of source dimensions used by the bounds tests.
+static constexpr int32_t kSmallDimension = 16;
+// At or above kMaxConvertImageDimension the source is rejected before scaling.
+static constexpr int32_t kOverLimitDimension =
+    mozilla::kMaxConvertImageDimension;
+// The largest even in-range dimension (odd dimensions hit an unrelated
+// chroma-subsampling limit in the conversion, so use even).
+static constexpr int32_t kInRangeDimension =
+    mozilla::kMaxConvertImageDimension - 2;
+
+TEST(MediaImageConversion, ConvertToI420SourceSizeBounds)
+{
+  uint8_t y[4] = {};
+  uint8_t u[1] = {};
+  uint8_t v[1] = {};
+  const IntSize dst(2, 2);
+
+  RefPtr<Image> tall = GenerateI420(kSmallDimension, kOverLimitDimension);
+  EXPECT_EQ(ConvertToI420(tall, y, 2, u, 1, v, 1, dst), NS_ERROR_INVALID_ARG);
+
+  RefPtr<Image> wide = GenerateI420(kOverLimitDimension, kSmallDimension);
+  EXPECT_EQ(ConvertToI420(wide, y, 2, u, 1, v, 1, dst), NS_ERROR_INVALID_ARG);
+
+  RefPtr<Image> maxTall = GenerateI420(kSmallDimension, kInRangeDimension);
+  EXPECT_TRUE(NS_SUCCEEDED(ConvertToI420(maxTall, y, 2, u, 1, v, 1, dst)));
+
+  RefPtr<Image> maxWide = GenerateI420(kInRangeDimension, kSmallDimension);
+  EXPECT_TRUE(NS_SUCCEEDED(ConvertToI420(maxWide, y, 2, u, 1, v, 1, dst)));
+}
+
+TEST(MediaImageConversion, ConvertToNV12SourceSizeBounds)
+{
+  uint8_t y[4] = {};
+  uint8_t uv[2] = {};
+  const IntSize dst(2, 2);
+
+  // ConvertToNV12 takes an I420 (YUV420P) source and outputs NV12.
+  RefPtr<Image> tall = GenerateI420(kSmallDimension, kOverLimitDimension);
+  EXPECT_EQ(ConvertToNV12(tall, y, 2, uv, 2, dst), NS_ERROR_INVALID_ARG);
+
+  RefPtr<Image> wide = GenerateI420(kOverLimitDimension, kSmallDimension);
+  EXPECT_EQ(ConvertToNV12(wide, y, 2, uv, 2, dst), NS_ERROR_INVALID_ARG);
+
+  RefPtr<Image> maxTall = GenerateI420(kSmallDimension, kInRangeDimension);
+  EXPECT_TRUE(NS_SUCCEEDED(ConvertToNV12(maxTall, y, 2, uv, 2, dst)));
+
+  RefPtr<Image> maxWide = GenerateI420(kInRangeDimension, kSmallDimension);
+  EXPECT_TRUE(NS_SUCCEEDED(ConvertToNV12(maxWide, y, 2, uv, 2, dst)));
 }
