@@ -2328,7 +2328,7 @@ nsresult ScriptLoader::AttemptOffThreadScriptCompile(
     }
   }
 
-  RefPtr<CompileOrDecodeTask> compileOrDecodeTask;
+  RefPtr<StencilCompileOrDecodeTask> compileOrDecodeTask;
   rv = CreateOffThreadTask(cx, aRequest, options,
                            getter_AddRefs(compileOrDecodeTask));
   NS_ENSURE_SUCCESS(rv, rv);
@@ -2369,17 +2369,27 @@ nsresult ScriptLoader::AttemptOffThreadScriptCompile(
 
 CompileOrDecodeTask::CompileOrDecodeTask()
     : Task(Kind::OffMainThreadOnly, EventQueuePriority::Normal),
-      mMutex("CompileOrDecodeTask"),
-      mOptions(JS::OwningCompileOptions::ForFrontendContext()) {}
+      mMutex("CompileOrDecodeTask") {}
 
-CompileOrDecodeTask::~CompileOrDecodeTask() {
+void CompileOrDecodeTask::Cancel() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  MutexAutoLock lock(mMutex);
+
+  mIsCancelled = true;
+}
+
+StencilCompileOrDecodeTask::StencilCompileOrDecodeTask()
+    : mOptions(JS::OwningCompileOptions::ForFrontendContext()) {}
+
+StencilCompileOrDecodeTask::~StencilCompileOrDecodeTask() {
   if (mFrontendContext) {
     JS::DestroyFrontendContext(mFrontendContext);
     mFrontendContext = nullptr;
   }
 }
 
-nsresult CompileOrDecodeTask::InitFrontendContext() {
+nsresult StencilCompileOrDecodeTask::InitFrontendContext() {
   mFrontendContext = JS::NewFrontendContext();
   if (!mFrontendContext) {
     mIsCancelled = true;
@@ -2388,8 +2398,8 @@ nsresult CompileOrDecodeTask::InitFrontendContext() {
   return NS_OK;
 }
 
-void CompileOrDecodeTask::DidRunTask(const MutexAutoLock& aProofOfLock,
-                                     RefPtr<JS::Stencil>&& aStencil) {
+void StencilCompileOrDecodeTask::DidRunTask(const MutexAutoLock& aProofOfLock,
+                                            RefPtr<JS::Stencil>&& aStencil) {
   if (aStencil) {
     if (!JS::PrepareForInstantiate(mFrontendContext, *aStencil,
                                    mInstantiationStorage)) {
@@ -2400,7 +2410,7 @@ void CompileOrDecodeTask::DidRunTask(const MutexAutoLock& aProofOfLock,
   mStencil = std::move(aStencil);
 }
 
-already_AddRefed<JS::Stencil> CompileOrDecodeTask::StealResult(
+already_AddRefed<JS::Stencil> StencilCompileOrDecodeTask::StealResult(
     JSContext* aCx, JS::InstantiationStorage* aInstantiationStorage) {
   JS::FrontendContext* fc = mFrontendContext;
   mFrontendContext = nullptr;
@@ -2434,22 +2444,14 @@ already_AddRefed<JS::Stencil> CompileOrDecodeTask::StealResult(
   return mStencil.forget();
 }
 
-void CompileOrDecodeTask::Cancel() {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  MutexAutoLock lock(mMutex);
-
-  mIsCancelled = true;
-}
-
 enum class CompilationTarget { Script, Module };
 
 template <CompilationTarget target>
-class ScriptOrModuleCompileTask final : public CompileOrDecodeTask {
+class ScriptOrModuleCompileTask final : public StencilCompileOrDecodeTask {
  public:
   explicit ScriptOrModuleCompileTask(
       ScriptLoader::MaybeSourceText&& aMaybeSource)
-      : CompileOrDecodeTask(), mMaybeSource(std::move(aMaybeSource)) {}
+      : StencilCompileOrDecodeTask(), mMaybeSource(std::move(aMaybeSource)) {}
 
   nsresult Init(JS::CompileOptions& aOptions) {
     nsresult rv = InitFrontendContext();
@@ -2513,7 +2515,7 @@ using ScriptCompileTask =
 using ModuleCompileTask =
     class ScriptOrModuleCompileTask<CompilationTarget::Module>;
 
-class ScriptDecodeTask final : public CompileOrDecodeTask {
+class ScriptDecodeTask final : public StencilCompileOrDecodeTask {
  public:
   explicit ScriptDecodeTask(const JS::TranscodeRange& aRange)
       : mRange(aRange) {}
@@ -2573,7 +2575,7 @@ class ScriptDecodeTask final : public CompileOrDecodeTask {
 
 nsresult ScriptLoader::CreateOffThreadTask(
     JSContext* aCx, ScriptLoadRequest* aRequest, JS::CompileOptions& aOptions,
-    CompileOrDecodeTask** aCompileOrDecodeTask) {
+    StencilCompileOrDecodeTask** aCompileOrDecodeTask) {
   if (aRequest->IsRetrievedAsSerializedStencil()) {
     JS::TranscodeRange range = aRequest->SerializedStencil();
     JS::DecodeOptions decodeOptions(aOptions);
