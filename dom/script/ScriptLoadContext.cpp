@@ -284,15 +284,7 @@ already_AddRefed<JS::Stencil> ScriptLoadContext::StealOffThreadResult(
   RefPtr<CompileOrDecodeTask> compileOrDecodeTask =
       mCompileOrDecodeTask.forget();
 
-  return compileOrDecodeTask->AsStencilCompileOrDecodeTask()->StealResult(
-      aCx, aInstantiationStorage);
-}
-
-JSObject* ScriptLoadContext::StealOffThreadWasmResult(JSContext* aCx) {
-  RefPtr<CompileOrDecodeTask> compileOrDecodeTask =
-      mCompileOrDecodeTask.forget();
-
-  return compileOrDecodeTask->AsWasmCompileTask()->StealResult(aCx);
+  return compileOrDecodeTask->StealResult(aCx, aInstantiationStorage);
 }
 
 }  // namespace mozilla::dom
