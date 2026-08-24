@@ -61,6 +61,16 @@ const lazy = XPCOMUtils.declareLazy({
   SponsorProtection:
     "moz-src:///browser/components/newtab/SponsorProtection.sys.mjs",
   TabCrashHandler: "resource:///modules/ContentCrashHandlers.sys.mjs",
+  tabLocalization: () =>
+    new Localization(
+      [
+        "browser/tabbrowser.ftl",
+        "browser/taskbartabs.ftl",
+        "branding/brand.ftl",
+      ],
+      true
+    ),
+  TabMetrics: "moz-src:///browser/components/tabbrowser/TabMetrics.sys.mjs",
   TabStateFlusher:
     "moz-src:///browser/components/sessionstore/TabStateFlusher.sys.mjs",
   TaskbarTabs: "resource:///modules/taskbartabs/TaskbarTabs.sys.mjs",
@@ -218,22 +228,6 @@ export class Tabbrowser {
     this.splitViewCommandSet =
       this.document.getElementById("splitViewCommands");
 
-    // Defined on the instance, not on `lazy`, because callers reach it as
-    // `gBrowser.TabMetrics`.
-    // eslint-disable-next-line mozilla/lazy-getter-object-name
-    ChromeUtils.defineESModuleGetters(this, {
-      TabMetrics: "moz-src:///browser/components/tabbrowser/TabMetrics.sys.mjs",
-    });
-    ChromeUtils.defineLazyGetter(this, "tabLocalization", () => {
-      return new Localization(
-        [
-          "browser/tabbrowser.ftl",
-          "browser/taskbartabs.ftl",
-          "branding/brand.ftl",
-        ],
-        true
-      );
-    });
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
       "tabGroupsEnabled",
@@ -307,6 +301,16 @@ export class Tabbrowser {
   // are updated separately.
   get ownerDocument() {
     return this.document;
+  }
+
+  // `TabMetrics` and `tabLocalization` are read from outside this module as
+  // `gBrowser.TabMetrics` and `gBrowser.tabLocalization`.
+  get TabMetrics() {
+    return lazy.TabMetrics;
+  }
+
+  get tabLocalization() {
+    return lazy.tabLocalization;
   }
 
   constructor(window) {
