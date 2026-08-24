@@ -627,9 +627,21 @@ ifndef NSS_DISABLE_KYBER
 KYBER_PQCRYSTALS = kyber-pqcrystals-ref.c
 endif
 
-VERIFIED_SRCS += Hacl_Hash_SHA3.c Hacl_P256.c Hacl_P384.c Hacl_P521.c libcrux_sha3_portable.c libcrux_mlkem768_portable.c libcrux_mlkem1024_portable.c libcrux_mlkem_portable.c libcrux_core.c
+VERIFIED_SRCS += Hacl_Hash_SHA3.c Hacl_P256.c Hacl_P384.c Hacl_P521.c
 VERIFIED_SRCS += Hacl_Ed25519.c
 VERIFIED_SRCS += Hacl_Curve25519_51.c
+
+# Vendored libcrux ML-KEM + ML-DSA combined extraction (see lib/freebl/libcrux/).
+# These share one SHA-3/combined_core and are compiled with an isolated include
+# scope (see below) so their krml/eurydice headers don't collide with the HACL*
+# extraction in verified/.
+LIBCRUX_SRCS = combined_core.c libcrux_ct_ops.c libcrux_sha3_portable.c \
+               libcrux_mlkem_core.c libcrux_mlkem_portable.c \
+               libcrux_mlkem768_portable.c libcrux_mlkem1024_portable.c \
+               libcrux_mldsa_core.c libcrux_mldsa_portable.c \
+               libcrux_mldsa44_portable.c libcrux_mldsa65_portable.c \
+               libcrux_mldsa87_portable.c
+CSRCS += $(LIBCRUX_SRCS)
 
 # Bug 1918767 / Bug 1918711 - by setting KRML_MUSTINLINE=inline here, we
 # avoid it being defined to `inline __forceinline` (for msvc) or `inline
@@ -669,11 +681,29 @@ rijndael_tables:
 	$(OBJDIR)/make_rijndael_tab
 
 vpath %.h mpi ecl verified deprecated
-vpath %.c mpi ecl verified deprecated
+vpath %.c mpi ecl verified deprecated libcrux
 vpath %.S mpi ecl
 vpath %.s mpi ecl
 vpath %.asm mpi ecl
-INCLUDES += -Impi -Iecl -Iverified -Iverified/internal -Iverified/karamel/include -Iverified/karamel/krmllib/dist/minimal -Iverified/eurydice -Ideprecated
+INCLUDES += -Impi -Iecl -Iverified -Iverified/internal -Iverified/karamel/include -Iverified/karamel/krmllib/dist/minimal -Ideprecated
+
+# The vendored libcrux objects and the freebl wrappers that use them (kyber.c,
+# ml_dsa.c) are compiled with the libcrux/ include dirs searched FIRST, so their
+# krml/eurydice headers resolve to the libcrux copies rather than the HACL*
+# copies under verified/.
+LIBCRUX_OBJS = $(addprefix $(OBJDIR)/$(PROG_PREFIX),$(LIBCRUX_SRCS:.c=$(OBJ_SUFFIX)))
+LIBCRUX_USERS = $(LIBCRUX_OBJS) \
+                $(OBJDIR)/$(PROG_PREFIX)kyber$(OBJ_SUFFIX) \
+                $(OBJDIR)/$(PROG_PREFIX)ml_dsa$(OBJ_SUFFIX)
+$(LIBCRUX_USERS): INCLUDES := -Ilibcrux -Ilibcrux/internal -Ilibcrux/karamel $(INCLUDES)
+
+ifeq ($(OS_TARGET),WINNT)
+# C4146: unary minus applied to an unsigned type. eurydice_glue.h does this
+# deliberately in its wrapping_neg helpers, where the wrapped result is the
+# intended value. The extraction is kept byte-identical to upstream (CI diffs
+# it), so silence the warning here rather than patching the header.
+$(LIBCRUX_USERS): CFLAGS += -wd4146
+endif
 
 
 DEFINES += -DMP_API_COMPATIBLE
