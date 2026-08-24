@@ -12,13 +12,13 @@ SHARED_LIBRARY = $(NULL)
 ifeq ($(NSS_BUILD_UTIL_ONLY),1)
 CPPSRCS = gtests-util.cc
 else
-CPPSRCS = gtests.cc json_reader.cc
+CPPSRCS = gtests.cc
 endif
 
 INCLUDES += -I$(CORE_DEPTH)/gtests/google_test/gtest/include \
             -I$(CORE_DEPTH)/gtests/common \
             -I$(CORE_DEPTH)/cpputil
 
-REQUIRES = nspr nss gtest cpputil
+REQUIRES = gtest
 
 EXTRA_LIBS = $(DIST)/lib/$(LIB_PREFIX)gtest.$(LIB_SUFFIX)

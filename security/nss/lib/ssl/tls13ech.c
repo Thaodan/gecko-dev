@@ -752,8 +752,7 @@ SSLExp_SetClientEchConfigs(PRFileDesc *fd,
 }
 
 /* Set up ECH. This generates an ephemeral sender
- * keypair and the HPKE context. Caller must hold the SSL3
- * handshake lock, which protects |ss->ssl3.hs|. */
+ * keypair and the HPKE context */
 SECStatus
 tls13_ClientSetupEch(sslSocket *ss, sslClientHelloType type)
 {
@@ -762,8 +761,6 @@ tls13_ClientSetupEch(sslSocket *ss, sslClientHelloType type)
     SECKEYPublicKey *pkR = NULL;
     SECItem hpkeInfo = { siBuffer, NULL, 0 };
     sslEchConfig *cfg = NULL;
-
-    PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
 
     if (PR_CLIST_IS_EMPTY(&ss->echConfigs) ||
         !ssl_ShouldSendSNIExtension(ss, ss->url) ||
@@ -2158,9 +2155,6 @@ tls13_MaybeGreaseEch(sslSocket *ss, const sslBuffer *preamble, sslBuffer *buf)
     PR_ASSERT(!ss->sec.isServer);
     const int kNonPayloadLen = 34;
 
-    /* |ss->ssl3.hs.greaseEchBuf| is protected by the SSL3 handshake lock. */
-    PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
-
     if (!ss->opt.enableTls13GreaseEch || ss->ssl3.hs.echHpkeCtx) {
         return SECSuccess;
     }
@@ -2697,7 +2691,6 @@ tls13_MaybeAcceptEch(sslSocket *ss, const SECItem *sidBytes, const PRUint8 *chOu
     TLSExtension *hrrXtn;
     PRBool previouslyOfferedEch;
 
-    PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
     PORT_Assert(!ss->ssl3.hs.echAccepted);
 
     if (!ss->xtnData.ech || ss->xtnData.ech->receivedInnerXtn || IS_DTLS(ss)) {

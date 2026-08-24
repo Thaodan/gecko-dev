@@ -91,8 +91,9 @@ extern void lg_nsslowkey_DestroyPublicKey(NSSLOWKEYPublicKey *key);
 /*
 ** Convert a low private key "privateKey" into a public low key
 */
-extern NSSLOWKEYPublicKey *
-lg_nsslowkey_ConvertToPublicKey(NSSLOWKEYPrivateKey *privateKey);
+extern NSSLOWKEYPublicKey
+    *
+    lg_nsslowkey_ConvertToPublicKey(NSSLOWKEYPrivateKey *privateKey);
 
 SECStatus
 nsslowkey_UpdateNickname(NSSLOWKEYDBHandle *handle,

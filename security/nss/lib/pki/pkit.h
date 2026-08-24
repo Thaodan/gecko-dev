@@ -70,8 +70,7 @@ struct nssPKIObjectStr {
     NSSArena *arena;
     /* Atomically incremented/decremented reference counting */
     PRInt32 refCount;
-    /* lock protects the array of nssCryptokiInstance's of the object,
-     * as well as the NSSCryptoContext (cryptoContext). */
+    /* lock protects the array of nssCryptokiInstance's of the object */
     union {
         PRLock *lock;
         PRMonitor *mlock;

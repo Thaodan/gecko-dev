@@ -692,9 +692,7 @@ STAN_GetCERTCertificateNameForInstance(
     NSSCertificate *c,
     nssCryptokiInstance *instance)
 {
-    nssPKIObject_Lock(&c->object);
     NSSCryptoContext *context = c->object.cryptoContext;
-    nssPKIObject_Unlock(&c->object);
     PRStatus nssrv;
     int nicklen, tokenlen, len;
     NSSUTF8 *tokenName = NULL;
@@ -733,7 +731,6 @@ STAN_GetCERTCertificateNameForInstance(
         memcpy(nick, stanNick, nicklen - 1);
         nickname[len - 1] = '\0';
     }
-
     return nickname;
 }
 
@@ -750,17 +747,18 @@ STAN_GetCERTCertificateName(PLArenaPool *arenaOpt, NSSCertificate *c)
 }
 
 static void
-fill_CERTCertificateFields(NSSCertificate *c, CERTCertificate *cc, NSSTrust *ccTrust, PRBool forced)
+fill_CERTCertificateFields(NSSCertificate *c, CERTCertificate *cc, PRBool forced)
 {
-    /* We are holding the base class object's lock on entry of this function.
-     * This lock protects writes to fields of the CERTCertificate.
-     * It is also needed by some functions to compute values such as trust.
-     */
     CERTCertTrust *trust = NULL;
+    NSSTrust *nssTrust;
     NSSCryptoContext *context = c->object.cryptoContext;
     nssCryptokiInstance *instance;
     NSSUTF8 *stanNick = NULL;
 
+    /* We are holding the base class object's lock on entry of this function
+     * This lock protects writes to fields of the CERTCertificate .
+     * It is also needed by some functions to compute values such as trust.
+     */
     instance = get_cert_instance(c);
 
     if (instance) {
@@ -802,8 +800,7 @@ fill_CERTCertificateFields(NSSCertificate *c, CERTCertificate *cc, NSSTrust *ccT
     }
     if (context) {
         /* trust */
-        NSSTrust *nssTrust = ccTrust;
-        NSSTrust *tdTrust = NULL;
+        nssTrust = nssCryptoContext_FindTrustForCertificate(context, c);
         if (!nssTrust) {
             /* chicken and egg issue:
              *
@@ -818,7 +815,7 @@ fill_CERTCertificateFields(NSSCertificate *c, CERTCertificate *cc, NSSTrust *ccT
             c->issuer.size = cc->derIssuer.len;
             c->serial.data = cc->serialNumber.data;
             c->serial.size = cc->serialNumber.len;
-            nssTrust = tdTrust = nssTrustDomain_FindTrustForCertificate(context->td, c);
+            nssTrust = nssTrustDomain_FindTrustForCertificate(context->td, c);
         }
         if (nssTrust) {
             trust = cert_trust_from_stan_trust(nssTrust, cc->arena);
@@ -830,8 +827,8 @@ fill_CERTCertificateFields(NSSCertificate *c, CERTCertificate *cc, NSSTrust *ccT
                 cc->trust = trust;
                 CERT_UnlockCertTrust(cc);
             }
+            nssTrust_Destroy(nssTrust);
         }
-        nssTrust_Destroy(tdTrust);
     } else if (instance) {
         /* slot */
         if (cc->slot != instance->token->pk11slot) {
@@ -914,17 +911,6 @@ stan_GetCERTCertificate(NSSCertificate *c, PRBool forceUpdate)
     CERTCertificate *cc = NULL;
     CERTCertTrust certTrust;
 
-    // Looking for trust information in a crypto context acquires the context's
-    // cert store's lock. To avoid a lock order inversion, do this while not
-    // holding this object's lock.
-    NSSTrust *ccTrust = NULL;
-    nssPKIObject_Lock(&c->object);
-    NSSCryptoContext *context = c->object.cryptoContext;
-    nssPKIObject_Unlock(&c->object);
-    if (context) {
-        ccTrust = nssCryptoContext_FindTrustForCertificate(context, c);
-    }
-
     /* make sure object does not go away until we finish */
     nssPKIObject_AddRef(&c->object);
     nssPKIObject_Lock(&c->object);
@@ -962,7 +948,7 @@ stan_GetCERTCertificate(NSSCertificate *c, PRBool forceUpdate)
     NSSCertificate *nssCert = cc->nssCertificate;
     CERT_UnlockCertTempPerm(cc);
     if (!nssCert || forceUpdate) {
-        fill_CERTCertificateFields(c, cc, ccTrust, forceUpdate);
+        fill_CERTCertificateFields(c, cc, forceUpdate);
     } else if (CERT_GetCertTrust(cc, &certTrust) != SECSuccess) {
         CERTCertTrust *trust;
         if (!c->object.cryptoContext) {
@@ -994,7 +980,6 @@ stan_GetCERTCertificate(NSSCertificate *c, PRBool forceUpdate)
 loser:
     nssPKIObject_Unlock(&c->object);
     nssPKIObject_Destroy(&c->object);
-    nssTrust_Destroy(ccTrust);
     return cc;
 }
 
@@ -1235,26 +1220,18 @@ STAN_ChangeCertTrust(CERTCertificate *cc, CERTCertTrust *trust)
     nssTrust->codeSigning = get_stan_trust(trust->objectSigningFlags, PR_FALSE);
     nssTrust->stepUpApproved =
         (PRBool)(trust->sslFlags & CERTDB_GOVT_APPROVED_CA);
-
-    nssPKIObject_Lock(&c->object);
-    NSSCryptoContext *cctx = c->object.cryptoContext;
-    nssPKIObject_Unlock(&c->object);
-    if (cctx) {
+    if (c->object.cryptoContext != NULL) {
         /* The cert is in a context, set the trust there */
+        NSSCryptoContext *cctx = c->object.cryptoContext;
         nssrv = nssCryptoContext_ImportTrust(cctx, nssTrust);
         if (nssrv != PR_SUCCESS) {
             goto done;
         }
-
-        nssPKIObject_Lock(&c->object);
-        PRBool soleInstance = c->object.numInstances == 0;
-        nssPKIObject_Unlock(&c->object);
-        if (soleInstance) {
+        if (c->object.numInstances == 0) {
             /* The context is the only instance, finished */
             goto done;
         }
     }
-
     td = STAN_GetDefaultTrustDomain();
     tok = stan_GetTrustToken(c);
     moving_object = PR_FALSE;
