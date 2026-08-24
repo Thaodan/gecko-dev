@@ -57,7 +57,8 @@ async function showAutofillFor(win, value) {
 }
 
 async function openAndCloseContextMenu(win) {
-  let cxmenu = win.EditContextMenu.popup;
+  let textBox = win.gURLBar.querySelector("moz-input-box");
+  let cxmenu = textBox.menupopup;
   let openPromise = BrowserTestUtils.waitForEvent(cxmenu, "popupshown");
   EventUtils.synthesizeMouseAtCenter(
     win.gURLBar.inputField,

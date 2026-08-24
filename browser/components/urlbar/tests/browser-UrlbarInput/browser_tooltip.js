@@ -31,18 +31,16 @@ async function expectTooltip(text) {
     await BrowserTestUtils.waitForEvent(gURLBar.inputField, "overflow");
   }
 
+  let tooltip = document.getElementById("aHTMLTooltip");
   let element = gURLBar.inputField;
 
-  // An HTML element gets the document's default tooltip, which is anonymous
-  // content, so the event retargets to the root element and the tooltip is its
-  // original target.
-  let popupShownPromise = BrowserTestUtils.waitForEvent(window, "popupshown");
+  let popupShownPromise = BrowserTestUtils.waitForEvent(tooltip, "popupshown");
   await synthesizeMouseOver(element);
   info("awaiting for tooltip popup");
-  let tooltip = (await popupShownPromise).originalTarget;
+  await popupShownPromise;
 
   is(element.getAttribute("title"), text, "title attribute has expected text");
-  is(tooltip.getAttribute("label"), text, "tooltip shows expected text");
+  is(tooltip.textContent, text, "tooltip shows expected text");
 
   await synthesizeMouseOut(element);
 }

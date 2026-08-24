@@ -56,7 +56,8 @@ async function showAutofillFor(win, value) {
 }
 
 async function readContextMenuItems(win) {
-  let cxmenu = win.EditContextMenu.popup;
+  let textBox = win.gURLBar.querySelector("moz-input-box");
+  let cxmenu = textBox.menupopup;
   let openPromise = BrowserTestUtils.waitForEvent(cxmenu, "popupshown");
   EventUtils.synthesizeMouseAtCenter(
     win.gURLBar.inputField,
@@ -66,8 +67,8 @@ async function readContextMenuItems(win) {
   await openPromise;
   await new Promise(win.requestAnimationFrame);
 
-  let dismiss = cxmenu.querySelector(`[anonid="${DISMISS_ID}"]`);
-  let forget = cxmenu.querySelector(`[anonid="${FORGET_ID}"]`);
+  let dismiss = textBox.getMenuItem(DISMISS_ID);
+  let forget = textBox.getMenuItem(FORGET_ID);
   let state = {
     dismissHidden: !dismiss || dismiss.hidden,
     forgetHidden: !forget || forget.hidden,

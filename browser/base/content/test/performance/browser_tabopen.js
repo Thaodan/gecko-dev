@@ -59,7 +59,7 @@ add_task(async function () {
     .getElementById("tabs-newtab-button")
     .getBoundingClientRect();
   let textBoxRect = gURLBar
-    .querySelector(".urlbar-input-box")
+    .querySelector("moz-input-box")
     .getBoundingClientRect();
 
   let inRange = (val, min, max) => min <= val && val <= max;

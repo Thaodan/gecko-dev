@@ -127,14 +127,15 @@ async function runPasteAndGoTest(aInput, aDesc, aExpectedScheme) {
     });
 
     const loaded = BrowserTestUtils.browserLoaded(browser, false, null, true);
-    const cxmenu = window.EditContextMenu.popup;
+    const textBox = gURLBar.querySelector("moz-input-box");
+    const cxmenu = textBox.menupopup;
     const cxmenuPromise = BrowserTestUtils.waitForEvent(cxmenu, "popupshown");
     EventUtils.synthesizeMouseAtCenter(gURLBar.inputField, {
       type: "contextmenu",
       button: 2,
     });
     await cxmenuPromise;
-    const menuitem = cxmenu.querySelector('[anonid="paste-and-go"]');
+    const menuitem = textBox.getMenuItem("paste-and-go");
     menuitem.closest("menupopup").activateItem(menuitem);
     await loaded;
 

@@ -98,36 +98,3 @@ function waitForRowIcon(browser, title, predicate) {
     return icon && predicate(icon) ? icon : false;
   }, `waiting for the icon of the row titled "${title}"`);
 }
-
-/**
- * Reads what the newtab address bar is currently showing.
- *
- * @param {MozBrowser} browser
- * @returns {Promise<{focused: boolean, value: string, viewOpen: boolean}>}
- *   Whether the input has focus, the value it holds, and whether the results
- *   view is open.
- */
-function getBarState(browser) {
-  return SpecialPowers.spawn(browser, [], () => {
-    let bar = content.document.querySelector("moz-urlbar");
-    let input = bar.querySelector("input.urlbar-input");
-    return {
-      focused: content.document.activeElement == input,
-      value: input.value,
-      // An Xray hides the element's plain JS properties.
-      viewOpen: Cu.waiveXrays(bar).view.isOpen,
-    };
-  });
-}
-
-/**
- * Waits for the newtab address bar's results view to open.
- *
- * @param {MozBrowser} browser
- */
-function waitForResults(browser) {
-  return TestUtils.waitForCondition(
-    async () => (await getBarState(browser)).viewOpen,
-    "waiting for the results view to open"
-  );
-}

@@ -288,7 +288,7 @@ add_task(
         "Two tabs should be selected"
       );
 
-      let contextMenu = window.EditContextMenu.popup;
+      let contextMenu = gURLBar.querySelector("moz-input-box").menupopup;
       // This is a trusted event, so it really opens the context menu.
       let popupShown = BrowserTestUtils.waitForPopupEvent(contextMenu, "shown");
       contextMenu.dispatchEvent(

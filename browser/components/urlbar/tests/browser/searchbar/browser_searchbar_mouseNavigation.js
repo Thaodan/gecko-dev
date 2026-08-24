@@ -17,7 +17,7 @@ function context_click(target) {
 
 add_setup(async function () {
   searchbar = document.getElementById("searchbar-new");
-  contextMenu = window.EditContextMenu.popup;
+  contextMenu = searchbar.querySelector("moz-input-box").menupopup;
 
   await SearchTestUtils.updateRemoteSettingsConfig([
     { identifier: "engine1" },
