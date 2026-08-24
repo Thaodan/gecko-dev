@@ -53,8 +53,8 @@ class APZCArePointerEventsConsumable : public APZCTreeManagerTester {
     return new TouchBlockState(aApzc, flags, counter);
   }
 
-  void UpdateOverscrollBehavior(ScrollableLayerGuid::ViewID aScrollId,
-                                OverscrollBehavior aX, OverscrollBehavior aY) {
+  void UpdateOverscrollBehavior(ViewID aScrollId, OverscrollBehavior aX,
+                                OverscrollBehavior aY) {
     auto* layer = layers[aScrollId - START_SCROLL_ID];
     ModifyFrameMetrics(layer, [aX, aY](ScrollMetadata& sm, FrameMetrics& _) {
       OverscrollBehaviorInfo overscroll;

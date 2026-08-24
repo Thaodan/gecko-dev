@@ -420,7 +420,7 @@ TEST_F(APZCTreeManagerGenericTesterMock,
   ScopedLayerTreeRegistration registration2(LayersId{2}, mcc);
 
   // In this test, we only bother to give the inner layer an APZC.
-  ScrollableLayerGuid::ViewID scrollId = START_SCROLL_ID;
+  ViewID scrollId = START_SCROLL_ID;
   SetScrollableFrameMetrics(layers[1], scrollId, CSSRect(0, 0, 100, 100));
 
   // Set the referent id of the root layer to 1.

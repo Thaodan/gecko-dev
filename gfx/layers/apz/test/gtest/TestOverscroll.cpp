@@ -2066,7 +2066,6 @@ TEST_F(APZCOverscrollTesterMock, OverscrollIntoPreventDefault) {
 TEST_F(APZCOverscrollTesterMock, StuckInOverscroll_Bug1810935) {
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
 
-  using ViewID = ScrollableLayerGuid::ViewID;
   ViewID rootScrollId = START_SCROLL_ID;
   ViewID subframeScrollId = START_SCROLL_ID + 1;
 

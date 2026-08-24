@@ -95,7 +95,7 @@ class APZCTreeManagerTester : public APZCTesterBase {
     // move the value out of mHitTester.
     mMockHitTester = static_cast<MockHitTester*>(mHitTester.get());
   }
-  void QueueMockHitResult(ScrollableLayerGuid::ViewID aScrollId,
+  void QueueMockHitResult(ViewID aScrollId,
                           gfx::CompositorHitTestInfo aHitInfo =
                               gfx::CompositorHitTestFlags::eVisibleToHitTest) {
     QueueMockHitResult(ScrollableLayerGuid(LayersId{0}, 0, aScrollId),
@@ -121,7 +121,7 @@ class APZCTreeManagerTester : public APZCTesterBase {
 
  protected:
   static ScrollMetadata BuildScrollMetadata(
-      ScrollableLayerGuid::ViewID aScrollId, const CSSRect& aScrollableRect,
+      ViewID aScrollId, const CSSRect& aScrollableRect,
       const ParentLayerRect& aCompositionBounds) {
     ScrollMetadata metadata;
     FrameMetrics& metrics = metadata.GetMetrics();
@@ -167,7 +167,7 @@ class APZCTreeManagerTester : public APZCTesterBase {
   }
 
   void SetScrollableFrameMetrics(WebRenderLayerScrollData* aLayer,
-                                 ScrollableLayerGuid::ViewID aScrollId,
+                                 ViewID aScrollId,
                                  CSSRect aScrollableRect = CSSRect(-1, -1, -1,
                                                                    -1)) {
     auto localTransform = aLayer->GetTransformTyped() * AsyncTransformMatrix();
