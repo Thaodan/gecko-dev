@@ -32,6 +32,12 @@ HERALD_RULES_MAX_AGE = 24 * 60 * 60
 # history to find past reviewers for a file.
 RECENT_REVIEWERS_COMMIT_LIMIT = 100
 
+# In-tree module ownership database, as maintained by the mots tool.
+MOTS_CONFIG_PATH = "mots.yaml"
+# Some mots modules also list external repositories, which no in-tree path can
+# match.
+MOTS_EXTERNAL_PATTERN_RE = re.compile(r"^https?://")
+
 
 class InvalidPathException(Exception):
     """Represents an error due to an invalid path."""
@@ -562,6 +568,144 @@ def _recent_reviewers_for_files(command_context, relpaths):
     return _parse_reviewers_from_subjects(subjects)
 
 
+def _load_mots_config(topsrcdir):
+    """Return the parsed in-tree mots configuration, or None if unreadable."""
+    import yaml
+
+    path = mozpath.join(topsrcdir, MOTS_CONFIG_PATH)
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return yaml.safe_load(fh)
+    except (OSError, yaml.YAMLError) as e:
+        print(f"(could not read {path}: {e})", file=sys.stderr)
+        return None
+
+
+def _mots_pattern_matches(pattern, path):
+    if MOTS_EXTERNAL_PATTERN_RE.match(pattern):
+        return False
+    # A pattern naming a directory covers everything under it, which is what
+    # mozpath.match does for a pattern matching an ancestor of the path.
+    pattern = pattern.rstrip("/")
+    # mozpath.match matches every path against an empty pattern, which would
+    # give a module with a bogus pattern ownership of the whole tree.
+    if not pattern:
+        return False
+    return mozpath.match(path, pattern)
+
+
+def _mots_module_matches(module, relpaths, parent=None):
+    """Return the subset of relpaths owned by a mots module or submodule.
+
+    A submodule that declares no patterns of its own inherits those of its
+    parent, per key: mots lets a submodule set only its includes and still be
+    bound by the parent's excludes. A submodule that declares an empty list
+    means it has none, and does not inherit the parent's.
+    """
+
+    def patterns(key):
+        for source in (module, parent):
+            if source is not None and source.get(key) is not None:
+                return source[key]
+        return []
+
+    includes = patterns("includes")
+    excludes = patterns("excludes")
+    return {
+        p
+        for p in relpaths
+        if any(_mots_pattern_matches(i, p) for i in includes)
+        and not any(_mots_pattern_matches(e, p) for e in excludes)
+    }
+
+
+def _mots_modules_for_files(config, relpaths):
+    """Return the mots modules owning the given files.
+
+    Each entry is a dict describing one matching module or submodule, with the
+    paths it owns. A submodule that narrows its parent's scope takes precedence
+    over it, mirroring how mots builds its directory index. Two kinds of
+    submodule are skipped instead, since attributing paths to them would hide
+    the parent's reviewer group without offering a better one:
+
+    * those with no reviewer group of their own, which have no reviewer to
+      contribute at all;
+    * those declaring no patterns, which inherit all of their parent's scope and
+      so say nothing about which paths they own.
+    """
+    entries = []
+    paths_by_entry = {}
+    entries_by_path = defaultdict(list)
+
+    def add(module, paths):
+        entries.append(module)
+        paths_by_entry[id(module)] = paths
+        for path in paths:
+            entries_by_path[path].append(module)
+
+    for module in config.get("modules") or []:
+        owned = _mots_module_matches(module, relpaths)
+        for submodule in module.get("submodules") or []:
+            if not submodule.get("includes"):
+                continue
+            if not (submodule.get("meta") or {}).get("review_group"):
+                continue
+            paths = _mots_module_matches(submodule, relpaths, parent=module)
+            owned -= paths
+            if paths:
+                add(submodule, paths)
+        if owned:
+            add(module, owned)
+
+    # A module can declare that it defers paths it shares with other modules.
+    dropped = set()
+    for path, matching in entries_by_path.items():
+        if len(matching) < 2:
+            continue
+        preferred = {id(m) for m in matching if not m.get("exclude_module_paths")}
+        if not preferred:
+            continue
+        for module in matching:
+            if id(module) in preferred:
+                continue
+            paths_by_entry[id(module)] = paths_by_entry[id(module)] - {path}
+            if not paths_by_entry[id(module)]:
+                dropped.add(id(module))
+
+    result = []
+    for module in entries:
+        if id(module) in dropped:
+            continue
+        # meta.group is a mailing list, not a Phabricator reviewer group, so only
+        # meta.review_group is a usable reviewer.
+        review_group = (module.get("meta") or {}).get("review_group")
+        result.append({
+            "machine_name": module.get("machine_name", ""),
+            "name": module.get("name", ""),
+            "review_group": review_group or "",
+            "paths": sorted(paths_by_entry[id(module)]),
+        })
+
+    return sorted(result, key=lambda m: (m["name"], m["machine_name"]))
+
+
+def _mots_groups_for_files(config, relpaths):
+    """Return the reviewer groups of the mots modules owning the given files.
+
+    Returns a dict mapping a group name to the names of the modules it reviews.
+    Modules without a review group contribute nothing: only groups are
+    suggested, never individual owners or peers.
+    """
+    groups = defaultdict(list)
+    for module in _mots_modules_for_files(config, relpaths):
+        if module["review_group"]:
+            groups[module["review_group"]].append(
+                module["name"] or module["machine_name"]
+            )
+
+    return {group: sorted(names) for group, names in sorted(groups.items())}
+
+
 @SubCommand(
     "file-info",
     "reviewers",
@@ -586,9 +730,11 @@ def file_info_reviewers(command_context, paths, rev=None, fmt=None, offline=Fals
 
     The reviewers that Phabricator's Herald rules would automatically add for
     the files (from the reviewer-selector tool's herald_rules.json) are
-    suggested first. When no rule matches, this falls back to the individuals
-    and groups that reviewed recent patches touching the files, parsed from
-    "r=" trailers in the version control history.
+    suggested first, followed by the reviewer groups of the modules owning the
+    files according to the in-tree mots database. When neither has anything to
+    say, this falls back to the individuals and groups that reviewed recent
+    patches touching the files, parsed from "r=" trailers in the version control
+    history.
     """
     try:
         files_info = _get_files_info(command_context, paths, rev=rev)
@@ -614,13 +760,16 @@ def file_info_reviewers(command_context, paths, rev=None, fmt=None, offline=Fals
             file=sys.stderr,
         )
 
-    # Parsing the version control history only to find a reviewer that Herald
-    # would have added anyway is wasteful, and on a rarely-touched file the walk
-    # is slow (the VCS has to traverse all of history to find the commit limit).
-    # So fall back to it only when no reviewer was found from the herald rules.
+    mots_config = _load_mots_config(command_context.topsrcdir)
+    mots_groups = _mots_groups_for_files(mots_config, relpaths) if mots_config else {}
+
+    # Parsing the version control history only to find a reviewer that Herald or
+    # mots already gave us is wasteful, and on a rarely-touched file the walk is
+    # slow (the VCS has to traverse all of history to find the commit limit). So
+    # fall back to it only when the other sources came up empty.
     have_herald = herald_groups or herald_individuals
     recent_individuals, recent_groups = [], []
-    if not have_herald:
+    if not have_herald and not mots_groups:
         recent_individuals, recent_groups = _recent_reviewers_for_files(
             command_context, relpaths
         )
@@ -630,7 +779,12 @@ def file_info_reviewers(command_context, paths, rev=None, fmt=None, offline=Fals
         if have_herald:
             data["herald_groups"] = _reviewers_to_json(herald_groups)
             data["herald_individuals"] = _reviewers_to_json(herald_individuals)
-        else:
+        if mots_groups:
+            data["mots_groups"] = [
+                {"name": group, "modules": modules}
+                for group, modules in mots_groups.items()
+            ]
+        if not have_herald and not mots_groups:
             data["recent_groups"] = [
                 {"name": name, "count": count} for name, count in recent_groups
             ]
@@ -647,9 +801,17 @@ def file_info_reviewers(command_context, paths, rev=None, fmt=None, offline=Fals
             print(f"  #{group}{' (blocking)' if blocking else ''}")
         for name, blocking in sorted(herald_individuals.items()):
             print(f"  {name}{' (blocking)' if blocking else ''}")
+    else:
+        print("No Herald reviewers matched.")
+
+    if mots_groups:
+        print("\nModule reviewer groups (from mots.yaml):")
+        for group, modules in mots_groups.items():
+            print(f"  #{group} ({', '.join(modules)})")
+
+    if have_herald or mots_groups:
         return
 
-    print("No Herald reviewers matched.")
     print("\nRecent reviewers (from version control history):")
     if recent_individuals or recent_groups:
         for name, count in recent_groups:
