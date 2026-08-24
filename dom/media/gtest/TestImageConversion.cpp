@@ -8,6 +8,7 @@
 #include "YUVBufferGenerator.h"
 #include "gtest/gtest.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/ImageBitmapBinding.h"
 #include "mozilla/dom/ImageUtils.h"
 
@@ -16,6 +17,7 @@ using mozilla::ConvertToNV12;
 using mozilla::ConvertToRGBA;
 using mozilla::MakeAndAddRef;
 using mozilla::MakeRefPtr;
+using mozilla::MakeUnique;
 using mozilla::Maybe;
 using mozilla::Nothing;
 using mozilla::Some;
@@ -154,9 +156,10 @@ static already_AddRefed<SourceSurfaceImage> CreateRedSurfaceImage2x2(
 }
 
 static already_AddRefed<SourceSurfaceImage> CreateSurfaceImage(
-    const IntSize& aSurfaceSize, const IntSize& aImageSize) {
+    const IntSize& aSurfaceSize, const IntSize& aImageSize,
+    SurfaceFormat aFormat = SurfaceFormat::R8G8B8A8) {
   auto surface = MakeRefPtr<SourceSurfaceAlignedRawData>();
-  if (NS_WARN_IF(!surface->Init(aSurfaceSize, SurfaceFormat::R8G8B8A8,
+  if (NS_WARN_IF(!surface->Init(aSurfaceSize, aFormat,
                                 /* aClearMem */ true, 0, 0))) {
     return nullptr;
   }
@@ -322,4 +325,66 @@ TEST(MediaImageConversion, ConvertToNV12SourceSizeBounds)
 
   RefPtr<Image> maxWide = GenerateI420(kInRangeDimension, kSmallDimension);
   EXPECT_TRUE(NS_SUCCEEDED(ConvertToNV12(maxWide, y, 2, uv, 2, dst)));
+}
+
+// The surface returned by GetAsSourceSurface() must cover the image's
+// reported GetSize(); conversion rejects an image whose surface is smaller
+// than that size.
+TEST(MediaImageConversion, UndersizedSourceSurface)
+{
+  const IntSize reportedSize(64, 64);
+  const size_t planeSize =
+      static_cast<size_t>(reportedSize.width) * reportedSize.height;
+
+  // Destination buffers, reused across both cases.
+  auto destY = MakeUnique<uint8_t[]>(planeSize);
+  auto destUV = MakeUnique<uint8_t[]>(planeSize);
+  auto destU = MakeUnique<uint8_t[]>(planeSize);
+  auto destV = MakeUnique<uint8_t[]>(planeSize);
+
+  {
+    // Undersized surface: it does not cover the reported image size, so every
+    // conversion must be rejected regardless of the requested destination
+    // size. The rejection is driven by the surface size, not the destination.
+    const IntSize undersizedSurface(60, 60);
+    RefPtr<SourceSurfaceImage> undersizedImage = CreateSurfaceImage(
+        undersizedSurface, reportedSize, SurfaceFormat::B8G8R8A8);
+    ASSERT_TRUE(!!undersizedImage);
+    ASSERT_EQ(undersizedImage->GetSize(), reportedSize);
+
+    // Destination equal to the reported size.
+    EXPECT_EQ(NS_ERROR_INVALID_ARG,
+              ConvertToNV12(undersizedImage, destY.get(), reportedSize.width,
+                            destUV.get(), reportedSize.width, reportedSize));
+    EXPECT_EQ(NS_ERROR_INVALID_ARG,
+              ConvertToI420(undersizedImage, destY.get(), reportedSize.width,
+                            destU.get(), reportedSize.width, destV.get(),
+                            reportedSize.width, reportedSize));
+
+    // Destination smaller than the reported size (scaling path).
+    const IntSize scaledSize(32, 32);
+    EXPECT_EQ(NS_ERROR_INVALID_ARG,
+              ConvertToNV12(undersizedImage, destY.get(), scaledSize.width,
+                            destUV.get(), scaledSize.width, scaledSize));
+    EXPECT_EQ(NS_ERROR_INVALID_ARG,
+              ConvertToI420(undersizedImage, destY.get(), scaledSize.width,
+                            destU.get(), scaledSize.width, destV.get(),
+                            scaledSize.width, scaledSize));
+  }
+
+  {
+    // Covering surface: it exactly covers the reported image size, so the
+    // conversion must be accepted.
+    RefPtr<SourceSurfaceImage> exactImage =
+        CreateSurfaceImage(reportedSize, reportedSize, SurfaceFormat::B8G8R8A8);
+    ASSERT_TRUE(!!exactImage);
+    ASSERT_EQ(exactImage->GetSize(), reportedSize);
+
+    EXPECT_EQ(NS_OK,
+              ConvertToNV12(exactImage, destY.get(), reportedSize.width,
+                            destUV.get(), reportedSize.width, reportedSize));
+    EXPECT_EQ(NS_OK, ConvertToI420(exactImage, destY.get(), reportedSize.width,
+                                   destU.get(), reportedSize.width, destV.get(),
+                                   reportedSize.width, reportedSize));
+  }
 }
