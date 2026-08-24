@@ -89,6 +89,11 @@ const logger = () => UrlbarShared.getLogger({ prefix: "Input" });
 
 const UNLIMITED_MAX_RESULTS = 99;
 
+// `nsILoadInfo.SchemelessInputTypeSchemeful` and `SchemelessInputTypeSchemeless`,
+// which a content realm has no `Ci` to read them from.
+const SCHEMELESS_INPUT_SCHEMEFUL = 1;
+const SCHEMELESS_INPUT_SCHEMELESS = 2;
+
 let getBoundsWithoutFlushing = UrlbarShared.getBoundsWithoutFlushing;
 
 // `promiseDocumentFlushed` is chrome-only. A frame does instead, since the
@@ -1003,9 +1008,9 @@ ${
       } else {
         isInitialPageControlledByWebContent = true;
 
-        // We should deal with losslessDecodeURI throwing for exotic URIs
+        // We should deal with losslessDecodeDisplaySpec throwing for exotic URIs
         try {
-          value = losslessDecodeURI(uri);
+          value = losslessDecodeDisplaySpec(uri.displaySpec);
         } catch (ex) {
           value = "about:blank";
         }
@@ -3686,7 +3691,7 @@ ${
       // This returns null for the empty string, allowing callers to clear the
       // input by passing an empty string as urlOverride.
       let url = URL.parse(urlOverride);
-      return url ? losslessDecodeURI(url.URI) : "";
+      return url ? losslessDecodeURL(url) : "";
     }
 
     let parsedUrl = URL.parse(result.payload.url);
@@ -3695,7 +3700,7 @@ ${
       return "";
     }
 
-    let url = losslessDecodeURI(parsedUrl.URI);
+    let url = losslessDecodeURL(parsedUrl);
     // If the user didn't originally type a protocol, and we generated one,
     // trim the http protocol from the input value, as https-first may upgrade
     // it to https, breaking user expectations.
@@ -3705,7 +3710,7 @@ ${
       result.payload.url.startsWith("http://") &&
       this.userTypedValue &&
       this.#getSchemelessInput(this.userTypedValue) ==
-        Ci.nsILoadInfo.SchemelessInputTypeSchemeless;
+        SCHEMELESS_INPUT_SCHEMELESS;
     if (!stripHttp) {
       return url;
     }
@@ -4378,7 +4383,7 @@ ${
         let { url } = loadRequest.urlLoad;
         // Make sure URL is formatted properly (don't show punycode).
         try {
-          this.value = losslessDecodeURI(new URL(url).URI);
+          this.value = losslessDecodeURL(new URL(url));
         } catch {
           this.value = url;
         }
@@ -6311,17 +6316,16 @@ ${
    * @param {string} value
    *   A untrimmed address bar input.
    * @returns {nsILoadInfo.SchemelessInputType}
-   *   Returns `Ci.nsILoadInfo.SchemelessInputTypeSchemeless` if the input
-   *   doesn't start with a scheme relevant for schemeless HTTPS-First
-   *   (http://, https:// and file://).
-   *   Returns `Ci.nsILoadInfo.SchemelessInputTypeSchemeful` if it does have a scheme.
+   *   Returns `SchemelessInputTypeSchemeless` if the input doesn't start with a
+   *   scheme relevant for schemeless HTTPS-First (http://, https:// and
+   *   file://). Returns `SchemelessInputTypeSchemeful` if it does have a scheme.
    */
   #getSchemelessInput(value) {
     return ["http://", "https://", "file://"].every(
       scheme => !value.trim().startsWith(scheme)
     )
-      ? Ci.nsILoadInfo.SchemelessInputTypeSchemeless
-      : Ci.nsILoadInfo.SchemelessInputTypeSchemeful;
+      ? SCHEMELESS_INPUT_SCHEMELESS
+      : SCHEMELESS_INPUT_SCHEMEFUL;
   }
 
   get #isOpenedPageInBlankTargetLoading() {
@@ -6463,14 +6467,14 @@ function getDroppableData(event) {
  * Decodes the given URI for displaying it in the address bar without losing
  * information, such that hitting Enter again will load the same URI.
  *
- * @param {nsIURI} aURI
- *   The URI to decode
+ * @param {string} displaySpec
+ *   The URI's display spec.
  * @returns {string}
  *   The decoded URI
  */
-function losslessDecodeURI(aURI) {
-  let scheme = aURI.scheme;
-  let value = aURI.displaySpec;
+function losslessDecodeDisplaySpec(displaySpec) {
+  let scheme = displaySpec.slice(0, displaySpec.indexOf(":"));
+  let value = displaySpec;
 
   // Try to decode as UTF-8 if there's no encoding sequence that we would break.
   if (!/%25(?:3B|2F|3F|3A|40|26|3D|2B|24|2C|23)/i.test(value)) {
@@ -6548,6 +6552,20 @@ function losslessDecodeURI(aURI) {
     encodeURIComponent
   );
   return value;
+}
+
+/**
+ * Decodes a URL for display, taking the Unicode form of a punycode host.
+ *
+ * @param {URL} url
+ *   The URL to decode.
+ * @returns {string}
+ *   The decoded URL
+ */
+function losslessDecodeURL(url) {
+  return losslessDecodeDisplaySpec(
+    UrlbarContentUtils.getDisplaySpec(url.href) ?? url.href
+  );
 }
 
 /**
