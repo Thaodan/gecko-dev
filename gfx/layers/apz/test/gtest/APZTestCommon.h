@@ -484,6 +484,10 @@ class TestAsyncPanZoomController : public AsyncPanZoomController {
 
 class APZCTesterBase : public ::testing::Test {
  public:
+  // Convenience alias so that derived classes can refer to this constant
+  // without qualification.
+  static constexpr auto START_SCROLL_ID = ScrollableLayerGuid::START_SCROLL_ID;
+
   APZCTesterBase() { mcc = new NiceMock<MockContentControllerDelayed>(); }
 
   void SetUp() override {
