@@ -1022,13 +1022,20 @@ export class ProtonScreen extends React.PureComponent {
           ${screenClassName} ${textColorClass}`}
         reverse-split={content.reverse_split ? "" : null}
         fullscreen={content.fullscreen ? "" : null}
-        style={
-          content.screen_style &&
-          MultiStageUtils.getValidStyle(content.screen_style, [
-            "overflow",
-            "display",
-          ])
-        }
+        style={{
+          ...(content.screen_style &&
+            MultiStageUtils.getValidStyle(content.screen_style, [
+              "overflow",
+              "display",
+            ])),
+          // center-large-fullscreen renders its background here, at the
+          // full-viewport screen level, rather than on .main-content, so it
+          // isn't confined to that inset card and can show behind the
+          // blurred glow (see .main-content below).
+          background: isCenterLargeFullscreen
+            ? this.getEffectiveBackground(content)
+            : null,
+        }}
         role={ariaRole ?? "alertdialog"}
         layout={content.layout}
         pos={content.position || "center"}
@@ -1071,7 +1078,9 @@ export class ProtonScreen extends React.PureComponent {
             className={`main-content ${hideStepsIndicator ? "no-steps" : ""}`}
             style={{
               background:
-                isCenterPosition && this.getEffectiveBackground(content)
+                isCenterPosition &&
+                !isCenterLargeFullscreen &&
+                this.getEffectiveBackground(content)
                   ? this.getEffectiveBackground(content)
                   : null,
               width:

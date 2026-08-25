@@ -167,13 +167,13 @@ html {
 
       .section-secondary {
         // Swap the wide-layout hero image for the pink hero gradient. Each stop
-        // resolves to the flat #210340 in dark mode (see the smart-window
+        // resolves to the same flat color in dark mode (see the smart-window
         // gradient above for the same per-stop light-dark() pattern).
         background: linear-gradient(
           0deg,
-          light-dark(rgb(252, 245, 240), #210340) 0%,
-          light-dark(rgb(250, 236, 241), #210340) 57%,
-          light-dark(rgb(245, 212, 245), #210340) 100%
+          light-dark(rgb(252, 245, 240), var(--onboarding-dark-backdrop-color)) 0%,
+          light-dark(rgb(250, 236, 241), var(--onboarding-dark-backdrop-color)) 57%,
+          light-dark(rgb(245, 212, 245), var(--onboarding-dark-backdrop-color)) 100%
         );
         height: auto;
         min-height: $small-secondary-section-height;
@@ -265,6 +265,8 @@ html {
   --multi-select-notice-background-color: light-dark(color-mix(in srgb, var(--color-violet-10) 40%, transparent), color-mix(in srgb, var(--color-violet-80) 30%, transparent));
   --multi-select-notice-border-color: light-dark(color-mix(in srgb, var(--color-violet-70) 15%, transparent), color-mix(in srgb, var(--color-violet-30) 10%, transparent));
   --multi-select-notice-icon-color: light-dark(var(--color-violet-70), var(--color-violet-30));
+  --onboarding-dark-backdrop-color: #210340;
+  --center-large-glow-color: light-dark(var(--color-white), var(--onboarding-dark-backdrop-color));
 
   @media (forced-colors: active) {
     --picker-background-color: ButtonFace;
@@ -342,6 +344,12 @@ html {
 
       .main-content {
         box-shadow: none;
+        position: relative;
+        justify-content: center;
+        // Prevent the blurred "glow" on the child component
+        // from getting clipped and creating a sharp border
+        // at smaller screen sizes
+        overflow: visible;
 
         > .secondary-buttons-top-container,
         > .secondary-cta.top {
@@ -356,21 +364,37 @@ html {
         }
 
         @media not (prefers-contrast) {
-          border: 1px solid var(--border-color-deemphasized);
-          backdrop-filter: blur(8px);
-          background-color: light-dark(
-            color-mix(in srgb, var(--color-black) 5%, transparent),
-            color-mix(in srgb, var(--color-black) 20%, transparent)
-          );
+          background-color: transparent;
         }
 
         .main-content-inner {
+          position: relative;
           width: 50%;
           margin: auto;
+          // Size to content instead of stretching to fill .main-content, so the
+          // glow behind it hugs the rendered content's actual height instead of
+          // the full card.
+          flex-grow: 0;
           justify-content: center;
 
           @media (width <= 720px) {
             width: 80%;
+          }
+
+          @media not (prefers-contrast) {
+            &::before {
+              content: '';
+              position: absolute;
+              inset-inline: -100px;
+              margin: auto;
+              z-index: -1;
+              width: calc(100% + 200px);
+              height: calc(100% + 120px);
+              border-radius: 50%;
+              background-color: var(--center-large-glow-color);
+              filter: blur(70px);
+              pointer-events: none;
+            }
           }
         }
       }

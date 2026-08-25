@@ -417,15 +417,30 @@ add_task(async function test_aboutwelcome_center_large_position() {
     "main.screen .section-main .main-content",
     // Expected styles:
     {
-      "backdrop-filter": "blur(8px)",
-      "background-color": "color(srgb 0 0 0 / 0.05)",
-      "border-left-color": novaEnabled
-        ? "rgb(214, 213, 218)"
-        : "rgb(186, 194, 202)",
-      "border-left-style": "solid",
-      "border-left-width": "1px",
+      "backdrop-filter": "none",
+      "background-color": "rgba(0, 0, 0, 0)",
+      "border-left-style": "none",
+      "border-left-width": "0px",
     }
   );
+
+  await SpecialPowers.spawn(browser, [], async () => {
+    const mainContentInner = await ContentTaskUtils.waitForCondition(() =>
+      content.document.querySelector(
+        "main.screen .section-main .main-content .main-content-inner"
+      )
+    );
+    const glowStyles = content.window.getComputedStyle(
+      mainContentInner,
+      "::before"
+    );
+    is(glowStyles.filter, "blur(70px)", "center-large glow should be blurred");
+    isnot(
+      glowStyles.backgroundColor,
+      "rgba(0, 0, 0, 0)",
+      "center-large glow should have a visible fill color"
+    );
+  });
 
   // Ensure secondary action has button styling
   await test_element_styles(

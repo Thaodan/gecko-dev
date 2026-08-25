@@ -4939,7 +4939,14 @@ class ProtonScreen extends (external_React_default()).PureComponent {
           ${screenClassName} ${textColorClass}`,
       "reverse-split": content.reverse_split ? "" : null,
       fullscreen: content.fullscreen ? "" : null,
-      style: content.screen_style && MultiStageUtils.getValidStyle(content.screen_style, ["overflow", "display"]),
+      style: {
+        ...(content.screen_style && MultiStageUtils.getValidStyle(content.screen_style, ["overflow", "display"])),
+        // center-large-fullscreen renders its background here, at the
+        // full-viewport screen level, rather than on .main-content, so it
+        // isn't confined to that inset card and can show behind the
+        // blurred glow (see .main-content below).
+        background: isCenterLargeFullscreen ? this.getEffectiveBackground(content) : null
+      },
       role: ariaRole ?? "alertdialog",
       layout: content.layout,
       pos: content.position || "center",
@@ -4958,7 +4965,7 @@ class ProtonScreen extends (external_React_default()).PureComponent {
     }, isCenterLargeFullscreen ? null : secondaryCTATop, includeNoodles ? this.renderNoodles() : null, content.more_button ? this.renderMoreButton() : null, content.dismiss_button && !content.reverse_split ? this.renderDismissButton() : null, /*#__PURE__*/external_React_default().createElement("div", {
       className: `main-content ${hideStepsIndicator ? "no-steps" : ""}`,
       style: {
-        background: isCenterPosition && this.getEffectiveBackground(content) ? this.getEffectiveBackground(content) : null,
+        background: isCenterPosition && !isCenterLargeFullscreen && this.getEffectiveBackground(content) ? this.getEffectiveBackground(content) : null,
         width: content.width && content.position !== "split" ? content.width : null,
         paddingBlock: content.split_content_padding_block ? content.split_content_padding_block : null,
         paddingInline: content.split_content_padding_inline ? content.split_content_padding_inline : null,
