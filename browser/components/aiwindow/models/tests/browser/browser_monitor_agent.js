@@ -122,7 +122,8 @@ add_task(async function test_run_single_url_monitor() {
   const mockEngineManager = new MockEngineManager();
 
   // serve a simple HTML page with a price in the body
-  const { url, server } = serveHTML(`
+  const { html } = MLTestUtils.serveHTML();
+  const { url, cleanup: stopServing } = html`
     <!DOCTYPE html>
     <html>
       <head>
@@ -133,7 +134,7 @@ add_task(async function test_run_single_url_monitor() {
         <div>The price is $299</div>
       </body>
     </html>
-  `);
+  `;
 
   try {
     // create a monitor that watches the page and runs every hour
@@ -198,7 +199,7 @@ add_task(async function test_run_single_url_monitor() {
       "The product was below $300, so the condition was met."
     );
   } finally {
-    await new Promise(resolve => server.stop(resolve));
+    await stopServing();
     mockEngineManager.cleanupMocks();
     await resetMonitorAgentForTesting();
   }
@@ -209,7 +210,8 @@ add_task(async function test_run_multiple_urls_monitor() {
   const mockEngineManager = new MockEngineManager();
 
   // serve two simple HTML pages with prices in the body
-  const { url: url1, server: server1 } = serveHTML(`
+  const { html } = MLTestUtils.serveHTML();
+  const { url: url1, cleanup: stopServing1 } = html`
     <!DOCTYPE html>
     <html>
       <head>
@@ -220,8 +222,8 @@ add_task(async function test_run_multiple_urls_monitor() {
         <div>The price is $299</div>
       </body>
     </html>
-  `);
-  const { url: url2, server: server2 } = serveHTML(`
+  `;
+  const { url: url2, cleanup: stopServing2 } = html`
     <!DOCTYPE html>
     <html>
       <head>
@@ -232,7 +234,7 @@ add_task(async function test_run_multiple_urls_monitor() {
         <div>The price is $399</div>
       </body>
     </html>
-  `);
+  `;
 
   try {
     // create a monitor that watches both pages and runs every hour
@@ -306,8 +308,8 @@ add_task(async function test_run_multiple_urls_monitor() {
       "The first product was below $300, so the condition was met."
     );
   } finally {
-    await new Promise(resolve => server1.stop(resolve));
-    await new Promise(resolve => server2.stop(resolve));
+    await stopServing1();
+    await stopServing2();
     mockEngineManager.cleanupMocks();
     await resetMonitorAgentForTesting();
   }
@@ -316,7 +318,8 @@ add_task(async function test_run_multiple_urls_monitor() {
 add_task(
   async function test_monitor_run_parses_fenced_json_and_records_not_met() {
     const mockEngineManager = new MockEngineManager();
-    const { url, server } = serveHTML(`
+    const { html } = MLTestUtils.serveHTML();
+    const { url, cleanup: stopServing } = html`
       <article>
         <h1>Widget Store</h1>
         <p>
@@ -328,7 +331,7 @@ add_task(
           and there is no indication of an upcoming discount.
         </p>
       </article>
-    `);
+    `;
     try {
       const monitor = await createMonitorWatching(
         [url],
@@ -364,7 +367,7 @@ add_task(
         "The explanation was extracted from the fenced JSON."
       );
     } finally {
-      await new Promise(resolve => server.stop(resolve));
+      await stopServing();
       mockEngineManager.cleanupMocks();
       await resetMonitorAgentForTesting();
     }
@@ -615,7 +618,6 @@ add_task(function test_Monitor_fromJSON_normalizes_loaded_history() {
         status: "error",
         resultExplanation: "Monitor check was interrupted before it finished.",
         conditionMet: false,
-        errorCode: "interrupted",
       },
     ],
     "A running history entry is converted to an interrupted error."
@@ -726,45 +728,6 @@ add_task(function test_categorizeError() {
     categorizeError("API endpoint not found"),
     "model_error",
     "API errors are categorized as model errors"
-  );
-
-  // Test status-based categorization (MLPA errors carry a status or encode
-  // it in the message instead of descriptive text)
-  const withStatus = (msg, status) => Object.assign(new Error(msg), { status });
-  Assert.equal(
-    categorizeError(withStatus("MLPA request failed", 429)),
-    "rate_limit",
-    "429 status is categorized as rate limit regardless of message"
-  );
-  Assert.equal(
-    categorizeError(new Error("Request failed: 429 status code")),
-    "rate_limit",
-    "A 429 encoded in the message text is categorized as rate limit"
-  );
-  Assert.equal(
-    categorizeError(withStatus("MLPA request failed", 401)),
-    "auth_error",
-    "401 status is categorized as an auth error"
-  );
-  Assert.equal(
-    categorizeError(withStatus("MLPA request failed", 403)),
-    "auth_error",
-    "403 status is categorized as an auth error"
-  );
-  Assert.equal(
-    categorizeError(withStatus("MLPA request failed", 408)),
-    "timeout",
-    "408 status is categorized as a timeout"
-  );
-  Assert.equal(
-    categorizeError(new Error("Request failed: 503 status code")),
-    "model_error",
-    "A server error encoded in the message is categorized as a model error"
-  );
-  Assert.equal(
-    categorizeError(withStatus("Internal server error", 500)),
-    "model_error",
-    "5xx status is categorized as a model error"
   );
 
   // Test unknown errors
@@ -905,7 +868,8 @@ add_task(async function test_limit_number_of_monitors() {
 
 add_task(async function test_monitor_only_watches_http_urls() {
   const mockEngineManager = new MockEngineManager();
-  const { url, server } = serveHTML(`
+  const { html } = MLTestUtils.serveHTML();
+  const { url, cleanup: stopServing } = html`
     <article>
       <h1>Store</h1>
       <p>
@@ -913,7 +877,7 @@ add_task(async function test_monitor_only_watches_http_urls() {
         watched threshold and should trigger a notification.
       </p>
     </article>
-  `);
+  `;
 
   try {
     // Mix a valid http URL with disallowed schemes that could reach local or
@@ -963,7 +927,7 @@ add_task(async function test_monitor_only_watches_http_urls() {
     respond(JSON.stringify({ explanation: "5 dollars.", conditionMet: false }));
     await runPromise;
   } finally {
-    await new Promise(resolve => server.stop(resolve));
+    await stopServing();
     mockEngineManager.cleanupMocks();
     await MonitorAgent._resetForTesting();
   }
@@ -1688,7 +1652,8 @@ add_task(async function test_run_backfills_missing_snapshot_into_prompt() {
     "moz-src:///browser/components/aiwindow/models/agents/MonitorStore.sys.mjs"
   );
 
-  const { url, server } = serveHTML(`
+  const { html } = MLTestUtils.serveHTML();
+  const { url, cleanup: stopServing } = html`
     <!DOCTYPE html>
     <html>
       <head>
@@ -1699,7 +1664,7 @@ add_task(async function test_run_backfills_missing_snapshot_into_prompt() {
         <div>The price is $299</div>
       </body>
     </html>
-  `);
+  `;
 
   try {
     await resetMonitorAgentForTesting();
@@ -1769,7 +1734,7 @@ add_task(async function test_run_backfills_missing_snapshot_into_prompt() {
       "The prompt carried the captured snapshot timestamp"
     );
   } finally {
-    await new Promise(resolve => server.stop(resolve));
+    await stopServing();
     mockEngineManager.cleanupMocks();
     await resetMonitorAgentForTesting();
   }

@@ -8,7 +8,6 @@ import {
   trimAndFilterWatchUrls,
   urlListsEqual,
   TOTAL_NUM_MONITORS,
-  MONITOR_ERROR_CODES,
   MONITOR_PROMPT_VERSION,
   MONITOR_AGENTS_CHANGED_TOPIC,
 } from "moz-src:///browser/components/aiwindow/models/agents/Monitor.sys.mjs";
@@ -296,7 +295,7 @@ export const MonitorAgent = {
     }
 
     try {
-      monitor.dispose(MONITOR_ERROR_CODES.CANCELED);
+      monitor.dispose();
       gMonitors.delete(id);
       await lazy.MonitorStore.deleteMonitor(id);
     } catch (error) {
