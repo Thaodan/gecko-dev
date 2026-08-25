@@ -165,6 +165,9 @@ const TAB_FAVICON_CHAT =
   "chrome://browser/content/aiwindow/assets/ask-icon.svg";
 const PREF_CHAT_INTERACTION_COUNT = "browser.smartwindow.chat.interactionCount";
 const PREF_HIDE_TOP_SITES = "browser.smartwindow.hideTopSites";
+// Hide Top Sites if the user has turned Shortcuts off in the New Tab settings.
+const PREF_TOPSITES_FEED_ENABLED =
+  "browser.newtabpage.activity-stream.feeds.topsites";
 const PREF_AGENT_ENABLED = "browser.smartwindow.agent.enabled";
 const MAX_INTERACTION_COUNT = 1000;
 const HISTORY_MENU_MAX_RECENT_CHATS = 6;
@@ -439,6 +442,13 @@ export class AIWindow extends MozLitElement {
       "hideTopSitesPref",
       PREF_HIDE_TOP_SITES,
       false,
+      () => this.#syncTopSites()
+    );
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "topSitesFeedPref",
+      PREF_TOPSITES_FEED_ENABLED,
+      true,
       () => this.#syncTopSites()
     );
     XPCOMUtils.defineLazyPreferenceGetter(
@@ -1440,25 +1450,28 @@ export class AIWindow extends MozLitElement {
   }
 
   /**
-   * Loads the user's Top Sites and renders a single row of them below the
-   * Smartbar in fullpage mode. Sponsored sites are filtered out; we only keep
-   * the first MAX_TOP_SITES entries to fit a single row.
+   * Whether Top Sites should be shown: the user must not have hidden them in
+   * Smart Window, and Shortcuts must still be enabled in the New Tab settings.
    *
    * @private
    */
+  get #topSitesEnabled() {
+    return !this.hideTopSitesPref && this.topSitesFeedPref;
+  }
+
   /**
    * Loads or clears Top Sites based on the current mode and the
-   * hideTopSites pref. Invoked on connect and whenever the pref changes
+   * Top Sites prefs. Invoked on connect and whenever either pref changes
    * so every open AI window reflects the new value.
    *
    * @private
    */
   #syncTopSites() {
     if (this.mode === MODE.FULLPAGE) {
-      Glean.smartWindow.topsitesEnabled.set(!this.hideTopSitesPref);
+      Glean.smartWindow.topsitesEnabled.set(this.#topSitesEnabled);
     }
 
-    if (this.mode === MODE.FULLPAGE && !this.hideTopSitesPref) {
+    if (this.mode === MODE.FULLPAGE && this.#topSitesEnabled) {
       // Only the visible tab can exhibit the prompts-row layout shift, so gate
       // its Top Sites on starter resolution (see #renderStarterPrompts).
       // Background tabs are hidden and never reload starters on tab switch, so
