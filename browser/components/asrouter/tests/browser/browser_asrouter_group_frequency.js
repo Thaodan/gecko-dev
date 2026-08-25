@@ -4,65 +4,24 @@ const { ASRouter } = ChromeUtils.importESModule(
 const { RemoteSettings } = ChromeUtils.importESModule(
   "resource://services-settings/remote-settings.sys.mjs"
 );
-const { InfoBar } = ChromeUtils.importESModule(
-  "resource:///modules/asrouter/InfoBar.sys.mjs"
+const { CFRMessageProvider } = ChromeUtils.importESModule(
+  "resource:///modules/asrouter/CFRMessageProvider.sys.mjs"
 );
-
-// Changing this pref fires the test message's preferenceObserver trigger, which
-// lets us exercise the real routing path without navigating anywhere.
-const TEST_PREF = "test.asrouter.groupFrequency";
-
-function getInfobarBox() {
-  return gBrowser.getNotificationBox(gBrowser.selectedBrowser);
-}
-
-function getInfobar(id) {
-  return getInfobarBox().getNotificationWithValue(id);
-}
-
-/**
- * Fire the trigger, wait for the infobar to render, assert the expected
- * impression count, then remove the infobar so the next trigger isn't blocked
- * by InfoBar's active-infobar guard.
- */
-async function showAndDismissInfobar(id, prefValue, expectedImpressions) {
-  Services.prefs.setIntPref(TEST_PREF, prefValue);
-
-  const node = await TestUtils.waitForCondition(
-    () => getInfobar(id),
-    `Infobar should be shown (impression ${expectedImpressions})`
-  );
-
-  await TestUtils.waitForCondition(
-    () => ASRouter.state.messageImpressions[id]?.length === expectedImpressions,
-    `Impression ${expectedImpressions} recorded`
-  );
-
-  getInfobarBox().removeNotification(node);
-  await TestUtils.waitForCondition(
-    () => !InfoBar._activeInfobar,
-    `Active infobar should be cleared (impression ${expectedImpressions})`
-  );
-}
 
 /**
  * Load and modify a message for the test.
  */
 add_setup(async function () {
   const initialMsgCount = ASRouter.state.messages.length;
+  const heartbeatMsg = (await CFRMessageProvider.getMessages()).find(
+    m => m.id === "HEARTBEAT_TACTIC_2"
+  );
   const testMessage = {
-    // Ensure no overlap due to frequency capping with other tests
-    id: `GROUP_FREQUENCY_MESSAGE_${Date.now()}`,
-    template: "infobar",
+    ...heartbeatMsg,
     groups: ["messaging-experiments"],
     targeting: "true",
-    frequency: { lifetime: 3 },
-    trigger: { id: "preferenceObserver", params: [TEST_PREF] },
-    content: {
-      type: "tab",
-      text: "Group frequency test infobar",
-      buttons: [{ label: "OK", primary: true, action: { type: "CANCEL" } }],
-    },
+    // Ensure no overlap due to frequency capping with other tests
+    id: `HEARTBEAT_MESSAGE_${Date.now()}`,
   };
   const client = RemoteSettings("cfr");
   await client.db.importChanges({}, Date.now(), [testMessage], {
@@ -84,10 +43,10 @@ add_setup(async function () {
   await ASRouter.loadMessagesFromAllProviders();
   await TestUtils.waitForCondition(
     () => ASRouter.state.messages.length > initialMsgCount,
-    "Should load the extra test message"
+    "Should load the extra heartbeat message"
   );
 
-  await TestUtils.waitForCondition(
+  TestUtils.waitForCondition(
     () => ASRouter.state.messages.find(m => m.id === testMessage.id),
     "Wait to load the message"
   );
@@ -97,7 +56,6 @@ add_setup(async function () {
   Assert.equal(msg.groups[0], "messaging-experiments");
 
   registerCleanupFunction(async () => {
-    Services.prefs.clearUserPref(TEST_PREF);
     await client.db.clear();
     // Reload the providers
     await ASRouter._updateMessageProviders();
@@ -113,10 +71,13 @@ add_setup(async function () {
 /**
  * Test group frequency capping.
  * Message has a lifetime frequency of 3 but it's group has a lifetime frequency
- * of 2, so the group is the binding constraint and the message should only show
- * up twice.
+ * of 2. It should only show up twice.
+ * We update the provider to remove any daily limitations so it should show up
+ * on every new tab load.
  */
-add_task(async function test_group_frequency_cap() {
+add_task(async function test_heartbeat_tactic_2() {
+  // eslint-disable-next-line sdl/no-insecure-url
+  const TEST_URL = "http://example.com";
   const msg = ASRouter.state.messages.find(m =>
     m.groups.includes("messaging-experiments")
   );
@@ -131,7 +92,7 @@ add_task(async function test_group_frequency_cap() {
     clear: true,
   });
 
-  // Force the message-groups provider cache to 0 by modifying updateCycleInMs
+  // Force the WNPanel provider cache to 0 by modifying updateCycleInMs
   await SpecialPowers.pushPrefEnv({
     set: [
       [
@@ -156,43 +117,66 @@ add_task(async function test_group_frequency_cap() {
   );
   Assert.ok(groupState, "Group config found");
   Assert.ok(groupState.enabled, "Group is enabled");
-  Assert.equal(
-    msg.frequency.lifetime,
-    3,
-    "Message's own cap allows more impressions than the group's cap of 2"
+
+  let tab1 = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
+  BrowserTestUtils.startLoadingURIString(tab1.linkedBrowser, TEST_URL);
+
+  let chiclet = document.getElementById("contextual-feature-recommendation");
+  Assert.ok(chiclet, "CFR chiclet element found (tab1)");
+  await TestUtils.waitForCondition(
+    () => !chiclet.hidden,
+    "Chiclet should be visible (tab1)"
   );
 
-  await showAndDismissInfobar(msg.id, 1, 1);
-  await showAndDismissInfobar(msg.id, 2, 2);
+  await TestUtils.waitForCondition(
+    () =>
+      ASRouter.state.messageImpressions[msg.id] &&
+      ASRouter.state.messageImpressions[msg.id].length === 1,
+    "First impression recorded"
+  );
+
+  BrowserTestUtils.removeTab(tab1);
+
+  let tab2 = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
+  BrowserTestUtils.startLoadingURIString(tab2.linkedBrowser, TEST_URL);
+
+  Assert.ok(chiclet, "CFR chiclet element found (tab2)");
+  await TestUtils.waitForCondition(
+    () => !chiclet.hidden,
+    "Chiclet should be visible (tab2)"
+  );
+
+  await TestUtils.waitForCondition(
+    () =>
+      ASRouter.state.messageImpressions[msg.id] &&
+      ASRouter.state.messageImpressions[msg.id].length === 2,
+    "Second impression recorded"
+  );
 
   Assert.ok(
     !ASRouter.isBelowFrequencyCaps(msg),
     "Should have reached freq limit"
   );
 
-  // The group cap is lower than the message cap, so the message is no longer
-  // eligible even though its own lifetime cap allows one more impression.
-  const eligible = await ASRouter.handleMessageRequest({
-    triggerId: "preferenceObserver",
-    triggerParam: { type: TEST_PREF },
-  });
-  Assert.equal(
-    eligible,
-    null,
-    "Message is not eligible once the group cap is reached"
-  );
+  BrowserTestUtils.removeTab(tab2);
 
-  Services.prefs.setIntPref(TEST_PREF, 3);
-  await TestUtils.waitForTick();
-  Assert.ok(!getInfobar(msg.id), "Infobar should not be shown once capped");
+  let tab3 = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
+  BrowserTestUtils.startLoadingURIString(tab3.linkedBrowser, TEST_URL);
+
+  await TestUtils.waitForCondition(
+    () => chiclet.hidden,
+    "Heartbeat button should be hidden"
+  );
   Assert.equal(
-    ASRouter.state.messageImpressions[msg.id].length,
+    ASRouter.state.messageImpressions[msg.id] &&
+      ASRouter.state.messageImpressions[msg.id].length,
     2,
     "Number of impressions did not increase"
   );
 
+  BrowserTestUtils.removeTab(tab3);
+
   info("Cleanup");
-  Services.prefs.clearUserPref(TEST_PREF);
   await client.db.clear();
   // Reset group impressions
   await ASRouter.resetGroupsState();
@@ -200,4 +184,5 @@ add_task(async function test_group_frequency_cap() {
   await ASRouter._updateMessageProviders();
   await ASRouter.loadMessagesFromAllProviders();
   await SpecialPowers.popPrefEnv();
+  CFRPageActions.clearRecommendations();
 });

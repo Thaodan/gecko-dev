@@ -11,6 +11,7 @@ ChromeUtils.defineESModuleGetters(this, {
   BrowserInitState: "resource:///modules/BrowserGlue.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   BuiltInThemes: "resource:///modules/BuiltInThemes.sys.mjs",
+  CFRMessageProvider: "resource:///modules/asrouter/CFRMessageProvider.sys.mjs",
   ClientID: "resource://gre/modules/ClientID.sys.mjs",
   FxAccounts: "resource://gre/modules/FxAccounts.sys.mjs",
   HomePage: "resource:///modules/HomePage.sys.mjs",
@@ -18,9 +19,6 @@ ChromeUtils.defineESModuleGetters(this, {
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   NimbusTestUtils: "resource://testing-common/NimbusTestUtils.sys.mjs",
-  OnboardingMessageProvider:
-    "resource:///modules/asrouter/OnboardingMessageProvider.sys.mjs",
-  PanelTestProvider: "resource:///modules/asrouter/PanelTestProvider.sys.mjs",
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
@@ -1508,15 +1506,12 @@ add_task(async function checkPatternMatches() {
 });
 
 add_task(async function checkPatternsValid() {
-  const messages = [
-    ...(await OnboardingMessageProvider.getMessages()),
-    ...(await PanelTestProvider.getMessages()),
-  ].filter(m => m.trigger?.patterns);
-
-  Assert.greater(messages.length, 0, "Found messages with trigger patterns");
+  const messages = (await CFRMessageProvider.getMessages()).filter(
+    m => m.trigger?.patterns
+  );
 
   for (const message of messages) {
-    Assert.ok(new MatchPatternSet(message.trigger.patterns), message.id);
+    Assert.ok(new MatchPatternSet(message.trigger.patterns));
   }
 });
 
@@ -1666,8 +1661,9 @@ add_task(async function check_newTabSettings_webExtension() {
 
 add_task(async function check_openUrlTrigger_context() {
   const message = {
-    id: "check_openUrlTrigger_context",
-    trigger: { id: "openURL", params: ["www.youtube.com", "youtube.com"] },
+    ...(await CFRMessageProvider.getMessages()).find(
+      m => m.id === "YOUTUBE_ENHANCE_3"
+    ),
     targeting: "visitsCount == 3",
   };
   const trigger = {
@@ -2423,7 +2419,7 @@ add_task(
 
 add_task(async function check_activeNotifications_infobar_shown() {
   let message = {
-    ...(await PanelTestProvider.getMessages()).find(
+    ...(await CFRMessageProvider.getMessages()).find(
       m => m.id === "INFOBAR_ACTION_86"
     ),
   };
