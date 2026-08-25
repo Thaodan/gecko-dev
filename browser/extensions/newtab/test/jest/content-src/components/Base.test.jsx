@@ -1261,45 +1261,76 @@ describe("<BaseContent> onWindowScroll", () => {
     return ref.current;
   }
 
+  // onWindowScroll is throttled, so let the throttle lapse after each scroll.
+  function scrollWindowTo(instance, value) {
+    setScrollY(value);
+    instance.onWindowScroll();
+    jest.advanceTimersByTime(10);
+  }
+
+  function scrollAction(threshold) {
+    return ac.OnlyToMain({ type: at.NEW_TAB_SCROLL, data: { threshold } });
+  }
+
   beforeEach(() => {
+    // performance is left real so componentDidMount's getEntriesByType works
+    jest.useFakeTimers({ doNotFake: ["performance"] });
     setScrollY(0);
   });
 
   afterEach(() => {
+    jest.useRealTimers();
     setScrollY(0);
   });
 
-  it("should dispatch NEW_TAB_SCROLL when scrollY exceeds threshold", () => {
+  it("should dispatch NEW_TAB_SCROLL when scrollY exceeds the first threshold", () => {
     const dispatch = jest.fn();
     const instance = mountScroll({ ...DEFAULT_PROPS, dispatch });
-    setScrollY(150);
-    instance.onWindowScroll();
-    expect(dispatch).toHaveBeenCalledWith(
-      ac.OnlyToMain({ type: at.NEW_TAB_SCROLL })
-    );
+    scrollWindowTo(instance, 60);
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(dispatch).toHaveBeenCalledWith(scrollAction(50));
   });
 
-  it("should not dispatch NEW_TAB_SCROLL when scrollY is at or below threshold", () => {
+  it("should not dispatch NEW_TAB_SCROLL when scrollY is at or below the first threshold", () => {
     const dispatch = jest.fn();
     const instance = mountScroll({ ...DEFAULT_PROPS, dispatch });
-    setScrollY(10);
-    instance.onWindowScroll();
+    scrollWindowTo(instance, 50);
     expect(dispatch).not.toHaveBeenCalled();
   });
 
-  it("should set _hasScrolledForSession to true when scroll threshold exceeded", () => {
-    const instance = mountScroll(DEFAULT_PROPS);
-    setScrollY(150);
-    instance.onWindowScroll();
-    expect(instance._hasScrolledForSession).toBe(true);
-  });
-
-  it("should not dispatch NEW_TAB_SCROLL again once _hasScrolledForSession is true", () => {
+  it("should dispatch every threshold passed by a single scroll", () => {
     const dispatch = jest.fn();
     const instance = mountScroll({ ...DEFAULT_PROPS, dispatch });
-    instance._hasScrolledForSession = true;
-    setScrollY(150);
-    instance.onWindowScroll();
+    scrollWindowTo(instance, 300);
+    expect(dispatch).toHaveBeenCalledTimes(3);
+    expect(dispatch).toHaveBeenCalledWith(scrollAction(50));
+    expect(dispatch).toHaveBeenCalledWith(scrollAction(100));
+    expect(dispatch).toHaveBeenCalledWith(scrollAction(250));
+  });
+
+  it("should dispatch each threshold as the user scrolls further", () => {
+    const dispatch = jest.fn();
+    const instance = mountScroll({ ...DEFAULT_PROPS, dispatch });
+    scrollWindowTo(instance, 60);
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(dispatch).toHaveBeenCalledWith(scrollAction(50));
+
+    scrollWindowTo(instance, 150);
+    expect(dispatch).toHaveBeenCalledTimes(2);
+    expect(dispatch).toHaveBeenCalledWith(scrollAction(100));
+
+    scrollWindowTo(instance, 300);
+    expect(dispatch).toHaveBeenCalledTimes(3);
+    expect(dispatch).toHaveBeenCalledWith(scrollAction(250));
+  });
+
+  it("should not dispatch NEW_TAB_SCROLL again for an already reported threshold", () => {
+    const dispatch = jest.fn();
+    const instance = mountScroll({ ...DEFAULT_PROPS, dispatch });
+    scrollWindowTo(instance, 300);
+    dispatch.mockClear();
+
+    scrollWindowTo(instance, 400);
     expect(dispatch).not.toHaveBeenCalled();
   });
 });

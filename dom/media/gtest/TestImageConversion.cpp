@@ -5,15 +5,19 @@
 #include "ImageContainer.h"
 #include "ImageConversion.h"
 #include "SourceSurfaceRawData.h"
+#include "YUVBufferGenerator.h"
 #include "gtest/gtest.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/ImageBitmapBinding.h"
 #include "mozilla/dom/ImageUtils.h"
 
 using mozilla::ConvertToI420;
+using mozilla::ConvertToNV12;
 using mozilla::ConvertToRGBA;
 using mozilla::MakeAndAddRef;
 using mozilla::MakeRefPtr;
+using mozilla::MakeUnique;
 using mozilla::Maybe;
 using mozilla::Nothing;
 using mozilla::Some;
@@ -23,6 +27,7 @@ using mozilla::gfx::DataSourceSurface;
 using mozilla::gfx::IntSize;
 using mozilla::gfx::SourceSurfaceAlignedRawData;
 using mozilla::gfx::SurfaceFormat;
+using mozilla::layers::Image;
 using mozilla::layers::PlanarYCbCrImage;
 using mozilla::layers::SourceSurfaceImage;
 
@@ -93,6 +98,12 @@ class TestRedPlanarYCbCrImage2x2 final : public PlanarYCbCrImage {
   uint8_t mV[4] = {0xEF, 0xEF, 0xEF, 0xEF};
 };
 
+static already_AddRefed<Image> GenerateI420(int32_t aWidth, int32_t aHeight) {
+  YUVBufferGenerator generator;
+  generator.Init(IntSize(aWidth, aHeight));
+  return generator.GenerateI420Image();
+}
+
 static already_AddRefed<SourceSurfaceImage> CreateRedSurfaceImage2x2(
     SurfaceFormat aFormat) {
   uint8_t redPixel[4] = {};
@@ -145,9 +156,10 @@ static already_AddRefed<SourceSurfaceImage> CreateRedSurfaceImage2x2(
 }
 
 static already_AddRefed<SourceSurfaceImage> CreateSurfaceImage(
-    const IntSize& aSurfaceSize, const IntSize& aImageSize) {
+    const IntSize& aSurfaceSize, const IntSize& aImageSize,
+    SurfaceFormat aFormat = SurfaceFormat::R8G8B8A8) {
   auto surface = MakeRefPtr<SourceSurfaceAlignedRawData>();
-  if (NS_WARN_IF(!surface->Init(aSurfaceSize, SurfaceFormat::R8G8B8A8,
+  if (NS_WARN_IF(!surface->Init(aSurfaceSize, aFormat,
                                 /* aClearMem */ true, 0, 0))) {
     return nullptr;
   }
@@ -263,4 +275,116 @@ TEST(MediaImageConversion, ConvertToI420)
   auto imgYuvNv21 =
       MakeRefPtr<TestRedPlanarYCbCrImage2x2>(ImageBitmapFormat::YUV420SP_NV21);
   checkImage(imgYuvNv21, Some(ImageBitmapFormat::YUV420SP_NV21));
+}
+
+// The smallest of the pair of source dimensions used by the bounds tests.
+static constexpr int32_t kSmallDimension = 16;
+// At or above kMaxConvertImageDimension the source is rejected before scaling.
+static constexpr int32_t kOverLimitDimension =
+    mozilla::kMaxConvertImageDimension;
+// The largest even in-range dimension (odd dimensions hit an unrelated
+// chroma-subsampling limit in the conversion, so use even).
+static constexpr int32_t kInRangeDimension =
+    mozilla::kMaxConvertImageDimension - 2;
+
+TEST(MediaImageConversion, ConvertToI420SourceSizeBounds)
+{
+  uint8_t y[4] = {};
+  uint8_t u[1] = {};
+  uint8_t v[1] = {};
+  const IntSize dst(2, 2);
+
+  RefPtr<Image> tall = GenerateI420(kSmallDimension, kOverLimitDimension);
+  EXPECT_EQ(ConvertToI420(tall, y, 2, u, 1, v, 1, dst), NS_ERROR_INVALID_ARG);
+
+  RefPtr<Image> wide = GenerateI420(kOverLimitDimension, kSmallDimension);
+  EXPECT_EQ(ConvertToI420(wide, y, 2, u, 1, v, 1, dst), NS_ERROR_INVALID_ARG);
+
+  RefPtr<Image> maxTall = GenerateI420(kSmallDimension, kInRangeDimension);
+  EXPECT_TRUE(NS_SUCCEEDED(ConvertToI420(maxTall, y, 2, u, 1, v, 1, dst)));
+
+  RefPtr<Image> maxWide = GenerateI420(kInRangeDimension, kSmallDimension);
+  EXPECT_TRUE(NS_SUCCEEDED(ConvertToI420(maxWide, y, 2, u, 1, v, 1, dst)));
+}
+
+TEST(MediaImageConversion, ConvertToNV12SourceSizeBounds)
+{
+  uint8_t y[4] = {};
+  uint8_t uv[2] = {};
+  const IntSize dst(2, 2);
+
+  // ConvertToNV12 takes an I420 (YUV420P) source and outputs NV12.
+  RefPtr<Image> tall = GenerateI420(kSmallDimension, kOverLimitDimension);
+  EXPECT_EQ(ConvertToNV12(tall, y, 2, uv, 2, dst), NS_ERROR_INVALID_ARG);
+
+  RefPtr<Image> wide = GenerateI420(kOverLimitDimension, kSmallDimension);
+  EXPECT_EQ(ConvertToNV12(wide, y, 2, uv, 2, dst), NS_ERROR_INVALID_ARG);
+
+  RefPtr<Image> maxTall = GenerateI420(kSmallDimension, kInRangeDimension);
+  EXPECT_TRUE(NS_SUCCEEDED(ConvertToNV12(maxTall, y, 2, uv, 2, dst)));
+
+  RefPtr<Image> maxWide = GenerateI420(kInRangeDimension, kSmallDimension);
+  EXPECT_TRUE(NS_SUCCEEDED(ConvertToNV12(maxWide, y, 2, uv, 2, dst)));
+}
+
+// The surface returned by GetAsSourceSurface() must cover the image's
+// reported GetSize(); conversion rejects an image whose surface is smaller
+// than that size.
+TEST(MediaImageConversion, UndersizedSourceSurface)
+{
+  const IntSize reportedSize(64, 64);
+  const size_t planeSize =
+      static_cast<size_t>(reportedSize.width) * reportedSize.height;
+
+  // Destination buffers, reused across both cases.
+  auto destY = MakeUnique<uint8_t[]>(planeSize);
+  auto destUV = MakeUnique<uint8_t[]>(planeSize);
+  auto destU = MakeUnique<uint8_t[]>(planeSize);
+  auto destV = MakeUnique<uint8_t[]>(planeSize);
+
+  {
+    // Undersized surface: it does not cover the reported image size, so every
+    // conversion must be rejected regardless of the requested destination
+    // size. The rejection is driven by the surface size, not the destination.
+    const IntSize undersizedSurface(60, 60);
+    RefPtr<SourceSurfaceImage> undersizedImage = CreateSurfaceImage(
+        undersizedSurface, reportedSize, SurfaceFormat::B8G8R8A8);
+    ASSERT_TRUE(!!undersizedImage);
+    ASSERT_EQ(undersizedImage->GetSize(), reportedSize);
+
+    // Destination equal to the reported size.
+    EXPECT_EQ(NS_ERROR_INVALID_ARG,
+              ConvertToNV12(undersizedImage, destY.get(), reportedSize.width,
+                            destUV.get(), reportedSize.width, reportedSize));
+    EXPECT_EQ(NS_ERROR_INVALID_ARG,
+              ConvertToI420(undersizedImage, destY.get(), reportedSize.width,
+                            destU.get(), reportedSize.width, destV.get(),
+                            reportedSize.width, reportedSize));
+
+    // Destination smaller than the reported size (scaling path).
+    const IntSize scaledSize(32, 32);
+    EXPECT_EQ(NS_ERROR_INVALID_ARG,
+              ConvertToNV12(undersizedImage, destY.get(), scaledSize.width,
+                            destUV.get(), scaledSize.width, scaledSize));
+    EXPECT_EQ(NS_ERROR_INVALID_ARG,
+              ConvertToI420(undersizedImage, destY.get(), scaledSize.width,
+                            destU.get(), scaledSize.width, destV.get(),
+                            scaledSize.width, scaledSize));
+  }
+
+  {
+    // Covering surface: it exactly covers the reported image size, so the
+    // conversion must be accepted.
+    RefPtr<SourceSurfaceImage> exactImage =
+        CreateSurfaceImage(reportedSize, reportedSize, SurfaceFormat::B8G8R8A8);
+    ASSERT_TRUE(!!exactImage);
+    ASSERT_EQ(exactImage->GetSize(), reportedSize);
+
+    EXPECT_EQ(NS_OK,
+              ConvertToNV12(exactImage, destY.get(), reportedSize.width,
+                            destUV.get(), reportedSize.width, reportedSize));
+    EXPECT_EQ(NS_OK, ConvertToI420(exactImage, destY.get(), reportedSize.width,
+                                   destU.get(), reportedSize.width, destV.get(),
+                                   reportedSize.width, reportedSize));
+  }
 }

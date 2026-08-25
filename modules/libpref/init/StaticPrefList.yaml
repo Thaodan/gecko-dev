@@ -10905,13 +10905,6 @@
   mirror: always
   rust: true
 
-# Is support for the contrast-color() function enabled?
-- name: layout.css.contrast-color.enabled
-  type: RelaxedAtomicBool
-  value: true
-  mirror: always
-  rust: true
-
 # Whether alt text in content is enabled.
 - name: layout.css.content.alt-text.enabled
   type: RelaxedAtomicBool
@@ -14278,7 +14271,11 @@
 # Factor to be multiplied for constant acceleration.
 - name: mousewheel.acceleration.factor
   type: RelaxedAtomicInt32
+#if defined(XP_MACOSX) && defined(NIGHTLY_BUILD)
+  value: 4
+#else
   value: 10
+#endif
   mirror: always
 
 # This affects how line scrolls from wheel events will be accelerated.
@@ -14286,7 +14283,11 @@
 # Acceleration can be turned off if pref is set to -1.
 - name: mousewheel.acceleration.start
   type: RelaxedAtomicInt32
+#if defined(XP_MACOSX) && defined(NIGHTLY_BUILD)
+  value: 3
+#else
   value: -1
+#endif
   mirror: always
 
 # Auto-dir is a feature which treats any single-wheel scroll as a scroll in the
@@ -21074,6 +21075,15 @@
 - name: widget.windows.fullscreen_marking_method
   type: RelaxedAtomicUint32
   value: 2
+  mirror: always
+
+# Whether to always set "NonRudeHWND" on non-fullscreen visible windows,
+# which seems to give us the benefit of using "NonRudeHWND" for the
+# fullscreen_marking_method without causing issues with the taskbar showing
+# when Firefox is fullscreen. (bug 1965699)
+- name: widget.windows.fullscreen_set_nonrudehwnd
+  type: RelaxedAtomicBool
+  value: true
   mirror: always
 
 # Whether to open the Windows file and folder pickers "remotely" (in a utility

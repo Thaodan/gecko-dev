@@ -2415,6 +2415,8 @@ pref("browser.smartwindow.smartformfill.disallowedRegions", "FR");
 // Smart Window Agent
 pref("browser.smartwindow.agent.enabled", true);
 pref("browser.smartwindow.agent.supportedRegions", "US,CA");
+// Toolbar button that opens the monitor creation panel (bug 2062113).
+pref("browser.smartwindow.agent.toolbar.enabled", false);
 
 
 // Smart Window: Exa search endpoint, used by the search_the_web agentic flow (bug 2037948)
@@ -2950,6 +2952,10 @@ pref("signon.relatedRealms.enabled", false);
 pref("signon.showAutoCompleteFooter", true);
 pref("signon.showAutoCompleteImport", "import");
 pref("signon.suggestImportCount", 3);
+
+// Whether the autocomplete dropdown lets users remove saved records
+// (logins, credit cards, and addresses) directly from the panel.
+pref("browser.autocomplete.removeRecords.enabled", false);
 
 // Whether or not the browser should scan for unsubmitted
 // crash reports, and then show a notification for submitting

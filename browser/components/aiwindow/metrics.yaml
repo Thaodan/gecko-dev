@@ -1547,8 +1547,9 @@ smart_window:
     type: boolean
     description: >
       Whether the single-row Top Sites are shown below the Smartbar in Smart
-      Window fullpage mode. Corresponds to the inverse of the
-      `browser.smartwindow.hideTopSites` pref (true when Top Sites are shown).
+      Window fullpage mode. True when the `browser.smartwindow.hideTopSites`
+      pref is false and the
+      `browser.newtabpage.activity-stream.feeds.topsites` pref is true.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2048338
     data_reviews:

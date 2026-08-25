@@ -493,9 +493,15 @@ export class UrlbarChildController {
           if (this.view.isOpen) {
             this.view.close();
           } else if (
-            // Moving focus into the content document only makes sense for a
-            // chrome moz-urlbar; a content-process one already has focus in
-            // content. Only a browser window has `gBrowser`.
+            // An in-page urlbar returns focus to the host page.
+            !this.window.gBrowser &&
+            UrlbarPrefs.get("focusContentDocumentOnEsc") &&
+            !this.input.searchMode &&
+            this.input.value == ""
+          ) {
+            this.input.blur();
+          } else if (
+            // A chrome urlbar moves focus into the content document instead.
             this.window.gBrowser &&
             UrlbarPrefs.get("focusContentDocumentOnEsc") &&
             !this.input.searchMode &&

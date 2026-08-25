@@ -2452,17 +2452,6 @@ RefPtr<MozPromise<bool, bool, false>> nsWindow::OnLoadRequest(
              : nullptr;
 }
 
-float nsWindow::GetDPI() {
-  float dpi = 160.0f;
-
-  nsCOMPtr<nsIScreen> screen = GetWidgetScreen();
-  if (screen) {
-    screen->GetDpi(&dpi);
-  }
-
-  return dpi;
-}
-
 double nsWindow::GetDefaultScaleInternal() {
   double scale = 1.0f;
 
