@@ -4975,6 +4975,11 @@ export class Tabbrowser {
         if (!splitView) {
           tabsFragment.appendChild(tab);
         } else if (splitView?.node) {
+          // Treat split views as a unit for hiding purposes -- both tabs and
+          // the split view wrapper itself should be hidden.
+          if (splitView.tabs.some(t => t.hidden)) {
+            splitView.node.toggleAttribute("hidden", true);
+          }
           tabsFragment.appendChild(splitView.node);
         }
 
@@ -7323,6 +7328,7 @@ export class Tabbrowser {
           this.showTab(sibling);
         }
       }
+      aTab.splitview.toggleAttribute("hidden", false);
     }
   }
 
@@ -7371,6 +7377,7 @@ export class Tabbrowser {
           this.hideTab(sibling, aSource);
         }
       }
+      aTab.splitview.toggleAttribute("hidden", true);
     }
   }
 
