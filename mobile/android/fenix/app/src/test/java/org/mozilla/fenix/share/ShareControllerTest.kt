@@ -931,112 +931,44 @@ class ShareControllerTest {
     @Test
     fun `ShareTab#toTabData maps a list of ShareTab to a TabData list`() =
         runTest(testDispatcher) {
-            val controller =
-                DefaultShareController(
-                    testContext,
-                    appStore,
-                    shareSubject,
-                    shareData,
-                    sendTabUseCases,
-                    saveToPdfUseCase,
-                    printUseCase,
-                    sentFromFirefoxManager,
-                    navController,
-                    recentAppStorage,
-                    this,
-                    testDispatcher,
-                    testDispatcher,
-                    FenixFxAEntryPoint.ShareMenu,
-                    dismiss,
-                )
-
-            var tabData: List<TabData>
-
-            with(controller) {
-                tabData = shareData.toTabData()
-            }
+            val tabData: List<TabData> = shareData.toTabData()
 
             assertEquals(tabsData, tabData)
         }
 
     @Test
-    fun `ShareTab#toTabData creates a data url from text if no url is specified`() =
-        runTest(testDispatcher) {
-            val controller =
-                DefaultShareController(
-                    testContext,
-                    appStore,
-                    shareSubject,
-                    shareData,
-                    sendTabUseCases,
-                    saveToPdfUseCase,
-                    printUseCase,
-                    sentFromFirefoxManager,
-                    navController,
-                    recentAppStorage,
-                    this,
-                    testDispatcher,
-                    testDispatcher,
-                    FenixFxAEntryPoint.ShareMenu,
-                    dismiss,
+    fun `ShareTab#toTabData creates a data url from text if no url is specified`() {
+        val expected =
+            listOf(
+                TabData(title = "title0", url = "", privacy = TabPrivacy.Normal),
+                TabData(title = "title1", url = "data:,Hello%2C%20World!", privacy = TabPrivacy.Normal),
+            )
+
+        val tabData: List<TabData> =
+            listOf(
+                    ShareData(title = "title0", private = false),
+                    ShareData(title = "title1", text = "Hello, World!", private = false),
                 )
+                .toTabData()
 
-            var tabData: List<TabData>
-            val expected =
-                listOf(
-                    TabData(title = "title0", url = "", privacy = TabPrivacy.Normal),
-                    TabData(title = "title1", url = "data:,Hello%2C%20World!", privacy = TabPrivacy.Normal),
-                )
-
-            with(controller) {
-                tabData =
-                    listOf(
-                            ShareData(title = "title0", private = false),
-                            ShareData(title = "title1", text = "Hello, World!", private = false),
-                        )
-                        .toTabData()
-            }
-
-            assertEquals(expected, tabData)
-        }
+        assertEquals(expected, tabData)
+    }
 
     @Test
     fun `ShareTab#toTabData respects private browsing mode`() {
-        runTest(testDispatcher) {
-            val privateShareData =
-                listOf(
-                    ShareData(url = "url0", title = "title0", private = true),
-                    ShareData(url = "url1", title = "title1", private = true),
-                )
-            val privateController =
-                DefaultShareController(
-                    context = testContext,
-                    appStore = appStore,
-                    shareSubject = null,
-                    shareData = privateShareData,
-                    sendTabUseCases = sendTabUseCases,
-                    saveToPdfUseCase = mockk(),
-                    printUseCase = mockk(),
-                    sentFromFirefoxManager = sentFromFirefoxManager,
-                    navController = navController,
-                    recentAppsStorage = recentAppStorage,
-                    viewLifecycleScope = this,
-                    ioDispatcher = testDispatcher,
-                    dismiss = dismiss,
-                )
+        val privateShareData =
+            listOf(
+                ShareData(url = "url0", title = "title0", private = true),
+                ShareData(url = "url1", title = "title1", private = true),
+            )
+        val expected =
+            listOf(
+                TabData(title = "title0", url = "url0", privacy = TabPrivacy.Private),
+                TabData(title = "title1", url = "url1", privacy = TabPrivacy.Private),
+            )
 
-            var tabData: List<TabData>
-            val expected =
-                listOf(
-                    TabData(title = "title0", url = "url0", privacy = TabPrivacy.Private),
-                    TabData(title = "title1", url = "url1", privacy = TabPrivacy.Private),
-                )
-
-            with(privateController) {
-                tabData = privateShareData.toTabData()
-            }
-            assertEquals(expected, tabData)
-        }
+        val tabData: List<TabData> = privateShareData.toTabData()
+        assertEquals(expected, tabData)
     }
 
     // SAM routed through mockk so verifyOrder can still span dismiss calls and other mocked

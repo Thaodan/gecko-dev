@@ -290,26 +290,13 @@ class DefaultShareController(
     internal fun getShareSubject() =
         shareSubject ?: shareData.filterNot { it.title.isNullOrEmpty() }.joinToString(", ") { it.title.toString() }
 
-    // Navigation between app fragments uses ShareTab as arguments. SendTabUseCases uses TabData.
-    @VisibleForTesting
-    internal fun List<ShareData>.toTabData() = map { data ->
-        TabData(
-            title = data.title.orEmpty(),
-            url = data.url ?: data.text?.toDataUri().orEmpty(),
-            privacy = if (data.private) TabPrivacy.Private else TabPrivacy.Normal,
-        )
-    }
-
-    private fun String.toDataUri(): String {
-        return "data:,${Uri.encode(this)}"
-    }
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun copyClipboard() {
         val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clipData = ClipData.newPlainText(getShareSubject(), getShareText())
 
-        if (shareData.any { it.private }) {
+        val isPrivate = shareData.any { it.private }
+
+        if (isPrivate) {
             clipData.description.extras =
                 PersistableBundle().apply {
                     putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true)
@@ -322,4 +309,18 @@ class DefaultShareController(
     companion object {
         const val ACTION_COPY_LINK_TO_CLIPBOARD = "org.mozilla.fenix.COPY_LINK_TO_CLIPBOARD"
     }
+}
+
+// Navigation between app fragments uses ShareTab as arguments. SendTabUseCases uses TabData.
+@VisibleForTesting
+internal fun List<ShareData>.toTabData() = map { data ->
+    fun String.toDataUri(): String {
+        return "data:,${Uri.encode(this)}"
+    }
+
+    TabData(
+        title = data.title.orEmpty(),
+        url = data.url ?: data.text?.toDataUri().orEmpty(),
+        privacy = if (data.private) TabPrivacy.Private else TabPrivacy.Normal,
+    )
 }
