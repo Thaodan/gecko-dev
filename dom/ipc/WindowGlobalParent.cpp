@@ -2294,6 +2294,14 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvPDocAccessibleConstructor(
     return IPC_OK();
   }
 
+  if (GetBrowsingContext()->IsDiscarded()) {
+    // This document is about to die, so ignore it. This is particularly
+    // important on Android because we must never have more than one active top
+    // level DocAccessible at the same time there.
+    doc->MarkAsShutdown();
+    return IPC_OK();
+  }
+
   RefPtr<WindowGlobalParent> embedderWgp =
       GetBrowsingContext()->GetEmbedderWindowGlobal();
   if (NS_WARN_IF(!IsTop() && !embedderWgp)) {
