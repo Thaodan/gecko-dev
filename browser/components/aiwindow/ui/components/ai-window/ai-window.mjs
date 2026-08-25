@@ -183,6 +183,9 @@ const HISTORY_MENU_EVENTS = [
 const MAX_SIDEBAR_STARTER_CACHE_KEYS = 20;
 const MAX_TOP_SITES = 8;
 const MAX_PILL_COUNT = 3;
+// TEMP: English-only workaround. Remove once resume headlines support
+// localization - see Bug 2066263.
+const RESUME_HEADLINE_PREFIX_RE = /^\s*pick\s+up\b[\s:;,.—-]*/iu;
 
 // 1-6 are MLPA spec codes; 7 is set locally for Fastly-blocked 406s.
 const ERROR_TELEMETRY_NAME_BY_CODE = {
@@ -2063,12 +2066,16 @@ export class AIWindow extends MozLitElement {
         checked: false,
       })
     );
+    const strippedHeadline =
+      resumePrompt.text.replace(RESUME_HEADLINE_PREFIX_RE, "").trim() ||
+      resumePrompt.text.trim();
     await this.reloadAndGenerate(conversation, {
       uiType: "tab-group-confirmation",
       toolCallId: `resume-activity-${resumePrompt.memory.id}`,
       properties: {
         actionType: "open_tabs",
-        tabGroupLabel: resumePrompt.text,
+        tabGroupLabel:
+          strippedHeadline.charAt(0).toUpperCase() + strippedHeadline.slice(1),
         tabs,
       },
     });

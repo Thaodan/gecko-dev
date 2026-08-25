@@ -636,7 +636,7 @@ add_task(async function test_resume_prompt_click_shows_confirmation_card() {
           toolCallId: "resume-activity-memory-1",
           properties: {
             actionType: "open_tabs",
-            tabGroupLabel: "Pick up your research",
+            tabGroupLabel: "Your research",
             tabs: [1, 2, 3, 4].map((id, index) => ({
               token: String(index),
               url: `https://example.com/${id}`,
@@ -719,7 +719,7 @@ add_task(
             toolCallId: "resume-activity-memory-1",
             properties: {
               actionType: "open_tabs",
-              tabGroupLabel: "Pick up your research",
+              tabGroupLabel: "Your research",
               tabs: [1, 2, 3, 4].map((id, index) => ({
                 token: String(index),
                 url: `https://example.com/${id}`,
