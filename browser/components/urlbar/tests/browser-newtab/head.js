@@ -14,26 +14,21 @@ Services.scriptloader.loadSubScript(
  * @returns {Promise<MozTabbrowserTab>}
  */
 async function openNewTabPage() {
-  // The element, not the load, is what the tests need, and it's polled for
-  // below.
+  // about:newtab is preloaded, so its load event may already have fired.
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     "about:newtab",
     false
   );
-  await TestUtils.waitForCondition(async () => {
-    // waitForCondition rejects instead of retrying when the condition throws,
-    // and a spawn() can lose its actor while the page is still coming up.
-    try {
-      return await SpecialPowers.spawn(
+  await TestUtils.waitForCondition(
+    () =>
+      SpecialPowers.spawn(
         tab.linkedBrowser,
         [],
         () => !!content.document.querySelector("moz-urlbar")
-      );
-    } catch {
-      return false;
-    }
-  }, "waiting for <moz-urlbar> on about:newtab");
+      ),
+    "waiting for <moz-urlbar> on about:newtab"
+  );
   return tab;
 }
 
