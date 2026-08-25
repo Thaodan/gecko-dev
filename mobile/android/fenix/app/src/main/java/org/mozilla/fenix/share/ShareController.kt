@@ -88,7 +88,6 @@ interface ShareController {
  * @param appStore Instance of [AppStore] for interacting with application wide state.
  * @param shareSubject Desired message subject used when sharing through 3rd party apps, like email clients.
  * @param shareData The list of [ShareData]s that can be shared.
- * @param isPrivate Whether the tab(s) being shared are from private browsing mode.
  * @param sendTabUseCases Instance of [SendTabUseCases] which allows sending tabs to account devices.
  * @param saveToPdfUseCase Instance of [SessionUseCases.SaveToPdfUseCase] to generate a PDF of a given tab.
  * @param printUseCase Instance of [SessionUseCases.PrintContentUseCase] to print content of a given tab.
@@ -107,7 +106,6 @@ class DefaultShareController(
     private val appStore: AppStore,
     private val shareSubject: String?,
     private val shareData: List<ShareData>,
-    private val isPrivate: Boolean,
     private val sendTabUseCases: SendTabUseCases,
     private val saveToPdfUseCase: SessionUseCases.SaveToPdfUseCase,
     private val printUseCase: SessionUseCases.PrintContentUseCase,
@@ -298,7 +296,7 @@ class DefaultShareController(
         TabData(
             title = data.title.orEmpty(),
             url = data.url ?: data.text?.toDataUri().orEmpty(),
-            privacy = if (isPrivate) TabPrivacy.Private else TabPrivacy.Normal,
+            privacy = if (data.private) TabPrivacy.Private else TabPrivacy.Normal,
         )
     }
 
@@ -311,7 +309,7 @@ class DefaultShareController(
         val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clipData = ClipData.newPlainText(getShareSubject(), getShareText())
 
-        if (isPrivate) {
+        if (shareData.any { it.private }) {
             clipData.description.extras =
                 PersistableBundle().apply {
                     putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true)
