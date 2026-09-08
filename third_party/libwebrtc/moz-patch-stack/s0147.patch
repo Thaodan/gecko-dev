@@ -17,10 +17,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/c814c6d6515563ed9
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc b/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
-index d79df396b4..b4429e7000 100644
+index 7fd0eb3df1..8903ac9731 100644
 --- a/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
 +++ b/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
-@@ -973,13 +973,13 @@ void SharedScreenCastStreamPrivate::ProcessBuffer(pw_buffer* buffer) {
+@@ -974,13 +974,13 @@ void SharedScreenCastStreamPrivate::ProcessBuffer(pw_buffer* buffer) {
    // that the position doesn't exceed the size of the stream itself.
    // NOTE: Currently it looks there is no implementation using this.
    uint32_t y_offset =

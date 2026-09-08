@@ -22,7 +22,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/a0efe8bc90331a480
  1 file changed, 79 insertions(+), 55 deletions(-)
 
 diff --git a/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc b/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
-index b4429e7000..aa06e2f679 100644
+index 8903ac9731..b42fa2e139 100644
 --- a/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
 +++ b/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
 @@ -473,8 +473,9 @@ void SharedScreenCastStreamPrivate::OnStreamParamChanged(
@@ -157,7 +157,7 @@ index b4429e7000..aa06e2f679 100644
      }
    }
  
-@@ -923,18 +944,21 @@ void SharedScreenCastStreamPrivate::ProcessBuffer(pw_buffer* buffer) {
+@@ -924,18 +945,21 @@ void SharedScreenCastStreamPrivate::ProcessBuffer(pw_buffer* buffer) {
    // metadata. This gives us the size we need in order to allocate the
    // DesktopFrame.
  
@@ -186,7 +186,7 @@ index b4429e7000..aa06e2f679 100644
      RTC_LOG(LS_ERROR) << "Stream metadata sizes are wrong!";
  
      if (observer_) {
-@@ -951,7 +975,7 @@ void SharedScreenCastStreamPrivate::ProcessBuffer(pw_buffer* buffer) {
+@@ -952,7 +976,7 @@ void SharedScreenCastStreamPrivate::ProcessBuffer(pw_buffer* buffer) {
    // only about smaller portion representing the window inside.
    bool videocrop_metadata_use = false;
    const struct spa_rectangle* videocrop_metadata_size =
@@ -195,7 +195,7 @@ index b4429e7000..aa06e2f679 100644
  
    if (videocrop_metadata_size && videocrop_metadata_size->width != 0 &&
        videocrop_metadata_size->height != 0 &&
-@@ -973,16 +997,16 @@ void SharedScreenCastStreamPrivate::ProcessBuffer(pw_buffer* buffer) {
+@@ -974,16 +998,16 @@ void SharedScreenCastStreamPrivate::ProcessBuffer(pw_buffer* buffer) {
    // that the position doesn't exceed the size of the stream itself.
    // NOTE: Currently it looks there is no implementation using this.
    uint32_t y_offset =
