@@ -155,7 +155,7 @@ index 32b236979e..bd89683ea3 100644
    return ss.Release();
  }
 diff --git a/call/video_receive_stream.h b/call/video_receive_stream.h
-index c8e7300453..faf292b324 100644
+index ecf267729d..6e819ae654 100644
 --- a/call/video_receive_stream.h
 +++ b/call/video_receive_stream.h
 @@ -21,6 +21,7 @@

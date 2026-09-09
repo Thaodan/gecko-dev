@@ -114,7 +114,7 @@ index 87974ada5c..d8543e0ba2 100644
    absl::InlinedVector<uint32_t, 4> new_continuous_temporal_units_;
  };
 diff --git a/call/video_receive_stream.h b/call/video_receive_stream.h
-index 8cdaad680b..fd3eda6ff2 100644
+index 48dc806999..72826587f2 100644
 --- a/call/video_receive_stream.h
 +++ b/call/video_receive_stream.h
 @@ -119,6 +119,8 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
@@ -272,10 +272,10 @@ index 76c1e2285f..d23f89f5e8 100644
    // h26x_packet_buffer_ is applicable to H.264 and H.265. For H.265 it is
    // always used but for H.264 it is only used if WebRTC-Video-H26xPacketBuffer
 diff --git a/video/video_receive_stream2.cc b/video/video_receive_stream2.cc
-index 75cced661f..db2f5f647b 100644
+index 672ce47b92..0a51dc9bd5 100644
 --- a/video/video_receive_stream2.cc
 +++ b/video/video_receive_stream2.cc
-@@ -263,6 +263,7 @@ VideoReceiveStream2::VideoReceiveStream2(
+@@ -264,6 +264,7 @@ VideoReceiveStream2::VideoReceiveStream2(
                                   &stats_proxy_,
                                   &stats_proxy_,
                                   nack_periodic_processor,
