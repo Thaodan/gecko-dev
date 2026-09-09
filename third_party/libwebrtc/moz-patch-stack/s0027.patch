@@ -541,7 +541,7 @@ index 88890be798..c9aefc297b 100644
  #include "rtc_base/memory/aligned_malloc.h"
  
 diff --git a/media/BUILD.gn b/media/BUILD.gn
-index 5bb7f40f95..0ff8d91df1 100644
+index 3ce11be86c..1e1e74eb69 100644
 --- a/media/BUILD.gn
 +++ b/media/BUILD.gn
 @@ -42,8 +42,12 @@ rtc_library("rtc_sdp_video_format_utils") {
@@ -710,7 +710,7 @@ index 59b5008fe9..bf19e2b74d 100644
  }
  
 diff --git a/modules/audio_device/BUILD.gn b/modules/audio_device/BUILD.gn
-index c76c4c5aec..ebeffb6802 100644
+index 98f0ee5fe7..353b8adef2 100644
 --- a/modules/audio_device/BUILD.gn
 +++ b/modules/audio_device/BUILD.gn
 @@ -30,6 +30,7 @@ rtc_source_set("audio_device_default") {
@@ -1248,7 +1248,7 @@ index 2290c35e74..bd9db45b15 100644
  rtc_library("call_config_utils") {
    testonly = true
 diff --git a/video/BUILD.gn b/video/BUILD.gn
-index b6c7632056..f27da1e886 100644
+index 7088a4807d..3cd3a0024b 100644
 --- a/video/BUILD.gn
 +++ b/video/BUILD.gn
 @@ -16,7 +16,7 @@ rtc_library("video_stream_encoder_interface") {
