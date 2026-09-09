@@ -408,6 +408,7 @@ void VideoReceiveStream2::Start() {
 
   // Start decoding on task queue.
   stats_proxy_.DecoderThreadStarting();
+  video_receiver_.SetDecodeQueue(decode_queue_.get());
   decode_queue_->PostTask([this] {
     RTC_DCHECK_RUN_ON(&decode_sequence_checker_);
     decoder_stopped_ = false;
@@ -445,6 +446,7 @@ void VideoReceiveStream2::Stop() {
     done.Wait(Event::kForever);
 
     decoder_running_ = false;
+    video_receiver_.SetDecodeQueue(nullptr);
     stats_proxy_.DecoderThreadStopped();
 
     UpdateHistograms();
