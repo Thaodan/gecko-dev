@@ -32,10 +32,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/abff9e232490c530f
  3 files changed, 45 insertions(+), 23 deletions(-)
 
 diff --git a/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc b/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
-index bfd86eab44..c35f9370e9 100644
+index 62da61875a..b969c49c4f 100644
 --- a/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
 +++ b/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
-@@ -1109,11 +1109,8 @@ bool SharedScreenCastStreamPrivate::ProcessMemFDBuffer(
+@@ -1097,11 +1097,8 @@ bool SharedScreenCastStreamPrivate::ProcessMemFDBuffer(
    uint8_t* src = nullptr;
  
    const uint64_t maxsize = static_cast<uint64_t>(spa_buffer->datas[0].maxsize);
