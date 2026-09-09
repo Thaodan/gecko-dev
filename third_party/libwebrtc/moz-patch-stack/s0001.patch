@@ -1286,10 +1286,10 @@ index 29e34dc3b5..a0addc53c0 100644
  
    int64_t _lastProcessFrameTimeNanos RTC_GUARDED_BY(capture_checker_);
 diff --git a/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc b/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc
-index 3b745a5ca1..1a3934c364 100644
+index b66ff0fe89..5fe9f3db58 100644
 --- a/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc
 +++ b/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc
-@@ -286,6 +286,7 @@ LibvpxVp9Encoder::LibvpxVp9Encoder(const Environment& env,
+@@ -287,6 +287,7 @@ LibvpxVp9Encoder::LibvpxVp9Encoder(const Environment& env,
        force_all_active_layers_(false),
        enable_svc_for_simulcast_(
            !env.field_trials().IsDisabled("WebRTC-VP9-SvcForSimulcast")),
@@ -1320,7 +1320,7 @@ index 3b745a5ca1..1a3934c364 100644
    // Set input image for use in the callback.
    // This was necessary since you need some information from input_image.
    // You can save only the necessary information (such as timestamp) instead of
-@@ -1313,6 +1323,48 @@ int LibvpxVp9Encoder::Encode(const VideoFrame& input_image,
+@@ -1312,6 +1322,48 @@ int LibvpxVp9Encoder::Encode(const VideoFrame& input_image,
    return WEBRTC_VIDEO_CODEC_OK;
  }
  
@@ -1370,10 +1370,10 @@ index 3b745a5ca1..1a3934c364 100644
                                               std::optional<int>* spatial_idx,
                                               std::optional<int>* temporal_idx,
 diff --git a/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.h b/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.h
-index c3326509ce..293ccd7089 100644
+index 849c7ce530..27f1b22422 100644
 --- a/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.h
 +++ b/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.h
-@@ -84,6 +84,9 @@ class LibvpxVp9Encoder : public VideoEncoder {
+@@ -83,6 +83,9 @@ class LibvpxVp9Encoder : public VideoEncoder {
    // Call encoder initialize function and set control settings.
    int InitAndSetControlSettings();
  
@@ -1383,7 +1383,7 @@ index c3326509ce..293ccd7089 100644
    bool PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
                               std::optional<int>* spatial_idx,
                               std::optional<int>* temporal_idx,
-@@ -172,6 +175,7 @@ class LibvpxVp9Encoder : public VideoEncoder {
+@@ -171,6 +174,7 @@ class LibvpxVp9Encoder : public VideoEncoder {
    VideoBitrateAllocation current_bitrate_allocation_;
    bool ss_info_needed_;
    bool force_all_active_layers_;
