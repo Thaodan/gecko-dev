@@ -121,20 +121,17 @@ class AudioReceiveStreamInterface : public MediaReceiveStreamInterface {
   };
 
   struct Config {
-   private:
-    // Access to the copy constructor is private to force use of the Copy()
-    // method for those exceptional cases where we do use it.
-    Config(const Config&);
-
    public:
     Config();
+    Config(const Config&) = delete;
     Config& operator=(const Config&) = delete;
     Config(Config&&);
     Config& operator=(Config&&);
     ~Config();
 
     // Mostly used by tests.  Avoid creating copies if you can.
-    Config Copy() const { return Config(*this); }
+    // Note that this method will not copy move-only fields.
+    Config Copy() const;
 
     std::string ToString() const;
 
