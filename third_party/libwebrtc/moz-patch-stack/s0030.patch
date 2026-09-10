@@ -11,10 +11,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/7330681cf4de6d8dd
  2 files changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/call/video_receive_stream.h b/call/video_receive_stream.h
-index 832caeae23..ecf267729d 100644
+index fa93077aaf..8f927b94b8 100644
 --- a/call/video_receive_stream.h
 +++ b/call/video_receive_stream.h
-@@ -247,6 +247,9 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
+@@ -249,6 +249,9 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
        // disabled.
        KeyFrameReqMethod keyframe_method = KeyFrameReqMethod::kPliRtcp;
  
@@ -25,10 +25,10 @@ index 832caeae23..ecf267729d 100644
  
        // See LntfConfig for description.
 diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index 68fc4b36d9..1124dc537b 100644
+index 6f370fdab9..e77c0af974 100644
 --- a/video/rtp_video_stream_receiver2.cc
 +++ b/video/rtp_video_stream_receiver2.cc
-@@ -1481,7 +1481,7 @@ void RtpVideoStreamReceiver2::StartReceive() {
+@@ -1489,7 +1489,7 @@ void RtpVideoStreamReceiver2::StartReceive() {
      // Change REMB candidate egibility.
      packet_router_->RemoveReceiveRtpModule(rtp_rtcp_.get());
      packet_router_->AddReceiveRtpModule(rtp_rtcp_.get(),

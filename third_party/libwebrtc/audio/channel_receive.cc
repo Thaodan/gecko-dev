@@ -158,6 +158,7 @@ class ChannelReceive : public ChannelReceiveInterface,
                  scoped_refptr<FrameDecryptorInterface> frame_decryptor,
                  const CryptoOptions& crypto_options,
                  scoped_refptr<FrameTransformerInterface> frame_transformer,
+                 absl::AnyInvocable<void(uint32_t ssrc) &&> on_first_packet,
                  RtcpEventObserver* rtcp_event_observer,
                  PacketRouter* absl_nonnull packet_router,
                  uint32_t local_ssrc);
@@ -360,6 +361,9 @@ class ChannelReceive : public ChannelReceiveInterface,
   std::map<int, SdpAudioFormat> payload_type_map_;
 
   std::unique_ptr<NackTracker> nack_tracker_
+      RTC_GUARDED_BY(worker_thread_checker_);
+
+  absl::AnyInvocable<void(uint32_t ssrc) &&> on_first_packet_
       RTC_GUARDED_BY(worker_thread_checker_);
 };
 
@@ -587,6 +591,7 @@ ChannelReceive::ChannelReceive(
     scoped_refptr<FrameDecryptorInterface> frame_decryptor,
     const CryptoOptions& crypto_options,
     scoped_refptr<FrameTransformerInterface> frame_transformer,
+    absl::AnyInvocable<void(uint32_t ssrc) &&> on_first_packet,
     RtcpEventObserver* rtcp_event_observer,
     PacketRouter* absl_nonnull packet_router,
     uint32_t local_ssrc)
@@ -618,7 +623,8 @@ ChannelReceive::ChannelReceive(
       packet_router_(packet_router),
       frame_decryptor_(frame_decryptor),
       crypto_options_(crypto_options),
-      absolute_capture_time_interpolator_(&env_.clock()) {
+      absolute_capture_time_interpolator_(&env_.clock()),
+      on_first_packet_(std::move(on_first_packet)) {
   RTC_DCHECK(audio_device_module);
   RTC_DCHECK(packet_router_);
 
@@ -695,6 +701,10 @@ void ChannelReceive::SetReceiveCodecs(
 
 void ChannelReceive::OnRtpPacket(const RtpPacketReceived& packet) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+  if (on_first_packet_) {
+    auto cb = std::move(on_first_packet_);
+    std::move(cb)(remote_ssrc_);
+  }
   env_.event_log().Log(std::make_unique<RtcEventRtpPacketIncoming>(packet));
   Timestamp now = env_.clock().CurrentTime();
 
@@ -1218,6 +1228,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
     scoped_refptr<FrameDecryptorInterface> frame_decryptor,
     const CryptoOptions& crypto_options,
     scoped_refptr<FrameTransformerInterface> frame_transformer,
+    absl::AnyInvocable<void(uint32_t ssrc) &&> on_first_packet,
     RtcpEventObserver* rtcp_event_observer,
     PacketRouter* absl_nonnull packet_router,
     uint32_t local_ssrc) {
@@ -1226,7 +1237,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
       jitter_buffer_max_packets, jitter_buffer_fast_playout,
       jitter_buffer_min_delay_ms, enable_non_sender_rtt, decoder_factory,
       std::move(frame_decryptor), crypto_options, std::move(frame_transformer),
-      rtcp_event_observer, packet_router, local_ssrc);
+      std::move(on_first_packet), rtcp_event_observer, packet_router, local_ssrc);
 }
 
 }  // namespace voe

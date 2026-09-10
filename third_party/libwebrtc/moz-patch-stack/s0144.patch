@@ -23,10 +23,10 @@ index f2e80eef92..c8e818a1d0 100644
  AudioReceiveStreamInterface::Config&
  AudioReceiveStreamInterface::Config::operator=(Config&&) = default;
 diff --git a/call/audio_receive_stream.h b/call/audio_receive_stream.h
-index df6b99bdf2..72d7ad119b 100644
+index 7f8500b325..999da25ff0 100644
 --- a/call/audio_receive_stream.h
 +++ b/call/audio_receive_stream.h
-@@ -120,13 +120,21 @@ class AudioReceiveStreamInterface : public MediaReceiveStreamInterface {
+@@ -121,13 +121,21 @@ class AudioReceiveStreamInterface : public MediaReceiveStreamInterface {
    };
  
    struct Config {

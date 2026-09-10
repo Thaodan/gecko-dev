@@ -24,6 +24,7 @@
 
 #include "absl/algorithm/container.h"
 #include "absl/base/nullability.h"
+#include "absl/functional/any_invocable.h"
 #include "api/crypto/frame_decryptor_interface.h"
 #include "api/environment/environment.h"
 #include "api/field_trials_view.h"
@@ -294,7 +295,8 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
     VideoStreamBufferControllerStatsObserver* vcm_receive_statistics,
     OnCompleteFrameCallback* complete_frame_callback,
     scoped_refptr<FrameDecryptorInterface> frame_decryptor,
-    scoped_refptr<FrameTransformerInterface> frame_transformer)
+    scoped_refptr<FrameTransformerInterface> frame_transformer,
+    absl::AnyInvocable<void(uint32_t ssrc) &&> on_first_packet)
     : env_(env),
       worker_queue_(worker_queue),
       config_(*config),
@@ -343,7 +345,8 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
       reference_finder_(std::make_unique<RtpFrameReferenceFinder>()),
       has_received_frame_(false),
       frames_decryptable_(false),
-      absolute_capture_time_interpolator_(&env_.clock()) {
+      absolute_capture_time_interpolator_(&env_.clock()),
+      on_first_packet_(std::move(on_first_packet)) {
   if (packet_router_) {
     // Do not register as REMB candidate, this is only done when starting to
     // receive.
@@ -846,6 +849,11 @@ void RtpVideoStreamReceiver2::OnRtpPacket(const RtpPacketReceived& packet) {
 
   if (!receiving_)
     return;
+
+  if (on_first_packet_) {
+    auto cb = std::move(on_first_packet_);
+    std::move(cb)(config_.rtp.remote_ssrc);
+  }
 
   ReceivePacket(packet);
 
