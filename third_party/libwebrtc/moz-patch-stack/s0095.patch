@@ -277,7 +277,7 @@ index 7394a2e1da..a5bc0c82dc 100644
  
  rtc_library("scalability_mode") {
 diff --git a/audio/BUILD.gn b/audio/BUILD.gn
-index 293104c72d..94cd15b208 100644
+index 3cb28313a6..ff4d566f01 100644
 --- a/audio/BUILD.gn
 +++ b/audio/BUILD.gn
 @@ -8,8 +8,8 @@

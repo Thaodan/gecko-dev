@@ -33,6 +33,7 @@
 #include "api/frame_transformer_interface.h"
 #include "api/neteq/neteq_factory.h"
 #include "api/rtp_headers.h"
+#include "api/rtp_packet_infos.h"
 #include "api/scoped_refptr.h"
 #include "api/transport/rtp/rtp_source.h"
 #include "api/units/time_delta.h"
@@ -186,7 +187,11 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
     absl::AnyInvocable<void(uint32_t ssrc) &&> on_first_packet,
     RtcpEventObserver* rtcp_event_observer,
     PacketRouter* absl_nonnull packet_router,
-    uint32_t local_ssrc);
+    uint32_t local_ssrc,
+    // Note: `on_frame_delivered_callback` is called synchronously from
+    // audio/packet processing threads and must be thread-safe and non-blocking.
+    absl::AnyInvocable<void(const RtpPacketInfos&, Timestamp) const>
+        on_frame_delivered_callback = nullptr);
 
 }  // namespace voe
 }  // namespace webrtc

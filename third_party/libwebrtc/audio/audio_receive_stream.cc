@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "absl/base/nullability.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "api/audio/audio_frame.h"
 #include "api/audio/audio_mixer.h"
@@ -96,7 +97,8 @@ std::unique_ptr<voe::ChannelReceiveInterface> CreateChannelReceive(
       config.decoder_factory, std::move(config.frame_decryptor),
       config.crypto_options, std::move(config.frame_transformer),
       std::move(config.on_first_packet), config.rtp.rtcp_event_observer,
-      packet_router, config.rtp.local_ssrc);
+      packet_router, config.rtp.local_ssrc,
+      std::move(config.on_frame_delivered_callback));
 }
 }  // namespace
 

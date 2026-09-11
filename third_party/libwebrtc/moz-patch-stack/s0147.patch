@@ -54,7 +54,7 @@ index c8e818a1d0..fb0533d976 100644
  AudioReceiveStreamInterface::Config::Rtp::~Rtp() = default;
  
 diff --git a/call/audio_receive_stream.h b/call/audio_receive_stream.h
-index 59ee70399c..e06639b3b4 100644
+index 757ea3be88..812b1444ef 100644
 --- a/call/audio_receive_stream.h
 +++ b/call/audio_receive_stream.h
 @@ -121,20 +121,17 @@ class AudioReceiveStreamInterface : public MediaReceiveStreamInterface {
