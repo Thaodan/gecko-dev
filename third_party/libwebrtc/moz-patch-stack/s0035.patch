@@ -122,7 +122,7 @@ index c1352da7a9..2b2bc75542 100644
  
  }  // namespace voe
 diff --git a/call/audio_receive_stream.h b/call/audio_receive_stream.h
-index c27d184092..7f8500b325 100644
+index 7ed91d16c5..157877e3c5 100644
 --- a/call/audio_receive_stream.h
 +++ b/call/audio_receive_stream.h
 @@ -23,6 +23,7 @@
@@ -143,10 +143,10 @@ index c27d184092..7f8500b325 100644
  
      // Receive-side RTT.
 diff --git a/call/video_receive_stream.cc b/call/video_receive_stream.cc
-index 82f4d5d53f..83eb34d6a2 100644
+index bf2b4cb414..4bf514cb1f 100644
 --- a/call/video_receive_stream.cc
 +++ b/call/video_receive_stream.cc
-@@ -176,6 +176,8 @@ std::string VideoReceiveStreamInterface::Config::Rtp::ToString() const {
+@@ -182,6 +182,8 @@ std::string VideoReceiveStreamInterface::Config::Rtp::ToString() const {
      ss << pt << ", ";
    }
    ss << "}";
@@ -156,7 +156,7 @@ index 82f4d5d53f..83eb34d6a2 100644
    return ss.Release();
  }
 diff --git a/call/video_receive_stream.h b/call/video_receive_stream.h
-index 8f927b94b8..657aff3d7c 100644
+index 19f147238d..a79abe23de 100644
 --- a/call/video_receive_stream.h
 +++ b/call/video_receive_stream.h
 @@ -23,6 +23,7 @@
@@ -167,7 +167,7 @@ index 8f927b94b8..657aff3d7c 100644
  #include "api/crypto/crypto_options.h"
  #include "api/crypto/frame_decryptor_interface.h"
  #include "api/frame_transformer_interface.h"
-@@ -280,6 +281,8 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
+@@ -283,6 +284,8 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
        // meta data is expected to be present in generic frame descriptor
        // RTP header extension).
        std::set<int> raw_payload_types;

@@ -23,12 +23,12 @@ index f2e80eef92..c8e818a1d0 100644
  AudioReceiveStreamInterface::Config&
  AudioReceiveStreamInterface::Config::operator=(Config&&) = default;
 diff --git a/call/audio_receive_stream.h b/call/audio_receive_stream.h
-index 7f8500b325..999da25ff0 100644
+index 157877e3c5..59ee70399c 100644
 --- a/call/audio_receive_stream.h
 +++ b/call/audio_receive_stream.h
 @@ -121,13 +121,21 @@ class AudioReceiveStreamInterface : public MediaReceiveStreamInterface {
+     int round_trip_time_measurements = 0;
    };
- 
    struct Config {
 +   private:
 +    // Access to the copy constructor is private to force use of the Copy()
