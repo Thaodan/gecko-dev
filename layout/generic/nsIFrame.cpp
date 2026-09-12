@@ -9,6 +9,7 @@
 #include <stdarg.h>
 
 #include <algorithm>
+#include <type_traits>
 
 #include "AnchorPositioningUtils.h"
 #include "LayoutLogging.h"
@@ -8022,8 +8023,14 @@ nsIWidget* nsIFrame::GetOwnWidget() const {
   return nullptr;
 }
 
-template <nsPoint (nsIFrame::*PositionGetter)() const>
-static nsPoint OffsetCalculator(const nsIFrame* aThis, const nsIFrame* aOther) {
+// aPosition should be a function that returns the position of a frame relative
+// to its parent.
+template <typename PositionGetter>
+static nsPoint OffsetCalculator(const nsIFrame* aThis, const nsIFrame* aOther,
+                                PositionGetter&& aPosition) {
+  static_assert(std::is_invocable_r_v<nsPoint, PositionGetter, const nsIFrame*>,
+                "aPosition must be callable as nsPoint(const nsIFrame*)");
+
   MOZ_ASSERT(aOther, "Must have frame for destination coordinate system!");
 
   NS_ASSERTION(aThis->PresContext() == aOther->PresContext(),
@@ -8032,7 +8039,7 @@ static nsPoint OffsetCalculator(const nsIFrame* aThis, const nsIFrame* aOther) {
   nsPoint offset(0, 0);
   const nsIFrame* f;
   for (f = aThis; f != aOther && f; f = f->GetParent()) {
-    offset += (f->*PositionGetter)();
+    offset += aPosition(f);
   }
 
   if (f != aOther) {
@@ -8040,7 +8047,7 @@ static nsPoint OffsetCalculator(const nsIFrame* aThis, const nsIFrame* aOther) {
     // the root-frame-relative position of |this| in |offset|.  Convert back
     // to the coordinates of aOther
     while (aOther) {
-      offset -= (aOther->*PositionGetter)();
+      offset -= aPosition(aOther);
       aOther = aOther->GetParent();
     }
   }
@@ -8049,7 +8056,9 @@ static nsPoint OffsetCalculator(const nsIFrame* aThis, const nsIFrame* aOther) {
 }
 
 nsPoint nsIFrame::GetOffsetTo(const nsIFrame* aOther) const {
-  return OffsetCalculator<&nsIFrame::GetPosition>(this, aOther);
+  return OffsetCalculator(this, aOther, [](const nsIFrame* aFrame) {
+    return aFrame->GetPosition();
+  });
 }
 
 nsPoint nsIFrame::GetOffsetToRootFrame() const {
@@ -8057,8 +8066,9 @@ nsPoint nsIFrame::GetOffsetToRootFrame() const {
 }
 
 nsPoint nsIFrame::GetOffsetToIgnoringScrolling(const nsIFrame* aOther) const {
-  return OffsetCalculator<&nsIFrame::GetPositionIgnoringScrolling>(this,
-                                                                   aOther);
+  return OffsetCalculator(this, aOther, [](const nsIFrame* aFrame) {
+    return aFrame->GetPositionIgnoringScrolling();
+  });
 }
 
 nsPoint nsIFrame::GetOffsetToCrossDoc(const nsIFrame* aOther) const {
