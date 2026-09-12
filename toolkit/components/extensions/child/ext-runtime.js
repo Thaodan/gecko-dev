@@ -126,10 +126,6 @@ this.runtime = class extends ExtensionAPI {
           return context.lastError;
         },
 
-        getVersion() {
-          return extension.manifest.version;
-        },
-
         getManifest() {
           return Cu.cloneInto(extension.manifest, context.cloneScope);
         },
