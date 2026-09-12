@@ -952,7 +952,7 @@ class ScrollContainerFrame : public nsContainerFrame,
   void ReflowCallbackCanceled() final;
 
   // nsIStatefulFrame
-  UniquePtr<PresState> SaveState() final;
+  UniquePtr<PresState> SaveState(CaptureStateFlags aFlags) final;
   NS_IMETHOD RestoreState(PresState* aState) final;
 
   // nsIScrollbarMediator

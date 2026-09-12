@@ -4303,7 +4303,8 @@ nsresult PresShell::CaptureHistoryState(nsILayoutHistoryState** aState) {
     return NS_OK;
   }
 
-  mFrameConstructor->CaptureFrameState(rootFrame, historyState);
+  mFrameConstructor->CaptureFrameState(rootFrame, historyState,
+                                       {CaptureStateFlag::ForSessionHistory});
 
   return NS_OK;
 }
