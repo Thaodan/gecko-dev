@@ -163,13 +163,13 @@ namespace mozilla {
 UniquePtr<PresState> NewPresState() {
   return MakeUnique<PresState>(
       /* contentData */ mozilla::void_t(),
-      /* scrollState */ nsPoint(0, 0),
-      /* allowScrollOriginDowngrade */ true,
+      /* scrollState */ nsPoint(),
+      /* scrollEventGeneration */ 0,
+      /* scrollEndEventGeneration */ 0,
       /* resolution */ 1.0,
+      /* allowScrollOriginDowngrade */ true,
       /* disabledSet */ false,
       /* disabled */ false,
-      /* droppedDown */ false,
-      /* scrollEventGeneration */ 0,
-      /* scrollEndEventGeneration */ 0);
+      /* droppedDown */ false);
 }
 }  // namespace mozilla
