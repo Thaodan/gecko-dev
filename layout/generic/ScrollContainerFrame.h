@@ -164,11 +164,10 @@ class ScrollContainerFrame : public nsContainerFrame,
   }
 
   nsPoint GetPositionOfChildIgnoringScrolling(const nsIFrame* aChild) final {
-    nsPoint pt = aChild->GetPosition();
-    if (aChild == GetScrolledFrame()) {
-      pt += GetScrollPosition();
-    }
-    return pt;
+    MOZ_ASSERT(aChild->GetParent() == this,
+               "aChild should be our direct child!");
+    return aChild == mScrolledFrame ? mScrollPort.TopLeft()
+                                    : aChild->GetPosition();
   }
 
   // nsIAnonymousContentCreator
