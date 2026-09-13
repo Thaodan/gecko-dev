@@ -8,7 +8,7 @@ task-defaults:
         docker-image: {in-tree: android-build}
         max-run-time: 1800
 
-macosx64-jdk-repack:
+macosx64-aarch64-jdk-repack:
     description: "Java JDK (macOS) repack toolchain build"
     treeherder:
         symbol: TMA64(jdk)
@@ -18,12 +18,12 @@ macosx64-jdk-repack:
         resources:
             - 'python/mozboot/**/*android*'
         toolchain-artifact: project/gecko/jdk/jdk-macos.tar.zst
-        toolchain-alias: macosx64-jdk
+        toolchain-alias: macosx64-aarch64-jdk
 
-macosx64-android-sdk-repack:
+macosx64-aarch64-android-sdk-repack:
     description: "Android SDK (macOS) repack toolchain build"
     treeherder:
-        symbol: TMA64(android-sdk-macos)
+        symbol: TMA64(android-sdk)
     run:
         using: toolchain-script
         script: repack-android-sdk-macos.sh
@@ -35,10 +35,10 @@ macosx64-android-sdk-repack:
         toolchain:
             - linux64-jdk-repack
 
-macosx64-android-avd-arm64-repack:
+macosx64-aarch64-android-avd-arm64-repack:
     description: "Android AVD arm64 (macOS) repack toolchain build"
     treeherder:
-        symbol: TMA64(avd-arm64-macos)
+        symbol: TMA64(avd-arm64)
     run:
         using: toolchain-script
         script: repack-android-avd-macos.sh
@@ -53,10 +53,10 @@ macosx64-android-avd-arm64-repack:
         toolchain:
             - linux64-jdk-repack
 
-macosx64-android-system-image-arm64-repack:
+macosx64-aarch64-android-system-image-arm64-repack:
     description: "Android System Images arm64 (macOS) repack toolchain build"
     treeherder:
-        symbol: TMA64(arm64-avd-img-macos)
+        symbol: TMA64(avd-img-arm64)
     run:
         using: toolchain-script
         script: repack-android-system-images-macos.sh
