@@ -8,9 +8,10 @@ In the Firefox code base, and in many other Mozilla code bases, commits are revi
 
 - Smoothe out the landing process by avoiding known sources of review and landing friction.
 - Reduce cognitive load during review, so that it's easy for the reviewer to spot bugs, and to understand the impact of a change.
-- Every "prefix" of the patch series should leave the world in a meaningful valid state.
+- Every "prefix" of the patch series should leave the world in a meaningful valid state: the tree builds, lints, and passes tests after every commit, not just at the tip.
 - Every patch should be an incremental improvement that makes sense to a reviewer in isolation.
 - Every patch should look "natural" and not depend on later work to justify its existence.
+- No forward references: an earlier patch's code and comments can't mention a concept that only a later patch introduces.
 
 ## Sources of review friction
 
