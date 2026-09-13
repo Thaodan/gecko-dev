@@ -808,11 +808,11 @@ windows-rs:
         add-prefix: windows-rs/
 
 libxml2:
-    description: libxml2 2.15.3 source code
+    description: libxml2 2.15.4 source code
     fetch:
         type: git
         repo: https://gitlab.gnome.org/GNOME/libxml2
-        revision: c94eb0210183b9d7cb43f8e7fddc6be55843ef49
+        revision: 96498992efa48d52b0e8b83058bd88dbdaf153c1
 
 mozilla-pdf.js:
     description: Mozilla pdf.js Github repo
