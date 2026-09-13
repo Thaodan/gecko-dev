@@ -641,6 +641,15 @@ class DisplayListBuilder final {
   Maybe<wr::WrSpatialId> GetSpatialIdForDefinedLayer(
       const ActiveScrolledRoot* aASR) const;
 
+  /// The accumulated external scroll offset for the space items are currently
+  /// being pushed into. WebRender normalizes item coordinates by this offset
+  /// and re-applies it at frame time against the transform, rounded to whole
+  /// device pixels - so it is the difference between the coordinates an item is
+  /// authored at and the ones its rect is snapped at. Anything that has to
+  /// predict that snapping (picking the resolution to rasterize an image at,
+  /// say) has to account for it. See bug 2070683.
+  wr::LayoutVector2D CurrentAccumulatedScrollOffset();
+
   wr::WrSpatialId DefineScrollLayer(
       const ActiveScrolledRoot* aAsr,
       const layers::ScrollableLayerGuid::ViewID& aViewId,

@@ -3307,6 +3307,11 @@ pub extern "C" fn wr_dp_push_stacking_context(
             WrReferenceFrameKind::Transform => ReferenceFrameKind::Transform {
                 is_2d_scale_translation: params.is_2d_scale_translation,
                 should_snap: params.should_snap,
+                // Gecko leaves reference-frame origins unrounded for us to round
+                // (see nsLayoutUtils::ShouldSnapToGrid). The frame's transform is
+                // computed as if the origin were rounded, so it has to be rounded
+                // before the transform is applied, not after (bug 2070683).
+                snap_origin: true,
                 paired_with_perspective: params.paired_with_perspective,
             },
             WrReferenceFrameKind::Perspective => ReferenceFrameKind::Perspective { scrolling_relative_to },
@@ -3349,7 +3354,14 @@ pub extern "C" fn wr_dp_push_stacking_context(
             PropertyBinding::Value(LayoutTransform::identity()),
             ReferenceFrameKind::Transform {
                 is_2d_scale_translation: true,
-                should_snap: false,
+                // A pure origin translation, so rounding the offset this frame
+                // composes to is exactly the reference-frame origin snapping
+                // Gecko used to do itself before it delegated this to us (see
+                // nsLayoutUtils::ShouldSnapToGrid). Leaving it unsnapped puts
+                // everything below it on a grid offset by the origin's
+                // fractional device part (bug 2070683).
+                should_snap: true,
+                snap_origin: false,
                 paired_with_perspective: false,
             },
         );
@@ -3454,6 +3466,16 @@ pub extern "C" fn wr_dp_define_rect_clip(state: &mut WrState, space: WrSpatialId
         .dl_builder
         .define_clip_rect(space.to_webrender(state.pipeline_id), clip_rect);
     WrClipId::from_webrender(clip_id)
+}
+
+#[no_mangle]
+pub extern "C" fn wr_dp_get_accumulated_scroll_offset(state: &mut WrState, space: WrSpatialId) -> LayoutVector2D {
+    debug_assert!(unsafe { is_in_main_thread() });
+
+    state
+        .frame_builder
+        .dl_builder
+        .accumulated_scroll_offset_px(space.to_webrender(state.pipeline_id))
 }
 
 #[no_mangle]
