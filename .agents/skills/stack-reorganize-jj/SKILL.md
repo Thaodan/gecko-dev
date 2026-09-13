@@ -1,5 +1,5 @@
 ---
-name: reorganize-patches-for-review
+name: stack-reorganize-jj
 description: Analyze a range of local commits, and reorganize them to minimize latency and friction in the review and landing process. To achieve this, commits can be split, reordered, squashed / grouped, or even rewritten. In the final commit series / "patch stack", the codebase should build, lint, and test cleanly after every commit, and each individual commit should stand on its own.
 when_to_use: Before a patch (or a patch series) is submitted for first review, if the user agrees to reorganization.
 allowed-tools:
@@ -82,7 +82,7 @@ At the end, run `jj fix`. This will run ./mach lint --fix on every commit in par
 `jj restore --from <rev> [paths]` pulls file content from another revision into the working copy without launching an editor.
 `jj file show -r <rev> <path>` prints the file's content at `<rev>` to stdout — useful for snapshotting "final state" into a temp file before you rewrite history, so you can later restore or diff against it without checking out the revision.
 
-For guidance on splitting commits, check the `jj-split` skill.
+For guidance on splitting commits, check the `stack-split-jj` skill.
 
 `jj op log` plus `jj op restore <op-id>` lets you undo cleanly after mutating commits; `jj --at-operation <op>` peeks at (or even mutates) prior states without disturbing current work.
 
