@@ -8,7 +8,6 @@ skip-if = [
 support-files = [
   "../head.js",
   "../file_ws_backend_wsh.py",
-  "../file_ws_early_backend_wsh.py",
   "html_websocket-test-page.html",
   "html_ws-early-connection-page.html",
   "html_ws-test-page.html",
