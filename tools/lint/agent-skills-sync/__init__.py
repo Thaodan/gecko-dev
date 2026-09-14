@@ -4,6 +4,7 @@
 
 import pathlib
 import shutil
+import subprocess
 
 from mozlint import result
 from mozversioncontrol import (
@@ -27,14 +28,39 @@ def _error(config, path, message):
     )
 
 
-def _walk(base, extensions):
-    """Every file under base carrying one of the listed extensions, or all of
-    them when the list is empty, as mozlint itself reads the key.
+def _collect_tracked(root):
+    """Return the repo-relative POSIX paths tracked under either skill
+    directory, or None if VCS cannot answer. The finder wants the repo root,
+    which is all a source checkout has to go on to read .gitignore.
     """
-    if not base.is_dir():
-        return []
-    patterns = [f"*.{e}" for e in extensions] or ["*"]
-    return [p for pattern in patterns for p in base.rglob(pattern) if p.is_file()]
+    try:
+        repo = get_repository_object(str(root))
+        finder = repo.get_tracked_files_finder(str(root))
+    except (
+        InvalidRepoPath,
+        MissingVCSTool,
+        MissingVCSInfo,
+        subprocess.CalledProcessError,
+    ):
+        return None
+    if finder is None:
+        return set()
+    return {
+        path
+        for prefix in (CLAUDE_SKILLS, AGENT_SKILLS)
+        for path, _ in finder.find(f"{prefix}/**")
+    }
+
+
+def _rels(prefix, tracked):
+    """The tracked paths under prefix, relative to it. An untracked file under
+    a skill is junk, and whether a tracked one exists is a separate question,
+    so a file --fix has just copied counts as present before VCS knows about
+    it.
+    """
+    return {
+        path[len(prefix) + 1 :] for path in tracked if path.startswith(f"{prefix}/")
+    }
 
 
 def _collect_vcs_changes(root):
@@ -62,13 +88,23 @@ def lint(paths, config, fix=None, **lintargs):
 
     vcs_changes = _collect_vcs_changes(root) if fix else None
 
-    extensions = set(config.get("extensions", []))
-    claude_rels = {
-        p.relative_to(claude_root).as_posix() for p in _walk(claude_root, extensions)
-    }
-    agent_rels = {
-        p.relative_to(agent_root).as_posix() for p in _walk(agent_root, extensions)
-    }
+    tracked = _collect_tracked(root)
+    if tracked is None:
+        return {
+            "results": [
+                _error(
+                    config,
+                    claude_root,
+                    "Cannot read which files VCS tracks, which is what tells a "
+                    "skill's own files from junk.",
+                )
+            ],
+            "fixed": 0,
+        }
+
+    rels = _rels(CLAUDE_SKILLS, tracked) | _rels(AGENT_SKILLS, tracked)
+    claude_rels = {rel for rel in rels if (claude_root / rel).is_file()}
+    agent_rels = {rel for rel in rels if (agent_root / rel).is_file()}
 
     results = []
     fixed = 0
