@@ -6822,6 +6822,12 @@ class MStoreElement : public MTernaryInstruction,
   bool needsHoleCheck_;
   bool needsPreBarrier_;
 
+  // For the post barrier we can use either MPostWriteBarrier (whole-cell
+  // buffer) or MPostWriteElementBarrier (more efficient if the object has many
+  // dense elements). The element barrier requires `index < initializedLength`
+  // so we default to the whole-cell barrier.
+  bool canUseElementPostBarrier_ = false;
+
   MStoreElement(MDefinition* elements, MDefinition* index, MDefinition* value,
                 bool needsHoleCheck, bool needsPreBarrier)
       : MTernaryInstruction(classOpcode, elements, index, value) {
@@ -6858,6 +6864,9 @@ class MStoreElement : public MTernaryInstruction,
   bool needsPreBarrier() const { return needsPreBarrier_; }
   bool needsHoleCheck() const { return needsHoleCheck_; }
   bool fallible() const { return needsHoleCheck(); }
+
+  bool canUseElementPostBarrier() const { return canUseElementPostBarrier_; }
+  void setCanUseElementPostBarrier() { canUseElementPostBarrier_ = true; }
 
   ALLOW_CLONE(MStoreElement)
 };
@@ -7629,6 +7638,7 @@ class MStoreFixedSlot
     : public MBinaryInstruction,
       public MixPolicy<SingleObjectPolicy, NoFloatPolicy<1>>::Data {
   bool needsPreBarrier_;
+  bool needsPostBarrier_ = true;
   size_t slot_;
 
   MStoreFixedSlot(MDefinition* obj, MDefinition* rval, size_t slot,
@@ -7659,6 +7669,11 @@ class MStoreFixedSlot
   bool needsPreBarrier() const { return needsPreBarrier_; }
   void setNeedsPreBarrier(bool needsPreBarrier = true) {
     needsPreBarrier_ = needsPreBarrier;
+  }
+
+  bool needsPostBarrier() const { return needsPostBarrier_; }
+  void setNeedsPostBarrier(bool needsPostBarrier) {
+    needsPostBarrier_ = needsPostBarrier;
   }
 
 #ifdef JS_JITSPEW
@@ -8098,6 +8113,7 @@ class MStoreDynamicSlot : public MBinaryInstruction,
                           public NoFloatPolicy<1>::Data {
   uint32_t slot_;
   bool needsPreBarrier_;
+  bool needsPostBarrier_ = true;
 
   MStoreDynamicSlot(MDefinition* slots, uint32_t slot, MDefinition* value,
                     bool needsPreBarrier)
@@ -8124,6 +8140,12 @@ class MStoreDynamicSlot : public MBinaryInstruction,
 
   uint32_t slot() const { return slot_; }
   bool needsPreBarrier() const { return needsPreBarrier_; }
+
+  bool needsPostBarrier() const { return needsPostBarrier_; }
+  void setNeedsPostBarrier(bool needsPostBarrier) {
+    needsPostBarrier_ = needsPostBarrier;
+  }
+
   AliasSet getAliasSet() const override {
     return AliasSet::Store(AliasSet::DynamicSlot);
   }

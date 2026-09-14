@@ -2551,9 +2551,6 @@ MNewArrayObject* ArgumentsReplacer::inlineArgsArray(MInstruction* ins,
           MStoreElement::NewNoPreBarrier(alloc(), elements, index, arg,
                                          /* needsHoleCheck = */ false);
       ins->block()->insertBefore(ins, store);
-
-      auto* barrier = MPostWriteBarrier::New(alloc(), newArray, arg);
-      ins->block()->insertBefore(ins, barrier);
     }
 
     auto* initLength =
