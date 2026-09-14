@@ -77,13 +77,6 @@ export class EnterprisePoliciesManagerContent {
       uri
     );
   }
-
-  getContainerForURI(_uri) {
-    throw Components.Exception(
-      "getContainerForURI is not available in content processes",
-      Cr.NS_ERROR_NOT_IMPLEMENTED
-    );
-  }
 }
 
 EnterprisePoliciesManagerContent.prototype.QueryInterface =
