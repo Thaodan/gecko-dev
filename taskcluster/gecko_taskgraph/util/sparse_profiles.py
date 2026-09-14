@@ -8,42 +8,51 @@ from pathlib import Path
 from gecko_taskgraph import GECKO
 
 
+def load_sparse_profile(profile_path, topsrcdir=GECKO):
+    """Return the ordered ``(includes, excludes)`` pattern lines of a Mercurial
+    sparse profile, following ``%include`` directives."""
+    includes = []
+    excludes = []
+
+    def parse(relpath):
+        full_path = Path(topsrcdir) / relpath
+        if not full_path.exists():
+            raise FileNotFoundError(
+                f"Sparse profile '{full_path.stem}' not found at {full_path}"
+            )
+        section = includes
+        for raw_line in full_path.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if line.startswith("%include "):
+                parse(line[len("%include ") :].strip())
+            elif line == "[include]":
+                section = includes
+            elif line == "[exclude]":
+                section = excludes
+            else:
+                section.append(line)
+
+    parse(profile_path)
+    return includes, excludes
+
+
 @functools.cache
 def _get_taskgraph_sparse_profile():
     """
     Parse the taskgraph sparse profile and return the paths and globs it includes.
     """
-
-    # We need this nested function to handle %include directives recursively
-    def parse(profile_path):
-        paths = set()
-        globs = set()
-
-        full_path = Path(GECKO) / profile_path
-        if not full_path.exists():
-            raise FileNotFoundError(
-                f"Sparse profile '{full_path.stem}' not found at {full_path}"
-            )
-
-        for raw_line in full_path.read_text().splitlines():
-            line = raw_line.strip()
-            if not line or line.startswith("#") or line.startswith("["):
-                continue
-            if line.startswith("%include "):
-                included_profile = line[len("%include ") :].strip()
-                included_paths, included_globs = parse(included_profile)
-                paths.update(included_paths)
-                globs.update(included_globs)
-            elif line.startswith("path:"):
-                path = line[len("path:") :].strip()
-                paths.add(Path(path))
-            elif line.startswith("glob:"):
-                glob = line[len("glob:") :].strip()
-                globs.add(glob)
-
-        return paths, globs
-
-    return parse("build/sparse-profiles/taskgraph")
+    includes, _ = load_sparse_profile("build/sparse-profiles/taskgraph")
+    paths = {
+        Path(line[len("path:") :].strip())
+        for line in includes
+        if line.startswith("path:")
+    }
+    globs = {
+        line[len("glob:") :].strip() for line in includes if line.startswith("glob:")
+    }
+    return paths, globs
 
 
 @functools.cache
