@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
  * For more information on this interface, please see
- * https://w3c.github.io/webappsec-feature-policy/#idl-index
+ * https://w3c.github.io/webappsec-permissions-policy/#idl-index
  */
 
 [LegacyNoInterfaceObject,

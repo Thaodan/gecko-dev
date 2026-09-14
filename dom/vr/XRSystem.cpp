@@ -422,7 +422,7 @@ void XRSystem::ProcessSessionRequestsWaitingForRuntimeDetection() {
       continue;
     }
     if (featurePolicyBlocked) {
-      // Don't show a permission prompt if blocked by feature policy.
+      // Don't show a permission prompt if blocked by permissions policy.
       if (CancelHardwareRequest(request)) {
         request->mPromise->MaybeRejectWithSecurityError(
             "The xr-spatial-tracking feature policy is required.");

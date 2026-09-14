@@ -1766,10 +1766,11 @@ nsObjectLoadingContent::UpgradeLoadToDocument(
   }
 
   // At this point we know that we have a browsing context, so it's time to make
-  // sure that that browsing context gets the correct container feature policy.
-  // This is needed for `DocumentLoadListener::MaybeTriggerProcessSwitch` to be
-  // able to start loading the document with the correct container feature
-  // policy in the load info.
+  // sure that that browsing context gets the correct container permissions
+  // policy. This is needed for
+  // `DocumentLoadListener::MaybeTriggerProcessSwitch` to be able to start
+  // loading the document with the correct container permissions policy in the
+  // load info.
   RefreshFeaturePolicy();
 
   bc.forget(aBrowsingContext);

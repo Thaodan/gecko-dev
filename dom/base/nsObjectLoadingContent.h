@@ -213,10 +213,10 @@ class nsObjectLoadingContent : public nsIStreamListener,
   bool BlockEmbedOrObjectContentLoading();
 
   /**
-   * Updates and stores the container's feature policy in its canonical browsing
-   * context. This gets called whenever the feature policy has changed, which
-   * can happen when this element is upgraded to a container or when the URI of
-   * the element has changed.
+   * Updates and stores the container's permissions policy in its canonical
+   * browsing context. This gets called whenever the permissions policy has
+   * changed, which can happen when this element is upgraded to a container or
+   * when the URI of the element has changed.
    */
   void RefreshFeaturePolicy();
 
@@ -390,7 +390,7 @@ class nsObjectLoadingContent : public nsIStreamListener,
   void MaybeFireErrorEvent();
 
   /**
-   * Store feature policy in container browsing context so that it can be
+   * Store permissions policy in container browsing context so that it can be
    * accessed cross process.
    */
   void MaybeStoreCrossOriginFeaturePolicy();
@@ -475,8 +475,8 @@ class nsObjectLoadingContent : public nsIStreamListener,
   // This gets created on the first call of `RefreshFeaturePolicy`, and will be
   // kept after that. Navigations of this element will use this if they're
   // targetting documents, which is how iframe element works. If it's a
-  // non-document the feature policy isn't used, but it doesn't hurt to keep it
-  // around, and a subsequent document load will continue using it after
+  // non-document the permissions policy isn't used, but it doesn't hurt to keep
+  // it around, and a subsequent document load will continue using it after
   // refreshing it.
   RefPtr<mozilla::dom::FeaturePolicy> mFeaturePolicy;
 };

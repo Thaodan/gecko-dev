@@ -3761,7 +3761,7 @@ nsresult Document::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
 
   MOZ_TRY(InitDocPolicy(aChannel));
 
-  // Initialize FeaturePolicy
+  // Initialize PermissionsPolicy
   MOZ_TRY(InitFeaturePolicy(aChannel));
 
   MOZ_TRY(InitTLSCertificateBinding(aChannel));

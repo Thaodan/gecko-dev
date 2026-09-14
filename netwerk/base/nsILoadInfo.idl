@@ -1470,8 +1470,8 @@ interface nsILoadInfo : nsISupports
   [notxpcom,nostdcall] PolicyContainerRef GetPolicyContainerToInherit();
 
   /**
-    * The possibly cross-origin container feature policy required to
-    * initialize the feature policy of a document load.
+    * The possibly cross-origin container permissions policy required to
+    * initialize the permissions policy of a document load.
     */
   [noscript, nostdcall, notxpcom]
   MaybeFeaturePolicyInfo GetContainerFeaturePolicyInfo();

@@ -5,7 +5,7 @@
  * The origin of this IDL file is
  * http://www.whatwg.org/specs/web-apps/current-work/#the-iframe-element
  * http://www.whatwg.org/specs/web-apps/current-work/#other-elements,-attributes-and-apis
- * https://wicg.github.io/feature-policy/#policy
+ * https://w3c.github.io/webappsec-permissions-policy/
  *
  * © Copyright 2004-2011 Apple Computer, Inc., Mozilla Foundation, and
  * Opera Software ASA. You are granted a license to use, reproduce
@@ -64,7 +64,7 @@ partial interface HTMLIFrameElement {
 
 HTMLIFrameElement includes MozFrameLoaderOwner;
 
-// https://w3c.github.io/webappsec-feature-policy/#idl-index
+// https://w3c.github.io/webappsec-permissions-policy/#idl-index
 partial interface HTMLIFrameElement {
   [SameObject, Pref="dom.security.featurePolicy.webidl.enabled"]
   readonly attribute FeaturePolicy featurePolicy;

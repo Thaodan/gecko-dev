@@ -149,13 +149,13 @@ LNAPermissionRequest::NotifyShown() {
 nsresult LNAPermissionRequest::RequestPermission() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  // Enforce Feature Policy for Local Network Access (Bug 1978550)
+  // Enforce Permissions Policy for Local Network Access (Bug 1978550)
   if (!mLoadInfo) {
     NS_WARNING("LNA permission request without load info");
     return Cancel();
   }
 
-  // Retrieve the canonical browsing context for feature policy checks
+  // Retrieve the canonical browsing context for permissions policy checks
   RefPtr<dom::CanonicalBrowsingContext> bc;
   if (mBrowsingContext) {
     bc = mBrowsingContext->Canonical();
@@ -170,14 +170,14 @@ nsresult LNAPermissionRequest::RequestPermission() {
     }
   } else {
     Maybe<dom::FeaturePolicyInfo> fpInfo = bc->GetContainerFeaturePolicy();
-    // Feature Policy is populated in the canonical browsing context via
+    // Permissions Policy is populated in the canonical browsing context via
     // HTMLIFrameElement::MaybeStoreCrossOriginFeaturePolicy() (for <iframe>)
     // nsObjectLoadingContent::MaybeStoreCrossOriginFeaturePolicy() (for
     // <object>/<embed>)
-    // Hence, it's safe to ignore feature policy when it's missing as that
+    // Hence, it's safe to ignore permissions policy when it's missing as that
     // would only mean the request is from a top-level document, which should
     // be allowed to request local network access without being blocked by
-    // feature policy.
+    // permissions policy.
     if (fpInfo.isSome()) {
       nsAutoString featureName;
       if (mType.Equals(LOOPBACK_NETWORK_PERMISSION_KEY)) {

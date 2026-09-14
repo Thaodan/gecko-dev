@@ -69,7 +69,7 @@ static FeatureMap sExperimentalFeatures[] = {
     {"payment", FeaturePolicyUtils::FeaturePolicyValue::eAll},
     {"document-domain", FeaturePolicyUtils::FeaturePolicyValue::eAll},
     {"vr", FeaturePolicyUtils::FeaturePolicyValue::eAll},
-    // https://immersive-web.github.io/webxr/#feature-policy
+    // https://immersive-web.github.io/webxr/#permissions-policy
     {"xr-spatial-tracking", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
 };
 

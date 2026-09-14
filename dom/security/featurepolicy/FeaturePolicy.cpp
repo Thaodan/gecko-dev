@@ -63,7 +63,7 @@ void FeaturePolicy::InheritPolicy(FeaturePolicy* aParentPolicy) {
     }
 
     // If there was not a declared feature, we allow the feature if the parent
-    // FeaturePolicy allows the current origin.
+    // PermissionsPolicy allows the current origin.
     if (!src->AllowsFeatureInternal(featureName, dest->mDefaultOrigin)) {
       dest->SetInheritedDeniedFeature(featureName);
     }
@@ -72,8 +72,8 @@ void FeaturePolicy::InheritPolicy(FeaturePolicy* aParentPolicy) {
 
 void FeaturePolicy::InheritPolicy(
     const FeaturePolicyInfo& aContainerFeaturePolicyInfo) {
-  // We create a temporary FeaturePolicy from the FeaturePolicyInfo to be able
-  // to re-use the inheriting functionality from FeaturePolicy.
+  // Create a temporary PermissionsPolicy from the PermissionsPolicyInfo to be
+  // able to re-use the inheriting functionality.
   RefPtr<dom::FeaturePolicy> featurePolicy = new dom::FeaturePolicy(nullptr);
   featurePolicy->SetDefaultOrigin(aContainerFeaturePolicyInfo.mDefaultOrigin);
   featurePolicy->SetInheritedDeniedFeatureNames(

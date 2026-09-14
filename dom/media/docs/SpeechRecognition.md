@@ -194,7 +194,7 @@ sequenceDiagram
   end
 
   JS->>SR: SpeechRecognition.install({langs: ["en-US"]})
-  Note over SR: Feature Policy, AI Controls,<br/>transient activation checks
+  Note over SR: Permissions Policy, AI Controls,<br/>transient activation checks
   SR->>BE: ::Install(langs, browsingContext)
   BE->>SRC: SendInstallModels(langs, browsingContextId)
   SRC->>SRP: PSpeechRecognition::InstallModels
@@ -536,7 +536,7 @@ sequenceDiagram
   end
 
   JS->>SR: SpeechRecognition.install({langs: ["en-US"]})
-  Note over SR: Feature Policy, AI Controls,<br/>transient activation checks
+  Note over SR: Permissions Policy, AI Controls,<br/>transient activation checks
   SR->>BE: ::Install(langs, browsingContext)
   BE->>SRC: SendInstallModels(langs, browsingContextId)
   SRC->>SRP: PSpeechRecognition::InstallModels

@@ -36,17 +36,17 @@ class FeaturePolicyUtils final {
   };
 
   // This method returns true if aFeatureName is allowed for aDocument.
-  // Use this method everywhere you need to check feature-policy directives.
+  // Use this method everywhere you need to check permissions-policy directives.
   static bool IsFeatureAllowed(Document* aDocument,
                                const nsAString& aFeatureName);
 
-  // Returns true if aFeatureName is a known feature policy name.
+  // Returns true if aFeatureName is a known permissions policy name.
   static bool IsSupportedFeature(const nsAString& aFeatureName);
 
-  // Returns true if aFeatureName is a experimental feature policy name.
+  // Returns true if aFeatureName is a experimental permissions policy name.
   static bool IsExperimentalFeature(const nsAString& aFeatureName);
 
-  // Runs aCallback for each known feature policy, with the feature name as
+  // Runs aCallback for each known permissions policy, with the feature name as
   // argument.
   static void ForEachFeature(const std::function<void(const char*)>& aCallback);
 
@@ -56,7 +56,7 @@ class FeaturePolicyUtils final {
 
   // This method returns true if aFeatureName is in unsafe allowed "*" case.
   // We are in "unsafe" case when there is 'allow "*"' presents for an origin
-  // that's not presented in the ancestor feature policy chain, via src, via
+  // that's not presented in the ancestor permissions policy chain, via src, via
   // explicitly listed in allow, and not being the top-level origin.
   static bool IsFeatureUnsafeAllowedAll(Document* aDocument,
                                         const nsAString& aFeatureName);

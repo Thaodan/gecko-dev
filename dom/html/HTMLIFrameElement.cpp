@@ -55,7 +55,7 @@ const DOMTokenListSupportedToken HTMLIFrameElement::sSupportedSandboxTokens[] =
 HTMLIFrameElement::HTMLIFrameElement(
     already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo, FromParser aFromParser)
     : nsGenericHTMLFrameElement(std::move(aNodeInfo), aFromParser) {
-  // We always need a featurePolicy, even if not exposed.
+  // We always need a permissionsPolicy, even if not exposed.
   mFeaturePolicy = new mozilla::dom::FeaturePolicy(this);
   nsCOMPtr<nsIPrincipal> origin = GetFeaturePolicyDefaultOrigin();
   MOZ_ASSERT(origin);
@@ -67,7 +67,7 @@ HTMLIFrameElement::~HTMLIFrameElement() = default;
 NS_IMPL_ELEMENT_CLONE(HTMLIFrameElement)
 
 void HTMLIFrameElement::BindToBrowsingContext(BrowsingContext*) {
-  RefreshFeaturePolicy(true /* parse the feature policy attribute */);
+  RefreshFeaturePolicy(true /* parse the permissions policy attribute */);
   RefreshEmbedderReferrerPolicy(
       ReferrerPolicyFromAttr(GetParsedAttr(nsGkAtoms::referrerpolicy)));
 }
@@ -191,9 +191,9 @@ void HTMLIFrameElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
 
     if (aName == nsGkAtoms::allow || aName == nsGkAtoms::src ||
         aName == nsGkAtoms::srcdoc || aName == nsGkAtoms::sandbox) {
-      RefreshFeaturePolicy(true /* parse the feature policy attribute */);
+      RefreshFeaturePolicy(true /* parse the permissions policy attribute */);
     } else if (aName == nsGkAtoms::allowfullscreen) {
-      RefreshFeaturePolicy(false /* parse the feature policy attribute */);
+      RefreshFeaturePolicy(false /* parse the permissions policy attribute */);
     }
   }
 
@@ -304,7 +304,7 @@ void HTMLIFrameElement::RefreshFeaturePolicy(bool aParseAllowAttribute) {
     GetAttr(nsGkAtoms::allow, allow);
 
     if (!allow.IsEmpty()) {
-      // Set or reset the FeaturePolicy directives.
+      // Set or reset the PermissionsPolicy directives.
       mFeaturePolicy->SetDeclaredAttributePolicy(OwnerDoc(), allow,
                                                  NodePrincipal(), origin);
     }

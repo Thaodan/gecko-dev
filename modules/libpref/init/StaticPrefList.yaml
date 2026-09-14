@@ -4946,7 +4946,7 @@
   value: false
   mirror: always
 
-# This pref enables the featurePolicy header support.
+# This pref enables Permissions-Policy header support.
 - name: dom.security.featurePolicy.header.enabled
   type: bool
   value: false
