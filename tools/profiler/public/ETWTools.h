@@ -423,6 +423,10 @@ static inline void EmitETWMarker(const mozilla::ProfilerString8View& aName,
   // Do some static checks in this function. We don't actually emit any ETW
   // markers because this code is only compiled on non-Windows. The idea is that
   // we want to catch mistakes on all platforms.
+  if constexpr (MarkerSupportsETW<MarkerType>::value) {
+    // Only the Windows code above reads ETWStoreName, keep it referenced here.
+    (void)MarkerType::ETWStoreName;
+  }
   if constexpr (mozilla::MarkerHasPayloadFields<MarkerType>::value) {
     if constexpr (mozilla::MarkerHasTranslator<MarkerType>::value) {
       // Call TranslateMarkerInputToSchema, which we expect to be a no-op on
