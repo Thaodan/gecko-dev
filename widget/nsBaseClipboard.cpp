@@ -9,6 +9,7 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Services.h"
+#include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_clipboard.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_widget.h"
@@ -20,6 +21,7 @@
 #include "mozilla/dom/PromiseNativeHandler.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WindowGlobalParent.h"
+#include "mozilla/intl/Localization.h"
 #include "nsArrayUtils.h"
 #include "nsContentUtils.h"
 #include "nsError.h"
@@ -253,11 +255,12 @@ nsBaseClipboard::AsyncSetClipboardData::SetData(nsITransferable* aTransferable,
   }
   mClipboard->mPendingWriteRequests[mClipboardType] = nullptr;
 
-  // Notify from the completion rather than from the return value, so that a
-  // later patch can defer the write without the callback running early.
+  // The write may be held back for a content analysis copy check, so notify
+  // from the completion rather than from the return value -- otherwise the
+  // page's promise would resolve before the verdict was in.
   return mClipboard->SetDataImpl(
       aTransferable, aOwner, mClipboardType, mWindowContext,
-      [self = RefPtr{this}](nsresult aRv) {
+      /* aCheckContentAnalysis */ true, [self = RefPtr{this}](nsresult aRv) {
         // Abort() may have already notified and invalidated us.
         if (self->IsValid()) {
           self->MaybeNotifyCallback(aRv);
@@ -352,6 +355,10 @@ nsBaseClipboard::~nsBaseClipboard() {
       request = nullptr;
     }
   }
+  if (mPendingCopy) {
+    mPendingCopy->Complete(NS_ERROR_ABORT);
+    mPendingCopy = nullptr;
+  }
 }
 
 NS_IMPL_ISUPPORTS(nsBaseClipboard, nsIClipboard)
@@ -364,13 +371,137 @@ NS_IMETHODIMP nsBaseClipboard::SetData(
     nsITransferable* aTransferable, nsIClipboardOwner* aOwner,
     ClipboardType aWhichClipboard,
     mozilla::dom::WindowContext* aWindowContext) {
-  return SetDataImpl(aTransferable, aOwner, aWhichClipboard, aWindowContext);
+  return SetDataImpl(aTransferable, aOwner, aWhichClipboard, aWindowContext,
+                     /* aCheckContentAnalysis */ true);
+}
+
+void nsBaseClipboard::SetDataWithCompletion(
+    nsITransferable* aTransferable, nsIClipboardOwner* aOwner,
+    ClipboardType aWhichClipboard, mozilla::dom::WindowContext* aWindowContext,
+    SetDataCompletion&& aCompletion) {
+  MOZ_ASSERT(aCompletion);
+  // SetDataImpl guarantees aCompletion runs exactly once, so the return value
+  // is redundant.
+  SetDataImpl(aTransferable, aOwner, aWhichClipboard, aWindowContext,
+              /* aCheckContentAnalysis */ true, std::move(aCompletion));
+}
+
+bool nsBaseClipboard::NeedsCopyContentAnalysis(
+    nsITransferable* aTransferable, ClipboardType aWhichClipboard,
+    mozilla::dom::WindowContext* aWindowContext) {
+  // Only the global clipboard is analyzed: on Linux the primary selection is
+  // written on every text selection, which would flood the agent.
+  if (aWhichClipboard != kGlobalClipboard || !aTransferable) {
+    return false;
+  }
+
+  // MightBeActive() and the pref are fast paths for the common case; the
+  // content analysis machinery checks both again.
+  if (!nsIContentAnalysis::MightBeActive() ||
+      !mozilla::StaticPrefs::
+          browser_contentanalysis_interception_point_clipboard_copy_enabled()) {
+    return false;
+  }
+
+  // Content analysis only cares about copies an outside webpage can see. A
+  // null window context is a parent-process copy; chrome and parent-rendered
+  // windows (the URL bar, about: pages) are exempt. ContentAnalysis's
+  // GetFinalRequestList exempts these too, but recognizing them here keeps
+  // such copies fully synchronous instead of deferring a write that was never
+  // going to be analyzed.
+  return aWindowContext && !aWindowContext->IsInProcess() &&
+         aWindowContext->GetBrowsingContext() &&
+         !aWindowContext->GetBrowsingContext()->IsChrome();
+}
+
+void nsBaseClipboard::CancelPendingCopy(ClipboardType aClipboardType,
+                                        nsresult aReason) {
+  if (aClipboardType == kGlobalClipboard) {
+    if (RefPtr<PendingCopy> pendingCopy = std::move(mPendingCopy)) {
+      MOZ_CLIPBOARD_LOG("%s: superseding deferred copy", __FUNCTION__);
+      pendingCopy->Complete(aReason);
+    }
+  }
+}
+
+void nsBaseClipboard::WriteCopyBlockedPlaceholder(
+    ClipboardType aWhichClipboard) {
+  // We replace the clipboard contents rather than leaving them alone: if we
+  // left them, the user could copy blocked content and then the next paste
+  // would paste whatever happened to be on the clipboard beforehand.
+  nsAutoCString message;
+  {
+    mozilla::IgnoredErrorResult rv;
+    nsTArray<nsCString> resIds = {
+        "toolkit/contentanalysis/contentanalysis.ftl"_ns};
+    RefPtr<mozilla::intl::Localization> l10n =
+        mozilla::intl::Localization::Create(resIds, /* aSync */ true);
+    l10n->FormatValueSync(
+        "contentanalysis-clipboard-copy-blocked-replacement"_ns, {}, message,
+        rv);
+  }
+  if (message.IsEmpty()) {
+    MOZ_CLIPBOARD_LOG("%s: could not load the placeholder string.",
+                      __FUNCTION__);
+    return;
+  }
+
+  nsCOMPtr<nsITransferable> trans =
+      do_CreateInstance("@mozilla.org/widget/transferable;1");
+  nsCOMPtr<nsISupportsString> data =
+      do_CreateInstance("@mozilla.org/supports-string;1");
+  if (!trans || !data) {
+    return;
+  }
+  trans->Init(nullptr);
+  if (NS_FAILED(trans->AddDataFlavor(kTextMime)) ||
+      NS_FAILED(data->SetData(NS_ConvertUTF8toUTF16(message))) ||
+      NS_FAILED(trans->SetTransferData(kTextMime, data))) {
+    return;
+  }
+
+  // No window context: this text is ours, not the page's, so it must not be
+  // analyzed and must not be attributed to the copying window.
+  SetDataImpl(trans, nullptr /* aOwner */, aWhichClipboard,
+              nullptr /* aWindowContext */,
+              /* aCheckContentAnalysis */ false);
+}
+
+void nsBaseClipboard::OnCopyContentAnalysisResult(ClipboardType aWhichClipboard,
+                                                  PendingCopy* aPendingCopy,
+                                                  bool aAllowed) {
+  MOZ_ASSERT(NS_IsMainThread());
+  // We only analyze copies to the global clipboard
+  MOZ_ASSERT(aWhichClipboard == kGlobalClipboard);
+
+  if (mPendingCopy != aPendingCopy) {
+    // A write issued after this one already superseded it.  The newer write
+    // wins regardless of which verdict came back first.
+    MOZ_CLIPBOARD_LOG("%s: ignoring stale copy verdict, clipboard=%d",
+                      __FUNCTION__, aWhichClipboard);
+    aPendingCopy->Complete(NS_ERROR_ABORT);
+    return;
+  }
+
+  RefPtr<PendingCopy> pendingCopy = std::move(mPendingCopy);
+
+  if (!aAllowed) {
+    MOZ_CLIPBOARD_LOG("%s: copy blocked by content analysis, clipboard=%d",
+                      __FUNCTION__, aWhichClipboard);
+    WriteCopyBlockedPlaceholder(aWhichClipboard);
+    pendingCopy->Complete(NS_ERROR_CONTENT_BLOCKED);
+    return;
+  }
+
+  SetDataImpl(pendingCopy->mTransferable, pendingCopy->mOwner, aWhichClipboard,
+              pendingCopy->mWindowContext, /* aCheckContentAnalysis */ false,
+              [pendingCopy](nsresult aRv) { pendingCopy->Complete(aRv); });
 }
 
 nsresult nsBaseClipboard::SetDataImpl(
     nsITransferable* aTransferable, nsIClipboardOwner* aOwner,
     ClipboardType aWhichClipboard, mozilla::dom::WindowContext* aWindowContext,
-    SetDataCompletion&& aCompletion) {
+    bool aCheckContentAnalysis, SetDataCompletion&& aCompletion) {
   NS_ASSERTION(aTransferable, "clipboard given a null transferable");
 
   MOZ_CLIPBOARD_LOG("%s: clipboard=%d", __FUNCTION__, aWhichClipboard);
@@ -406,6 +537,40 @@ nsresult nsBaseClipboard::SetDataImpl(
       aOwner == clipboardCache->GetClipboardOwner()) {
     MOZ_CLIPBOARD_LOG("%s: skipping update.", __FUNCTION__);
     return finish(NS_OK);
+  }
+
+  // Actually changing the clipboard supersedes any copy still awaiting a
+  // verdict for it.
+  CancelPendingCopy(aWhichClipboard, NS_ERROR_ABORT);
+
+  // Ask Content Analysis whether web content is permitted to copy this data.
+  // The check is asynchronous on this (the parent's main) thread, as the agent
+  // may be slow, so the clipboard is left as it was until the verdict arrives.
+  // Copies from content processes are nonetheless synchronous from the page's
+  // point of view: the content process blocks in a sync IPC call that
+  // ClipboardContentAnalysisParent only answers once aCompletion has run.
+  if (aCheckContentAnalysis &&
+      NeedsCopyContentAnalysis(aTransferable, aWhichClipboard,
+                               aWindowContext)) {
+    CancelPendingCopy(aWhichClipboard, NS_ERROR_ABORT);
+    auto pendingCopy = mozilla::MakeRefPtr<PendingCopy>(
+        aTransferable, aOwner, aWindowContext, std::move(aCompletion));
+    // We only analyze copies to the global clipboard
+    MOZ_ASSERT(aWhichClipboard == kGlobalClipboard);
+    mPendingCopy = pendingCopy;
+
+    auto callback =
+        mozilla::MakeRefPtr<mozilla::contentanalysis::ContentAnalysisCallback>(
+            [self = RefPtr{this}, aWhichClipboard,
+             pendingCopy](nsIContentAnalysisResult* aResult) {
+              self->OnCopyContentAnalysisResult(
+                  aWhichClipboard, pendingCopy,
+                  aResult->GetShouldAllowContent());
+            });
+    mozilla::contentanalysis::ContentAnalysis::
+        CheckClipboardCopyContentAnalysis(aWindowContext->Canonical(),
+                                          aTransferable, callback);
+    return NS_OK;
   }
 
   clipboardCache->Clear();
@@ -852,6 +1017,10 @@ NS_IMETHODIMP nsBaseClipboard::EmptyClipboard(ClipboardType aWhichClipboard) {
                       aWhichClipboard);
     return NS_ERROR_FAILURE;
   }
+
+  // Emptying the clipboard supersedes any copy still awaiting a verdict, so
+  // that a late "allow" doesn't repopulate what we just cleared.
+  CancelPendingCopy(aWhichClipboard, NS_ERROR_ABORT);
 
   EmptyNativeClipboardData(aWhichClipboard);
 

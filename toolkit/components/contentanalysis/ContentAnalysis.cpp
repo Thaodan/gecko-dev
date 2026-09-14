@@ -2748,11 +2748,22 @@ ContentAnalysis::PrintToPDFToDetermineIfPrintAllowed(
   return promise;
 }
 
+// For copies, the content analysis clipboard paste response cache is not
+// consulted or updated. It is explicitly for pastes, not copies, and agents
+// may approve a copy that they wouldn't approve as a paste. Caching copy
+// requests is assumed to be not useful.
 static nsresult CheckClipboard(
-    ContentAnalysisCallback* aCallback, Maybe<int32_t> aClipboardSequenceNumber,
-    bool aStoreInCache, nsITransferable* aTransferable,
+    ContentAnalysisCallback* aCallback,
+    nsIContentAnalysisRequest::Reason aReason,
+    Maybe<int32_t> aClipboardSequenceNumber, bool aStoreInCache,
+    nsITransferable* aTransferable,
     mozilla::dom::WindowGlobalParent* aWindowGlobal,
     mozilla::dom::WindowGlobalParent* aSourceWindowGlobal) {
+  MOZ_ASSERT(aReason == nsIContentAnalysisRequest::Reason::eClipboardCopy ||
+             aReason == nsIContentAnalysisRequest::Reason::eClipboardPaste);
+  const bool useCache =
+      aReason != nsIContentAnalysisRequest::Reason::eClipboardCopy;
+
   NoContentAnalysisResult caResult =
       NoContentAnalysisResult::DENY_DUE_TO_OTHER_ERROR;
   auto respondOnFailure = MakeScopeExit([&]() {
@@ -2774,14 +2785,13 @@ static nsresult CheckClipboard(
                     : nullptr;
 
   auto request = MakeRefPtr<ContentAnalysisRequest>(
-      nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
-      nsIContentAnalysisRequest::Reason::eClipboardPaste, aTransferable,
-      aWindowGlobal, aSourceWindowGlobal);
+      TextAnalysisTypeForReason(aReason), aReason, aTransferable, aWindowGlobal,
+      aSourceWindowGlobal);
 
   // Don't use the cache if the request can store to the cache -- that
   // is an indication that this is a separate operation from the previous
   // one.
-  if (!aStoreInCache && aClipboardSequenceNumber.isSome()) {
+  if (useCache && !aStoreInCache && aClipboardSequenceNumber.isSome()) {
     bool isValid = false;
     nsIContentAnalysisResponse::Action action =
         nsIContentAnalysisResponse::Action::eUnspecified;
@@ -2800,7 +2810,7 @@ static nsresult CheckClipboard(
   }
 
   RefPtr wrapperCallback = aCallback;
-  if (aStoreInCache && aClipboardSequenceNumber.isSome()) {
+  if (useCache && aStoreInCache && aClipboardSequenceNumber.isSome()) {
     // Add the result to the result cache before we call the caller's callback.
     wrapperCallback = MakeRefPtr<ContentAnalysisCallback>(
         [aClipboardSequenceNumber, uri,
@@ -2829,9 +2839,11 @@ static nsresult CheckClipboard(
       requests, true /* autoAcknowledge */, wrapperCallback);
 }
 
-// This method must stay in sync with ContentAnalysis::kKnownClipboardTypes. All
-// of those types must be analyzed here, and if we start analyzing more types
-// here we should add it to ContentAnalysis::kKnownClipboardTypes.
+// This method and CheckClipboardCopyContentAnalysis must stay in sync with
+// ContentAnalysis::kKnownClipboardTypes - both go through
+// AddRequestsFromTransferableIfAny, which analyzes those types. All of
+// those types must be analyzed there, and if we start analyzing more types
+// there we should add it to ContentAnalysis::kKnownClipboardTypes.
 void ContentAnalysis::CheckClipboardContentAnalysis(
     nsBaseClipboard* aClipboard, mozilla::dom::WindowGlobalParent* aWindow,
     nsITransferable* aTransferable, nsIClipboard::ClipboardType aClipboardType,
@@ -2875,8 +2887,49 @@ void ContentAnalysis::CheckClipboardContentAnalysis(
           .map<decltype(Some<int>)>(Some)
           .unwrapOr(Nothing());
 
-  CheckClipboard(aResolver, maybeSequenceNumber, aForFullClipboard,
-                 aTransferable, aWindow, sourceWindowGlobal);
+  CheckClipboard(aResolver, nsIContentAnalysisRequest::Reason::eClipboardPaste,
+                 maybeSequenceNumber, aForFullClipboard, aTransferable, aWindow,
+                 sourceWindowGlobal);
+
+  issueNoAnalysisResponse.release();
+}
+
+void ContentAnalysis::CheckClipboardCopyContentAnalysis(
+    mozilla::dom::WindowGlobalParent* aWindow, nsITransferable* aTransferable,
+    ContentAnalysisCallback* aResolver) {
+  // Make sure we call aResolver on error.  Use the current value of
+  // noCAResult.
+  NoContentAnalysisResult noCAResult =
+      NoContentAnalysisResult::DENY_DUE_TO_OTHER_ERROR;
+  auto issueNoAnalysisResponse = MakeScopeExit([&]() {
+    LOGD("CheckClipboardCopyContentAnalysis skipping CA.  Response = %d",
+         (int)noCAResult);
+    auto result = MakeRefPtr<ContentAnalysisNoResult>(noCAResult);
+    aResolver->ContentResult(result);
+  });
+
+  nsCOMPtr<nsIContentAnalysis> contentAnalysis =
+      mozilla::components::nsIContentAnalysis::Service();
+  if (!contentAnalysis || !aWindow) {
+    noCAResult = NoContentAnalysisResult::DENY_DUE_TO_OTHER_ERROR;
+    return;
+  }
+
+  bool contentAnalysisIsActive;
+  nsresult rv = contentAnalysis->GetIsActive(&contentAnalysisIsActive);
+  if (MOZ_LIKELY(NS_FAILED(rv) || !contentAnalysisIsActive)) {
+    noCAResult =
+        NoContentAnalysisResult::ALLOW_DUE_TO_CONTENT_ANALYSIS_NOT_ACTIVE;
+    return;
+  }
+
+  // Unlike paste, we don't need to look in the clipboard cache to find the
+  // source of the data: the window doing the copy is both the source of the
+  // data and the context whose URL is reported to the agent.
+  CheckClipboard(aResolver, nsIContentAnalysisRequest::Reason::eClipboardCopy,
+                 Nothing() /* aClipboardSequenceNumber */,
+                 false /* aStoreInCache */, aTransferable, aWindow,
+                 aWindow /* aSourceWindowGlobal */);
 
   issueNoAnalysisResponse.release();
 }
