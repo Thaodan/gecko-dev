@@ -77,7 +77,7 @@ const CONFIDENCE_RANK = new Map([
 
 // The lowest confidence a model's value must reach to be filled. Reported as
 // the threshold of the generation request, so both have to move together.
-const FILL_CONFIDENCE_THRESHOLD = "high";
+const FILL_CONFIDENCE_THRESHOLD = "medium";
 
 /**
  * @typedef {{
