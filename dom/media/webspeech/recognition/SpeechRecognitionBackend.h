@@ -128,6 +128,7 @@ class SpeechRecognitionBackend {
       MOZ_REQUIRES(sMainThreadCapability);
   // Detach from the current audio track.
   void DetachFromTrack() MOZ_REQUIRES(sMainThreadCapability);
+  void SetEnabled(bool aEnabled) MOZ_REQUIRES(sMainThreadCapability);
 
   // == Graph thread
   // Called by SpeechTrackListener on the graph's real-time thread
@@ -279,6 +280,8 @@ class SpeechRecognitionBackend {
   // Graph-thread downmixing scratch buffer, freed with the backend after
   // DetachFromTrack() has stopped the callbacks.
   nsTArray<AudioDataValue> mMonoBuffer;
+  // Graph thread only
+  bool mEnabled = false;
   const uint32_t mGraphRate;
   // Graph-thread only, number of frames that couldn't be pushed into
   // mRingBuffer and has been dropped.

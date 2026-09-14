@@ -6,6 +6,7 @@
 #define DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHRECOGNITION_H_
 
 #include "DOMMediaStream.h"
+#include "PrincipalChangeObserver.h"
 #include "SpeechGrammarList.h"
 #include "SpeechRecognitionBackend.h"
 #include "SpeechRecognitionResultList.h"
@@ -67,8 +68,10 @@ class SpeechRecognitionInstallTransaction final {
 
 // This implements the SpeechRecognition object in the content process, from the
 // Web Speech API: https://webaudio.github.io/web-speech-api/#speechrecognition
-class SpeechRecognition final : public DOMEventTargetHelper,
-                                public SupportsWeakPtr {
+class SpeechRecognition final
+    : public DOMEventTargetHelper,
+      public SupportsWeakPtr,
+      public PrincipalChangeObserver<MediaStreamTrack> {
  public:
   MOZ_DECLARE_REFCOUNTED_TYPENAME(SpeechRecognition)
 
@@ -158,6 +161,8 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   IMPL_EVENT_HANDLER(end)
 
   void NotifyTrackAdded(const RefPtr<MediaStreamTrack>& aTrack);
+
+  void PrincipalChanged(MediaStreamTrack* aMediaStreamTrack) override;
 
   class TrackListener final : public DOMMediaStream::TrackListener {
    public:

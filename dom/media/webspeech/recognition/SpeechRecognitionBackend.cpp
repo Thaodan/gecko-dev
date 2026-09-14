@@ -408,6 +408,17 @@ void SpeechRecognitionBackend::AttachToTrack(AudioStreamTrack* aTrack) {
   LOG("SpeechRecognitionBackend::AttachToTrack");
 }
 
+void SpeechRecognitionBackend::SetEnabled(bool aEnabled) {
+  AssertIsOnMainThread();
+
+  if (!mTrack) {
+    return;
+  }
+
+  mTrack->GetTrack()->QueueControlMessageWithNoShutdown(
+      [self = RefPtr{this}, aEnabled] { self->mEnabled = aEnabled; });
+}
+
 void SpeechRecognitionBackend::DetachFromTrack() {
   AssertIsOnMainThread();
 
@@ -444,7 +455,7 @@ void SpeechRecognitionBackend::DataCallback(MediaTrackGraph* aGraph,
   // absence of audio, so it is fed as zeros rather than dropped. Dropping it
   // would splice together the audio on either side of a silent gap, hiding the
   // silence that ends an utterance from the recognizer.
-  const bool isSilence = aChunk.IsNull();
+  const bool isSilence = aChunk.IsNull() || !mEnabled;
 
   // Downmix to mono into the fixed-size scratch buffer and enqueue. A single
   // graph chunk can be larger than the scratch buffer, so process it in slices

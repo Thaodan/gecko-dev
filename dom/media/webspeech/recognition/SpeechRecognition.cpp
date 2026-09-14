@@ -153,6 +153,9 @@ void SpeechRecognitionInstallTransaction::Resolve(bool aSuccess) {
 NS_IMPL_CYCLE_COLLECTION_CLASS(SpeechRecognition)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(SpeechRecognition,
                                                 DOMEventTargetHelper)
+  if (tmp->mTrack) {
+    tmp->mTrack->RemovePrincipalChangeObserver(tmp);
+  }
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mTrack, mSpeechGrammarList, mListener,
                                   mPhrases, mRecognitionResults)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_PTR
@@ -219,6 +222,9 @@ SpeechRecognition::~SpeechRecognition() {
   if (mBackend) {
     mBackend->Abort(TrailingEvents::Skip);
     mBackend = nullptr;
+  }
+  if (mTrack) {
+    mTrack->RemovePrincipalChangeObserver(this);
   }
 }
 
@@ -331,8 +337,11 @@ void SpeechRecognition::Reset() {
   // A track obtained via our own getUserMedia() call (the microphone path)
   // has nobody else to stop it; an explicitly-passed track is the caller's
   // to manage.
-  if (mTrack && mTrackIsOwned) {
-    mTrack->Stop();
+  if (mTrack) {
+    mTrack->RemovePrincipalChangeObserver(this);
+    if (mTrackIsOwned) {
+      mTrack->Stop();
+    }
   }
   mTrack = nullptr;
   mTrackIsOwned = false;
@@ -404,6 +413,8 @@ SpeechRecognition::StartRecording(RefPtr<AudioStreamTrack>& aTrack) {
 
   mTrack = aTrack;
   mBackend->AttachToTrack(aTrack);
+  PrincipalChanged(mTrack);
+  mTrack->AddPrincipalChangeObserver(this);
   MaybeDispatchStart();
 
   return NS_OK;
@@ -1209,6 +1220,39 @@ void SpeechRecognition::NotifyTrackAdded(
   }
 
   StartRecording(audioTrack);
+}
+
+// Called on the main thread, but enacted on the MediaTrackGraph thread. This
+// is safe because MediaStreamTrack combines the old and the new principal and
+// notifies its observers before any content under the new principal is
+// inserted into the graph, so SetEnabled() is queued ahead of that content.
+// See the longer explanation on
+// MediaStreamTrackAudioSourceNode::PrincipalChanged.
+void SpeechRecognition::PrincipalChanged(MediaStreamTrack* aMediaStreamTrack) {
+  AssertIsOnMainThread();
+  MOZ_ASSERT(aMediaStreamTrack == mTrack);
+
+  bool subsumes = false;
+  Document* doc = nullptr;
+  if (nsPIDOMWindowInner* win = GetOwnerWindow()) {
+    doc = win->GetExtantDoc();
+    if (doc) {
+      nsIPrincipal* docPrincipal = doc->NodePrincipal();
+      nsIPrincipal* trackPrincipal = aMediaStreamTrack->GetPrincipal();
+      if (!trackPrincipal ||
+          NS_FAILED(docPrincipal->Subsumes(trackPrincipal, &subsumes))) {
+        subsumes = false;
+      }
+    }
+  }
+  bool enabled = subsumes;
+  if (mBackend) {
+    mBackend->SetEnabled(enabled);
+  }
+
+  if (!enabled && doc) {
+    doc->WarnOnceAbout(Document::eSpeechRecognitionIsolatedTrack);
+  }
 }
 
 void SpeechRecognition::DispatchError(SpeechRecognitionErrorCode aErrorCode,
