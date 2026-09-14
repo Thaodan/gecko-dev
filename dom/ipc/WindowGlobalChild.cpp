@@ -11,6 +11,7 @@
 #include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/MozPrintCallbackRunner.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -63,10 +64,6 @@
 #include "nsSerializationHelper.h"
 #include "nsURLHelper.h"
 #include "xpcpublic.h"
-
-#ifdef NS_PRINTING
-#  include "mozilla/MozPrintCallbackRunner.h"
-#endif
 
 using namespace mozilla::ipc;
 using namespace mozilla::dom::ipc;
@@ -799,7 +796,6 @@ mozilla::ipc::IPCResult WindowGlobalChild::RecvMakeFrameRemote(
   return IPC_OK();
 }
 
-#ifdef NS_PRINTING
 class PrintCallbackSnapshot final : public nsITimerCallback, public nsINamed {
  public:
   NS_DECL_ISUPPORTS
@@ -916,19 +912,16 @@ class PrintCallbackSnapshot final : public nsITimerCallback, public nsINamed {
 };
 
 NS_IMPL_ISUPPORTS(PrintCallbackSnapshot, nsITimerCallback, nsINamed)
-#endif
 
 mozilla::ipc::IPCResult WindowGlobalChild::RecvDrawSnapshot(
     const Maybe<IntRect>& aRect, const float& aScale,
     const nscolor& aBackgroundColor, const gfx::CrossProcessPaintFlags& aFlags,
     DrawSnapshotResolver&& aResolve) {
-#ifdef NS_PRINTING
   if (PrintCallbackSnapshot::MaybeStart(BrowsingContext(), aRect, aScale,
                                         aBackgroundColor, aFlags,
                                         std::move(aResolve))) {
     return IPC_OK();
   }
-#endif
   aResolve(gfx::PaintFragment::Record(BrowsingContext(), aRect, aScale,
                                       aBackgroundColor, aFlags));
   return IPC_OK();
