@@ -2091,12 +2091,6 @@ pocketNewtab:
       setPref:
         branch: user
         pref: "browser.newtabpage.activity-stream.discoverystream.endpoints"
-    spocsClearEndpoint:
-      description: URL for deleting any server data when a user opts out of sponsored content
-      type: string
-      setPref:
-        branch: user
-        pref: "browser.newtabpage.activity-stream.discoverystream.endpointSpocsClear"
     ctaButtonSponsors:
       description: A CSV list of sponsors that should use a button CTA.
       type: string
