@@ -53,6 +53,11 @@ suites:
             "browser_urlbar_semantic_history_perf.js": ""
             "browser_quicksuggest_ml_perf.js": ""
 
+    browser/components/tabbrowser/test/browser/smarttabgrouping/performance:
+        description: "End-to-end performance tests for Smart Tab Grouping"
+        tests:
+            "browser_smart_tab_grouping_perf.js": ""
+
     browser/components/translations/tests/browser:
         description: "Performance tests for Translations models on Firefox Desktop"
         tests:
