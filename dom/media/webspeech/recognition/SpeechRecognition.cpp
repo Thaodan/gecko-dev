@@ -1296,7 +1296,15 @@ void SpeechRecognition::HandleRecognitionResultFromBackend(
   RefPtr<SpeechRecognitionAlternative> alternative =
       new SpeechRecognitionAlternative(this);
 
+  // https://webaudio.github.io/web-speech-api/#dom-speechrecognitionalternative-transcript
+  // "For continuous recognition, leading or trailing whitespace MUST be
+  // included where necessary such that concatenation of consecutive
+  // SpeechRecognitionResults produces a proper transcript of the session."
+  // The backend reports one utterance at a time, unpadded.
   alternative->mTranscript = NS_ConvertUTF8toUTF16(aTranscript);
+  if (!mRecognitionResults.IsEmpty()) {
+    alternative->mTranscript.Insert(u' ', 0);
+  }
   // Per-result confidence, aggregated by the backend from the model's per-word
   // confidences (mean). The spec leaves the exact aggregation engine-defined;
   // the legacy backend, which has no per-word scores, reports 1.0.
