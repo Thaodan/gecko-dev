@@ -1963,6 +1963,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "dom_push"
+version = "0.1.0"
+dependencies = [
+ "nsstring",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "dom_speculationrules"
 version = "0.1.0"
 dependencies = [
@@ -2976,6 +2985,7 @@ dependencies = [
  "detect_win32k_conflicts",
  "dom",
  "dom_fragmentdirectives",
+ "dom_push",
  "dom_speculationrules",
  "encoding_glue",
  "etagere",
