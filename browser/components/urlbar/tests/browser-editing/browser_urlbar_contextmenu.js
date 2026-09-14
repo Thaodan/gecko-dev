@@ -391,5 +391,9 @@ async function openContainerSubMenuItem(menuItem, userContextId) {
     () => subMenuItem.textContent,
     "Waiting for the container item to be labeled"
   );
+  Assert.ok(
+    subMenuItem.hasAttribute("accesskey"),
+    `The container item for ${userContextId} has an accesskey`
+  );
   return subMenuItem;
 }

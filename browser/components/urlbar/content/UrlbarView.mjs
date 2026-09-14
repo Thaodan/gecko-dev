@@ -28,6 +28,9 @@ const RESULT_MENU_COMMANDS = {
   MANAGE: "manage",
 };
 
+// The entry point the container menu items report to telemetry.
+const CONTAINER_SOURCE = "urlbar_result_context_menu";
+
 const getBoundsWithoutFlushing = UrlbarShared.getBoundsWithoutFlushing;
 
 // Used to get a unique id to use for row elements, it wraps at 9999, that
@@ -4282,6 +4285,76 @@ export class UrlbarView {
     }
   }
 
+  /**
+   * Fills the submenu of the command that opens a result in a container tab
+   * with the containers, along with the items that add and manage them.
+   *
+   * @param {PanelList} panel
+   *   The submenu to fill.
+   */
+  async #populateContainerSubmenu(panel) {
+    let containers = await UrlbarContentUtils.getContainers();
+
+    panel.textContent = "";
+    for (let container of containers) {
+      let menuitem = this.document.createElement("panel-item");
+      menuitem.dataset.usercontextid = String(container.userContextId);
+      if (container.l10nId) {
+        menuitem.setAttribute("data-l10n-attrs", "accesskey");
+        this.document.l10n.setAttributes(
+          menuitem,
+          `${container.l10nId}-panel-item`
+        );
+      } else {
+        menuitem.textContent = container.name;
+      }
+      menuitem.style.setProperty(
+        "--panel-item-icon",
+        `url("${container.iconURL}")`
+      );
+      menuitem.style.setProperty("--panel-item-fill", container.colorCode);
+      panel.appendChild(menuitem);
+    }
+
+    panel.appendChild(this.document.createElement("hr"));
+    panel.appendChild(
+      this.#createContainerMenuItem(
+        "user-context-add-container-panel-item",
+        () =>
+          this.controller.parentController.openContainerCreationPanel(
+            CONTAINER_SOURCE
+          )
+      )
+    );
+    panel.appendChild(
+      this.#createContainerMenuItem(
+        "user-context-manage-containers-panel-item",
+        () =>
+          this.controller.parentController.openPreferences("paneContainers", {
+            urlParams: { entrypoint: CONTAINER_SOURCE },
+          })
+      )
+    );
+  }
+
+  /**
+   * Builds one of the container submenu's items that don't pick the result.
+   *
+   * @param {string} l10nId
+   *   The l10n id of the item's label, which also carries its accesskey.
+   * @param {Function} onPick
+   *   Called when the item is picked.
+   * @returns {Element}
+   *   The menu item.
+   */
+  #createContainerMenuItem(l10nId, onPick) {
+    let menuitem = this.document.createElement("panel-item");
+    menuitem.setAttribute("data-l10n-attrs", "accesskey");
+    this.document.l10n.setAttributes(menuitem, l10nId);
+    menuitem.addEventListener("click", onPick);
+    return menuitem;
+  }
+
   // Event handlers below.
 
   on_SelectedOneOffButtonChanged() {
@@ -4611,12 +4684,7 @@ export class UrlbarView {
 
       this.#populateResultMenu({ commands });
     } else if (event.target.dataset.openIn == "container-tab") {
-      this.chromeWindow.createUserContextMenu(event, {
-        target: event.target.submenuPanel,
-        isContextMenu: true,
-        isPanelList: true,
-        containerSource: "urlbar_result_context_menu",
-      });
+      this.#populateContainerSubmenu(event.target.submenuPanel);
     }
   }
 
