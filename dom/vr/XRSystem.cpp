@@ -368,7 +368,7 @@ void XRSystem::ResolveIsSessionSupportedRequests() {
        isSessionSupportedRequests) {
     if (permissionsPolicyBlocked) {
       request->mPromise->MaybeRejectWithSecurityError(
-          "The xr-spatial-tracking feature policy is required.");
+          "The xr-spatial-tracking permissions policy is required.");
       continue;
     }
 
@@ -425,7 +425,7 @@ void XRSystem::ProcessSessionRequestsWaitingForRuntimeDetection() {
       // Don't show a permission prompt if blocked by permissions policy.
       if (CancelHardwareRequest(request)) {
         request->mPromise->MaybeRejectWithSecurityError(
-            "The xr-spatial-tracking feature policy is required.");
+            "The xr-spatial-tracking permissions policy is required.");
       }
       continue;
     }

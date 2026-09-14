@@ -608,7 +608,8 @@ already_AddRefed<PaymentRequest> PaymentRequest::Constructor(
 
   if (!PermissionsPolicyUtils::IsFeatureAllowed(doc, u"payment"_ns)) {
     aRv.ThrowSecurityError(
-        "Document's Feature Policy does not allow to create a PaymentRequest");
+        "Document's Permissions Policy does not allow to create a "
+        "PaymentRequest");
     return nullptr;
   }
 

@@ -26,9 +26,9 @@ void ReportToConsoleUnsupportedFeature(Document* aDocument,
   AutoTArray<nsString, 1> params = {aFeatureName};
 
   nsContentUtils::ReportToConsole(
-      nsIScriptError::warningFlag, "Feature Policy"_ns, aDocument,
+      nsIScriptError::warningFlag, "Permissions Policy"_ns, aDocument,
       PropertiesFile::SECURITY_PROPERTIES,
-      "FeaturePolicyUnsupportedFeatureName", params);
+      "PermissionsPolicyUnsupportedFeatureName", params);
 }
 
 void ReportToConsoleInvalidEmptyAllowValue(Document* aDocument,
@@ -40,9 +40,9 @@ void ReportToConsoleInvalidEmptyAllowValue(Document* aDocument,
   AutoTArray<nsString, 1> params = {aFeatureName};
 
   nsContentUtils::ReportToConsole(
-      nsIScriptError::warningFlag, "Feature Policy"_ns, aDocument,
+      nsIScriptError::warningFlag, "Permissions Policy"_ns, aDocument,
       PropertiesFile::SECURITY_PROPERTIES,
-      "FeaturePolicyInvalidEmptyAllowValue", params);
+      "PermissionsPolicyInvalidEmptyAllowValue", params);
 }
 
 void ReportToConsoleInvalidAllowValue(Document* aDocument,
@@ -54,9 +54,9 @@ void ReportToConsoleInvalidAllowValue(Document* aDocument,
   AutoTArray<nsString, 1> params = {aValue};
 
   nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
-                                  "Feature Policy"_ns, aDocument,
+                                  "Permissions Policy"_ns, aDocument,
                                   PropertiesFile::SECURITY_PROPERTIES,
-                                  "FeaturePolicyInvalidAllowValue", params);
+                                  "PermissionsPolicyInvalidAllowValue", params);
 }
 
 }  // namespace

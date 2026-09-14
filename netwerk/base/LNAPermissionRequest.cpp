@@ -189,7 +189,7 @@ nsresult LNAPermissionRequest::RequestPermission() {
       }
 
       if (fpInfo->mInheritedDeniedFeatureNames.Contains(featureName)) {
-        NS_WARNING("Feature policy denying the request");
+        NS_WARNING("Permissions policy denying the request");
         return Cancel();
       }
     }
