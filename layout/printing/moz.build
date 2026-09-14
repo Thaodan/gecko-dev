@@ -7,12 +7,15 @@ EXPORTS.mozilla.layout += [
     "ipc/RemotePrintJobParent.h",
 ]
 
+EXPORTS.mozilla += ["MozPrintCallbackRunner.h"]
+
 EXPORTS.mozilla.layout.printing += ["DrawEventRecorder.h"]
 
 UNIFIED_SOURCES += [
     "DrawEventRecorder.cpp",
     "ipc/RemotePrintJobChild.cpp",
     "ipc/RemotePrintJobParent.cpp",
+    "MozPrintCallbackRunner.cpp",
     "nsPagePrintTimer.cpp",
     "nsPrintData.cpp",
     "nsPrintJob.cpp",
@@ -25,6 +28,7 @@ include("/ipc/chromium/chromium-config.mozbuild")
 FINAL_LIBRARY = "xul"
 LOCAL_INCLUDES += [
     "../base",
+    "../generic",
     "/dom/base",
     "/gfx/2d/",
     "/netwerk/base/",
