@@ -6,8 +6,11 @@ import functools
 import re
 from pathlib import Path
 
+from taskgraph.util.vcs import get_repository
+
 from gecko_taskgraph import GECKO
 
+_DIRECTORY_LISTING_RE = re.compile(r"^\^(?:(?P<dir>[^\\^$*+?()|\[\]]+)/)?\[\^/\]\+\$$")
 _GIT_PATTERN_METACHARS_RE = re.compile(r"([*?\[\\])")
 
 
@@ -78,15 +81,36 @@ def _glob_to_git(glob):
     return pattern
 
 
-def _translate(pattern):
+def _parse(pattern):
+    """Check one profile line and return its kind with the value in git form:
+    an anchored path, a git glob, or the directory a listing names."""
     kind, sep, value = pattern.partition(":")
     if not sep:
-        raise ValueError(f"pattern {pattern!r} has no kind, use path: or glob:")
+        raise ValueError(f"pattern {pattern!r} has no kind, use path:, glob: or re:")
     if kind == "path":
-        return [f"/{_escape(_repository_path(value, pattern))}"]
+        return kind, f"/{_escape(_repository_path(value, pattern))}"
     if kind == "glob":
-        return [_glob_to_git(value)]
+        return kind, _glob_to_git(value)
+    if kind == "re":
+        match = _DIRECTORY_LISTING_RE.match(value)
+        if not match:
+            raise ValueError(
+                f"unsupported regular expression {value!r}: only ^[^/]+$ and "
+                "^<dir>/[^/]+$ have a git form"
+            )
+        return kind, _repository_path(match["dir"], pattern) if match["dir"] else ""
     raise ValueError(f"unsupported pattern kind {kind!r} in {pattern!r}")
+
+
+def _translate(pattern, list_files):
+    kind, value = _parse(pattern)
+    if kind != "re":
+        return [value]
+    prefix = f"/{value}/" if value else "/"
+    names = list(list_files(value))
+    if not names:
+        raise ValueError(f"{pattern!r} lists no files at this revision")
+    return [f"{prefix}{_escape(name)}" for name in names]
 
 
 def load_sparse_profile(profile_path, topsrcdir=GECKO):
@@ -117,7 +141,7 @@ def load_sparse_profile(profile_path, topsrcdir=GECKO):
                 section = excludes
             else:
                 try:
-                    _translate(line)
+                    _parse(line)
                 except ValueError as e:
                     raise ValueError(f"{relpath}:{lineno}: {e}") from None
                 section.append(line)
@@ -126,9 +150,11 @@ def load_sparse_profile(profile_path, topsrcdir=GECKO):
     return includes, excludes
 
 
-def to_git_sparse_patterns(includes, excludes):
+def to_git_sparse_patterns(includes, excludes, list_files):
     """Translate Mercurial sparse profile lines into ``git sparse-checkout``
-    patterns for ``--no-cone`` mode. Every result is a positive pattern, so the
+    patterns for ``--no-cone`` mode. ``list_files(directory)`` names the files
+    directly inside a directory (``""`` for the root) and expands the
+    ``re:^dir/[^/]+$`` listings. Every result is a positive pattern, so the
     patterns of two profiles can be combined by appending one to the other."""
     if excludes:
         raise ValueError(
@@ -138,10 +164,46 @@ def to_git_sparse_patterns(includes, excludes):
         )
     patterns = []
     for pattern in includes:
-        patterns.extend(_translate(pattern))
+        patterns.extend(_translate(pattern, list_files))
     if not patterns:
         raise ValueError("the profile translates to no patterns")
     return list(dict.fromkeys(patterns))
+
+
+@functools.cache
+def _repository():
+    return get_repository(GECKO)
+
+
+@functools.cache
+def list_directory_files(directory):
+    """Return the names of the files directly inside ``directory`` (``""`` for
+    the root) at the checked out revision. The list comes from the repository
+    rather than the working copy, so a sparse checkout does not hide any."""
+    repo = _repository()
+    if repo.tool == "hg":
+        out = repo.run(
+            "--encoding",
+            "utf-8",
+            "files",
+            "-r",
+            ".",
+            "-0",
+            "-I",
+            f"rootfilesin:{directory or '.'}",
+            return_codes=[1],
+        )
+        paths = [p.replace("\\", "/") for p in out.split("\0") if p]
+    else:
+        args = ["ls-tree", "-z", "HEAD"]
+        if directory:
+            args.append(f"{directory}/")
+        paths = [
+            entry.split("\t", 1)[1]
+            for entry in repo.run(*args).split("\0")
+            if entry and entry.split("\t", 1)[0].split(" ")[1] == "blob"
+        ]
+    return sorted(p.rsplit("/", 1)[-1] for p in paths)
 
 
 @functools.cache

@@ -10,11 +10,24 @@ from mozunit import main
 from gecko_taskgraph import GECKO
 from gecko_taskgraph.util.sparse_profiles import (
     is_path_covered_by_taskgraph_sparse_profile,
+    list_directory_files,
     load_sparse_profile,
     to_git_sparse_patterns,
 )
 
 SPARSE_PROFILES_DIR = Path(GECKO, "build", "sparse-profiles")
+
+FAKE_FILES = {
+    "": ["mach", "#odd", "star*.txt", "trailing "],
+    "js/src/tests": ["jstests.list", "lib.py"],
+    "dir with space": ["a b.txt"],
+    "empty": [],
+    "newline": ["line\nbreak"],
+}
+
+
+def fake_list_files(directory):
+    return FAKE_FILES[directory]
 
 
 @pytest.mark.parametrize(
@@ -36,10 +49,16 @@ SPARSE_PROFILES_DIR = Path(GECKO, "build", "sparse-profiles")
         ("glob:**/docs/**.jpg", ["**/docs/**/*.jpg"]),
         ("glob:**/tooltool-manifests/**", ["tooltool-manifests/"]),
         ("glob:gfx/**/*.rs", ["/gfx/**/*.rs"]),
+        ("re:^[^/]+$", ["/mach", "/#odd", r"/star\*.txt", "/trailing\\ "]),
+        (
+            "re:^js/src/tests/[^/]+$",
+            ["/js/src/tests/jstests.list", "/js/src/tests/lib.py"],
+        ),
+        ("re:^dir with space/[^/]+$", ["/dir with space/a b.txt"]),
     ],
 )
 def test_translate_include(pattern, expected):
-    assert to_git_sparse_patterns([pattern], []) == expected
+    assert to_git_sparse_patterns([pattern], [], fake_list_files) == expected
 
 
 @pytest.mark.parametrize(
@@ -47,6 +66,7 @@ def test_translate_include(pattern, expected):
     [
         (["python"], [], "has no kind"),
         (["rootfilesin:python"], [], "unsupported pattern kind"),
+        (["re:^python/.*\\.py$"], [], "unsupported regular expression"),
         (["path:"], [], "unsupported path"),
         (["path:."], [], "unsupported path"),
         (["path:../other"], [], "unsupported path"),
@@ -62,31 +82,46 @@ def test_translate_include(pattern, expected):
         (["glob:**"], [], "names something"),
         (["glob:**/"], [], "names something"),
         (["glob:foo//bar"], [], "names something"),
+        (["re:^/foo/[^/]+$"], [], "unsupported path"),
+        (["re:^foo//bar/[^/]+$"], [], "unsupported path"),
+        (["re:^empty/[^/]+$"], [], "lists no files"),
+        (["re:^newline/[^/]+$"], [], "cannot be written"),
         (["path:python"], ["path:python/foo"], "cannot be translated"),
     ],
 )
 def test_translate_rejects(includes, excludes, message):
     with pytest.raises(ValueError, match=message):
-        to_git_sparse_patterns(includes, excludes)
+        to_git_sparse_patterns(includes, excludes, fake_list_files)
 
 
 def test_order_kept_and_deduplicated():
     includes = [
         "path:python",
+        "re:^[^/]+$",
         "glob:**/moz.build",
         "path:mach",
         "path:python",
     ]
-    assert to_git_sparse_patterns(includes, []) == [
+    assert to_git_sparse_patterns(includes, [], fake_list_files) == [
         "/python",
-        "moz.build",
         "/mach",
+        "/#odd",
+        r"/star\*.txt",
+        "/trailing\\ ",
+        "moz.build",
     ]
 
 
 def test_empty_translation_rejected():
     with pytest.raises(ValueError, match="translates to no patterns"):
-        to_git_sparse_patterns([], [])
+        to_git_sparse_patterns([], [], fake_list_files)
+
+
+def test_list_directory_files():
+    root = list_directory_files("")
+    assert "mach" in root and "moz.build" in root and "python" not in root
+    testing = list_directory_files("testing")
+    assert "moz.build" in testing and "mozbase" not in testing
 
 
 def test_load_follows_includes(tmp_path):
@@ -105,9 +140,9 @@ def test_load_follows_includes(tmp_path):
 
 def test_load_reports_file_and_line(tmp_path):
     (tmp_path / "bad").write_text(
-        "[include]\npath:mach\nrootfilesin:python\n", encoding="utf-8"
+        "[include]\npath:mach\nre:^python/.*$\n", encoding="utf-8"
     )
-    with pytest.raises(ValueError, match="^bad:3: unsupported pattern kind"):
+    with pytest.raises(ValueError, match="^bad:3: unsupported regular expression"):
         load_sparse_profile("bad", topsrcdir=tmp_path)
 
 
@@ -121,7 +156,7 @@ def test_load_missing_profile(tmp_path):
 )
 def test_in_tree_profiles_translate(profile):
     includes, excludes = load_sparse_profile(f"build/sparse-profiles/{profile}")
-    patterns = to_git_sparse_patterns(includes, excludes)
+    patterns = to_git_sparse_patterns(includes, excludes, list_directory_files)
     assert patterns
     for pattern in patterns:
         assert pattern and pattern[0] not in ("!", "#"), pattern
