@@ -671,7 +671,7 @@ void nsDOMMutationObserver::Observe(nsINode& aTarget,
     filters.SetCapacity(len);
 
     for (uint32_t i = 0; i < len; ++i) {
-      filters.AppendElement(NS_Atomize(filtersAsString[i]));
+      filters.AppendElement(NS_AtomizeMainThread(filtersAsString[i]));
     }
   }
 
