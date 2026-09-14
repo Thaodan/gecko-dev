@@ -3354,7 +3354,13 @@ void ScrollContainerFrame::ScrollToImpl(
   presContext->RecordInteractionTime(
       nsPresContext::InteractionType::ScrollInteraction, TimeStamp::Now());
 
-  PostScrollEvent(curPos);
+  // Session history only restores the root scroll position; a non-root restore
+  // re-establishes a position across a reframe, so nothing scrolled.
+  const bool restoringNonRootScrollPosition =
+      aOrigin == ScrollOrigin::Restore && !mIsRoot;
+  if (!restoringNonRootScrollPosition) {
+    PostScrollEvent(curPos);
+  }
 
   // Schedule the scroll-timelines linked to its scrollable frame.
   // if `pt == curPos`, we early return, so the position must be changed at
