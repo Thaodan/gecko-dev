@@ -47,6 +47,7 @@ XPCSHELL_TESTS_MANIFESTS += [
 ]
 
 EXPORTS.mozilla.dom += [
+    "Declarative.h",
     "PushManager.h",
     "PushNotifier.h",
     "PushSubscription.h",
@@ -54,6 +55,7 @@ EXPORTS.mozilla.dom += [
 ]
 
 UNIFIED_SOURCES += [
+    "Declarative.cpp",
     "PushManager.cpp",
     "PushNotifier.cpp",
     "PushSubscription.cpp",
