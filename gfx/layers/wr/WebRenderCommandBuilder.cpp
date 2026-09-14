@@ -1166,8 +1166,7 @@ static ItemActivity AssessBounds(const StackingContextHelper& aSc,
   // costly enough that it's worth the risk of having more layers. As we
   // move more blob items into wr display items it will become less of a
   // concern.
-  const float largeish =
-      float(StaticPrefs::gfx_webrender_blob_largeish_px());
+  const float largeish = float(StaticPrefs::gfx_webrender_blob_largeish_px());
 
   bool snap = false;
   nsRect bounds = aItem->GetBounds(aDisplayListBuilder, &snap);
@@ -1369,8 +1368,7 @@ void Grouper::ConstructGroups(nsDisplayListBuilder* aDisplayListBuilder,
         encounteredActiveItem, uniformlyScaled);
     auto threshold =
         isFirst || isLast ||
-                StaticPrefs::
-                    gfx_webrender_blob_relaxed_active_threshold()
+                StaticPrefs::gfx_webrender_blob_relaxed_active_threshold()
             ? ItemActivity::Could
             : ItemActivity::Should;
 
