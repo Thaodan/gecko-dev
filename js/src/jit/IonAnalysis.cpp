@@ -1197,7 +1197,7 @@ bool jit::EliminateRedundantShapeGuards(MIRGraph& graph) {
                   "Stopped at StoreFixedSlot for other object");
           return true;
         }
-        store->setNeedsBarrier(false);
+        store->setNeedsPreBarrier(false);
         JitSpew(JitSpew_RedundantGCBarriers, "Elided StoreFixedSlot barrier");
         break;
       }

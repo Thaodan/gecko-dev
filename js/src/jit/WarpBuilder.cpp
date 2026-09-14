@@ -380,10 +380,10 @@ MInstruction* WarpBuilder::buildNamedLambdaEnv(MDefinition* callee,
 
   size_t enclosingSlot = NamedLambdaObject::enclosingEnvironmentSlot();
   size_t lambdaSlot = NamedLambdaObject::lambdaSlot();
-  current->add(MStoreFixedSlot::NewUnbarriered(alloc(), namedLambda,
-                                               enclosingSlot, env));
-  current->add(MStoreFixedSlot::NewUnbarriered(alloc(), namedLambda, lambdaSlot,
-                                               callee));
+  current->add(MStoreFixedSlot::NewNoPreBarrier(alloc(), namedLambda,
+                                                enclosingSlot, env));
+  current->add(MStoreFixedSlot::NewNoPreBarrier(alloc(), namedLambda,
+                                                lambdaSlot, callee));
 
   return namedLambda;
 }
@@ -415,9 +415,9 @@ MInstruction* WarpBuilder::buildCallObject(MDefinition* callee,
   size_t enclosingSlot = CallObject::enclosingEnvironmentSlot();
   size_t calleeSlot = CallObject::calleeSlot();
   current->add(
-      MStoreFixedSlot::NewUnbarriered(alloc(), callObj, enclosingSlot, env));
+      MStoreFixedSlot::NewNoPreBarrier(alloc(), callObj, enclosingSlot, env));
   current->add(
-      MStoreFixedSlot::NewUnbarriered(alloc(), callObj, calleeSlot, callee));
+      MStoreFixedSlot::NewNoPreBarrier(alloc(), callObj, calleeSlot, callee));
 
   return callObj;
 }
@@ -2499,7 +2499,7 @@ bool WarpBuilder::build_PushLexicalEnv(BytecodeLocation loc) {
 
   // Initialize the object's reserved slots. No post barrier is needed here,
   // for the same reason as in buildNamedLambdaEnv.
-  current->add(MStoreFixedSlot::NewUnbarriered(
+  current->add(MStoreFixedSlot::NewNoPreBarrier(
       alloc(), ins, EnvironmentObject::enclosingEnvironmentSlot(), env));
 
   current->setEnvironmentChain(ins);
@@ -2525,7 +2525,7 @@ bool WarpBuilder::build_PushClassBodyEnv(BytecodeLocation loc) {
 
   // Initialize the object's reserved slots. No post barrier is needed here,
   // for the same reason as in buildNamedLambdaEnv.
-  current->add(MStoreFixedSlot::NewUnbarriered(
+  current->add(MStoreFixedSlot::NewNoPreBarrier(
       alloc(), ins, EnvironmentObject::enclosingEnvironmentSlot(), env));
 
   current->setEnvironmentChain(ins);
@@ -2570,7 +2570,7 @@ bool WarpBuilder::build_FreshenLexicalEnv(BytecodeLocation loc) {
 
   // Initialize the object's reserved slots. No post barrier is needed here,
   // for the same reason as in buildNamedLambdaEnv.
-  current->add(MStoreFixedSlot::NewUnbarriered(
+  current->add(MStoreFixedSlot::NewNoPreBarrier(
       alloc(), ins, EnvironmentObject::enclosingEnvironmentSlot(),
       enclosingEnv));
 
@@ -2610,8 +2610,8 @@ bool WarpBuilder::build_FreshenLexicalEnv(BytecodeLocation loc) {
       current->add(MAssertCanElidePostWriteBarrier::New(alloc(), ins, load));
 #endif
 
-      current->add(
-          MStoreDynamicSlot::NewUnbarriered(alloc(), slots, dynamicSlot, load));
+      current->add(MStoreDynamicSlot::NewNoPreBarrier(alloc(), slots,
+                                                      dynamicSlot, load));
     } else {
       auto* load = MLoadFixedSlot::New(alloc(), env, slot);
       current->add(load);
@@ -2621,7 +2621,7 @@ bool WarpBuilder::build_FreshenLexicalEnv(BytecodeLocation loc) {
       current->add(MAssertCanElidePostWriteBarrier::New(alloc(), ins, load));
 #endif
 
-      current->add(MStoreFixedSlot::NewUnbarriered(alloc(), ins, slot, load));
+      current->add(MStoreFixedSlot::NewNoPreBarrier(alloc(), ins, slot, load));
     }
   }
 
@@ -2653,7 +2653,7 @@ bool WarpBuilder::build_RecreateLexicalEnv(BytecodeLocation loc) {
 
   // Initialize the object's reserved slots. No post barrier is needed here,
   // for the same reason as in buildNamedLambdaEnv.
-  current->add(MStoreFixedSlot::NewUnbarriered(
+  current->add(MStoreFixedSlot::NewNoPreBarrier(
       alloc(), ins, EnvironmentObject::enclosingEnvironmentSlot(),
       enclosingEnv));
 
@@ -2680,7 +2680,7 @@ bool WarpBuilder::build_PushVarEnv(BytecodeLocation loc) {
 
   // Initialize the object's reserved slots. No post barrier is needed here,
   // for the same reason as in buildNamedLambdaEnv.
-  current->add(MStoreFixedSlot::NewUnbarriered(
+  current->add(MStoreFixedSlot::NewNoPreBarrier(
       alloc(), ins, EnvironmentObject::enclosingEnvironmentSlot(), env));
 
   current->setEnvironmentChain(ins);
@@ -2972,7 +2972,7 @@ bool WarpBuilder::buildSuspend(BytecodeLocation loc, MDefinition* gen,
       // Use peekUnchecked because we're also writing out the argument slots
       int32_t peek = -slotsToCopy + i;
       MDefinition* stackElem = current->peekUnchecked(peek);
-      auto* store = MStoreElement::NewUnbarriered(
+      auto* store = MStoreElement::NewNoPreBarrier(
           alloc(), elements, constant(Int32Value(i)), stackElem,
           /* needsHoleCheck = */ false);
 
@@ -2994,7 +2994,7 @@ bool WarpBuilder::buildSuspend(BytecodeLocation loc, MDefinition* gen,
 
   // This store is unbarriered, as it's only ever storing an integer, and as
   // such doesn't partake of object tracing.
-  current->add(MStoreFixedSlot::NewUnbarriered(
+  current->add(MStoreFixedSlot::NewNoPreBarrier(
       alloc(), genObj, AbstractGeneratorObject::resumeIndexSlot(),
       constant(Int32Value(resumeIndex))));
 
@@ -3405,8 +3405,8 @@ bool WarpBuilder::build_InitElemArray(BytecodeLocation loc) {
   } else {
     current->add(MPostWriteBarrier::New(alloc(), obj, val));
     auto* store =
-        MStoreElement::NewUnbarriered(alloc(), elements, indexConst, val,
-                                      /* needsHoleCheck = */ false);
+        MStoreElement::NewNoPreBarrier(alloc(), elements, indexConst, val,
+                                       /* needsHoleCheck = */ false);
     current->add(store);
   }
 
@@ -3630,8 +3630,8 @@ bool WarpBuilder::build_Rest(BytecodeLocation loc) {
 
       MDefinition* arg = inlineCallInfo()->argv()[i];
       MStoreElement* store =
-          MStoreElement::NewUnbarriered(alloc(), elements, index, arg,
-                                        /* needsHoleCheck = */ false);
+          MStoreElement::NewNoPreBarrier(alloc(), elements, index, arg,
+                                         /* needsHoleCheck = */ false);
       current->add(store);
       current->add(MPostWriteBarrier::New(alloc(), newArray, arg));
     }

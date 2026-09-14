@@ -6902,7 +6902,7 @@ bool WarpCacheIRTranspiler::emitSpecializedBindFunctionResult(
     // WarpBuilder::buildNamedLambdaEnv.
     add(MAssertCanElidePostWriteBarrier::New(alloc(), bound, value));
 #endif
-    addUnchecked(MStoreFixedSlot::NewUnbarriered(alloc(), bound, slot, value));
+    addUnchecked(MStoreFixedSlot::NewNoPreBarrier(alloc(), bound, slot, value));
   };
 
   initSlot(BoundFunctionObject::targetSlot(), target);
