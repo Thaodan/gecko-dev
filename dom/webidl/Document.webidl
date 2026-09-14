@@ -635,7 +635,7 @@ Document includes DocumentOrShadowRoot;
 // https://w3c.github.io/webappsec-permissions-policy/#idl-index
 partial interface Document {
     [SameObject, BinaryName="PermissionsPolicy",
-     Pref="dom.security.featurePolicy.webidl.enabled"]
+     Pref="dom.security.permissionsPolicy.webidl.enabled"]
     readonly attribute PermissionsPolicy featurePolicy;
 };
 

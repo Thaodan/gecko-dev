@@ -4302,7 +4302,7 @@ nsresult Document::InitPermissionsPolicy(nsIChannel* aChannel) {
 
   // We don't want to parse the http Permissions-Policy header if this pref is
   // off.
-  if (!StaticPrefs::dom_security_featurePolicy_header_enabled()) {
+  if (!StaticPrefs::dom_security_permissionsPolicy_header_enabled()) {
     return NS_OK;
   }
 

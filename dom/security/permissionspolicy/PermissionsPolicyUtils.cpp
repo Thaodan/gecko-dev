@@ -59,7 +59,7 @@ static FeatureMap sSupportedFeatures[] = {
 
 /*
  * This is experimental features list, which is disabled by default by pref
- * dom.security.featurePolicy.experimental.enabled.
+ * dom.security.permissionsPolicy.experimental.enabled.
  */
 static FeatureMap sExperimentalFeatures[] = {
     // We don't support 'autoplay' for now, because it would be overwrote by
@@ -102,7 +102,7 @@ bool PermissionsPolicyUtils::IsSupportedFeature(const nsAString& aFeatureName) {
     }
   }
 
-  return StaticPrefs::dom_security_featurePolicy_experimental_enabled() &&
+  return StaticPrefs::dom_security_permissionsPolicy_experimental_enabled() &&
          IsExperimentalFeature(aFeatureName);
 }
 
@@ -115,7 +115,7 @@ void PermissionsPolicyUtils::ForEachFeature(
     aCallback(sSupportedFeatures[i].mFeatureName);
   }
 
-  if (StaticPrefs::dom_security_featurePolicy_experimental_enabled()) {
+  if (StaticPrefs::dom_security_permissionsPolicy_experimental_enabled()) {
     numFeatures =
         (sizeof(sExperimentalFeatures) / sizeof(sExperimentalFeatures[0]));
     for (uint32_t i = 0; i < numFeatures; ++i) {
@@ -134,7 +134,7 @@ PermissionsPolicyUtils::DefaultAllowListFeature(const nsAString& aFeatureName) {
     }
   }
 
-  if (StaticPrefs::dom_security_featurePolicy_experimental_enabled()) {
+  if (StaticPrefs::dom_security_permissionsPolicy_experimental_enabled()) {
     numFeatures =
         (sizeof(sExperimentalFeatures) / sizeof(sExperimentalFeatures[0]));
     for (uint32_t i = 0; i < numFeatures; ++i) {
@@ -196,7 +196,7 @@ bool PermissionsPolicyUtils::IsFeatureAllowed(Document* aDocument,
   MOZ_ASSERT(aDocument);
 
   // Skip apply features in experimental phase
-  if (!StaticPrefs::dom_security_featurePolicy_experimental_enabled() &&
+  if (!StaticPrefs::dom_security_permissionsPolicy_experimental_enabled() &&
       IsExperimentalFeature(aFeatureName)) {
     return true;
   }

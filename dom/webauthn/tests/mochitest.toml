@@ -11,7 +11,7 @@ support-files = [
 ]
 scheme = "https"
 prefs = [
-  "dom.security.featurePolicy.webidl.enabled=true",
+  "dom.security.permissionsPolicy.webidl.enabled=true",
   "security.webauth.webauthn=true",
   "security.webauth.webauthn_enable_softtoken=true",
   "security.webauth.webauthn_enable_usbtoken=false",

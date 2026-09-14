@@ -47,7 +47,7 @@
  * From a C++ point of view, use PermissionsPolicyUtils to obtain the list of
  * features and to check if they are allowed in the current context.
  *
- * dom.security.featurePolicy.header.enabled pref can be used to disable the
+ * dom.security.permissionsPolicy.header.enabled pref can be used to disable the
  * HTTP header support.
  **/
 

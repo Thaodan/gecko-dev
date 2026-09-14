@@ -15,7 +15,7 @@ interface PermissionsPolicy {
   sequence<DOMString> getAllowlistForFeature(DOMString feature);
 };
 
-[Pref="dom.reporting.featurePolicy.enabled",
+[Pref="dom.reporting.permissionsPolicy.enabled",
  Exposed=Window]
 interface PermissionsPolicyViolationReportBody : ReportBody {
   readonly attribute DOMString featureId;

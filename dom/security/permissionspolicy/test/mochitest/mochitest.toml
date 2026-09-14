@@ -1,7 +1,7 @@
 [DEFAULT]
 prefs = [
-  "dom.security.featurePolicy.header.enabled=true",
-  "dom.security.featurePolicy.webidl.enabled=true",
+  "dom.security.permissionsPolicy.header.enabled=true",
+  "dom.security.permissionsPolicy.webidl.enabled=true",
   "network.lna.blocking=true",
 ]
 support-files = [
