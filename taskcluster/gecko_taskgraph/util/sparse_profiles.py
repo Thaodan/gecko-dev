@@ -120,14 +120,23 @@ def load_sparse_profile(profile_path, topsrcdir=GECKO):
     ``ValueError`` naming the file and line number."""
     includes = []
     excludes = []
+    root = Path(topsrcdir).resolve()
+    stack = []
 
     def parse(relpath):
-        full_path = Path(topsrcdir) / relpath
+        full_path = (root / relpath).resolve()
+        if root not in full_path.parents:
+            raise ValueError(f"{relpath}: sparse profile lies outside {topsrcdir}")
         if not full_path.exists():
             raise FileNotFoundError(
                 f"Sparse profile '{full_path.stem}' not found at {full_path}"
             )
-        section = includes
+        if relpath in stack:
+            raise ValueError(
+                f"{relpath}: %include cycle: {' > '.join(stack + [relpath])}"
+            )
+        stack.append(relpath)
+        section = None
         lines = full_path.read_text(encoding="utf-8").splitlines()
         for lineno, raw_line in enumerate(lines, 1):
             line = raw_line.strip()
@@ -136,15 +145,24 @@ def load_sparse_profile(profile_path, topsrcdir=GECKO):
             if line.startswith("%include "):
                 parse(line[len("%include ") :].strip())
             elif line == "[include]":
+                if section is excludes:
+                    raise ValueError(
+                        f"{relpath}:{lineno}: includes must come before excludes"
+                    )
                 section = includes
             elif line == "[exclude]":
                 section = excludes
+            elif section is None:
+                raise ValueError(
+                    f"{relpath}:{lineno}: entry outside of a section: {line}"
+                )
             else:
                 try:
                     _parse(line)
                 except ValueError as e:
                     raise ValueError(f"{relpath}:{lineno}: {e}") from None
                 section.append(line)
+        stack.pop()
 
     parse(profile_path)
     return includes, excludes
