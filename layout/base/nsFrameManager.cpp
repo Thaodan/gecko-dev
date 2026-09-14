@@ -12,14 +12,13 @@
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresState.h"
+#include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/ViewportFrame.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
-#include "nsCOMPtr.h"
 #include "nsContainerFrame.h"
 #include "nsError.h"
 #include "nsILayoutHistoryState.h"
-#include "nsIStatefulFrame.h"
 #include "nsPlaceholderFrame.h"
 #include "nsWindowSizes.h"
 #include "nscore.h"
@@ -133,13 +132,13 @@ void nsFrameManager::CaptureFrameStateFor(nsIFrame* aFrame,
   }
 
   // Only capture state for stateful frames
-  nsIStatefulFrame* statefulFrame = do_QueryFrame(aFrame);
-  if (!statefulFrame) {
+  ScrollContainerFrame* scrollFrame = do_QueryFrame(aFrame);
+  if (!scrollFrame) {
     return;
   }
 
   // Capture the state, exit early if we get null (nothing to save)
-  UniquePtr<PresState> frameState = statefulFrame->SaveState(aFlags);
+  UniquePtr<PresState> frameState = scrollFrame->SaveState(aFlags);
   if (!frameState) {
     return;
   }
@@ -149,7 +148,7 @@ void nsFrameManager::CaptureFrameStateFor(nsIFrame* aFrame,
   nsAutoCString stateKey;
   nsIContent* content = aFrame->GetContent();
   Document* doc = content ? content->GetUncomposedDoc() : nullptr;
-  statefulFrame->GenerateStateKey(content, doc, stateKey);
+  nsContentUtils::GenerateStateKey(content, doc, stateKey);
   if (stateKey.IsEmpty()) {
     return;
   }
@@ -200,9 +199,9 @@ void nsFrameManager::RestoreFrameStateFor(nsIFrame* aFrame,
     return;
   }
 
-  // Only restore state for stateful frames
-  nsIStatefulFrame* statefulFrame = do_QueryFrame(aFrame);
-  if (!statefulFrame) {
+  // Only restore state for scroll frames
+  ScrollContainerFrame* scrollFrame = do_QueryFrame(aFrame);
+  if (!scrollFrame) {
     return;
   }
 
@@ -217,25 +216,19 @@ void nsFrameManager::RestoreFrameStateFor(nsIFrame* aFrame,
 
   nsAutoCString stateKey;
   Document* doc = content->GetUncomposedDoc();
-  statefulFrame->GenerateStateKey(content, doc, stateKey);
+  nsContentUtils::GenerateStateKey(content, doc, stateKey);
   if (stateKey.IsEmpty()) {
     return;
   }
 
   // Get the state from the hash
-  PresState* frameState = aState->GetState(stateKey);
+  UniquePtr<PresState> frameState = aState->TakeState(stateKey);
   if (!frameState) {
     return;
   }
 
   // Restore it
-  nsresult rv = statefulFrame->RestoreState(frameState);
-  if (NS_FAILED(rv)) {
-    return;
-  }
-
-  // If we restore ok, remove the state from the state table
-  aState->RemoveState(stateKey);
+  scrollFrame->RestoreState(frameState.get());
 }
 
 void nsFrameManager::AddSizeOfIncludingThis(nsWindowSizes& aSizes) const {

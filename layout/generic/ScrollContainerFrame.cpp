@@ -1694,7 +1694,6 @@ a11y::AccType ScrollContainerFrame::AccessibleType() {
 
 NS_QUERYFRAME_HEAD(ScrollContainerFrame)
   NS_QUERYFRAME_ENTRY(nsIAnonymousContentCreator)
-  NS_QUERYFRAME_ENTRY(nsIStatefulFrame)
   NS_QUERYFRAME_ENTRY(nsIScrollbarMediator)
   NS_QUERYFRAME_ENTRY(ScrollContainerFrame)
 NS_QUERYFRAME_TAIL_INHERITING(nsContainerFrame)
@@ -7460,7 +7459,7 @@ UniquePtr<PresState> ScrollContainerFrame::SaveState(CaptureStateFlags aFlags) {
   return state;
 }
 
-NS_IMETHODIMP ScrollContainerFrame::RestoreState(PresState* aState) {
+void ScrollContainerFrame::RestoreState(PresState* aState) {
   mRestorePos = aState->scrollState();
   MOZ_ASSERT(mLastScrollOrigin == ScrollOrigin::None);
   mAllowScrollOriginDowngrade = aState->allowScrollOriginDowngrade();
@@ -7488,7 +7487,6 @@ NS_IMETHODIMP ScrollContainerFrame::RestoreState(PresState* aState) {
     PresShell()->SetResolutionAndScaleTo(
         aState->resolution(), ResolutionChangeOrigin::MainThreadRestore);
   }
-  return NS_OK;
 }
 
 void ScrollContainerFrame::PostScrolledAreaEvent() {
