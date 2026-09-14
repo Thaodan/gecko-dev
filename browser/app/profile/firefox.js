@@ -457,9 +457,8 @@ pref("browser.urlbar.focusContentDocumentOnEsc", true);
 pref("browser.urlbar.ipc.chromeMessagePassing", false);
 
 // Feature gate for the <moz-urlbar> on about:newtab and about:home. When
-// enabled, it supersedes New Tab's handoff search bar. Disabled in debug
-// because of bug 2065180.
-#if defined(NIGHTLY_BUILD) && !defined(DEBUG)
+// enabled, it supersedes New Tab's handoff search bar.
+#ifdef NIGHTLY_BUILD
 pref("browser.urlbar.newtab.featureGate", true);
 #else
 pref("browser.urlbar.newtab.featureGate", false);
