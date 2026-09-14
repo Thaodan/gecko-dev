@@ -661,7 +661,7 @@ void nsDOMMutationObserver::Observe(nsINode& aTarget,
     return;
   }
 
-  nsTArray<RefPtr<nsAtom>> filters;
+  AutoTArray<RefPtr<nsAtom>, 2> filters;
   bool allAttrs = true;
   if (aOptions.mAttributeFilter.WasPassed()) {
     allAttrs = false;
