@@ -1076,6 +1076,14 @@ void MacroAssemblerLOONG64::ma_jump36(int32_t offset, Register scratch) {
   as_jirl(zero, scratch, BOffImm16(offs16));
 }
 
+void MacroAssemblerLOONG64::ma_call36(int32_t offset, Register scratch) {
+  static_assert(MaxCodeBytesPerProcess <= (static_cast<uint64_t>(1) << 37),
+                "All JIT code jump offsets must fit in 128GiB to use call36");
+  const auto [si20, offs16] = SplitJump36Offset(offset);
+  as_pcaddu18i(scratch, si20);
+  as_jirl(ra, scratch, BOffImm16(offs16));
+}
+
 void MacroAssemblerLOONG64::branchWithCode(InstImm code, Label* label,
                                            JumpKind jumpKind,
                                            Register scratch) {
