@@ -2088,10 +2088,7 @@ export class UrlbarView {
       return true;
     }
 
-    if (
-      !!this.#getResultMenuCommands(newResult) !=
-      item._buttons.has("result-menu")
-    ) {
+    if (this.#hasMenuButton(newResult) != item._buttons.has("result-menu")) {
       return true;
     }
 
@@ -2153,7 +2150,7 @@ export class UrlbarView {
       item._buttons.get("tip").textContent = result.payload.buttonText;
     }
 
-    let hasResultMenu = !!this.#getResultMenuCommands(result);
+    let hasResultMenu = this.#hasMenuButton(result);
     item.toggleAttribute("has-menu-button", hasResultMenu);
     if (hasResultMenu) {
       this.#addRowButton(item, {
@@ -4166,6 +4163,35 @@ export class UrlbarView {
 
   /**
    * @param {UrlbarResult} result
+   *   The result to check.
+   * @returns {boolean}
+   *   Whether the result's row shows a menu button. The heuristic result shows
+   *   one only for its own commands, so that the first Tab press moves to the
+   *   second row.
+   */
+  #hasMenuButton(result) {
+    return (
+      (!result.heuristic && this.#canOpenInNewTarget(result)) ||
+      !!this.#getResultMenuCommands(result)
+    );
+  }
+
+  /**
+   * @param {UrlbarResult} result
+   *   The result to check.
+   * @returns {boolean}
+   *   Whether the result's menu offers to open it in a new tab or window.
+   */
+  #canOpenInNewTarget(result) {
+    return (
+      UrlbarPrefs.get("contextMenu.featureGate") &&
+      this.input.handlesOpenInCommands &&
+      !!UrlbarShared.getLoadRequestFromResult(result)
+    );
+  }
+
+  /**
+   * @param {UrlbarResult} result
    *   The result to get menu commands for.
    * @returns {?UrlbarResultCommand[]}
    *   Everything the result's menu shows, null if it has nothing to show. The
@@ -4175,11 +4201,7 @@ export class UrlbarView {
    */
   #getMenuCommands(result) {
     let commands = this.#getResultMenuCommands(result);
-    if (
-      !UrlbarPrefs.get("contextMenu.featureGate") ||
-      !this.input.handlesOpenInCommands ||
-      !UrlbarShared.getLoadRequestFromResult(result)
-    ) {
+    if (!this.#canOpenInNewTarget(result)) {
       return commands;
     }
     let openInCommands = this.#openInCommands;
@@ -4192,8 +4214,7 @@ export class UrlbarView {
    * @param {UrlbarResult} result
    *   The result to get menu commands for.
    * @returns {Array}
-   *   Array of the result's own menu commands, null if there are none. This
-   *   also decides whether the result's row gets a three-dot button.
+   *   Array of the result's own menu commands, null if there are none.
    */
   #getResultMenuCommands(result) {
     if (this.#resultMenuCommands.has(result)) {
