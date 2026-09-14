@@ -7,7 +7,7 @@
 
 #include <functional>
 
-#include "mozilla/dom/FeaturePolicy.h"
+#include "mozilla/dom/PermissionsPolicy.h"
 
 class PickleIterator;
 

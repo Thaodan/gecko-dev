@@ -12,7 +12,7 @@
 #include "mozilla/StaticPrefs_permissions.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/Document.h"
-#include "mozilla/dom/FeaturePolicyUtils.h"
+#include "mozilla/dom/PermissionsPolicyUtils.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/PermissionManager.h"
 

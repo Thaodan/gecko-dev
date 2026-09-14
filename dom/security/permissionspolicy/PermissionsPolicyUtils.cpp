@@ -2,14 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "FeaturePolicyUtils.h"
+#include "PermissionsPolicyUtils.h"
 
 #include "ipc/IPCMessageUtilsSpecializations.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/Document.h"
-#include "mozilla/dom/FeaturePolicyViolationReportBody.h"
 #include "mozilla/dom/PermissionMessageUtils.h"
+#include "mozilla/dom/PermissionsPolicyViolationReportBody.h"
 #include "mozilla/dom/ReportingUtils.h"
 #include "nsContentUtils.h"
 #include "nsIOService.h"

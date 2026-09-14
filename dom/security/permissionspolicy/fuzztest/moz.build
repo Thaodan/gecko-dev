@@ -5,7 +5,7 @@
 Library("FuzzingFeaturePolicy")
 
 LOCAL_INCLUDES += [
-    "/dom/security/featurepolicy",
+    "/dom/security/permissionspolicy",
     "/netwerk/base",
 ]
 

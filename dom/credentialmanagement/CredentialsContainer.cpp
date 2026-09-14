@@ -7,7 +7,7 @@
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/dom/Credential.h"
 #include "mozilla/dom/DigitalCredentialHandler.h"
-#include "mozilla/dom/FeaturePolicyUtils.h"
+#include "mozilla/dom/PermissionsPolicyUtils.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WebAuthnHandler.h"
 #include "mozilla/dom/WebIdentityHandler.h"

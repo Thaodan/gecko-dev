@@ -8,7 +8,7 @@
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Result.h"
 #include "mozilla/dom/ClientInfo.h"
-#include "mozilla/dom/FeaturePolicy.h"
+#include "mozilla/dom/PermissionsPolicy.h"
 #include "mozilla/dom/ReferrerPolicyBinding.h"
 #include "mozilla/dom/ServiceWorkerDescriptor.h"
 #include "mozilla/dom/UserNavigationInvolvement.h"

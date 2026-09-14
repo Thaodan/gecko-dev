@@ -2,16 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "FeaturePolicy.h"
+#include "PermissionsPolicy.h"
 
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/Feature.h"
-#include "mozilla/dom/FeaturePolicyBinding.h"
-#include "mozilla/dom/FeaturePolicyParser.h"
-#include "mozilla/dom/FeaturePolicyUtils.h"
 #include "mozilla/dom/HTMLIFrameElement.h"
+#include "mozilla/dom/PermissionsPolicyBinding.h"
+#include "mozilla/dom/PermissionsPolicyParser.h"
+#include "mozilla/dom/PermissionsPolicyUtils.h"
 #include "nsContentUtils.h"
 #include "nsNetUtil.h"
 

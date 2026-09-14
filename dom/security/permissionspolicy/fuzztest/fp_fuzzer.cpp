@@ -5,7 +5,7 @@
 #include "FuzzingInterface.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/dom/Feature.h"
-#include "mozilla/dom/FeaturePolicyParser.h"
+#include "mozilla/dom/PermissionsPolicyParser.h"
 #include "nsNetUtil.h"
 #include "nsStringFwd.h"
 #include "nsTArray.h"

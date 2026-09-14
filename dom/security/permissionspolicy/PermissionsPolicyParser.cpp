@@ -2,11 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "FeaturePolicyParser.h"
+#include "PermissionsPolicyParser.h"
 
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/dom/Feature.h"
-#include "mozilla/dom/FeaturePolicyUtils.h"
+#include "mozilla/dom/PermissionsPolicyUtils.h"
 #include "mozilla/dom/PolicyTokenizer.h"
 #include "mozilla/net/SFV.h"
 #include "nsIScriptError.h"

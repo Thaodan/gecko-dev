@@ -7,7 +7,7 @@
 </head>
 <body>
 <iframe src="empty.html" id="ifr"></iframe>
-<iframe src="https://example.org/tests/dom/security/featurePolicy/test/mochitest/empty.html" id="cross_ifr"></iframe>
+<iframe src="https://example.org/tests/dom/security/permissionspolicy/test/mochitest/empty.html" id="cross_ifr"></iframe>
 <script type="text/javascript">
 
 SimpleTest.waitForExplicitFinish();
@@ -292,7 +292,7 @@ function test_cross_iframe_contentDocument_no_allow() {
   info("Checking cross iframe document.featurePolicy no allow");
 
   let ifr = document.createElement("iframe");
-  ifr.setAttribute("src", "https://example.org/tests/dom/security/featurePolicy/test/mochitest/empty.html");
+  ifr.setAttribute("src", "https://example.org/tests/dom/security/permissionspolicy/test/mochitest/empty.html");
   ifr.onload = async function() {
     await SpecialPowers.spawn(ifr, [], () => {
       Assert.ok("featurePolicy" in this.content.document, "We have this.content.document.featurePolicy");
@@ -345,7 +345,7 @@ function test_cross_iframe_contentDocument_allow() {
   info("Checking cross iframe document.featurePolicy with allow");
 
   let ifr = document.createElement("iframe");
-  ifr.setAttribute("src", "https://example.org/tests/dom/security/featurePolicy/test/mochitest/empty.html");
+  ifr.setAttribute("src", "https://example.org/tests/dom/security/permissionspolicy/test/mochitest/empty.html");
   ifr.setAttribute("allow", "geolocation; camera 'none'");
   ifr.onload = async function() {
     await SpecialPowers.spawn(ifr, [], () => {

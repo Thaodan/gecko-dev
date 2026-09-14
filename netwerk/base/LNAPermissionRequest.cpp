@@ -9,7 +9,7 @@
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/ClientInfo.h"
 #include "mozilla/dom/Document.h"
-#include "mozilla/dom/FeaturePolicy.h"
+#include "mozilla/dom/PermissionsPolicy.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/glean/NetwerkMetrics.h"
 #include "nsContentUtils.h"

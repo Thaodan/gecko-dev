@@ -11,16 +11,16 @@ BROWSER_CHROME_MANIFESTS += ["test/browser/browser.toml"]
 
 EXPORTS.mozilla.dom += [
     "Feature.h",
-    "FeaturePolicy.h",
-    "FeaturePolicyParser.h",
-    "FeaturePolicyUtils.h",
+    "PermissionsPolicy.h",
+    "PermissionsPolicyParser.h",
+    "PermissionsPolicyUtils.h",
 ]
 
 UNIFIED_SOURCES += [
     "Feature.cpp",
-    "FeaturePolicy.cpp",
-    "FeaturePolicyParser.cpp",
-    "FeaturePolicyUtils.cpp",
+    "PermissionsPolicy.cpp",
+    "PermissionsPolicyParser.cpp",
+    "PermissionsPolicyUtils.cpp",
 ]
 
 LOCAL_INCLUDES += [
