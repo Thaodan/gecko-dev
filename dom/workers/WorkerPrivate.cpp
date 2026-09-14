@@ -3640,7 +3640,7 @@ nsresult WorkerPrivate::GetLoadInfo(
       loadInfo.mUseRegularPrincipal = document->UseRegularPrincipal();
       loadInfo.mUsingStorageAccess = document->UsingStorageAccess();
       loadInfo.mSerialAllowed =
-          FeaturePolicyUtils::IsFeatureAllowed(document, u"serial"_ns);
+          PermissionsPolicyUtils::IsFeatureAllowed(document, u"serial"_ns);
       loadInfo.mShouldResistFingerprinting =
           document->ShouldResistFingerprinting(
               RFPTarget::IsAlwaysEnabledForPrecompute);

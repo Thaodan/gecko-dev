@@ -25,7 +25,7 @@ class nsFrameLoader;
 
 namespace mozilla::dom {
 struct BindContext;
-class FeaturePolicy;
+class PermissionsPolicy;
 template <typename T>
 class Sequence;
 class HTMLIFrameElement;
@@ -218,7 +218,7 @@ class nsObjectLoadingContent : public nsIStreamListener,
    * changed, which can happen when this element is upgraded to a container or
    * when the URI of the element has changed.
    */
-  void RefreshFeaturePolicy();
+  void RefreshPermissionsPolicy();
 
  private:
   // Object parameter changes returned by UpdateObjectParameters
@@ -393,14 +393,14 @@ class nsObjectLoadingContent : public nsIStreamListener,
    * Store permissions policy in container browsing context so that it can be
    * accessed cross process.
    */
-  void MaybeStoreCrossOriginFeaturePolicy();
+  void MaybeStoreCrossOriginPermissionsPolicy();
 
   /**
    * Return the value of either `data` or `src`, depending on element type,
    * parsed as a URL. If URL is invalid or the attribute is missing this returns
    * the document's origin.
    */
-  static already_AddRefed<nsIPrincipal> GetFeaturePolicyDefaultOrigin(
+  static already_AddRefed<nsIPrincipal> GetPermissionsPolicyDefaultOrigin(
       nsINode* aNode);
 
   // The final listener for mChannel (uriloader, pluginstreamlistener, etc.)
@@ -472,13 +472,13 @@ class nsObjectLoadingContent : public nsIStreamListener,
   mozilla::Maybe<mozilla::IntrinsicSize> mSubdocumentIntrinsicSize;
   mozilla::Maybe<mozilla::AspectRatio> mSubdocumentIntrinsicRatio;
 
-  // This gets created on the first call of `RefreshFeaturePolicy`, and will be
-  // kept after that. Navigations of this element will use this if they're
+  // This gets created on the first call of `RefreshPermissionsPolicy`, and will
+  // be kept after that. Navigations of this element will use this if they're
   // targetting documents, which is how iframe element works. If it's a
   // non-document the permissions policy isn't used, but it doesn't hurt to keep
   // it around, and a subsequent document load will continue using it after
   // refreshing it.
-  RefPtr<mozilla::dom::FeaturePolicy> mFeaturePolicy;
+  RefPtr<mozilla::dom::PermissionsPolicy> mPermissionsPolicy;
 };
 
 #endif

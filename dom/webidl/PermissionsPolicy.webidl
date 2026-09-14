@@ -8,7 +8,7 @@
 
 [LegacyNoInterfaceObject,
  Exposed=Window]
-interface FeaturePolicy {
+interface PermissionsPolicy {
   boolean allowsFeature(DOMString feature, optional DOMString origin);
   sequence<DOMString> features();
   sequence<DOMString> allowedFeatures();
@@ -17,7 +17,7 @@ interface FeaturePolicy {
 
 [Pref="dom.reporting.featurePolicy.enabled",
  Exposed=Window]
-interface FeaturePolicyViolationReportBody : ReportBody {
+interface PermissionsPolicyViolationReportBody : ReportBody {
   readonly attribute DOMString featureId;
   readonly attribute UTF8String? sourceFile;
   readonly attribute long? lineNumber;

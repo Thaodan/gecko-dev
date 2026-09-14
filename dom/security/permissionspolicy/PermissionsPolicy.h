@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_dom_FeaturePolicy_h
-#define mozilla_dom_FeaturePolicy_h
+#ifndef mozilla_dom_PermissionsPolicy_h
+#define mozilla_dom_PermissionsPolicy_h
 
 #include "nsCycleCollectionParticipant.h"
 #include "nsIPrincipal.h"
@@ -60,9 +60,9 @@ class Feature;
 template <typename T>
 class Optional;
 
-class FeaturePolicyUtils;
+class PermissionsPolicyUtils;
 
-struct FeaturePolicyInfo final {
+struct PermissionsPolicyInfo final {
   CopyableTArray<nsString> mInheritedDeniedFeatureNames;
   CopyableTArray<nsString> mAttributeEnabledFeatureNames;
   nsString mDeclaredString;
@@ -71,16 +71,16 @@ struct FeaturePolicyInfo final {
   nsCOMPtr<nsIPrincipal> mSrcOrigin;
 };
 
-using MaybeFeaturePolicyInfo = Maybe<FeaturePolicyInfo>;
+using MaybePermissionsPolicyInfo = Maybe<PermissionsPolicyInfo>;
 
-class FeaturePolicy final : public nsISupports, public nsWrapperCache {
-  friend class FeaturePolicyUtils;
+class PermissionsPolicy final : public nsISupports, public nsWrapperCache {
+  friend class PermissionsPolicyUtils;
 
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
-  NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(FeaturePolicy)
+  NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(PermissionsPolicy)
 
-  explicit FeaturePolicy(nsINode* aNode);
+  explicit PermissionsPolicy(nsINode* aNode);
 
   // A PermissionsPolicy must have a default origin.
   // This method must be called before any other exposed WebIDL method or before
@@ -94,10 +94,11 @@ class FeaturePolicy final : public nsISupports, public nsWrapperCache {
   nsIPrincipal* DefaultOrigin() const { return mDefaultOrigin; }
 
   // Inherits the policy from the 'parent' context if it exists.
-  void InheritPolicy(FeaturePolicy* aParentFeaturePolicy);
+  void InheritPolicy(PermissionsPolicy* aParentPermissionsPolicy);
 
   // Inherits the policy from the 'parent' context if it exists.
-  void InheritPolicy(const FeaturePolicyInfo& aContainerFeaturePolicyInfo);
+  void InheritPolicy(
+      const PermissionsPolicyInfo& aContainerPermissionsPolicyInfo);
 
   // Parses and sets a policy from an iframe `allow` attribute. Attribute
   // policies use a different syntax from Permissions-Policy response headers.
@@ -175,10 +176,10 @@ class FeaturePolicy final : public nsISupports, public nsWrapperCache {
   nsIPrincipal* GetSelfOrigin() const { return mSelfOrigin; }
   nsIPrincipal* GetSrcOrigin() const { return mSrcOrigin; }
 
-  FeaturePolicyInfo ToFeaturePolicyInfo() const;
+  PermissionsPolicyInfo ToPermissionsPolicyInfo() const;
 
  private:
-  ~FeaturePolicy() = default;
+  ~PermissionsPolicy() = default;
 
   // This method returns true if the aFeatureName is allowed for aOrigin,
   // following the permissions-policy directives. See the comment at the top of
@@ -226,4 +227,4 @@ class FeaturePolicy final : public nsISupports, public nsWrapperCache {
 
 }  // namespace mozilla::dom
 
-#endif  // mozilla_dom_FeaturePolicy_h
+#endif  // mozilla_dom_PermissionsPolicy_h

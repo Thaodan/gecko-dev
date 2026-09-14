@@ -1478,8 +1478,8 @@ already_AddRefed<Promise> Navigator::Share(const ShareData& aData,
     return nullptr;
   }
 
-  if (!FeaturePolicyUtils::IsFeatureAllowed(mWindow->GetExtantDoc(),
-                                            u"web-share"_ns)) {
+  if (!PermissionsPolicyUtils::IsFeatureAllowed(mWindow->GetExtantDoc(),
+                                                u"web-share"_ns)) {
     aRv.ThrowNotAllowedError(
         "Document's Permissions Policy does not allow calling "
         "share() from this context.");
@@ -1576,8 +1576,8 @@ bool Navigator::CanShare(const ShareData& aData) {
     return false;
   }
 
-  if (!FeaturePolicyUtils::IsFeatureAllowed(mWindow->GetExtantDoc(),
-                                            u"web-share"_ns)) {
+  if (!PermissionsPolicyUtils::IsFeatureAllowed(mWindow->GetExtantDoc(),
+                                                u"web-share"_ns)) {
     return false;
   }
 
@@ -1651,8 +1651,8 @@ void Navigator::GetGamepads(nsTArray<RefPtr<Gamepad>>& aGamepads,
   NS_ENSURE_TRUE_VOID(mWindow->GetDocShell());
   nsGlobalWindowInner* win = nsGlobalWindowInner::Cast(mWindow);
 
-  if (!FeaturePolicyUtils::IsFeatureAllowed(win->GetExtantDoc(),
-                                            u"gamepad"_ns)) {
+  if (!PermissionsPolicyUtils::IsFeatureAllowed(win->GetExtantDoc(),
+                                                u"gamepad"_ns)) {
     aRv.ThrowSecurityError(
         "Document's Permission Policy does not allow calling "
         "getGamepads() from this context.");
@@ -1702,8 +1702,8 @@ already_AddRefed<Promise> Navigator::GetVRDisplays(ErrorResult& aRv) {
     return nullptr;
   }
 
-  if (!FeaturePolicyUtils::IsFeatureAllowed(mWindow->GetExtantDoc(),
-                                            u"vr"_ns)) {
+  if (!PermissionsPolicyUtils::IsFeatureAllowed(mWindow->GetExtantDoc(),
+                                                u"vr"_ns)) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return nullptr;
   }
@@ -2238,7 +2238,7 @@ already_AddRefed<Promise> Navigator::RequestMediaKeySystemAccess(
 
   Document* doc = mWindow->GetExtantDoc();
   if (doc &&
-      !FeaturePolicyUtils::IsFeatureAllowed(doc, u"encrypted-media"_ns)) {
+      !PermissionsPolicyUtils::IsFeatureAllowed(doc, u"encrypted-media"_ns)) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return nullptr;
   }

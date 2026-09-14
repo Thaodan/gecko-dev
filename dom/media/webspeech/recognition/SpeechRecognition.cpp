@@ -476,7 +476,7 @@ already_AddRefed<Promise> SpeechRecognition::Available(
   }
 
   Document* doc = window->GetExtantDoc();
-  if (!doc || !FeaturePolicyUtils::IsFeatureAllowed(
+  if (!doc || !PermissionsPolicyUtils::IsFeatureAllowed(
                   doc, u"on-device-speech-recognition"_ns)) {
     promise->MaybeResolve(AvailabilityStatus::Unavailable);
     return promise.forget();
@@ -556,7 +556,7 @@ already_AddRefed<Promise> SpeechRecognition::Install(
   // Not conditioned on processLocally: there is no remote backend to install
   // for, so every install() ends up fetching an on-device model and has to
   // clear these gates.
-  if (!FeaturePolicyUtils::IsFeatureAllowed(
+  if (!PermissionsPolicyUtils::IsFeatureAllowed(
           doc, u"on-device-speech-recognition"_ns)) {
     aRv.ThrowNotAllowedError(
         "on-device speech recognition is not allowed in this cross-origin "

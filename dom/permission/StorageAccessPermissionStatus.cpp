@@ -104,8 +104,8 @@ class StorageAccessPermissionStatusSink final : public PermissionStatusSink {
       }
 
       // Perform a Permission Policy Request
-      if (!FeaturePolicyUtils::IsFeatureAllowed(window->GetExtantDoc(),
-                                                u"storage-access"_ns)) {
+      if (!PermissionsPolicyUtils::IsFeatureAllowed(window->GetExtantDoc(),
+                                                    u"storage-access"_ns)) {
         return PermissionStatePromise::CreateAndResolve(
             nsIPermissionManager::PROMPT_ACTION, __func__);
       }

@@ -62,7 +62,7 @@ void ReportToConsoleInvalidAllowValue(Document* aDocument,
 }  // namespace
 
 /* static */
-bool FeaturePolicyParser::ParsePolicyFromAttribute(
+bool PermissionsPolicyParser::ParsePolicyFromAttribute(
     const nsAString& aPolicy, Document* aDocument, nsIPrincipal* aSelfOrigin,
     nsIPrincipal* aSrcOrigin, nsTArray<Feature>& aParsedFeatures) {
   MOZ_ASSERT(aSelfOrigin);
@@ -77,7 +77,7 @@ bool FeaturePolicyParser::ParsePolicyFromAttribute(
       continue;
     }
 
-    if (!FeaturePolicyUtils::IsSupportedFeature(featureTokens[0])) {
+    if (!PermissionsPolicyUtils::IsSupportedFeature(featureTokens[0])) {
       ReportToConsoleUnsupportedFeature(aDocument, featureTokens[0]);
       continue;
     }
@@ -175,7 +175,7 @@ static bool AppendOriginToFeature(const nsACString& aValue, Document* aDocument,
 }
 
 /* static */
-bool FeaturePolicyParser::ParsePolicyFromHeader(
+bool PermissionsPolicyParser::ParsePolicyFromHeader(
     const nsACString& aPolicy, Document* aDocument, nsIPrincipal* aSelfOrigin,
     nsTArray<Feature>& aParsedFeatures) {
   MOZ_ASSERT(aSelfOrigin);
@@ -198,7 +198,7 @@ bool FeaturePolicyParser::ParsePolicyFromHeader(
   for (const nsCString& key : keys) {
     nsString featureName = NS_ConvertUTF8toUTF16(key);
 
-    if (!FeaturePolicyUtils::IsSupportedFeature(featureName)) {
+    if (!PermissionsPolicyUtils::IsSupportedFeature(featureName)) {
       ReportToConsoleUnsupportedFeature(aDocument, featureName);
       continue;
     }

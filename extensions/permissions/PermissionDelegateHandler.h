@@ -101,7 +101,7 @@ class PermissionDelegateHandler final : public nsIPermissionDelegateHandler {
      * default in cross origin iframe and the iframe only could get/set
      * permission if there's allow attribute set in iframe. e.g allow =
      * "geolocation" */
-    eDelegateUseFeaturePolicy,
+    eDelegateUsePermissionsPolicy,
 
     /* Persistent denied permissions in cross origin iframe */
     ePersistDeniedCrossOrigin,
@@ -176,7 +176,7 @@ class PermissionDelegateHandler final : public nsIPermissionDelegateHandler {
    * default and only have the opportunity to request permission with allow
    * attribute.
    */
-  bool HasFeaturePolicyAllowed(const PermissionDelegateInfo* info) const;
+  bool HasPermissionsPolicyAllowed(const PermissionDelegateInfo* info) const;
 
   /**
    * A helper function to test the permission and set the result to the given

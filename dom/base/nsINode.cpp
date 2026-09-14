@@ -4953,7 +4953,8 @@ void nsINode::AncestorRevealingAlgorithm(ErrorResult& aRv) {
 
 void nsINode::AriaNotify(const nsAString& aAnnouncement,
                          const AriaNotificationOptions& aOptions) {
-  if (!FeaturePolicyUtils::IsFeatureAllowed(OwnerDoc(), u"aria-notify"_ns)) {
+  if (!PermissionsPolicyUtils::IsFeatureAllowed(OwnerDoc(),
+                                                u"aria-notify"_ns)) {
     return;
   }
 #ifdef ACCESSIBILITY

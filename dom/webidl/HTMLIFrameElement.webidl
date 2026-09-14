@@ -66,8 +66,9 @@ HTMLIFrameElement includes MozFrameLoaderOwner;
 
 // https://w3c.github.io/webappsec-permissions-policy/#idl-index
 partial interface HTMLIFrameElement {
-  [SameObject, Pref="dom.security.featurePolicy.webidl.enabled"]
-  readonly attribute FeaturePolicy featurePolicy;
+  [SameObject, BinaryName="PermissionsPolicy",
+   Pref="dom.security.featurePolicy.webidl.enabled"]
+  readonly attribute PermissionsPolicy featurePolicy;
 
   [CEReactions, SetterThrows, Pure]
            attribute DOMString allow;

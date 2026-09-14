@@ -41,7 +41,7 @@ static int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   NS_ConvertASCIItoUTF16 policy(reinterpret_cast<const char*>(data), size);
   if (!policy.get()) return 0;
 
-  FeaturePolicyParser::ParsePolicyFromAttribute(
+  PermissionsPolicyParser::ParsePolicyFromAttribute(
       policy, nullptr, selfURIPrincipal, selfURIPrincipal, parsedFeatures);
 
   for (const Feature& feature : parsedFeatures) {
@@ -62,4 +62,4 @@ static int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 }
 
 MOZ_FUZZING_INTERFACE_RAW(LVVMFuzzerInitTest, LLVMFuzzerTestOneInput,
-                          FeaturePolicyParser);
+                          PermissionsPolicyParser);

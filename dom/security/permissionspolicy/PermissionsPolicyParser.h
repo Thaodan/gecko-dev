@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_dom_FeaturePolicyParser_h
-#define mozilla_dom_FeaturePolicyParser_h
+#ifndef mozilla_dom_PermissionsPolicyParser_h
+#define mozilla_dom_PermissionsPolicyParser_h
 
 #include "nsString.h"
 
@@ -14,7 +14,7 @@ namespace mozilla::dom {
 class Document;
 class Feature;
 
-class FeaturePolicyParser final {
+class PermissionsPolicyParser final {
  public:
   // aSelfOrigin must not be null. if aSrcOrigin is null, the parsing will not
   // support 'src' as valid allow directive value.
@@ -32,4 +32,4 @@ class FeaturePolicyParser final {
 
 }  // namespace mozilla::dom
 
-#endif  // mozilla_dom_FeaturePolicyParser_h
+#endif  // mozilla_dom_PermissionsPolicyParser_h

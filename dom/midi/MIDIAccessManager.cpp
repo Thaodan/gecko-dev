@@ -70,7 +70,7 @@ already_AddRefed<Promise> MIDIAccessManager::RequestMIDIAccess(
   }
 #endif
 
-  if (!FeaturePolicyUtils::IsFeatureAllowed(doc, u"midi"_ns)) {
+  if (!PermissionsPolicyUtils::IsFeatureAllowed(doc, u"midi"_ns)) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return nullptr;
   }

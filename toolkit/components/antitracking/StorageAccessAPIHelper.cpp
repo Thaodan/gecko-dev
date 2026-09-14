@@ -1171,7 +1171,7 @@ Maybe<bool> StorageAccessAPIHelper::CheckCallingContextDecidesStorageAccessAPI(
 
   if (aRequestingStorageAccess) {
     // Perform a Permission Policy Request
-    dom::FeaturePolicy* policy = aDocument->FeaturePolicy();
+    dom::PermissionsPolicy* policy = aDocument->PermissionsPolicy();
     MOZ_ASSERT(policy);
 
     if (!policy->AllowsFeature(u"storage-access"_ns,

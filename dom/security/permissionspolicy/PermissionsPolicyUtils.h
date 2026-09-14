@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_dom_FeaturePolicyUtils_h
-#define mozilla_dom_FeaturePolicyUtils_h
+#ifndef mozilla_dom_PermissionsPolicyUtils_h
+#define mozilla_dom_PermissionsPolicyUtils_h
 
 #include <functional>
 
@@ -22,9 +22,9 @@ namespace dom {
 
 class Document;
 
-class FeaturePolicyUtils final {
+class PermissionsPolicyUtils final {
  public:
-  enum FeaturePolicyValue {
+  enum PermissionsPolicyValue {
     // Feature always allowed.
     eAll,
 
@@ -51,7 +51,7 @@ class FeaturePolicyUtils final {
   static void ForEachFeature(const std::function<void(const char*)>& aCallback);
 
   // Returns the default policy value for aFeatureName.
-  static FeaturePolicyValue DefaultAllowListFeature(
+  static PermissionsPolicyValue DefaultAllowListFeature(
       const nsAString& aFeatureName);
 
   // This method returns true if aFeatureName is in unsafe allowed "*" case.
@@ -75,14 +75,14 @@ template <typename T>
 struct ParamTraits;
 
 template <>
-struct ParamTraits<mozilla::dom::FeaturePolicyInfo> {
-  using paramType = mozilla::dom::FeaturePolicyInfo;
+struct ParamTraits<mozilla::dom::PermissionsPolicyInfo> {
+  using paramType = mozilla::dom::PermissionsPolicyInfo;
   static void Write(MessageWriter* aWriter,
-                    const mozilla::dom::FeaturePolicyInfo& aParam);
+                    const mozilla::dom::PermissionsPolicyInfo& aParam);
   static bool Read(MessageReader* aReader,
-                   mozilla::dom::FeaturePolicyInfo* aResult);
+                   mozilla::dom::PermissionsPolicyInfo* aResult);
 };
 
 }  // namespace IPC
 
-#endif  // mozilla_dom_FeaturePolicyUtils_h
+#endif  // mozilla_dom_PermissionsPolicyUtils_h

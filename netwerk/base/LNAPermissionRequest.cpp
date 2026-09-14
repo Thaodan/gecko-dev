@@ -169,10 +169,12 @@ nsresult LNAPermissionRequest::RequestPermission() {
       return Cancel();
     }
   } else {
-    Maybe<dom::FeaturePolicyInfo> fpInfo = bc->GetContainerFeaturePolicy();
+    Maybe<dom::PermissionsPolicyInfo> fpInfo =
+        bc->GetContainerPermissionsPolicy();
     // Permissions Policy is populated in the canonical browsing context via
-    // HTMLIFrameElement::MaybeStoreCrossOriginFeaturePolicy() (for <iframe>)
-    // nsObjectLoadingContent::MaybeStoreCrossOriginFeaturePolicy() (for
+    // HTMLIFrameElement::MaybeStoreCrossOriginPermissionsPolicy() (for
+    // <iframe>)
+    // nsObjectLoadingContent::MaybeStoreCrossOriginPermissionsPolicy() (for
     // <object>/<embed>)
     // Hence, it's safe to ignore permissions policy when it's missing as that
     // would only mean the request is from a top-level document, which should

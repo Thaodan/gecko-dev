@@ -269,7 +269,7 @@ void XRSystem::OnXRPermissionRequestCancel() {
   }
 }
 
-bool XRSystem::FeaturePolicyBlocked() const {
+bool XRSystem::PermissionsPolicyBlocked() const {
   nsGlobalWindowInner* win = GetOwnerWindow();
   if (!win) {
     return true;
@@ -362,11 +362,11 @@ void XRSystem::ResolveIsSessionSupportedRequests() {
   gfx::VRManagerChild* vm = gfx::VRManagerChild::Get();
   nsTArray<RefPtr<IsSessionSupportedRequest>> isSessionSupportedRequests(
       std::move(mIsSessionSupportedRequests));
-  bool featurePolicyBlocked = FeaturePolicyBlocked();
+  bool permissionsPolicyBlocked = PermissionsPolicyBlocked();
 
   for (RefPtr<IsSessionSupportedRequest>& request :
        isSessionSupportedRequests) {
-    if (featurePolicyBlocked) {
+    if (permissionsPolicyBlocked) {
       request->mPromise->MaybeRejectWithSecurityError(
           "The xr-spatial-tracking feature policy is required.");
       continue;
@@ -390,7 +390,7 @@ void XRSystem::ResolveIsSessionSupportedRequests() {
 void XRSystem::ProcessSessionRequestsWaitingForRuntimeDetection() {
   bool alreadyRequestedPermission =
       !mRequestSessionRequestsWaitingForEnumeration.IsEmpty();
-  bool featurePolicyBlocked = FeaturePolicyBlocked();
+  bool permissionsPolicyBlocked = PermissionsPolicyBlocked();
   gfx::VRManagerChild* vm = gfx::VRManagerChild::Get();
 
   nsTArray<RefPtr<RequestSessionRequest>> sessionRequests(
@@ -421,7 +421,7 @@ void XRSystem::ProcessSessionRequestsWaitingForRuntimeDetection() {
       }
       continue;
     }
-    if (featurePolicyBlocked) {
+    if (permissionsPolicyBlocked) {
       // Don't show a permission prompt if blocked by permissions policy.
       if (CancelHardwareRequest(request)) {
         request->mPromise->MaybeRejectWithSecurityError(

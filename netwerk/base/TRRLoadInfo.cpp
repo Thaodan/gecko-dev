@@ -490,12 +490,12 @@ TRRLoadInfo::GetPolicyContainerToInherit() {
   return nullptr;
 }
 
-Maybe<FeaturePolicyInfo> TRRLoadInfo::GetContainerFeaturePolicyInfo() {
+Maybe<PermissionsPolicyInfo> TRRLoadInfo::GetContainerPermissionsPolicyInfo() {
   return Nothing();
 }
 
-void TRRLoadInfo::SetContainerFeaturePolicyInfo(
-    const FeaturePolicyInfo& aContainerFeaturePolicyInfo) {}
+void TRRLoadInfo::SetContainerPermissionsPolicyInfo(
+    const PermissionsPolicyInfo& aContainerPermissionsPolicyInfo) {}
 
 NS_IMETHODIMP
 TRRLoadInfo::GetIsSameDocumentNavigation(bool* aTextDirectiveUserActivation) {

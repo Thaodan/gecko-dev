@@ -20,7 +20,7 @@ namespace dom {
 
 struct FeatureMap {
   const char* mFeatureName;
-  FeaturePolicyUtils::FeaturePolicyValue mDefaultAllowList;
+  PermissionsPolicyUtils::PermissionsPolicyValue mDefaultAllowList;
 };
 
 /*
@@ -28,30 +28,33 @@ struct FeatureMap {
  * DOM Security peer!
  */
 static FeatureMap sSupportedFeatures[] = {
-    {"camera", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
-    {"geolocation", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
-    {"microphone", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
+    {"camera", PermissionsPolicyUtils::PermissionsPolicyValue::eSelf},
+    {"geolocation", PermissionsPolicyUtils::PermissionsPolicyValue::eSelf},
+    {"microphone", PermissionsPolicyUtils::PermissionsPolicyValue::eSelf},
     {"on-device-speech-recognition",
-     FeaturePolicyUtils::FeaturePolicyValue::eSelf},
+     PermissionsPolicyUtils::PermissionsPolicyValue::eSelf},
     {"digital-credentials-create",
-     FeaturePolicyUtils::FeaturePolicyValue::eSelf},
-    {"digital-credentials-get", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
-    {"display-capture", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
-    {"fullscreen", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
-    {"web-share", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
-    {"gamepad", FeaturePolicyUtils::FeaturePolicyValue::eAll},
+     PermissionsPolicyUtils::PermissionsPolicyValue::eSelf},
+    {"digital-credentials-get",
+     PermissionsPolicyUtils::PermissionsPolicyValue::eSelf},
+    {"display-capture", PermissionsPolicyUtils::PermissionsPolicyValue::eSelf},
+    {"fullscreen", PermissionsPolicyUtils::PermissionsPolicyValue::eSelf},
+    {"web-share", PermissionsPolicyUtils::PermissionsPolicyValue::eSelf},
+    {"gamepad", PermissionsPolicyUtils::PermissionsPolicyValue::eAll},
     {"publickey-credentials-create",
-     FeaturePolicyUtils::FeaturePolicyValue::eSelf},
+     PermissionsPolicyUtils::PermissionsPolicyValue::eSelf},
     {"publickey-credentials-get",
-     FeaturePolicyUtils::FeaturePolicyValue::eSelf},
-    {"serial", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
-    {"speaker-selection", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
-    {"storage-access", FeaturePolicyUtils::FeaturePolicyValue::eAll},
-    {"screen-wake-lock", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
-    {"loopback-network", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
-    {"local-network", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
-    {"aria-notify", FeaturePolicyUtils::FeaturePolicyValue::eAll},
-    {"picture-in-picture", FeaturePolicyUtils::FeaturePolicyValue::eAll},
+     PermissionsPolicyUtils::PermissionsPolicyValue::eSelf},
+    {"serial", PermissionsPolicyUtils::PermissionsPolicyValue::eSelf},
+    {"speaker-selection",
+     PermissionsPolicyUtils::PermissionsPolicyValue::eSelf},
+    {"storage-access", PermissionsPolicyUtils::PermissionsPolicyValue::eAll},
+    {"screen-wake-lock", PermissionsPolicyUtils::PermissionsPolicyValue::eSelf},
+    {"loopback-network", PermissionsPolicyUtils::PermissionsPolicyValue::eSelf},
+    {"local-network", PermissionsPolicyUtils::PermissionsPolicyValue::eSelf},
+    {"aria-notify", PermissionsPolicyUtils::PermissionsPolicyValue::eAll},
+    {"picture-in-picture",
+     PermissionsPolicyUtils::PermissionsPolicyValue::eAll},
 };
 
 /*
@@ -63,18 +66,20 @@ static FeatureMap sExperimentalFeatures[] = {
     // 'user-gesture-activation' policy. However, we can still keep it in the
     // list as we might start supporting it after we use different autoplay
     // policy.
-    {"autoplay", FeaturePolicyUtils::FeaturePolicyValue::eAll},
-    {"encrypted-media", FeaturePolicyUtils::FeaturePolicyValue::eAll},
-    {"midi", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
-    {"payment", FeaturePolicyUtils::FeaturePolicyValue::eAll},
-    {"document-domain", FeaturePolicyUtils::FeaturePolicyValue::eAll},
-    {"vr", FeaturePolicyUtils::FeaturePolicyValue::eAll},
+    {"autoplay", PermissionsPolicyUtils::PermissionsPolicyValue::eAll},
+    {"encrypted-media", PermissionsPolicyUtils::PermissionsPolicyValue::eAll},
+    {"midi", PermissionsPolicyUtils::PermissionsPolicyValue::eSelf},
+    {"payment", PermissionsPolicyUtils::PermissionsPolicyValue::eAll},
+    {"document-domain", PermissionsPolicyUtils::PermissionsPolicyValue::eAll},
+    {"vr", PermissionsPolicyUtils::PermissionsPolicyValue::eAll},
     // https://immersive-web.github.io/webxr/#permissions-policy
-    {"xr-spatial-tracking", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
+    {"xr-spatial-tracking",
+     PermissionsPolicyUtils::PermissionsPolicyValue::eSelf},
 };
 
 /* static */
-bool FeaturePolicyUtils::IsExperimentalFeature(const nsAString& aFeatureName) {
+bool PermissionsPolicyUtils::IsExperimentalFeature(
+    const nsAString& aFeatureName) {
   uint32_t numFeatures =
       (sizeof(sExperimentalFeatures) / sizeof(sExperimentalFeatures[0]));
   for (uint32_t i = 0; i < numFeatures; ++i) {
@@ -88,7 +93,7 @@ bool FeaturePolicyUtils::IsExperimentalFeature(const nsAString& aFeatureName) {
 }
 
 /* static */
-bool FeaturePolicyUtils::IsSupportedFeature(const nsAString& aFeatureName) {
+bool PermissionsPolicyUtils::IsSupportedFeature(const nsAString& aFeatureName) {
   uint32_t numFeatures =
       (sizeof(sSupportedFeatures) / sizeof(sSupportedFeatures[0]));
   for (uint32_t i = 0; i < numFeatures; ++i) {
@@ -102,7 +107,7 @@ bool FeaturePolicyUtils::IsSupportedFeature(const nsAString& aFeatureName) {
 }
 
 /* static */
-void FeaturePolicyUtils::ForEachFeature(
+void PermissionsPolicyUtils::ForEachFeature(
     const std::function<void(const char*)>& aCallback) {
   uint32_t numFeatures =
       (sizeof(sSupportedFeatures) / sizeof(sSupportedFeatures[0]));
@@ -119,8 +124,8 @@ void FeaturePolicyUtils::ForEachFeature(
   }
 }
 
-/* static */ FeaturePolicyUtils::FeaturePolicyValue
-FeaturePolicyUtils::DefaultAllowListFeature(const nsAString& aFeatureName) {
+/* static */ PermissionsPolicyUtils::PermissionsPolicyValue
+PermissionsPolicyUtils::DefaultAllowListFeature(const nsAString& aFeatureName) {
   uint32_t numFeatures =
       (sizeof(sSupportedFeatures) / sizeof(sSupportedFeatures[0]));
   for (uint32_t i = 0; i < numFeatures; ++i) {
@@ -140,7 +145,7 @@ FeaturePolicyUtils::DefaultAllowListFeature(const nsAString& aFeatureName) {
     }
   }
 
-  return FeaturePolicyValue::eNone;
+  return PermissionsPolicyValue::eNone;
 }
 
 static bool IsSameOriginAsTop(Document* aDocument) {
@@ -167,7 +172,7 @@ static bool IsSameOriginAsTop(Document* aDocument) {
 }
 
 /* static */
-bool FeaturePolicyUtils::IsFeatureUnsafeAllowedAll(
+bool PermissionsPolicyUtils::IsFeatureUnsafeAllowedAll(
     Document* aDocument, const nsAString& aFeatureName) {
   MOZ_ASSERT(aDocument);
 
@@ -175,7 +180,7 @@ bool FeaturePolicyUtils::IsFeatureUnsafeAllowedAll(
     return false;
   }
 
-  FeaturePolicy* policy = aDocument->FeaturePolicy();
+  PermissionsPolicy* policy = aDocument->PermissionsPolicy();
   MOZ_ASSERT(policy);
 
   return policy->HasFeatureUnsafeAllowsAll(aFeatureName) &&
@@ -186,8 +191,8 @@ bool FeaturePolicyUtils::IsFeatureUnsafeAllowedAll(
 }
 
 /* static */
-bool FeaturePolicyUtils::IsFeatureAllowed(Document* aDocument,
-                                          const nsAString& aFeatureName) {
+bool PermissionsPolicyUtils::IsFeatureAllowed(Document* aDocument,
+                                              const nsAString& aFeatureName) {
   MOZ_ASSERT(aDocument);
 
   // Skip apply features in experimental phase
@@ -196,7 +201,7 @@ bool FeaturePolicyUtils::IsFeatureAllowed(Document* aDocument,
     return true;
   }
 
-  FeaturePolicy* policy = aDocument->FeaturePolicy();
+  PermissionsPolicy* policy = aDocument->PermissionsPolicy();
   MOZ_ASSERT(policy);
 
   if (policy->AllowsFeatureInternal(aFeatureName, policy->DefaultOrigin())) {
@@ -208,8 +213,8 @@ bool FeaturePolicyUtils::IsFeatureAllowed(Document* aDocument,
 }
 
 /* static */
-void FeaturePolicyUtils::ReportViolation(Document* aDocument,
-                                         const nsAString& aFeatureName) {
+void PermissionsPolicyUtils::ReportViolation(Document* aDocument,
+                                             const nsAString& aFeatureName) {
   MOZ_ASSERT(aDocument);
 
   nsCOMPtr<nsIURI> uri = aDocument->GetDocumentURI();
@@ -239,10 +244,10 @@ void FeaturePolicyUtils::ReportViolation(Document* aDocument,
     return;
   }
 
-  RefPtr<FeaturePolicyViolationReportBody> body =
-      new FeaturePolicyViolationReportBody(window->AsGlobal(), aFeatureName,
-                                           sourceFile, lineNumber, columnNumber,
-                                           u"enforce"_ns);
+  RefPtr<PermissionsPolicyViolationReportBody> body =
+      new PermissionsPolicyViolationReportBody(window->AsGlobal(), aFeatureName,
+                                               sourceFile, lineNumber,
+                                               columnNumber, u"enforce"_ns);
 
   ReportingUtils::Report(window->AsGlobal(), nsGkAtoms::featurePolicyViolation,
                          u"default"_ns, NS_ConvertUTF8toUTF16(url), body);
@@ -253,7 +258,7 @@ void FeaturePolicyUtils::ReportViolation(Document* aDocument,
 
 namespace IPC {
 
-IMPLEMENT_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::FeaturePolicyInfo,
+IMPLEMENT_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::PermissionsPolicyInfo,
                                      mInheritedDeniedFeatureNames,
                                      mAttributeEnabledFeatureNames,
                                      mDeclaredString, mDefaultOrigin,

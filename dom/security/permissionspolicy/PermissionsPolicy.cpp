@@ -17,24 +17,24 @@
 
 namespace mozilla::dom {
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(FeaturePolicy)
-NS_IMPL_CYCLE_COLLECTING_ADDREF(FeaturePolicy)
-NS_IMPL_CYCLE_COLLECTING_RELEASE(FeaturePolicy)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(PermissionsPolicy)
+NS_IMPL_CYCLE_COLLECTING_ADDREF(PermissionsPolicy)
+NS_IMPL_CYCLE_COLLECTING_RELEASE(PermissionsPolicy)
 
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(FeaturePolicy)
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(PermissionsPolicy)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-FeaturePolicy::FeaturePolicy(nsINode* aNode) : mParentNode(aNode) {}
+PermissionsPolicy::PermissionsPolicy(nsINode* aNode) : mParentNode(aNode) {}
 
-void FeaturePolicy::InheritPolicy(FeaturePolicy* aParentPolicy) {
+void PermissionsPolicy::InheritPolicy(PermissionsPolicy* aParentPolicy) {
   MOZ_ASSERT(aParentPolicy);
 
   mInheritedDeniedFeatureNames.Clear();
 
-  RefPtr<FeaturePolicy> dest = this;
-  RefPtr<FeaturePolicy> src = aParentPolicy;
+  RefPtr<PermissionsPolicy> dest = this;
+  RefPtr<PermissionsPolicy> src = aParentPolicy;
 
   // Inherit origins which explicitly declared policy in chain
   for (const Feature& featureInChain :
@@ -42,7 +42,7 @@ void FeaturePolicy::InheritPolicy(FeaturePolicy* aParentPolicy) {
     dest->AppendToDeclaredAllowInAncestorChain(featureInChain);
   }
 
-  FeaturePolicyUtils::ForEachFeature([dest, src](const char* aFeatureName) {
+  PermissionsPolicyUtils::ForEachFeature([dest, src](const char* aFeatureName) {
     nsString featureName;
     featureName.AppendASCII(aFeatureName);
     // Store unsafe allows all (allow=*)
@@ -70,41 +70,46 @@ void FeaturePolicy::InheritPolicy(FeaturePolicy* aParentPolicy) {
   });
 }
 
-void FeaturePolicy::InheritPolicy(
-    const FeaturePolicyInfo& aContainerFeaturePolicyInfo) {
+void PermissionsPolicy::InheritPolicy(
+    const PermissionsPolicyInfo& aContainerPermissionsPolicyInfo) {
   // Create a temporary PermissionsPolicy from the PermissionsPolicyInfo to be
   // able to re-use the inheriting functionality.
-  RefPtr<dom::FeaturePolicy> featurePolicy = new dom::FeaturePolicy(nullptr);
-  featurePolicy->SetDefaultOrigin(aContainerFeaturePolicyInfo.mDefaultOrigin);
-  featurePolicy->SetInheritedDeniedFeatureNames(
-      aContainerFeaturePolicyInfo.mInheritedDeniedFeatureNames);
+  RefPtr<dom::PermissionsPolicy> permissionsPolicy =
+      new dom::PermissionsPolicy(nullptr);
+  permissionsPolicy->SetDefaultOrigin(
+      aContainerPermissionsPolicyInfo.mDefaultOrigin);
+  permissionsPolicy->SetInheritedDeniedFeatureNames(
+      aContainerPermissionsPolicyInfo.mInheritedDeniedFeatureNames);
 
-  const auto& declaredString = aContainerFeaturePolicyInfo.mDeclaredString;
-  if (aContainerFeaturePolicyInfo.mSelfOrigin && !declaredString.IsEmpty()) {
-    featurePolicy->SetDeclaredAttributePolicy(
-        nullptr, declaredString, aContainerFeaturePolicyInfo.mSelfOrigin,
-        aContainerFeaturePolicyInfo.mSrcOrigin);
+  const auto& declaredString = aContainerPermissionsPolicyInfo.mDeclaredString;
+  if (aContainerPermissionsPolicyInfo.mSelfOrigin &&
+      !declaredString.IsEmpty()) {
+    permissionsPolicy->SetDeclaredAttributePolicy(
+        nullptr, declaredString, aContainerPermissionsPolicyInfo.mSelfOrigin,
+        aContainerPermissionsPolicyInfo.mSrcOrigin);
   }
 
   for (const auto& featureName :
-       aContainerFeaturePolicyInfo.mAttributeEnabledFeatureNames) {
-    featurePolicy->MaybeSetAllowedPolicy(featureName);
+       aContainerPermissionsPolicyInfo.mAttributeEnabledFeatureNames) {
+    permissionsPolicy->MaybeSetAllowedPolicy(featureName);
   }
 
-  InheritPolicy(featurePolicy);
+  InheritPolicy(permissionsPolicy);
 }
 
-void FeaturePolicy::SetInheritedDeniedFeature(const nsAString& aFeatureName) {
+void PermissionsPolicy::SetInheritedDeniedFeature(
+    const nsAString& aFeatureName) {
   MOZ_ASSERT(!HasInheritedDeniedFeature(aFeatureName));
   mInheritedDeniedFeatureNames.AppendElement(aFeatureName);
 }
 
-bool FeaturePolicy::HasInheritedDeniedFeature(
+bool PermissionsPolicy::HasInheritedDeniedFeature(
     const nsAString& aFeatureName) const {
   return mInheritedDeniedFeatureNames.Contains(aFeatureName);
 }
 
-bool FeaturePolicy::HasDeclaredFeature(const nsAString& aFeatureName) const {
+bool PermissionsPolicy::HasDeclaredFeature(
+    const nsAString& aFeatureName) const {
   for (const Feature& feature : mFeatures) {
     if (feature.Name().Equals(aFeatureName)) {
       return true;
@@ -114,7 +119,7 @@ bool FeaturePolicy::HasDeclaredFeature(const nsAString& aFeatureName) const {
   return false;
 }
 
-bool FeaturePolicy::HasFeatureUnsafeAllowsAll(
+bool PermissionsPolicy::HasFeatureUnsafeAllowsAll(
     const nsAString& aFeatureName) const {
   for (const Feature& feature : mFeatures) {
     if (feature.AllowsAll() && feature.Name().Equals(aFeatureName)) {
@@ -127,7 +132,7 @@ bool FeaturePolicy::HasFeatureUnsafeAllowsAll(
   return mParentAllowedAllFeatures.Contains(aFeatureName);
 }
 
-void FeaturePolicy::AppendToDeclaredAllowInAncestorChain(
+void PermissionsPolicy::AppendToDeclaredAllowInAncestorChain(
     const Feature& aFeature) {
   for (Feature& featureInChain : mDeclaredFeaturesInAncestorChain) {
     if (featureInChain.Name().Equals(aFeature.Name())) {
@@ -146,7 +151,7 @@ void FeaturePolicy::AppendToDeclaredAllowInAncestorChain(
   mDeclaredFeaturesInAncestorChain.AppendElement(aFeature);
 }
 
-bool FeaturePolicy::IsSameOriginAsSrc(nsIPrincipal* aPrincipal) const {
+bool PermissionsPolicy::IsSameOriginAsSrc(nsIPrincipal* aPrincipal) const {
   MOZ_ASSERT(aPrincipal);
 
   if (!mSrcOrigin) {
@@ -157,17 +162,16 @@ bool FeaturePolicy::IsSameOriginAsSrc(nsIPrincipal* aPrincipal) const {
       ->Subsumes(aPrincipal, BasePrincipal::ConsiderDocumentDomain);
 }
 
-void FeaturePolicy::SetDeclaredAttributePolicy(Document* aDocument,
-                                               const nsAString& aPolicyString,
-                                               nsIPrincipal* aSelfOrigin,
-                                               nsIPrincipal* aSrcOrigin) {
+void PermissionsPolicy::SetDeclaredAttributePolicy(
+    Document* aDocument, const nsAString& aPolicyString,
+    nsIPrincipal* aSelfOrigin, nsIPrincipal* aSrcOrigin) {
   ResetDeclaredPolicy();
 
   mDeclaredString = aPolicyString;
   mSelfOrigin = aSelfOrigin;
   mSrcOrigin = aSrcOrigin;
 
-  (void)NS_WARN_IF(!FeaturePolicyParser::ParsePolicyFromAttribute(
+  (void)NS_WARN_IF(!PermissionsPolicyParser::ParsePolicyFromAttribute(
       aPolicyString, aDocument, aSelfOrigin, aSrcOrigin, mFeatures));
 
   // Only store explicitly declared allowlist
@@ -178,15 +182,15 @@ void FeaturePolicy::SetDeclaredAttributePolicy(Document* aDocument,
   }
 }
 
-void FeaturePolicy::SetDeclaredHeaderPolicy(Document* aDocument,
-                                            const nsAString& aPolicyString,
-                                            nsIPrincipal* aSelfOrigin) {
+void PermissionsPolicy::SetDeclaredHeaderPolicy(Document* aDocument,
+                                                const nsAString& aPolicyString,
+                                                nsIPrincipal* aSelfOrigin) {
   ResetDeclaredPolicy();
 
   mDeclaredString = aPolicyString;
   mSelfOrigin = aSelfOrigin;
 
-  (void)NS_WARN_IF(!FeaturePolicyParser::ParsePolicyFromHeader(
+  (void)NS_WARN_IF(!PermissionsPolicyParser::ParsePolicyFromHeader(
       NS_ConvertUTF16toUTF8(aPolicyString), aDocument, aSelfOrigin, mFeatures));
 
   // Only store explicitly declared allowlist
@@ -197,7 +201,7 @@ void FeaturePolicy::SetDeclaredHeaderPolicy(Document* aDocument,
   }
 }
 
-void FeaturePolicy::ResetDeclaredPolicy() {
+void PermissionsPolicy::ResetDeclaredPolicy() {
   mFeatures.Clear();
   mDeclaredString.Truncate();
   mSelfOrigin = nullptr;
@@ -206,13 +210,13 @@ void FeaturePolicy::ResetDeclaredPolicy() {
   mAttributeEnabledFeatureNames.Clear();
 }
 
-JSObject* FeaturePolicy::WrapObject(JSContext* aCx,
-                                    JS::Handle<JSObject*> aGivenProto) {
-  return FeaturePolicy_Binding::Wrap(aCx, this, aGivenProto);
+JSObject* PermissionsPolicy::WrapObject(JSContext* aCx,
+                                        JS::Handle<JSObject*> aGivenProto) {
+  return PermissionsPolicy_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-bool FeaturePolicy::AllowsFeature(const nsAString& aFeatureName,
-                                  const Optional<nsAString>& aOrigin) const {
+bool PermissionsPolicy::AllowsFeature(
+    const nsAString& aFeatureName, const Optional<nsAString>& aOrigin) const {
   nsCOMPtr<nsIPrincipal> origin;
   if (aOrigin.WasPassed()) {
     nsCOMPtr<nsIURI> uri;
@@ -233,7 +237,7 @@ bool FeaturePolicy::AllowsFeature(const nsAString& aFeatureName,
   return AllowsFeatureInternal(aFeatureName, origin);
 }
 
-bool FeaturePolicy::AllowsFeatureExplicitlyInAncestorChain(
+bool PermissionsPolicy::AllowsFeatureExplicitlyInAncestorChain(
     const nsAString& aFeatureName, nsIPrincipal* aOrigin) const {
   MOZ_ASSERT(aOrigin);
 
@@ -246,8 +250,8 @@ bool FeaturePolicy::AllowsFeatureExplicitlyInAncestorChain(
   return false;
 }
 
-bool FeaturePolicy::AllowsFeatureInternal(const nsAString& aFeatureName,
-                                          nsIPrincipal* aOrigin) const {
+bool PermissionsPolicy::AllowsFeatureInternal(const nsAString& aFeatureName,
+                                              nsIPrincipal* aOrigin) const {
   MOZ_ASSERT(aOrigin);
 
   // Let's see if have to disable this feature because inherited policy.
@@ -261,15 +265,15 @@ bool FeaturePolicy::AllowsFeatureInternal(const nsAString& aFeatureName,
     }
   }
 
-  switch (FeaturePolicyUtils::DefaultAllowListFeature(aFeatureName)) {
-    case FeaturePolicyUtils::FeaturePolicyValue::eAll:
+  switch (PermissionsPolicyUtils::DefaultAllowListFeature(aFeatureName)) {
+    case PermissionsPolicyUtils::PermissionsPolicyValue::eAll:
       return true;
 
-    case FeaturePolicyUtils::FeaturePolicyValue::eSelf:
+    case PermissionsPolicyUtils::PermissionsPolicyValue::eSelf:
       return BasePrincipal::Cast(mDefaultOrigin)
           ->Subsumes(aOrigin, BasePrincipal::ConsiderDocumentDomain);
 
-    case FeaturePolicyUtils::FeaturePolicyValue::eNone:
+    case PermissionsPolicyUtils::PermissionsPolicyValue::eNone:
       return false;
 
     default:
@@ -279,9 +283,9 @@ bool FeaturePolicy::AllowsFeatureInternal(const nsAString& aFeatureName,
   return false;
 }
 
-void FeaturePolicy::Features(nsTArray<nsString>& aFeatures) {
-  RefPtr<FeaturePolicy> self = this;
-  FeaturePolicyUtils::ForEachFeature(
+void PermissionsPolicy::Features(nsTArray<nsString>& aFeatures) {
+  RefPtr<PermissionsPolicy> self = this;
+  PermissionsPolicyUtils::ForEachFeature(
       [self, &aFeatures](const char* aFeatureName) {
         nsString featureName;
         featureName.AppendASCII(aFeatureName);
@@ -289,9 +293,9 @@ void FeaturePolicy::Features(nsTArray<nsString>& aFeatures) {
       });
 }
 
-void FeaturePolicy::AllowedFeatures(nsTArray<nsString>& aAllowedFeatures) {
-  RefPtr<FeaturePolicy> self = this;
-  FeaturePolicyUtils::ForEachFeature(
+void PermissionsPolicy::AllowedFeatures(nsTArray<nsString>& aAllowedFeatures) {
+  RefPtr<PermissionsPolicy> self = this;
+  PermissionsPolicyUtils::ForEachFeature(
       [self, &aAllowedFeatures](const char* aFeatureName) {
         nsString featureName;
         featureName.AppendASCII(aFeatureName);
@@ -302,8 +306,8 @@ void FeaturePolicy::AllowedFeatures(nsTArray<nsString>& aAllowedFeatures) {
       });
 }
 
-void FeaturePolicy::GetAllowlistForFeature(const nsAString& aFeatureName,
-                                           nsTArray<nsString>& aList) const {
+void PermissionsPolicy::GetAllowlistForFeature(
+    const nsAString& aFeatureName, nsTArray<nsString>& aList) const {
   if (!AllowsFeatureInternal(aFeatureName, mDefaultOrigin)) {
     return;
   }
@@ -331,12 +335,12 @@ void FeaturePolicy::GetAllowlistForFeature(const nsAString& aFeatureName,
     }
   }
 
-  switch (FeaturePolicyUtils::DefaultAllowListFeature(aFeatureName)) {
-    case FeaturePolicyUtils::FeaturePolicyValue::eAll:
+  switch (PermissionsPolicyUtils::DefaultAllowListFeature(aFeatureName)) {
+    case PermissionsPolicyUtils::PermissionsPolicyValue::eAll:
       aList.AppendElement(u"*"_ns);
       return;
 
-    case FeaturePolicyUtils::FeaturePolicyValue::eSelf: {
+    case PermissionsPolicyUtils::PermissionsPolicyValue::eSelf: {
       nsAutoCString originNoSuffix;
       nsresult rv = mDefaultOrigin->GetOriginNoSuffix(originNoSuffix);
       if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -347,7 +351,7 @@ void FeaturePolicy::GetAllowlistForFeature(const nsAString& aFeatureName,
       return;
     }
 
-    case FeaturePolicyUtils::FeaturePolicyValue::eNone:
+    case PermissionsPolicyUtils::PermissionsPolicyValue::eNone:
       return;
 
     default:
@@ -355,12 +359,12 @@ void FeaturePolicy::GetAllowlistForFeature(const nsAString& aFeatureName,
   }
 }
 
-void FeaturePolicy::MaybeSetAllowedPolicy(const nsAString& aFeatureName) {
-  MOZ_ASSERT(FeaturePolicyUtils::IsSupportedFeature(aFeatureName) ||
-             FeaturePolicyUtils::IsExperimentalFeature(aFeatureName));
+void PermissionsPolicy::MaybeSetAllowedPolicy(const nsAString& aFeatureName) {
+  MOZ_ASSERT(PermissionsPolicyUtils::IsSupportedFeature(aFeatureName) ||
+             PermissionsPolicyUtils::IsExperimentalFeature(aFeatureName));
   // Skip if feature is in experimental phase
   if (!StaticPrefs::dom_security_featurePolicy_experimental_enabled() &&
-      FeaturePolicyUtils::IsExperimentalFeature(aFeatureName)) {
+      PermissionsPolicyUtils::IsExperimentalFeature(aFeatureName)) {
     return;
   }
 
@@ -375,7 +379,7 @@ void FeaturePolicy::MaybeSetAllowedPolicy(const nsAString& aFeatureName) {
   mAttributeEnabledFeatureNames.AppendElement(aFeatureName);
 }
 
-FeaturePolicyInfo FeaturePolicy::ToFeaturePolicyInfo() const {
+PermissionsPolicyInfo PermissionsPolicy::ToPermissionsPolicyInfo() const {
   return {mInheritedDeniedFeatureNames.Clone(),
           mAttributeEnabledFeatureNames.Clone(),
           mDeclaredString,

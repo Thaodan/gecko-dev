@@ -634,8 +634,9 @@ Document includes DocumentOrShadowRoot;
 
 // https://w3c.github.io/webappsec-permissions-policy/#idl-index
 partial interface Document {
-    [SameObject, Pref="dom.security.featurePolicy.webidl.enabled"]
-    readonly attribute FeaturePolicy featurePolicy;
+    [SameObject, BinaryName="PermissionsPolicy",
+     Pref="dom.security.featurePolicy.webidl.enabled"]
+    readonly attribute PermissionsPolicy featurePolicy;
 };
 
 // Extension to give chrome JS the ability to specify a non-default keypress

@@ -8667,8 +8667,8 @@ already_AddRefed<Promise> HTMLMediaElement::SetSinkId(const nsAString& aSinkId,
     return nullptr;
   }
 
-  if (!FeaturePolicyUtils::IsFeatureAllowed(win->GetExtantDoc(),
-                                            u"speaker-selection"_ns)) {
+  if (!PermissionsPolicyUtils::IsFeatureAllowed(win->GetExtantDoc(),
+                                                u"speaker-selection"_ns)) {
     promise->MaybeRejectWithNotAllowedError(
         "Document's Permissions Policy does not allow setSinkId()");
   }

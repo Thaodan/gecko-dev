@@ -9,7 +9,7 @@
 
 namespace mozilla::dom {
 
-FeaturePolicyViolationReportBody::FeaturePolicyViolationReportBody(
+PermissionsPolicyViolationReportBody::PermissionsPolicyViolationReportBody(
     nsIGlobalObject* aGlobal, const nsAString& aFeatureId,
     const nsACString& aSourceFile, const Nullable<int32_t>& aLineNumber,
     const Nullable<int32_t>& aColumnNumber, const nsAString& aDisposition)
@@ -20,37 +20,40 @@ FeaturePolicyViolationReportBody::FeaturePolicyViolationReportBody(
       mColumnNumber(aColumnNumber),
       mDisposition(aDisposition) {}
 
-FeaturePolicyViolationReportBody::~FeaturePolicyViolationReportBody() = default;
+PermissionsPolicyViolationReportBody::~PermissionsPolicyViolationReportBody() =
+    default;
 
-JSObject* FeaturePolicyViolationReportBody::WrapObject(
+JSObject* PermissionsPolicyViolationReportBody::WrapObject(
     JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
-  return FeaturePolicyViolationReportBody_Binding::Wrap(aCx, this, aGivenProto);
+  return PermissionsPolicyViolationReportBody_Binding::Wrap(aCx, this,
+                                                            aGivenProto);
 }
 
-void FeaturePolicyViolationReportBody::GetFeatureId(
+void PermissionsPolicyViolationReportBody::GetFeatureId(
     nsAString& aFeatureId) const {
   aFeatureId = mFeatureId;
 }
 
-void FeaturePolicyViolationReportBody::GetSourceFile(
+void PermissionsPolicyViolationReportBody::GetSourceFile(
     nsACString& aSourceFile) const {
   aSourceFile = mSourceFile;
 }
 
-Nullable<int32_t> FeaturePolicyViolationReportBody::GetLineNumber() const {
+Nullable<int32_t> PermissionsPolicyViolationReportBody::GetLineNumber() const {
   return mLineNumber;
 }
 
-Nullable<int32_t> FeaturePolicyViolationReportBody::GetColumnNumber() const {
+Nullable<int32_t> PermissionsPolicyViolationReportBody::GetColumnNumber()
+    const {
   return mColumnNumber;
 }
 
-void FeaturePolicyViolationReportBody::GetDisposition(
+void PermissionsPolicyViolationReportBody::GetDisposition(
     nsAString& aDisposition) const {
   aDisposition = mDisposition;
 }
 
-void FeaturePolicyViolationReportBody::ToJSON(JSONWriter& aWriter) const {
+void PermissionsPolicyViolationReportBody::ToJSON(JSONWriter& aWriter) const {
   aWriter.StringProperty("featureId", NS_ConvertUTF16toUTF8(mFeatureId));
 
   if (mSourceFile.IsEmpty()) {

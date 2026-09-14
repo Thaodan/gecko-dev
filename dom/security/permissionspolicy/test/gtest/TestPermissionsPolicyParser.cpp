@@ -22,7 +22,7 @@ void CheckParser(const nsAString& aInput, bool aExpectedResults,
   nsCOMPtr<nsIPrincipal> principal =
       mozilla::BasePrincipal::CreateContentPrincipal(URL_SELF);
   nsTArray<Feature> parsedFeatures;
-  ASSERT_TRUE(FeaturePolicyParser::ParsePolicyFromAttribute(
+  ASSERT_TRUE(PermissionsPolicyParser::ParsePolicyFromAttribute(
                   aInput, nullptr, principal, principal, parsedFeatures) ==
               aExpectedResults);
   ASSERT_TRUE(parsedFeatures.Length() == aExpectedFeatures);
@@ -30,7 +30,7 @@ void CheckParser(const nsAString& aInput, bool aExpectedResults,
   aParsedFeatures = std::move(parsedFeatures);
 }
 
-TEST(FeaturePolicyParser, Basic)
+TEST(PermissionsPolicyParser, Basic)
 {
   nsCOMPtr<nsIPrincipal> selfPrincipal =
       mozilla::BasePrincipal::CreateContentPrincipal(URL_SELF);

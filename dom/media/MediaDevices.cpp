@@ -270,11 +270,12 @@ RefPtr<MediaDeviceSetRefCnt> MediaDevices::FilterExposedDevices(
   }
   // Only expose devices which are allowed to use:
   // https://w3c.github.io/mediacapture-main/#dom-mediadevices-enumeratedevices
-  bool dropMics = !FeaturePolicyUtils::IsFeatureAllowed(doc, u"microphone"_ns);
-  bool dropCams = !FeaturePolicyUtils::IsFeatureAllowed(doc, u"camera"_ns);
+  bool dropMics =
+      !PermissionsPolicyUtils::IsFeatureAllowed(doc, u"microphone"_ns);
+  bool dropCams = !PermissionsPolicyUtils::IsFeatureAllowed(doc, u"camera"_ns);
   bool dropSpeakers =
       !Preferences::GetBool("media.setsinkid.enabled") ||
-      !FeaturePolicyUtils::IsFeatureAllowed(doc, u"speaker-selection"_ns);
+      !PermissionsPolicyUtils::IsFeatureAllowed(doc, u"speaker-selection"_ns);
   bool shouldResistFingerprinting =
       window->AsGlobal()->ShouldResistFingerprinting(RFPTarget::MediaDevices);
   bool legacy = IsLegacyMode(window);

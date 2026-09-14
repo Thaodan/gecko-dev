@@ -1034,8 +1034,8 @@ already_AddRefed<Promise> HTMLVideoElement::RequestPictureInPicture(
   // 2. If this’s node document is not allowed to use the policy-controlled
   // feature named "picture-in-picture", reject p with a SecurityError
   // exception and return p.
-  if (!FeaturePolicyUtils::IsFeatureAllowed(OwnerDoc(),
-                                            u"picture-in-picture"_ns)) {
+  if (!PermissionsPolicyUtils::IsFeatureAllowed(OwnerDoc(),
+                                                u"picture-in-picture"_ns)) {
     p->MaybeRejectWithSecurityError(
         "Permissions policy: picture-in-picture not allowed");
     return p.forget();

@@ -772,7 +772,7 @@ nsresult txMozillaXMLOutput::createResultDocument(const nsAString& aName,
 
   if (mNotifier) {
     MOZ_TRY(mNotifier->SetOutputDocument(mDocument));
-    MOZ_TRY(mDocument->InitFeaturePolicy(mDocument->GetChannel()));
+    MOZ_TRY(mDocument->InitPermissionsPolicy(mDocument->GetChannel()));
   }
 
   // Do this after calling OnDocumentCreated to ensure that the

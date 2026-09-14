@@ -112,7 +112,7 @@ fails one of the first two never touches the model hub or inference backend.
 
 Registered in `PermissionsPolicyUtils.cpp` with a default value of `self`, like
 `camera`/`microphone`. Checked via
-`FeaturePolicyUtils::IsFeatureAllowed(doc, u"on-device-speech-recognition"_ns)`.
+`PermissionsPolicyUtils::IsFeatureAllowed(doc, u"on-device-speech-recognition"_ns)`.
 `available()` resolves `"unavailable"` when disallowed, matching the spec's
 availability algorithm, which never rejects. `install()` rejects with
 `NotAllowedError`. `start()` does not check this policy directly.
