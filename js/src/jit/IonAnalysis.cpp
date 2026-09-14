@@ -1185,7 +1185,6 @@ static void TryEliminateGCBarriersForAllocation(MInstruction* allocation) {
       case MDefinition::Opcode::Constant:
       case MDefinition::Opcode::Box:
       case MDefinition::Opcode::Unbox:
-      case MDefinition::Opcode::AssertCanElidePostWriteBarrier:
         // These instructions can't trigger GC or affect this analysis in other
         // ways.
         break;
@@ -1390,13 +1389,6 @@ static auto NeedToCanonicalizeNaN(const MDefinition* def) {
     case MDefinition::Opcode::TypedArrayFill:
       // These definitions accept and can store non-canonical NaN values. They
       // don't return any value.
-      MOZ_ASSERT(def->type() == MIRType::None);
-      return CanonicalizeNaN::No;
-
-    case MDefinition::Opcode::PostWriteBarrier:
-    case MDefinition::Opcode::PostWriteElementBarrier:
-      // Post-write barriers on known floating point values are omitted, so
-      // non-canonical NaN values don't need to be handled.
       MOZ_ASSERT(def->type() == MIRType::None);
       return CanonicalizeNaN::No;
 
