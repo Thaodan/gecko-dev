@@ -253,11 +253,16 @@ nsBaseClipboard::AsyncSetClipboardData::SetData(nsITransferable* aTransferable,
   }
   mClipboard->mPendingWriteRequests[mClipboardType] = nullptr;
 
-  nsresult rv = mClipboard->SetData(aTransferable, aOwner, mClipboardType,
-                                    mWindowContext);
-  MaybeNotifyCallback(rv);
-
-  return rv;
+  // Notify from the completion rather than from the return value, so that a
+  // later patch can defer the write without the callback running early.
+  return mClipboard->SetDataImpl(
+      aTransferable, aOwner, mClipboardType, mWindowContext,
+      [self = RefPtr{this}](nsresult aRv) {
+        // Abort() may have already notified and invalidated us.
+        if (self->IsValid()) {
+          self->MaybeNotifyCallback(aRv);
+        }
+      });
 }
 
 NS_IMETHODIMP
@@ -359,14 +364,31 @@ NS_IMETHODIMP nsBaseClipboard::SetData(
     nsITransferable* aTransferable, nsIClipboardOwner* aOwner,
     ClipboardType aWhichClipboard,
     mozilla::dom::WindowContext* aWindowContext) {
+  return SetDataImpl(aTransferable, aOwner, aWhichClipboard, aWindowContext);
+}
+
+nsresult nsBaseClipboard::SetDataImpl(
+    nsITransferable* aTransferable, nsIClipboardOwner* aOwner,
+    ClipboardType aWhichClipboard, mozilla::dom::WindowContext* aWindowContext,
+    SetDataCompletion&& aCompletion) {
   NS_ASSERTION(aTransferable, "clipboard given a null transferable");
 
   MOZ_CLIPBOARD_LOG("%s: clipboard=%d", __FUNCTION__, aWhichClipboard);
 
+  // Runs aCompletion on every early return, so callers that need the final
+  // result always hear about it exactly once.
+  auto finish = [&aCompletion](nsresult aRv) {
+    if (aCompletion) {
+      SetDataCompletion completion = std::move(aCompletion);
+      completion(aRv);
+    }
+    return aRv;
+  };
+
   if (!nsIClipboard::IsClipboardTypeSupported(aWhichClipboard)) {
     MOZ_CLIPBOARD_LOG("%s: clipboard %d is not supported.", __FUNCTION__,
                       aWhichClipboard);
-    return NS_ERROR_FAILURE;
+    return finish(NS_ERROR_FAILURE);
   }
 
   if (MOZ_CLIPBOARD_LOG_ENABLED()) {
@@ -383,7 +405,7 @@ NS_IMETHODIMP nsBaseClipboard::SetData(
   if (aTransferable == clipboardCache->GetTransferable() &&
       aOwner == clipboardCache->GetClipboardOwner()) {
     MOZ_CLIPBOARD_LOG("%s: skipping update.", __FUNCTION__);
-    return NS_OK;
+    return finish(NS_OK);
   }
 
   clipboardCache->Clear();
@@ -400,21 +422,21 @@ NS_IMETHODIMP nsBaseClipboard::SetData(
   if (NS_FAILED(rv)) {
     MOZ_CLIPBOARD_LOG("%s: setting native clipboard data failed.",
                       __FUNCTION__);
-    return rv;
+    return finish(rv);
   }
 
   auto result = GetNativeClipboardSequenceNumber(aWhichClipboard);
   if (result.isErr()) {
     MOZ_CLIPBOARD_LOG("%s: getting native clipboard change count failed.",
                       __FUNCTION__);
-    return result.unwrapErr();
+    return finish(result.unwrapErr());
   }
 
   clipboardCache->Update(aTransferable, aOwner, result.unwrap(),
                          aWindowContext
                              ? mozilla::Some(aWindowContext->InnerWindowId())
                              : mozilla::Nothing());
-  return NS_OK;
+  return finish(NS_OK);
 }
 
 nsresult nsBaseClipboard::GetDataFromClipboardCache(
