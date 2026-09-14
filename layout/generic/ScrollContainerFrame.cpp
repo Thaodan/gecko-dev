@@ -7396,12 +7396,6 @@ void ScrollContainerFrame::ResetScrollInfoIfNeeded(
 }
 
 UniquePtr<PresState> ScrollContainerFrame::SaveState(CaptureStateFlags aFlags) {
-  nsIScrollbarMediator* mediator = do_QueryFrame(GetScrolledFrame());
-  if (mediator) {
-    // child handles its own scroll state, so don't bother saving state here
-    return nullptr;
-  }
-
   // Don't store a scroll state if we never have been scrolled or restored
   // a previous scroll state, and we're not in the middle of a smooth scroll.
   auto scrollAnimationState = ScrollAnimationState();
