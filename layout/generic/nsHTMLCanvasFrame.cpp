@@ -295,7 +295,7 @@ class nsDisplayCanvas final : public nsPaintedDisplayItem {
     }
 
     const Rect srcRect(surface->GetRect());
-    if (!presContext->IsPrintingOrPrintPreview() ||
+    if (presContext->Type() != nsPresContext::eContext_Print ||
         !canvas->GetMozPrintCallback() ||
         !dt.TryToReplaySurface(surface, destRect, srcRect)) {
       dt.DrawSurface(

@@ -9,10 +9,14 @@
 
 namespace mozilla {
 
-class MozPrintCallbackRunner;
 class PresShell;
 class PrintedSheetFrame;
 
+namespace dom {
+
+class HTMLCanvasElement;
+
+}  // namespace dom
 }  // namespace mozilla
 
 //-----------------------------------------------
@@ -119,12 +123,9 @@ class nsPageSequenceFrame final : public nsContainerFrame {
   nsresult StartPrint(nsPresContext* aPresContext,
                       nsIPrintSettings* aPrintSettings,
                       const nsAString& aDocTitle, const nsAString& aDocURL);
-  // Prepares the current sheet for printing by dispatching the mozPrintCallback
-  // of the canvases in it.
-  nsresult PrePrintNextSheet(nsITimerCallback* aCallback,
-                             mozilla::MozPrintCallbackRunner& aRunner,
-                             bool* aDone);
+  nsresult PrePrintNextSheet(nsITimerCallback* aCallback, bool* aDone);
   nsresult PrintNextSheet();
+  void ResetPrintCanvasList();
 
   uint32_t GetCurrentSheetIdx() const { return mCurrentSheetIdx; }
 
@@ -191,7 +192,11 @@ class nsPageSequenceFrame final : public nsContainerFrame {
   // This is an index into our PrincipalChildList, effectively.
   uint32_t mCurrentSheetIdx = 0;
 
+  nsTArray<RefPtr<mozilla::dom::HTMLCanvasElement>> mCurrentCanvasList;
+
   bool mCalledBeginPage;
+
+  bool mCurrentCanvasListSetup;
 };
 
 #endif /* nsPageSequenceFrame_h_ */

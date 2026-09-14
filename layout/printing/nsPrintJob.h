@@ -6,7 +6,6 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/MozPrintCallbackRunner.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/layout/RemotePrintJobChild.h"
 #include "nsCOMPtr.h"
@@ -249,10 +248,6 @@ class nsPrintJob final : public nsIWebProgressListener,
   RefPtr<nsPrintData> mPrt;
 
   RefPtr<nsPagePrintTimer> mPagePrintTimer;
-
-  // Runs the mozPrintCallback of the canvases in the sheet being printed. This
-  // lives here rather than in the page sequence frame so that it outlives it.
-  mozilla::MozPrintCallbackRunner mPrintCallbackRunner;
 
   // Only set if this nsPrintJob was created for a real print.
   RefPtr<RemotePrintJobChild> mRemotePrintJob;
