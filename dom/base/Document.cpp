@@ -18515,17 +18515,24 @@ static void UpdateEffectsOnBrowsingContext(BrowsingContext* aBc,
       // for example.
       return EffectsInfo::FullyHidden();
     }
-    const bool inPopup = subDocFrame->HasAnyStateBits(NS_FRAME_IN_POPUP);
     Maybe<nsRect> visibleRect;
-    if (inPopup) {
+    // Be a bit conservative on popups and paginated mode, and assume remote
+    // frames in there are fully visible.
+    if (subDocFrame->HasAnyStateBits(NS_FRAME_IN_POPUP)) {
       nsMenuPopupFrame* popup =
           do_QueryFrame(nsLayoutUtils::GetDisplayRootFrame(subDocFrame));
       MOZ_ASSERT(popup);
       if (!popup || !popup->IsVisibleOrShowing()) {
         return EffectsInfo::FullyHidden();
       }
-      // Be a bit conservative on popups and assume remote frames in there are
-      // fully visible.
+      // In order to make the DOMIntersectionObserver code work on popups, we'd
+      // need to teach it to deal with popups that are outside the browser
+      // viewport.
+      visibleRect = Some(subDocFrame->GetDestRect());
+    } else if (subDocFrame->PresContext()->IsPaginated()) {
+      // In order to make DOMIntersectionObserver code work while paginated,
+      // we'd need to make it account for things like GetTransformGetter() and
+      // maybe fragmentation fallback, both of which look rather non-trivial.
       visibleRect = Some(subDocFrame->GetDestRect());
     } else {
       const IntersectionOutput output = DOMIntersectionObserver::Intersect(
@@ -18542,13 +18549,6 @@ static void UpdateEffectsOnBrowsingContext(BrowsingContext* aBc,
         // right throttling behavior.
         visibleRect.emplace(*output.mIntersectionRect -
                             output.mTargetRect.TopLeft());
-      }
-      // If we're paginated, the visible rect from the display list might not be
-      // reasonable, because there can be multiple display items for the frame
-      // and the rect would be the last one painted. We assume the frame is
-      // fully visible, lacking something better.
-      if (subDocFrame->PresContext()->IsPaginated()) {
-        visibleRect = Some(subDocFrame->GetDestRect());
       }
     }
     gfx::MatrixScales rasterScale = subDocFrame->GetRasterScale();
