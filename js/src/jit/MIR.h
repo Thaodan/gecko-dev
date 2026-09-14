@@ -8777,14 +8777,6 @@ class MPostWriteBarrier : public MBinaryInstruction,
 
   AliasSet getAliasSet() const override { return AliasSet::None(); }
 
-#ifdef DEBUG
-  bool isConsistentFloat32Use(MUse* use) const override {
-    // During lowering, values that neither have object nor value MIR type
-    // are ignored, thus Float32 can show up at this point without any issue.
-    return use == getUseFor(1);
-  }
-#endif
-
   ALLOW_CLONE(MPostWriteBarrier)
 };
 
@@ -8806,14 +8798,6 @@ class MPostWriteElementBarrier
   NAMED_OPERANDS((0, object), (1, value), (2, index))
 
   AliasSet getAliasSet() const override { return AliasSet::None(); }
-
-#ifdef DEBUG
-  bool isConsistentFloat32Use(MUse* use) const override {
-    // During lowering, values that neither have object nor value MIR type
-    // are ignored, thus Float32 can show up at this point without any issue.
-    return use == getUseFor(1);
-  }
-#endif
 
   ALLOW_CLONE(MPostWriteElementBarrier)
 };
