@@ -231,6 +231,7 @@ export class Tabbrowser {
   }
 
   init() {
+    /** @type {MozTabbrowserTabs} */
     this.tabContainer = this.document.getElementById("tabbrowser-tabs");
     this.tabGroupMenu = this.document.getElementById("tab-group-editor");
     this.tabNoteMenu = this.document.getElementById("tab-note-menu");
@@ -7825,9 +7826,10 @@ export class Tabbrowser {
   }
 
   /**
+   * Whether the element is the `<label>` in a `<tab-group>`.
+   *
    * @param {Element} element
-   * @returns {boolean}
-   *   `true` if element is the `<label>` in a `<tab-group>`
+   * @returns {element is MozTabbrowserTabGroupLabel}
    */
   isTabGroupLabel(element) {
     return !!element?.classList?.contains("tab-group-label");

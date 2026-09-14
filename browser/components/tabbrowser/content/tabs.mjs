@@ -881,7 +881,9 @@ export class MozTabbrowserTabs extends MozElements.TabsBase {
 
   get allGroups() {
     let children = Array.from(this.arrowScrollbox.children);
-    return children.filter(node => node.tagName == "tab-group");
+    return /** @type {MozTabbrowserTabGroup[]} */ (
+      children.filter(node => node.tagName == "tab-group")
+    );
   }
 
   get allSplitViews() {
@@ -954,7 +956,11 @@ export class MozTabbrowserTabs extends MozElements.TabsBase {
   /** @type {FocusableItem[]} */
   #focusableItems;
 
-  /** @type {dragAndDropElements[]} */
+  /**
+   * @typedef {MozTabbrowserTab|MozTabbrowserTabGroupLabel|MozTabSplitViewWrapper} DragAndDropElement
+   */
+
+  /** @type {DragAndDropElement[]} */
   #dragAndDropElements;
 
   /**
@@ -995,10 +1001,11 @@ export class MozTabbrowserTabs extends MozElements.TabsBase {
   }
 
   /**
-   * @returns {dragAndDropElements[]}
    * Representation of every drag and drop element including tabs, tab group labels and split view wrapper.
    * We keep this separate from ariaFocusableItems because not every element for drag n'drop also needs to be
    * focusable (ex, we don't want the splitview container to be focusable, only its children).
+   *
+   * @returns {DragAndDropElement[]}
    */
   get dragAndDropElements() {
     if (this.#dragAndDropElements) {
@@ -1006,6 +1013,7 @@ export class MozTabbrowserTabs extends MozElements.TabsBase {
     }
 
     let elementIndex = 0;
+    /** @type {DragAndDropElement[]} */
     let dragAndDropElements = [];
     let unpinnedChildren = Array.from(this.arrowScrollbox.children);
     let pinnedChildren = Array.from(this.pinnedTabsContainer.children);
