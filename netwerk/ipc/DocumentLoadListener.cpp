@@ -1115,6 +1115,9 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
                                         mIsDocumentLoad);
   openInfo->Prepare();
 
+  // Set before TryActivateFromPrefetch, which flags the activation on it.
+  mTiming = aTiming;
+
   // Check for a matching completed speculation rules prefetch; see
   // TryActivateFromPrefetch. Only for document (navigational) loads; skipped
   // for <object>/<embed>. Runs on all platforms before AsyncOpen.
@@ -1193,7 +1196,6 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
   mLoadStateExternalLoadFlags = aLoadState->LoadFlags();
   mLoadStateInternalLoadFlags = aLoadState->InternalLoadFlags();
   mLoadStateLoadType = aLoadState->LoadType();
-  mTiming = aTiming;
   mSrcdocData = aLoadState->SrcdocData();
   mBaseURI = aLoadState->BaseURI();
   mOriginalUriString = aLoadState->GetOriginalURIString();
