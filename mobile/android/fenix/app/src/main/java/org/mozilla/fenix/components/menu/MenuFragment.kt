@@ -29,6 +29,11 @@ import com.google.android.material.R as materialR
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import mozilla.components.compose.menu.Menu
+import mozilla.components.compose.menu.data.MenuItemsGroup
+import mozilla.components.compose.menu.store.MenuState
+import mozilla.components.compose.menu.store.MenuStore
+import mozilla.components.lib.state.helpers.StoreProvider.Companion.composableStore
 import mozilla.components.support.ktx.android.util.dpToPx
 import mozilla.components.support.utils.ext.getWindowInsets
 import mozilla.components.support.utils.ext.isLandscape
@@ -120,6 +125,11 @@ class MenuFragment : BottomSheetDialogFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ) = content {
+        val menuStore by
+            composableStore(MenuState(buildInitialMenuState())) {
+                buildMenuStore(it)
+            }
+
         FirefoxTheme {
             BackHandler { dismissAllowingStateLoss() }
 
@@ -140,7 +150,7 @@ class MenuFragment : BottomSheetDialogFragment() {
                         bottomEnd = CornerSize(0.dp),
                     ),
             ) {
-                // the menu content
+                Menu(menuStore)
             }
         }
     }
@@ -174,4 +184,12 @@ class MenuFragment : BottomSheetDialogFragment() {
 
         return orientationMaxHeight - topBarHeight
     }
+
+    private fun buildInitialMenuState() = listOf<MenuItemsGroup>()
+
+    private fun buildMenuStore(initialState: MenuState) =
+        MenuStore(
+            initialState = initialState,
+            middleware = emptyList(),
+        )
 }
