@@ -392,6 +392,10 @@ skip-if = [
 
 ["browser_smartwindow_smartformfill_telemetry_outcomes.js"]
 
+["browser_smartwindow_smartformfill_telemetry_review.js"]
+
+["browser_smartwindow_smartformfill_telemetry_tab_selection.js"]
+
 ["browser_smartwindow_switcher_telemetry.js"]
 
 ["browser_smartwindow_tab_move.js"]
