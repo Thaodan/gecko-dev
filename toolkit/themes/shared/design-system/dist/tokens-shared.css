@@ -420,6 +420,7 @@
     --input-width: var(--size-item-small);
 
     /** link **/
+    --link-border-radius-focus: var(--border-radius-small);
     --link-color: var(--color-accent-primary);
     --link-color-hover: var(--color-accent-primary-hover);
     --link-color-active: var(--color-accent-primary-active);
@@ -987,6 +988,9 @@
       --input-search-icon-size: var(--icon-size-small);
       --input-text-background-color: var(--background-color-box);
       --input-text-background-color-disabled: var(--button-background-color-ghost-disabled);
+
+      /** link **/
+      --link-border-radius-focus: var(--border-radius-xsmall);
 
       /** page **/
       --page-main-content-width: 664px;
