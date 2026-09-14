@@ -35,9 +35,11 @@ child:
                         nsString aReason);
 
   async FrameReceived(uint32_t aWebSocketSerialID,
+                      uint64_t aHttpChannelId,
                       WebSocketFrameData aFrameData);
 
   async FrameSent(uint32_t aWebSocketSerialID,
+                  uint64_t aHttpChannelId,
                   WebSocketFrameData aFrameData);
 
   async __delete__();

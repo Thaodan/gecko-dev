@@ -65,9 +65,11 @@ class WebSocketBaseRunnable : public Runnable {
 class WebSocketFrameRunnable final : public WebSocketBaseRunnable {
  public:
   WebSocketFrameRunnable(uint32_t aWebSocketSerialID, uint64_t aInnerWindowID,
+                         uint64_t aHttpChannelId,
                          already_AddRefed<WebSocketFrame> aFrame,
                          bool aFrameSent)
       : WebSocketBaseRunnable(aWebSocketSerialID, aInnerWindowID),
+        mHttpChannelId(aHttpChannelId),
         mFrame(std::move(aFrame)),
         mFrameSent(aFrameSent) {}
 
@@ -75,14 +77,15 @@ class WebSocketFrameRunnable final : public WebSocketBaseRunnable {
   virtual void DoWork(nsIWebSocketEventListener* aListener) override {
     DebugOnly<nsresult> rv{};
     if (mFrameSent) {
-      rv = aListener->FrameSent(mWebSocketSerialID, mFrame);
+      rv = aListener->FrameSent(mWebSocketSerialID, mHttpChannelId, mFrame);
     } else {
-      rv = aListener->FrameReceived(mWebSocketSerialID, mFrame);
+      rv = aListener->FrameReceived(mWebSocketSerialID, mHttpChannelId, mFrame);
     }
 
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Frame op failed");
   }
 
+  uint64_t mHttpChannelId;
   RefPtr<WebSocketFrame> mFrame;
   bool mFrameSent;
 };
@@ -293,7 +296,8 @@ void WebSocketEventService::WebSocketClosed(uint32_t aWebSocketSerialID,
 
 void WebSocketEventService::FrameReceived(
     uint32_t aWebSocketSerialID, uint64_t aInnerWindowID,
-    already_AddRefed<WebSocketFrame> aFrame, nsIEventTarget* aTarget) {
+    uint64_t aHttpChannelId, already_AddRefed<WebSocketFrame> aFrame,
+    nsIEventTarget* aTarget) {
   RefPtr<WebSocketFrame> frame(std::move(aFrame));
   MOZ_ASSERT(frame);
 
@@ -302,9 +306,9 @@ void WebSocketEventService::FrameReceived(
     return;
   }
 
-  RefPtr runnable =
-      MakeRefPtr<WebSocketFrameRunnable>(aWebSocketSerialID, aInnerWindowID,
-                                         frame.forget(), false /* frameSent */);
+  RefPtr runnable = MakeRefPtr<WebSocketFrameRunnable>(
+      aWebSocketSerialID, aInnerWindowID, aHttpChannelId, frame.forget(),
+      false /* frameSent */);
   DebugOnly<nsresult> rv = aTarget
                                ? aTarget->Dispatch(runnable, NS_DISPATCH_NORMAL)
                                : NS_DispatchToMainThread(runnable);
@@ -313,6 +317,7 @@ void WebSocketEventService::FrameReceived(
 
 void WebSocketEventService::FrameSent(uint32_t aWebSocketSerialID,
                                       uint64_t aInnerWindowID,
+                                      uint64_t aHttpChannelId,
                                       already_AddRefed<WebSocketFrame> aFrame,
                                       nsIEventTarget* aTarget) {
   RefPtr<WebSocketFrame> frame(std::move(aFrame));
@@ -324,7 +329,8 @@ void WebSocketEventService::FrameSent(uint32_t aWebSocketSerialID,
   }
 
   RefPtr runnable = MakeRefPtr<WebSocketFrameRunnable>(
-      aWebSocketSerialID, aInnerWindowID, frame.forget(), true /* frameSent */);
+      aWebSocketSerialID, aInnerWindowID, aHttpChannelId, frame.forget(),
+      true /* frameSent */);
 
   DebugOnly<nsresult> rv = aTarget
                                ? aTarget->Dispatch(runnable, NS_DISPATCH_NORMAL)

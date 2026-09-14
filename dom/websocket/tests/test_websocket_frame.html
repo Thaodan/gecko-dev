@@ -84,8 +84,9 @@ var listener = {
     checkListener();
   },
 
-  frameReceived(aWebSocketSerialID, aFrame) {
+  frameReceived(aWebSocketSerialID, aHttpChannelId, aFrame) {
     ok(!!aFrame, "We have received a frame");
+    ok(aHttpChannelId > 0, "Channel ID received");
 
     if (tests.length) {
       ok(aFrame.timeStamp, "Checking timeStamp: " + aFrame.timeStamp);
@@ -102,8 +103,9 @@ var listener = {
     frameReceivedCounter++;
   },
 
-  frameSent(aWebSocketSerialID, aFrame) {
+  frameSent(aWebSocketSerialID, aHttpChannelId, aFrame) {
     ok(!!aFrame, "We have sent a frame");
+    ok(aHttpChannelId > 0, "Channel ID received");
 
     if (tests.length) {
       ok(aFrame.timeStamp, "Checking timeStamp: " + aFrame.timeStamp);

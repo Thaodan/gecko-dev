@@ -88,25 +88,27 @@ WebSocketEventListenerParent::WebSocketMessageAvailable(
 
 NS_IMETHODIMP
 WebSocketEventListenerParent::FrameReceived(uint32_t aWebSocketSerialID,
+                                            uint64_t aHttpChannelId,
                                             nsIWebSocketFrame* aFrame) {
   if (!aFrame) {
     return NS_ERROR_FAILURE;
   }
 
   WebSocketFrame* frame = static_cast<WebSocketFrame*>(aFrame);
-  (void)SendFrameReceived(aWebSocketSerialID, frame->Data());
+  (void)SendFrameReceived(aWebSocketSerialID, aHttpChannelId, frame->Data());
   return NS_OK;
 }
 
 NS_IMETHODIMP
 WebSocketEventListenerParent::FrameSent(uint32_t aWebSocketSerialID,
+                                        uint64_t aHttpChannelId,
                                         nsIWebSocketFrame* aFrame) {
   if (!aFrame) {
     return NS_ERROR_FAILURE;
   }
 
   WebSocketFrame* frame = static_cast<WebSocketFrame*>(aFrame);
-  (void)SendFrameSent(aWebSocketSerialID, frame->Data());
+  (void)SendFrameSent(aWebSocketSerialID, aHttpChannelId, frame->Data());
   return NS_OK;
 }
 

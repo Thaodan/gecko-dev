@@ -58,10 +58,12 @@ class WebSocketEventService final : public nsIWebSocketEventService,
                        nsIEventTarget* aTarget = nullptr);
 
   void FrameReceived(uint32_t aWebSocketSerialID, uint64_t aInnerWindowID,
+                     uint64_t aHttpChannelId,
                      already_AddRefed<WebSocketFrame> aFrame,
                      nsIEventTarget* aTarget = nullptr);
 
   void FrameSent(uint32_t aWebSocketSerialID, uint64_t aInnerWindowID,
+                 uint64_t aHttpChannelId,
                  already_AddRefed<WebSocketFrame> aFrame,
                  nsIEventTarget* aTarget = nullptr);
 
