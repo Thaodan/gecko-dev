@@ -11011,7 +11011,7 @@
 # Is support for CSS Borders 4 corner-shape enabled?
 - name: layout.css.corner-shape.enabled
   type: RelaxedAtomicBool
-  value: @IS_NIGHTLY_BUILD@
+  value: false
   mirror: always
   rust: true
 
