@@ -83,6 +83,20 @@ Services.ppmm.addMessageListener(
   }
 );
 
+Services.ppmm.addMessageListener(
+  "AutoComplete:MaybeLeaveSecondaryAction",
+  message => {
+    if (compareContext(message)) {
+      let actor = currentActor;
+      if (actor && actor.openedPopup) {
+        return actor.openedPopup.maybeLeaveSecondaryAction();
+      }
+    }
+
+    return false;
+  }
+);
+
 // AutoCompleteResultView is an abstraction around a list of results.
 // It implements enough of nsIAutoCompleteController and
 // nsIAutoCompleteInput to make the richlistbox popup work. Since only
