@@ -176,7 +176,7 @@ TEST_F(ContentAnalysisTelemetryTest, TestSimpleRequest) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
 
   nsCString analysisTypeString = "BULK_DATA_ENTRY"_ns;
   auto originalAnalysisTypeCount =
@@ -228,7 +228,7 @@ void ContentAnalysisTelemetryTest::TestSimpleCopyRequestWithPrefValue(
       nsIContentAnalysisRequest::AnalysisType::eDataCopied,
       nsIContentAnalysisRequest::Reason::eClipboardCopy, std::move(allow),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
 
   nsCString analysisTypeString = "DATA_COPIED"_ns;
   auto originalAnalysisTypeCount =
@@ -289,7 +289,7 @@ TEST_F(ContentAnalysisTelemetryTest, TestAllowAndDenyLists) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
 
   auto originalAllowCount =
       glean::content_analysis::request_allowed_by_allow_url.TestGetValue()
@@ -333,7 +333,7 @@ TEST_F(ContentAnalysisTelemetryTest, TestSimpleAllowResponse) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
 
   nsCString allowString = "1000"_ns;  // eAllow
   auto originalAnalysisTypeCount =
@@ -362,7 +362,7 @@ TEST_F(ContentAnalysisTelemetryTest, TestSimpleBlockResponse) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(block),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
 
   nsCString blockString = "3"_ns;  // eBlock
   auto originalAnalysisTypeCount =
@@ -395,7 +395,7 @@ TEST_F(ContentAnalysisTelemetryTest, TestConnectionRetry) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
   SendRequestAndExpectResponse(mContentAnalysis, request, Some(true),
                                Some(nsIContentAnalysisResponse::eAllow),
                                Nothing());

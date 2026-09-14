@@ -131,6 +131,17 @@ bool SourceIsSameTab(nsIContentAnalysisRequest* aRequest) {
              sourceWindowGlobal->DocumentPrincipal());
 }
 
+// Only used to pick the wording of the dialogs, so that a blocked copy says
+// "copy" rather than "paste".
+nsIContentAnalysisRequest::OperationType ClipboardOperationTypeForReason(
+    nsIContentAnalysisRequest::Reason aReason) {
+  MOZ_ASSERT(aReason == nsIContentAnalysisRequest::Reason::eClipboardCopy ||
+             aReason == nsIContentAnalysisRequest::Reason::eClipboardPaste);
+  return aReason == nsIContentAnalysisRequest::Reason::eClipboardCopy
+             ? nsIContentAnalysisRequest::OperationType::eCopyClipboard
+             : nsIContentAnalysisRequest::OperationType::ePasteClipboard;
+}
+
 }  // anonymous namespace
 
 /* static */ bool nsIContentAnalysis::MightBeActive() {
@@ -364,8 +375,7 @@ ContentAnalysisRequest::ContentAnalysisRequest(
     : mAnalysisType(aAnalysisType),
       mReason(aReason),
       mTransferable(aTransferable),
-      mOperationTypeForDisplay(
-          nsIContentAnalysisRequest::OperationType::eClipboard),
+      mOperationTypeForDisplay(ClipboardOperationTypeForReason(aReason)),
       mWindowGlobalParent(aWindowGlobalParent),
       mSourceWindowGlobal(aSourceWindowGlobal) {}
 
@@ -1443,9 +1453,8 @@ static nsresult AddClipboardCARForCustomData(
       });
   for (auto& text : texts) {
     AddCARForText(std::move(text), aReason,
-                  nsIContentAnalysisRequest::OperationType::eClipboard, aURI,
-                  aWindowGlobal, aSourceWindowGlobal, nsCString(aUserActionId),
-                  aRequests);
+                  ClipboardOperationTypeForReason(aReason), aURI, aWindowGlobal,
+                  aSourceWindowGlobal, nsCString(aUserActionId), aRequests);
   }
   return NS_OK;
 }
@@ -1481,9 +1490,8 @@ static nsresult AddClipboardCARForText(
   }
 
   AddCARForText(std::move(text), aReason,
-                nsIContentAnalysisRequest::OperationType::eClipboard, aURI,
-                aWindowGlobal, aSourceWindowGlobal, std::move(aUserActionId),
-                aRequests);
+                ClipboardOperationTypeForReason(aReason), aURI, aWindowGlobal,
+                aSourceWindowGlobal, std::move(aUserActionId), aRequests);
   return NS_OK;
 }
 

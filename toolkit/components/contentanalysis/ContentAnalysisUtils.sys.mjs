@@ -104,7 +104,7 @@ export const ContentAnalysisUtils = {
               {
                 analysisType: Ci.nsIContentAnalysisRequest.eBulkDataEntry,
                 operationTypeForDisplay: isPaste
-                  ? Ci.nsIContentAnalysisRequest.eClipboard
+                  ? Ci.nsIContentAnalysisRequest.ePasteClipboard
                   : Ci.nsIContentAnalysisRequest.eDroppedText,
                 reason: isPaste
                   ? Ci.nsIContentAnalysisRequest.eClipboardPaste

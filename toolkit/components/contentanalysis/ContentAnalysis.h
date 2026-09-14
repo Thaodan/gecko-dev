@@ -140,7 +140,7 @@ class ContentAnalysisRequest final : public nsIContentAnalysisRequest {
   int64_t mUserActionRequestsCount = 1;
 
   // Type of text to display, see nsIContentAnalysisRequest for values
-  OperationType mOperationTypeForDisplay = OperationType::eClipboard;
+  OperationType mOperationTypeForDisplay = OperationType::ePasteClipboard;
 
   // File name to display if mOperationTypeForDisplay is
   // eUpload or eDownload.
