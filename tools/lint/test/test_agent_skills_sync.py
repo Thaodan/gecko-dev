@@ -93,6 +93,37 @@ def test_content_mismatch(global_lint, tmp_path):
     assert all("differs from" in r.message for r in results)
 
 
+def test_non_markdown_content_mismatch(global_lint, tmp_path):
+    _setup_tree(
+        tmp_path,
+        claude_files={"foo/scripts/run.py": b"claude"},
+        agent_files={"foo/scripts/run.py": b"agent"},
+    )
+    results = global_lint([], root=str(tmp_path))
+    assert len(results) == 2
+    assert all(r.level == "error" for r in results)
+    assert all("differs from" in r.message for r in results)
+
+
+def test_non_markdown_missing_counterpart(global_lint, tmp_path):
+    _setup_tree(tmp_path, claude_files={"foo/scripts/run.py": b"data"})
+    results = global_lint([], root=str(tmp_path))
+    assert len(results) == 1
+    assert results[0].level == "error"
+    assert ".agents/skills/foo/scripts/run.py" in results[0].message
+
+
+def test_fix_propagates_executable_mode(global_lint, tmp_path, patch_vcs):
+    patch_vcs(added_or_modified=[".claude/skills/foo/scripts/run.sh"])
+    _setup_tree(tmp_path, claude_files={"foo/scripts/run.sh": b"#!/bin/sh\n"})
+    (tmp_path / ".claude" / "skills" / "foo" / "scripts" / "run.sh").chmod(0o755)
+    results = global_lint([], root=str(tmp_path), fix=True)
+    assert results == []
+    assert fixed == 1
+    mirrored = tmp_path / ".agents" / "skills" / "foo" / "scripts" / "run.sh"
+    assert mirrored.stat().st_mode & 0o111
+
+
 def test_fix_propagates_add_to_agent(global_lint, tmp_path, patch_vcs):
     patch_vcs(added_or_modified=[".claude/skills/foo/SKILL.md"])
     _setup_tree(tmp_path, claude_files={"foo/SKILL.md": b"data"})
@@ -228,10 +259,14 @@ def test_fix_cannot_resolve_content_mismatch_when_both_changed(
     assert all("resolve manually" in r.message for r in results)
 
 
-def test_non_md_files_are_ignored(global_lint, tmp_path):
+def test_unlisted_extensions_are_ignored(global_lint, tmp_path):
     _setup_tree(
         tmp_path,
-        claude_files={"foo/SKILL.md": b"same", "foo/.DS_Store": b"noise"},
+        claude_files={
+            "foo/SKILL.md": b"same",
+            "foo/.DS_Store": b"noise",
+            "foo/notes.txt": b"noise",
+        },
         agent_files={"foo/SKILL.md": b"same"},
     )
     results = global_lint([], root=str(tmp_path))

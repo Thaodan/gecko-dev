@@ -6,6 +6,8 @@ agent-skills-sync:
         - '.agents/skills'
     extensions:
         - md
+        - py
+        - sh
     support-files:
         - 'tools/lint/agent-skills-sync/**'
     type: global

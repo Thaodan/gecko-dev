@@ -27,10 +27,14 @@ def _error(config, path, message):
     )
 
 
-def _walk(base):
+def _walk(base, extensions):
+    """Every file under base carrying one of the listed extensions, or all of
+    them when the list is empty, as mozlint itself reads the key.
+    """
     if not base.is_dir():
         return []
-    return [p for p in base.rglob("*.md") if p.is_file()]
+    patterns = [f"*.{e}" for e in extensions] or ["*"]
+    return [p for pattern in patterns for p in base.rglob(pattern) if p.is_file()]
 
 
 def _collect_vcs_changes(root):
@@ -58,8 +62,13 @@ def lint(paths, config, fix=None, **lintargs):
 
     vcs_changes = _collect_vcs_changes(root) if fix else None
 
-    claude_rels = {p.relative_to(claude_root).as_posix() for p in _walk(claude_root)}
-    agent_rels = {p.relative_to(agent_root).as_posix() for p in _walk(agent_root)}
+    extensions = set(config.get("extensions", []))
+    claude_rels = {
+        p.relative_to(claude_root).as_posix() for p in _walk(claude_root, extensions)
+    }
+    agent_rels = {
+        p.relative_to(agent_root).as_posix() for p in _walk(agent_root, extensions)
+    }
 
     results = []
     fixed = 0
@@ -82,7 +91,7 @@ def lint(paths, config, fix=None, **lintargs):
             missing_deleted = missing_display in vcs_changes["deleted"]
             if existing_added and not missing_deleted:
                 missing_path.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(existing_path, missing_path)
+                shutil.copy(existing_path, missing_path)
                 fixed += 1
                 continue
             if missing_deleted and not existing_added:
@@ -123,11 +132,11 @@ def lint(paths, config, fix=None, **lintargs):
             claude_changed = claude_display in vcs_changes["added_or_modified"]
             agent_changed = agent_display in vcs_changes["added_or_modified"]
             if claude_changed and not agent_changed:
-                shutil.copyfile(claude_path, agent_path)
+                shutil.copy(claude_path, agent_path)
                 fixed += 1
                 continue
             if agent_changed and not claude_changed:
-                shutil.copyfile(agent_path, claude_path)
+                shutil.copy(agent_path, claude_path)
                 fixed += 1
                 continue
 
