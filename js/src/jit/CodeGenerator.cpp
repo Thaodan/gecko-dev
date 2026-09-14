@@ -5921,17 +5921,6 @@ void CodeGenerator::emitPostWriteBarrier(const LAllocation* obj) {
   EmitPostWriteBarrier(masm, gen->runtime, objreg, object, isGlobal, regs);
 }
 
-// Returns true if `def` might be allocated in the nursery.
-static bool ValueNeedsPostBarrier(MDefinition* def) {
-  if (def->isBox()) {
-    def = def->toBox()->input();
-  }
-  if (def->type() == MIRType::Value) {
-    return true;
-  }
-  return NeedsPostBarrier(def->type());
-}
-
 void CodeGenerator::emitElementPostWriteBarrier(
     MInstruction* mir, const LiveRegisterSet& liveVolatileRegs, Register obj,
     Register index, Register scratch, const ConstantOrRegister& val,

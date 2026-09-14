@@ -9682,6 +9682,23 @@ MConstant* MDefinition::maybeConstantValue() {
   return nullptr;
 }
 
+// Returns true if storing |value| in an object needs a post write barrier.
+inline bool ValueNeedsPostBarrier(MDefinition* value) {
+  if (value->isBox()) {
+    value = value->toBox()->input();
+  }
+  // MIR can't contain nursery pointers, so constants are always tenured.
+  if (value->isConstant()) {
+    MOZ_ASSERT(
+        JS::GCPolicy<Value>::isTenured(value->toConstant()->toJSValue()));
+    return false;
+  }
+  if (value->type() == MIRType::Value) {
+    return true;
+  }
+  return NeedsPostBarrier(value->type());
+}
+
 }  // namespace jit
 }  // namespace js
 
