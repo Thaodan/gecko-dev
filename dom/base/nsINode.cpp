@@ -3639,9 +3639,18 @@ void nsINode::BindObject(nsISupports* aObject, UnbindCallback aDtor) {
 }
 
 void nsINode::UnbindObject(nsISupports* aObject) {
-  if (auto* slots = GetExistingSlots()) {
-    slots->mBoundObjects.UnorderedRemoveElement(aObject);
+  auto* slots = GetExistingSlots();
+  if (!slots) {
+    return;
   }
+  // Keep only single-object storage for nodes that are repeatedly observed.
+  if (slots->mBoundObjects.Capacity() == 1 &&
+      slots->mBoundObjects.Length() == 1 &&
+      slots->mBoundObjects[0] == aObject) {
+    slots->mBoundObjects.ClearAndRetainStorage();
+    return;
+  }
+  slots->mBoundObjects.UnorderedRemoveElement(aObject);
 }
 
 already_AddRefed<AccessibleNode> nsINode::GetAccessibleNode() {
