@@ -86,6 +86,13 @@ pre.mermaid {
   padding-inline: 1.5rem;
   mask-image: linear-gradient(to right, transparent, black 1.5rem, black calc(100% - 1.5rem), transparent);
 
+  /* The mask fades the focus ring along with everything else at the scrollport
+     edge, measured down to 14% opacity, and a diagram taller than the window
+     shows only those two edges. */
+  &:focus-visible {
+    mask-image: none;
+  }
+
   /* The extension declares both of these on the same selector, from a
      stylesheet injected after this one, so beating it takes the !important
      and the :root prefix for specificity. */
