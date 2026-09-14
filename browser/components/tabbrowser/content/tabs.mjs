@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-"use strict";
-
 // This is loaded into all browser windows. Wrap in a block to prevent
 // leaking to window scope.
 {
@@ -221,14 +219,14 @@
       this.tabDragAndDrop.init();
     }
 
-    attributeChangedCallback(name, oldValue, newValue) {
-      if (name == "orient") {
+    attributeChangedCallback(attrName, oldValue, newValue) {
+      if (attrName == "orient") {
         // reset this attribute so we don't have incorrect styling for vertical tabs
         this.removeAttribute("overflow");
         this.#updateTabMinWidth();
         this.pinnedTabsContainer?.setAttribute("orient", newValue);
       }
-      super.attributeChangedCallback(name, oldValue, newValue);
+      super.attributeChangedCallback(attrName, oldValue, newValue);
     }
 
     // Event handlers
@@ -1277,18 +1275,18 @@
             "vertical-tabs-newtab-button"
           );
 
-          for (let parent of [newTab, newTab2, newTabVertical]) {
-            if (!parent) {
+          for (let button of [newTab, newTab2, newTabVertical]) {
+            if (!button) {
               continue;
             }
 
-            parent.removeAttribute("type");
-            if (parent.menupopup) {
-              parent.menupopup.remove();
+            button.removeAttribute("type");
+            if (button.menupopup) {
+              button.menupopup.remove();
             }
 
             if (containersEnabled) {
-              parent.setAttribute("context", "new-tab-button-popup");
+              button.setAttribute("context", "new-tab-button-popup");
 
               let popup = document
                 .getElementById("new-tab-button-popup")
@@ -1297,27 +1295,27 @@
               popup.className = "new-tab-popup";
               popup.setAttribute("position", "after_end");
               popup.addEventListener("popupshowing", CreateContainerTabMenu);
-              parent.prepend(popup);
-              parent.setAttribute("type", "menu");
+              button.prepend(popup);
+              button.setAttribute("type", "menu");
               // Update tooltip text
-              DynamicShortcutTooltip.nodeToTooltipMap[parent.id] =
+              DynamicShortcutTooltip.nodeToTooltipMap[button.id] =
                 newTabLeftClickOpensContainersMenu
                   ? "newTabAlwaysContainer.tooltip"
                   : "newTabContainer.tooltip";
             } else {
-              DynamicShortcutTooltip.nodeToTooltipMap[parent.id] =
+              DynamicShortcutTooltip.nodeToTooltipMap[button.id] =
                 "newTabButton.tooltip";
-              parent.removeAttribute("context", "new-tab-button-popup");
+              button.removeAttribute("context", "new-tab-button-popup");
             }
             // evict from tooltip cache
-            DynamicShortcutTooltip.cache.delete(parent.id);
+            DynamicShortcutTooltip.cache.delete(button.id);
 
             // If containers and press-hold container menu are both used,
             // add to gClickAndHoldListenersOnElement; otherwise, remove.
             if (containersEnabled && !newTabLeftClickOpensContainersMenu) {
-              gClickAndHoldListenersOnElement.add(parent);
+              gClickAndHoldListenersOnElement.add(button);
             } else {
-              gClickAndHoldListenersOnElement.remove(parent);
+              gClickAndHoldListenersOnElement.remove(button);
             }
           }
 
@@ -1713,8 +1711,8 @@
     }
 
     _hiddenSoundPlayingStatusChanged(tab, opts) {
-      let closed = opts && opts.closed;
-      if (!closed && tab.soundPlaying && !tab.visible) {
+      let isClosed = opts && opts.closed;
+      if (!isClosed && tab.soundPlaying && !tab.visible) {
         this._hiddenSoundPlayingTabs.add(tab);
         this.toggleAttribute("hiddensoundplaying", true);
       } else {

@@ -4982,7 +4982,7 @@ export class Tabbrowser {
 
       // Re-use existing selected tab if possible to avoid the overhead of
       // selecting a new tab. For now, we only do this for horizontal tabs;
-      // we'll let tabs.js handle pinning for vertical tabs until we unify
+      // we'll let tabs.mjs handle pinning for vertical tabs until we unify
       // the logic for both horizontal and vertical tabs in bug 1910097.
       if (
         select &&
