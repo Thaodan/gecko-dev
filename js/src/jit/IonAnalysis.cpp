@@ -1868,11 +1868,7 @@ bool jit::AddPostWriteBarriers(MIRGraph& graph) {
 
       MOZ_ASSERT(object->type() == MIRType::Object);
 
-      // MIR can't contain nursery pointers, so constants are always tenured.
-      if (value->isConstant()) {
-        continue;
-      }
-      if (value->type() != MIRType::Value && !NeedsPostBarrier(value->type())) {
+      if (!ValueNeedsPostBarrier(value)) {
         continue;
       }
 
