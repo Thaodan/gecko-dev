@@ -4380,7 +4380,15 @@ void LIRGenerator::visitStoreDynamicSlot(MStoreDynamicSlot* ins) {
 
 void LIRGenerator::visitPostWriteBarrier(MPostWriteBarrier* ins) {
   MOZ_ASSERT(ins->object()->type() == MIRType::Object);
-  MOZ_ASSERT(ValueNeedsPostBarrier(ins->value()));
+
+  // We need a barrier if the value might be allocated in the nursery. If the
+  // value is a constant, it must be tenured because MIR can't contain nursery
+  // pointers.
+  MConstant* constValue = ins->value()->maybeConstantValue();
+  if (constValue) {
+    MOZ_ASSERT(JS::GCPolicy<Value>::isTenured(constValue->toJSValue()));
+    return;
+  }
 
   switch (ins->value()->type()) {
     case MIRType::Object: {
@@ -4420,14 +4428,25 @@ void LIRGenerator::visitPostWriteBarrier(MPostWriteBarrier* ins) {
       break;
     }
     default:
-      MOZ_CRASH("Unexpected value type");
+      // Currently, only objects, strings, and bigints can be in the nursery.
+      // Other instruction types cannot hold nursery pointers.
+      MOZ_ASSERT(!NeedsPostBarrier(ins->value()->type()));
+      break;
   }
 }
 
 void LIRGenerator::visitPostWriteElementBarrier(MPostWriteElementBarrier* ins) {
   MOZ_ASSERT(ins->object()->type() == MIRType::Object);
   MOZ_ASSERT(ins->index()->type() == MIRType::Int32);
-  MOZ_ASSERT(ValueNeedsPostBarrier(ins->value()));
+
+  // We need a barrier if the value might be allocated in the nursery. If the
+  // value is a constant, it must be tenured because MIR can't contain nursery
+  // pointers.
+  MConstant* constValue = ins->value()->maybeConstantValue();
+  if (constValue) {
+    MOZ_ASSERT(JS::GCPolicy<Value>::isTenured(constValue->toJSValue()));
+    return;
+  }
 
   switch (ins->value()->type()) {
     case MIRType::Object: {
@@ -4471,7 +4490,10 @@ void LIRGenerator::visitPostWriteElementBarrier(MPostWriteElementBarrier* ins) {
       break;
     }
     default:
-      MOZ_CRASH("Unexpected value type");
+      // Currently, only objects, strings, and bigints can be in the nursery.
+      // Other instruction types cannot hold nursery pointers.
+      MOZ_ASSERT(!NeedsPostBarrier(ins->value()->type()));
+      break;
   }
 }
 
