@@ -113,6 +113,9 @@ def test_non_markdown_missing_counterpart(global_lint, tmp_path):
     assert ".agents/skills/foo/scripts/run.py" in results[0].message
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="Windows has no executable permission bit"
+)
 def test_fix_propagates_executable_mode(global_lint, tmp_path, patch_vcs):
     patch_vcs(added_or_modified=[".claude/skills/foo/scripts/run.sh"])
     _setup_tree(tmp_path, claude_files={"foo/scripts/run.sh": b"#!/bin/sh\n"})
