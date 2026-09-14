@@ -189,6 +189,21 @@ contrast entirely.
 covers the companion case: an override that does sit in a layer still needs
 `@media (not (forced-colors))` to leave the token layer's system color in place.
 
+### Overriding across a shadow boundary
+
+A custom property is substituted where it is declared. A variable declared on
+`:host, :root` in terms of another variable captures the root's value, so an
+embedder overriding the inner variable further down the tree does not change
+it. When an override "isn't working", check whether the consuming declaration
+already resolved at the root.
+
+An outer-tree `::part()` rule beats the widget's own shadow rule, whatever the
+specificity inside the shadow root. An embedder's unscoped `widget::part(x)`
+rule therefore overrides that widget's internal metrics for every instance on
+the page, including instances it was never written for, so scope such a rule to
+a class the embedder's own instances opt into. A part inside a nested shadow
+root is out of reach of a page `::part()` selector altogether.
+
 ## Using CSS variables
 
 ### Adding new variables
@@ -343,6 +358,28 @@ this:
 
 [^footnote-2]: However there is probably a better way than using absolute
     positioning.
+
+### Chrome versus in-content
+
+A stylesheet shared between a chrome window and an `about:` page does not behave
+the same in both, and most of the differences are invisible in the source.
+
+- **`rem` means something different in each.** Chrome's root font size comes from
+  the system UI font (`:root { font: message-box }`), so it is 11 to 15px
+  depending on the platform and never the 16px a generic page gets. A privileged
+  `about:` page is not 16px either: `about:newtab` sets
+  `--font-size-root: 15px`. One shared rem-valued value therefore resolves to
+  three different lengths across chrome, New Tab and the web. `em` is affected
+  the same way in most cases, since the font size it resolves against is
+  system-dependent too. Hardcoded `px` font sizes are a lint error in any case:
+  the `use-design-tokens` rule covers `font-size`.
+- **Chrome-only conditions never match in a page.**
+  `:root[uidensity="compact"]`, the `:root[lwt-*]` theme selectors, anything
+  relying on `xul.css` defaults such as `user-select` or `-moz-user-focus`, and
+  anything keyed on a XUL-only attribute. From the page's point of view a shared
+  sheet's chrome branches are dead code, so check which realm a rule can reach
+  before fixing it, and do not assume a compact-density rule protects the in-page
+  case.
 
 ### Colors
 
@@ -686,3 +723,30 @@ However, if only 1x and 2x PNG assets are available, you can use this
 ```css
 @media (min-resolution: 1.1dppx)
 ```
+
+#### Some properties are rounded to device pixels, but not others
+
+A used `border-width` is rounded down to whole device pixels. `padding`,
+`margin`, `gap` and `height` are not. Trading a border for padding of the same
+length, or a 1px-tall background box for a 1px border, is therefore not
+geometry-neutral unless the length lands on whole device pixels, and what has to
+be integral is the length in *device* pixels rather than in CSS pixels. A whole
+number of CSS pixels is not exempt: at a device pixel ratio of 1.25 a `1px`
+border is used as 0.8px while `1px` of padding stays 1px, so the box changes
+size and everything after it moves.
+
+The consequences are easy to miss because the default ratio hides them, so set
+`layout.css.devPixelsPerPx` (a string pref; `"-1.0"` restores automatic) and
+check fractional ratios such as 1.25 and 1.5 before calling such a swap neutral.
+Where padding has to reproduce the snapping, `round(down, X, env(hairline))`
+does it, with a `max(env(hairline), ...)` guard against rounding to zero;
+`browser/themes/shared/urlbar.css` uses that form. The CSSWG has
+[resolved on `round(line-width, ...)`](https://github.com/w3c/csswg-drafts/issues/3720#issuecomment-3999235838)
+as the syntax for this, which nothing implements yet. Keeping the original height
+and adding `box-sizing: border-box` is the other way to hold a box exactly.
+
+`env(hairline)` is one device pixel. Like the chrome-only media features it is
+gated on the stylesheet's URL rather than the document's, so it resolves in a
+`chrome://` sheet in either realm and in `about:newtab`'s own CSS, and yields
+nothing in a stylesheet loaded from another origin, where the declaration
+computes to 0.
