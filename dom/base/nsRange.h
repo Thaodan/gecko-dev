@@ -453,6 +453,24 @@ class nsRange final : public mozilla::dom::AbstractRange,
       }
     }
 
+    /**
+     * Assign the start/end boundaries and the new root from aNew if and only if
+     * the corresponding member of aNew is set. In other words, unset members of
+     * aNew does not change the corresponding members of this; in particular,
+     * this never unsets a boundary or the root.
+     */
+    void AssignSetBoundariesAndRootFrom(const RangeBoundariesAndRoot aNew) {
+      if (aNew.mStart.IsSet()) {
+        mStart = aNew.mStart;
+      }
+      if (aNew.mEnd.IsSet()) {
+        mEnd = aNew.mEnd;
+      }
+      if (aNew.mRoot) {
+        mRoot = aNew.mRoot;
+      }
+    }
+
     RawRangeBoundary mStart;
     RawRangeBoundary mEnd;
     nsINode* mRoot = nullptr;
@@ -462,12 +480,14 @@ class nsRange final : public mozilla::dom::AbstractRange,
     [[nodiscard]] nsIContent* Get(RangeBoundarySide aSide) const {
       return aSide == RangeBoundarySide::Start ? mStart : mEnd;
     }
+    inline void Clear() { mStart = mEnd = nullptr; }
     [[nodiscard]] inline bool HasSiblings() const { return mStart || mEnd; }
     nsIContent* MOZ_NON_OWNING_REF mStart = nullptr;
     nsIContent* MOZ_NON_OWNING_REF mEnd = nullptr;
   };
 
   class MOZ_STACK_CLASS AutoCharacterDataChangedHandler;
+  class MOZ_STACK_CLASS AutoNewContentHandler;
 
   // @return true iff the range is positioned, aContainer belongs to the same
   //         document as the range, aContainer is a DOCUMENT_TYPE_NODE and
