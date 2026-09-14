@@ -72,11 +72,9 @@ WebSocketEventListenerParent::WebSocketOpened(uint32_t aWebSocketSerialID,
 
 NS_IMETHODIMP
 WebSocketEventListenerParent::WebSocketClosed(uint32_t aWebSocketSerialID,
-                                              uint64_t aHttpChannelId,
                                               bool aWasClean, uint16_t aCode,
                                               const nsAString& aReason) {
-  (void)SendWebSocketClosed(aWebSocketSerialID, aHttpChannelId, aWasClean,
-                            aCode, aReason);
+  (void)SendWebSocketClosed(aWebSocketSerialID, aWasClean, aCode, aReason);
   return NS_OK;
 }
 
@@ -90,27 +88,25 @@ WebSocketEventListenerParent::WebSocketMessageAvailable(
 
 NS_IMETHODIMP
 WebSocketEventListenerParent::FrameReceived(uint32_t aWebSocketSerialID,
-                                            uint64_t aHttpChannelId,
                                             nsIWebSocketFrame* aFrame) {
   if (!aFrame) {
     return NS_ERROR_FAILURE;
   }
 
   WebSocketFrame* frame = static_cast<WebSocketFrame*>(aFrame);
-  (void)SendFrameReceived(aWebSocketSerialID, aHttpChannelId, frame->Data());
+  (void)SendFrameReceived(aWebSocketSerialID, frame->Data());
   return NS_OK;
 }
 
 NS_IMETHODIMP
 WebSocketEventListenerParent::FrameSent(uint32_t aWebSocketSerialID,
-                                        uint64_t aHttpChannelId,
                                         nsIWebSocketFrame* aFrame) {
   if (!aFrame) {
     return NS_ERROR_FAILURE;
   }
 
   WebSocketFrame* frame = static_cast<WebSocketFrame*>(aFrame);
-  (void)SendFrameSent(aWebSocketSerialID, aHttpChannelId, frame->Data());
+  (void)SendFrameSent(aWebSocketSerialID, frame->Data());
   return NS_OK;
 }
 

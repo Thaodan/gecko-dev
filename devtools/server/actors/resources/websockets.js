@@ -15,6 +15,10 @@ const webSocketEventService = Cc[
 class WebSocketWatcher {
   constructor() {
     this.windowIds = new Set();
+    // Maintains a map of all the connection channels per websocket
+    // The map item is keyed on the `webSocketSerialID` and stores
+    // the `httpChannelId` as value.
+    this.connections = new Map();
     this.onWindowReady = this.onWindowReady.bind(this);
     this.onWindowDestroy = this.onWindowDestroy.bind(this);
   }
@@ -91,12 +95,13 @@ class WebSocketWatcher {
   webSocketCreated() {}
 
   webSocketOpened(
-    _webSocketSerialID,
+    webSocketSerialID,
     effectiveURI,
     protocols,
     extensions,
     httpChannelId
   ) {
+    this.connections.set(webSocketSerialID, httpChannelId);
     const resource = WebSocketWatcher.createResource("webSocketOpened", {
       httpChannelId,
       effectiveURI,
@@ -109,7 +114,10 @@ class WebSocketWatcher {
 
   webSocketMessageAvailable() {}
 
-  webSocketClosed(_webSocketSerialID, httpChannelId, wasClean, code, reason) {
+  webSocketClosed(webSocketSerialID, wasClean, code, reason) {
+    const httpChannelId = this.connections.get(webSocketSerialID);
+    this.connections.delete(webSocketSerialID);
+
     const resource = WebSocketWatcher.createResource("webSocketClosed", {
       httpChannelId,
       wasClean,
@@ -120,7 +128,12 @@ class WebSocketWatcher {
     this.onAvailable([resource]);
   }
 
-  frameReceived(_webSocketSerialID, httpChannelId, frame) {
+  frameReceived(webSocketSerialID, frame) {
+    const httpChannelId = this.connections.get(webSocketSerialID);
+    if (!httpChannelId) {
+      return;
+    }
+
     const payload = WebSocketWatcher.prepareFramePayload(
       this.targetActor,
       frame
@@ -144,7 +157,13 @@ class WebSocketWatcher {
     this.onAvailable([resource]);
   }
 
-  frameSent(_webSocketSerialID, httpChannelId, frame) {
+  frameSent(webSocketSerialID, frame) {
+    const httpChannelId = this.connections.get(webSocketSerialID);
+
+    if (!httpChannelId) {
+      return;
+    }
+
     const payload = WebSocketWatcher.prepareFramePayload(
       this.targetActor,
       frame
