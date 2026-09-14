@@ -786,16 +786,24 @@ export var Policies = {
           Services.prefs.lockPref(`browser.contentanalysis.${pref[1]}`);
         }
       }
+      // The third element is the value to use when InterceptionPoints is
+      // present but this interception point is not mentioned in it.  It is
+      // true for everything that predates per-entry defaults; new
+      // interception points that are off by default must use false here so
+      // that policy files written before they existed don't silently opt in,
+      // and similarly we should not change any of these values to avoid
+      // changing existing clients.
       const interceptionPointPrefs = [
-        ["Clipboard", "clipboard"],
-        ["Download", "download"],
-        ["DragAndDrop", "drag_and_drop"],
-        ["FileUpload", "file_upload"],
-        ["Print", "print"],
+        ["Clipboard", "clipboard", true],
+        ["ClipboardCopy", "clipboard_copy", false],
+        ["Download", "download", true],
+        ["DragAndDrop", "drag_and_drop", true],
+        ["FileUpload", "file_upload", true],
+        ["Print", "print", true],
       ];
       if ("InterceptionPoints" in param) {
         for (const pref of interceptionPointPrefs) {
-          let value = true;
+          let value = pref[2];
           if (pref[0] in param.InterceptionPoints) {
             if ("Enabled" in param.InterceptionPoints[pref[0]]) {
               value = !!param.InterceptionPoints[pref[0]].Enabled;
@@ -815,6 +823,7 @@ export var Policies = {
       }
       const plainTextOnlyPrefs = [
         ["Clipboard", "clipboard"],
+        ["ClipboardCopy", "clipboard_copy"],
         ["DragAndDrop", "drag_and_drop"],
       ];
       if ("InterceptionPoints" in param) {
@@ -822,11 +831,9 @@ export var Policies = {
           // Need to set and lock this value even if the enterprise
           // policy isn't set so users can't change it
           let value = true;
-          if ("InterceptionPoints" in param) {
-            if (pref[0] in param.InterceptionPoints) {
-              if ("PlainTextOnly" in param.InterceptionPoints[pref[0]]) {
-                value = !!param.InterceptionPoints[pref[0]].PlainTextOnly;
-              }
+          if (pref[0] in param.InterceptionPoints) {
+            if ("PlainTextOnly" in param.InterceptionPoints[pref[0]]) {
+              value = !!param.InterceptionPoints[pref[0]].PlainTextOnly;
             }
           }
           lazy.PoliciesUtils.setAndLockPref(

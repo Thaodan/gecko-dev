@@ -759,6 +759,10 @@
               "Enabled": true,
               "PlainTextOnly": true
             },
+            "ClipboardCopy": {
+              "Enabled": false,
+              "PlainTextOnly": true
+            },
             "Download": {
               "Enabled": false
             },
@@ -824,6 +828,17 @@
           "type": "object",
           "properties": {
             "Clipboard": {
+              "type": "object",
+              "properties": {
+                "Enabled": {
+                  "type": "boolean"
+                },
+                "PlainTextOnly": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "ClipboardCopy": {
               "type": "object",
               "properties": {
                 "Enabled": {
