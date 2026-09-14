@@ -4,6 +4,8 @@
 
 #include "jit/loong64/MacroAssembler-loong64.h"
 
+#include <utility>
+
 #include "jit/Bailouts.h"
 #include "jit/BaselineFrame.h"
 #include "jit/JitFrames.h"
@@ -1064,6 +1066,14 @@ void MacroAssemblerLOONG64::ma_bl(Label* label) {
   as_nop();
   as_nop();
   as_nop();
+}
+
+void MacroAssemblerLOONG64::ma_jump36(int32_t offset, Register scratch) {
+  static_assert(MaxCodeBytesPerProcess <= (static_cast<uint64_t>(1) << 37),
+                "All JIT code jump offsets must fit in 128GiB to use jump36");
+  const auto [si20, offs16] = SplitJump36Offset(offset);
+  as_pcaddu18i(scratch, si20);
+  as_jirl(zero, scratch, BOffImm16(offs16));
 }
 
 void MacroAssemblerLOONG64::branchWithCode(InstImm code, Label* label,
