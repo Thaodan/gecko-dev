@@ -584,6 +584,18 @@ nsAppStartup::SetImpendingShutdown() {
   return NS_OK;
 }
 
+namespace mozilla {
+
+void CollectShutdownHangAnnotations() {}
+
+}  // namespace mozilla
+
+NS_IMETHODIMP
+nsAppStartup::CollectShutdownHangAnnotations() {
+  mozilla::CollectShutdownHangAnnotations();
+  return NS_OK;
+}
+
 void nsAppStartup::CloseAllWindows() {
   nsCOMPtr<nsIWindowMediator> mediator(
       do_GetService(NS_WINDOWMEDIATOR_CONTRACTID));
