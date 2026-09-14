@@ -4970,7 +4970,6 @@ interface GleanImpl {
     declarativeMutable: GleanCounter;
     detectedDuplicatedMessageIds: GleanCounter;
     errorCode: Record<"decryption_error"|"internal_error"|"not_delivered"|"uncaught_exception"|"unhandled_rejection", GleanCounter>;
-    unsubscribedByClearingData: GleanCounter;
   }
 
   domQuota: {
