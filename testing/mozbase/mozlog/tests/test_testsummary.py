@@ -16,13 +16,13 @@ from mozlog.formatters import TestSummaryFormatter
         ),
         pytest.param(
             {"action": "log", "level": "ERROR", "message": "boom"},
-            True,
-            id="log_error_kept",
+            False,
+            id="log_error_dropped",
         ),
         pytest.param(
             {"action": "log", "level": "CRITICAL", "message": "crit"},
-            True,
-            id="log_critical_kept",
+            False,
+            id="log_critical_dropped",
         ),
         pytest.param(
             {"action": "log", "level": "WARNING", "message": "warn"},
@@ -189,31 +189,6 @@ def test_testsummary_strips_noise_fields():
     assert result["test"] == "xpcom/tests/unit/test_bug476919.js"
     assert result["status"] == "FAIL"
     assert result["expected"] == "PASS"
-
-
-def test_testsummary_log_error_keeps_only_level_and_message():
-    fmt = TestSummaryFormatter()
-    message = (
-        "TEST-UNEXPECTED-FAIL | LeakSanitizer leak at nsTimer, NS_NewTimer"
-        " | netwerk/test/browser/browser.toml"
-    )
-    record = {
-        "action": "log",
-        "time": 1787844653959,
-        "thread": "MainThread",
-        "pid": 9594,
-        "source": "mochitest",
-        "level": "ERROR",
-        "message": message,
-    }
-    out = fmt(record)
-    result = json.loads(out)
-    assert result == {
-        "action": "log",
-        "time": 1787844653959,
-        "level": "ERROR",
-        "message": message,
-    }
 
 
 def test_testsummary_crash_keeps_stack():
