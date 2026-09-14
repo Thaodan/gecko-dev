@@ -3302,6 +3302,13 @@ class Settings(
             default = { FxNimbus.features.addressbarFocusMode.value().enabled },
         )
 
+    /** Whether the customizing the browser menu is allowed. */
+    var isMenuCustomizationEnabled by
+        booleanPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_enable_menu_customization),
+            default = { false },
+        )
+
     /** Whether Longfox is enabled. */
     var longfoxEnabled by
         booleanPreference(
