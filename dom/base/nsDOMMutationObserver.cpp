@@ -688,11 +688,11 @@ void nsDOMMutationObserver::Observe(nsINode& aTarget,
   r->SetChromeOnlyNodes(chromeOnlyNodes);
   r->RemoveClones();
 
-  if (!aSubjectPrincipal.IsSystemPrincipal() &&
+  if (nsPIDOMWindowInner* window = aTarget.OwnerDoc()->GetInnerWindow();
+      window && !window->MutationObserverHasObservedNodeForTelemetry() &&
+      !aSubjectPrincipal.IsSystemPrincipal() &&
       !aSubjectPrincipal.GetIsAddonOrExpandedAddonPrincipal()) {
-    if (nsPIDOMWindowInner* window = aTarget.OwnerDoc()->GetInnerWindow()) {
-      window->SetMutationObserverHasObservedNodeForTelemetry();
-    }
+    window->SetMutationObserverHasObservedNodeForTelemetry();
   }
 
 #ifdef DEBUG
