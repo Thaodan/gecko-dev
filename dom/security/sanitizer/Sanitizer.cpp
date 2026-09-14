@@ -48,16 +48,11 @@ JSObject* Sanitizer::WrapObject(JSContext* aCx,
 }
 
 /* static */
-// https://html.spec.whatwg.org/#get-a-sanitizer-instance-from-options
+// https://wicg.github.io/sanitizer-api/#sanitizerconfig-get-a-sanitizer-instance-from-options
 already_AddRefed<Sanitizer> Sanitizer::GetInstance(
     nsIGlobalObject* aGlobal,
     const OwningSanitizerOrSanitizerConfigOrSanitizerPresets& aOptions,
     bool aSafe, ErrorResult& aRv) {
-  // Step 3. Assert: sanitizerSpec is either a Sanitizer instance, a
-  // SanitizerPresets member, or a SanitizerConfig dictionary.
-  MOZ_ASSERT(aOptions.IsSanitizer() || aOptions.IsSanitizerPresets() ||
-             aOptions.IsSanitizerConfig());
-
   // Step 4. If sanitizerSpec is a string:
   if (aOptions.IsSanitizerPresets()) {
     // Step 4.1. Assert: sanitizerSpec is "default"
@@ -71,31 +66,35 @@ already_AddRefed<Sanitizer> Sanitizer::GetInstance(
     return sanitizer.forget();
   }
 
-  // Step 5. If sanitizerSpec is a dictionary:
+  // Step 5. Assert: sanitizerSpec is either a Sanitizer instance, or a
+  // dictionary. Step 6. If sanitizerSpec is a dictionary:
   if (aOptions.IsSanitizerConfig()) {
-    // Step 5.1. Let sanitizer be a new Sanitizer object.
+    // Step 6.1. Let sanitizer be a new Sanitizer instance.
     RefPtr<Sanitizer> sanitizer = new Sanitizer(aGlobal);
 
-    // Step 5.2. Let permissiveDefaults be true if safe is false;
-    // false otherwise.
-    // Step 5.3 Configure sanitizer given sanitizerSpec and permissiveDefaults.
+    // Step 6.2. Let setConfigurationResult be the result of set a
+    // configuration with sanitizerSpec and not safe on sanitizer.
     sanitizer->SetConfig(aOptions.GetAsSanitizerConfig(), !aSafe, aRv);
 
+    // Step 6.3. If setConfigurationResult is false, throw a TypeError.
     if (aRv.Failed()) {
       return nullptr;
     }
 
-    // Step 5.4. Set sanitizerSpec to sanitizer.
+    // Step 6.4. Set sanitizerSpec to sanitizer.
     return sanitizer.forget();
   }
 
-  // Step 6. Return sanitizerSpec.
+  // Step 7. Assert: sanitizerSpec is a Sanitizer instance.
+  MOZ_ASSERT(aOptions.IsSanitizer());
+
+  // Step 8. Return sanitizerSpec.
   RefPtr<Sanitizer> sanitizer = aOptions.GetAsSanitizer();
   return sanitizer.forget();
 }
 
 /* static */
-// https://html.spec.whatwg.org/#dom-sanitizer-constructor
+// https://wicg.github.io/sanitizer-api/#sanitizer-constructor
 already_AddRefed<Sanitizer> Sanitizer::Constructor(
     const GlobalObject& aGlobal,
     const SanitizerConfigOrSanitizerPresets& aConfig, ErrorResult& aRv) {
@@ -115,9 +114,11 @@ already_AddRefed<Sanitizer> Sanitizer::Constructor(
     return sanitizer.forget();
   }
 
-  // Step 2. Configure this given configuration and true.
+  // Step 2. Let valid be the return value of set a configuration with
+  // configuration and true on this.
   sanitizer->SetConfig(aConfig.GetAsSanitizerConfig(), true, aRv);
 
+  // Step 3. If valid is false, then throw a TypeError.
   if (aRv.Failed()) {
     return nullptr;
   }
@@ -133,16 +134,14 @@ void Sanitizer::SetDefaultConfig() {
 
   mIsDefaultConfig = true;
 
-  // https://html.spec.whatwg.org/#built-in-safe-default-configuration
+  // https://wicg.github.io/sanitizer-api/#built-in-safe-default-configuration
   // {
   //   ...
   //   "comments": false,
-  //   "dataAttributes": false,
-  //   "javascriptURLs": false
+  //   "dataAttributes": false
   // }
   mComments = false;
   mDataAttributes = Some(false);
-  mJavascriptURLs = false;
 
   if (sDefaultHTMLElements) {
     // Already initialized.
@@ -359,9 +358,9 @@ static CanonicalElementAttributes CanonicalizeElementAttributes(
 }
 
 // https://html.spec.whatwg.org/#canonicalize-the-configuration
-void Sanitizer::CanonicalizeConfiguration(const SanitizerConfig& aConfig,
-                                          bool aPermissiveDefaults,
-                                          ErrorResult& aRv) {
+void Sanitizer::CanonicalizeConfiguration(
+    const SanitizerConfig& aConfig, bool aAllowCommentsPIsAndDataAttributes,
+    ErrorResult& aRv) {
   // This function is only called while constructing a new Sanitizer object.
   AssertNoLists();
 
@@ -384,9 +383,9 @@ void Sanitizer::CanonicalizeConfiguration(const SanitizerConfig& aConfig,
   // configuration["removeProcessingInstructions"] exists:
   if (!aConfig.mProcessingInstructions.WasPassed() &&
       !aConfig.mRemoveProcessingInstructions.WasPassed()) {
-    // Step 3.1. If permissiveDefaults is true, then set
+    // Step 3.1. If allowCommentsPIsAndDataAttributes is true, then set
     // configuration["removeProcessingInstructions"] to an empty list.
-    if (aPermissiveDefaults) {
+    if (aAllowCommentsPIsAndDataAttributes) {
       mRemoveProcessingInstructions.emplace();
     } else {
       // Step 3.2. Otherwise, set configuration["processingInstructions"] to an
@@ -531,31 +530,22 @@ void Sanitizer::CanonicalizeConfiguration(const SanitizerConfig& aConfig,
   }
 
   // Step 11. If configuration["comments"] does not exist, then set it to
-  // permissiveDefaults.
+  // allowCommentsPIsAndDataAttributes.
   if (aConfig.mComments.WasPassed()) {
     // NOTE: We always need to copy this property if it exists.
     mComments = aConfig.mComments.Value();
   } else {
-    mComments = aPermissiveDefaults;
+    mComments = aAllowCommentsPIsAndDataAttributes;
   }
 
   // Step 12. If configuration["attributes"] exists and
   // configuration["dataAttributes"] does not exist, then set it to
-  // permissiveDefaults.
+  // allowCommentsPIsAndDataAttributes.
   if (aConfig.mDataAttributes.WasPassed()) {
     // NOTE: We always need to copy this property if it exists.
     mDataAttributes = Some(aConfig.mDataAttributes.Value());
   } else if (aConfig.mAttributes.WasPassed()) {
-    mDataAttributes = Some(aPermissiveDefaults);
-  }
-
-  // Step 13. If configuration["javascriptURLs"] does not exist, then set
-  // it to permissiveDefaults.
-  if (aConfig.mJavascriptURLs.WasPassed()) {
-    // NOTE: We always need to copy this property if it exists.
-    mJavascriptURLs = aConfig.mJavascriptURLs.Value();
-  } else {
-    mJavascriptURLs = aPermissiveDefaults;
+    mDataAttributes = Some(aAllowCommentsPIsAndDataAttributes);
   }
 }
 
@@ -823,9 +813,10 @@ void Sanitizer::AssertIsValid() const {
 
 // https://html.spec.whatwg.org/#configure-a-sanitizer
 void Sanitizer::SetConfig(const SanitizerConfig& aConfig,
-                          bool aPermissiveDefaults, ErrorResult& aRv) {
-  // Step 1. Canonicalize configuration with permissiveDefaults.
-  CanonicalizeConfiguration(aConfig, aPermissiveDefaults, aRv);
+                          bool aAllowCommentsPIsAndDataAttributes,
+                          ErrorResult& aRv) {
+  // Step 1. Canonicalize configuration with allowCommentsPIsAndDataAttributes.
+  CanonicalizeConfiguration(aConfig, aAllowCommentsPIsAndDataAttributes, aRv);
   if (aRv.Failed()) {
     return;
   }
@@ -1004,8 +995,6 @@ void Sanitizer::Get(SanitizerConfig& aConfig) {
   if (mDataAttributes) {
     aConfig.mDataAttributes.Construct(*mDataAttributes);
   }
-
-  aConfig.mJavascriptURLs.Construct(mJavascriptURLs);
 
   // Step 7. Return config.
 }
@@ -1638,24 +1627,6 @@ bool Sanitizer::SetDataAttributes(bool aAllow) {
   return true;
 }
 
-// https://html.spec.whatwg.org/#dom-sanitizer-setjavascripturls
-bool Sanitizer::SetJavascriptURLs(bool aAllow) {
-  // Step 1. Let configuration be this's configuration.
-  // Step 2. Assert: configuration is valid.
-  AssertIsValid();
-
-  // Step 3. If configuration["javascriptURLs"] is allow, then return false.
-  if (mJavascriptURLs == aAllow) {
-    return false;
-  }
-
-  // Step 4. Set configuration["javascriptURLs"] to allow.
-  mJavascriptURLs = aAllow;
-
-  // Step 5. Return true.
-  return true;
-}
-
 // https://wicg.github.io/sanitizer-api/#built-in-safe-baseline-configuration
 // The built-in safe baseline configuration
 #define FOR_EACH_BASELINE_REMOVE_ELEMENT(ELEMENT) \
@@ -1710,14 +1681,7 @@ bool Sanitizer::RemoveUnsafe() {
         }
       });
 
-  // Step 6. If configuration["javascriptURLs"] is true:
-  if (mJavascriptURLs) {
-    // Step 6.1. Set result to true.
-    result = true;
-    // Step 6.2. Set configuration["javascriptURLs"] to false.
-    mJavascriptURLs = false;
-  }
-  // Step 7. Return result.
+  // Step 6. Return result.
   return result;
 }
 
@@ -1959,21 +1923,16 @@ bool Sanitizer::ShouldRemoveAttributeInternal(
     int32_t aNamespaceID, FunctionRef<void(nsAString&)> aGetValue) const {
   // 5.1. Let attrName be a SanitizerAttributeNamespace with attribute's local
   //      name and namespace.
-  // 5.2.-5.5. handled by MatchAllowsAttribute.
+  // 5.2.-5.6. handled by MatchAllowsAttribute.
   if (!MatchAllowsAttribute<IsDefaultConfig>(aMatch, aLocalName,
                                              aNamespaceID)) {
     return true;
   }
 
-  // 5.6 If configuration["javascriptURLs"] is true, then return true.
-  if (!aMatch.mSafe && mJavascriptURLs) {
-    return false;
-  }
-
   // 5.7.-5.10. handled by ShouldRemoveJavascriptNavigationURLAttribute.
-  return ShouldRemoveJavascriptNavigationURLAttribute(
-      aMatch.mLocalName, aMatch.mNamespaceID, aLocalName, aNamespaceID,
-      aGetValue);
+  return aMatch.mSafe && ShouldRemoveJavascriptNavigationURLAttribute(
+                             aMatch.mLocalName, aMatch.mNamespaceID, aLocalName,
+                             aNamespaceID, aGetValue);
 }
 
 // "To sanitize an Element element given a SanitizerConfig configuration and a
@@ -2208,6 +2167,7 @@ bool Sanitizer::AttributeListsAllow(StaticAtomSet* aElementAttributes,
   MOZ_ASSERT(!nsContentUtils::IsEventAttributeName(
       aAttrLocalName, EventNameType_All & ~EventNameType_XUL));
 
+  // Step 6. Return allowed.
   return true;
 }
 
@@ -2282,6 +2242,7 @@ bool Sanitizer::AttributeListsAllow(
     }
   }
 
+  // Step 6. Return allowed.
   return true;
 }
 
