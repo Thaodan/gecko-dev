@@ -15,6 +15,8 @@ class TestSummaryFormatter(BaseFormatter):
       - `test_status` actions where the status differs from the expected
         status (i.e. the subtest result was unexpected)
       - `crash` actions
+      - `log` actions of level ERROR or CRITICAL (failures not tied to a
+        test, e.g. LeakSanitizer reports or harness errors)
 
     All other actions are dropped.
 
@@ -32,6 +34,7 @@ class TestSummaryFormatter(BaseFormatter):
         "test_end",
         "test_status",
         "crash",
+        "log",
     })
     _ALWAYS_STRIP = frozenset({
         "crashing_thread_stack",
@@ -53,6 +56,8 @@ class TestSummaryFormatter(BaseFormatter):
         if action == "test_status" and (
             "expected" not in data or data["expected"] == data.get("status")
         ):
+            return
+        if action == "log" and data.get("level") not in ("ERROR", "CRITICAL"):
             return
 
         strip = self._ALWAYS_STRIP_CRASH if action == "crash" else self._ALWAYS_STRIP
