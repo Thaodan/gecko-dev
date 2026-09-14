@@ -3144,15 +3144,20 @@ Preferences.addSetting({
   id: "clearOnCloseGroup",
 });
 
+// Keyed on whether clearing will happen, not on alwaysClear.disabled: a policy
+// locking clearing on must leave the sub-settings alone, permanent private
+// browsing (nothing persists to clear) must not.
+function clearOnShutdownInactive({ alwaysClear, privateBrowsingAutoStart }) {
+  return !alwaysClear.value || privateBrowsingAutoStart.value;
+}
+
 Preferences.addSetting({
   id: "clearDataSettings",
-  deps: ["historyMode", "alwaysClear"],
+  deps: ["historyMode", "alwaysClear", "privateBrowsingAutoStart"],
   visible({ historyMode }) {
     return historyMode.value == "custom";
   },
-  disabled({ alwaysClear }) {
-    return !alwaysClear.value || alwaysClear.disabled;
-  },
+  disabled: clearOnShutdownInactive,
   onUserClick() {
     gSubDialog.open(
       "chrome://browser/content/sanitize_v2.xhtml",
@@ -3168,13 +3173,11 @@ Preferences.addSetting({
 
 Preferences.addSetting({
   id: "shutdownClearingExceptions",
-  deps: ["historyMode", "alwaysClear"],
+  deps: ["historyMode", "alwaysClear", "privateBrowsingAutoStart"],
   visible({ historyMode }) {
     return historyMode.value == "custom";
   },
-  disabled({ alwaysClear }) {
-    return !alwaysClear.value || alwaysClear.disabled;
-  },
+  disabled: clearOnShutdownInactive,
   onUserClick() {
     gSubDialog.open(
       "chrome://browser/content/preferences/dialogs/permissions.xhtml",
