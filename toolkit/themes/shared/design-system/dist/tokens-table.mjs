@@ -2417,10 +2417,8 @@ export const tokensTable = {
     {
       value: {
         default: "inherit",
-        brand: {
-          prefersContrast: "var(--button-text-color)",
-          forcedColors: "var(--button-text-color)",
-        },
+        prefersContrast: "var(--button-text-color)",
+        forcedColors: "var(--button-text-color)",
       },
       name: "--button-text-color-ghost",
     },
@@ -4404,10 +4402,8 @@ export const variableLookupTable = {
   },
   "button-text-color-ghost": {
     default: "inherit",
-    brand: {
-      prefersContrast: "var(--button-text-color)",
-      forcedColors: "var(--button-text-color)",
-    },
+    prefersContrast: "var(--button-text-color)",
+    forcedColors: "var(--button-text-color)",
   },
   "button-text-color-ghost-active": {
     default: "inherit",
