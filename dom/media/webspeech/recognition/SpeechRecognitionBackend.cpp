@@ -699,10 +699,11 @@ void SpeechRecognitionBackend::StartSpeechRecognitionSession(
         }
       });
 
+  TimeStamp initStart = TimeStamp::Now();
   aChild->SendInit(SPEECH_RECOGNITION_ENGINE_ID, aLanguage, mPhrases)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [self = RefPtr{this}](const nsCString& aError) {
+          [self = RefPtr{this}, initStart](const nsCString& aError) {
             AssertOnIPCThread();
             if (!aError.IsEmpty()) {
               LOGE("Failed to initialize speech recognition session: {}",
@@ -710,6 +711,8 @@ void SpeechRecognitionBackend::StartSpeechRecognitionSession(
               self->HandleRecognitionError(aError);
             } else {
               LOG("Speech recognition session initialized successfully");
+              glean::media_speech_recognition::session_init_time
+                  .AccumulateRawDuration(TimeStamp::Now() - initStart);
               self->DispatchToParentIfAlive(
                   "SpeechRecognitionBackend::NotifyBackendListening",
                   [](SpeechRecognition* aParent) {
