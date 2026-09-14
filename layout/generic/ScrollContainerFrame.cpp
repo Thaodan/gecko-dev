@@ -11,7 +11,6 @@
 #include <algorithm>
 #include <cmath>    // for std::abs(float/double)
 #include <cstdlib>  // for std::abs(int/long)
-#include <tuple>    // for std::tie
 
 #include "DisplayItemClip.h"
 #include "GeckoProfiler.h"
@@ -36,7 +35,6 @@
 #include "mozilla/EventStateManager.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/MathAlgorithms.h"
-#include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresState.h"
 #include "mozilla/ReflowInput.h"
@@ -45,9 +43,7 @@
 #include "mozilla/ScrollingMetrics.h"
 #include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/StaticPrefs_bidi.h"
-#include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_general.h"
-#include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StaticPrefs_mousewheel.h"
 #include "mozilla/StaticPrefs_toolkit.h"
@@ -62,12 +58,10 @@
 #include "mozilla/dom/HTMLOptionElement.h"
 #include "mozilla/dom/NodeInfo.h"
 #include "mozilla/dom/ScrollTimeline.h"
-#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
 #include "mozilla/layers/APZPublicUtils.h"
 #include "mozilla/layers/AxisPhysicsMSDModel.h"
-#include "mozilla/layers/AxisPhysicsModel.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/ScrollLinkedEffectDetector.h"
 #include "mozilla/layers/ScrollingInteractionContext.h"
@@ -93,7 +87,6 @@
 #include "nsIXULRuntime.h"
 #include "nsLayoutUtils.h"
 #include "nsListControlFrame.h"
-#include "nsNameSpaceManager.h"
 #include "nsNodeInfoManager.h"
 #include "nsPlaceholderFrame.h"
 #include "nsPresContext.h"
@@ -7457,6 +7450,41 @@ UniquePtr<PresState> ScrollContainerFrame::SaveState(CaptureStateFlags aFlags) {
     state->resolution() = PresShell()->GetResolution();
   }
   return state;
+}
+
+static bool GetStateKey(nsIContent* aContent, nsACString& aKey) {
+  if (!aContent) {
+    return false;
+  }
+  nsContentUtils::GenerateStateKey(aContent, aContent->GetUncomposedDoc(),
+                                   aKey);
+  return !aKey.IsEmpty();
+}
+
+void ScrollContainerFrame::SaveState(CaptureStateFlags aFlags,
+                                     nsILayoutHistoryState* aState) {
+  MOZ_ASSERT(aState);
+  UniquePtr state = SaveState(aFlags);
+  if (!state) {
+    return;
+  }
+  nsAutoCString key;
+  if (!GetStateKey(mContent, key)) {
+    return;
+  }
+  aState->AddState(key, std::move(state));
+}
+
+void ScrollContainerFrame::RestoreState(nsILayoutHistoryState* aState) {
+  MOZ_ASSERT(aState);
+  MOZ_ASSERT(aState->HasStates());
+  nsAutoCString key;
+  if (!GetStateKey(mContent, key)) {
+    return;
+  }
+  if (UniquePtr state = aState->TakeState(key)) {
+    RestoreState(state.get());
+  }
 }
 
 void ScrollContainerFrame::RestoreState(PresState* aState) {

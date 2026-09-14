@@ -15,7 +15,7 @@
 #include "mozilla/dom/WindowBinding.h"  // for mozilla::dom::ScrollBehavior
 #include "mozilla/layout/ScrollAnchorContainer.h"
 #include "nsContainerFrame.h"
-#include "nsExpirationTracker.h"
+#include "nsExpirationState.h"
 #include "nsIAnonymousContentCreator.h"
 #include "nsIReflowCallback.h"
 #include "nsIScrollbarMediator.h"
@@ -24,6 +24,7 @@
 
 class nsPresContext;
 class nsIContent;
+class nsILayoutHistoryState;
 class nsAtom;
 class AutoContainsBlendModeCapturer;
 
@@ -951,6 +952,8 @@ class ScrollContainerFrame : public nsContainerFrame,
 
   UniquePtr<PresState> SaveState(CaptureStateFlags);
   void RestoreState(PresState*);
+  void SaveState(CaptureStateFlags, nsILayoutHistoryState*);
+  void RestoreState(nsILayoutHistoryState*);
 
   // nsIScrollbarMediator
   void ScrollByPage(
