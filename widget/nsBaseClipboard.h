@@ -175,9 +175,9 @@ class nsBaseClipboard : public nsIClipboard {
 
  private:
   // A copy waiting on a content analysis verdict before it may touch the
-  // clipboard.  Tracked per clipboard type; a newer write replaces the entry,
-  // which makes the older check's completion a no-op, so the write issued last
-  // always wins no matter which verdict arrives first.
+  // clipboard.  A newer write replaces the entry, which makes the older
+  // check's completion a no-op, so the write issued last always wins
+  // no matter which verdict arrives first.
   class PendingCopy final {
    public:
     NS_INLINE_DECL_REFCOUNTING(PendingCopy)

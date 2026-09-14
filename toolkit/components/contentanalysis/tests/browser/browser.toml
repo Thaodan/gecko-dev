@@ -17,6 +17,11 @@ support-files = [
   "clipboard_copy.html",
 ]
 
+["browser_clipboard_copy_prompt_content_analysis.js"]
+support-files = [
+  "clipboard_paste_prompt.html",
+]
+
 ["browser_clipboard_paste_changingclipboardexternal_content_analysis.js"]
 support-files = [
   "clipboard_paste_changingclipboardexternal.html",
