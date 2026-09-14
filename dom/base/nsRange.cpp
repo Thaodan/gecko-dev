@@ -176,6 +176,39 @@ class MOZ_STACK_CLASS nsRange::AutoNewContentHandler {
 };
 
 /******************************************************************************
+ * nsRange::AutoContentWillBeRemovedHandler
+ ******************************************************************************/
+
+class nsRange::AutoContentWillBeRemovedHandler {
+ public:
+  AutoContentWillBeRemovedHandler(const AbstractRange& aRange,
+                                  nsIContent& aChild)
+      : mRange(aRange), mChild(aChild), mParentNode(aChild.GetParentNode()) {
+    MOZ_ASSERT(mParentNode);
+  }
+
+  /**
+   * Compute and return new boundaries when aChild will be removed.
+   */
+  [[nodiscard]] RangeBoundariesAndRoot ComputeNewBoundaries() const {
+    RawRangeBoundary newStart =
+        ComputeNewBoundary(RangeBoundarySide::Start, nullptr);
+    RawRangeBoundary newEnd =
+        ComputeNewBoundary(RangeBoundarySide::End, &newStart);
+    return {std::move(newStart), std::move(newEnd), nullptr};
+  }
+
+ private:
+  [[nodiscard]] RawRangeBoundary ComputeNewBoundary(
+      RangeBoundarySide aSide,
+      const RawRangeBoundary* aAlreadyComputedStartBoundary) const;
+
+  const AbstractRange& mRange;
+  nsIContent& mChild;
+  const nsCOMPtr<nsINode> mParentNode;
+};
+
+/******************************************************************************
  * nsRange
  ******************************************************************************/
 
@@ -816,74 +849,78 @@ void nsRange::ContentInserted(nsIContent* aChild, const ContentInsertInfo&) {
   DoSetRange(newBoundaries.mStart, newBoundaries.mEnd, newBoundaries.mRoot);
 }
 
+RawRangeBoundary nsRange::AutoContentWillBeRemovedHandler::ComputeNewBoundary(
+    RangeBoundarySide aSide,
+    const RawRangeBoundary* aAlreadyComputedStartBoundary) const {
+  MOZ_ASSERT_IF(aSide == RangeBoundarySide::Start,
+                !aAlreadyComputedStartBoundary);
+  MOZ_ASSERT_IF(aSide == RangeBoundarySide::End, aAlreadyComputedStartBoundary);
+
+  nsINode* const container = mRange.GetContainer(aSide);
+  if (mParentNode == container) {
+    // If the boundary refers the removing node, make it refer its previous
+    // sibling.
+    nsIContent* const referenceChild = mRange.BoundaryRef(aSide).Ref();
+    if (&mChild == referenceChild) {
+      return {mParentNode, mChild.GetPreviousSibling()};
+    }
+    // aChild may be a preceding sibling of the referring child. Therefore,
+    // we should invalidate the offset.
+    RawRangeBoundary newBoundary{mParentNode, referenceChild};
+    MOZ_ASSERT(newBoundary.IsStartOfContainer() || !newBoundary.HasOffset());
+    return newBoundary;
+  }
+  // If the boundary is in the removing node, we should set the boundary to
+  // where aChild is.
+  // NOTE: IsInclusiveDescendantOf() may be expensive. Therefore, if we're
+  // already computed the same thing at computing the new start boundary, we
+  // should skip to call it.
+  if (aSide == RangeBoundarySide::End) {
+    nsINode* const startContainer = mRange.GetStartContainer();
+    nsINode* const endContainer = container;
+    if (startContainer == endContainer) {
+      MOZ_ASSERT(mParentNode != startContainer);
+      if (aAlreadyComputedStartBoundary->IsSet()) {
+        MOZ_ASSERT(aAlreadyComputedStartBoundary->GetContainer() ==
+                   mParentNode);
+        MOZ_ASSERT(aAlreadyComputedStartBoundary->Ref() ==
+                   mChild.GetPreviousSibling());
+        return *aAlreadyComputedStartBoundary;
+      }
+      return RawRangeBoundary{};
+    }
+  }
+  if (container->IsInclusiveDescendantOf(&mChild)) {
+    return RawRangeBoundary{mParentNode, mChild.GetPreviousSibling()};
+  }
+  return RawRangeBoundary{};
+}
+
 void nsRange::ContentWillBeRemoved(nsIContent* aChild,
                                    const ContentRemoveInfo&) {
+  MOZ_ASSERT(aChild);
+  MOZ_ASSERT(aChild->GetParentNode());
   MOZ_ASSERT(mIsPositioned);
 
-  nsINode* container = aChild->GetParentNode();
-  MOZ_ASSERT(container);
+  AutoContentWillBeRemovedHandler handler(*this, *aChild);
+  RangeBoundariesAndRoot newBoundaries = handler.ComputeNewBoundaries();
 
-  nsINode* startContainer = mStart.GetContainer();
-  nsINode* endContainer = mEnd.GetContainer();
-
-  RawRangeBoundary newStart;
-  RawRangeBoundary newEnd;
-  Maybe<bool> gravitateStart;
-  bool gravitateEnd;
-
-  // Adjust position if a sibling was removed...
-  if (container == startContainer) {
-    // We're only interested if our boundary reference was removed, otherwise
-    // we can just invalidate the offset.
-    if (aChild == mStart.Ref()) {
-      newStart = {container, aChild->GetPreviousSibling()};
-    } else {
-      newStart.CopyFrom(mStart, RangeBoundarySetBy::Ref);
-      newStart.InvalidateOffset();
-    }
-  } else {
-    gravitateStart = Some(startContainer->IsInclusiveDescendantOf(aChild));
-    if (gravitateStart.value()) {
-      newStart = {container, aChild->GetPreviousSibling()};
-    }
-  }
-
-  // Do same thing for end boundry.
-  if (container == endContainer) {
-    if (aChild == mEnd.Ref()) {
-      newEnd = {container, aChild->GetPreviousSibling()};
-    } else {
-      newEnd.CopyFrom(mEnd, RangeBoundarySetBy::Ref);
-      newEnd.InvalidateOffset();
-    }
-  } else {
-    if (startContainer == endContainer && gravitateStart.isSome()) {
-      gravitateEnd = gravitateStart.value();
-    } else {
-      gravitateEnd = endContainer->IsInclusiveDescendantOf(aChild);
-    }
-    if (gravitateEnd) {
-      newEnd = {container, aChild->GetPreviousSibling()};
-    }
-  }
-
-  bool newStartIsSet = newStart.IsSet();
-  bool newEndIsSet = newEnd.IsSet();
-  if (newStartIsSet || newEndIsSet) {
-    DoSetRange(
-        newStartIsSet ? newStart : mStart.AsRaw(),
-        newEndIsSet ? newEnd : mEnd.AsRaw(), mRoot, false,
-        // CrossShadowBoundaryRange mutates content
-        // removal fot itself, so no need for nsRange to do anything with it.
-        RangeBehaviour::KeepDefaultRangeAndCrossShadowBoundaryRanges);
-  } else {
+  if (!newBoundaries.HasNewBoundaries()) {
+    // If the boundaries are not modified, let's assert if we're still valid.
     nsRange::AssertIfMismatchRootAndRangeBoundaries(mStart, mEnd, mRoot);
+  } else {
+    newBoundaries.SetUnsetBoundaries(*this);
+    DoSetRange(newBoundaries.mStart, newBoundaries.mEnd, newBoundaries.mRoot,
+               /* aNotYetInserted = */ false,
+               // CrossShadowBoundaryRange mutates content removal fot itself,
+               // so no need for nsRange to do anything with it.
+               RangeBehaviour::KeepDefaultRangeAndCrossShadowBoundaryRanges);
   }
 
   MOZ_ASSERT(mStart.Ref() != aChild);
   MOZ_ASSERT(mEnd.Ref() != aChild);
 
-  if (container->IsMaybeSelected() &&
+  if (aChild->GetParentNode()->IsMaybeSelected() &&
       aChild
           ->IsDescendantOfClosestCommonInclusiveAncestorForRangeInSelection()) {
     aChild

@@ -488,6 +488,7 @@ class nsRange final : public mozilla::dom::AbstractRange,
 
   class MOZ_STACK_CLASS AutoCharacterDataChangedHandler;
   class MOZ_STACK_CLASS AutoNewContentHandler;
+  class MOZ_STACK_CLASS AutoContentWillBeRemovedHandler;
 
   // @return true iff the range is positioned, aContainer belongs to the same
   //         document as the range, aContainer is a DOCUMENT_TYPE_NODE and
