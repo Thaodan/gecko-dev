@@ -408,12 +408,19 @@ class LensCameraFragment(private val now: () -> Long = DefaultDateTimeProvider()
                         }
 
                         override fun onConfigureFailed(session: CameraCaptureSession) {
-                            logger.error("Failed to configure CameraCaptureSession")
+                            onSessionConfigureFailed()
                         }
                     }
                 createCaptureSessionCompat(camera, imageSurface, qrSurface, previewSurface, sessionStateCallback)
             }
         }
+    }
+
+    /** Shows the camera error state. The repeating request never starts, so the preview stays black. */
+    @VisibleForTesting
+    internal fun onSessionConfigureFailed() {
+        logger.error("Failed to configure CameraCaptureSession")
+        mainHandler.post { showCameraError.value = true }
     }
 
     @VisibleForTesting
