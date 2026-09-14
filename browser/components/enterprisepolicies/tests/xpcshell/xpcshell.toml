@@ -83,6 +83,8 @@ support-files = ["config_popups_cookies_addons.json"]
 
 ["test_sitepolicies.js"]
 
+["test_sitepolicies_container.js"]
+
 ["test_sorted_alphabetically.js"]
 
 ["test_telemetry.js"]
