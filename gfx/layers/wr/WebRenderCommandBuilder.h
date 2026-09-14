@@ -88,7 +88,8 @@ class WebRenderCommandBuilder final {
                          mozilla::wr::DisplayListBuilder& aBuilder,
                          mozilla::wr::IpcResourceUpdateQueue& aResources,
                          const LayoutDeviceRect& aRect,
-                         const LayoutDeviceRect& aClip);
+                         const LayoutDeviceRect& aClip,
+                         bool aRasterizedForRect = false);
 
   Maybe<wr::ImageMask> BuildWrMaskImage(
       nsDisplayMasksAndClipPaths* aMaskItem, wr::DisplayListBuilder& aBuilder,

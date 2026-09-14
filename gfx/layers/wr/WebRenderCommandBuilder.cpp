@@ -2441,7 +2441,8 @@ bool WebRenderCommandBuilder::PushImageProvider(
     nsDisplayItem* aItem, image::WebRenderImageProvider* aProvider,
     image::ImgDrawResult aDrawResult, mozilla::wr::DisplayListBuilder& aBuilder,
     mozilla::wr::IpcResourceUpdateQueue& aResources,
-    const LayoutDeviceRect& aRect, const LayoutDeviceRect& aClip) {
+    const LayoutDeviceRect& aRect, const LayoutDeviceRect& aClip,
+    bool aRasterizedForRect) {
   Maybe<wr::ImageKey> key =
       CreateImageProviderKey(aItem, aProvider, aDrawResult, aResources);
   if (!key) {
@@ -2454,7 +2455,8 @@ bool WebRenderCommandBuilder::PushImageProvider(
   auto r = wr::ToLayoutRect(aRect);
   auto c = wr::ToLayoutRect(aClip);
   aBuilder.PushImage(r, c, !aItem->BackfaceIsHidden(), antialiased, rendering,
-                     key.value());
+                     key.value(), true, wr::ColorF{1.0f, 1.0f, 1.0f, 1.0f},
+                     false, false, aRasterizedForRect);
 
   return true;
 }
