@@ -526,6 +526,12 @@ class Settings(
             default = false,
         )
 
+    var isUserPairingCampaignAttributed by
+        booleanPreference(
+            appContext.getPreferenceKey(R.string.pref_key_is_user_pairing_campaign_attributed),
+            default = false,
+        )
+
     /**
      * Whether the `referrals` ping has already been submitted for this profile. A referral code must only ever be
      * reported once.
