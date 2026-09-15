@@ -82,11 +82,16 @@ UNIFIED_SOURCES += [
     "nsColorPicker.cpp",
     "nsDataObj.cpp",
     "nsDataObjCollection.cpp",
+    "nsDeviceContextSpecWin.cpp",
     "nsDragService.cpp",
     "nsLookAndFeel.cpp",
     "nsNativeDragSource.cpp",
     "nsNativeDragTarget.cpp",
     "nsNativeThemeWin.cpp",
+    "nsPrintDialogWin.cpp",
+    "nsPrinterWin.cpp",
+    "nsPrintSettingsServiceWin.cpp",
+    "nsPrintSettingsWin.cpp",
     "nsSound.cpp",
     "nsToolkit.cpp",
     "nsUserIdleServiceWin.cpp",
@@ -133,6 +138,7 @@ SOURCES += [
     "MediaKeysEventSourceFactory.cpp",
     "nsBidiKeyboard.cpp",
     "nsFilePicker.cpp",
+    "nsPrintDialogUtil.cpp",
     "nsSharePicker.cpp",
     "nsWidgetFactory.cpp",
     "OSKInputPaneManager.cpp",
@@ -153,18 +159,6 @@ SOURCES["WindowsUIUtils.cpp"].flags += [
     "-Xclang",
     "-fcxx-exceptions",
 ]
-
-if CONFIG["NS_PRINTING"]:
-    UNIFIED_SOURCES += [
-        "nsDeviceContextSpecWin.cpp",
-        "nsPrintDialogWin.cpp",
-        "nsPrinterWin.cpp",
-        "nsPrintSettingsServiceWin.cpp",
-        "nsPrintSettingsWin.cpp",
-    ]
-    SOURCES += [
-        "nsPrintDialogUtil.cpp",
-    ]
 
 XPIDL_SOURCES += [
     "nsIAlertsServiceRust.idl",

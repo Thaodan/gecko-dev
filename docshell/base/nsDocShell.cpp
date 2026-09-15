@@ -258,10 +258,8 @@
 #  include "mozIPlacesPendingOperation.h"
 #endif
 
-#ifdef NS_PRINTING
-#  include "nsIDocumentViewerPrint.h"
-#  include "nsIWebBrowserPrint.h"
-#endif
+#include "nsIDocumentViewerPrint.h"
+#include "nsIWebBrowserPrint.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -10732,8 +10730,8 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
 
   // We don't update session history on reload unless we're loading
   // an iframe in shift-reload case.
-  [[maybe_unused]]
-  bool updateSHistory = mBrowsingContext->ShouldUpdateSessionHistory(mLoadType);
+  [[maybe_unused]] bool updateSHistory =
+      mBrowsingContext->ShouldUpdateSessionHistory(mLoadType);
 
   // Create SH Entry (mLSHE) only if there is a SessionHistory object in the
   // root browsing context.
@@ -12668,10 +12666,8 @@ nsresult nsDocShell::CharsetChangeStopDocumentLoad() {
 }
 
 NS_IMETHODIMP nsDocShell::ExitPrintPreview() {
-#ifdef NS_PRINTING
   nsCOMPtr<nsIWebBrowserPrint> viewer = do_QueryInterface(mDocumentViewer);
   MOZ_TRY(viewer->ExitPrintPreview());
-#endif
   return NS_OK;
 }
 

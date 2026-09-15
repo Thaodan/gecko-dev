@@ -34,9 +34,7 @@
 #include "mozilla/dom/SessionStorageManager.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
-#ifdef NS_PRINTING
-#  include "mozilla/layout/RemotePrintJobParent.h"
-#endif
+#include "mozilla/layout/RemotePrintJobParent.h"
 #include "mozilla/net/DocumentLoadListener.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/ScopedPrefs.h"
@@ -871,7 +869,6 @@ void CanonicalBrowsingContext::MaybeReuseNavigationKeyFromActiveEntry(
 }
 
 using PrintPromise = CanonicalBrowsingContext::PrintPromise;
-#ifdef NS_PRINTING
 // Clients must call StaticCloneForPrintingCreated or
 // NoStaticCloneForPrintingWillBeCreated before the underlying promise can
 // resolve.
@@ -952,7 +949,6 @@ class PrintListenerAdapter final : public nsIWebProgressListener {
 };
 
 NS_IMPL_ISUPPORTS(PrintListenerAdapter, nsIWebProgressListener)
-#endif
 
 already_AddRefed<Promise> CanonicalBrowsingContext::PrintJS(
     nsIPrintSettings* aPrintSettings, ErrorResult& aRv) {
@@ -973,9 +969,6 @@ already_AddRefed<Promise> CanonicalBrowsingContext::PrintJS(
 
 RefPtr<PrintPromise> CanonicalBrowsingContext::Print(
     nsIPrintSettings* aPrintSettings) {
-#ifndef NS_PRINTING
-  return PrintPromise::CreateAndReject(NS_ERROR_NOT_AVAILABLE, __func__);
-#else
   bool needContentAnalysis = false;
   nsCOMPtr<nsIContentAnalysis> contentAnalysis =
       mozilla::components::nsIContentAnalysis::Service();
@@ -1019,26 +1012,20 @@ RefPtr<PrintPromise> CanonicalBrowsingContext::Print(
     return done;
   }
   return PrintWithNoContentAnalysis(aPrintSettings, false, nullptr);
-#endif
 }
 
 void CanonicalBrowsingContext::ReleaseClonedPrint(
     const MaybeDiscardedBrowsingContext& aClonedStaticBrowsingContext) {
-#ifdef NS_PRINTING
   auto* browserParent = GetBrowserParent();
   if (NS_WARN_IF(!browserParent)) {
     return;
   }
   (void)browserParent->SendDestroyPrintClone(aClonedStaticBrowsingContext);
-#endif
 }
 
 RefPtr<PrintPromise> CanonicalBrowsingContext::PrintWithNoContentAnalysis(
     nsIPrintSettings* aPrintSettings, bool aForceStaticDocument,
     const MaybeDiscardedBrowsingContext& aCachedStaticDocument) {
-#ifndef NS_PRINTING
-  return PrintPromise::CreateAndReject(NS_ERROR_NOT_AVAILABLE, __func__);
-#else
   auto promise = MakeRefPtr<PrintPromise::Private>(__func__);
   auto listener = MakeRefPtr<PrintListenerAdapter>(promise);
   if (IsInProcess()) {
@@ -1127,7 +1114,6 @@ RefPtr<PrintPromise> CanonicalBrowsingContext::PrintWithNoContentAnalysis(
         });
   }
   return promise.forget();
-#endif
 }
 
 void CanonicalBrowsingContext::CallOnTopDescendants(

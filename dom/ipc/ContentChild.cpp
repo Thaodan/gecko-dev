@@ -7,6 +7,7 @@
 #endif
 
 #include "BrowserChild.h"
+#include "ChildProfilerController.h"
 #include "ContentChild.h"
 #include "GMPServiceChild.h"
 #include "GeckoProfiler.h"
@@ -113,12 +114,7 @@
 #include "mozilla/layers/CompositorManagerChild.h"
 #include "mozilla/layers/ContentProcessController.h"
 #include "mozilla/layers/ImageBridgeChild.h"
-#include "nsNSSComponent.h"
-#include "nsXPLookAndFeel.h"
-#ifdef NS_PRINTING
-#  include "mozilla/layout/RemotePrintJobChild.h"
-#endif
-#include "ChildProfilerController.h"
+#include "mozilla/layout/RemotePrintJobChild.h"
 #include "mozilla/loader/ScriptCacheActors.h"
 #include "mozilla/media/MediaChild.h"
 #include "mozilla/net/CaptivePortalService.h"
@@ -142,10 +138,12 @@
 #include "nsISimpleEnumerator.h"
 #include "nsIStringBundle.h"
 #include "nsIURIMutator.h"
+#include "nsNSSComponent.h"
 #include "nsOpenWindowInfo.h"
 #include "nsQueryObject.h"
 #include "nsRefreshDriver.h"
 #include "nsSandboxFlags.h"
+#include "nsXPLookAndFeel.h"
 
 #if defined(MOZ_SANDBOX)
 #  if defined(XP_WIN)
@@ -2059,11 +2057,7 @@ mozilla::ipc::IPCResult ContentChild::RecvSocketProcessCrashed() {
 }
 
 PRemotePrintJobChild* ContentChild::AllocPRemotePrintJobChild() {
-#ifdef NS_PRINTING
   return new RemotePrintJobChild();
-#else
-  return nullptr;
-#endif
 }
 
 media::PMediaChild* ContentChild::AllocPMediaChild() {
