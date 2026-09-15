@@ -1190,11 +1190,21 @@ JSString* js::gc::TenuringTracer::promoteString(JSString* src) {
   AllocKind dstKind = src->getAllocKind();
   Zone* zone = src->nurseryZone();
 
+  MOZ_ASSERT(!src->isAtom());
+
+  // An atom ref already points to a tenured atom with the same characters and
+  // encoding, so forward to that instead of promoting a copy.
+  if (src->isAtomRef()) {
+    JSAtom* atom = src->atom();
+    StringRelocationOverlay::forwardString(src, atom);
+    gcprobes::PromoteToTenured(src, atom);
+    return atom;
+  }
+
   // If this string is in the StringToAtomCache, try to deduplicate it by using
   // the atom. Don't do this for dependent strings because they're more
   // complicated. See StringRelocationOverlay and DeduplicationStringHasher
   // comments.
-  MOZ_ASSERT(!src->isAtom());
   if (src->isLinear() && src->inStringToAtomCache() &&
       src->isDeduplicatable() && !src->hasBase()) {
     JSLinearString* linear = &src->asLinear();
