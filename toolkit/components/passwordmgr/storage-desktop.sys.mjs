@@ -6,6 +6,13 @@ import { LoginManagerStorage_json } from "resource://gre/modules/storage-json.sy
 import { LoginManagerRustStorage } from "resource://gre/modules/storage-rust.sys.mjs";
 import { LoginStorageMigrator } from "resource://gre/modules/LoginStorageMigrator.sys.mjs";
 
+// The class name of the error that aborted initialization. XPCOM exceptions
+// all construct "Exception"; their `name` carries the result code instead.
+function errorKind(error) {
+  const name = error.constructor?.name;
+  return name == "Exception" ? error.name : (name ?? "Error");
+}
+
 export class LoginManagerStorage extends LoginManagerStorage_json {
   static #jsonStorage = null;
   static #rustStorage = null;
@@ -16,23 +23,53 @@ export class LoginManagerStorage extends LoginManagerStorage_json {
     if (!this.#initializationPromise) {
       this.#jsonStorage = new LoginManagerStorage_json();
       this.#rustStorage = new LoginManagerRustStorage();
-
-      this.#initializationPromise = this.#jsonStorage
-        .initialize()
-        .then(() => this.#rustStorage.initialize())
-        .then(async () => {
-          const store = await new LoginStorageMigrator(
-            this.#jsonStorage,
-            this.#rustStorage
-          ).run();
-          this.#activeStore = store;
-          this.#jsonStorage.isActive = store === this.#jsonStorage;
-          this.#rustStorage.isActive = store === this.#rustStorage;
-          return store;
-        });
+      this.#initializationPromise = this.#initialize();
     }
 
     return this.#initializationPromise;
+  }
+
+  static async #initialize() {
+    const startedAt = ChromeUtils.now();
+    let totalMs = null;
+    let numberOfLogins = null;
+    let backend = null;
+    let error = null;
+
+    try {
+      await this.#jsonStorage.initialize();
+      await this.#rustStorage.initialize();
+
+      const store = await new LoginStorageMigrator(
+        this.#jsonStorage,
+        this.#rustStorage
+      ).run();
+      totalMs = Math.round(ChromeUtils.now() - startedAt);
+
+      this.#activeStore = store;
+      this.#jsonStorage.isActive = store === this.#jsonStorage;
+      this.#rustStorage.isActive = store === this.#rustStorage;
+      backend = store.backendName;
+      numberOfLogins = await store.countLoginsAsync("", "", "");
+      Glean.pwmgr.numSavedPasswords.set(numberOfLogins);
+
+      return store;
+    } catch (e) {
+      error = e;
+      totalMs = Math.round(ChromeUtils.now() - startedAt);
+      throw e;
+    } finally {
+      const timings = this.#rustStorage.initTimings;
+      Glean.pwmgr.rustInitStatus.record({
+        init_rust_components_ms: timings?.initRustComponentsMs ?? null,
+        create_rust_store_ms: timings?.createRustStoreMs ?? null,
+        total_ms: totalMs,
+        number_of_logins: numberOfLogins,
+        backend,
+        result: error ? "error" : "ok",
+        error_kind: error ? errorKind(error) : null,
+      });
+    }
   }
 
   static getActiveStore() {
