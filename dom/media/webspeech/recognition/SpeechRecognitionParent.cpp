@@ -85,99 +85,70 @@ namespace {
 
 // Interval covering one parakeet_capi_stream_feed() call: how much audio went
 // in, how much was still waiting behind it, and what came out.
-struct ParakeetFeedMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("ParakeetFeed");
-  }
-  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
-                                   double aFedMs, double aQueuedMs,
-                                   double aTotalFedMs, int32_t aWordsCommitted,
-                                   bool aEndOfUtterance) {
-    aWriter.DoubleProperty("fedMs", aFedMs);
-    aWriter.DoubleProperty("queuedMs", aQueuedMs);
-    aWriter.DoubleProperty("totalFedMs", aTotalFedMs);
-    aWriter.IntProperty("wordsCommitted", aWordsCommitted);
-    aWriter.BoolProperty("endOfUtterance", aEndOfUtterance);
-  }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.SetTableLabel(
-        "{marker.name} - fed {marker.data.fedMs}, queued "
-        "{marker.data.queuedMs}, {marker.data.wordsCommitted} word(s)");
-    schema.AddKeyLabelFormat("fedMs", "Audio fed", MS::Format::Milliseconds);
-    schema.AddKeyLabelFormat("queuedMs", "Audio still queued",
-                             MS::Format::Milliseconds);
-    schema.AddKeyLabelFormat("totalFedMs", "Audio fed this session",
-                             MS::Format::Milliseconds);
-    schema.AddKeyLabelFormat("wordsCommitted", "Words committed",
-                             MS::Format::Integer);
-    schema.AddKeyLabelFormat("endOfUtterance", "End of utterance",
-                             MS::Format::String);
-    return schema;
-  }
+struct ParakeetFeedMarker : public BaseMarkerType<ParakeetFeedMarker> {
+  static constexpr const char* Name = "ParakeetFeed";
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"fedMs", MS::InputType::Double, "Audio fed", MS::Format::Milliseconds},
+      {"queuedMs", MS::InputType::Double, "Audio still queued",
+       MS::Format::Milliseconds},
+      {"totalFedMs", MS::InputType::Double, "Audio fed this session",
+       MS::Format::Milliseconds},
+      {"wordsCommitted", MS::InputType::Int32, "Words committed",
+       MS::Format::Integer},
+      {"endOfUtterance", MS::InputType::Boolean, "End of utterance"},
+  };
+  static constexpr const char* TableLabel =
+      "{marker.name} - fed {marker.data.fedMs}, queued "
+      "{marker.data.queuedMs}, {marker.data.wordsCommitted} word(s)";
 };
 
 // One word the model committed, placed on the audio timeline it belongs to.
-struct ParakeetWordMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("ParakeetWord");
-  }
-  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
-                                   const ProfilerString8View& aWord,
-                                   double aAudioStartS, double aAudioEndS,
-                                   double aConfidence) {
-    aWriter.StringProperty("word", aWord);
-    aWriter.DoubleProperty("audioStartS", aAudioStartS);
-    aWriter.DoubleProperty("audioEndS", aAudioEndS);
-    aWriter.DoubleProperty("confidence", aConfidence);
-  }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.SetTableLabel(
-        "{marker.name} - \"{marker.data.word}\" @ "
-        "{marker.data.audioStartS} conf {marker.data.confidence}");
-    schema.AddKeyLabelFormat("word", "Word", MS::Format::String);
-    schema.AddKeyLabelFormat("audioStartS", "Audio start", MS::Format::Seconds);
-    schema.AddKeyLabelFormat("audioEndS", "Audio end", MS::Format::Seconds);
-    schema.AddKeyLabelFormat("confidence", "Confidence",
-                             MS::Format::Percentage);
-    return schema;
-  }
+struct ParakeetWordMarker : public BaseMarkerType<ParakeetWordMarker> {
+  static constexpr const char* Name = "ParakeetWord";
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"word", MS::InputType::CString, "Word"},
+      {"audioStartS", MS::InputType::Double, "Audio start",
+       MS::Format::Seconds},
+      {"audioEndS", MS::InputType::Double, "Audio end", MS::Format::Seconds},
+      {"confidence", MS::InputType::Double, "Confidence",
+       MS::Format::Percentage},
+  };
+  static constexpr const char* TableLabel =
+      "{marker.name} - \"{marker.data.word}\" @ "
+      "{marker.data.audioStartS} conf {marker.data.confidence}";
 };
 
 // A result on its way to content. lagMs is the user-visible latency: how long
 // ago the audio behind this result was captured.
-struct ParakeetResultMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("ParakeetResult");
-  }
-  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
-                                   const ProfilerString8View& aTranscript,
-                                   bool aIsFinal, double aConfidence,
-                                   double aLagMs, int32_t aWordCount) {
-    aWriter.StringProperty("transcript", aTranscript);
-    aWriter.BoolProperty("isFinal", aIsFinal);
-    aWriter.DoubleProperty("confidence", aConfidence);
-    aWriter.DoubleProperty("lagMs", aLagMs);
-    aWriter.IntProperty("wordCount", aWordCount);
-  }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.SetTableLabel(
-        "{marker.name} - {marker.data.lagMs} behind capture: "
-        "\"{marker.data.transcript}\"");
-    schema.AddKeyLabelFormat("transcript", "Transcript", MS::Format::String);
-    schema.AddKeyLabelFormat("isFinal", "Final", MS::Format::String);
-    schema.AddKeyLabelFormat("confidence", "Confidence",
-                             MS::Format::Percentage);
-    schema.AddKeyLabelFormat("lagMs", "Behind capture",
-                             MS::Format::Milliseconds);
-    schema.AddKeyLabelFormat("wordCount", "Words", MS::Format::Integer);
-    return schema;
-  }
+struct ParakeetResultMarker : public BaseMarkerType<ParakeetResultMarker> {
+  static constexpr const char* Name = "ParakeetResult";
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"transcript", MS::InputType::CString, "Transcript"},
+      {"isFinal", MS::InputType::Boolean, "Final"},
+      {"confidence", MS::InputType::Double, "Confidence",
+       MS::Format::Percentage},
+      {"lagMs", MS::InputType::Double, "Behind capture",
+       MS::Format::Milliseconds},
+      {"wordCount", MS::InputType::Int32, "Words", MS::Format::Integer},
+  };
+  static constexpr const char* TableLabel =
+      "{marker.name} - {marker.data.lagMs} behind capture: "
+      "\"{marker.data.transcript}\"";
 };
 
 }  // namespace

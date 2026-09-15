@@ -326,50 +326,40 @@ using namespace mozilla::widget;
 using mozilla::loader::PScriptCacheChild;
 
 namespace geckoprofiler::markers {
-struct ProcessPriorityChange {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("ProcessPriorityChange");
-  }
-  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
-                                   const ProfilerString8View& aPreviousPriority,
-                                   const ProfilerString8View& aNewPriority) {
-    aWriter.StringProperty("Before", aPreviousPriority);
-    aWriter.StringProperty("After", aNewPriority);
-  }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyFormat("Before", MS::Format::String);
-    schema.AddKeyFormat("After", MS::Format::String);
-    schema.AddStaticLabelValue("Note",
-                               "This is a notification of the priority change "
-                               "that was done by the parent process");
-    schema.SetAllLabels(
-        "priority: {marker.data.Before} -> {marker.data.After}");
-    return schema;
-  }
+struct ProcessPriorityChange : public BaseMarkerType<ProcessPriorityChange> {
+  static constexpr const char* Name = "ProcessPriorityChange";
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"Before", MS::InputType::CString, nullptr,
+       MS::Format::UniqueString},  // TODO: Use enum encoding
+      {"After", MS::InputType::CString, nullptr,
+       MS::Format::UniqueString},  // TODO: Use enum encoding
+  };
+  static constexpr const char* AllLabels =
+      "priority: {marker.data.Before} -> {marker.data.After}";
+  static constexpr const char* Description =
+      "This is a notification of the priority change "
+      "that was done by the parent process";
 };
 
-struct ProcessPriority {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("ProcessPriority");
-  }
-  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
-                                   const ProfilerString8View& aPriority,
-                                   const ProfilingState& aProfilingState) {
-    aWriter.StringProperty("Priority", aPriority);
-    aWriter.StringProperty("Marker cause",
-                           ProfilerString8View::WrapNullTerminatedString(
-                               ProfilingStateToString(aProfilingState)));
-  }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyFormat("Priority", MS::Format::String);
-    schema.AddKeyFormat("Marker cause", MS::Format::String);
-    schema.SetAllLabels("priority: {marker.data.Priority}");
-    return schema;
-  }
+struct ProcessPriority : public BaseMarkerType<ProcessPriority> {
+  static constexpr const char* Name = "ProcessPriority";
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"Priority", MS::InputType::CString, nullptr,
+       MS::Format::UniqueString},  // TODO: Use enum encoding
+      {"Marker cause", MS::InputType::CString, nullptr,
+       MS::Format::UniqueString},  // TODO: Use enum encoding
+  };
+  static constexpr const char* AllLabels = "priority: {marker.data.Priority}";
 };
 }  // namespace geckoprofiler::markers
 
@@ -629,7 +619,8 @@ ContentChild::ContentChild()
                         mozilla::MarkerThreadId::MainThread(), ProcessPriority,
                         ProfilerString8View::WrapNullTerminatedString(
                             ProcessPriorityToString(selfPtr->mProcessPriority)),
-                        aProfilingState);
+                        ProfilerString8View::WrapNullTerminatedString(
+                            ProfilingStateToString(aProfilingState)));
       },
       self);
 
