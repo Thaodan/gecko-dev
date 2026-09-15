@@ -43,6 +43,14 @@ export const statusType = {
   error: "ERROR",
 };
 
+function getFilePath(item, index) {
+  return item.type === "RESULT"
+    ? `${item.location.source.id}-${index || "$"}`
+    : `${item.location.source.id}-${item.location.line}-${
+        item.location.column
+      }-${index || "$"}`;
+}
+
 export class ProjectSearch extends Component {
   constructor(props) {
     super(props);
@@ -334,6 +342,7 @@ export class ProjectSearch extends Component {
         autoExpandDepth: 1,
         autoExpandNodeChildrenLimit: 100,
         getParent: () => null,
+        getPath: getFilePath,
         renderItem: this.renderItem,
         focused: this.state.focusedItem,
         onFocus: this.onFocus,
@@ -356,10 +365,7 @@ export class ProjectSearch extends Component {
           });
         },
         preventBlur: true,
-        getKey: item =>
-          item.type === "RESULT"
-            ? `${item.location.source.id}`
-            : `${item.location.source.id}-${item.location.line}-${item.location.column}`,
+        getKey: getFilePath,
       });
     }
     const msg =

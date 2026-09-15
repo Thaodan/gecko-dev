@@ -743,18 +743,6 @@ class Tree extends Component {
     this._focus(parentIndex, parent, { alignTo: "top" });
   }
 
-  /**
-   * The item to focus when the tree is focused while no item is focused yet.
-   *
-   * @param {Array} traversalSlice
-   *        The slice of the traversal that is currently rendered.
-   * @return {*}
-   *         The first rendered item, or undefined when none is rendered.
-   */
-  _getDefaultSelectedItem(traversalSlice) {
-    return traversalSlice[0]?.item;
-  }
-
   render() {
     const traversal = this._dfsFromRoots();
 
@@ -833,21 +821,6 @@ class Tree extends Component {
       })
     );
 
-    // Only set aria-activedescendant if the tree can manage focus (i.e. if
-    // `onFocus` is passed)
-    let activeDescendantId;
-    if (this.props.onFocus) {
-      if (focused != null) {
-        activeDescendantId = this.props.getKey(focused);
-      } else {
-        // Fall back to the item onFocus would select.
-        const defaultItem = this._getDefaultSelectedItem(toRender);
-        if (defaultItem != null) {
-          activeDescendantId = this.props.getKey(defaultItem);
-        }
-      }
-    }
-
     return dom.div(
       {
         className: "tree",
@@ -861,14 +834,14 @@ class Tree extends Component {
         onMouseDown: () => this.setState({ mouseDown: true }),
         onMouseUp: () => this.setState({ mouseDown: false }),
         onFocus: () => {
-          if (focused != null || this.state.mouseDown) {
+          if (focused || this.state.mouseDown) {
             return;
           }
 
           // Only set default focus to the first tree node if focused node is
           // not yet set and the focus event is not the result of a mouse
           // interarction.
-          this._focus(begin, this._getDefaultSelectedItem(toRender));
+          this._focus(begin, toRender[0].item);
         },
         onBlur: e => {
           if (active != null) {
@@ -884,7 +857,7 @@ class Tree extends Component {
         },
         "aria-label": this.props.label,
         "aria-labelledby": this.props.labelledby,
-        "aria-activedescendant": activeDescendantId,
+        "aria-activedescendant": focused && this.props.getKey(focused),
         style: {
           padding: 0,
           margin: 0,
