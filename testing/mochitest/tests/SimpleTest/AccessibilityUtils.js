@@ -62,8 +62,16 @@ this.AccessibilityUtils = (function () {
     Ci.nsIAccessibleRole.ROLE_RICH_OPTION,
   ]);
 
+  // Roles which are operated by changing their value rather than by being
+  // activated, so they do not expose an accessible action.
+  const FOCUSABLE_VALUE_ROLES = new Set([
+    Ci.nsIAccessibleRole.ROLE_SCROLLBAR,
+    Ci.nsIAccessibleRole.ROLE_SEPARATOR,
+  ]);
+
   // Roles that are considered interactive when they are focusable.
   const INTERACTIVE_IF_FOCUSABLE_ROLES = new Set([
+    ...FOCUSABLE_VALUE_ROLES,
     // If article is focusable, we can assume it is inside a feed.
     Ci.nsIAccessibleRole.ROLE_ARTICLE,
     // Column header can be focusable.
@@ -74,8 +82,6 @@ this.AccessibilityUtils = (function () {
     Ci.nsIAccessibleRole.ROLE_PAGETABLIST,
     // Row header can be focusable.
     Ci.nsIAccessibleRole.ROLE_ROWHEADER,
-    Ci.nsIAccessibleRole.ROLE_SCROLLBAR,
-    Ci.nsIAccessibleRole.ROLE_SEPARATOR,
     Ci.nsIAccessibleRole.ROLE_TOOLBAR,
   ]);
 
@@ -935,10 +941,13 @@ this.AccessibilityUtils = (function () {
    *        Accessible object for a node.
    */
   function assertInteractive(accessible) {
+    const isFocusableValueRole = FOCUSABLE_VALUE_ROLES.has(accessible.role);
+
     if (
       gEnv.mustBeEnabled &&
       gEnv.actionCountRule &&
-      accessible.actionCount === 0
+      accessible.actionCount === 0 &&
+      !isFocusableValueRole
     ) {
       a11yFail("Node does not support any accessible actions", accessible);
 
@@ -948,7 +957,8 @@ this.AccessibilityUtils = (function () {
     if (
       gEnv.mustBeEnabled &&
       gEnv.interactiveRule &&
-      !INTERACTIVE_ROLES.has(accessible.role)
+      !INTERACTIVE_ROLES.has(accessible.role) &&
+      !isFocusableValueRole
     ) {
       if (
         // Labels that have a label for relation with their target are clickable.
@@ -1202,7 +1212,10 @@ this.AccessibilityUtils = (function () {
         const targetAcc = relation.getTarget(0);
         return targetAcc;
       }
-      if (INTERACTIVE_ROLES.has(acc.role)) {
+      if (
+        INTERACTIVE_ROLES.has(acc.role) ||
+        FOCUSABLE_VALUE_ROLES.has(acc.role)
+      ) {
         return acc;
       }
     }
