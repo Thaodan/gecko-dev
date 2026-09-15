@@ -1890,6 +1890,16 @@ class Element : public FragmentOrElement {
     }
   }
 
+  // Scroll state saved from a scroll container frame of this element that got
+  // destroyed for reconstruction, to be restored by the new frame.
+  void SetSavedScrollState(UniquePtr<ScrollState> aState);
+  UniquePtr<ScrollState> TakeSavedScrollState() {
+    if (auto* slots = GetExistingExtendedDOMSlots()) {
+      return std::move(slots->mSavedScrollState);
+    }
+    return nullptr;
+  }
+
   bool TemporarilyVisibleForScrolledIntoViewDescendant() const {
     const auto* slots = GetExistingExtendedDOMSlots();
     return slots && slots->mTemporarilyVisibleForScrolledIntoViewDescendant;
