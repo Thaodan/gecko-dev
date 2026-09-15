@@ -1807,15 +1807,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "detect_win32k_conflicts"
-version = "0.1.0"
-dependencies = [
- "log",
- "thiserror 1.999.999",
- "winapi",
-]
-
-[[package]]
 name = "devd-rs"
 version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2973,7 +2964,6 @@ dependencies = [
  "dap_ffi",
  "data-encoding-ffi",
  "data_storage",
- "detect_win32k_conflicts",
  "dom",
  "dom_fragmentdirectives",
  "dom_speculationrules",
@@ -3061,6 +3051,7 @@ dependencies = [
  "webrender_bindings",
  "wgpu_bindings",
  "widget_windows",
+ "win32_process_mitigations",
  "wpf-gpu-raster",
  "xdg_alerts",
  "xpcom",
@@ -9438,6 +9429,15 @@ dependencies = [
  "windows",
  "windows-collections",
  "xpcom",
+]
+
+[[package]]
+name = "win32_process_mitigations"
+version = "0.1.0"
+dependencies = [
+ "log",
+ "thiserror 2.0.12",
+ "winapi",
 ]
 
 [[package]]

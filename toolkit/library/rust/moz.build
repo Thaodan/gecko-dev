@@ -34,6 +34,8 @@ RUST_TESTS = [
 
 if CONFIG["TARGET_OS"] in ("WINNT", "OSX"):
     RUST_TESTS += ["nmhproxy"]
+if CONFIG["TARGET_OS"] == "WINNT":
+    RUST_TESTS += ["win32_process_mitigations"]
 
 RUST_TEST_FEATURES.append("crashreporter/mock")
 

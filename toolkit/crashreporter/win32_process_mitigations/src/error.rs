@@ -8,10 +8,7 @@ use thiserror::Error;
 
 /// The error type for this crate
 #[derive(Debug, Error)]
-pub enum DetectConflictError {
-    /// An exploit protection key was not found in the registry
-    #[error("exploit protection key missing")]
-    ExploitProtectionKeyMissing,
+pub enum MitigationOptionsError {
     /// Failed to enumerate the next registry subkey
     #[error("failed to enumerate next registry subkey. code: {0}")]
     RegEnumKeyFailed(u32),
@@ -24,12 +21,17 @@ pub enum DetectConflictError {
     /// Failed to open a registry key
     #[error("failed to open registry key. code: {0}")]
     RegOpenKeyFailed(u32),
-    /// Exploit Protection registry value was too short
-    #[error("exploit protection registry value too short")]
-    RegValueTooShort,
     /// Failed to query key for subkey length
     #[error("failed to query key for max subkey length. code: {0}")]
     RegQueryInfoKeyFailed(u32),
+    /// A registry value did not have the length its type implies
+    #[error("registry value has length {actual}, expected {expected}")]
+    UnexpectedValueLength {
+        /// The length the value's type implies
+        expected: u32,
+        /// The length the registry reported
+        actual: u32,
+    },
     /// A registry value had an unsupported type
     #[error("key has unsupported value type: {0}")]
     UnsupportedValueType(u32),
