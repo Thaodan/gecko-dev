@@ -40,6 +40,9 @@ else:
     # Windows linker pulls in FFI symbols despite them not being relevant for the tests.
     RUST_TESTS += ["crash_helper_server"]
 
+if CONFIG["TARGET_OS"] == "WINNT":
+    RUST_TESTS += ["pushnotificationhelper"]
+
 RUST_TEST_FEATURES.append("crashreporter/mock")
 RUST_TEST_FEATURES.append("crashping/gecko_tests")
 RUST_TEST_FEATURES.append("firefox-on-glean/gecko_tests")
