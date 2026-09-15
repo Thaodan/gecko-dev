@@ -6,6 +6,8 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   BreachAlertStorage: "resource://gre/modules/BreachAlertStore.sys.mjs",
+  BreachAlertsData:
+    "moz-src:///toolkit/components/passwordmgr/BreachAlertsData.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   ContentBlockingAllowList:
     "resource://gre/modules/ContentBlockingAllowList.sys.mjs",
@@ -18,7 +20,6 @@ ChromeUtils.defineESModuleGetters(this, {
   privacyMetricsStatsCategories:
     "moz-src:///browser/components/protections/PrivacyMetricsService.sys.mjs",
   QWACs: "resource://gre/modules/psm/QWACs.sys.mjs",
-  RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   SiteDataManager: "resource:///modules/SiteDataManager.sys.mjs",
   UIState: "resource://services-sync/UIState.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
@@ -191,6 +192,8 @@ class TrustPanel {
     Fingerprinting,
     Cryptomining,
   };
+
+  #breachAlertsData = new BreachAlertsData();
 
   init() {
     for (let blocker of Object.values(this.#blockers)) {
@@ -2043,20 +2046,8 @@ class TrustPanel {
     return this.#breachAlertStoragePromise;
   }
 
-  async #getBreachedWebsites() {
-    const REMOTE_SETTINGS_COLLECTION = "fxmonitor-breaches";
-
-    try {
-      const breaches = await RemoteSettings(REMOTE_SETTINGS_COLLECTION).get();
-      return breaches;
-    } catch (ex) {
-      console.error("Could not get breach data from Remote Settings:", ex);
-      return [];
-    }
-  }
-
   async #getApplicableBreaches(site) {
-    const breaches = await this.#getBreachedWebsites();
+    const breaches = await this.#breachAlertsData.getAllBreaches();
 
     if (!site || !breaches.length) {
       return [];

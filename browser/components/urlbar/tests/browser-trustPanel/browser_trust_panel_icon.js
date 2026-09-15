@@ -34,10 +34,9 @@ const TEST_BREACH = {
 };
 
 add_setup(async function setup() {
-  const db = RemoteSettings("fxmonitor-breaches").db;
-  await db.clear();
-  await db.create(TEST_BREACH, { useRecordId: true });
-  await db.importChanges({}, Date.now());
+  await RemoteSettings("fxmonitor-breaches").emit("sync", {
+    data: { current: [TEST_BREACH] },
+  });
 
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -76,8 +75,6 @@ add_setup(async function setup() {
     );
     await PlacesUtils.history.clear();
     Services.prefs.clearUserPref("browser.urlbar.trackerCountShown");
-    await db.clear();
-    await db.importChanges({}, Date.now());
   });
 });
 
@@ -178,16 +175,18 @@ add_task(async function test_breached_urlbar_icon_animation_logic() {
 
     info("4. Visit a DIFFERENT breached site");
 
-    const db = RemoteSettings("fxmonitor-breaches").db;
-    await db.create(
-      {
-        ...TEST_BREACH,
-        id: "different-guid",
-        Domain: "example.com",
+    await RemoteSettings("fxmonitor-breaches").emit("sync", {
+      data: {
+        current: [
+          TEST_BREACH,
+          {
+            ...TEST_BREACH,
+            id: "different-guid",
+            Domain: "example.com",
+          },
+        ],
       },
-      { useRecordId: true }
-    );
-    await db.importChanges({}, Date.now());
+    });
 
     tab3 = await BrowserTestUtils.openNewForegroundTab({
       gBrowser,
@@ -233,16 +232,18 @@ add_task(async function test_breached_idn_site() {
     "The test site is displayed as an IDN, not as punycode"
   );
 
-  const db = RemoteSettings("fxmonitor-breaches").db;
-  await db.create(
-    {
-      ...TEST_BREACH,
-      id: "idn-guid",
-      Domain: IDN_ASCII_HOST,
+  await RemoteSettings("fxmonitor-breaches").emit("sync", {
+    data: {
+      current: [
+        TEST_BREACH,
+        {
+          ...TEST_BREACH,
+          id: "idn-guid",
+          Domain: IDN_ASCII_HOST,
+        },
+      ],
     },
-    { useRecordId: true }
-  );
-  await db.importChanges({}, Date.now());
+  });
 
   const tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
