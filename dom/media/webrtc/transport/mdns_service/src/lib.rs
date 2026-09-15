@@ -14,6 +14,17 @@ use std::thread;
 use std::time;
 use uuid::Uuid;
 
+// https://www.rfc-editor.org/info/rfc1035/#section-2.3.4
+// Domain names in messages are expressed in terms of a sequence of labels.
+// Each label is represented as a one octet length field followed by that
+// number of octets.  Since every domain name ends with the null label of
+// the root, a domain name is terminated by a length byte of zero.  The
+// high order two bits of every length octet must be zero, and the
+// remaining six bits of the length field limit the label to 63 octets or
+// less.
+const MAX_LABEL_LENGTH: usize = 63;
+const MAX_NAME_LENGTH: usize = 255;
+
 #[macro_use]
 extern crate log;
 
@@ -43,9 +54,31 @@ fn hostname_timedout(callback: &Callback, hostname: &str) {
     }
 }
 
+fn split_name(name: &str) -> Option<impl Iterator<Item = &str>> {
+    let parts = name.split('.');
+    let (total_name, max_label) = parts.clone().fold((0, 0), |(total, max), p| {
+        (total + p.len(), max.max(p.len()))
+    });
+    if total_name > MAX_NAME_LENGTH {
+        error!("Total name length {} too long", total_name);
+        return None;
+    }
+    if max_label > MAX_LABEL_LENGTH {
+        error!("Name part length {} too long", max_label);
+        return None;
+    }
+    Some(parts)
+}
+
 // This code is derived from code for creating questions in the dns-parser
 // crate. It would be nice to upstream this, or something similar.
 fn create_answer(id: u16, answers: &[(String, &[u8])]) -> Result<Vec<u8>, io::Error> {
+    // Split each answer name into parts, discarding any that are invalid
+    let answers = answers
+        .iter()
+        .filter_map(|(n, addr)| split_name(n).map(|p| (p, addr)))
+        .collect::<Vec<_>>();
+
     let mut buf = Vec::with_capacity(512);
     let head = dns_parser::Header {
         id,
@@ -67,11 +100,8 @@ fn create_answer(id: u16, answers: &[(String, &[u8])]) -> Result<Vec<u8>, io::Er
     buf.extend([0u8; 12].iter());
     head.write(&mut buf[..12]);
 
-    for (name, addr) in answers {
-        for part in name.split('.') {
-            if part.len() > 62 {
-                return Err(io::Error::other("Name part length too long"));
-            }
+    for (name_parts, addr) in answers {
+        for part in name_parts {
             let ln = part.len() as u8;
             buf.push(ln);
             buf.extend(part.as_bytes());
@@ -89,11 +119,16 @@ fn create_answer(id: u16, answers: &[(String, &[u8])]) -> Result<Vec<u8>, io::Er
         buf.write_u16::<BigEndian>(addr.len() as u16)?;
         buf.extend(*addr);
     }
-
     Ok(buf)
 }
 
 fn create_query(id: u16, queries: &[String]) -> Result<Vec<u8>, io::Error> {
+    // Split each query into name parts, discarding any that are invalid
+    let queries = queries
+        .iter()
+        .filter_map(|q| split_name(q))
+        .collect::<Vec<_>>();
+
     let mut buf = Vec::with_capacity(512);
     let head = dns_parser::Header {
         id,
@@ -115,9 +150,8 @@ fn create_query(id: u16, queries: &[String]) -> Result<Vec<u8>, io::Error> {
     buf.extend([0u8; 12].iter());
     head.write(&mut buf[..12]);
 
-    for name in queries {
-        for part in name.split('.') {
-            assert!(part.len() < 63);
+    for name_parts in queries {
+        for part in name_parts {
             let ln = part.len() as u8;
             buf.push(ln);
             buf.extend(part.as_bytes());
@@ -630,6 +664,7 @@ pub unsafe extern "C" fn mdns_service_unregister_hostname(
 #[cfg(test)]
 mod tests {
     use crate::create_query;
+    use crate::split_name;
     use crate::validate_hostname;
     use crate::Callback;
     use crate::MDNSService;
@@ -721,6 +756,60 @@ mod tests {
             }
             questions
         })
+    }
+
+    #[test]
+    fn max_len() {
+        const C15: &'static str = "0123456789ABCDE";
+        const C16: &'static str = "0123456789ABCDEF";
+        let c31 = || format!("{}{}", C16, C15);
+        let c32 = || format!("{}{}", C16, C16);
+        let c63 = || format!("{}{}{}{}", C16, C16, C16, C15);
+        let c64 = || format!("{}{}{}{}", C16, C16, C16, C16);
+        assert!(
+            split_name(c63().as_str()).is_some(),
+            "63 character label is allowed"
+        );
+        assert!(
+            split_name(c64().as_str()).is_none(),
+            "64 character label is too long"
+        );
+        assert!(
+            split_name(
+                format!(
+                    "{}.{}.{}.{}.{}.{}.{}.{}",
+                    c32(),
+                    c32(),
+                    c32(),
+                    c32(),
+                    c32(),
+                    c32(),
+                    c32(),
+                    c31()
+                )
+                .as_str()
+            )
+            .is_some(),
+            "name with 255 label characters is allowed"
+        );
+        assert!(
+            split_name(
+                format!(
+                    "{}.{}.{}.{}.{}.{}.{}.{}",
+                    c32(),
+                    c32(),
+                    c32(),
+                    c32(),
+                    c32(),
+                    c32(),
+                    c32(),
+                    c32()
+                )
+                .as_str()
+            )
+            .is_none(),
+            "name with 256 label characters is too long"
+        );
     }
 
     #[test]
