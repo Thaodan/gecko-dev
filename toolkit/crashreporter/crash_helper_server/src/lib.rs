@@ -74,7 +74,7 @@ pub unsafe extern "C" fn crash_generator_logic_desktop(
         build_id.to_str(),
         "BuildID is not a valid UTF-8 string"
     ).to_string();
-    initialize_static_annotations(&ApplicationInfo::new(build_id));
+    initialize_static_annotations(&ApplicationInfo::new(build_id, client_handle.clone()));
     let listener = unsafe { CStr::from_ptr(listener) };
     let listener = unwrap_with_message(
         IPCListener::deserialize(listener, client_pid),
@@ -147,7 +147,10 @@ pub unsafe extern "C" fn crash_generator_logic_android(
         .to_owned()
         .into_string()
         .unwrap();
-    initialize_static_annotations(&ApplicationInfo::new(build_id));
+    initialize_static_annotations(&ApplicationInfo::new(
+        build_id,
+        Some(crash_helper_common::ProcessHandle(pid)),
+    ));
 
     let breakpad_data = BreakpadData::new(breakpad_data);
     let minidump_path = unsafe { CStr::from_ptr(minidump_path) }
