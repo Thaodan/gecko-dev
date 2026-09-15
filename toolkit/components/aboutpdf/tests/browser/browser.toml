@@ -7,4 +7,6 @@ support-files = ["head.js"]
 
 ["browser_aboutPDF_appmenu.js"]
 
+["browser_aboutPDF_features.js"]
+
 ["browser_aboutPDF_promo.js"]

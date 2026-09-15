@@ -3,10 +3,10 @@
 
 "use strict";
 
-async function openAboutPDF() {
+async function openAboutPDF(hash = "") {
   const tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
-    opening: "about:pdf",
+    opening: "about:pdf" + hash,
     waitForLoad: true,
   });
   // The load event can fire before painting is unsuppressed, making synthesized

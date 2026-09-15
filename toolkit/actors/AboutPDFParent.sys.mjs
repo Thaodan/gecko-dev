@@ -27,6 +27,8 @@ export class AboutPDFParent extends JSWindowActorParent {
     switch (message.name) {
       case "AboutPDF:CanSetDefaultPDFHandler":
         return this.#canSetDefaultPDFHandler();
+      case "AboutPDF:GoBack":
+        return this.#goBack();
       case "AboutPDF:PickFile":
         return this.#pickFile();
       case "AboutPDF:SetDefaultPDFHandler":
@@ -34,6 +36,20 @@ export class AboutPDFParent extends JSWindowActorParent {
     }
 
     return undefined;
+  }
+
+  // Return whether a Back navigation was requested.
+  #goBack() {
+    const { browsingContext } = this;
+    if (browsingContext !== browsingContext.top) {
+      return false;
+    }
+    const browser = browsingContext.embedderElement;
+    if (!browser?.canGoBack) {
+      return false;
+    }
+    browser.goBack();
+    return true;
   }
 
   #canSetDefaultPDFHandler() {

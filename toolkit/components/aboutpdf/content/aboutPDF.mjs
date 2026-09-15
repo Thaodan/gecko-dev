@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /* global RPMCanSetDefaultPDFHandler, RPMGetBoolPref, RPMPickPDFFile,
-   RPMSetDefaultPDFHandler, RPMSetPref */
+   RPMSendQuery, RPMSetDefaultPDFHandler, RPMSetPref */
 
 const PROMO_DISMISSED_PREF = "browser.aboutpdf.promo.dismissed";
 
@@ -14,6 +14,48 @@ const browseFiles = document.getElementById("browse-files");
 const promo = document.getElementById("promo");
 const setDefault = document.getElementById("set-default");
 const dismissPromo = document.getElementById("dismiss-promo");
+const featuresCta = document.getElementById("features-cta");
+const featuresBack = document.getElementById("features-back");
+const mainHeading = document.getElementById("main-heading");
+const featuresHeading = document.getElementById("features-heading");
+
+function renderView(moveFocus) {
+  const showFeatures = window.location.hash === "#features";
+  document.body.classList.toggle("view-features", showFeatures);
+  if (moveFocus) {
+    (showFeatures ? featuresHeading : mainHeading).focus();
+  }
+}
+
+window.addEventListener("hashchange", () => renderView(true));
+
+// Add a history entry so Back returns to the main view.
+featuresCta.addEventListener("click", () => {
+  window.location.hash = "features";
+});
+
+featuresBack.addEventListener("click", async () => {
+  try {
+    if (await RPMSendQuery("AboutPDF:GoBack")) {
+      return;
+    }
+  } catch (e) {
+    console.error("Failed to go back", e);
+  }
+  // With no previous entry, switch views without adding history.
+  try {
+    window.history.replaceState(
+      null,
+      "",
+      window.location.href.replace(/#.*$/, "")
+    );
+    renderView(true);
+  } catch {
+    window.location.hash = "";
+  }
+});
+
+renderView(false);
 
 browseFiles.addEventListener("click", () => {
   pickFile();
