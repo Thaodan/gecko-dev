@@ -37,6 +37,7 @@ import mozilla.components.feature.ipprotection.store.IPProtectionStore
 import mozilla.components.feature.ipprotection.store.state.Authorized
 import mozilla.components.feature.ipprotection.store.state.IPProtectionState
 import mozilla.components.feature.ipprotection.store.state.ProxyStatus
+import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Rule
 import org.junit.Test
@@ -61,6 +62,8 @@ import org.mozilla.fenix.components.menu.store.MenuAction.CustomizeReaderView as
 import org.mozilla.fenix.components.menu.store.MenuAction.FindInPage
 import org.mozilla.fenix.components.menu.store.MenuAction.IPProtectionToggle
 import org.mozilla.fenix.components.menu.store.MenuAction.Navigate
+import org.mozilla.fenix.components.menu.store.MenuAction.RequestDesktopSite
+import org.mozilla.fenix.components.menu.store.MenuAction.RequestMobileSite
 import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 
@@ -73,13 +76,15 @@ class MenuMiddlewareTest {
     private val browserStore =
         BrowserStore(
             BrowserState(
-                tabs = listOf(createTab(url = TEST_URL, title = TEST_TITLE, id = "tab1")),
-                selectedTabId = "tab1",
+                tabs = listOf(createTab(url = TEST_URL, title = TEST_TITLE, id = TAB_ID)),
+                selectedTabId = TAB_ID,
             )
         )
     private val addBookmarkUseCase: BookmarksUseCase.AddBookmarksUseCase = mockk()
+    private val requestDesktopSiteUseCase: SessionUseCases.RequestDesktopSiteUseCase = mockk(relaxed = true)
     private val useCases: UseCases = mockk {
         every { bookmarksUseCases } returns mockk { every { addBookmark } returns addBookmarkUseCase }
+        every { sessionUseCases } returns mockk { every { requestDesktopSite } returns requestDesktopSiteUseCase }
     }
     // Navigating away is guarded on still being on the menu, so the mock has to report that as the current
     // destination. A relaxed mock would otherwise report an id of 0 and every navigation would be skipped.
@@ -246,6 +251,30 @@ class MenuMiddlewareTest {
         }
     }
 
+    @Test
+    fun `GIVEN in mobile mode WHEN handling desktop site being requested THEN dismiss the menu and load the desktop version of the current page`() {
+        val store = createStore()
+
+        store.dispatch(RequestDesktopSite)
+
+        verify {
+            navController.popBackStack(R.id.menuFragment, true)
+            requestDesktopSiteUseCase(enable = true, tabId = TAB_ID)
+        }
+    }
+
+    @Test
+    fun `GIVEN in desktop mode WHEN handling mobile mode being requested THEN dismiss the menu and load the mobile version of the current page`() {
+        val store = createStore()
+
+        store.dispatch(RequestMobileSite)
+
+        verify {
+            navController.popBackStack(R.id.menuFragment, true)
+            requestDesktopSiteUseCase(enable = false, tabId = TAB_ID)
+        }
+    }
+
     private fun ipProtectionStore(proxyStatus: ProxyStatus): IPProtectionStore = mockk {
         every { state } returns IPProtectionState(proxyStatus = proxyStatus)
         every { dispatch(any()) } just Runs
@@ -290,6 +319,7 @@ class MenuMiddlewareTest {
         const val BOOKMARK_GUID = "bookmarkGuid"
         const val TEST_URL = "https://mozilla.org"
         const val TEST_TITLE = "Mozilla"
+        const val TAB_ID = "tab1"
 
         val readerViewItem =
             StandardMenuItem(title = Text.String("Customize reader view"), onClickEvent = CustomizeReaderViewEvent)

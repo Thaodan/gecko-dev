@@ -37,6 +37,8 @@ import org.mozilla.fenix.components.menu.store.MenuAction.CustomizeReaderView
 import org.mozilla.fenix.components.menu.store.MenuAction.FindInPage
 import org.mozilla.fenix.components.menu.store.MenuAction.IPProtectionToggle
 import org.mozilla.fenix.components.menu.store.MenuAction.Navigate
+import org.mozilla.fenix.components.menu.store.MenuAction.RequestDesktopSite
+import org.mozilla.fenix.components.menu.store.MenuAction.RequestMobileSite
 import org.mozilla.fenix.components.menu.toMenuState
 import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.ext.nav
@@ -98,6 +100,10 @@ class MenuMiddleware(
                 appStore.dispatch(FindInPageAction.FindInPageStarted)
             }
 
+            is RequestDesktopSite -> requestSiteMode(enableDesktopMode = true)
+
+            is RequestMobileSite -> requestSiteMode(enableDesktopMode = false)
+
             else -> {
                 // no-op
             }
@@ -128,6 +134,13 @@ class MenuMiddleware(
             IPProtectionMenuStatus.DataLimitReached,
             IPProtectionMenuStatus.ConnectionError -> ipProtectionStore.dispatch(IPProtectionAction.Toggle)
         }
+    }
+
+    private fun requestSiteMode(enableDesktopMode: Boolean) {
+        val tabId = browserStore.state.selectedTab?.id ?: return
+
+        dismissMenu()
+        useCases.sessionUseCases.requestDesktopSite(enable = enableDesktopMode, tabId = tabId)
     }
 
     private fun addBookmark() = scope.launch {

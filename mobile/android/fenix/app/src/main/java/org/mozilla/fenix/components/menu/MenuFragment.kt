@@ -44,6 +44,7 @@ import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.R
 import org.mozilla.fenix.bookmarks.BookmarkMenuItemProvider
+import org.mozilla.fenix.browser.DesktopSiteMenuItemProvider
 import org.mozilla.fenix.browser.readermode.ReaderViewMenuItemProvider
 import org.mozilla.fenix.components.FindInPageMenuItemProvider
 import org.mozilla.fenix.components.menu.compose.MenuDialogBottomSheet
@@ -215,6 +216,11 @@ class MenuFragment : BottomSheetDialogFragment() {
                     applicationScope = requireComponents.applicationScope,
                 ),
             FenixMenuItem.FindInPage to FindInPageMenuItemProvider(),
+            FenixMenuItem.DesktopSite to
+                DesktopSiteMenuItemProvider(
+                    browserStore = requireComponents.core.store,
+                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                ),
         )
 
     private fun buildMenuStore(initialState: MenuState) =

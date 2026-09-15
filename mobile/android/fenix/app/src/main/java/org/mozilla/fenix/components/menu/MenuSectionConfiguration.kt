@@ -17,6 +17,9 @@ sealed interface FenixMenuItem {
 
     /** A menu item allowing to start the find in page feature. */
     data object FindInPage : FenixMenuItem
+
+    /** A menu item allowing to switch the current page between the desktop and the mobile version. */
+    data object DesktopSite : FenixMenuItem
 }
 
 /**
