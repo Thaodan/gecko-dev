@@ -28,12 +28,11 @@
 #ifndef AVCODEC_VORBIS_PARSER_INTERNAL_H
 #define AVCODEC_VORBIS_PARSER_INTERNAL_H
 
-#include <stdint.h>
-
+#include "avcodec.h"
 #include "vorbis_parser.h"
 
 struct AVVorbisParseContext {
-    const struct AVClass *class;
+    const AVClass *class;
     int extradata_parsed;       ///< we have attempted to parse extradata
     int valid_extradata;        ///< extradata is valid, so we can calculate duration
     int blocksize[2];           ///< short and long window sizes
@@ -43,8 +42,5 @@ struct AVVorbisParseContext {
     int mode_mask;              ///< bitmask used to get the mode in each packet
     int prev_mask;              ///< bitmask used to get the previous mode flag in each packet
 };
-
-int ff_vorbis_parse_init(AVVorbisParseContext *s,
-                         const uint8_t *extradata, int extradata_size);
 
 #endif /* AVCODEC_VORBIS_PARSER_INTERNAL_H */

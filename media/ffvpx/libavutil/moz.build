@@ -24,11 +24,9 @@ SOURCES += [
     'cpu.c',
     'crc.c',
     'dict.c',
-    'display.c',
     'error.c',
     'eval.c',
     'fifo.c',
-    'file_open.c',
     'fixed_dsp.c',
     'float_dsp.c',
     'float_scalarproduct.c',
@@ -43,12 +41,10 @@ SOURCES += [
     'opt.c',
     'parseutils.c',
     'pixdesc.c',
-    'random_seed.c',
     'rational.c',
     'refstruct.c',
     'reverse.c',
     'samplefmt.c',
-    'sha.c',
     'side_data.c',
     'slicethread.c',
     'time.c',
@@ -66,7 +62,6 @@ if not CONFIG['MOZ_FFVPX_AUDIOONLY']:
         'base64.c',
         'film_grain_params.c',
         'hdr_dynamic_metadata.c',
-        'hdr_dynamic_vivid_metadata.c',
         'integer.c',
         'intmath.c',
         'lls.c',
@@ -114,10 +109,7 @@ SYMBOLS_FILE =  'avutil.symbols'
 NoVisibilityFlags()
 
 OS_LIBS += CONFIG['REALTIME_LIBS']
-if CONFIG['OS_TARGET'] == 'WINNT':
-    # random_seed.c uses BCryptGenRandom().
-    OS_LIBS += ['bcrypt']
-else:
+if CONFIG['OS_TARGET'] != 'WINNT':
     OS_LIBS += ['m']
 
 OS_LIBS += CONFIG["LIBATOMIC_LIBS"]

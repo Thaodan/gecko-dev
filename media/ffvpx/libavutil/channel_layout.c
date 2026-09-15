@@ -32,7 +32,6 @@
 #include "bprint.h"
 #include "common.h"
 #include "error.h"
-#include "attributes.h"
 #include "macros.h"
 #include "mem.h"
 #include "opt.h"
@@ -609,7 +608,7 @@ int av_channel_layout_describe_bprint(const AVChannelLayout *channel_layout,
                 av_bprintf(bp, "%s", channel_layout_map[i].name);
                 return 0;
             }
-        av_fallthrough;
+        // fall-through
     case AV_CHANNEL_ORDER_CUSTOM:
         if (channel_layout->order == AV_CHANNEL_ORDER_CUSTOM) {
             int64_t mask;
@@ -640,7 +639,7 @@ int av_channel_layout_describe_bprint(const AVChannelLayout *channel_layout,
             av_bprintf(bp, ")");
             return 0;
         }
-        av_fallthrough;
+        // fall-through
     case AV_CHANNEL_ORDER_UNSPEC:
         av_bprintf(bp, "%d channels", channel_layout->nb_channels);
         return 0;
@@ -688,13 +687,12 @@ av_channel_layout_channel_from_index(const AVChannelLayout *channel_layout,
             return AV_CHAN_AMBISONIC_BASE + idx;
         idx -= ambi_channels;
         }
-        av_fallthrough;
+    // fall-through
     case AV_CHANNEL_ORDER_NATIVE:
         for (i = 0; i < 64; i++) {
             if ((1ULL << i) & channel_layout->u.mask && !idx--)
                 return i;
         }
-        av_fallthrough;
     default:
         return AV_CHAN_NONE;
     }
@@ -770,7 +768,7 @@ int av_channel_layout_index_from_string(const AVChannelLayout *channel_layout,
                 (ch == AV_CHAN_NONE || ch == channel_layout->u.map[i].id))
                 return i;
         }
-        av_fallthrough;
+        // fall-through
     case AV_CHANNEL_ORDER_AMBISONIC:
     case AV_CHANNEL_ORDER_NATIVE:
         ch = av_channel_from_string(str);
