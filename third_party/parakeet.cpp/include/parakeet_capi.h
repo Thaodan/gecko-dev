@@ -45,6 +45,11 @@ typedef struct parakeet_ctx parakeet_ctx;
 //
 // v6: added parakeet_capi_stream_chunk_samples, the audio one encoder chunk
 //     spans. Additive.
+//
+// v7: added parakeet_capi_stream_has_eou, parakeet_capi_stream_end_utterance and
+//     parakeet_capi_stream_blank_seconds,
+//     so a host can close an utterance itself on a model whose vocab has no
+//     <EOU> piece. Additive: the existing entry points are unchanged.
 int parakeet_capi_abi_version(void);
 
 // Load a GGUF model. Returns an owning context, or NULL on failure.
@@ -254,6 +259,22 @@ int parakeet_capi_stream_drain_events(parakeet_stream* s,
 // Free an event array previously returned by parakeet_capi_stream_drain_events.
 // Safe on NULL.
 void parakeet_capi_free_events(parakeet_stream_event* events);
+
+// Firefox-local: whether the model marks utterance boundaries itself, i.e. has
+// an <EOU>. 1 / 0, -1 on error.
+int parakeet_capi_stream_has_eou(parakeet_stream* s);
+
+// Firefox-local: audio decoded since the RNN-T last emitted a token, in
+// seconds. The endpointing signal for a model that marks no boundary of its
+// own, needing no noise-floor tuning. 0 while the decoder is emitting, -1 on
+// error.
+double parakeet_capi_stream_blank_seconds(parakeet_stream* s);
+
+// Firefox-local: close the utterance in progress without ending the stream, for
+// a model that marks no boundary itself. Every word decoded so far becomes
+// final and the decoder restarts, so nothing can extend them. Returns the
+// newly-finalized text (malloc'd, "" if none, NULL on error).
+char* parakeet_capi_stream_end_utterance(parakeet_stream* s);
 
 // Firefox-local: a finalized word with timing + confidence. Same data the JSON
 // "words" array carries, in a typed form so the host need not parse JSON.
