@@ -138,7 +138,7 @@ ChromeUtils.defineLazyGetter(lazy, "log", function () {
  */
 
 /**
- * @typedef {"button" | "enter" | "follow-up" | "resume" | "retry" | "shortcuts" | "starter" | "suggestion"} ChatSubmitType
+ * @typedef {"button" | "enter" | "follow-up" | "menu" | "resume" | "retry" | "shortcuts" | "starter" | "suggestion"} ChatSubmitType
  */
 
 const MODE = {

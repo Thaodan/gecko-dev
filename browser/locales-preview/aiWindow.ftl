@@ -278,6 +278,10 @@ ai-tasks-alert-history-error-unknown = Something went wrong on our side and this
 
 ## AI Tab - A page generated from the content of the user's tabs
 
+# The feature name. It stays here rather than in brandings.ftl until the AI Tab
+# strings are exposed to localization.
+-ai-tab-brand-name = AI Tab
+
 # Title given to a generated page when the model returns no title of its own and
 # the user did not say what the page should focus on.
 ai-tab-default-page-title = Generated page
@@ -288,6 +292,31 @@ ai-tab-page-unavailable = This page isn’t available anymore.
 
 # Shown in place of a generated page when it could not be loaded.
 ai-tab-page-error = Something went wrong loading this page.
+
+# Page context menu entry that builds a generated page from the current page.
+main-context-menu-create-aitab =
+    .label = Create { -ai-tab-brand-name }
+    .accesskey = A
+
+# Tab context menu entry that builds a generated page from the tabs the menu
+# was opened on.
+tab-context-create-aitab =
+    .label = Create { -ai-tab-brand-name }
+
+# Tab group menu entry that builds a generated page from the group's tabs.
+tab-group-editor-action-create-aitab =
+    .label = Create { -ai-tab-brand-name }
+
+# Chat message that starts the conversation created by a "Create AI Tab" menu
+# entry, written in the user's voice. The URLs of the chosen tabs are appended
+# on the lines below it.
+# Variables:
+#   $tabCount (Number) - How many tabs the page is built from.
+ai-tab-create-page-prompt =
+    { $tabCount ->
+        [one] Create an { -ai-tab-brand-name } from this tab:
+       *[other] Create an { -ai-tab-brand-name } from these tabs:
+    }
 
 ## Smartbar command palette
 ## Slash commands shown in the smartbar when the user types "/".
@@ -404,10 +433,7 @@ aitab-page-delete =
     .aria-label = Delete page
     .title = Delete page
 
-# TODO: D321710 (bug 2061040) adds `-ai-tab-brand-name`; swap the literal
-# placeholder for that term once it has landed on central.
-# "[AI Tab]" is a placeholder for the final product name.
-aitab-page-delete-dialog-title = Delete this [AI Tab]?
+aitab-page-delete-dialog-title = Delete this { -ai-tab-brand-name }?
 aitab-page-delete-dialog-message = This generated page will be removed. The sources it was built from aren’t affected.
 
 aitab-page-delete-dialog-cancel =
