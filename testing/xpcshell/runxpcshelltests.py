@@ -1795,6 +1795,17 @@ class XPCShellTests:
         for key, value in self.mozHttp2Server.ports().items():
             self.env[key] = value
 
+    def removeOwnedTempDir(self):
+        """
+        Remove the temp dir this run created because the caller gave none.
+        """
+        if not self.ownsTempDir:
+            return
+        try:
+            shutil.rmtree(self.tempDir)
+        except Exception:
+            self.log.info(f"{self.tempDir} could not be cleaned up.")
+
     def shutdownNode(self):
         """
         Shut down our node process, if it exists
@@ -2190,7 +2201,11 @@ class XPCShellTests:
         self.utility_path = options.get("utility_path")
         self.appPath = options.get("appPath")
         self.symbolsPath = options.get("symbolsPath")
-        self.tempDir = os.path.normpath(options.get("tempDir") or tempfile.gettempdir())
+        self.tempDir = options.get("tempDir")
+        self.ownsTempDir = not self.tempDir
+        if self.ownsTempDir:
+            self.tempDir = mkdtemp(prefix="xpcshell-")
+        self.tempDir = os.path.normpath(self.tempDir)
         self.manifest = options.get("manifest")
         self.dump_tests = options.get("dump_tests")
         self.interactive = options.get("interactive")
@@ -2248,6 +2263,7 @@ class XPCShellTests:
         self.event = Event()
 
         if not self.updateMozinfo(prefs, options):
+            self.removeOwnedTempDir()
             return False
 
         self.log.info(
@@ -2259,6 +2275,7 @@ class XPCShellTests:
 
         if options.get("self_test"):
             if not self.runSelfTest():
+                self.removeOwnedTempDir()
                 return False
 
         if (
@@ -2430,6 +2447,7 @@ class XPCShellTests:
                 self.log.error(
                     "Error: --jsdebugger can only be used with a single test!"
                 )
+                self.removeOwnedTempDir()
                 return False
 
         # The test itself needs to know whether it is a tsan build, since
@@ -2778,6 +2796,7 @@ class XPCShellTests:
                 shutil.rmtree(directory)
             except Exception:
                 self.log.info("%s could not be cleaned up." % directory)
+        self.removeOwnedTempDir()
 
         if exceptions:
             self.log.info("Following exceptions were raised:")
