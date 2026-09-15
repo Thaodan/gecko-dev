@@ -70,10 +70,7 @@ fn create_answer(id: u16, answers: &[(String, &[u8])]) -> Result<Vec<u8>, io::Er
     for (name, addr) in answers {
         for part in name.split('.') {
             if part.len() > 62 {
-                return Err(io::Error::new(
-                    io::ErrorKind::Other,
-                    "Name part length too long",
-                ));
+                return Err(io::Error::other("Name part length too long"));
             }
             let ln = part.len() as u8;
             buf.push(ln);
@@ -154,7 +151,7 @@ fn handle_queries(
                 queries.iter().map(|q| q.hostname.to_string()).collect();
 
             if let Ok(buf) = create_query(0, &query_hostnames) {
-                match socket.send_to(&buf, &mdns_addr) {
+                match socket.send_to(&buf, mdns_addr) {
                     Ok(_) => {
                         for query in queries {
                             pending_queries.insert(query.hostname.to_string(), query);
@@ -199,7 +196,7 @@ fn handle_queries(
 fn handle_mdns_socket(
     socket: &std::net::UdpSocket,
     mdns_addr: &std::net::SocketAddr,
-    mut buffer: &mut [u8],
+    buffer: &mut [u8],
     hosts: &mut HashMap<String, Vec<u8>>,
     pending_queries: &mut HashMap<String, Query>,
 ) -> bool {
@@ -213,11 +210,11 @@ fn handle_mdns_socket(
         );
     }
 
-    match socket.recv_from(&mut buffer) {
+    match socket.recv_from(buffer) {
         Ok((amt, _)) => {
             if amt > 0 {
                 let buffer = &buffer[0..amt];
-                match dns_parser::Packet::parse(&buffer) {
+                match dns_parser::Packet::parse(buffer) {
                     Ok(parsed) => {
                         let mut answers: Vec<(String, &[u8])> = Vec::new();
 
@@ -233,7 +230,7 @@ fn handle_mdns_socket(
                                     trace!("mDNS question: {} {:?}", qname, question.qtype);
                                     if let Some(octets) = hosts.get(&qname) {
                                         trace!("Sending mDNS answer for {}: {:?}", qname, octets);
-                                        answers.push((qname, &octets));
+                                        answers.push((qname, octets));
                                     }
                                 });
                         }
@@ -271,7 +268,7 @@ fn handle_mdns_socket(
                         // this query.
                         if !answers.is_empty() {
                             if let Ok(buf) = create_answer(parsed.header.id, &answers) {
-                                if let Err(err) = socket.send_to(&buf, &mdns_addr) {
+                                if let Err(err) = socket.send_to(&buf, mdns_addr) {
                                     warn!("Sending mDNS answer failed: {}", err);
                                 }
                             }
@@ -456,11 +453,9 @@ impl MDNSService {
                                 continue;
                             }
                             trace!("Registering {} for: {}", hostname, address);
-                            match address.parse().and_then(|ip| {
-                                Ok(match ip {
-                                    net::IpAddr::V4(ip) => ip.octets().to_vec(),
-                                    net::IpAddr::V6(ip) => ip.octets().to_vec(),
-                                })
+                            match address.parse().map(|ip| match ip {
+                                net::IpAddr::V4(ip) => ip.octets().to_vec(),
+                                net::IpAddr::V6(ip) => ip.octets().to_vec(),
                             }) {
                                 Ok(octets) => {
                                     let mut v = Vec::new();
