@@ -213,6 +213,9 @@ smartwindow-agent-monitor-watching = I’ll check { $monitorName } { $schedule }
 #   $monitorName (string) - The name of the page or target that was being watched
 smartwindow-agent-monitor-deleted = I’ve stopped watching { $monitorName } and removed this task.
 
+# Shown in place of the card when the user cancels creating a task from the chat.
+smartwindow-agent-monitor-canceled = Canceled. Is there anything else I can assist you with?
+
 # Check watch schedule, added { $schedule } in the chat message.
 # Variables:
 #   $time (date) - The scheduled check time
