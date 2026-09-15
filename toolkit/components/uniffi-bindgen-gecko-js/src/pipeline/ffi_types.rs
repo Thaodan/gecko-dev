@@ -3,35 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use super::*;
-use anyhow::bail;
-use heck::ToUpperCamelCase;
 
-pub fn pass(root: &mut Root) -> Result<()> {
-    root.visit_mut(|node: &mut FfiTypeNode| {
-        node.type_name = ffi_type_name(&node.ty);
-    });
-    root.visit_mut(|return_handler: &mut CallbackReturnHandlerClass| {
-        return_handler.return_type_name = match &return_handler.return_ty {
-            Some(return_ty) => return_ty.ty.type_name.clone(),
-            None => "void".to_string(),
-        };
-    });
-    root.visit_mut(|return_ty: &mut FfiReturnType| {
-        return_ty.type_name = match &return_ty.ty {
-            Some(type_node) => type_node.type_name.clone(),
-            None => "void".to_string(),
-        };
-    });
-    root.try_visit_mut(|arg: &mut FfiValueArgument| {
-        arg.ffi_value_class = ffi_value_class(&arg.ty)?;
-        Ok(())
-    })?;
-    root.try_visit_mut(|return_ty: &mut FfiValueReturnType| {
-        return_ty.ffi_value_class = ffi_value_class(&return_ty.ty)?;
-        Ok(())
-    })?;
-
-    Ok(())
+pub fn map_ffi_type_node(input: general::FfiType, _context: &Context) -> Result<FfiTypeNode> {
+    Ok(FfiTypeNode {
+        type_name: ffi_type_name(&input),
+        ty: input,
+    })
 }
 
 fn ffi_type_name(ty: &FfiType) -> String {
@@ -59,8 +36,9 @@ fn ffi_type_name(ty: &FfiType) -> String {
     }
 }
 
-fn ffi_value_class(node: &FfiTypeNode) -> Result<String> {
-    Ok(match &node.ty {
+pub fn ffi_value_class(type_node: &TypeNode) -> Result<String> {
+    let type_name = &type_node.ffi_type.type_name;
+    Ok(match &type_node.ffi_type.ty {
         FfiType::UInt8
         | FfiType::Int8
         | FfiType::UInt16
@@ -68,25 +46,55 @@ fn ffi_value_class(node: &FfiTypeNode) -> Result<String> {
         | FfiType::UInt32
         | FfiType::Int32
         | FfiType::UInt64
-        | FfiType::Int64 => format!("FfiValueInt<{}>", node.type_name),
+        | FfiType::Int64 => format!("FfiValueInt<{type_name}>"),
         FfiType::Float32 | FfiType::Float64 => {
-            format!("FfiValueFloat<{}>", node.type_name)
+            format!("FfiValueFloat<{type_name}>")
         }
         FfiType::RustBuffer(_) => "FfiValueRustBuffer".to_owned(),
-        FfiType::Handle(HandleKind::StructInterface {
-            namespace,
-            interface_name,
-        })
-        | FfiType::Handle(HandleKind::TraitInterface {
-            namespace,
-            interface_name,
-        }) => {
-            format!(
-                "FfiValueObjectHandle{}{}",
-                namespace.to_upper_camel_case(),
-                interface_name.to_upper_camel_case(),
-            )
+        FfiType::Handle(HandleKind::StructInterface { .. })
+        | FfiType::Handle(HandleKind::TraitInterface { .. }) => {
+            format!("FfiValueObjectHandle{}", type_node.id)
         }
+        FfiType::ForeignBytes => "FfiValueTodo".into(),
         ty => bail!("No FfiValue class for: {ty:?}"),
     })
+}
+
+impl FfiFunction {
+    pub fn arg_types(&self) -> Vec<&str> {
+        self.arguments
+            .iter()
+            .map(|a| a.ty.type_name.as_str())
+            .chain(self.has_rust_call_status_arg.then_some("RustCallStatus*"))
+            .collect()
+    }
+}
+
+impl FfiFunctionType {
+    pub fn arg_types(&self) -> Vec<&str> {
+        self.arguments
+            .iter()
+            .map(|a| a.ty.type_name.as_str())
+            .chain(self.has_rust_call_status_arg.then_some("RustCallStatus*"))
+            .collect()
+    }
+}
+
+impl FfiReturnType {
+    pub fn type_name(&self) -> &str {
+        match &self.ty {
+            Some(ffi_type_node) => &ffi_type_node.type_name,
+            None => "void",
+        }
+    }
+}
+
+impl FfiDefinition {
+    pub fn name(&self) -> &str {
+        match self {
+            Self::RustFunction(f) => f.name.0.as_str(),
+            Self::FunctionType(f) => f.name.0.as_str(),
+            Self::Struct(s) => s.name.0.as_str(),
+        }
+    }
 }

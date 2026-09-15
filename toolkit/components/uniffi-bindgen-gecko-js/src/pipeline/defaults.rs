@@ -3,19 +3,23 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use super::*;
-use anyhow::bail;
 use heck::{ToShoutySnakeCase, ToUpperCamelCase};
 
-/// A pass to handle literals and other default values.
-pub fn pass(root: &mut Root) -> Result<()> {
-    // literals first, because the Default pass might use the value.
-    root.visit_mut(|node: &mut LiteralNode| node.js_lit = js_lit(&node.lit));
-
-    // Now the default node itself.
-    root.try_visit_mut(|default: &mut DefaultValueNode| {
-        default.js_lit = render_default(&default.default)?;
-        Ok(())
+pub fn map_literal_node(input: general::Literal, context: &Context) -> Result<LiteralNode> {
+    let lit = input.map_node(context)?;
+    Ok(LiteralNode {
+        js_lit: js_lit(&lit),
+        lit,
     })
+}
+
+pub fn map_default_value_node(
+    input: general::DefaultValue,
+    context: &Context,
+) -> Result<DefaultValueNode> {
+    let default = input.map_node(context)?;
+    let js_lit = render_default(&default)?;
+    Ok(DefaultValueNode { default, js_lit })
 }
 
 pub(super) fn render_default(default: &DefaultValue) -> Result<String> {
@@ -36,7 +40,13 @@ pub(super) fn render_default(default: &DefaultValue) -> Result<String> {
             Type::Record { .. }
             | Type::Enum { .. }
             | Type::Interface { .. }
-            | Type::CallbackInterface { .. } => format!("new {}()", tn.ty.name()?),
+            | Type::CallbackInterface { .. } => {
+                let name = tn
+                    .ty
+                    .name()
+                    .ok_or_else(|| anyhow!("{:?} returned None for name", tn.ty))?;
+                format!("new {name}()")
+            }
             Type::Optional { .. } => "null".to_string(),
             Type::Map { .. } => "{}".to_string(),
             Type::Sequence { .. } => "[]".to_string(),
@@ -63,8 +73,9 @@ fn js_lit(lit: &Literal) -> String {
         Literal::Float(num, _) => num.clone(),
         Literal::Enum(name, typ) => enum_lit(&typ.ty, name),
         Literal::EmptyMap => "{}".to_string(),
+        Literal::EmptySet => "new Set()".to_string(),
         Literal::EmptySequence => "[]".to_string(),
-        Literal::Some { inner } => js_lit(inner),
+        Literal::Some { inner } => inner.js_lit.clone(),
         Literal::None => "null".to_string(),
     }
 }

@@ -159,9 +159,9 @@ rust-version = "1.90.0"
 
 [workspace.dependencies]
 # Shared across multiple UniFFI consumers.
-uniffi = "0.31"
-uniffi_bindgen = "0.31"
-uniffi_pipeline = "0.31"
+uniffi = "0.32"
+uniffi_bindgen = "0.32"
+uniffi_pipeline = "0.32"
 # Shared across multiple application-services consumers.
 rusqlite = "0.37"
 # Shared across multiple glean consumers.

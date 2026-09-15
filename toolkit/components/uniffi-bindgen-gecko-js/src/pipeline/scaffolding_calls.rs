@@ -3,9 +3,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use super::*;
-use heck::ToUpperCamelCase;
 
-pub fn pass(namespace: &mut Namespace) -> Result<()> {
-    namespace.js_filename = format!("Rust{}.sys.mjs", namespace.name.to_upper_camel_case());
-    Ok(())
+impl ScaffoldingCall {
+    pub fn is_async(&self) -> bool {
+        self.ffi_func.async_data.is_some()
+    }
+
+    pub fn handler_class_name(&self) -> String {
+        format!("ScaffoldingCallHandler{}", self.id)
+    }
 }
