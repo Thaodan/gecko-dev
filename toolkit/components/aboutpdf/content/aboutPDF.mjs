@@ -2,8 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* global RPMCanSetDefaultPDFHandler, RPMGetBoolPref, RPMPickPDFFile,
-   RPMSendQuery, RPMSetDefaultPDFHandler, RPMSetPref */
+/* global RPMAddMessageListener, RPMCanSetDefaultPDFHandler, RPMGetBoolPref,
+   RPMPickPDFFile, RPMSendAsyncMessage, RPMSendQuery, RPMSetDefaultPDFHandler,
+   RPMSetPref */
 
 const PROMO_DISMISSED_PREF = "browser.aboutpdf.promo.dismissed";
 
@@ -14,14 +15,22 @@ const browseFiles = document.getElementById("browse-files");
 const promo = document.getElementById("promo");
 const setDefault = document.getElementById("set-default");
 const dismissPromo = document.getElementById("dismiss-promo");
+const notification = document.getElementById("pdf-notification");
 const featuresCta = document.getElementById("features-cta");
 const featuresBack = document.getElementById("features-back");
 const mainHeading = document.getElementById("main-heading");
 const featuresHeading = document.getElementById("features-heading");
 
+let notificationClaimed = false;
+let notificationConsumed = false;
+
 function renderView(moveFocus) {
   const showFeatures = window.location.hash === "#features";
   document.body.classList.toggle("view-features", showFeatures);
+  if (showFeatures) {
+    consumeNotification();
+  }
+  updateNotificationVisibility();
   if (moveFocus) {
     (showFeatures ? featuresHeading : mainHeading).focus();
   }
@@ -130,7 +139,69 @@ dismissPromo.addEventListener("click", () => {
   });
 });
 
+setupNotification();
+
 updatePromoVisibility();
+
+async function setupNotification() {
+  // Move focus before the bar removes itself.
+  notification.addEventListener("message-bar:user-dismissed", () => {
+    if (notification.matches(":focus-within")) {
+      browseFiles.focus();
+    }
+    persistNotificationDismissal();
+  });
+
+  RPMAddMessageListener("PDF:HideFeaturesNotification", () => {
+    dropNotification();
+  });
+
+  // Do not claim an impression on the features view.
+  if (document.body.classList.contains("view-features")) {
+    dropNotification();
+    return;
+  }
+  try {
+    notificationClaimed = await RPMSendQuery("AboutPDF:NotificationEligible");
+  } catch (e) {
+    console.error("Failed to check the notification eligibility", e);
+  }
+  // Another surface may dismiss the notification while the query is pending.
+  if (!notificationClaimed || !notification.isConnected) {
+    dropNotification();
+    return;
+  }
+  updateNotificationVisibility();
+}
+
+function consumeNotification() {
+  if (notificationConsumed) {
+    return;
+  }
+  notificationConsumed = true;
+  persistNotificationDismissal();
+  dropNotification();
+}
+
+function persistNotificationDismissal() {
+  notificationClaimed = false;
+  RPMSendAsyncMessage("AboutPDF:DismissNotification");
+}
+
+function updateNotificationVisibility() {
+  if (
+    notificationClaimed &&
+    !document.body.classList.contains("view-features")
+  ) {
+    notification.hidden = false;
+  }
+}
+
+// Removal prevents later callbacks from showing it again.
+function dropNotification() {
+  notificationClaimed = false;
+  notification.remove();
+}
 
 async function updatePromoVisibility() {
   try {

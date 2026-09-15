@@ -9,7 +9,23 @@ body {
 }
 
 body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background-color: var(--background-color-canvas);
+}
+
+#pdf-notification {
+  flex-shrink: 0;
+  border-radius: 0;
+  border-inline: none;
+  border-block-start: none;
+}
+
+#scroll-container {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
 }
 
 #container {

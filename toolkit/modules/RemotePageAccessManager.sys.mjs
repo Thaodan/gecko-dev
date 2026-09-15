@@ -86,10 +86,12 @@ export let RemotePageAccessManager = {
       RPMSendQuery: ["getCertificates"],
     },
     "about:pdf": {
+      RPMAddMessageListener: ["PDF:HideFeaturesNotification"],
       RPMCanSetDefaultPDFHandler: ["*"],
       RPMGetBoolPref: ["browser.aboutpdf.promo.dismissed"],
       RPMPickPDFFile: ["*"],
-      RPMSendQuery: ["AboutPDF:GoBack"],
+      RPMSendAsyncMessage: ["AboutPDF:DismissNotification"],
+      RPMSendQuery: ["AboutPDF:GoBack", "AboutPDF:NotificationEligible"],
       RPMSetDefaultPDFHandler: ["*"],
       RPMSetPref: ["browser.aboutpdf.promo.dismissed"],
     },

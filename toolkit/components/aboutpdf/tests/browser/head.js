@@ -44,6 +44,10 @@ function promisePickerShown() {
   });
 }
 
+function resetPdfNotificationPrefs() {
+  Services.prefs.clearUserPref("pdfjs.featuresNotificationImpressionCount");
+}
+
 function getAboutPDFActor(tab) {
   return tab.linkedBrowser.browsingContext.currentWindowGlobal.getActor(
     "AboutPDF"
