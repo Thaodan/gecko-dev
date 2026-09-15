@@ -2643,6 +2643,11 @@ smart_window:
         unit: tabs
         description: >
           How many tabs were sent in the request.
+      threshold:
+        type: string
+        description: >
+          Minimum relevance a tab must reach to be selected as context.
+          A string. One of: low, medium or high.
 
   form_relevant_tabs_response:
     type: event
@@ -2685,8 +2690,9 @@ smart_window:
         description: >
           Number of those tabs that were actually included as context.
           Lower than tabs_selected when the model repeated a tab, named
-          one that was never offered, or picked more than the client accepts.
-          Absent when the request failed.
+          one that was never offered, rated a tab below the relevance
+          threshold, or picked more than the client accepts. Absent when
+          the request failed.
       tabs_high:
         type: quantity
         unit: tabs
