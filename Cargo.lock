@@ -1380,6 +1380,7 @@ dependencies = [
  "rust_minidump_writer_linux",
  "thiserror 2.0.12",
  "uuid",
+ "win32_process_mitigations",
  "windows-sys",
 ]
 

@@ -11,9 +11,18 @@ use super::{
 mod linux;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub(crate) use linux::get_auxv_info;
+#[cfg(any(target_os = "android", target_os = "linux"))]
+use linux::create_platform_specific_annotations;
+
+#[cfg(any(target_os = "ios", target_os = "macos"))]
+mod macos;
+#[cfg(any(target_os = "ios", target_os = "macos"))]
+use macos::create_platform_specific_annotations;
 
 #[cfg(target_os = "windows")]
 mod windows;
+#[cfg(target_os = "windows")]
+use windows::create_platform_specific_annotations;
 
 use anyhow::{Context, Result};
 use crash_helper_common::{
@@ -180,9 +189,16 @@ fn make_error_annotation(error: impl std::fmt::Display) -> CAnnotation {
 static STATIC_ANNOTATIONS: OnceLock<Vec<CAnnotation>> = OnceLock::new();
 
 /// Initialize if needed the static annotations that will get included in every crash report.
+///
+/// Any potential error will be recorded as an annotation rather than returned.
 pub(crate) fn initialize_static_annotations(app_info: &ApplicationInfo) {
     let _ = STATIC_ANNOTATIONS.get_or_init(|| {
-        required_annotations(app_info)
+        let mut annotations = required_annotations(app_info);
+        match create_platform_specific_annotations(app_info) {
+            Ok(mut platform_annotations) => annotations.append(&mut platform_annotations),
+            Err(error) => annotations.push(make_error_annotation(error)),
+        }
+        annotations
     });
 }
 
