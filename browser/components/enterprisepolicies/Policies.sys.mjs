@@ -31,10 +31,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ProxyPolicies: "resource:///modules/policies/ProxyPolicies.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
-  ContextualIdentityService:
-    "moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs",
-  EphemeralContainerWatcher:
-    "resource:///modules/policies/EphemeralContainerWatcher.sys.mjs",
   WebsiteFilter: "resource:///modules/policies/WebsiteFilter.sys.mjs",
   LaunchOnLogin: "resource://gre/modules/LaunchOnLogin.sys.mjs",
 
@@ -3614,25 +3610,8 @@ export var Policies = {
       return features;
     },
 
-    // When no policy is provided we just default to an empty set which allows us
-    // to clean up containers.
-    onMissing() {
-      return [];
-    },
-
     onBeforeAddons(manager, params) {
-      const policyContainerMap = new Map();
-      const cis = lazy.ContextualIdentityService;
-
-      for (const identity of cis.getPolicyIdentities()) {
-        policyContainerMap.set(identity.policyId, identity.userContextId);
-      }
-
-      const unseenContainers = new Set(policyContainerMap.values());
-
       const sitePolicies = [];
-      let hasContainerPolicy = false;
-      const ephemeralUserContextIds = new Set();
 
       for (const policies of params) {
         const matches = policies.Match ?? [];
@@ -3667,55 +3646,14 @@ export var Policies = {
           }
         }
 
-        const features = this.featuresForPolicies(policies.Policies);
-
-        if ("Container" in policies.Policies) {
-          const containerId = policies.Policies.Container.id;
-          let userContextId = policyContainerMap.get(containerId);
-
-          if (!userContextId) {
-            userContextId = cis.createForPolicy(containerId).userContextId;
-            policyContainerMap.set(containerId, userContextId);
-          } else {
-            unseenContainers.delete(userContextId);
-          }
-
-          features.container = userContextId;
-          hasContainerPolicy = true;
-
-          if (policies.Policies.Container.ephemeral) {
-            ephemeralUserContextIds.add(userContextId);
-          }
-        }
-
         sitePolicies.push({
           match: new MatchPatternSet(matchPatterns),
           exceptions: new MatchPatternSet(exceptionPatterns),
-          features,
+          features: this.featuresForPolicies(policies.Policies),
         });
       }
 
       manager.updateSitePolicies(sitePolicies);
-
-      for (const userContextId of unseenContainers) {
-        cis.removePolicyIdentity(userContextId);
-      }
-
-      if (hasContainerPolicy) {
-        lazy.PoliciesUtils.setAndLockPref("privacy.userContext.enabled", true);
-        lazy.PoliciesUtils.setAndLockPref(
-          "privacy.containers.switchDuringNavigation.enabled",
-          true
-        );
-
-        if (ephemeralUserContextIds.size > 0) {
-          lazy.EphemeralContainerWatcher.init(ephemeralUserContextIds);
-        } else {
-          lazy.EphemeralContainerWatcher.destroy();
-        }
-      } else {
-        lazy.EphemeralContainerWatcher.destroy();
-      }
     },
   },
 
