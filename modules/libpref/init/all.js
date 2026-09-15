@@ -3671,7 +3671,7 @@ pref("browser.ml.pageExtractor.headlessTimeoutMs", 15000);
 
 // Extract video metadata and the transcript from YouTube watch pages during
 // page extraction.
-pref("browser.pageextractor.youtube.enabled", true);
+pref("browser.pageextractor.youtube.enabled", false);
 
 // How long, in milliseconds, to wait for the YouTube transcript panel to render
 // after it is opened before giving up and returning metadata alone.
