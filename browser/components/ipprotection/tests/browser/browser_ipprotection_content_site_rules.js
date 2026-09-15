@@ -57,9 +57,9 @@ function getSiteRuleStatusIcon(content) {
 
 /**
  * openPanel() applies its state before showing(), which then recomputes
- * siteData from the loaded tab - and #getSiteData currently hardcodes
- * isInclusion to false (Bug 2066802). Re-apply the state once the panel is up
- * so the injected siteData survives.
+ * siteData from the loaded tab. Re-apply the state once the panel is up so the
+ * injected siteData survives, for the cases that exercise the rendering rather
+ * than the rule lookup.
  *
  * @param {object} state
  *  The panel state to apply.
