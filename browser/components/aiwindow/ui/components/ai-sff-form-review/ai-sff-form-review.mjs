@@ -51,9 +51,12 @@ export class AiSffFormReview extends MozLitElement {
   };
 
   static queries = {
-    stateSection: ".form-review-dialog",
+    firstReviewField: "moz-input-text",
     reviewFields: ".form-review-fields",
+    stopButton: ".form-review-stop",
+    closeButton: ".form-review-close",
     jumpButton: ".form-review-jump-to-bottom-button",
+    retryButton: ".form-review-retry",
   };
 
   /**
@@ -102,8 +105,8 @@ export class AiSffFormReview extends MozLitElement {
    *
    * @returns {void}
    */
-  async firstUpdated() {
-    await this.#focusCurrentState();
+  firstUpdated() {
+    this.#focusCurrentState();
     this.dispatchEvent(
       new CustomEvent(FORM_REVIEW_READY_EVENT, {
         bubbles: true,
@@ -121,29 +124,16 @@ export class AiSffFormReview extends MozLitElement {
   updated(changedProperties) {
     super.updated(changedProperties);
 
-    const stateChanged = changedProperties.has("state");
-    const retryCompleted =
-      this.state === FORM_REVIEW_STATES.FINAL &&
-      changedProperties.get("filling") === true &&
-      !this.filling;
-
-    if (!stateChanged && !retryCompleted) {
+    if (!changedProperties.has("state")) {
       return;
     }
 
-    if (stateChanged && this.state === FORM_REVIEW_STATES.PROGRESS) {
+    if (this.state === FORM_REVIEW_STATES.PROGRESS) {
       this.#retryUsed = false;
       this.#reviewedAllFields = false;
     }
 
-    if (changedProperties.get("state") !== undefined || retryCompleted) {
-      this.#focusCurrentState();
-    }
-
-    if (!stateChanged) {
-      return;
-    }
-
+    this.#focusCurrentState();
     this.#updateScrollListeners();
     this.#observeReviewFields();
   }
@@ -202,25 +192,40 @@ export class AiSffFormReview extends MozLitElement {
   }
 
   /**
-   * Focuses the current state after its accessible text is localized.
+   * Focuses the primary control for the current state.
+   *
+   * @returns {void}
+   */
+  #focusCurrentState() {
+    // TODO Bug 2062498 - Ensure screen readers announce context for each state
+    switch (this.state) {
+      case FORM_REVIEW_STATES.PROGRESS:
+        this.stopButton?.focus();
+        break;
+      case FORM_REVIEW_STATES.REVIEW:
+        this.#focusFirstReviewField();
+        break;
+      case FORM_REVIEW_STATES.FINAL:
+        (this.retryButton ?? this.closeButton)?.focus();
+        break;
+    }
+  }
+
+  /**
+   * Focuses the first review field after its internal input is rendered.
    *
    * @returns {Promise<void>}
    */
-  async #focusCurrentState() {
-    const section = this.stateSection;
-    const state = this.state;
-    if (!section) {
+  async #focusFirstReviewField() {
+    const field = this.firstReviewField;
+    if (!field) {
       return;
     }
 
-    await this.ownerDocument.l10n?.translateFragment(section);
+    await field.updateComplete;
 
-    if (
-      section.isConnected &&
-      this.state === state &&
-      this.stateSection === section
-    ) {
-      section.focus();
+    if (this.state === FORM_REVIEW_STATES.REVIEW && field.isConnected) {
+      field.focus();
     }
   }
 
@@ -458,7 +463,6 @@ export class AiSffFormReview extends MozLitElement {
     return html`
       <section
         class="form-review-dialog vertical-layout"
-        tabindex="-1"
         aria-labelledby="form-review-heading"
         aria-describedby="form-review-description"
       >
@@ -520,7 +524,6 @@ export class AiSffFormReview extends MozLitElement {
     return html`
       <section
         class="form-review-progress form-review-dialog"
-        tabindex="-1"
         aria-labelledby="form-review-progress-label"
       >
         <div class="form-review-progress-group">
@@ -585,7 +588,6 @@ export class AiSffFormReview extends MozLitElement {
     return html`
       <section
         class="form-review-dialog vertical-layout"
-        tabindex="-1"
         aria-labelledby="form-review-final-heading"
         aria-describedby="form-review-final-description"
       >
