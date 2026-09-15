@@ -2,7 +2,7 @@
 
 This directory contains files used in gecko builds from FFmpeg
 (http://ffmpeg.org). The current files are from FFmpeg as of
-revision 9917308cc209a885c6870f0345905104c6ea8799
+FFmpeg release 9.0.1
 
 All source files match their path from the library's source archive.
 
@@ -162,3 +162,8 @@ Finally, apply the patches:
   neither, so multichannel Vorbis plays with its channels permuted
   (bug 1991957). Drop this patch if it is ever fixed upstream.
 - av1_tilesize.patch to clean up av1 tile handling
+- vp8dsp-nasm-2.14-compat.patch to restore the `%if`-based register counts in
+  `put_vp8_epel*_h6`/`_h4`. Upstream folded them into inline expressions, but
+  nasm cannot parse a relational operator inside parentheses until 2.15, and
+  our minimum supported nasm (used by the base-toolchains builds) is 2.14.02.
+  Drop this patch once that minimum is raised past 2.15.
