@@ -337,8 +337,8 @@ function _RouteMessage(action, options) {
  * AlsoToMain - Creates a message that will be dispatched locally and also sent to the Main process.
  *
  * @param  {object} action Any redux action (required)
- * @param  {string} fromTarget The id of the content port from which the action originated. (optional)
- * @param  {boolean} skipLocal Used by OnlyToMain to skip the main reducer
+ * @param  {string} [fromTarget] The id of the content port from which the action originated.
+ * @param  {boolean} [skipLocal] Used by OnlyToMain to skip the main reducer
  * @return {object} An action with added .meta properties
  */
 function AlsoToMain(action, fromTarget, skipLocal) {
@@ -354,7 +354,7 @@ function AlsoToMain(action, fromTarget, skipLocal) {
  * OnlyToMain - Creates a message that will be sent to the Main process and skip the local reducer.
  *
  * @param  {object} action Any redux action (required)
- * @param  {string} fromTarget The id of the content port from which the action originated. (optional)
+ * @param  {string} [fromTarget] The id of the content port from which the action originated.
  * @return {object} An action with added .meta properties
  */
 function OnlyToMain(action, fromTarget) {
