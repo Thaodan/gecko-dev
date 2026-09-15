@@ -1821,7 +1821,17 @@ void CacheIndex::WriteIndexToDisk(const StaticMutexAutoLock& aProofOfLock) {
 
   ChangeState(WRITING, aProofOfLock);
 
-  mProcessEntries = mIndexStats.ActiveEntriesCount();
+  mRWEntries.Clear();
+  mRWEntries.SetCapacity(mIndexStats.ActiveEntriesCount());
+  for (auto iter = mIndex.Iter(); !iter.Done(); iter.Next()) {
+    CacheIndexEntry* entry = iter.Get();
+    if (entry->IsRemoved() || !entry->IsInitialized() || entry->IsFileEmpty()) {
+      continue;
+    }
+    mRWEntries.AppendElement(entry);
+  }
+  MOZ_ASSERT(mRWEntries.Length() == mIndexStats.ActiveEntriesCount());
+  mProcessEntries = static_cast<uint32_t>(mRWEntries.Length());
 
   mIndexFileOpener = new FileOpenHelper(this);
   rv = CacheFileIOManager::OpenFile(
@@ -1892,37 +1902,23 @@ void CacheIndex::WriteRecords(const StaticMutexAutoLock& aProofOfLock) {
   uint32_t hashOffset = mRWBufPos;
 
   char* buf = mRWBuf + mRWBufPos;
-  uint32_t skip = mSkipEntries;
   uint32_t processMax = (mRWBufSize - mRWBufPos) / sizeof(CacheIndexRecord);
   MOZ_ASSERT(processMax != 0 ||
              mProcessEntries ==
                  0);  // TODO make sure we can write an empty index
   uint32_t processed = 0;
-#ifdef DEBUG
-  bool hasMore = false;
-#endif
-  for (auto iter = mIndex.Iter(); !iter.Done(); iter.Next()) {
-    CacheIndexEntry* entry = iter.Get();
-    if (entry->IsRemoved() || !entry->IsInitialized() || entry->IsFileEmpty()) {
-      continue;
-    }
-
-    if (skip) {
-      skip--;
-      continue;
-    }
-
+  for (uint32_t i = mSkipEntries; i < mRWEntries.Length(); ++i) {
     if (processed == processMax) {
-#ifdef DEBUG
-      hasMore = true;
-#endif
       break;
     }
 
-    entry->WriteToBuf(buf);
+    mRWEntries[i]->WriteToBuf(buf);
     buf += sizeof(CacheIndexRecord);
     processed++;
   }
+#ifdef DEBUG
+  bool hasMore = mSkipEntries + processed < mRWEntries.Length();
+#endif
 
   MOZ_ASSERT(mRWBufPos != static_cast<uint32_t>(buf - mRWBuf) ||
              mProcessEntries == 0);
@@ -1977,6 +1973,9 @@ void CacheIndex::FinishWrite(bool aSucceeded,
   mIndexHandle = nullptr;
   mRWHash = nullptr;
   ReleaseBuffer();
+  // ReleaseBuffer() keeps the buffer while a write is still pending, but the
+  // entries below are about to be removed from mIndex.
+  mRWEntries.Clear();
 
   if (aSucceeded) {
     // Opening of the file must not be in progress if writing succeeded.
@@ -3486,6 +3485,7 @@ void CacheIndex::ReleaseBuffer() {
   mRWBuf = nullptr;
   mRWBufSize = 0;
   mRWBufPos = 0;
+  mRWEntries.Clear();
 }
 
 void CacheIndex::FrecencyStorage::AppendRecord(
