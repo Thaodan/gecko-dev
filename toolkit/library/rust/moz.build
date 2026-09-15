@@ -36,6 +36,9 @@ if CONFIG["TARGET_OS"] in ("WINNT", "OSX"):
     RUST_TESTS += ["nmhproxy"]
 if CONFIG["TARGET_OS"] == "WINNT":
     RUST_TESTS += ["win32_process_mitigations"]
+else:
+    # Windows linker pulls in FFI symbols despite them not being relevant for the tests.
+    RUST_TESTS += ["crash_helper_server"]
 
 RUST_TEST_FEATURES.append("crashreporter/mock")
 

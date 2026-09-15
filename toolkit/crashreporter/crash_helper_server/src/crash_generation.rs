@@ -27,7 +27,7 @@ use num_traits::FromPrimitive;
 use std::{
     collections::HashMap,
     convert::TryInto,
-    ffi::{c_void, CStr, CString, OsStr, OsString},
+    ffi::{c_void, CString, OsStr, OsString},
     fs::File,
     io::{Seek, SeekFrom, Write},
     mem::size_of,
@@ -130,10 +130,10 @@ impl CrashGenerator {
         let global_annotations = self.retrieve_main_process_annotations();
         let annotations = retrieve_annotations(&process_id, origin);
         let annotations = [
-            (STATIC_ANNOTATIONS.get().map(Clone::clone), c"ShouldNotFail"),
-            (global_annotations.ok(), c"MissingMainProcessAnnotations"),
-            (annotations.ok(), c"MissingChildProcessAnnotations"),
-            (Some(extra_annotations), c"ShouldNotFail"),
+            STATIC_ANNOTATIONS.get().cloned().context("MissingStaticAnnotations"),
+            global_annotations.context("MissingMainProcessAnnotations"),
+            annotations.context("MissingChildProcessAnnotations"),
+            Ok(extra_annotations),
         ]
         .into_iter()
         .fold(HashMap::new(), fold_annotations);
@@ -171,6 +171,10 @@ fn make_annotation(id: CrashAnnotation, data: &str) -> CAnnotation {
         id: id as u32,
         data: AnnotationData::String(CString::new(data).expect("Should be a valid C string")),
     }
+}
+
+fn make_error_annotation(error: impl std::fmt::Display) -> CAnnotation {
+    make_annotation(CrashAnnotation::DumperError, &format!("{}", error))
 }
 
 static STATIC_ANNOTATIONS: OnceLock<Vec<CAnnotation>> = OnceLock::new();
@@ -334,21 +338,19 @@ fn retrieve_annotations(
 /// *as the `DumperError` annotation* should the source not be available.
 fn fold_annotations(
     mut merged: HashMap<u32, AnnotationData>,
-    to_merge: (Option<Vec<CAnnotation>>, &CStr),
+    to_merge: Result<Vec<CAnnotation>>,
 ) -> HashMap<u32, AnnotationData> {
+
+    let mut merge_annotation = |annotation: CAnnotation| {
+        let _ = merged.insert(annotation.id, annotation.data);
+    };
+
     match to_merge {
-        (Some(annotations), _) => annotations
+        Ok(annotations) => annotations
             .into_iter()
             .filter(|annotation| !matches!(annotation.data, AnnotationData::Empty))
-            .for_each(|annotation| {
-                let _ = merged.insert(annotation.id, annotation.data);
-            }),
-        (None, err) => {
-            merged.insert(
-                CrashAnnotation::DumperError as u32,
-                AnnotationData::String(err.to_owned()),
-            );
-        }
+            .for_each(merge_annotation),
+        Err(err) => merge_annotation(make_error_annotation(err)),
     }
     merged
 }
@@ -443,5 +445,43 @@ fn hex_digit_as_ascii_char(value: u8) -> u8 {
         b'0' + value
     } else {
         b'a' + (value - 10)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn fold_annotations_trivial() {
+        let annotations = vec![
+            make_annotation(CrashAnnotation::ProductName, "Firefox"),
+            make_annotation(CrashAnnotation::Vendor, "Mozilla"),
+        ];
+
+        let merged = fold_annotations(HashMap::new(), Ok(annotations));
+
+        assert_eq!(merged.len(), 2);
+        assert_eq!(
+            merged.get(&(CrashAnnotation::ProductName as u32)),
+            Some(&AnnotationData::String(CString::new("Firefox").unwrap()))
+        );
+        assert_eq!(
+            merged.get(&(CrashAnnotation::Vendor as u32)),
+            Some(&AnnotationData::String(CString::new("Mozilla").unwrap()))
+        );
+    }
+
+    #[test]
+    fn fold_annotations_error() {
+        let merged = fold_annotations(HashMap::new(), None.context("MissingMainProcessAnnotations"));
+
+        assert_eq!(merged.len(), 1);
+        assert_eq!(
+            merged.get(&(CrashAnnotation::DumperError as u32)),
+            Some(&AnnotationData::String(
+                CString::new("MissingMainProcessAnnotations").unwrap()
+            ))
+        );
     }
 }
