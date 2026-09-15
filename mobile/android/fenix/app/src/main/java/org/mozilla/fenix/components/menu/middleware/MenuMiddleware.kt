@@ -12,24 +12,37 @@ import mozilla.components.compose.menu.store.MenuAction.Init
 import mozilla.components.compose.menu.store.MenuAction.Update
 import mozilla.components.compose.menu.store.MenuState
 import mozilla.components.compose.menu.store.MenuStore
+import mozilla.components.feature.ipprotection.store.IPProtectionAction
+import mozilla.components.feature.ipprotection.store.IPProtectionStore
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
+import mozilla.telemetry.glean.private.NoExtras
+import org.mozilla.fenix.GleanMetrics.Vpn
+import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
+import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppAction.ReaderViewAction
 import org.mozilla.fenix.components.menu.BrowserMenuBuilder
+import org.mozilla.fenix.components.menu.store.IPProtectionMenuStatus
 import org.mozilla.fenix.components.menu.store.MenuAction.CustomizeReaderView
+import org.mozilla.fenix.components.menu.store.MenuAction.IPProtectionToggle
+import org.mozilla.fenix.components.menu.store.MenuAction.Navigate
+import org.mozilla.fenix.components.menu.toMenuState
+import org.mozilla.fenix.ext.nav
 
 /**
  * [MenuStore] middleware handling all user interactions.
  *
  * @param appStore [AppStore] for syncing with other application features
+ * @param ipProtectionStore [IPProtectionStore] used to read the current status and to toggle IP protection.
  * @param browserMenuBuilder [BrowserMenuBuilder] providing the menu to show, kept up to date.
  * @param navController [NavController] for navigating to other screens.
  * @param scope [CoroutineScope] used for running long running operations in background.
  */
 class MenuMiddleware(
     private val appStore: AppStore,
+    private val ipProtectionStore: IPProtectionStore,
     private val browserMenuBuilder: BrowserMenuBuilder,
     private val navController: NavController,
     private val scope: CoroutineScope,
@@ -41,11 +54,18 @@ class MenuMiddleware(
         action: MenuAction,
     ) {
         when (action) {
-            is Init -> observeMenu(store)
+            is Init -> observeMenuStructureUpdates(store)
 
             is CustomizeReaderView -> {
                 dismissMenu()
                 appStore.dispatch(ReaderViewAction.ReaderViewControlsShown)
+            }
+
+            is IPProtectionToggle -> handleIPProtectionToggle()
+
+            is Navigate.IPProtectionSettings -> {
+                Vpn.settingsPageTapped.record(Vpn.SettingsPageTappedExtra(entrypoint = "Menu"))
+                navigateToIPProtectionSettings()
             }
 
             else -> {
@@ -56,7 +76,38 @@ class MenuMiddleware(
         next(action)
     }
 
-    private fun observeMenu(store: Store<MenuState, MenuAction>) = scope.launch {
+    /** The menu is deliberately left open while connecting, so that the user can see the status change. */
+    private fun handleIPProtectionToggle() {
+        when (ipProtectionStore.state.toMenuState().status) {
+            IPProtectionMenuStatus.Disabled -> {
+                Vpn.menuTurnedOn.record()
+                ipProtectionStore.dispatch(IPProtectionAction.Toggle)
+            }
+
+            IPProtectionMenuStatus.Enabled -> {
+                Vpn.menuTurnedOff.record()
+                ipProtectionStore.dispatch(IPProtectionAction.Toggle)
+            }
+
+            IPProtectionMenuStatus.AuthRequired -> {
+                Vpn.menuTryItTapped.record(NoExtras())
+                navigateToIPProtectionSettings()
+            }
+
+            IPProtectionMenuStatus.Activating,
+            IPProtectionMenuStatus.DataLimitReached,
+            IPProtectionMenuStatus.ConnectionError -> ipProtectionStore.dispatch(IPProtectionAction.Toggle)
+        }
+    }
+
+    private fun navigateToIPProtectionSettings() {
+        navController.nav(
+            navController.currentDestination?.id,
+            NavGraphDirections.actionGlobalIpProtectionFragment(entrypoint = FenixFxAEntryPoint.IPProtectionMainMenu),
+        )
+    }
+
+    private fun observeMenuStructureUpdates(store: Store<MenuState, MenuAction>) = scope.launch {
         browserMenuBuilder.menuStructure.collect { store.dispatch(Update(it)) }
     }
 

@@ -154,6 +154,9 @@ sealed class MenuAction : MenuEvent {
      */
     data class UpdateIPProtectionMenuState(val state: IPProtectionMenuState) : MenuAction()
 
+    /** [MenuAction] dispatched when the user clicks the IP protection menu item. */
+    data object IPProtectionToggle : MenuAction()
+
     /** [MenuAction] dispatched when a navigation event occurs for a specific destination. */
     sealed class Navigate : MenuAction() {
 

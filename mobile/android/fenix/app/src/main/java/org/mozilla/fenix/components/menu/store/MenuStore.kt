@@ -107,6 +107,7 @@ private fun reducer(state: MenuState, action: MenuAction): MenuState {
             }
 
         is MenuAction.UpdateIPProtectionMenuState -> state.copy(ipProtectionMenuState = action.state)
+        is MenuAction.IPProtectionToggle -> state
     }
 }
 

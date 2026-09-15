@@ -5,26 +5,41 @@
 package org.mozilla.fenix.components.menu.middleware
 
 import androidx.navigation.NavController
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.menu.data.MenuItem
 import mozilla.components.compose.menu.data.MenuItemsGroup
 import mozilla.components.compose.menu.data.StandardMenuItem
 import mozilla.components.compose.menu.store.MenuState
 import mozilla.components.compose.menu.store.MenuStore
+import mozilla.components.concept.engine.ipprotection.ServiceState
+import mozilla.components.feature.ipprotection.store.IPProtectionAction
+import mozilla.components.feature.ipprotection.store.IPProtectionStore
+import mozilla.components.feature.ipprotection.store.state.Authorized
+import mozilla.components.feature.ipprotection.store.state.IPProtectionState
+import mozilla.components.feature.ipprotection.store.state.ProxyStatus
+import mozilla.components.support.test.robolectric.testContext
+import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.mozilla.fenix.GleanMetrics.Vpn
+import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
+import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppAction.ReaderViewAction
 import org.mozilla.fenix.components.menu.BrowserMenuBuilder
 import org.mozilla.fenix.components.menu.FenixMenuItem.CustomizeReaderView
@@ -32,8 +47,15 @@ import org.mozilla.fenix.components.menu.MenuItemProvider
 import org.mozilla.fenix.components.menu.MenuPresentationMode.Row
 import org.mozilla.fenix.components.menu.MenuSectionConfiguration
 import org.mozilla.fenix.components.menu.store.MenuAction.CustomizeReaderView as CustomizeReaderViewEvent
+import org.mozilla.fenix.components.menu.store.MenuAction.IPProtectionToggle
+import org.mozilla.fenix.components.menu.store.MenuAction.Navigate
+import org.mozilla.fenix.helpers.FenixGleanTestRule
 
+@OptIn(ExperimentalAndroidComponentsApi::class)
+@RunWith(AndroidJUnit4::class)
 class MenuMiddlewareTest {
+    @get:Rule val gleanRule = FenixGleanTestRule(testContext)
+
     private val appStore: AppStore = mockk { every { dispatch(any()) } just Runs }
     private val navController: NavController = mockk(relaxed = true)
     private val testDispatcher = StandardTestDispatcher()
@@ -76,13 +98,83 @@ class MenuMiddlewareTest {
         }
     }
 
-    private fun createStore(provided: StateFlow<MenuItem?> = MutableStateFlow(readerViewItem)) =
+    @Test
+    fun `GIVEN IP protection is off WHEN handling it being toggled THEN toggle the functionality and keep the menu open`() {
+        val ipProtectionStore = ipProtectionStore(Authorized.Idle)
+        val store = createStore(ipProtectionStore = ipProtectionStore)
+
+        store.dispatch(IPProtectionToggle)
+
+        verify { ipProtectionStore.dispatch(IPProtectionAction.Toggle) }
+        verify(exactly = 0) { navController.popBackStack(any<Int>(), any()) }
+        assertNotNull(Vpn.menuTurnedOn.testGetValue())
+    }
+
+    @Test
+    fun `GIVEN IP protection is on WHEN handling it being toggled THEN toggle the functionality and keep the menu open`() {
+        val ipProtectionStore = ipProtectionStore(Authorized.Active)
+        val store = createStore(ipProtectionStore = ipProtectionStore)
+
+        store.dispatch(IPProtectionToggle)
+
+        verify { ipProtectionStore.dispatch(IPProtectionAction.Toggle) }
+        verify(exactly = 0) { navController.popBackStack(any<Int>(), any()) }
+        assertNotNull(Vpn.menuTurnedOff.testGetValue())
+    }
+
+    @Test
+    fun `GIVEN authentication is needed WHEN handling it being toggled THEN dismiss the menu and open VPN settings`() {
+        val ipProtectionStore = IPProtectionStore(IPProtectionState(serviceStatus = ServiceState.Unauthenticated))
+        val store = createStore(ipProtectionStore = ipProtectionStore)
+
+        store.dispatch(IPProtectionToggle)
+
+        verify {
+            navController.popBackStack(R.id.menuFragment, true)
+            navController.navigate(
+                NavGraphDirections.actionGlobalIpProtectionFragment(
+                    entrypoint = FenixFxAEntryPoint.IPProtectionMainMenu
+                ),
+                null,
+            )
+        }
+        assertNotNull(Vpn.menuTryItTapped.testGetValue())
+    }
+
+    @Test
+    fun `WHEN handling a navigation to the IP protection settings THEN dismiss the menu and open the VPN settings`() {
+        val store = createStore()
+
+        store.dispatch(Navigate.IPProtectionSettings)
+
+        verify {
+            navController.popBackStack(R.id.menuFragment, true)
+            navController.navigate(
+                NavGraphDirections.actionGlobalIpProtectionFragment(
+                    entrypoint = FenixFxAEntryPoint.IPProtectionMainMenu
+                ),
+                null,
+            )
+        }
+        assertEquals("Menu", Vpn.settingsPageTapped.testGetValue()?.last()?.extra?.get("entrypoint"))
+    }
+
+    private fun ipProtectionStore(proxyStatus: ProxyStatus): IPProtectionStore = mockk {
+        every { state } returns IPProtectionState(proxyStatus = proxyStatus)
+        every { dispatch(any()) } just Runs
+    }
+
+    private fun createStore(
+        provided: StateFlow<MenuItem?> = MutableStateFlow(readerViewItem),
+        ipProtectionStore: IPProtectionStore = ipProtectionStore(Authorized.Idle),
+    ) =
         MenuStore(
             initialState = MenuState(emptyList()),
             middleware =
                 listOf(
                     MenuMiddleware(
                         appStore = appStore,
+                        ipProtectionStore = ipProtectionStore,
                         browserMenuBuilder =
                             BrowserMenuBuilder(
                                 providers = mapOf(CustomizeReaderView to FakeMenuItemProvider(provided)),

@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.map
 import mozilla.components.compose.menu.data.MenuItem
 import mozilla.components.compose.menu.data.MenuItemsGroup
 import org.mozilla.fenix.components.menu.FenixMenuItem.CustomizeReaderView
+import org.mozilla.fenix.components.menu.FenixMenuItem.IPProtection
 import org.mozilla.fenix.components.menu.MenuPresentationMode.Grid
 import org.mozilla.fenix.components.menu.MenuPresentationMode.Row
 
@@ -59,6 +60,7 @@ class BrowserMenuBuilder(
 
     companion object {
         @VisibleForTesting internal val BROWSER_MENU_GROUP_1_ID = "browser_group_1"
+        @VisibleForTesting internal val BROWSER_MENU_GROUP_2_ID = "browser_group_2"
 
         /** The items shown in the browser menu, and how they are laid out. */
         @VisibleForTesting
@@ -68,7 +70,12 @@ class BrowserMenuBuilder(
                     id = BROWSER_MENU_GROUP_1_ID,
                     presentationMode = Row,
                     items = listOf(CustomizeReaderView),
-                )
+                ),
+                MenuSectionConfiguration(
+                    id = BROWSER_MENU_GROUP_2_ID,
+                    presentationMode = Row,
+                    items = listOf(IPProtection),
+                ),
             )
     }
 }

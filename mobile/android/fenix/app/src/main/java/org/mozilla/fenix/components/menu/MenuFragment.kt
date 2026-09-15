@@ -49,6 +49,7 @@ import org.mozilla.fenix.components.menu.compose.MenuHandleState
 import org.mozilla.fenix.components.menu.middleware.MenuMiddleware
 import org.mozilla.fenix.components.menu.middleware.MenuTelemetryMiddleware
 import org.mozilla.fenix.ext.requireComponents
+import org.mozilla.fenix.ipprotection.VpnMenuItemProvider
 import org.mozilla.fenix.theme.FirefoxTheme
 
 private const val EXPANDED_OFFSET = 56
@@ -199,7 +200,12 @@ class MenuFragment : BottomSheetDialogFragment() {
                 ReaderViewMenuItemProvider(
                     browserStore = requireComponents.core.store,
                     scope = viewLifecycleOwner.lifecycle.coroutineScope,
-                )
+                ),
+            FenixMenuItem.IPProtection to
+                VpnMenuItemProvider(
+                    ipProtectionStore = requireComponents.ipProtection.store,
+                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                ),
         )
 
     private fun buildMenuStore(initialState: MenuState) =
@@ -209,6 +215,7 @@ class MenuFragment : BottomSheetDialogFragment() {
                 listOf(
                     MenuMiddleware(
                         appStore = requireComponents.appStore,
+                        ipProtectionStore = requireComponents.ipProtection.store,
                         browserMenuBuilder = BrowserMenuBuilder(providers = buildMenuItemProviders()),
                         navController = findNavController(),
                         scope = viewLifecycleOwner.lifecycle.coroutineScope,

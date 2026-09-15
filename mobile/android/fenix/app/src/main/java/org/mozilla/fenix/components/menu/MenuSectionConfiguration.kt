@@ -8,6 +8,9 @@ package org.mozilla.fenix.components.menu
 sealed interface FenixMenuItem {
     /** A menu item allowing to customize the reader view. */
     data object CustomizeReaderView : FenixMenuItem
+
+    /** A menu item allowing to view the current VPN status or change its configuration. */
+    data object IPProtection : FenixMenuItem
 }
 
 /**
