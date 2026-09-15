@@ -28,11 +28,13 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.UseCases
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppAction.BookmarkAction
+import org.mozilla.fenix.components.appstate.AppAction.FindInPageAction
 import org.mozilla.fenix.components.appstate.AppAction.ReaderViewAction
 import org.mozilla.fenix.components.menu.BrowserMenuBuilder
 import org.mozilla.fenix.components.menu.store.IPProtectionMenuStatus
 import org.mozilla.fenix.components.menu.store.MenuAction.AddBookmark
 import org.mozilla.fenix.components.menu.store.MenuAction.CustomizeReaderView
+import org.mozilla.fenix.components.menu.store.MenuAction.FindInPage
 import org.mozilla.fenix.components.menu.store.MenuAction.IPProtectionToggle
 import org.mozilla.fenix.components.menu.store.MenuAction.Navigate
 import org.mozilla.fenix.components.menu.toMenuState
@@ -89,6 +91,11 @@ class MenuMiddleware(
 
             is Navigate.EditBookmark -> {
                 navigateToEditBookmark(action.guidToEdit)
+            }
+
+            is FindInPage -> {
+                dismissMenu()
+                appStore.dispatch(FindInPageAction.FindInPageStarted)
             }
 
             else -> {

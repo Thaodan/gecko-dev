@@ -13,6 +13,7 @@ import mozilla.components.compose.menu.data.MenuItem
 import mozilla.components.compose.menu.data.MenuItemsGroup
 import org.mozilla.fenix.components.menu.FenixMenuItem.Bookmark
 import org.mozilla.fenix.components.menu.FenixMenuItem.CustomizeReaderView
+import org.mozilla.fenix.components.menu.FenixMenuItem.FindInPage
 import org.mozilla.fenix.components.menu.FenixMenuItem.IPProtection
 import org.mozilla.fenix.components.menu.MenuPresentationMode.Grid
 import org.mozilla.fenix.components.menu.MenuPresentationMode.Row
@@ -81,7 +82,7 @@ class BrowserMenuBuilder(
                 MenuSectionConfiguration(
                     id = BROWSER_MENU_GROUP_3_ID,
                     presentationMode = Row,
-                    items = listOf(Bookmark),
+                    items = listOf(Bookmark, FindInPage),
                 ),
             )
     }

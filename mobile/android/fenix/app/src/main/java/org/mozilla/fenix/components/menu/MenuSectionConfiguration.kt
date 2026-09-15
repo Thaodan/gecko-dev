@@ -14,6 +14,9 @@ sealed interface FenixMenuItem {
 
     /** A menu item allowing to bookmark the current page, or to edit the bookmark it already has. */
     data object Bookmark : FenixMenuItem
+
+    /** A menu item allowing to start the find in page feature. */
+    data object FindInPage : FenixMenuItem
 }
 
 /**

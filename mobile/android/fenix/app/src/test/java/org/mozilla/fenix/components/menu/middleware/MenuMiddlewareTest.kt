@@ -48,6 +48,7 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.UseCases
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppAction.BookmarkAction
+import org.mozilla.fenix.components.appstate.AppAction.FindInPageAction
 import org.mozilla.fenix.components.appstate.AppAction.ReaderViewAction
 import org.mozilla.fenix.components.bookmarks.BookmarksUseCase
 import org.mozilla.fenix.components.menu.BrowserMenuBuilder
@@ -57,6 +58,7 @@ import org.mozilla.fenix.components.menu.MenuPresentationMode.Row
 import org.mozilla.fenix.components.menu.MenuSectionConfiguration
 import org.mozilla.fenix.components.menu.store.MenuAction.AddBookmark
 import org.mozilla.fenix.components.menu.store.MenuAction.CustomizeReaderView as CustomizeReaderViewEvent
+import org.mozilla.fenix.components.menu.store.MenuAction.FindInPage
 import org.mozilla.fenix.components.menu.store.MenuAction.IPProtectionToggle
 import org.mozilla.fenix.components.menu.store.MenuAction.Navigate
 import org.mozilla.fenix.components.metrics.MetricsUtils
@@ -230,6 +232,18 @@ class MenuMiddlewareTest {
         store.dispatch(Navigate.EditBookmark(guidToEdit = null))
 
         verify(exactly = 0) { navController.navigate(any<NavDirections>(), any<NavOptions>()) }
+    }
+
+    @Test
+    fun `WHEN handling the find in page feature being started THEN dismiss the menu and start searching in the current page`() {
+        val store = createStore()
+
+        store.dispatch(FindInPage)
+
+        verify {
+            navController.popBackStack(R.id.menuFragment, true)
+            appStore.dispatch(FindInPageAction.FindInPageStarted)
+        }
     }
 
     private fun ipProtectionStore(proxyStatus: ProxyStatus): IPProtectionStore = mockk {
