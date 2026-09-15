@@ -197,6 +197,16 @@ std::vector<int32_t> StreamingSession::feed_mel_chunk(const std::vector<float>& 
         state_.last_token = -1;     // SOS sentinel (nothing emitted yet)
         state_.have_token = false;
         tokens_since_boundary_ = 0;
+        // Drop the encoder cache too, as NeMo's reset_state() does. The comment
+        // above used to reset the decoder only, on the grounds that the cache
+        // made no difference to the decoded tokens; that holds while speech
+        // keeps coming, but not when an utterance is followed by silence. The
+        // cache still carries the utterance's right context, so the joint keeps
+        // scoring its last word over the silence frames and the decoder, back
+        // at SOS, emits that word again on every chunk - one result per chunk,
+        // for as long as the caller stays quiet. The caches only: the caller's
+        // chunk schedule is unchanged, so the step counter keeps running.
+        enc_.reset_caches();
     }
     return emitted;
 }
