@@ -49,7 +49,7 @@ bookmark_sync = { path = "../../../components/places/bookmark_sync", optional = 
 buildid_reader_ffi = { path = "../../buildid_reader/ffi" }
 chardetng_c = "1.0.0"
 audio_thread_priority = { version = "0.37", default-features = false }
-mdns_service = { path="../../../../dom/media/webrtc/transport/mdns_service", optional = true }
+mdns_service = { path="../../../../dom/media/webrtc/transport/mdns_service", features = ["profiler"], optional = true }
 neqo_glue = { path = "../../../../netwerk/socket/neqo_glue" }
 wgpu_bindings = { path = "../../../../gfx/wgpu_bindings" }
 fontations_glue = { path = "../../../../gfx/fontations_glue", optional = true }
