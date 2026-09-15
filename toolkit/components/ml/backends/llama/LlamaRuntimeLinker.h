@@ -106,6 +106,7 @@ namespace mozilla::llama {
   X(char*, parakeet_capi_stream_feed,                                          \
     (parakeet_stream * s, const float* pcm, int n_samples, int* eou_out))      \
   X(char*, parakeet_capi_stream_finalize, (parakeet_stream * s))               \
+  X(int, parakeet_capi_stream_chunk_samples, (parakeet_stream * s))            \
   X(int, parakeet_capi_stream_drain_words,                                     \
     (parakeet_stream * s, parakeet_stream_word * *out_words))                  \
   X(void, parakeet_capi_free_words, (parakeet_stream_word * words, int count)) \

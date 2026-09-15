@@ -42,6 +42,9 @@ typedef struct parakeet_ctx parakeet_ctx;
 //     Added parakeet_capi_stream_drain_events (typed per-event records with
 //     is_eob + timestamps, freed with parakeet_capi_free_events) and an
 //     "events" array in the stream_feed_json / stream_finalize_json documents.
+//
+// v6: added parakeet_capi_stream_chunk_samples, the audio one encoder chunk
+//     spans. Additive.
 int parakeet_capi_abi_version(void);
 
 // Load a GGUF model. Returns an owning context, or NULL on failure.
@@ -218,6 +221,11 @@ char* parakeet_capi_stream_feed(parakeet_stream* s, const float* pcm,
 // (malloc'd; "" if none, NULL on error). After this the running transcript is
 // complete. Does NOT fabricate an <EOU> NeMo's streaming would not emit.
 char* parakeet_capi_stream_finalize(parakeet_stream* s);
+
+// Firefox-local: the audio one mid-stream encoder chunk spans, in 16 kHz
+// samples: feed at most this much per call to get one chunk's events per call
+// (-1 on error).
+int parakeet_capi_stream_chunk_samples(parakeet_stream* s);
 
 // One <EOU>/<EOB> event emitted by the streaming decoder. <EOU> marks the end
 // of a complete utterance (the user yielded the turn); <EOB> marks the end of a

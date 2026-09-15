@@ -1359,14 +1359,19 @@ void SpeechRecognition::HandleRecognitionResultFromBackend(
 
   result->SetFinal(aIsFinal);
 
-  // Streaming backends only emit final results, so prior entries never change.
-  MOZ_ASSERT(aIsFinal);
+  // event.results is every final of the session followed by the interim in
+  // flight, and resultIndex is the lowest changed index.
   uint32_t resultIndex = mRecognitionResults.Length();
-  mRecognitionResults.AppendElement(result);
+  if (aIsFinal) {
+    mRecognitionResults.AppendElement(result);
+  }
 
   RefPtr<SpeechRecognitionResultList> resultList =
       new SpeechRecognitionResultList(this);
   resultList->mItems.AppendElements(mRecognitionResults);
+  if (!aIsFinal) {
+    resultList->mItems.AppendElement(result);
+  }
 
   RootedDictionary<SpeechRecognitionEventInit> init(RootingCx());
   init.mBubbles = true;

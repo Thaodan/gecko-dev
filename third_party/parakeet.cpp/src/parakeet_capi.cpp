@@ -31,7 +31,9 @@
 //     Added stream_drain_events / free_events (typed per-event records) and
 //     the "events" array in the stream_feed_json / stream_finalize_json
 //     documents.
-#define PARAKEET_CAPI_ABI_VERSION 5
+// v6: parakeet_capi_stream_chunk_samples, the audio one encoder chunk spans.
+//     Additive.
+#define PARAKEET_CAPI_ABI_VERSION 6
 
 // The opaque context: a loaded model plus a buffer for the last error message.
 struct parakeet_ctx {
@@ -619,6 +621,14 @@ extern "C" char* parakeet_capi_stream_finalize(parakeet_stream* s) {
         s->ctx->last_error = "unknown error";
         return nullptr;
     }
+}
+
+extern "C" int parakeet_capi_stream_chunk_samples(parakeet_stream* s) {
+    if (!s || !s->sess) return -1;
+    if (!s->ctx || !s->ctx->model) return -1;
+    // A mid-stream chunk is chunk_size() mel frames, each hop_length samples of
+    // audio (the first one is chunk_size_first(), which is smaller).
+    return s->sess->chunk_size() * (int)s->ctx->model->config().hop_length;
 }
 
 extern "C" int parakeet_capi_stream_drain_events(parakeet_stream* s,

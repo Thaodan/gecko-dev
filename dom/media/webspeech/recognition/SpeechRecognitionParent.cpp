@@ -946,12 +946,16 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
       mozilla::llama::LlamaRuntimeLinker::Get();
 
   // parakeet_capi_stream_feed hands new audio to the model (which keeps its
-  // own caches) and returns the text newly committed by this call; a
-  // cache-aware transducer never revises past output, so each committed delta
-  // is emitted as a final result. Forward audio as it arrives; a small floor
+  // own caches) and commits words as it decodes them; a cache-aware transducer
+  // never revises past output. Forward audio as it arrives; a small floor
   // avoids spinning on sub-block wakeups.
   const size_t minFeed = size_t(0.01 * PARAKEET_SAMPLE_RATE);  // 10 ms
-  const size_t maxFeed = size_t(PARAKEET_SAMPLE_RATE);         // 1 s
+  // One encoder chunk at most per call: a bigger block decodes several chunks
+  // and reports their <EOU>s as one flag, merging two utterances into one
+  // result.
+  const int chunkSamples = lib->parakeet_capi_stream_chunk_samples(mCapiStream);
+  MOZ_ASSERT(chunkSamples != -1);
+  const size_t maxFeed = AssertedCast<size_t>(chunkSamples);
 
   // Strip inline <...> markers (e.g. nemotron <en-US> language tags).
   auto stripTags = [](nsCString& aText) {
@@ -994,43 +998,55 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
         }));
   };
 
-  // Drain the words the model finalized this step. They are already grouped at
-  // word boundaries and carry per-word timing + confidence. Emit them as a
-  // single final result with the mean confidence; the per-word timestamps are
-  // logged (kept engine-internal — the Web Speech result has no per-word timing
-  // field).
-  auto emitFinalizedWords = [&]() {
+  // The utterance being spoken, accumulated until it ends: the model commits
+  // words several times over, and the API wants one result for the lot.
+  nsCString utterance;
+  float confSum = 0.0f;
+  int wordCount = 0;
+
+  auto meanConfidence = [&]() {
+    return wordCount ? confSum / float(wordCount) : 1.0f;
+  };
+
+  // Drain the words committed this step into the utterance, and return how
+  // many. Their timings only reach the profiler: a result has no room for them.
+  auto drainWords = [&]() {
     parakeet_stream_word* words = nullptr;
     int n = lib->parakeet_capi_stream_drain_words(mCapiStream, &words);
-    int32_t counted = 0;
-    if (n > 0) {
-      nsCString text;
-      float confSum = 0.0f;
-      for (int i = 0; i < n; ++i) {
-        nsCString w(words[i].text ? words[i].text : "");
-        stripTags(w);  // drop any inline <lang> markers
-        w.Trim(" \t\n\r");
-        if (w.IsEmpty()) {
-          continue;
-        }
-        if (!text.IsEmpty()) {
-          text.Append(' ');
-        }
-        text.Append(w);
-        confSum += words[i].conf;
-        ++counted;
-        profiler_add_marker("parakeet word",
-                            geckoprofiler::category::MEDIA_PLAYBACK, {},
-                            ParakeetWordMarker{}, w, words[i].start,
-                            words[i].end, words[i].conf);
-        LOGV("  word '{}' [{:.2f}-{:.2f}] conf={:.2f}", w.get(), words[i].start,
-             words[i].end, words[i].conf);
+    int32_t added = 0;
+    for (int i = 0; i < n; ++i) {
+      nsCString w(words[i].text ? words[i].text : "");
+      stripTags(w);       // drop any inline <lang> markers
+      w.Trim(" \t\n\r");  // the token carries its own spacing; joined with one
+                          // below
+      if (w.IsEmpty()) {
+        continue;
       }
-      emit(text, /* isFinal */ true, counted ? confSum / counted : 1.0f,
-           CaptureTimeForPosition(mProcessedAudioPos), counted);
+      if (!utterance.IsEmpty()) {
+        utterance.Append(' ');
+      }
+      utterance.Append(w);
+      confSum += words[i].conf;
+      ++wordCount;
+      ++added;
+      profiler_add_marker(
+          "parakeet word", geckoprofiler::category::MEDIA_PLAYBACK, {},
+          ParakeetWordMarker{}, w, words[i].start, words[i].end, words[i].conf);
+      LOGV("  word '{}' [{:.2f}-{:.2f}] conf={:.2f}", w.get(), words[i].start,
+           words[i].end, words[i].conf);
     }
     lib->parakeet_capi_free_words(words, n > 0 ? n : 0);
-    return counted;
+    return added;
+  };
+
+  auto flushUtterance = [&]() {
+    // emit() ignores an empty transcript, so an utterance that committed
+    // nothing is not reported as a result.
+    emit(utterance, /* isFinal */ true, meanConfidence(),
+         CaptureTimeForPosition(mProcessedAudioPos), wordCount);
+    utterance.Truncate();
+    confSum = 0.0f;
+    wordCount = 0;
   };
 
   nsTArray<float> chunk;
@@ -1052,13 +1068,13 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
     // Dump audio for debugging
     mRecognitionAudioDumper.Write(chunk.Elements(), chunk.Length());
 
-    int eou = 0;
+    int events = 0;
     // The marker interval is the inference compute time; the text records the
     // audio fed and how much was queued (the buffering-latency component), so a
     // profile shows the real-time factor and end-to-end latency directly.
     TimeStamp feedStart = TimeStamp::Now();
     char* fed = lib->parakeet_capi_stream_feed(mCapiStream, chunk.Elements(),
-                                               AssertedCast<int>(got), &eou);
+                                               AssertedCast<int>(got), &events);
     if (fed) {
       lib->parakeet_capi_free_string(fed);  // text comes from drain_words
     }
@@ -1077,26 +1093,37 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
           100.0 * got / (PARAKEET_SAMPLE_RATE * computeTime.ToSeconds())));
       ++realtimeFactorCount;
     }
-    int32_t committed = emitFinalizedWords();
+    // Committed words go out as interim results; only the end of an utterance
+    // finalizes them. An <EOB> is a backchannel, not the end of a turn.
+    const bool eou = events & PARAKEET_EVENT_EOU;
+    int32_t committed = drainWords();
     profiler_add_marker(
         "parakeet_capi_stream_feed", geckoprofiler::category::MEDIA_PLAYBACK,
         MarkerOptions(MarkerTiming::Interval(feedStart, feedEnd)),
         ParakeetFeedMarker{}, 1000.0 * double(got) / PARAKEET_SAMPLE_RATE,
         1000.0 * double(available) / PARAKEET_SAMPLE_RATE, totalFedMs,
-        committed, eou != 0);
+        committed, eou);
+    if (committed && !eou) {
+      emit(utterance, /* isFinal */ false, meanConfidence(),
+           CaptureTimeForPosition(mProcessedAudioPos), wordCount);
+    }
+    if (eou) {
+      flushUtterance();
+    }
   }
 
-  // Flush the end-of-stream tail, then emit its finalized words.
+  // Flush the end-of-stream tail, then close the utterance in progress.
   TimeStamp finalizeStart = TimeStamp::Now();
   char* tail = lib->parakeet_capi_stream_finalize(mCapiStream);
   if (tail) {
     lib->parakeet_capi_free_string(tail);
   }
-  int32_t tailWords = emitFinalizedWords();
+  int32_t tailWords = drainWords();
   PROFILER_MARKER_TEXT(
       "parakeet_capi_stream_finalize", MEDIA_PLAYBACK,
       MarkerOptions(MarkerTiming::IntervalUntilNowFrom(finalizeStart)),
       nsFmtCString("{} tail word(s)", tailWords));
+  flushUtterance();
   if (realtimeFactorCount) {
     glean::media_speech_recognition::inference_realtime_factor
         .AccumulateSingleSample(static_cast<uint32_t>(
