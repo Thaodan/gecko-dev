@@ -32,7 +32,7 @@ use std::{
     io::{Seek, SeekFrom, Write},
     mem::size_of,
     path::{Path, PathBuf},
-    sync::Mutex,
+    sync::{Mutex, OnceLock},
 };
 
 pub(crate) struct CrashReport {
@@ -66,7 +66,6 @@ where
     // generation thread, so it needs to be `Send`.
     Self: Send,
 {
-    app_info: ApplicationInfo,
     main_process_handle: ProcessHandle,
     #[allow(unused)]
     minidump_path: OsString,
@@ -78,10 +77,8 @@ impl CrashGenerator {
     pub(crate) fn new(
         main_process_handle: ProcessHandle,
         minidump_path: OsString,
-        build_id: String
     ) -> CrashGenerator {
         CrashGenerator {
-            app_info: ApplicationInfo::new(build_id),
             main_process_handle,
             minidump_path,
             reports_by_pid: HashMap::<Pid, Vec<CrashReport>>::new(),
@@ -133,7 +130,7 @@ impl CrashGenerator {
         let global_annotations = self.retrieve_main_process_annotations();
         let annotations = retrieve_annotations(&process_id, origin);
         let annotations = [
-            (Some(required_annotations(&self.app_info)), c"ShouldNotFail"),
+            (STATIC_ANNOTATIONS.get().map(Clone::clone), c"ShouldNotFail"),
             (global_annotations.ok(), c"MissingMainProcessAnnotations"),
             (annotations.ok(), c"MissingChildProcessAnnotations"),
             (Some(extra_annotations), c"ShouldNotFail"),
@@ -174,6 +171,15 @@ fn make_annotation(id: CrashAnnotation, data: &str) -> CAnnotation {
         id: id as u32,
         data: AnnotationData::String(CString::new(data).expect("Should be a valid C string")),
     }
+}
+
+static STATIC_ANNOTATIONS: OnceLock<Vec<CAnnotation>> = OnceLock::new();
+
+/// Initialize if needed the static annotations that will get included in every crash report.
+pub(crate) fn initialize_static_annotations(app_info: &ApplicationInfo) {
+    let _ = STATIC_ANNOTATIONS.get_or_init(|| {
+        required_annotations(app_info)
+    });
 }
 
 fn required_annotations(app_info: &ApplicationInfo) -> Vec<CAnnotation> {
