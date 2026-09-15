@@ -1411,10 +1411,6 @@ export const AIWindow = {
       l10nId: "smartwindow-organize-tabs-button",
       defaultArea: lazy.CustomizableUI.AREA_TABSTRIP,
       defaultAreaVerticalTabs: lazy.CustomizableUI.AREA_NAVBAR,
-      // Profiles that already have a saved tab strip only get a new default
-      // widget put in its default spot if it is marked as newly introduced;
-      // without this it lands at the end of the toolbar instead.
-      _introducedByPref: PREF_AUTO_TAB_GROUPING,
       removable: true,
       showInPrivateBrowsing: false,
       onCreated: node => {
