@@ -28,7 +28,7 @@
 
     /** border **/
     --border-color: light-dark(var(--color-gray-30), var(--color-gray-40));
-    --border-color-deemphasized: light-dark(var(--color-gray-20), var(--color-gray-50));
+    --border-color-deemphasized: color-mix(in srgb, currentColor 24%, transparent);
     --border-color-error: light-dark(var(--color-red-50), var(--color-red-20));
     --border-color-interactive-hover: light-dark(var(--color-gray-50), var(--color-gray-20));
     --border-color-interactive-active: light-dark(var(--color-gray-50), var(--color-gray-15));

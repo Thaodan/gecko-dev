@@ -21,6 +21,7 @@
     --background-color-warning: light-dark(var(--color-yellow-0), var(--color-yellow-90));
 
     /** border **/
+    --border-color-deemphasized: color-mix(in srgb, currentColor 24%, transparent);
     --border-color-error: light-dark(var(--color-red-70), var(--color-red-20));
     --border-color-interactive-hover: var(--border-color-interactive);
     --border-color-interactive-active: var(--border-color-interactive);
@@ -759,6 +760,7 @@
       --background-color-warning: light-dark(var(--color-yellow-10), var(--color-yellow-70));
 
       /** border **/
+      --border-color-deemphasized: color-mix(in srgb, currentColor 24%, transparent);
       --border-color-error: light-dark(var(--color-red-50), var(--color-red-20));
       --border-color-interactive-hover: light-dark(var(--color-gray-50), var(--color-gray-20));
       --border-color-interactive-active: light-dark(var(--color-gray-50), var(--color-gray-15));

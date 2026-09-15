@@ -60,8 +60,8 @@
     "forcedColors": "{HCM Theme$CanvasText}"
   },
   "border/color/deemphasized": {
-    "light": "{Colors$color/gray/30}",
-    "dark": "{Colors$color/gray/70}",
+    "light": "color-mix(in srgb, currentColor 24%, transparent)",
+    "dark": "color-mix(in srgb, currentColor 24%, transparent)",
     "forcedColors": "{HCM Theme$ButtonText}"
   },
   "border/color/interactive": {

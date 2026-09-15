@@ -976,14 +976,7 @@ export const tokensTable = {
     },
     {
       value: {
-        brand: {
-          light: "var(--color-gray-30)",
-          dark: "var(--color-gray-70)",
-          default: "light-dark(var(--color-gray-30), var(--color-gray-70))",
-        },
-        platform: {
-          default: "color-mix(in srgb, currentColor 24%, transparent)",
-        },
+        default: "color-mix(in srgb, currentColor 24%, transparent)",
         prefersContrast: "currentColor",
         forcedColors: "ButtonText",
       },
@@ -3699,12 +3692,7 @@ export const variableLookupTable = {
     prefersContrast: "CanvasText",
   },
   "border-color-deemphasized": {
-    brand: {
-      light: "var(--color-gray-30)",
-      dark: "var(--color-gray-70)",
-      default: "light-dark(var(--color-gray-30), var(--color-gray-70))",
-    },
-    platform: { default: "color-mix(in srgb, currentColor 24%, transparent)" },
+    default: "color-mix(in srgb, currentColor 24%, transparent)",
     prefersContrast: "currentColor",
     forcedColors: "ButtonText",
   },

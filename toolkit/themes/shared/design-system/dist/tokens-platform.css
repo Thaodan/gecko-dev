@@ -19,7 +19,6 @@
 
     /** border **/
     --border-color: color-mix(in srgb, currentColor 50%, transparent);
-    --border-color-deemphasized: color-mix(in srgb, currentColor 24%, transparent);
     --border-color-interactive: color-mix(in srgb, currentColor 15%, var(--color-gray-60));
 
     /** button **/
