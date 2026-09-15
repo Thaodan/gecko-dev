@@ -65,8 +65,7 @@ void ReportingUtils::Report(nsIGlobalObject* aGlobal, nsAtom* aType,
   MOZ_RELEASE_ASSERT(aGlobal && aBody);
 
   RefPtr<mozilla::dom::Report> report =
-      new mozilla::dom::Report(aGlobal, nsDependentAtomString(aType),
-                               NS_ConvertUTF8toUTF16(aURL), aBody);
+      new mozilla::dom::Report(aGlobal, aType, aURL, aBody);
   aGlobal->BroadcastReport(report);
 
   // No endpoint to send them to.
@@ -86,7 +85,7 @@ void ReportingUtils::Report(nsIGlobalObject* aGlobal, nsAtom* aType,
     associatedBrowsingContextId = workerPrivate->AssociatedBrowsingContextID();
   }
 
-  ReportDeliver::AttemptDelivery(aGlobal, nsAtomCString(aType), aGroupName,
+  ReportDeliver::AttemptDelivery(aGlobal, nsAutoAtomCString(aType), aGroupName,
                                  aURL, aBody, associatedBrowsingContextId);
 }
 
