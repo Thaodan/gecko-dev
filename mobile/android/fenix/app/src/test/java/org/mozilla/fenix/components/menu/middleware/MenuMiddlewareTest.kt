@@ -5,8 +5,11 @@
 package org.mozilla.fenix.components.menu.middleware
 
 import androidx.navigation.NavController
+import androidx.navigation.NavDirections
+import androidx.navigation.NavOptions
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.mockk.Runs
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -19,6 +22,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.ExperimentalAndroidComponentsApi
+import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.state.createTab
+import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.menu.data.MenuItem
 import mozilla.components.compose.menu.data.MenuItemsGroup
@@ -39,16 +45,21 @@ import org.mozilla.fenix.GleanMetrics.Vpn
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
+import org.mozilla.fenix.components.UseCases
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
+import org.mozilla.fenix.components.appstate.AppAction.BookmarkAction
 import org.mozilla.fenix.components.appstate.AppAction.ReaderViewAction
+import org.mozilla.fenix.components.bookmarks.BookmarksUseCase
 import org.mozilla.fenix.components.menu.BrowserMenuBuilder
 import org.mozilla.fenix.components.menu.FenixMenuItem.CustomizeReaderView
 import org.mozilla.fenix.components.menu.MenuItemProvider
 import org.mozilla.fenix.components.menu.MenuPresentationMode.Row
 import org.mozilla.fenix.components.menu.MenuSectionConfiguration
+import org.mozilla.fenix.components.menu.store.MenuAction.AddBookmark
 import org.mozilla.fenix.components.menu.store.MenuAction.CustomizeReaderView as CustomizeReaderViewEvent
 import org.mozilla.fenix.components.menu.store.MenuAction.IPProtectionToggle
 import org.mozilla.fenix.components.menu.store.MenuAction.Navigate
+import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 
 @OptIn(ExperimentalAndroidComponentsApi::class)
@@ -57,7 +68,23 @@ class MenuMiddlewareTest {
     @get:Rule val gleanRule = FenixGleanTestRule(testContext)
 
     private val appStore: AppStore = mockk { every { dispatch(any()) } just Runs }
-    private val navController: NavController = mockk(relaxed = true)
+    private val browserStore =
+        BrowserStore(
+            BrowserState(
+                tabs = listOf(createTab(url = TEST_URL, title = TEST_TITLE, id = "tab1")),
+                selectedTabId = "tab1",
+            )
+        )
+    private val addBookmarkUseCase: BookmarksUseCase.AddBookmarksUseCase = mockk()
+    private val useCases: UseCases = mockk {
+        every { bookmarksUseCases } returns mockk { every { addBookmark } returns addBookmarkUseCase }
+    }
+    // Navigating away is guarded on still being on the menu, so the mock has to report that as the current
+    // destination. A relaxed mock would otherwise report an id of 0 and every navigation would be skipped.
+    private val navController: NavController =
+        mockk(relaxed = true) {
+            every { currentDestination } returns mockk { every { id } returns R.id.menuFragment }
+        }
     private val testDispatcher = StandardTestDispatcher()
 
     @Test
@@ -123,14 +150,13 @@ class MenuMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN authentication is needed WHEN handling it being toggled THEN dismiss the menu and open VPN settings`() {
+    fun `GIVEN authentication is needed WHEN handling it being toggled THEN open VPN settings`() {
         val ipProtectionStore = IPProtectionStore(IPProtectionState(serviceStatus = ServiceState.Unauthenticated))
         val store = createStore(ipProtectionStore = ipProtectionStore)
 
         store.dispatch(IPProtectionToggle)
 
         verify {
-            navController.popBackStack(R.id.menuFragment, true)
             navController.navigate(
                 NavGraphDirections.actionGlobalIpProtectionFragment(
                     entrypoint = FenixFxAEntryPoint.IPProtectionMainMenu
@@ -142,13 +168,12 @@ class MenuMiddlewareTest {
     }
 
     @Test
-    fun `WHEN handling a navigation to the IP protection settings THEN dismiss the menu and open the VPN settings`() {
+    fun `WHEN handling a navigation to the IP protection settings THEN open the VPN settings`() {
         val store = createStore()
 
         store.dispatch(Navigate.IPProtectionSettings)
 
         verify {
-            navController.popBackStack(R.id.menuFragment, true)
             navController.navigate(
                 NavGraphDirections.actionGlobalIpProtectionFragment(
                     entrypoint = FenixFxAEntryPoint.IPProtectionMainMenu
@@ -157,6 +182,54 @@ class MenuMiddlewareTest {
             )
         }
         assertEquals("Menu", Vpn.settingsPageTapped.testGetValue()?.last()?.extra?.get("entrypoint"))
+    }
+
+    @Test
+    fun `WHEN handling adding a bookmark THEN bookmark the current page and dismiss the menu`() =
+        runTest(testDispatcher) {
+            coEvery { addBookmarkUseCase(url = TEST_URL, title = TEST_TITLE) } returns
+                BookmarksUseCase.AddBookmarksUseCase.Result(guidToEdit = BOOKMARK_GUID, parentNode = null)
+            val store = createStore()
+
+            store.dispatch(AddBookmark)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify {
+                appStore.dispatch(
+                    BookmarkAction.BookmarkAdded(
+                        guidToEdit = BOOKMARK_GUID,
+                        parentNode = null,
+                        source = MetricsUtils.BookmarkAction.Source.MENU_DIALOG,
+                    )
+                )
+                navController.popBackStack(R.id.menuFragment, true)
+            }
+        }
+
+    @Test
+    fun `GIVEN the current page is bookmarked WHEN handling EditBookmark THEN open the bookmarks editor`() {
+        val store = createStore()
+
+        store.dispatch(Navigate.EditBookmark(guidToEdit = BOOKMARK_GUID))
+
+        verify {
+            navController.navigate(
+                NavGraphDirections.actionGlobalBookmarkEditFragment(
+                    guidToEdit = BOOKMARK_GUID,
+                    requiresSnackbarPaddingForToolbar = true,
+                ),
+                null,
+            )
+        }
+    }
+
+    @Test
+    fun `GIVEN the current page is not bookmarked WHEN handling EditBookmark THEN don't open the editor`() {
+        val store = createStore()
+
+        store.dispatch(Navigate.EditBookmark(guidToEdit = null))
+
+        verify(exactly = 0) { navController.navigate(any<NavDirections>(), any<NavOptions>()) }
     }
 
     private fun ipProtectionStore(proxyStatus: ProxyStatus): IPProtectionStore = mockk {
@@ -174,7 +247,9 @@ class MenuMiddlewareTest {
                 listOf(
                     MenuMiddleware(
                         appStore = appStore,
+                        browserStore = browserStore,
                         ipProtectionStore = ipProtectionStore,
+                        useCases = useCases,
                         browserMenuBuilder =
                             BrowserMenuBuilder(
                                 providers = mapOf(CustomizeReaderView to FakeMenuItemProvider(provided)),
@@ -189,6 +264,7 @@ class MenuMiddlewareTest {
                             ),
                         navController = navController,
                         scope = CoroutineScope(testDispatcher),
+                        applicationScope = CoroutineScope(testDispatcher),
                     )
                 ),
         )
@@ -197,6 +273,9 @@ class MenuMiddlewareTest {
 
     private companion object {
         const val MENU_GROUP_ID = "test"
+        const val BOOKMARK_GUID = "bookmarkGuid"
+        const val TEST_URL = "https://mozilla.org"
+        const val TEST_TITLE = "Mozilla"
 
         val readerViewItem =
             StandardMenuItem(title = Text.String("Customize reader view"), onClickEvent = CustomizeReaderViewEvent)

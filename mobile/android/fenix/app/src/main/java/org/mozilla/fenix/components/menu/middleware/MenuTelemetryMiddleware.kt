@@ -38,7 +38,7 @@ class MenuTelemetryMiddleware<S : State, A : Action>(private val accessPoint: Me
             MenuAction.AddBookmark ->
                 Events.browserMenuAction.record(Events.BrowserMenuActionExtra(item = "add_bookmark"))
 
-            MenuAction.Navigate.EditBookmark ->
+            is MenuAction.Navigate.EditBookmark ->
                 Events.browserMenuAction.record(Events.BrowserMenuActionExtra(item = "edit_bookmark"))
 
             MenuAction.AddShortcut ->

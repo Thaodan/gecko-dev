@@ -43,6 +43,7 @@ import mozilla.components.support.utils.ext.top
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.R
+import org.mozilla.fenix.bookmarks.BookmarkMenuItemProvider
 import org.mozilla.fenix.browser.readermode.ReaderViewMenuItemProvider
 import org.mozilla.fenix.components.menu.compose.MenuDialogBottomSheet
 import org.mozilla.fenix.components.menu.compose.MenuHandleState
@@ -206,6 +207,12 @@ class MenuFragment : BottomSheetDialogFragment() {
                     ipProtectionStore = requireComponents.ipProtection.store,
                     scope = viewLifecycleOwner.lifecycle.coroutineScope,
                 ),
+            FenixMenuItem.Bookmark to
+                BookmarkMenuItemProvider(
+                    browserStore = requireComponents.core.store,
+                    bookmarksStorage = requireComponents.core.bookmarksStorage,
+                    applicationScope = requireComponents.applicationScope,
+                ),
         )
 
     private fun buildMenuStore(initialState: MenuState) =
@@ -215,10 +222,13 @@ class MenuFragment : BottomSheetDialogFragment() {
                 listOf(
                     MenuMiddleware(
                         appStore = requireComponents.appStore,
+                        browserStore = requireComponents.core.store,
                         ipProtectionStore = requireComponents.ipProtection.store,
+                        useCases = requireComponents.useCases,
                         browserMenuBuilder = BrowserMenuBuilder(providers = buildMenuItemProviders()),
                         navController = findNavController(),
                         scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                        applicationScope = requireComponents.applicationScope,
                     ),
                     MenuTelemetryMiddleware(accessPoint = MenuAccessPoint.Browser),
                 ),

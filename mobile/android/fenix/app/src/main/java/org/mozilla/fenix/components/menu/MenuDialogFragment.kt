@@ -583,7 +583,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                             menuStore.dispatch(MenuAction.AddBookmark)
                                         },
                                         onEditBookmarkButtonClick = {
-                                            menuStore.dispatch(MenuAction.Navigate.EditBookmark)
+                                            menuStore.dispatch(MenuAction.Navigate.EditBookmark())
                                         },
                                         onSwitchToDesktopSiteMenuClick = {
                                             if (isDesktopMode) {
@@ -804,7 +804,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                             menuStore.dispatch(MenuAction.AddBookmark)
                                         },
                                         onEditBookmarkMenuClick = {
-                                            menuStore.dispatch(MenuAction.Navigate.EditBookmark)
+                                            menuStore.dispatch(MenuAction.Navigate.EditBookmark())
                                         },
                                         onFindInPageMenuClick = {
                                             menuStore.dispatch(MenuAction.FindInPage)

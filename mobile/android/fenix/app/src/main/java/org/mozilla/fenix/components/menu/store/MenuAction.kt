@@ -189,8 +189,12 @@ sealed class MenuAction : MenuEvent {
         /** [Navigate] action dispatched when navigating to passwords. */
         data object Passwords : Navigate()
 
-        /** [Navigate] action dispatched when navigating to edit the existing bookmark. */
-        data object EditBookmark : Navigate()
+        /**
+         * [Navigate] action dispatched when navigating to edit the existing bookmark.
+         *
+         * @property guidToEdit The guid of the bookmark to edit if known.
+         */
+        data class EditBookmark(val guidToEdit: String? = null) : Navigate()
 
         /** [Navigate] action dispatched when navigating to add site to home screen. */
         data object AddToHomeScreen : Navigate()

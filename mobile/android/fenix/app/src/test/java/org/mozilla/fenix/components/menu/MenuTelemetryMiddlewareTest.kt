@@ -63,7 +63,7 @@ class MenuTelemetryMiddlewareTest {
         val store = createStore()
         assertNull(Events.browserMenuAction.testGetValue())
 
-        store.dispatch(MenuAction.Navigate.EditBookmark)
+        store.dispatch(MenuAction.Navigate.EditBookmark())
 
         assertTelemetryRecorded(Events.browserMenuAction, item = "edit_bookmark")
     }

@@ -414,7 +414,7 @@ class MenuNavigationMiddlewareTest {
                     ),
             )
 
-        store.dispatch(MenuAction.Navigate.EditBookmark)
+        store.dispatch(MenuAction.Navigate.EditBookmark())
         testScheduler.advanceUntilIdle()
 
         verify {

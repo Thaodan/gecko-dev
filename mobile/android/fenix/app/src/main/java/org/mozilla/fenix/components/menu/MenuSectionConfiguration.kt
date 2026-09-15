@@ -11,6 +11,9 @@ sealed interface FenixMenuItem {
 
     /** A menu item allowing to view the current VPN status or change its configuration. */
     data object IPProtection : FenixMenuItem
+
+    /** A menu item allowing to bookmark the current page, or to edit the bookmark it already has. */
+    data object Bookmark : FenixMenuItem
 }
 
 /**

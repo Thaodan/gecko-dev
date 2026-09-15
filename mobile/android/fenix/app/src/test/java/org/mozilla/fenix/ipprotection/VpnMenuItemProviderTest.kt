@@ -9,6 +9,7 @@ import androidx.compose.ui.semantics.Role.Companion.Button
 import androidx.compose.ui.semantics.Role.Companion.Switch
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -109,6 +110,7 @@ class VpnMenuItemProviderTest {
         assertNull((provider.itemFlow.value as StandardMenuItem).summary)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `WHEN the user stops being eligible THEN stop showing the menu item`() = runTest {
         val store = eligibleStore(Uninitialized)
