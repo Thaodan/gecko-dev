@@ -428,17 +428,16 @@ void StickyScrollContainer::PositionContinuations(nsIFrame* aFrame) {
   NS_ASSERTION(nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(aFrame),
                "Should be starting from the first continuation");
   bool hadProperty;
-  nsPoint translation =
-      ComputePosition(aFrame) - aFrame->GetNormalPosition(&hadProperty);
-  if (NS_WARN_IF(!hadProperty)) {
-    // If the frame was never relatively positioned, don't move its position
-    // dynamically. There are a variety of frames for which `position` doesn't
-    // really apply like frames inside svg which would get here and be sticky
-    // only in one direction.
+  const nsPoint normalPosition = aFrame->GetNormalPosition(&hadProperty);
+  if (!hadProperty) {
+    // We have no normal position to stick from. This happens when the frame
+    // hasn't been reflowed yet, e.g. it's in a subtree whose contents are
+    // skipped by content-visibility property.
     return;
   }
 
   // Move all continuation frames by the same amount.
+  const nsPoint translation = ComputePosition(aFrame) - normalPosition;
   for (nsIFrame* cont = aFrame; cont;
        cont = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(cont)) {
     cont->SetPosition(cont->GetNormalPosition() + translation);
