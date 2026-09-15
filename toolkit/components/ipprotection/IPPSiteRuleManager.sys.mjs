@@ -6,6 +6,7 @@ import {
   IPPInfrastructureRuleProvider,
   IPPPrincipalRules,
   IPPProxyableRuleProvider,
+  MatchPatternPrefRule,
 } from "moz-src:///toolkit/components/ipprotection/IPPSiteRuleProviders.sys.mjs";
 
 export { IPPPrincipalRules };
@@ -142,4 +143,8 @@ export class SiteRuleManager extends EventTarget {
 export const IPPSiteRuleManager = new SiteRuleManager([
   new IPPProxyableRuleProvider(),
   new IPPInfrastructureRuleProvider(),
+  new MatchPatternPrefRule(
+    "browser.ipProtection.inclusion.match_patterns",
+    IPPPrincipalRules.INCLUDED
+  ),
 ]);
