@@ -83,7 +83,7 @@ static const char sPrintSettingsServiceContractID[] =
 #include "nsPageSequenceFrame.h"
 #include "nsRange.h"
 
-#if defined(ACCESSIBILITY) && defined(MOZ_ENABLE_SKIA_PDF)
+#ifdef ACCESSIBILITY
 #  include "mozilla/a11y/DocManager.h"
 #  include "mozilla/a11y/PdfStructTreeBuilder.h"
 #endif
@@ -904,7 +904,7 @@ nsresult nsPrintJob::SetupToPrintContent() {
   //      to the "File Name" dialog, this comes back as an error
   // Don't start printing when regression test are executed
   if (mIsDoingPrinting) {
-#if defined(ACCESSIBILITY) && defined(MOZ_ENABLE_SKIA_PDF)
+#ifdef ACCESSIBILITY
     if (!mIsCreatingPrintPreview) {
       a11y::DocManager::NotifyOfPrintDocument(mPrintObject->mDocument);
       // XXX Out-of-process iframes inside a parent process document won't be

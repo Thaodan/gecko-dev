@@ -4182,7 +4182,7 @@ void BrowserChild::OnPointerRawUpdateEventListenerRemoved(
            mPointerRawUpdateWindowCount));
 }
 
-#if defined(ACCESSIBILITY) && defined(MOZ_ENABLE_SKIA_PDF)
+#ifdef ACCESSIBILITY
 mozilla::ipc::IPCResult BrowserChild::RecvRequestDocAccessibleForPrint() {
   if (RefPtr<Document> doc = GetTopLevelDocument()) {
     a11y::DocManager::NotifyOfPrintDocument(doc);
