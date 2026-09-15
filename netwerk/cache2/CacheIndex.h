@@ -817,20 +817,15 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
       const std::function<void(const CacheIndexEntry*)>& aCB = nullptr);
 
   // Returns a hash of the least important entry that should be evicted if the
-  // cache size is over limit and also returns a total number of all entries in
-  // the index minus the number of forced valid entries and unpinned entries
-  // that we encounter when searching (see below)
+  // cache size is over limit and also returns the number of entries we had to
+  // reject -- pinned, in use, or of the wrong content type -- before finding
+  // one we could evict.
   static nsresult GetEntryForEviction(EvictionSortedSnapshot& aSnapshot,
                                       bool aIgnoreEmptyEntries,
                                       SHA1Sum::Hash* aHash, uint32_t* aCnt);
 
   // Returns a sorted snapshot of the frecency storage.
   static EvictionSortedSnapshot GetSortedSnapshotForEviction();
-
-  // Checks if a cache entry is currently forced valid. Used to prevent an entry
-  // (that has been forced valid) from being evicted when the cache size reaches
-  // its limit.
-  static bool IsForcedValidEntry(const SHA1Sum::Hash* aHash);
 
   // Returns cache size in kB.
   static nsresult GetCacheSize(uint32_t* _retval);

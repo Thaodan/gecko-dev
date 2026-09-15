@@ -1371,7 +1371,7 @@ nsresult CacheIndex::GetEntryForEviction(EvictionSortedSnapshot& aSnapshot,
   uint32_t skipped = 0;
   size_t recordPosition = 0;
 
-  // find first non-forced valid and unpinned entry with the lowest frecency
+  // find the first evictable entry with the lowest frecency
   for (size_t i = 0; i < aSnapshot.Length(); ++i) {
     if (!aSnapshot[i]) {
       continue;  // Skip the null records
@@ -1396,16 +1396,15 @@ nsresult CacheIndex::GetEntryForEviction(EvictionSortedSnapshot& aSnapshot,
       continue;
     }
 
-    if (IsForcedValidEntry(&hash)) {
-      continue;
-    }
-
     // Skip entries with active (non-doomed) file handles. These are
     // currently being read from or written to. Evicting them would doom
     // the in-progress I/O — in particular, a newly-created entry being
     // written always has the lowest frecency and would otherwise be
     // selected as the first eviction candidate, preventing it from ever
     // being stored. See bug 2031577.
+    //
+    // The previous IsForcedValidEntry check itself required a handle to
+    // return true, so this handle check already subsumes it.
     {
       RefPtr<CacheFileHandle> handle;
       if (CacheFileIOManager::gInstance &&
@@ -1443,19 +1442,6 @@ nsresult CacheIndex::GetEntryForEviction(EvictionSortedSnapshot& aSnapshot,
   aSnapshot[recordPosition] = nullptr;  // Remove the record from the snapshot
 
   return NS_OK;
-}
-
-// static
-bool CacheIndex::IsForcedValidEntry(const SHA1Sum::Hash* aHash) {
-  RefPtr<CacheFileHandle> handle;
-
-  CacheFileIOManager::gInstance->mHandles.GetHandle(aHash,
-                                                    getter_AddRefs(handle));
-
-  if (!handle) return false;
-
-  nsCString hashKey = handle->Key();
-  return CacheStorageService::Self()->IsForcedValidEntry(hashKey);
 }
 
 // static
