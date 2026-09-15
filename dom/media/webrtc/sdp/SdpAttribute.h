@@ -1277,7 +1277,7 @@ class SdpFmtpAttributeList : public SdpAttribute {
   };
 
   struct Av1Parameters : public Parameters {
-    // https://aomediacodec.github.io/av1-rtp-spec/#722-rid-restrictions-mapping-for-av1
+    // https://aomediacodec.github.io/av1-rtp-spec/#rid
     Maybe<uint8_t> profile;
     static constexpr uint8_t kDefaultProfile = 0;
     Maybe<uint8_t> levelIdx;
