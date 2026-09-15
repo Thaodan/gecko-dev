@@ -190,7 +190,8 @@ export class AgentMonitorItem extends MozLitElement {
     alertDescription: { type: String, state: true },
     pageUrls: { type: Array, state: true },
     pendingUrl: { type: String, state: true },
-    pendingUrlError: { type: String, state: true },
+    pendingUrlError: { type: Object, state: true },
+    fieldErrors: { type: Object, state: true },
   };
 
   constructor() {
@@ -209,7 +210,8 @@ export class AgentMonitorItem extends MozLitElement {
     this.alertDescription = "";
     this.pageUrls = [];
     this.pendingUrl = "";
-    this.pendingUrlError = "";
+    this.pendingUrlError = null;
+    this.fieldErrors = { name: null, condition: null, pages: null };
     this.#draftName = null;
   }
 
@@ -246,7 +248,8 @@ export class AgentMonitorItem extends MozLitElement {
     this.pageUrls = seededUrls.filter(u => u?.trim().length);
     this.alertDescription = condition ?? "";
     this.pendingUrl = "";
-    this.pendingUrlError = "";
+    this.pendingUrlError = null;
+    this.fieldErrors = { name: null, condition: null, pages: null };
 
     // If the agent data includes an expanded state, apply it
     if (expanded !== undefined) {
@@ -384,14 +387,51 @@ export class AgentMonitorItem extends MozLitElement {
     return this.selfContained ? icon : nothing;
   }
 
-  get #isFormValid() {
-    const hasDescription = this.alertDescription?.trim().length > 0;
-    const hasValidUrl = !!this.pageUrls.length;
-    return hasDescription && hasValidUrl && !this.pendingUrlError;
+  // Fields the form checks on submit, in the order errors are surfaced and
+  // focused. Returns the keys that failed.
+  #validateForm() {
+    // A URL left in the input has to be committed before submit, so a valid one
+    // isn't silently dropped and an invalid one sets pendingUrlError.
+    if (this.pendingUrl.trim()) {
+      this.#addUrl();
+    }
+    const errors = { name: null, condition: null, pages: null };
+    if (this.mode === "create" && !this.#monitorName.trim()) {
+      errors.name = { id: "ai-tasks-alert-error-name-required" };
+    }
+    if (!this.alertDescription?.trim()) {
+      errors.condition = { id: "ai-tasks-alert-error-condition-required" };
+    }
+    if (!this.pageUrls.length) {
+      errors.pages = { id: "ai-tasks-alert-error-no-pages" };
+    }
+    this.fieldErrors = errors;
+    const invalid = ["name", "condition", "pages"].filter(key => errors[key]);
+
+    if (this.pendingUrlError && !invalid.includes("pages")) {
+      invalid.push("pages");
+    }
+    return invalid;
+  }
+
+  #clearFieldError(key) {
+    if (this.fieldErrors[key]) {
+      this.fieldErrors = { ...this.fieldErrors, [key]: null };
+    }
+  }
+
+  #focusField(key) {
+    const selector = {
+      name: ".monitor-name-input",
+      condition: ".monitor-condition-input",
+      pages: ".page-url-input",
+    }[key];
+    this.shadowRoot.querySelector(selector)?.focus();
   }
 
   #onNameInput(event) {
     this.#draftName = event.target.value;
+    this.#clearFieldError("name");
     // Typing coalesces, a change (blur) flushes right away
     this.#persistDraft({ debounce: event.type === "input" });
   }
@@ -422,69 +462,97 @@ export class AgentMonitorItem extends MozLitElement {
 
   #onConditionInput(event) {
     this.alertDescription = event.target.value;
+    this.#clearFieldError("condition");
     this.#persistDraft({ debounce: event.type === "input" });
   }
 
   #onPresetClick(preset) {
     this.alertDescription = preset;
+    this.#clearFieldError("condition");
     this.#persistDraft();
   }
 
   // TODO: Bug 2054529 - share this URL validation with about:tools' create form
-  async #validateUrl(url) {
+  // Returns an { id } Fluent descriptor for the error, or null when valid.
+  #validateUrl(url) {
     const value = url.trim();
+
     if (!value) {
-      return { valid: true, error: "" };
+      return { valid: true, error: null };
     }
+
+    const invalidUrl = {
+      valid: false,
+      error: { id: "ai-tasks-alert-error-invalid-url" },
+    };
+
+    const missingScheme = {
+      valid: false,
+      error: { id: "ai-tasks-alert-error-url-scheme" },
+    };
+
+    // If the user supplied an HTTP(S) scheme, validate the URL as-is.
+    if (/^https?:\/\//i.test(value)) {
+      try {
+        const parsed = new URL(value);
+
+        if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+          return { valid: true, error: null };
+        }
+      } catch {}
+
+      return invalidUrl;
+    }
+
+    // Reject explicit non-HTTP schemes such as ftp:, file:, mailto:, etc.
+    // Host and port values like "localhost:3000" or "example.com:8080" are
+    // excluded because they are likely web addresses missing their scheme.
+    const hasExplicitScheme = /^[a-z][a-z\d+.-]*:/i.test(value);
+    const looksLikeHostWithPort =
+      /^(?:\[[^\]]+\]|[^/?#:]+):\d+(?:[/?#]|$)/.test(value);
+
+    if (hasExplicitScheme && !looksLikeHostWithPort) {
+      return invalidUrl;
+    }
+
+    // If adding HTTPS produces a valid web URL, the only thing missing from
+    // the user's input was the scheme.
     try {
-      const { protocol } = new URL(value);
-      if (protocol !== "http:" && protocol !== "https:") {
-        const error = await document.l10n.formatValue(
-          "ai-tasks-alert-error-http-only"
-        );
-        return { valid: false, error };
+      const parsed = new URL(`https://${value}`);
+
+      if (parsed.hostname) {
+        return missingScheme;
       }
-      return { valid: true, error: "" };
-    } catch {
-      const error = await document.l10n.formatValue(
-        "ai-tasks-alert-error-invalid-url"
-      );
-      return { valid: false, error };
-    }
+    } catch {}
+
+    return invalidUrl;
   }
 
-  async #validatePendingUrl() {
-    this.pendingUrlError = this.pendingUrl.trim()
-      ? (await this.#validateUrl(this.pendingUrl)).error
-      : "";
-  }
-
-  async #addUrl() {
+  #addUrl() {
     const url = this.pendingUrl.trim();
     if (!url) {
       return;
     }
-    const { valid, error } = await this.#validateUrl(url);
+    const { valid, error } = this.#validateUrl(url);
     if (!valid) {
       this.pendingUrlError = error;
       return;
     }
     if (this.pageUrls.includes(url)) {
-      this.pendingUrlError = await document.l10n.formatValue(
-        "ai-tasks-alert-error-duplicate-url"
-      );
+      this.pendingUrlError = { id: "ai-tasks-alert-error-duplicate-url" };
       return;
     }
     if (this.pageUrls.length >= this.maxWatchUrls) {
-      this.pendingUrlError = await document.l10n.formatValue(
-        "ai-tasks-alert-error-max-urls",
-        { maxUrls: this.maxWatchUrls }
-      );
+      this.pendingUrlError = {
+        id: "ai-tasks-alert-error-max-urls",
+        args: { maxUrls: this.maxWatchUrls },
+      };
       return;
     }
     this.pageUrls = [...this.pageUrls, url];
     this.pendingUrl = "";
-    this.pendingUrlError = "";
+    this.pendingUrlError = null;
+    this.#clearFieldError("pages");
     this.#persistDraft();
   }
 
@@ -503,7 +571,9 @@ export class AgentMonitorItem extends MozLitElement {
 
   #onPendingUrlInput(event) {
     this.pendingUrl = event.target.value;
-    this.#validatePendingUrl();
+    if (this.pendingUrlError) {
+      this.pendingUrlError = null;
+    }
     this.#persistDraft({ debounce: true });
   }
 
@@ -522,8 +592,11 @@ export class AgentMonitorItem extends MozLitElement {
     this.#dispatch("agent-monitor-item:cancel", {});
   }
 
-  #onSubmit() {
-    if (!this.#isFormValid) {
+  async #onSubmit() {
+    const invalidFields = this.#validateForm();
+    if (invalidFields.length) {
+      await this.updateComplete;
+      this.#focusField(invalidFields[0]);
       return;
     }
     // The host drops the draft as it commits the form, so make sure a coalesced
@@ -575,6 +648,16 @@ export class AgentMonitorItem extends MozLitElement {
     ></span>`;
   }
 
+  #renderFieldError(error) {
+    return error
+      ? html`<div
+          class="error-message"
+          data-l10n-id=${error.id}
+          data-l10n-args=${error.args ? JSON.stringify(error.args) : nothing}
+        ></div>`
+      : nothing;
+  }
+
   #renderConditionField() {
     const presets = this.agent?.conditionPresets ?? [];
     return html`
@@ -583,10 +666,13 @@ export class AgentMonitorItem extends MozLitElement {
           class="monitor-condition-input"
           data-l10n-id="ai-tasks-alert-alert"
           data-l10n-attrs="placeholder,label,description"
+          required
+          ?invalid=${!!this.fieldErrors.condition}
           .value=${this.alertDescription}
           @input=${this.#onConditionInput}
           @change=${this.#onConditionInput}
         ></moz-textarea>
+        ${this.#renderFieldError(this.fieldErrors.condition)}
         ${presets.length
           ? html`<div class="chip-row">
               ${presets.map(
@@ -611,9 +697,9 @@ export class AgentMonitorItem extends MozLitElement {
         <div class="pages-container">
           <div class="page-input-row">
             <moz-input-url
-              class="form-input page-url-input ${this.pendingUrlError
-                ? "error"
-                : ""}"
+              class="form-input page-url-input"
+              required
+              ?invalid=${!!this.pendingUrlError || !!this.fieldErrors.pages}
               data-l10n-id="ai-tasks-alert-pages"
               data-l10n-attrs="placeholder,label"
               data-l10n-args=${JSON.stringify({
@@ -622,7 +708,6 @@ export class AgentMonitorItem extends MozLitElement {
               .value=${this.pendingUrl}
               @input=${this.#onPendingUrlInput}
               @keydown=${this.#onPendingUrlKeydown}
-              @blur=${() => this.#validatePendingUrl()}
             ></moz-input-url>
             <moz-button
               size="small"
@@ -634,9 +719,9 @@ export class AgentMonitorItem extends MozLitElement {
               @click=${() => this.#addUrl()}
             ></moz-button>
           </div>
-          ${this.pendingUrlError
-            ? html`<div class="error-message">${this.pendingUrlError}</div>`
-            : nothing}
+          ${this.#renderFieldError(
+            this.pendingUrlError ?? this.fieldErrors.pages
+          )}
           ${this.pageUrls.length
             ? html`<div class="page-pills-row">
                 ${this.pageUrls.map(
@@ -922,14 +1007,22 @@ export class AgentMonitorItem extends MozLitElement {
               class="monitor-name-input"
               data-l10n-id="ai-tasks-alert-name"
               data-l10n-attrs="label"
+              required
+              ?invalid=${!!this.fieldErrors.name}
               .value=${this.#monitorName}
               @input=${this.#onNameInput}
               @change=${this.#onNameInput}
             ></moz-input-text>
+            ${this.#renderFieldError(this.fieldErrors.name)}
           </div>
         </div>
         ${this.#renderConditionField()} ${this.#renderPagesField()}
         ${this.#renderScheduler()}
+
+        <p
+          class="required-note"
+          data-l10n-id="ai-tasks-alert-required-note"
+        ></p>
 
         <div class="monitor-card-actions">
           <span class="spacer"></span>
@@ -944,7 +1037,6 @@ export class AgentMonitorItem extends MozLitElement {
             type="primary"
             data-l10n-id="ai-tasks-alert-create-button"
             data-l10n-attrs="label"
-            ?disabled=${!this.#isFormValid}
             @click=${this.#onSubmit}
           ></moz-button>
         </div>

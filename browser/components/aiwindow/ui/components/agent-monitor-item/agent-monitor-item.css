@@ -211,9 +211,22 @@ moz-input-text::part(label),
 }
 
 .error-message {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xsmall);
   color: var(--text-color-error);
   font-size: var(--font-size-small);
   margin-inline-start: var(--space-small);
+
+  &::before {
+    content: "";
+    width: var(--icon-size-xsmall);
+    height: var(--icon-size-xsmall);
+    flex: none;
+    -moz-context-properties: fill;
+    fill: currentColor;
+    background: url("chrome://browser/content/aiwindow/assets/error-outline.svg") no-repeat center / contain;
+  }
 }
 
 .monitor-row {
@@ -280,6 +293,12 @@ moz-input-text::part(label),
   flex-direction: column;
   gap: var(--space-medium);
   cursor: auto;
+}
+
+.required-note {
+  color: var(--text-color-deemphasized);
+  font-size: var(--font-size-small);
+  margin: 0;
 }
 
 .monitor-card-actions {

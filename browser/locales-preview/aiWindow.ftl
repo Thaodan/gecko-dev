@@ -103,6 +103,10 @@ ai-tasks-alert-check-now-button = Check now
 
 ai-tasks-alert-modal-title = Create task
 
+# Note shown at the bottom of the create form indicating required fields
+# The asterisk (*) marks form fields that must be filled in.
+ai-tasks-alert-required-note = * Required
+
 ## Page Content - Strings displayed on the alerts page
 
 ai-tasks-page-title = Tasks
@@ -127,15 +131,23 @@ ai-tasks-alert-watching-pages = { $count ->
 
 ## Error Messages - Validation and error messages for alert creation
 
-ai-tasks-alert-error-http-only = Only HTTP and HTTPS URLs are allowed
-ai-tasks-alert-error-invalid-url = Please enter a valid URL
+# Shown under the task name field when it is left empty on submit
+ai-tasks-alert-error-name-required = Enter a name for this task.
+# Shown under the "Notify me when" field when it is left empty on submit
+ai-tasks-alert-error-condition-required = Enter what you want to watch for.
+# Shown under the page field when an address only looks like it is missing its
+# scheme, e.g. "example.com"
+ai-tasks-alert-error-url-scheme = Add https:// or http:// to start of the URL.
+# Shown under the page field for input that cannot be parsed as a URL at all
+ai-tasks-alert-error-invalid-url = Enter a full URL, starting with https:// or http://
 ai-tasks-alert-error-duplicate-url = This URL has already been added
+# Shown under the page field when submitting with no pages added
+ai-tasks-alert-error-no-pages = Add at least one page to watch.
 # Variables:
-#   $maxUrls (number) - Maximum number of URLs allowed per alert
+#   $maxUrls (number) - Maximum number of pages allowed per task
 ai-tasks-alert-error-max-urls = { $maxUrls ->
-    [one] Maximum of { $maxUrls } URL allowed
-   *[other] Maximum of { $maxUrls } URLs allowed
-  }
+ *[other] You can watch up to { $maxUrls } pages. Delete one to add another.
+}
 
 ## Accessibility - ARIA labels and accessibility text
 
