@@ -20,6 +20,27 @@ import "chrome://browser/content/aiwindow/components/monitor-icon.mjs";
 import "chrome://browser/content/aiwindow/components/monitor-status-chip.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/ai-website-chip.mjs";
+import { monitorErrorL10nId } from "chrome://browser/content/aiwindow/components/monitor-error-copy.mjs";
+
+// What a finished check can say about the condition. A run that failed reports
+// neither met nor not-met: it never got to compare anything.
+const RESULT_STATES = Object.freeze({
+  MET: "met",
+  NOT_MET: "not-met",
+  COULD_NOT_CHECK: "could-not-check",
+});
+
+const RESULT_BADGE_L10N_IDS = Object.freeze({
+  [RESULT_STATES.MET]: "ai-tasks-alert-condition-met",
+  [RESULT_STATES.NOT_MET]: "ai-tasks-alert-condition-not-met",
+  [RESULT_STATES.COULD_NOT_CHECK]: "ai-tasks-alert-condition-could-not-check",
+});
+
+const LAST_RESULT_L10N_IDS = Object.freeze({
+  [RESULT_STATES.MET]: "ai-tasks-alert-last-result-met",
+  [RESULT_STATES.NOT_MET]: "ai-tasks-alert-last-result-not-met",
+  [RESULT_STATES.COULD_NOT_CHECK]: "ai-tasks-alert-last-result-could-not-check",
+});
 
 const SCHEDULE_TYPES = Object.freeze({
   DAILY: "daily",
@@ -536,22 +557,22 @@ export class AgentMonitorItem extends MozLitElement {
   }
 
   #renderLastCheckedCondition() {
-    // Get the most recent history item (first in array) to show its condition status
-    const historyItems = this.agent?.history ?? [];
-    const mostRecentItem = historyItems.length ? historyItems[0] : null;
+    // Get the most recent history item (first in array) to show its condition
+    // status. It goes through the same transform as the history rows so a
+    // failed run reads the same status in both places.
+    const [mostRecentItem] = this.agent?.history ?? [];
+    const normalizedItem = mostRecentItem
+      ? this.#transformHistoryItem(mostRecentItem)
+      : null;
 
-    return html`
-      ${mostRecentItem && mostRecentItem.conditionMet !== undefined
-        ? html`<span
-            class="last-result ${mostRecentItem.conditionMet
-              ? "match"
-              : "not-match"}"
-            data-l10n-id=${mostRecentItem.conditionMet
-              ? "ai-tasks-alert-last-result-met"
-              : "ai-tasks-alert-last-result-not-met"}
-          ></span>`
-        : nothing}
-    `;
+    if (!normalizedItem) {
+      return nothing;
+    }
+
+    return html`<span
+      class="last-result ${mostRecentItem.conditionMet ? "match" : "not-match"}"
+      data-l10n-id=${LAST_RESULT_L10N_IDS[normalizedItem.resultState]}
+    ></span>`;
   }
 
   #renderConditionField() {
@@ -659,13 +680,15 @@ export class AgentMonitorItem extends MozLitElement {
         hour12: true,
       });
 
-    // Handle error status
+    // A failed run has no comparison to report, so the badge says so and the
+    // note explains the failure. resultExplanation holds the raw error message
+    // for a failed run, so it is deliberately not shown to the user.
     if (item.status === "error") {
       return {
         when: displayTime,
-        conditionMet: undefined,
-        note: item.resultExplanation || "",
-        noteL10nId: "smartwindow-agent-monitor-history-check-failed",
+        resultState: RESULT_STATES.COULD_NOT_CHECK,
+        note: "",
+        noteL10nId: monitorErrorL10nId(item.errorCode),
         status: item.status,
         low: true,
       };
@@ -675,7 +698,7 @@ export class AgentMonitorItem extends MozLitElement {
     if (item.conditionMet) {
       return {
         when: displayTime,
-        conditionMet: true,
+        resultState: RESULT_STATES.MET,
         note: item.resultExplanation || "",
         status: item.status,
         low: false,
@@ -685,7 +708,7 @@ export class AgentMonitorItem extends MozLitElement {
     // Handle condition not met
     return {
       when: displayTime,
-      conditionMet: false,
+      resultState: RESULT_STATES.NOT_MET,
       note: item.resultExplanation || "",
       noteL10nId: item.resultExplanation
         ? null
@@ -717,16 +740,10 @@ export class AgentMonitorItem extends MozLitElement {
 
           return html`<div class="history-item">
             <span class="when">${normalizedItem.when}</span>
-            ${normalizedItem.conditionMet !== undefined
-              ? html`<span
-                  class="condition-badge ${normalizedItem.conditionMet
-                    ? "met"
-                    : "not-met"}"
-                  data-l10n-id=${normalizedItem.conditionMet
-                    ? "ai-tasks-alert-condition-met"
-                    : "ai-tasks-alert-condition-not-met"}
-                ></span>`
-              : html`<span>-</span>`}
+            <span
+              class="condition-badge ${normalizedItem.resultState}"
+              data-l10n-id=${RESULT_BADGE_L10N_IDS[normalizedItem.resultState]}
+            ></span>
             ${(() => {
               if (normalizedItem.noteL10nId) {
                 return html`<span

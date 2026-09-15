@@ -127,6 +127,7 @@ browser.jar:
   content/browser/aiwindow/components/agent-monitor-item.css        (components/agent-monitor-item/agent-monitor-item.css)
   content/browser/aiwindow/components/agent-monitor-panel.mjs       (components/agent-monitor-panel/agent-monitor-panel.mjs)
   content/browser/aiwindow/components/agent-monitor-panel.css       (components/agent-monitor-panel/agent-monitor-panel.css)
+  content/browser/aiwindow/components/monitor-error-copy.mjs        (components/agent-monitor-item/monitor-error-copy.mjs)
   content/browser/aiwindow/components/smartwindow-smartbar-glow.mjs (components/smartwindow-smartbar-glow/smartwindow-smartbar-glow.mjs)
   content/browser/aiwindow/components/smartwindow-smartbar-glow.css (components/smartwindow-smartbar-glow/smartwindow-smartbar-glow.css)
   content/browser/aiwindow/components/smartwindow-topsites.mjs       (components/smartwindow-topsites/smartwindow-topsites.mjs)

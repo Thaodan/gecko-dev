@@ -322,7 +322,7 @@ hr.rule {
 
 .history-item {
   display: grid;
-  grid-template-columns: minmax(200px, 30%) minmax(80px, 15%) 1fr;
+  grid-template-columns: minmax(170px, 25%) minmax(110px, 18%) 1fr;
   align-items: baseline;
   gap: var(--space-medium);
   padding: var(--space-small) 0;
@@ -400,6 +400,10 @@ hr.rule {
 
 .condition-badge.met {
   color: var(--icon-color-success);
+}
+
+.condition-badge.could-not-check {
+  color: var(--text-color-deemphasized);
 }
 
 .monitor-condition-input {
