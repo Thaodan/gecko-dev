@@ -220,7 +220,18 @@ export class _AdsClient {
       }
 
       const builtAdsClient = lazy.MozAdsClientBuilder.init()
-        .environment(lazy.MozAdsEnvironment.PROD)
+        /**
+         * @backward-compat { version 158 }
+         *
+         * The environment constructor depends on the app-services commit.
+         * Once 158 reaches release, this can just be `new
+         * lazy.MozAdsEnvironment.Prod()`
+         */
+        .environment(
+          lazy.MozAdsEnvironment.PROD
+            ? lazy.MozAdsEnvironment.PROD
+            : new lazy.MozAdsEnvironment.Prod()
+        )
         .cacheConfig(this.cacheConfig)
         .telemetry(this.buildTelemetry())
         .build();
