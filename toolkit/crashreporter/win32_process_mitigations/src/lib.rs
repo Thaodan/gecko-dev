@@ -8,6 +8,7 @@
 
 #![deny(missing_docs)]
 
+mod decode;
 mod error;
 mod query;
 mod registry;

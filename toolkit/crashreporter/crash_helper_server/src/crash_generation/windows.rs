@@ -189,10 +189,16 @@ pub(crate) fn create_platform_specific_annotations(
         .flatten();
     let sys_mitigations = win32_process_mitigations::get_system_mitigation_options()?;
     if let Some(mitigations) = MitigationOptions::amalgamate(sys_mitigations, app_mitigations) {
-        Ok(vec![super::make_annotation(
-            CrashAnnotation::WindowsProcessMitigationsBytes,
-            &format!("{}", mitigations),
-        )])
+        Ok(vec![
+            super::make_annotation(
+                CrashAnnotation::WindowsProcessMitigationsBytes,
+                &format!("{}", mitigations),
+            ),
+            super::make_annotation(
+                CrashAnnotation::WindowsProcessMitigations,
+                &mitigations.describe(),
+            ),
+        ])
     } else {
         Ok(vec![])
     }
