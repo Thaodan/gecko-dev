@@ -32,10 +32,6 @@ export class LoginManagerStorage extends LoginManagerStorage_json {
     throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
   }
 
-  get backendName() {
-    return "geckoview";
-  }
-
   initialize() {
     try {
       return Promise.resolve();
