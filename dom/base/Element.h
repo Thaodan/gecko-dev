@@ -32,6 +32,9 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"
 #include "mozilla/RustCell.h"
+// FIXME: ScrollState is only needed for older libstdc++ versions, remove,
+// eventually...
+#include "mozilla/ScrollState.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/AtomAttributes.h"
 #include "mozilla/dom/BorrowedAttrInfo.h"
