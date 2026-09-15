@@ -361,19 +361,19 @@ static void VulkanCopyQueues(const AVVulkanDeviceContext* aVkCtx,
 }
 
 bool FFmpegVideoDecoder<LIBAV_VER>::VulkanDirectDecodeExportEnabled() {
-  static bool exportEnabled = [&](){
+  static bool exportEnabled = [&]() {
     if (!mLib->av_hwframe_map) {
       return false;
     }
     // Keep direct export disabled on bundled ffvpx until lavc is greater than
     // MOZ_FFMPEG_MIN_LAVC_FOR_VULKAN_DMABUF (62.29.101); then remove this #if.
-  #    if defined(FFVPX_VERSION) && \
-          LIBAVCODEC_VERSION_INT <= MOZ_FFMPEG_MIN_LAVC_FOR_VULKAN_DMABUF
+#    if defined(FFVPX_VERSION) && \
+        LIBAVCODEC_VERSION_INT <= MOZ_FFMPEG_MIN_LAVC_FOR_VULKAN_DMABUF
     return false;
-  #    else
+#    else
     return StaticPrefs::
         media_hardware_video_decoding_vulkan_direct_export_enabled_AtStartup();
-  #    endif
+#    endif
   }();
   return exportEnabled;
 }
