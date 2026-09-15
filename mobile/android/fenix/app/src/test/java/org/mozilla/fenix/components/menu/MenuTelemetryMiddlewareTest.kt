@@ -5,6 +5,8 @@
 package org.mozilla.fenix.components.menu
 
 import kotlin.test.assertNotNull
+import mozilla.components.compose.menu.store.MenuState as CustomizableMenuState
+import mozilla.components.compose.menu.store.MenuStore as CustomizableMenuStore
 import mozilla.components.feature.addons.Addon
 import mozilla.components.service.fxa.manager.AccountState
 import mozilla.components.support.test.robolectric.testContext
@@ -35,6 +37,20 @@ class MenuTelemetryMiddlewareTest {
     @Test
     fun `WHEN adding a bookmark THEN record the bookmark browser menu telemetry`() {
         val store = createStore()
+        assertNull(Events.browserMenuAction.testGetValue())
+
+        store.dispatch(MenuAction.AddBookmark)
+
+        assertTelemetryRecorded(Events.browserMenuAction, item = "add_bookmark")
+    }
+
+    @Test
+    fun `GIVEN middleware is registered to the customizable menu store WHEN an action is dispatched THEN record telemetry`() {
+        val store =
+            CustomizableMenuStore(
+                initialState = CustomizableMenuState(emptyList()),
+                middleware = listOf(MenuTelemetryMiddleware(accessPoint = MenuAccessPoint.Browser)),
+            )
         assertNull(Events.browserMenuAction.testGetValue())
 
         store.dispatch(MenuAction.AddBookmark)

@@ -5,13 +5,13 @@
 package org.mozilla.fenix.components.menu.store
 
 import android.app.PendingIntent
+import mozilla.components.compose.menu.store.MenuEvent
 import mozilla.components.feature.addons.Addon
-import mozilla.components.lib.state.Action
 import mozilla.components.service.fxa.manager.AccountState
 import org.mozilla.fenix.components.menu.MenuAccessPoint
 
 /** Actions to dispatch through the [MenuStore] to modify the [MenuState]. */
-sealed class MenuAction : Action {
+sealed class MenuAction : MenuEvent {
 
     /**
      * [MenuAction] dispatched to indicate that the store is initialized and ready to use. This action is dispatched

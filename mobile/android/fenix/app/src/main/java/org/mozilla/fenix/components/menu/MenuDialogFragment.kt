@@ -1028,7 +1028,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
         )
     }
 
-    private fun createMenuTelemetryMiddleware(): MenuTelemetryMiddleware {
+    private fun createMenuTelemetryMiddleware(): MenuTelemetryMiddleware<MenuState, MenuAction> {
         return MenuTelemetryMiddleware(accessPoint = args.accesspoint)
     }
 
