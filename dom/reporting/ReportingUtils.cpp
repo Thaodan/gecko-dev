@@ -87,8 +87,9 @@ void ReportingUtils::Report(nsIGlobalObject* aGlobal, nsAtom* aType,
     associatedBrowsingContextId = workerPrivate->AssociatedBrowsingContextID();
   }
 
-  ReportDeliver::AttemptDelivery(aGlobal, type, aGroupName, aURL, aBody,
-                                 associatedBrowsingContextId);
+  ReportDeliver::AttemptDelivery(
+      aGlobal, nsAtomCString(aType), NS_ConvertUTF16toUTF8(aGroupName),
+      NS_ConvertUTF16toUTF8(aURL), aBody, associatedBrowsingContextId);
 }
 
 /* static */
