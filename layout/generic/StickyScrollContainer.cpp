@@ -458,22 +458,15 @@ void StickyScrollContainer::UpdatePositions(nsPoint aScrollPosition,
   OverflowChangedTracker oct;
   oct.SetSubtreeRoot(aSubtreeRoot);
   // We need to position ancestors before children, so iter from shallowest.
-  // Collect a list of frames to be removed, so that we don't invalidate the
-  // iterator while we're using it.
-  AutoTArray<nsIFrame*, 8> framesToRemove;
   for (nsIFrame* f : mFrames.IterFromShallowest()) {
-    if (!nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(f)) {
-      // This frame was added in nsIFrame::DidSetComputedStyle before we knew it
-      // wasn't the first ib-split-sibling.
-      framesToRemove.AppendElement(f);
-      continue;
-    }
+    // mFrames only contains primary frames, because we only register in
+    // nsIFrame::HandlePrimaryFrameStyleChange().
+    MOZ_ASSERT(nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(f),
+               "Only primary frames should have been registered");
     if (aSubtreeRoot) {
       // Reflowing the scroll frame, so recompute offsets.
       ComputeStickyOffsets(f);
     }
-    // mFrames will only contain first continuations, because we filter in
-    // nsIFrame::DidSetComputedStyle.
     PositionContinuations(f);
 
     f = f->GetParent();
@@ -483,9 +476,6 @@ void StickyScrollContainer::UpdatePositions(nsPoint aScrollPosition,
         oct.AddFrame(cont, OverflowChangedTracker::CHILDREN_CHANGED);
       }
     }
-  }
-  for (nsIFrame* f : framesToRemove) {
-    mFrames.Remove(f);
   }
   oct.Flush();
 }
