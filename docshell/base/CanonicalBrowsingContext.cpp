@@ -479,24 +479,20 @@ CanonicalBrowsingContext::GetBrowserDOMWindow() {
 }
 
 already_AddRefed<WindowGlobalParent>
-CanonicalBrowsingContext::GetEmbedderWindowGlobal() const {
-  uint64_t windowId = GetEmbedderInnerWindowId();
-  if (windowId == 0) {
-    return nullptr;
+CanonicalBrowsingContext::GetEmbedderWindowGlobal() {
+  if (auto* parent = GetParentWindowContext()) {
+    return do_AddRef(parent);
   }
-
-  return WindowGlobalParent::GetByInnerWindowId(windowId);
+  if (mCrossGroupEmbedderWindowId) {
+    return WindowGlobalParent::GetByInnerWindowId(mCrossGroupEmbedderWindowId);
+  }
+  return nullptr;
 }
 
 CanonicalBrowsingContext*
 CanonicalBrowsingContext::GetParentCrossChromeBoundary() {
-  if (GetParent()) {
-    return Cast(GetParent());
-  }
-  if (auto* embedder = GetEmbedderElement()) {
-    return Cast(embedder->OwnerDoc()->GetBrowsingContext());
-  }
-  return nullptr;
+  RefPtr<WindowGlobalParent> parent = GetEmbedderWindowGlobal();
+  return parent ? parent->BrowsingContext() : nullptr;
 }
 
 CanonicalBrowsingContext* CanonicalBrowsingContext::TopCrossChromeBoundary() {
@@ -2683,15 +2679,16 @@ CanonicalBrowsingContext::ChangeRemoteness(
   return promise.forget();
 }
 
-void CanonicalBrowsingContext::MaybeSetPermanentKey(Element* aEmbedder) {
-  MOZ_DIAGNOSTIC_ASSERT(IsTop());
+void CanonicalBrowsingContext::SetCrossGroupEmbedderElement(
+    Element* aEmbedder) {
+  MOZ_DIAGNOSTIC_ASSERT(IsTop() && aEmbedder);
 
-  if (aEmbedder) {
-    if (nsCOMPtr<nsIBrowser> browser = aEmbedder->AsBrowser()) {
-      JS::Rooted<JS::Value> key(RootingCx());
-      if (NS_SUCCEEDED(browser->GetPermanentKey(&key)) && key.isObject()) {
-        mPermanentKey = key;
-      }
+  mCrossGroupEmbedderWindowId = aEmbedder->OwnerDoc()->InnerWindowID();
+
+  if (nsCOMPtr<nsIBrowser> browser = aEmbedder->AsBrowser()) {
+    JS::Rooted<JS::Value> key(RootingCx());
+    if (NS_SUCCEEDED(browser->GetPermanentKey(&key)) && key.isObject()) {
+      mPermanentKey = key;
     }
   }
 }
