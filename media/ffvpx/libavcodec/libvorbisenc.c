@@ -32,7 +32,6 @@
 #include "encode.h"
 #include "version.h"
 #include "vorbis_parser.h"
-#include "vorbis_parser_internal.h"
 
 
 /* Number of samples the user should send in each call.
@@ -54,7 +53,7 @@ typedef struct LibvorbisEncContext {
     int dsp_initialized;                /**< vd has been initialized        */
     vorbis_comment vc;                  /**< VorbisComment info             */
     double iblock;                      /**< impulse block bias option      */
-    AVVorbisParseContext vp;            /**< parse context to get durations */
+    AVVorbisParseContext *vp;           /**< parse context to get durations */
     AudioFrameQueue afq;                /**< frame queue for timestamps     */
 } LibvorbisEncContext;
 
@@ -225,8 +224,9 @@ static av_cold int libvorbis_get_priming_samples(vorbis_info *vi, AVCodecContext
             ret = vorbis_error_to_averror(ret);
             goto error;
         }
-        avctx->initial_padding = av_vorbis_parse_frame(&s->vp, op.packet, op.bytes);
     }
+
+    avctx->initial_padding = av_vorbis_parse_frame(s->vp, op.packet, op.bytes);
 
     ret = 0;
 error:
@@ -256,6 +256,8 @@ static av_cold int libvorbis_encode_close(AVCodecContext *avctx)
 
     av_fifo_freep2(&s->pkt_fifo);
     ff_af_queue_close(&s->afq);
+
+    av_vorbis_parse_free(&s->vp);
 
     return 0;
 }
@@ -289,10 +291,8 @@ static av_cold int libvorbis_encode_init(AVCodecContext *avctx)
     if (!(avctx->flags & AV_CODEC_FLAG_BITEXACT))
         vorbis_comment_add_tag(&s->vc, "encoder", LIBAVCODEC_IDENT);
 
-    ret = vorbis_analysis_headerout(&s->vd, &s->vc, &header, &header_comm,
-                                    &header_code);
-    vorbis_comment_clear(&s->vc);
-    if (ret) {
+    if ((ret = vorbis_analysis_headerout(&s->vd, &s->vc, &header, &header_comm,
+                                         &header_code))) {
         ret = vorbis_error_to_averror(ret);
         goto error;
     }
@@ -318,14 +318,16 @@ static av_cold int libvorbis_encode_init(AVCodecContext *avctx)
     offset += header_code.bytes;
     av_assert0(offset == avctx->extradata_size);
 
-    ret = ff_vorbis_parse_init(&s->vp, avctx->extradata, avctx->extradata_size);
-    if (ret < 0) {
+    s->vp = av_vorbis_parse_init(avctx->extradata, avctx->extradata_size);
+    if (!s->vp) {
         av_log(avctx, AV_LOG_ERROR, "invalid extradata\n");
-        goto error;
+        return ret;
     }
 
+    vorbis_comment_clear(&s->vc);
+
     if ((ret = libvorbis_get_priming_samples(&s->vi, avctx)))
-        goto error;
+        return ret;
 
     avctx->frame_size = LIBVORBIS_FRAME_SIZE;
     ff_af_queue_init(avctx, &s->afq);
@@ -413,7 +415,7 @@ static int libvorbis_encode_frame(AVCodecContext *avctx, AVPacket *avpkt,
 
     avpkt->pts = ff_samples_to_time_base(avctx, op.granulepos);
 
-    duration = av_vorbis_parse_frame(&s->vp, avpkt->data, avpkt->size);
+    duration = av_vorbis_parse_frame(s->vp, avpkt->data, avpkt->size);
     if (duration > 0) {
         int discard_padding;
 

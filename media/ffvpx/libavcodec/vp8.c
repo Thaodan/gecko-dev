@@ -26,7 +26,6 @@
 
 #include "config_components.h"
 
-#include "libavutil/attributes.h"
 #include "libavutil/mem.h"
 #include "libavutil/mem_internal.h"
 
@@ -1661,7 +1660,7 @@ int check_intra_pred4x4_mode_emuedge(int mode, int mb_x, int mb_y,
             *copy_buf = 1;
             return mode;
         }
-        av_fallthrough;
+        /* fall-through */
     case DIAG_DOWN_LEFT_PRED:
     case VERT_LEFT_PRED:
         return !mb_y ? (vp7 ? DC_128_PRED : DC_127_PRED) : mode;
@@ -1670,7 +1669,7 @@ int check_intra_pred4x4_mode_emuedge(int mode, int mb_x, int mb_y,
             *copy_buf = 1;
             return mode;
         }
-        av_fallthrough;
+        /* fall-through */
     case HOR_UP_PRED:
         return !mb_x ? (vp7 ? DC_128_PRED : DC_129_PRED) : mode;
     case TM_VP8_PRED:
