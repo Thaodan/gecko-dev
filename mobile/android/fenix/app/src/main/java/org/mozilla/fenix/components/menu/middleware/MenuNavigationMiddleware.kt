@@ -36,7 +36,6 @@ import org.mozilla.fenix.components.menu.MenuDialogFragmentDirections
 import org.mozilla.fenix.components.menu.store.MenuAction
 import org.mozilla.fenix.components.menu.store.MenuState
 import org.mozilla.fenix.components.menu.store.MenuStore
-import org.mozilla.fenix.components.menu.store.NavigationEvent
 import org.mozilla.fenix.components.menu.toFenixFxAEntryPoint
 import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.components.usecases.ShareUseCases
@@ -55,10 +54,12 @@ import org.mozilla.fenix.webcompat.WebCompatReporterMoreInfoSender
  *
  * @param browserStore [BrowserStore] used to dispatch actions related to the menu state and access the selected tab.
  * @param navController [NavController] used for navigation.
+ * @param openToBrowser Callback to open the provided [BrowserNavigationParams] in a new browser tab.
  * @param sessionUseCases [SessionUseCases] used to reload the page and navigate back/forward.
  * @param webAppUseCases [WebAppUseCases] used for adding items to the home screen.
  * @param shareUseCases [ShareUseCases] for sharing content via the system share sheet or the in-app [ShareFragment].
  * @param settings Used to check [Settings] when adding items to the home screen.
+ * @param onDismiss Callback invoked to dismiss the menu dialog.
  * @param scope [CoroutineScope] used to launch coroutines.
  * @param webCompatReporterMoreInfoSender [WebCompatReporterMoreInfoSender] used to send WebCompat info to
  *   webcompat.com.
@@ -67,10 +68,12 @@ import org.mozilla.fenix.webcompat.WebCompatReporterMoreInfoSender
 class MenuNavigationMiddleware(
     private val browserStore: BrowserStore,
     private val navController: NavController,
+    private val openToBrowser: (params: BrowserNavigationParams) -> Unit,
     private val sessionUseCases: SessionUseCases,
     private val webAppUseCases: WebAppUseCases,
     private val shareUseCases: ShareUseCases,
     private val settings: Settings,
+    private val onDismiss: suspend () -> Unit,
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main),
     private val webCompatReporterMoreInfoSender: WebCompatReporterMoreInfoSender,
 ) : Middleware<MenuState, MenuAction> {
@@ -179,7 +182,7 @@ class MenuNavigationMiddleware(
                     settings.installPwaOpened = true
                     if (webAppUseCases.isInstallable()) {
                         webAppUseCases.addToHomescreen()
-                        store.emitEvent(NavigationEvent.Dismiss)
+                        onDismiss()
                     } else {
                         navController.nav(
                             R.id.menuDialogFragment,
@@ -264,7 +267,7 @@ class MenuNavigationMiddleware(
                         },
                     )
 
-                    store.emitEvent(NavigationEvent.Dismiss)
+                    onDismiss()
                 }
 
                 is MenuAction.Navigate.ManageExtensions ->
@@ -274,9 +277,7 @@ class MenuNavigationMiddleware(
                     )
 
                 is MenuAction.Navigate.DiscoverMoreExtensions ->
-                    store.emitEvent(
-                        NavigationEvent.OpenToBrowser(BrowserNavigationParams(url = AMO_HOMEPAGE_FOR_ANDROID))
-                    )
+                    openToBrowser(BrowserNavigationParams(url = AMO_HOMEPAGE_FOR_ANDROID))
 
                 is MenuAction.Navigate.AddonDetails ->
                     navController.nav(
@@ -308,11 +309,7 @@ class MenuNavigationMiddleware(
                                 engineSession = selectedTab?.engineState?.engineSession,
                             )
 
-                            store.emitEvent(
-                                NavigationEvent.OpenToBrowser(
-                                    BrowserNavigationParams(url = "$WEB_COMPAT_REPORTER_URL$tabUrl")
-                                )
-                            )
+                            openToBrowser(BrowserNavigationParams(url = "$WEB_COMPAT_REPORTER_URL$tabUrl"))
                         }
                     }
                 }
@@ -375,7 +372,7 @@ class MenuNavigationMiddleware(
                             else -> sessionUseCases.goBack.invoke(session.id)
                         }
 
-                        store.emitEvent(NavigationEvent.Dismiss)
+                        onDismiss()
                     }
                 }
 
@@ -396,7 +393,7 @@ class MenuNavigationMiddleware(
                     } else {
                         session?.let {
                             sessionUseCases.goForward.invoke(it.id)
-                            store.emitEvent(NavigationEvent.Dismiss)
+                            onDismiss()
                         }
                     }
                 }
@@ -414,7 +411,7 @@ class MenuNavigationMiddleware(
                                     LoadUrlFlags.none()
                                 },
                         )
-                        store.emitEvent(NavigationEvent.Dismiss)
+                        onDismiss()
                     }
                 }
 
@@ -423,7 +420,7 @@ class MenuNavigationMiddleware(
 
                     session?.let {
                         sessionUseCases.stopLoading.invoke(it.id)
-                        store.emitEvent(NavigationEvent.Dismiss)
+                        onDismiss()
                     }
                 }
 
@@ -440,10 +437,6 @@ class MenuNavigationMiddleware(
                 else -> Unit
             }
         }
-    }
-
-    private fun Store<MenuState, MenuAction>.emitEvent(event: NavigationEvent) {
-        (this as? MenuStore)?.emitEvent(event)
     }
 
     private fun MenuState.browserDestinationId(): Int =
