@@ -53,6 +53,15 @@ StickyScrollContainer* StickyScrollContainer::GetForFrame(
                               : nullptr;
 }
 
+void StickyScrollContainer::AddFrame(nsIFrame* aFrame) {
+  MOZ_ASSERT(aFrame->IsStickyPositioned() &&
+                 !aFrame->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY |
+                                          NS_FRAME_SVG_LAYOUT),
+             "Sticky positioning doesn't apply to this frame, so it shouldn't "
+             "be registered!");
+  mFrames.Add(aFrame);
+}
+
 static nscoord ComputeStickySideOffset(Side aSide,
                                        const nsStylePosition& aPosition,
                                        nscoord aPercentBasis) {
