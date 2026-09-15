@@ -33,6 +33,7 @@
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/layers/KnowsCompositor.h"
 #include "mozilla/media/MediaUtils.h"
+#include "mozilla/media/webrtc/AV1FmtpParser.h"
 #include "mozilla/media/webrtc/CodecInfo.h"
 #include "mozilla/media/webrtc/H264FmtpParser.h"
 #include "nsContentUtils.h"
@@ -254,6 +255,53 @@ static CodecType WebrtcMimeToCodecType(const MediaExtendedMIMEType& aMime) {
     return CodecType::AV1;
   }
   return CodecType::Unknown;
+}
+
+template <typename InfoType>
+static InfoType UnsupportedInfo() {
+  InfoType info;
+  info.mSupported = false;
+  info.mSmooth = false;
+  info.mPowerEfficient = false;
+  return info;
+}
+
+// Whether aVideo's resolution and framerate exceed the caps of the H264/AV1
+// level signaled in aMime's fmtp parameters, or the signaled AV1 tier is not
+// defined for that level. Present-but-invalid parameters
+// have already been rejected by WebrtcCodecInfo during the support check, so
+// only well-formed or absent ones reach here. An absent level is deliberately
+// not defaulted (to level 1.0 for H264, 3.1 for AV1, per their RTP payload
+// specs): the resolution and framerate are given explicitly, so the level is
+// inferred from them instead.
+static bool WebrtcVideoExceedsLevel(const MediaExtendedMIMEType& aMime,
+                                    const VideoConfiguration& aVideo) {
+  const auto framerate = static_cast<double>(aVideo.mFramerate);
+  switch (WebrtcMimeToCodecType(aMime)) {
+    case CodecType::H264: {
+      const auto fmtp = ParseH264Fmtp(aMime.OriginalString());
+      MOZ_ASSERT(!fmtp.HasInvalidParam());
+      return fmtp.mProfileLevel.isOk() &&
+             !H264LevelFits(fmtp.mProfileLevel.inspect().mLevel, aVideo.mWidth,
+                            aVideo.mHeight, framerate);
+    }
+    case CodecType::AV1: {
+      const auto fmtp = ParseAV1Fmtp(aMime.OriginalString());
+      MOZ_ASSERT(!fmtp.HasInvalidParam());
+      if (fmtp.mLevelIdx.isErr()) {
+        return false;
+      }
+      const uint8_t levelIdx = fmtp.mLevelIdx.inspect();
+      // Annex A.3 defines no high tier parameters below level 4.0 (level-idx
+      // 8).
+      if (fmtp.mTier.isOk() && fmtp.mTier.inspect() == 1 && levelIdx < 8) {
+        return true;
+      }
+      return !AV1LevelFits(levelIdx, aVideo.mWidth, aVideo.mHeight, framerate);
+    }
+    default:
+      return false;
+  }
 }
 
 // Returns an EncoderConfig for use with PEMFactory::Supports.
@@ -686,24 +734,11 @@ void MediaCapabilities::CreateWebRTCDecodingInfo(
 
         const auto& v = aConfiguration.mVideo.Value();
         const auto& mime = videoContainer->ExtendedType();
-        if (WebrtcMimeToCodecType(mime) == CodecType::H264) {
-          const auto fmtp = ParseH264Fmtp(mime.OriginalString());
-          const bool invalidFmtp =
-              fmtp.mProfileLevel.isErr() &&
-              fmtp.mProfileLevel.inspectErr() == H264FmtpParseError::Invalid;
-          const bool levelTooLow =
-              fmtp.mProfileLevel.isOk() &&
-              !H264LevelFits(fmtp.mProfileLevel.inspect().mLevel, v.mWidth,
-                             v.mHeight, static_cast<double>(v.mFramerate));
-          if (invalidFmtp || levelTooLow) {
-            MediaCapabilitiesDecodingInfo unsupported;
-            unsupported.mSupported = false;
-            unsupported.mSmooth = false;
-            unsupported.mPowerEfficient = false;
-            LOG("{} -> {}", aConfiguration, unsupported);
-            return PromiseType::CreateAndResolve(
-                std::move(unsupported), "MediaCapabilities::DecodingInfo");
-          }
+        if (WebrtcVideoExceedsLevel(mime, v)) {
+          auto unsupported = UnsupportedInfo<MediaCapabilitiesDecodingInfo>();
+          LOG("{} -> {}", aConfiguration, unsupported);
+          return PromiseType::CreateAndResolve(
+              std::move(unsupported), "MediaCapabilities::DecodingInfo");
         }
         const CheckedInt<uint32_t> pixels =
             CheckedInt<uint32_t>(v.mWidth) * CheckedInt<uint32_t>(v.mHeight);
@@ -718,10 +753,7 @@ void MediaCapabilities::CreateWebRTCDecodingInfo(
             CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
                 trackMime, *videoContainer);
         if (!trackInfo) {
-          MediaCapabilitiesDecodingInfo unsupported;
-          unsupported.mSupported = false;
-          unsupported.mSmooth = false;
-          unsupported.mPowerEfficient = false;
+          auto unsupported = UnsupportedInfo<MediaCapabilitiesDecodingInfo>();
           LOG("{} -> {}", aConfiguration, unsupported);
           return PromiseType::CreateAndResolve(
               std::move(unsupported), "MediaCapabilities::DecodingInfo");
@@ -736,10 +768,8 @@ void MediaCapabilities::CreateWebRTCDecodingInfo(
                            aValue) mutable -> RefPtr<PromiseType> {
                      // Treat an internal failure as unsupported.
                      if (aValue.IsReject() || aValue.ResolveValue().isEmpty()) {
-                       MediaCapabilitiesDecodingInfo unsupported;
-                       unsupported.mSupported = false;
-                       unsupported.mSmooth = false;
-                       unsupported.mPowerEfficient = false;
+                       auto unsupported =
+                           UnsupportedInfo<MediaCapabilitiesDecodingInfo>();
                        LOG("{} -> {}", aConfiguration, unsupported);
                        return PromiseType::CreateAndResolve(
                            std::move(unsupported),
@@ -1459,24 +1489,11 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
 
         MOZ_ASSERT(aConfiguration.mVideo.WasPassed());
         const auto& v = aConfiguration.mVideo.Value();
-        if (WebrtcMimeToCodecType(*videoMime) == CodecType::H264) {
-          const auto fmtp = ParseH264Fmtp(videoMime->OriginalString());
-          const bool invalidFmtp =
-              fmtp.mProfileLevel.isErr() &&
-              fmtp.mProfileLevel.inspectErr() == H264FmtpParseError::Invalid;
-          const bool levelTooLow =
-              fmtp.mProfileLevel.isOk() &&
-              !H264LevelFits(fmtp.mProfileLevel.inspect().mLevel, v.mWidth,
-                             v.mHeight, static_cast<double>(v.mFramerate));
-          if (invalidFmtp || levelTooLow) {
-            MediaCapabilitiesInfo unsupported;
-            unsupported.mSupported = false;
-            unsupported.mSmooth = false;
-            unsupported.mPowerEfficient = false;
-            LOG("{} -> {}", aConfiguration, unsupported);
-            return PromiseType::CreateAndResolve(
-                std::move(unsupported), "MediaCapabilities::EncodingInfo");
-          }
+        if (WebrtcVideoExceedsLevel(*videoMime, v)) {
+          auto unsupported = UnsupportedInfo<MediaCapabilitiesInfo>();
+          LOG("{} -> {}", aConfiguration, unsupported);
+          return PromiseType::CreateAndResolve(
+              std::move(unsupported), "MediaCapabilities::EncodingInfo");
         }
         auto encoderConfig = BuildEncoderConfig(*videoMime, v);
         return SupportsVideoEncodeForWebrtc(encoderConfig)
@@ -1486,10 +1503,7 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
                  info](media::EncodeSupportSet aVideoSupport) mutable
                     -> RefPtr<PromiseType> {
                   if (aVideoSupport.isEmpty()) {
-                    MediaCapabilitiesInfo unsupported;
-                    unsupported.mSupported = false;
-                    unsupported.mSmooth = false;
-                    unsupported.mPowerEfficient = false;
+                    auto unsupported = UnsupportedInfo<MediaCapabilitiesInfo>();
                     LOG("{} -> {}", aConfiguration, unsupported);
                     return PromiseType::CreateAndResolve(
                         std::move(unsupported),
@@ -1542,10 +1556,7 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
                 },
                 [](nsresult) -> RefPtr<PromiseType> {
                   // Treat an internal failure as unsupported.
-                  MediaCapabilitiesInfo unsupported;
-                  unsupported.mSupported = false;
-                  unsupported.mSmooth = false;
-                  unsupported.mPowerEfficient = false;
+                  auto unsupported = UnsupportedInfo<MediaCapabilitiesInfo>();
                   return PromiseType::CreateAndResolve(
                       std::move(unsupported),
                       "MediaCapabilities::EncodingInfo");
