@@ -6,7 +6,7 @@ const { topChromeWindow } = window.browsingContext;
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
-  GenAI: "moz-src:///browser/components/genai/GenAI.sys.mjs",
+  GenAI: "resource:///modules/GenAI.sys.mjs",
   SpecialMessageActions:
     "resource://messaging-system/lib/SpecialMessageActions.sys.mjs",
 });

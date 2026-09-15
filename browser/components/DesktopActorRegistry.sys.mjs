@@ -580,10 +580,10 @@ let JSWINDOWACTORS = {
 
   GenAI: {
     parent: {
-      esModuleURI: "moz-src:///browser/components/genai/GenAIParent.sys.mjs",
+      esModuleURI: "resource:///actors/GenAIParent.sys.mjs",
     },
     child: {
-      esModuleURI: "moz-src:///browser/components/genai/GenAIChild.sys.mjs",
+      esModuleURI: "resource:///actors/GenAIChild.sys.mjs",
       events: {
         mousedown: {},
         mouseup: {},
@@ -680,12 +680,10 @@ let JSWINDOWACTORS = {
 
   LinkPreview: {
     parent: {
-      esModuleURI:
-        "moz-src:///browser/components/genai/LinkPreviewParent.sys.mjs",
+      esModuleURI: "resource:///actors/LinkPreviewParent.sys.mjs",
     },
     child: {
-      esModuleURI:
-        "moz-src:///browser/components/genai/LinkPreviewChild.sys.mjs",
+      esModuleURI: "resource:///actors/LinkPreviewChild.sys.mjs",
     },
     includeChrome: true,
     enablePreference: "browser.ml.linkPreview.enabled",
@@ -694,12 +692,10 @@ let JSWINDOWACTORS = {
 
   PageAssist: {
     parent: {
-      esModuleURI:
-        "moz-src:///browser/components/genai/PageAssistParent.sys.mjs",
+      esModuleURI: "resource:///actors/PageAssistParent.sys.mjs",
     },
     child: {
-      esModuleURI:
-        "moz-src:///browser/components/genai/PageAssistChild.sys.mjs",
+      esModuleURI: "resource:///actors/PageAssistChild.sys.mjs",
     },
     includeChrome: true,
     enablePreference: "browser.ml.pageAssist.enabled",

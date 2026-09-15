@@ -22,7 +22,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
   ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
-  GenAI: "moz-src:///browser/components/genai/GenAI.sys.mjs",
+  GenAI: "resource:///modules/GenAI.sys.mjs",
 });
 
 /**

@@ -15,7 +15,7 @@ const { LinkPreviewModel } = ChromeUtils.importESModule(
 );
 
 const { LinkPreviewChild } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/genai/LinkPreviewChild.sys.mjs"
+  "resource:///actors/LinkPreviewChild.sys.mjs"
 );
 
 const { Readerable } = ChromeUtils.importESModule(

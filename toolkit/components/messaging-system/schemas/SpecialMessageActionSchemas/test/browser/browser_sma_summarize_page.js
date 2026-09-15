@@ -4,7 +4,7 @@
 "use strict";
 
 const { GenAI } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/genai/GenAI.sys.mjs"
+  "resource:///modules/GenAI.sys.mjs"
 );
 
 const SIDEBAR_REVAMP_PREF = "sidebar.revamp";

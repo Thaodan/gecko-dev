@@ -2,7 +2,7 @@
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 const { GenAI } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/genai/GenAI.sys.mjs"
+  "resource:///modules/GenAI.sys.mjs"
 );
 
 // Schedule reset to the initial sidebar state after the test.
