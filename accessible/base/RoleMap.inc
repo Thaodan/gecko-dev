@@ -468,7 +468,7 @@ ROLE(COMBOBOX,
      nil,
      ROLE_SYSTEM_COMBOBOX,
      ROLE_SYSTEM_COMBOBOX,
-     java::SessionAccessibility::CLASSNAME_VIEW,
+     java::SessionAccessibility::CLASSNAME_SPINNER,
      IsAccessibilityElementRule::Yes,
      UIA_ComboBoxControlTypeId,
      eNameFromValueRule)
