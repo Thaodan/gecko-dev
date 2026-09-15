@@ -3814,6 +3814,9 @@
                   "id": {
                     "type": "string",
                     "minLength": 1
+                  },
+                  "ephemeral": {
+                    "type": "boolean"
                   }
                 },
                 "required": ["id"]

@@ -33,6 +33,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
   ContextualIdentityService:
     "moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs",
+  EphemeralContainerWatcher:
+    "resource:///modules/policies/EphemeralContainerWatcher.sys.mjs",
   WebsiteFilter: "resource:///modules/policies/WebsiteFilter.sys.mjs",
   LaunchOnLogin: "resource://gre/modules/LaunchOnLogin.sys.mjs",
 
@@ -3630,6 +3632,7 @@ export var Policies = {
 
       const sitePolicies = [];
       let hasContainerPolicy = false;
+      const ephemeralUserContextIds = new Set();
 
       for (const policies of params) {
         const matches = policies.Match ?? [];
@@ -3679,6 +3682,10 @@ export var Policies = {
 
           features.container = userContextId;
           hasContainerPolicy = true;
+
+          if (policies.Policies.Container.ephemeral) {
+            ephemeralUserContextIds.add(userContextId);
+          }
         }
 
         sitePolicies.push({
@@ -3700,6 +3707,14 @@ export var Policies = {
           "privacy.containers.switchDuringNavigation.enabled",
           true
         );
+
+        if (ephemeralUserContextIds.size > 0) {
+          lazy.EphemeralContainerWatcher.init(ephemeralUserContextIds);
+        } else {
+          lazy.EphemeralContainerWatcher.destroy();
+        }
+      } else {
+        lazy.EphemeralContainerWatcher.destroy();
       }
     },
   },
