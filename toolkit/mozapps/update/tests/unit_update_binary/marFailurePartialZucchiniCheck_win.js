@@ -3,26 +3,29 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-/* Zucchini Partial MAR File Patch Apply Memory Allocation Failure Test */
+/* Zucchini Partial MAR File Patch Apply CHECK Failure Test */
 
 async function run_test() {
   if (!setupTestCommon()) {
     return;
   }
-  const badAllocEnv = "MOZ_TEST_ZUCCHINI_BAD_ALLOC";
-  const hadBadAllocEnv = Services.env.exists(badAllocEnv);
-  const originalBadAllocEnv = hadBadAllocEnv
-    ? Services.env.get(badAllocEnv)
+  const checkFailureEnv = "MOZ_TEST_ZUCCHINI_CHECK_FAILURE";
+  const hadCheckFailureEnv = Services.env.exists(checkFailureEnv);
+  const originalCheckFailureEnv = hadCheckFailureEnv
+    ? Services.env.get(checkFailureEnv)
     : "";
-  Services.env.set(badAllocEnv, "1");
+  Services.env.set(checkFailureEnv, "1");
   registerCleanupFunction(() => {
-    Services.env.set(badAllocEnv, hadBadAllocEnv ? originalBadAllocEnv : "");
+    Services.env.set(
+      checkFailureEnv,
+      hadCheckFailureEnv ? originalCheckFailureEnv : ""
+    );
   });
   gTestFiles = gTestFilesPartialSuccess;
   gTestDirs = gTestDirsPartialSuccess;
   setTestFilesAndDirsForFailure();
   await setupUpdaterTest(FILE_PARTIAL_ZUCCHINI_MAR, false);
-  runUpdate(STATE_FAILED_BSPATCH_MEM_ERROR, false, USE_EXECV ? 0 : 1, true);
+  runUpdate(STATE_FAILED_UNEXPECTED_BSPATCH_ERROR, false, 1, true);
   checkAppBundleModTime();
   await testPostUpdateProcessing();
   checkPostUpdateRunningFile(false);
@@ -32,7 +35,7 @@ async function run_test() {
     STATE_NONE,
     false,
     STATE_FAILED,
-    BSPATCH_MEM_ERROR,
+    UNEXPECTED_BSPATCH_ERROR,
     1
   );
   checkCallbackLog();

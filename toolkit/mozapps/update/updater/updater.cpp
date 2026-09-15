@@ -1812,8 +1812,7 @@ class PatchFileDecoder {
 
   virtual ~PatchFileDecoder() = default;
 
-  [[nodiscard]] virtual int ComputeCrc32(const uint8_t* aBuf, size_t aBufSize,
-                                         unsigned int& aOutCrc32) = 0;
+  virtual unsigned int ComputeCrc32(const uint8_t* aBuf, size_t aBufSize) = 0;
 
   virtual off_t SourceSize() = 0;
   virtual off_t DestinationSize() = 0;
@@ -1823,12 +1822,8 @@ class PatchFileDecoder {
   // aDstFile. aDstFile is never deleted, cleanup is up to the caller.
   // Assumes that the crc32 and size of aCheckedSrcBuf have been
   // checked by the caller.
-  [[nodiscard]] virtual int Apply(const uint8_t* aCheckedSrcBuf,
-                                  size_t aCheckedSrcBufSize,
-                                  FILE* aDstFile) = 0;
-
-  // Release resources early, returning a status code.
-  [[nodiscard]] virtual int Finalize() { return OK; }
+  virtual int Apply(const uint8_t* aCheckedSrcBuf, size_t aCheckedSrcBufSize,
+                    FILE* aDstFile) = 0;
 
  protected:
   virtual int Load(FILE* aPatchFile) = 0;
@@ -1839,8 +1834,7 @@ class BSPatchFileDecoder : public PatchFileDecoder {
  public:
   ~BSPatchFileDecoder() override = default;
 
-  [[nodiscard]] int ComputeCrc32(const uint8_t* aBuf, size_t aBufSize,
-                                 unsigned int& aOutCrc32) override;
+  unsigned int ComputeCrc32(const uint8_t* aBuf, size_t aBufSize) override;
 
   off_t SourceSize() override;
 
@@ -1848,8 +1842,8 @@ class BSPatchFileDecoder : public PatchFileDecoder {
 
   unsigned int SourceCrc32() override;
 
-  [[nodiscard]] int Apply(const uint8_t* aSrcBuf, size_t aSrcBufSize,
-                          FILE* aDstFile) override;
+  int Apply(const uint8_t* aSrcBuf, size_t aSrcBufSize,
+            FILE* aDstFile) override;
 
  protected:  // Comply with PatchFileDecoder::TryLoadAs requirements
   BSPatchFileDecoder() = default;
@@ -1863,16 +1857,16 @@ class BSPatchFileDecoder : public PatchFileDecoder {
 
 // This BZ2_crc32Table variable lives in libbz2. We just took the
 // data structure from bz2 and created crctables.h
-int BSPatchFileDecoder::ComputeCrc32(const uint8_t* aBuf, size_t aBufSize,
-                                     unsigned int& aOutCrc32) {
+unsigned int BSPatchFileDecoder::ComputeCrc32(const uint8_t* aBuf,
+                                              size_t aBufSize) {
   unsigned int crc = 0xffffffffL;
 
   const uint8_t* end = aBuf + aBufSize;
   for (; aBuf != end; ++aBuf)
     crc = (crc << 8) ^ BZ2_crc32Table[(crc >> 24) ^ *aBuf];
 
-  aOutCrc32 = ~crc;
-  return OK;
+  crc = ~crc;
+  return crc;
 }
 
 int BSPatchFileDecoder::Load(FILE* aPatchFile) {
@@ -1943,8 +1937,7 @@ class ZucchiniPatchFileDecoder : public PatchFileDecoder {
  public:
   ~ZucchiniPatchFileDecoder() override = default;
 
-  [[nodiscard]] int ComputeCrc32(const uint8_t* aBuf, size_t aBufSize,
-                                 unsigned int& aOutCrc32) override;
+  unsigned int ComputeCrc32(const uint8_t* aBuf, size_t aBufSize) override;
 
   off_t SourceSize() override;
 
@@ -1952,10 +1945,8 @@ class ZucchiniPatchFileDecoder : public PatchFileDecoder {
 
   unsigned int SourceCrc32() override;
 
-  [[nodiscard]] int Apply(const uint8_t* aCheckedSrcBuf,
-                          size_t aCheckedSrcBufSize, FILE* aDstFile) override;
-
-  [[nodiscard]] int Finalize() override;
+  int Apply(const uint8_t* aCheckedSrcBuf, size_t aCheckedSrcBufSize,
+            FILE* aDstFile) override;
 
  protected:  // Comply with PatchFileDecoder::TryLoadAs requirements
   ZucchiniPatchFileDecoder() = default;
@@ -1969,10 +1960,9 @@ class ZucchiniPatchFileDecoder : public PatchFileDecoder {
   uint32_t mSourceCrc32{};
 };
 
-int ZucchiniPatchFileDecoder::ComputeCrc32(const uint8_t* aBuf, size_t aBufSize,
-                                           unsigned int& aOutCrc32) {
-  return FromZucchiniStatus(
-      zucchini::mozilla::ComputeCrc32(aBuf, aBufSize, aOutCrc32));
+unsigned int ZucchiniPatchFileDecoder::ComputeCrc32(const uint8_t* aBuf,
+                                                    size_t aBufSize) {
+  return zucchini::mozilla::ComputeCrc32(aBuf, aBufSize);
 }
 
 int ZucchiniPatchFileDecoder::Load(FILE* aPatchFile) {
@@ -1999,10 +1989,6 @@ int ZucchiniPatchFileDecoder::Apply(const uint8_t* aCheckedSrcBuf,
   // of PatchFileDecoder::Apply.
   return FromZucchiniStatus(
       mMappedPatch.ApplyUnsafe(aCheckedSrcBuf, aCheckedSrcBufSize, aDstFile));
-}
-
-int ZucchiniPatchFileDecoder::Finalize() {
-  return FromZucchiniStatus(mMappedPatch.Finalize());
 }
 #endif  // defined(MOZ_ZUCCHINI)
 
@@ -2101,12 +2087,7 @@ int PatchFile::LoadSourceFile(FILE* ofile) {
 
   // Verify that the contents of the source file correspond to what we expect.
 
-  unsigned int crc = 0;
-  rv = mPatchFileDecoder->ComputeCrc32(mBuf.get(), mBufSize, crc);
-  if (rv != OK) {
-    LOG(("LoadSourceFile: crc computation failed, err: %d", rv));
-    return rv;
-  }
+  unsigned int crc = mPatchFileDecoder->ComputeCrc32(mBuf.get(), mBufSize);
   unsigned int expectedCrc = mPatchFileDecoder->SourceCrc32();
 
   if (crc != expectedCrc) {
@@ -2375,12 +2356,6 @@ int PatchFile::ApplyPatchTo(PatchDest aDest) {
   // SAFETY: We have manually checked that the size and crc32 of mBuf match with
   // the patch in PatchFile::LoadSourceFile.
   rv = mPatchFileDecoder->Apply(mBuf.get(), mBufSize, ofile);
-
-  if (rv == OK) {
-    // Manually release resources, and propagate any failure that could reflect
-    // process instability (e.g. OOM).
-    rv = mPatchFileDecoder->Finalize();
-  }
 
   // Go ahead and do a bit of cleanup now to minimize runtime overhead.
   // Release the patch decoder and any resources it holds (such as
@@ -5685,13 +5660,15 @@ int DoUpdate() {
   NS_tchar* rb = buf;
 
 #if defined(MOZ_ZUCCHINI)
-#  if defined(TEST_UPDATER)
+#  if defined(TEST_UPDATER) && defined(XP_WIN)
+  // Crash recovery is only supported (and hence tested) on Windows for now.
+  // POSIX support is planned, see bug 2043122 for more information.
   zucchini::mozilla::TestOptions options;
   options.logDestructorMarker = EnvHasValue("MOZ_TEST_ZUCCHINI_DTOR_MARKER");
   options.triggerBadAlloc = EnvHasValue("MOZ_TEST_ZUCCHINI_BAD_ALLOC");
   options.triggerCheckFailure = EnvHasValue("MOZ_TEST_ZUCCHINI_CHECK_FAILURE");
   zucchini::mozilla::SetTestOptions(options);
-#  endif  // TEST_UPDATER
+#  endif  // TEST_UPDATER && XP_WIN
 
   zucchini::mozilla::SetLogFunction(LogZucchiniMessage);
 #endif  // defined(MOZ_ZUCCHINI)

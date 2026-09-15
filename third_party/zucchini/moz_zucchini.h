@@ -49,6 +49,8 @@ namespace mozilla {
 
 #ifdef ENABLE_TESTS
 // Options that help testing crash recovery.
+// Crash recovery is only supported on Windows for now.
+// POSIX support is planned, see bug 2043122 for more information.
 
 struct TestOptions {
   bool logDestructorMarker = false;
@@ -61,40 +63,27 @@ void SetTestOptions(const TestOptions& aOptions);
 using LogFunctionPtr = void (*)(const char* aMessage);
 void SetLogFunction(LogFunctionPtr aLogFunction);
 
-[[nodiscard]] status::Code ComputeCrc32(const uint8_t* aBuf, size_t aBufSize,
-                                        uint32_t& aOutCrc32);
+uint32_t ComputeCrc32(const uint8_t* aBuf, size_t aBufSize);
 
 class MappedPatchImpl;
 
 class MappedPatch {
  public:
-  MappedPatch() : mImpl(nullptr), mInitStatus(Initialize()) { }
-  ~MappedPatch() { (void)Finalize(); }
+  MappedPatch();
+  ~MappedPatch();
 
-  [[nodiscard]] status::Code Load(FILE* aPatchFile, uint32_t* aSourceSize,
-                                  uint32_t* aDestinationSize,
-                                  uint32_t* aSourceCrc32);
+  status::Code Load(FILE* aPatchFile, uint32_t* aSourceSize,
+                    uint32_t* aDestinationSize, uint32_t* aSourceCrc32);
 
-  // Applies the loaded patch to aCheckedOldImage, and writes the result to
+  // Applies the loaded patch to aOldImage, and writes the result to
   // aNewFile. aNewFile is never deleted, cleanup is up to the caller.
-  // Assumes that the crc32 and size of aCheckedOldImage have already been
+  // Assumes that the crc32 and size of aCheckOldImage have already been
   // checked by the caller, hence the name.
-  [[nodiscard]] status::Code ApplyUnsafe(const uint8_t* aCheckedOldImage,
-                                         size_t aCheckedOldImageSize,
-                                         FILE* aNewFile);
-
-  // Releases resources. Call this method manually to get a status code.
-  [[nodiscard]] status::Code Finalize();
+  status::Code ApplyUnsafe(const uint8_t* aCheckedOldImage,
+                           size_t aCheckedOldImageSize, FILE* aNewFile);
 
  private:
-  status::Code Initialize();
-  status::Code LoadImpl(FILE* aPatchFile, uint32_t* aSourceSize,
-                        uint32_t* aDestinationSize, uint32_t* aSourceCrc32);
-  status::Code ApplyUnsafeImpl(const uint8_t* aCheckedOldImage,
-                               size_t aCheckedOldImageSize, FILE* aNewFile);
-
   MappedPatchImpl* mImpl;
-  status::Code mInitStatus;
 };
 
 }  // namespace mozilla

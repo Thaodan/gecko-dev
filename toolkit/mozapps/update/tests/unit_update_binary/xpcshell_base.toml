@@ -133,19 +133,25 @@ reason = "Unix only test"
 
 ["marFailurePartialZucchini.js"]
 
-["marFailurePartialZucchiniBadAlloc.js"]
+["marFailurePartialZucchiniBadAlloc_win.js"]
 skip-if = [
+  "os != 'win'",
   "tsan", # TSan intercepts operator new and aborts on OOM before bad_alloc
   "asan", # Same issue with ASan
 ]
+reason = "Windows only test, POSIX planned for bug 2043122"
 
-["marFailurePartialZucchiniBadAllocDestructor.js"]
-skip-if = [
-  "tsan", # TSan intercepts operator new and aborts on OOM before bad_alloc
-  "asan", # Same issue with ASan
+["marFailurePartialZucchiniCheck_win.js"]
+run-if = [
+  "os == 'win'",
 ]
+reason = "Windows only test, POSIX planned for bug 2043122"
 
-["marFailurePartialZucchiniCheck.js"]
+["marFailurePartialZucchiniCheckDestructor_win.js"]
+run-if = [
+  "os == 'win'",
+]
+reason = "Windows only test, POSIX planned for bug 2043122"
 
 ["marFileInUseStageFailureComplete_win.js"]
 run-if = [
@@ -184,6 +190,12 @@ run-if = [
 reason = "Windows only test"
 
 ["marFileLockedFailureComplete_win.js"]
+run-if = [
+  "os == 'win'",
+]
+reason = "Windows only test"
+
+["marRemoveAddRollbackFailureComplete_win.js"]
 run-if = [
   "os == 'win'",
 ]
@@ -279,12 +291,6 @@ run-if = [
 reason = "Windows only test"
 
 ["marRMRFDirFileInUseSuccessPartial_win.js"]
-run-if = [
-  "os == 'win'",
-]
-reason = "Windows only test"
-
-["marRemoveAddRollbackFailureComplete_win.js"]
 run-if = [
   "os == 'win'",
 ]
