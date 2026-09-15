@@ -62,9 +62,6 @@ nsresult LoadInfoArgsToLoadInfo(const mozilla::net::LoadInfoArgs& aLoadInfoArgs,
   GETTER(uint64_t, TriggeringWindowId, triggeringWindowId, 0)                  \
   SETTER(uint64_t, TriggeringWindowId)                                         \
                                                                                \
-  GETTER(bool, TriggeringStorageAccess, triggeringStorageAccess, false)        \
-  SETTER(bool, TriggeringStorageAccess)                                        \
-                                                                               \
   GETTER(uint32_t, TriggeringFirstPartyClassificationFlags,                    \
          triggeringFirstPartyClassificationFlags, 0)                           \
   SETTER(uint32_t, TriggeringFirstPartyClassificationFlags)                    \

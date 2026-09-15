@@ -458,13 +458,9 @@ interface nsILoadInfo : nsISupports
 
 
   /**
-  * The window id and storage access status of the window of the
-  * context that triggered the load. This is used to allow self-initiated
-  * same-origin navigations to propogate their "has storage access" bit
-  * to the next Document.
+  * The window id of the window of the context that triggered the load.
   */
   [infallible] attribute unsigned long long triggeringWindowId;
-  [infallible] attribute boolean triggeringStorageAccess;
 
   /**
    * The classification flags of the first-party context responsible for causing

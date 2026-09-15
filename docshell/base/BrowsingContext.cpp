@@ -2600,7 +2600,6 @@ BrowsingContext::CheckURLAndCreateLoadState(nsIURI* aURI,
       aSourceDocument->ConsumeTextDirectiveUserActivation() ||
       loadState->HasValidUserGestureActivation());
   loadState->SetTriggeringWindowId(aSourceDocument->InnerWindowID());
-  loadState->SetTriggeringStorageAccess(aSourceDocument->UsingStorageAccess());
   loadState->SetTriggeringClassificationFlags(
       aSourceDocument->GetScriptTrackingFlags());
 
