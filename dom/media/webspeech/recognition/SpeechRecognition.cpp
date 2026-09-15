@@ -1157,7 +1157,9 @@ void SpeechRecognition::DispatchNoMatch() {
   // the confidence threshold or may be null"; the engine hands us nothing at
   // all in this case, so the list is empty.
   RootedDictionary<SpeechRecognitionEventInit> init(RootingCx());
-  init.mBubbles = true;
+  // https://webaudio.github.io/web-speech-api/#speechreco-events
+  // "These events do not bubble and are not cancelable."
+  init.mBubbles = false;
   init.mCancelable = false;
   init.mResultIndex = 0;
   init.mResults = new SpeechRecognitionResultList(this);
@@ -1266,7 +1268,9 @@ void SpeechRecognition::DispatchError(SpeechRecognitionErrorCode aErrorCode,
   RefPtr<SpeechRecognitionErrorEvent> srError =
       new SpeechRecognitionErrorEvent(nullptr, nullptr, nullptr);
 
-  srError->InitSpeechRecognitionError(u"error"_ns, true, false, aErrorCode,
+  // https://webaudio.github.io/web-speech-api/#speechreco-events
+  // "These events do not bubble and are not cancelable."
+  srError->InitSpeechRecognitionError(u"error"_ns, false, false, aErrorCode,
                                       aMessage);
   srError->SetTrusted(true);
 
@@ -1383,7 +1387,9 @@ void SpeechRecognition::HandleRecognitionResultFromBackend(
   }
 
   RootedDictionary<SpeechRecognitionEventInit> init(RootingCx());
-  init.mBubbles = true;
+  // https://webaudio.github.io/web-speech-api/#speechreco-events
+  // "These events do not bubble and are not cancelable."
+  init.mBubbles = false;
   init.mCancelable = false;
   init.mResultIndex = resultIndex;
   init.mResults = resultList;

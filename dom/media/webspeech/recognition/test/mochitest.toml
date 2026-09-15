@@ -40,6 +40,8 @@ skip-if = [
   "verify", # skip under test-verify: it runs outside the subsuite, so serve_model.py (the model hub) is never started
 ]
 
+["test_event_bubbles.html"]
+
 ["test_fuzz_availability_install.html"]
 
 ["test_fuzz_iframe_teardown.html"]
