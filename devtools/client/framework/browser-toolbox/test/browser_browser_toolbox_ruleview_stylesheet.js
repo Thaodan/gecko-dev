@@ -60,7 +60,9 @@ add_task(async function () {
     info("Retrieve the sourceLabel for the rule at index 1");
     const ruleView = inspector.getPanel("ruleview").view;
     await waitUntil(() => getRuleViewLinkByIndex(ruleView, 1));
-    const sourceLabelEl = getRuleViewLinkByIndex(ruleView, 1);
+    const sourceLabelEl = getRuleViewLinkByIndex(ruleView, 1).querySelector(
+      ".ruleview-rule-source-label"
+    );
 
     return sourceLabelEl.textContent;
   });

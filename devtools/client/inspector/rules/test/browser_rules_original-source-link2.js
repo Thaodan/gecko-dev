@@ -79,7 +79,9 @@ function waitForOriginalStyleSheetEditorSelection(toolbox) {
 
 function verifyLinkText(text, view) {
   info("Verifying that the rule-view stylesheet link is " + text);
-  const label = getRuleViewLinkByIndex(view, 1);
+  const label = getRuleViewLinkByIndex(view, 1).querySelector(
+    ".ruleview-rule-source-label"
+  );
   return waitForSuccess(function () {
     return label.textContent == text;
   }, "Link text changed to display correct location: " + text);

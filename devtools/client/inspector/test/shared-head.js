@@ -698,12 +698,11 @@ function getRuleViewSelector(view, selectorText) {
  *        The instance of the rule-view panel
  * @param {number} index
  *        The index of the link to get
- * @return {DOMNode|null} The anchor, which is where the click handler lives, or
- *         null if this rule has no source link
+ * @return {DOMNode|null} The link if any at this rule index, or null if it doesn't exist
  */
 function getRuleViewLinkByIndex(view, index) {
   const ruleEl = view.styleDocument.querySelectorAll(".ruleview-rule")[index];
-  return ruleEl?.querySelector(".ruleview-rule-source-label") || null;
+  return ruleEl?.querySelector(".ruleview-rule-source") || null;
 }
 
 /**
@@ -716,7 +715,8 @@ function getRuleViewLinkByIndex(view, index) {
  * @return {string} The string at this index
  */
 function getRuleViewLinkTextByIndex(view, index) {
-  return getRuleViewLinkByIndex(view, index).textContent;
+  const link = getRuleViewLinkByIndex(view, index);
+  return link.querySelector(".ruleview-rule-source-label").textContent;
 }
 
 /**

@@ -108,7 +108,11 @@ add_task(async function testStylesheetLinksToDebuggerTelemetry() {
     "Find the style link in the rule view and click it to open the debugger"
   );
   const link = getRuleViewLinkByIndex(ruleView, 1);
-  is(link.textContent, "style.css:1", "The link text is correct");
+  is(
+    link.querySelector(".ruleview-rule-source-label").textContent,
+    "style.css:1",
+    "The link text is correct"
+  );
 
   link.scrollIntoView();
   link.click();

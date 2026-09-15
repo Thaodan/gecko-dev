@@ -203,7 +203,8 @@ async function testDisabledStyleEditor(view, toolbox) {
 
 async function testRuleViewLinkLabel(view) {
   info("Checking the data URL link label");
-  let labelElem = await waitFor(() => getRuleViewLinkByIndex(view, 1));
+  let link = await waitFor(() => getRuleViewLinkByIndex(view, 1));
+  let labelElem = link.querySelector(".ruleview-rule-source-label");
   let value = labelElem.textContent;
   let tooltipText = labelElem.getAttribute("title");
 
@@ -219,7 +220,8 @@ async function testRuleViewLinkLabel(view) {
   );
 
   info("Checking the external link label");
-  labelElem = await waitFor(() => getRuleViewLinkByIndex(view, 2));
+  link = await waitFor(() => getRuleViewLinkByIndex(view, 2));
+  labelElem = link.querySelector(".ruleview-rule-source-label");
   value = labelElem.textContent;
   tooltipText = labelElem.getAttribute("title");
 
@@ -237,7 +239,7 @@ async function testRuleViewLinkLabel(view) {
 
 function testUnselectableRuleViewLink(view, index) {
   const link = getRuleViewLinkByIndex(view, index);
-  const unselectable = link.parentNode.hasAttribute("unselectable");
+  const unselectable = link.hasAttribute("unselectable");
 
   ok(unselectable, "Rule view is unselectable");
 }
