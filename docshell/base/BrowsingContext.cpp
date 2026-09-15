@@ -3691,12 +3691,12 @@ void BrowsingContext::DidSet(FieldIndex<IDX_OverrideDPPX>, float aOldValue) {
   PresContextAffectingFieldChanged();
 }
 
-void BrowsingContext::SetCustomUserAgent(const nsAString& aUserAgent,
+void BrowsingContext::SetCustomUserAgent(const nsACString& aUserAgent,
                                          ErrorResult& aRv) {
   Top()->SetUserAgentOverride(aUserAgent, aRv);
 }
 
-nsresult BrowsingContext::SetCustomUserAgent(const nsAString& aUserAgent) {
+nsresult BrowsingContext::SetCustomUserAgent(const nsACString& aUserAgent) {
   return Top()->SetUserAgentOverride(aUserAgent);
 }
 
@@ -3978,8 +3978,8 @@ bool BrowsingContext::CanSet(FieldIndex<IDX_UseGlobalHistory>,
 }
 
 auto BrowsingContext::CanSet(FieldIndex<IDX_UserAgentOverride>,
-                             const nsString& aUserAgent, ContentParent* aSource)
-    -> CanSetResult {
+                             const nsCString& aUserAgent,
+                             ContentParent* aSource) -> CanSetResult {
   if (!IsTop()) {
     return CanSetResult::Deny;
   }

@@ -405,14 +405,13 @@ void ReportDeliver::WorkerInitializeReportingEndpoints(
                   aEndpointURL.forget(), aEndpointName));
             });
 
-        nsString userAgent;
+        nsAutoCString userAgent;
         mozilla::dom::Navigator::GetUserAgent(
             nullptr, nullptr, Some(aShouldResistFingerprinting), userAgent);
 
         gReportDeliver->mGlobalsEndpointLists.InsertOrUpdate(
             aGlobalKey,
-            GlobalReportingData{NS_ConvertUTF16toUTF8(userAgent),
-                                std::move(list), cookieJarSettings});
+            GlobalReportingData{userAgent, std::move(list), cookieJarSettings});
       }));
 }
 
@@ -436,7 +435,7 @@ void ReportDeliver::WindowInitializeReportingEndpoints(
     cookieJarSettings = doc->CookieJarSettings();
   }
 
-  nsAutoString userAgent;
+  nsAutoCString userAgent;
   (void)mozilla::dom::Navigator::GetUserAgent(
       win, doc,
       mozilla::Some(
@@ -444,8 +443,7 @@ void ReportDeliver::WindowInitializeReportingEndpoints(
       userAgent);
   gReportDeliver->mGlobalsEndpointLists.InsertOrUpdate(
       reinterpret_cast<uintptr_t>(aGlobal),
-      GlobalReportingData{NS_ConvertUTF16toUTF8(userAgent),
-                          std::move(aEndpointList),
+      GlobalReportingData{userAgent, std::move(aEndpointList),
                           std::move(cookieJarSettings)});
 }
 

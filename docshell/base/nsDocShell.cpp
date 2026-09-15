@@ -2296,13 +2296,13 @@ nsDocShell::NameEquals(const nsAString& aName, bool* aResult) {
 }
 
 NS_IMETHODIMP
-nsDocShell::GetCustomUserAgent(nsAString& aCustomUserAgent) {
+nsDocShell::GetCustomUserAgent(nsACString& aCustomUserAgent) {
   mBrowsingContext->GetCustomUserAgent(aCustomUserAgent);
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsDocShell::SetCustomUserAgent(const nsAString& aCustomUserAgent) {
+nsDocShell::SetCustomUserAgent(const nsACString& aCustomUserAgent) {
   if (mWillChangeProcess) {
     NS_WARNING("SetCustomUserAgent: Process is changing. Ignoring set");
     return NS_ERROR_FAILURE;

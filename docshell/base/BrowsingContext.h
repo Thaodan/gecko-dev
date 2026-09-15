@@ -209,7 +209,7 @@ struct EmbedderColorSchemes {
   FIELD(CurrentOrientationType, mozilla::dom::OrientationType)                \
   FIELD(OrientationLock, mozilla::hal::ScreenOrientation)                     \
   FIELD(HasOrientationOverride, bool)                                         \
-  FIELD(UserAgentOverride, nsString)                                          \
+  FIELD(UserAgentOverride, nsCString)                                         \
   FIELD(TouchEventsOverrideInternal, mozilla::dom::TouchEventsOverride)       \
   FIELD(EmbedderElementType, Maybe<nsString>)                                 \
   FIELD(MessageManagerGroup, nsString)                                        \
@@ -885,11 +885,11 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
                       const WindowPostMessageOptions& aOptions,
                       nsIPrincipal& aSubjectPrincipal, ErrorResult& aError);
 
-  void GetCustomUserAgent(nsAString& aUserAgent) {
+  void GetCustomUserAgent(nsACString& aUserAgent) {
     aUserAgent = Top()->GetUserAgentOverride();
   }
-  nsresult SetCustomUserAgent(const nsAString& aUserAgent);
-  void SetCustomUserAgent(const nsAString& aUserAgent, ErrorResult& aRv);
+  nsresult SetCustomUserAgent(const nsACString& aUserAgent);
+  void SetCustomUserAgent(const nsACString& aUserAgent, ErrorResult& aRv);
 
   void GetCustomPlatform(nsAString& aPlatform) {
     aPlatform = Top()->GetPlatformOverride();
@@ -1500,7 +1500,7 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   void DidSet(FieldIndex<IDX_UserAgentOverride>);
   CanSetResult CanSet(FieldIndex<IDX_UserAgentOverride>,
-                      const nsString& aUserAgent, ContentParent* aSource);
+                      const nsCString& aUserAgent, ContentParent* aSource);
   bool CanSet(FieldIndex<IDX_OrientationLock>,
               const mozilla::hal::ScreenOrientation& aOrientationLock,
               ContentParent* aSource);
