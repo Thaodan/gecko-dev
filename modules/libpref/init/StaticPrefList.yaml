@@ -4304,13 +4304,6 @@
   value: true
   mirror: always
 
-# Declarative Web Push
-# https://w3c.github.io/push-api/#declarative-push-message
-- name: dom.push.declarative.enabled
-  type: bool
-  value: false
-  mirror: always
-
 # Indicate the deprecated aesgcm support in PushManager.supportedContentEncodings.
 #
 # This does not affect actual aesgcm support, any new and existing subscriptions
