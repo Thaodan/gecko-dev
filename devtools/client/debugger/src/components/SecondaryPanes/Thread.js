@@ -3,10 +3,7 @@
  * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 import React, { Component } from "devtools/client/shared/vendor/react";
-import {
-  button,
-  span,
-} from "devtools/client/shared/vendor/react-dom-factories";
+import { div, span } from "devtools/client/shared/vendor/react-dom-factories";
 import PropTypes from "devtools/client/shared/vendor/react-prop-types";
 import { connect } from "devtools/client/shared/vendor/react-redux";
 
@@ -46,18 +43,16 @@ export class Thread extends Component {
     if (thread.serviceWorkerStatus) {
       label += ` (${thread.serviceWorkerStatus})`;
     }
-    const isSelected = thread.actor == currentThread;
-    return button(
+    return div(
       {
-        type: "button",
         className: classnames("thread", {
+          selected: thread.actor == currentThread,
           paused: isPaused,
         }),
         key: thread.actor,
         onClick: this.onSelectThread,
-        "aria-pressed": isSelected,
       },
-      span(
+      div(
         {
           className: "icon",
         },
@@ -65,7 +60,7 @@ export class Thread extends Component {
           name: iconClassname,
         })
       ),
-      span(
+      div(
         {
           className: "label",
         },

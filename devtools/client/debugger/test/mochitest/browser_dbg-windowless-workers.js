@@ -152,6 +152,13 @@ add_task(async function () {
   );
 });
 
+function assertClass(dbg, selector, className, ...args) {
+  ok(
+    findElement(dbg, selector, ...args).classList.contains(className),
+    `${className} class exists`
+  );
+}
+
 function threadIsPaused(dbg, index) {
   return ok(
     findElement(dbg, "threadsPaneItemPause", index),
@@ -160,9 +167,5 @@ function threadIsPaused(dbg, index) {
 }
 
 function threadIsSelected(dbg, index) {
-  return is(
-    findElement(dbg, "threadsPaneItem", index).getAttribute("aria-pressed"),
-    "true",
-    `Thread ${index} is selected`
-  );
+  return assertClass(dbg, "threadsPaneItem", "selected", index);
 }
