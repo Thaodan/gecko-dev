@@ -25,6 +25,10 @@ let { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 
+const { PromiseTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PromiseTestUtils.sys.mjs"
+);
+
 // Always pretend OS Auth is enabled in this dir.
 if (OSKeyStoreTestUtils.canTestOSKeyStoreLogin() && OSKeyStore.canReauth()) {
   // Enable OS reauth so we can test it.
@@ -82,7 +86,13 @@ const CryptoErrors = {
   INVALID_ARG_ENCRYPT: "Need at least one plaintext to encrypt",
   INVALID_ARG_DECRYPT: "Need at least one ciphertext to decrypt",
   DECRYPTION_FAILURE: "Couldn't decrypt string",
+  PRIMARY_PASSWORD_LOCKED: "Primary password locked",
 };
+
+// The Rust store's counterpart of DECRYPTION_FAILURE below: operations that
+// race an unanswered primary password prompt reject with it, and about:logins
+// does not catch that on its breach alert path (Bug 2070874).
+PromiseTestUtils.allowMatchingRejectionsGlobally(/Primary password locked/);
 
 async function addLogin(login) {
   const result = await Services.logins.addLoginAsync(login);
@@ -179,6 +189,10 @@ add_setup(async function setup_head() {
       "NotFoundError: No such JSWindowActor 'MarionetteEvents'"
     ) {
       // Ignore MarionetteEvents error (Bug 1730837, Bug 1710079).
+      return;
+    }
+    if (msg.errorMessage.includes(CryptoErrors.PRIMARY_PASSWORD_LOCKED)) {
+      // See the PromiseTestUtils call above.
       return;
     }
     if (msg.errorMessage.includes(CryptoErrors.DECRYPTION_FAILURE)) {
