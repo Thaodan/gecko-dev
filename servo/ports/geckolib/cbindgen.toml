@@ -374,6 +374,7 @@ include = [
   "BoxDecorationBreak",
   "ImageLayerAttachment",
   "FloatEdge",
+  "TopLayer",
 ]
 item_types = [
   "enums",

@@ -294,12 +294,6 @@ enum class StyleTextSecurity : uint8_t {
   Square,
 };
 
-// See nsStyleDisplay
-enum class StyleTopLayer : uint8_t {
-  None,
-  Auto,
-};
-
 // See nsStyleVisibility
 enum class StyleVisibility : uint8_t {
   Hidden,
