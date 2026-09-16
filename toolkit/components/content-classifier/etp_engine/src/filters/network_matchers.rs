@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 //! This file contains the implementation of network filter matching logic for a filtering system.
 //! It provides functions to check if a given network request matches specific filter patterns based
 //! on various criteria, including hostname anchoring, pattern matching, and regular expressions.
@@ -462,7 +466,3 @@ pub fn check_excluded_domains_mapped(
 
     true
 }
-
-#[cfg(test)]
-#[path = "../../tests/unit/filters/network_matchers.rs"]
-mod unit_tests;

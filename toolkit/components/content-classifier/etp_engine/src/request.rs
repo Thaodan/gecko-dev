@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 //! Contains structures needed to describe network requests.
 
 use thiserror::Error;
@@ -245,7 +249,3 @@ fn calculate_tokens(url_lower_cased: &str) -> Vec<utils::Hash> {
     tokens.push(0);
     tokens.into_iter().collect()
 }
-
-#[cfg(test)]
-#[path = "../tests/unit/request.rs"]
-mod unit_tests;

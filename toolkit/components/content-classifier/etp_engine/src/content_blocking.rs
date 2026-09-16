@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 //! Transforms filter rules into content blocking syntax used on iOS and MacOS.
 
 use crate::filters::cosmetic::CosmeticFilter;
@@ -672,7 +676,3 @@ impl TryFrom<CosmeticFilter> for CbRule {
         }
     }
 }
-
-#[cfg(test)]
-#[path = "../tests/unit/content_blocking.rs"]
-mod unit_tests;

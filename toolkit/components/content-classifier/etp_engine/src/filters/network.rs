@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 //! Filters that take effect at the network request level, including blocking and response
 //! modification.
 
@@ -1050,6 +1054,3 @@ fn check_is_regex(filter: &str) -> bool {
     let separator_index = find_char(b'^', filter.as_bytes());
     start_index.is_some() || separator_index.is_some()
 }
-#[cfg(test)]
-#[path = "../../tests/unit/filters/network.rs"]
-mod unit_tests;

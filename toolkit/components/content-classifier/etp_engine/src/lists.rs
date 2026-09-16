@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 //! Parsing functions and collections for handling with multiple filter rules.
 
 use std::convert::TryFrom;
@@ -35,7 +39,7 @@ impl RuleTypes {
 /// this struct will not be considered a breaking change.
 ///
 /// ```
-/// # use adblock::lists::{FilterFormat, ParseOptions};
+/// # use etp_engine::lists::{FilterFormat, ParseOptions};
 /// let parse_options = ParseOptions {
 ///     format: FilterFormat::Hosts,
 ///     ..ParseOptions::default()
@@ -590,7 +594,3 @@ fn detect_filter_type(filter: &str) -> FilterType {
     // Everything else is a network filter
     FilterType::Network
 }
-
-#[cfg(test)]
-#[path = "../tests/unit/lists.rs"]
-mod unit_tests;

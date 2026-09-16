@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 //! Provides API to prepare and serialize cosmetic filter rules to a flatbuffer.
 //! To build the struct, use `CosmeticFilterCacheBuilder`.
 //! To use the serialized rules, use `CosmeticFilterCache`.

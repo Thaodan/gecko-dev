@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 //! Compiled regexes can take up large amounts of memory. To reduce the overall memory footprint of
 //! the [`crate::Engine`], infrequently used regexes can be discarded. The [`RegexManager`] is
 //! responsible for managing the storage of regexes used by filters.
@@ -350,7 +354,3 @@ impl RegexManager {
         }
     }
 }
-
-#[cfg(test)]
-#[path = "../tests/unit/regex_manager.rs"]
-mod unit_tests;

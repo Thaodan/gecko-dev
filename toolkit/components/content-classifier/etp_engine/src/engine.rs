@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 //! The adblock [`Engine`] is the primary interface for adblocking.
 
 use crate::blocker::{Blocker, BlockerResult};
@@ -342,7 +346,3 @@ fn make_flatbuffer(
     let cosmetic_rules = FlatSerialize::serialize(cosmetic_rules, &mut builder);
     builder.finish(network_rules, cosmetic_rules)
 }
-
-#[cfg(test)]
-#[path = "../tests/unit/engine.rs"]
-mod unit_tests;

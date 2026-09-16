@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 #![allow(dead_code)]
 
 use std::marker::PhantomData;
@@ -62,7 +66,3 @@ impl<'b, B: FlatBuilder<'b>, T: FlatSerialize<'b, B> + std::hash::Hash + Ord> Fl
         builder.raw_builder().create_vector(&v)
     }
 }
-
-#[cfg(test)]
-#[path = "../../../tests/unit/flatbuffers/containers/flat_set.rs"]
-mod unit_tests;

@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 //! Simplified URL parsing infrastructure, including the domain resolver
 //! implementation if the `embedded-domain-resolver` feature is disabled.
 
@@ -55,7 +59,7 @@ pub trait ResolvesDomain: Send + Sync {
     /// If there isn't a valid domain, `(0, host.len())` should be returned.
     ///
     /// ```
-    /// # use adblock::url_parser::ResolvesDomain;
+    /// # use etp_engine::url_parser::ResolvesDomain;
     /// # /// I'd use DefaultResolver here, but I can't use private structs in doctests.
     /// # /// Enjoy this mock implementation instead :(
     /// # struct Resolver;

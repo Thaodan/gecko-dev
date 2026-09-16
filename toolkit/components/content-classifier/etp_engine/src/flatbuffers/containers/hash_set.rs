@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 /// A HashSet implementation backed by a HashIndex.
 /// Uses more memory than FlatSet, but gives faster lookup.
 use crate::flatbuffers::containers::{
@@ -65,7 +69,3 @@ impl<I: FbHashKey, Keys: FbIndex<I>> HashSetView<I, Keys> {
         self.view.capacity()
     }
 }
-
-#[cfg(test)]
-#[path = "../../../tests/unit/flatbuffers/containers/hash_set.rs"]
-mod unit_tests;

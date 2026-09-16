@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 //! Provides behavior related to cosmetic filtering - that is, modifying a page's contents after
 //! it's been loaded into a browser. This is primarily used to hide or clean up unwanted page
 //! elements that are served inline with the rest of the first-party content from a page, but can
@@ -355,7 +359,3 @@ impl CosmeticFilterCache {
         }
     }
 }
-
-#[cfg(test)]
-#[path = "../tests/unit/cosmetic_filter_cache.rs"]
-mod unit_tests;
