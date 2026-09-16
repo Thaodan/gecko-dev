@@ -136,14 +136,6 @@ enum class StyleDirection : uint8_t { Ltr, Rtl };
 // values here accidentally use it in their binary representation.)
 static constexpr uint8_t kWritingModeSidewaysMask = 4;
 
-// See nsStylePosition
-enum class StyleFlexDirection : uint8_t {
-  Row,
-  RowReverse,
-  Column,
-  ColumnReverse,
-};
-
 // CSS Grid <track-breadth> keywords
 enum class StyleGridTrackBreadth : uint8_t {
   MaxContent = 1,
