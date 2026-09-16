@@ -177,22 +177,22 @@ _ContextualIdentityService.prototype = {
     {
       icon: "fingerprint",
       color: "blue",
-      l10nId: "user-context-personal2",
+      l10nId: "user-context-personal",
     },
     {
       icon: "briefcase",
       color: "orange",
-      l10nId: "user-context-work2",
+      l10nId: "user-context-work",
     },
     {
       icon: "dollar",
       color: "green",
-      l10nId: "user-context-banking2",
+      l10nId: "user-context-banking",
     },
     {
       icon: "cart",
       color: "pink",
-      l10nId: "user-context-shopping2",
+      l10nId: "user-context-shopping",
     },
   ],
   _systemIdentities: [
@@ -1084,16 +1084,16 @@ _ContextualIdentityService.prototype = {
     for (let identity of data.identities) {
       switch (identity.l10nID) {
         case "userContextPersonal.label":
-          identity.l10nId = "user-context-personal2";
+          identity.l10nId = "user-context-personal";
           break;
         case "userContextWork.label":
-          identity.l10nId = "user-context-work2";
+          identity.l10nId = "user-context-work";
           break;
         case "userContextBanking.label":
-          identity.l10nId = "user-context-banking2";
+          identity.l10nId = "user-context-banking";
           break;
         case "userContextShopping.label":
-          identity.l10nId = "user-context-shopping2";
+          identity.l10nId = "user-context-shopping";
           break;
       }
       delete identity.l10nID;
