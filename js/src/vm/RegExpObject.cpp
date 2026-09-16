@@ -752,6 +752,13 @@ RegExpRunStatus RegExpShared::execute(JSContext* cx,
   const uint32_t maxInterruptRetries = 4;
   do {
     RegExpRunStatus result = irregexp::Execute(cx, re, input, start, matches);
+
+    // Immediately propagate interrupt termination.
+    if (result == RegExpRunStatus::Error && !cx->isExceptionPending()) {
+      MOZ_ASSERT(cx->hadUncatchableException());
+      return RegExpRunStatus::Error;
+    }
+
 #ifdef DEBUG
     // Check if we must simulate the interruption
     if (js::irregexp::IsolateShouldSimulateInterrupt(cx->isolate)) {
@@ -785,14 +792,12 @@ RegExpRunStatus RegExpShared::execute(JSContext* cx,
       }
       // If we reached this point, then we failed for a reason that was not
       // stack overflow. Cases where this can occur:
-      // 1. We invoked the interrupt handler and it returned false. We are
-      //    terminating.
-      // 2. The realm is a debuggee with single-step mode enabled. After
+      // 1. The realm is a debuggee with single-step mode enabled. After
       //    checking for interrupts, we called DebugAPI::onSingleStep, which
       //    threw an error.
-      // 3. The multiple-interrupt case above.
-      // In all cases, we can simply propagate the current error here.
-      MOZ_ASSERT(cx->isExceptionPending() || cx->hadUncatchableException());
+      // 2. The no-jit multiple-interrupt case above.
+      // In both cases, we can simply propagate the current error here.
+      MOZ_ASSERT(cx->isExceptionPending());
       return RegExpRunStatus::Error;
     }
 
