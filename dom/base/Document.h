@@ -1673,9 +1673,7 @@ class Document : public nsINode,
                          NotNull<const Encoding*>& aEncoding,
                          nsHtml5TreeOpExecutor* aExecutor);
 
-  MOZ_CAN_RUN_SCRIPT void DispatchContentLoadedEvents(bool aFinishSync);
-  // Unblocks the load event. An aborted load also gets readyState complete.
-  MOZ_CAN_RUN_SCRIPT void FinishDOMContentLoaded();
+  MOZ_CAN_RUN_SCRIPT void DispatchContentLoadedEvents();
 
   // TODO: Convert this to MOZ_CAN_RUN_SCRIPT (bug 1415230)
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void DispatchPageTransition(
@@ -2248,10 +2246,7 @@ class Document : public nsINode,
   uint32_t UpdateNestingLevel() { return mUpdateNestLevel; }
 
   void BeginLoad();
-  // aFireDOMContentLoadedSync must be false for a terminated parse.
-  // See bug 344305.
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual void EndLoad(
-      bool aFireDOMContentLoadedSync);
+  virtual void EndLoad();
 
   enum ReadyState {
     READYSTATE_UNINITIALIZED = 0,
@@ -2654,8 +2649,7 @@ class Document : public nsINode,
 
   void BlockDOMContentLoaded() { ++mBlockDOMContentLoaded; }
 
-  // If aFireSync is false, DOMContentLoaded fires from a task instead.
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void UnblockDOMContentLoaded(bool aFireSync);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void UnblockDOMContentLoaded();
 
   /**
    * Notification that the page has been shown, for documents which are loaded

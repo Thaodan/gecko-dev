@@ -416,9 +416,6 @@ add_task(async function test_same_origin_navigation() {
 
   BrowserTestUtils.startLoadingURIString(browser, PAGE_WITH_LINK_TO_ADULT_URL);
   await browserLoaded;
-  // browserLoaded resolves on DOMContentLoaded here, which is before the
-  // first paint, and hit testing ignores content while painting is suppressed.
-  await BrowserTestUtils.waitForPaintingUnsuppressed(browser.browsingContext);
 
   let doneLoading = BrowserTestUtils.waitForContentEvent(
     browser,
@@ -454,7 +451,6 @@ add_task(async function test_cross_site_navigation() {
     PAGE_WITH_LINK_TO_ADULT_URL + "?host=" + CROSS_SITE_ADULT_URL_HOST
   );
   await browserLoaded;
-  await BrowserTestUtils.waitForPaintingUnsuppressed(browser.browsingContext);
 
   let doneLoading = BrowserTestUtils.waitForContentEvent(
     browser,
