@@ -151,7 +151,13 @@ def collapse(paths, base=None, dotfiles=False):
 
 
 def filterpaths(
-    root, paths, include, exclude=None, extensions=None, exclude_extensions=None
+    root,
+    paths,
+    include,
+    exclude=None,
+    extensions=None,
+    exclude_extensions=None,
+    expand_excludes=True,
 ):
     """Filters a list of paths.
 
@@ -164,8 +170,12 @@ def filterpaths(
     :param exclude: A list of paths that should be excluded (optional).
     :param extensions: A list of file extensions which should be considered (optional).
     :param exclude_extensions: A list of file extensions which should not be considered (optional).
+    :param expand_excludes: Whether to compute the list of paths to exclude.
+                            Expanding glob excludes requires walking every
+                            directory in `paths`, so callers that only need
+                            the paths to lint should pass False (optional).
     :returns: A tuple containing a list of file paths to lint and a list of
-              paths to exclude.
+              paths to exclude (empty if `expand_excludes` is False).
     """
 
     def normalize(path):
@@ -226,16 +236,21 @@ def filterpaths(
                     keep.add(path)
                     discard.update([e for e in excs if path.contains(e)])
 
+        if not expand_excludes:
+            continue
+
         # Next expand excludes with globs in them so we can add them to
         # the set of files to discard.
         for pattern in excludeglobs:
             for p, f in path.finder.find(pattern):
                 discard.add(path.join(p))
 
-    return (
-        [f.path for f in keep if f.exists],
-        collapse([f.path for f in discard if f.exists]),
-    )
+    if expand_excludes:
+        excludes = collapse([f.path for f in discard if f.exists])
+    else:
+        excludes = []
+
+    return [f.path for f in keep if f.exists], excludes
 
 
 def findobject(path, definition, linter_paths=None):

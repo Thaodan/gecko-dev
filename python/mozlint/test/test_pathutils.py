@@ -142,6 +142,10 @@ def test_filterpaths(test):
     assert_paths(paths, expected)
     assert_paths(exclude, expected_exclude)
 
+    paths, exclude = pathutils.filterpaths(root, expand_excludes=False, **test)
+    assert_paths(paths, expected)
+    assert exclude == []
+
 
 @pytest.mark.parametrize(
     "test",
