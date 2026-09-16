@@ -120,7 +120,7 @@ class WebRTCCodecInfoTest : public testing::Test {
   media::EncodeSupportSet StrictQueryEncode(
       const MediaExtendedMIMEType& aMime) {
     return Await(StrictSupportsVideoEncodeForWebrtc(
-        MakeWebrtcEncoderConfig(aMime), mTaskQueue));
+        MakeWebrtcEncoderConfig(aMime), mTaskQueue, nullptr));
   }
 
   media::DecodeSupportSet QueryDecode(const MediaExtendedMIMEType& aMime) {

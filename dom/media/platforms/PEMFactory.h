@@ -10,6 +10,7 @@
 
 namespace mozilla {
 
+class AllocPolicy;
 class StaticMutex;
 enum class RemoteMediaIn;
 
@@ -48,9 +49,12 @@ class PEMFactory final {
   // trusts the reported codec support, this verifies it by briefly creating
   // (and immediately destroying) a real encoder, so it is correspondingly more
   // expensive. Resolves with an empty EncodeSupportSet if the encoder cannot
-  // be created or initialized. Must be called off the main thread.
+  // be created or initialized. The encoder is allocated through aPolicy, or
+  // the per-track encoder GlobalAllocPolicy if aPolicy is null, and holds its
+  // token until its shutdown completes. Must be called off the main thread.
   RefPtr<PEMSupportsEncoderPromise> StrictSupportsAsync(
-      const EncoderConfig& aConfig, const RefPtr<TaskQueue>& aTaskQueue);
+      const EncoderConfig& aConfig, const RefPtr<TaskQueue>& aTaskQueue,
+      AllocPolicy* aPolicy = nullptr);
 
   static media::MediaCodecsSupported Supported(bool aForceRefresh = false);
   static media::EncodeSupportSet SupportsCodec(
@@ -67,7 +71,6 @@ class PEMFactory final {
   RefPtr<PlatformEncoderModule::CreateEncoderPromise>
   CheckAndMaybeCreateEncoder(const EncoderConfig& aConfig, uint32_t aIndex,
                              const RefPtr<TaskQueue>& aTaskQueue);
-
   RefPtr<PlatformEncoderModule::CreateEncoderPromise> CreateEncoderWithPEM(
       PlatformEncoderModule* aPEM, const EncoderConfig& aConfig,
       const RefPtr<TaskQueue>& aTaskQueue);

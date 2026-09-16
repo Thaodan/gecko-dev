@@ -1500,10 +1500,27 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
               std::move(unsupported), "MediaCapabilities::EncodingInfo");
         }
         auto encoderConfig = BuildEncoderConfig(*videoMime, v);
-        auto videoSupport =
-            StaticPrefs::media_mediacapabilities_codec_support_cache_enabled()
-                ? SupportsVideoEncodeForWebrtc(encoderConfig)
-                : StrictSupportsVideoEncodeForWebrtc(encoderConfig, taskQueue);
+        RefPtr<PlatformEncoderModule::SupportsEncoderPromise> videoSupport;
+        if (StaticPrefs::
+                media_mediacapabilities_codec_support_cache_enabled()) {
+          videoSupport = SupportsVideoEncodeForWebrtc(encoderConfig);
+        } else {
+          // We want to ensure that all encoder's queries are occurring only
+          // once at a time as it can quickly exhaust the system resources
+          // otherwise.
+          static RefPtr<AllocPolicy> sVideoEncodeAllocPolicy = [&taskQueue]() {
+            SchedulerGroup::Dispatch(NS_NewRunnableFunction(
+                "MediaCapabilities::AllocPolicy:VideoEncode", []() {
+                  ClearOnShutdown(&sVideoEncodeAllocPolicy,
+                                  ShutdownPhase::XPCOMShutdownThreads);
+                }));
+            return new SingleAllocPolicy(GlobalAllocPolicy::Kind::Encoder,
+                                         TrackInfo::TrackType::kVideoTrack,
+                                         taskQueue);
+          }();
+          videoSupport = StrictSupportsVideoEncodeForWebrtc(
+              encoderConfig, taskQueue, sVideoEncodeAllocPolicy);
+        }
         return videoSupport->Then(
             GetCurrentSerialEventTarget(), __func__,
             [aConfiguration,

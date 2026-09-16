@@ -197,9 +197,11 @@ WebrtcVideoEncoderFactory::SupportsCodec(const EncoderConfig& aConfig) {
 /* static */
 RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
 WebrtcVideoEncoderFactory::StrictSupportsCodec(
-    const EncoderConfig& aConfig, const RefPtr<TaskQueue>& aTaskQueue) {
-  return EncoderSupportsWithPemFn(aConfig, [&aConfig, &aTaskQueue]() {
-    return MediaDataCodec::StrictSupportsEncoderCodec(aConfig, aTaskQueue);
+    const EncoderConfig& aConfig, const RefPtr<TaskQueue>& aTaskQueue,
+    AllocPolicy* aPolicy) {
+  return EncoderSupportsWithPemFn(aConfig, [&aConfig, &aTaskQueue, aPolicy]() {
+    return MediaDataCodec::StrictSupportsEncoderCodec(aConfig, aTaskQueue,
+                                                      aPolicy);
   });
 }
 
