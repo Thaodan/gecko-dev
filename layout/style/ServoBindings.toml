@@ -699,6 +699,7 @@ cbindgen-types = [
     { gecko = "StyleHyphens", servo = "crate::values::computed::Hyphens" },
     { gecko = "StyleTextSizeAdjust", servo = "crate::values::computed::TextSizeAdjust" },
     { gecko = "StyleRubyAlign", servo = "crate::values::computed::RubyAlign" },
+    { gecko = "StyleTextCombineUpright", servo = "crate::values::computed::TextCombineUpright" },
 ]
 
 mapped-generic-types = [

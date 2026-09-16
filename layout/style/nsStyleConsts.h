@@ -280,12 +280,6 @@ enum class StyleTextWrapStyle : uint8_t {
 };
 
 // See nsStyleText
-enum class StyleTextCombineUpright : uint8_t {
-  None,
-  All,
-};
-
-// See nsStyleText
 enum class StyleUnicodeBidi : uint8_t {
   Normal,
   Embed,

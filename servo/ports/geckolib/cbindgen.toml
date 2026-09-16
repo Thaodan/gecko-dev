@@ -395,6 +395,7 @@ include = [
   "Hyphens",
   "TextSizeAdjust",
   "RubyAlign",
+  "TextCombineUpright",
 ]
 item_types = [
   "enums",
