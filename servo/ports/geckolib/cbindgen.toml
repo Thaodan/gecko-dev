@@ -420,6 +420,7 @@ include = [
   "BoxPack",
   "Blend",
   "MathStyle",
+  "MathVariant",
 ]
 item_types = [
   "enums",

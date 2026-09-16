@@ -6484,7 +6484,7 @@ pub extern "C" fn Servo_DeclarationBlock_SetKeywordValue(
         FontWeight => longhands::font_weight::SpecifiedValue::from_gecko_keyword(value),
         ListStyleType => longhands::list_style_type::SpecifiedValue::from_gecko_keyword(value),
         MathStyle => get_from_computed::<longhands::math_style::SpecifiedValue>(value),
-        MozMathVariant => longhands::_moz_math_variant::SpecifiedValue::from_gecko_keyword(value),
+        MozMathVariant => get_from_computed::<longhands::_moz_math_variant::SpecifiedValue>(value),
         WhiteSpaceCollapse => get_from_computed::<longhands::white_space_collapse::SpecifiedValue>(value),
         TextWrapMode => get_from_computed::<longhands::text_wrap_mode::SpecifiedValue>(value),
         CaptionSide => get_from_computed::<CaptionSide>(value),
