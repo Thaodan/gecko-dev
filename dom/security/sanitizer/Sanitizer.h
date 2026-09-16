@@ -12,9 +12,9 @@
 #include "mozilla/dom/SanitizerBinding.h"
 #include "mozilla/dom/SanitizerTypes.h"
 #include "mozilla/dom/StaticAtomSet.h"
-#include "nsIGlobalObject.h"
 #include "nsIParserUtils.h"
 #include "nsNameSpaceManager.h"
+#include "nsPIDOMWindow.h"
 #include "nsString.h"
 
 class nsISupports;
@@ -58,21 +58,21 @@ class SanitizerElementMatch final {
 };
 
 class Sanitizer final : public nsISupports, public nsWrapperCache {
-  explicit Sanitizer(nsIGlobalObject* aGlobal) : mGlobal(aGlobal) {
-    MOZ_ASSERT(aGlobal);
+  explicit Sanitizer(nsPIDOMWindowInner* aWindow) : mWindow(aWindow) {
+    MOZ_ASSERT(aWindow);
   }
 
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(Sanitizer);
 
-  nsIGlobalObject* GetParentObject() const { return mGlobal; }
+  nsPIDOMWindowInner* GetParentObject() const { return mWindow; }
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
   static already_AddRefed<Sanitizer> GetInstance(
-      nsIGlobalObject* aGlobal,
+      nsPIDOMWindowInner* aWindow,
       const OwningSanitizerOrSanitizerConfigOrSanitizerPresets& aOptions,
       bool aSafe, ErrorResult& aRv);
 
@@ -234,7 +234,7 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
     MOZ_ASSERT(!mRemoveAttributes);
   }
 
-  RefPtr<nsIGlobalObject> mGlobal;
+  nsCOMPtr<nsPIDOMWindowInner> mWindow;
 
   Maybe<sanitizer::CanonicalElementMap> mElements;
   Maybe<sanitizer::CanonicalElementSet> mRemoveElements;

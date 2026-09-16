@@ -26,7 +26,7 @@
 namespace mozilla::dom {
 using namespace sanitizer;
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(Sanitizer, mGlobal)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(Sanitizer, mWindow)
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(Sanitizer)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(Sanitizer)
@@ -53,7 +53,7 @@ JSObject* Sanitizer::WrapObject(JSContext* aCx,
 /* static */
 // https://html.spec.whatwg.org/#get-a-sanitizer-instance-from-options
 already_AddRefed<Sanitizer> Sanitizer::GetInstance(
-    nsIGlobalObject* aGlobal,
+    nsPIDOMWindowInner* aWindow,
     const OwningSanitizerOrSanitizerConfigOrSanitizerPresets& aOptions,
     bool aSafe, ErrorResult& aRv) {
   // Step 3. Assert: sanitizerSpec is either a Sanitizer instance, a
@@ -69,7 +69,7 @@ already_AddRefed<Sanitizer> Sanitizer::GetInstance(
     // Step 4.2. Set sanitizerSpec to the built-in safe default configuration.
     // NOTE: The built-in safe default configuration is complete and not
     // influenced by |safe|.
-    RefPtr<Sanitizer> sanitizer = new Sanitizer(aGlobal);
+    RefPtr<Sanitizer> sanitizer = new Sanitizer(aWindow);
     sanitizer->SetDefaultConfig();
     return sanitizer.forget();
   }
@@ -77,7 +77,7 @@ already_AddRefed<Sanitizer> Sanitizer::GetInstance(
   // Step 5. If sanitizerSpec is a dictionary:
   if (aOptions.IsSanitizerConfig()) {
     // Step 5.1. Let sanitizer be a new Sanitizer object.
-    RefPtr<Sanitizer> sanitizer = new Sanitizer(aGlobal);
+    RefPtr<Sanitizer> sanitizer = new Sanitizer(aWindow);
 
     // Step 5.2. Let permissiveDefaults be true if safe is false;
     // false otherwise.
@@ -102,8 +102,9 @@ already_AddRefed<Sanitizer> Sanitizer::GetInstance(
 already_AddRefed<Sanitizer> Sanitizer::Constructor(
     const GlobalObject& aGlobal,
     const SanitizerConfigOrSanitizerPresets& aConfig, ErrorResult& aRv) {
-  nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
-  RefPtr<Sanitizer> sanitizer = new Sanitizer(global);
+  nsCOMPtr<nsPIDOMWindowInner> window =
+      do_QueryInterface(aGlobal.GetAsSupports());
+  RefPtr<Sanitizer> sanitizer = new Sanitizer(window);
 
   // Step 1. If configuration is a SanitizerPresets string, then:
   if (aConfig.IsSanitizerPresets()) {
@@ -826,11 +827,7 @@ void Sanitizer::AssertIsValid() const {
 }
 
 void Sanitizer::RecordConfigKeyUse(UseCounter aCounter) const {
-  nsPIDOMWindowInner* window = mGlobal->GetAsInnerWindow();
-  if (!window) {
-    return;
-  }
-  if (Document* doc = window->GetExtantDoc()) {
+  if (Document* doc = mWindow->GetExtantDoc()) {
     doc->SetUseCounter(aCounter);
   }
 }
@@ -1280,11 +1277,9 @@ bool Sanitizer::AllowElementInternal(
        !elementAttributes.mRemoveAttributes->IsEmpty())) {
     // Step 3.1.1. The user agent may report a warning to the console that this
     // operation is not supported.
-    if (auto* win = mGlobal->GetAsInnerWindow()) {
-      nsContentUtils::ReportToConsole(
-          nsIScriptError::warningFlag, "Sanitizer"_ns, win->GetDoc(),
-          PropertiesFile::SECURITY_PROPERTIES, "SanitizerAllowElementIgnored2");
-    }
+    nsContentUtils::ReportToConsole(
+        nsIScriptError::warningFlag, "Sanitizer"_ns, mWindow->GetDoc(),
+        PropertiesFile::SECURITY_PROPERTIES, "SanitizerAllowElementIgnored2");
 
     // Step 3.1.2. Return false.
     return false;
