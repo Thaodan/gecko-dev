@@ -1399,26 +1399,30 @@ CSSIntSize nsImageLoadingContent::NaturalSize(
     return {};
   }
 
-  // Fallback case, for web-compatibility!
-  // See https://github.com/whatwg/html/issues/11287 and bug 1935269.
-  // If we lack an intrinsic size in either axis, then use the fallback size,
-  // unless we can transfer the size through the aspect ratio.
-  // (And if we *only* have an intrinsic aspect ratio, use the fallback width
-  // and transfer that through the aspect ratio to produce a height.)
   CSSIntSize size;  // defaults to 0,0
-  size.width = intrinsicSize.mWidth.valueOr(kFallbackIntrinsicWidthInPixels);
-  size.height =
-      intrinsicSize.mHeight.valueOr(kFallbackIntrinsicHeightInPixels);
-
-  AspectRatio ratio = image->GetIntrinsicRatio();
-  if (ratio) {
-    if (!intrinsicSize.mHeight) {
-      // Compute the height from the width & ratio.  (Note that the width we
-      // use here might be kFallbackIntrinsicWidthInPixels, and that's fine.)
-      size.height = ratio.Inverted().ApplyTo(size.width);
-    } else if (!intrinsicSize.mWidth) {
-      // Compute the width from the height & ratio.
-      size.width = ratio.ApplyTo(size.height);
+  if (!StaticPrefs::image_natural_size_fallback_enabled()) {
+    size.width = intrinsicSize.mWidth.valueOr(0);
+    size.height = intrinsicSize.mHeight.valueOr(0);
+  } else {
+    // Fallback case, for web-compatibility!
+    // See https://github.com/whatwg/html/issues/11287 and bug 1935269.
+    // If we lack an intrinsic size in either axis, then use the fallback size,
+    // unless we can transfer the size through the aspect ratio.
+    // (And if we *only* have an intrinsic aspect ratio, use the fallback width
+    // and transfer that through the aspect ratio to produce a height.)
+    size.width = intrinsicSize.mWidth.valueOr(kFallbackIntrinsicWidthInPixels);
+    size.height =
+        intrinsicSize.mHeight.valueOr(kFallbackIntrinsicHeightInPixels);
+    AspectRatio ratio = image->GetIntrinsicRatio();
+    if (ratio) {
+      if (!intrinsicSize.mHeight) {
+        // Compute the height from the width & ratio.  (Note that the width we
+        // use here might be kFallbackIntrinsicWidthInPixels, and that's fine.)
+        size.height = ratio.Inverted().ApplyTo(size.width);
+      } else if (!intrinsicSize.mWidth) {
+        // Compute the width from the height & ratio.
+        size.width = ratio.ApplyTo(size.height);
+      }
     }
   }
 
@@ -1447,17 +1451,23 @@ CSSIntSize nsImageLoadingContent::GetWidthHeightForImage() {
   }
 
   CSSIntSize size;
-  // Our image is not rendered (we don't have any frame); so we should
-  // return the natural size, per:
-  // https://html.spec.whatwg.org/multipage/embedded-content.html#dom-img-width
-  //
-  // Note that the spec says to use the "density-corrected natural width and
-  // height of the image", but we don't do that -- we specifically request
-  // the NaturalSize *without* density-correction here.  This handles a case
-  // where browsers deviate from the spec in an interoperable way, which
-  // hopefully we'll address in the spec soon. See:
-  // https://github.com/whatwg/html/issues/12573
-  size = NaturalSize(DoDensityCorrection::No);
+  nsCOMPtr<imgIContainer> image;
+  if (StaticPrefs::image_natural_size_fallback_enabled()) {
+    // Our image is not rendered (we don't have any frame); so we should should
+    // return the natural size, per:
+    // https://html.spec.whatwg.org/multipage/embedded-content.html#dom-img-width
+    //
+    // Note that the spec says to use the "density-corrected natural width and
+    // height of the image", but we don't do that -- we specifically request
+    // the NaturalSize *without* density-correction here.  This handles a case
+    // where browsers deviate from the spec in an interoperable way, which
+    // hopefully we'll address in the spec soon. See case (2) in this comment
+    // for more:
+    // https://github.com/whatwg/html/issues/11287#issuecomment-2923467541
+    size = NaturalSize(DoDensityCorrection::No);
+  } else if (mCurrentRequest) {
+    mCurrentRequest->GetImage(getter_AddRefs(image));
+  }
 
   // If we have width or height attrs, we'll let those stomp on whatever
   // NaturalSize we may have gotten above. This handles a case where browsers
@@ -1468,11 +1478,15 @@ CSSIntSize nsImageLoadingContent::GetWidthHeightForImage() {
   if ((value = element->GetParsedAttr(nsGkAtoms::width)) &&
       value->Type() == nsAttrValue::eInteger) {
     size.width = value->GetIntegerValue();
+  } else if (image) {
+    image->GetWidth(&size.width);
   }
 
   if ((value = element->GetParsedAttr(nsGkAtoms::height)) &&
       value->Type() == nsAttrValue::eInteger) {
     size.height = value->GetIntegerValue();
+  } else if (image) {
+    image->GetHeight(&size.height);
   }
 
   NS_ASSERTION(size.width >= 0, "negative width");
