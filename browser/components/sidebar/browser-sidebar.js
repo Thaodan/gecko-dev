@@ -1011,6 +1011,8 @@ var SidebarController = {
     // Indicate we've switched ordering to the box
     this._box.toggleAttribute("sidebar-positionend", !this._positionStart);
     sidebarMain.toggleAttribute("sidebar-positionend", !this._positionStart);
+    // The launcher reads the position to place the Customize button.
+    sidebarMain.requestUpdate?.();
     contentArea.toggleAttribute("sidebar-positionend", !this._positionStart);
     sidebarContainer.toggleAttribute(
       "sidebar-positionend",
