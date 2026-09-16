@@ -4198,10 +4198,8 @@
   mirror: always
 
 # Is support for PerformanceResourceTiming/PerformanceNavigationTiming's
-# deliveryType enabled? Independent of dom.speculation_rules.enabled: this
-# only implements the "navigational-prefetch" value, not "cache" (bug
-# 1914120), so it must stay off even once speculation rules ships, until
-# "cache" support lands too.
+# deliveryType enabled? Independent of dom.speculation_rules.enabled; flipping
+# it on is tracked in bug 1914120.
 - name: dom.performance.deliverytype.enabled
   type: RelaxedAtomicBool
   value: false
