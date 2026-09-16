@@ -396,6 +396,7 @@ include = [
   "TextSizeAdjust",
   "RubyAlign",
   "TextCombineUpright",
+  "TextRendering",
 ]
 item_types = [
   "enums",
