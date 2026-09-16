@@ -1383,10 +1383,13 @@
       "x-compatibility": {
         "firefox": { "version_added": "155" },
         "firefox_esr": { "version_added": false },
-        "firefox_enterprise": { "version_added": "155" }
+        "firefox_enterprise": { "version_added": "155" },
+        "notes": [
+          "Windows support added in 155, macOS support added in 156. Has no effect on Linux."
+        ]
       },
       "x-restart-required": true,
-      "description": "Prevent Firefox from launching automatically when the user logs in, and prevent the user from enabling this setting. This policy currently only has an effect on Windows.",
+      "description": "Prevent Firefox from launching automatically when the user logs in, and prevent the user from enabling this setting.",
       "examples": [true]
     },
 
