@@ -32,6 +32,7 @@
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "mozilla/net/ChannelClassifierUtils.h"
 #include "mozilla/net/ContentRange.h"
+#include "mozilla/net/HttpBaseChannel.h"
 #include "mozilla/net/InterceptionInfo.h"
 #include "mozilla/net/NeckoChannelParams.h"
 #include "nsContentPolicyUtils.h"
@@ -831,6 +832,30 @@ nsresult FetchDriver::HttpFetch(
     if (bodyStream) {
       nsAutoCString method;
       mRequest->GetMethod(method);
+
+      // Streaming uploads (ReadableStream) require HTTP/2 or HTTP/3.
+      // Since browsers only use HTTP/2 over TLS, reject non-https URLs early.
+      if (mRequest->HasStreamBody()) {
+        bool isHttps = false;
+        rv = uri->SchemeIs("https", &isHttps);
+        if (NS_SUCCEEDED(rv) && !isHttps) {
+          // Reject streaming upload on non-https (which implies HTTP/1.1)
+          FailWithNetworkError(NS_ERROR_DOM_NETWORK_ERR);
+          return NS_ERROR_DOM_NETWORK_ERR;
+        }
+      }
+
+      // Mark the channel as streaming BEFORE calling ExplicitSetUploadStream
+      // so InternalSetUploadStream knows to skip normalization.
+      if (mRequest->HasStreamBody()) {
+        nsCOMPtr<nsIHttpChannel> httpChan = do_QueryInterface(chan);
+        RefPtr<mozilla::net::HttpBaseChannel> baseChan =
+            do_QueryObject(httpChan);
+        if (baseChan) {
+          baseChan->SetUploadStreamIsStreaming(true);
+        }
+      }
+
       rv = uploadChan->ExplicitSetUploadStream(bodyStream, contentType,
                                                bodyLength, method);
       NS_ENSURE_SUCCESS(rv, rv);

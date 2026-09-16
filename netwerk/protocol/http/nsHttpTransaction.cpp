@@ -300,7 +300,9 @@ nsresult nsHttpTransaction::Init(
   if (NS_FAILED(rv)) return rv;
 
   mHasRequestBody = !!requestBody;
-  if (mHasRequestBody && !requestContentLength) {
+  // A streaming upload body has no length known up front, so a zero length
+  // does not mean there is nothing to send.
+  if (mHasRequestBody && !requestContentLength && !mRequestBodyIsStreaming) {
     mHasRequestBody = false;
   }
 

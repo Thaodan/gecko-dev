@@ -255,6 +255,15 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   void SetIsTRRTransaction() override { mIsTRRTransaction = true; }
   bool IsTRRTransaction() { return mIsTRRTransaction; }
 
+  // Marks this transaction as uploading a non-replayable streaming body,
+  // whose length is not known when the transaction is initialised. Restart
+  // and retry logic must not attempt to re-send it, because the body stream
+  // has already been consumed.
+  void SetRequestBodyIsStreaming(bool aIsStreaming) override {
+    mRequestBodyIsStreaming = aIsStreaming;
+  }
+  bool RequestBodyIsStreaming() const { return mRequestBodyIsStreaming; }
+
   // Used by the HE speculative path to propagate the failed-handshake
   // security info onto the real transaction whose mConnection was never
   // set (so its own MaybeRefreshSecurityInfo skips). Without this the
@@ -534,6 +543,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   bool mReceivedData{false};
   bool mStatusEventPending{false};
   bool mHasRequestBody{false};
+  bool mRequestBodyIsStreaming{false};
   bool mProxyConnectFailed{false};
   bool mHttpResponseMatched{false};
   bool mPreserveStream{false};
