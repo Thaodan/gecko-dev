@@ -31,6 +31,13 @@ SupportsVideoDecodeForWebrtc(const MediaExtendedMIMEType& aMime,
   return WebrtcVideoDecoderFactory::SupportsCodec(aMime, aParams);
 }
 
+// Strict variant: create the decoder and probe it for hardware acceleration.
+RefPtr<PlatformDecoderModule::SupportsDecoderPromise>
+StrictSupportsVideoDecodeForWebrtc(const MediaExtendedMIMEType& aMime,
+                                   const SupportDecoderParams& aParams) {
+  return WebrtcVideoDecoderFactory::StrictSupportsCodec(aMime, aParams);
+}
+
 // Implementation class that samples codec preferences once at construction.
 class CodecInfoImpl final : public WebrtcCodecInfo {
  public:
@@ -137,6 +144,13 @@ SupportsVideoEncodeForWebrtc(const EncoderConfig&) {
 RefPtr<PlatformDecoderModule::SupportsDecoderPromise>
 SupportsVideoDecodeForWebrtc(const MediaExtendedMIMEType&,
                              const SupportDecoderParams&) {
+  return PlatformDecoderModule::SupportsDecoderPromise::CreateAndResolve(
+      media::DecodeSupportSet{}, __func__);
+}
+
+RefPtr<PlatformDecoderModule::SupportsDecoderPromise>
+StrictSupportsVideoDecodeForWebrtc(const MediaExtendedMIMEType&,
+                                   const SupportDecoderParams&) {
   return PlatformDecoderModule::SupportsDecoderPromise::CreateAndResolve(
       media::DecodeSupportSet{}, __func__);
 }
