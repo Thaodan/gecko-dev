@@ -291,6 +291,12 @@ add_task(async function test_page_counters() {
           name: "SANITIZER_ELEMENT_REMOVE_ATTRIBUTES",
           glean: ["", "sanitizerConfigElementRemoveAttributes"],
         },
+        // Present in a dictionary, so counted even though its value is the
+        // built-in default.
+        {
+          name: "SANITIZER_JAVASCRIPT_URLS",
+          glean: ["", "sanitizerConfigJavascriptUrls"],
+        },
         // Untouched keys must stay untouched. In particular the global
         // attributes keys are not implied by the per-element ones.
         {
@@ -332,6 +338,12 @@ add_task(async function test_page_counters() {
           glean: ["", "sanitizerConfigElementRemoveAttributes"],
         },
         { name: "SANITIZER_COMMENTS", glean: ["", "sanitizerConfigComments"] },
+        // setJavascriptURLs() counts once, even though removeUnsafe() then
+        // resets the key again.
+        {
+          name: "SANITIZER_JAVASCRIPT_URLS",
+          glean: ["", "sanitizerConfigJavascriptUrls"],
+        },
         {
           name: "SANITIZER_REMOVE_UNSAFE",
           glean: ["", "sanitizerRemoveunsafe"],
@@ -376,6 +388,11 @@ add_task(async function test_page_counters() {
         {
           name: "SANITIZER_DATA_ATTRIBUTES",
           glean: ["", "sanitizerConfigDataAttributes"],
+          value: 0,
+        },
+        {
+          name: "SANITIZER_JAVASCRIPT_URLS",
+          glean: ["", "sanitizerConfigJavascriptUrls"],
           value: 0,
         },
         {
@@ -437,6 +454,11 @@ add_task(async function test_page_counters() {
           value: 0,
         },
         {
+          name: "SANITIZER_JAVASCRIPT_URLS",
+          glean: ["", "sanitizerConfigJavascriptUrls"],
+          value: 0,
+        },
+        {
           name: "SANITIZER_ELEMENT_ATTRIBUTES",
           glean: ["", "sanitizerConfigElementAttributes"],
           value: 0,
@@ -476,6 +498,11 @@ add_task(async function test_page_counters() {
         {
           name: "SANITIZER_DATA_ATTRIBUTES",
           glean: ["", "sanitizerConfigDataAttributes"],
+          value: 0,
+        },
+        {
+          name: "SANITIZER_JAVASCRIPT_URLS",
+          glean: ["", "sanitizerConfigJavascriptUrls"],
           value: 0,
         },
       ],

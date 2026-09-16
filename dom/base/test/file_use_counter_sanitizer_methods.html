@@ -21,6 +21,11 @@
 
   sanitizer.allowElement({ name: "my-widget", removeAttributes: ["lang"] });
   sanitizer.removeElement("p");
+
+  // Counted because it changes the configuration away from the default. The
+  // removeUnsafe() below resets javascriptURLs again, which must not count a
+  // second time: use counters are per document, not per call.
+  sanitizer.setJavascriptURLs(true);
   sanitizer.removeUnsafe();
 
   // Per-element attribute lists are not supported on a remove-list

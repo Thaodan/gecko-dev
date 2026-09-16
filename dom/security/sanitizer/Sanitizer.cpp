@@ -886,6 +886,7 @@ void Sanitizer::RecordDictionaryConfigKeyUses(
   CHECK_CONFIG(RemoveProcessingInstructions);
   CHECK_CONFIG(Comments);
   CHECK_CONFIG(DataAttributes);
+  CHECK_CONFIG(JavascriptURLs);
 
 #undef CHECK_CONFIG
 
@@ -1770,6 +1771,7 @@ bool Sanitizer::SetJavascriptURLs(bool aAllow) {
   mJavascriptURLs = aAllow;
 
   // Step 5. Return true.
+  RecordConfigChange(eUseCounter_custom_SanitizerConfigJavascriptURLs);
   return true;
 }
 
