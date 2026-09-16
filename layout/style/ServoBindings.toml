@@ -677,6 +677,7 @@ cbindgen-types = [
     { gecko = "StyleLinkParameters", servo = "crate::values::computed::param::LinkParameters" },
     { gecko = "StyleBoxDecorationBreak", servo = "crate::values::computed::BoxDecorationBreak" },
     { gecko = "StyleImageLayerAttachment", servo = "crate::values::computed::ImageLayerAttachment" },
+    { gecko = "StyleFloatEdge", servo = "crate::values::computed::FloatEdge" },
 ]
 
 mapped-generic-types = [
