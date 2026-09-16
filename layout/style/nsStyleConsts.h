@@ -94,13 +94,6 @@ enum class StyleShapeSourceType : uint8_t {
   Path,  // SVG path function
 };
 
-// -moz-window-dragging
-enum class StyleWindowDragging : uint8_t {
-  Default,
-  Drag,
-  NoDrag,
-};
-
 // See nsStyleImageLayers
 enum class StyleImageLayerRepeat : uint8_t {
   NoRepeat = 0x00,

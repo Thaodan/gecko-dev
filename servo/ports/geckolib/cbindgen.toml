@@ -411,6 +411,7 @@ include = [
   "UnicodeBidi",
   "ImeMode",
   "ScrollbarWidth",
+  "WindowDragging",
 ]
 item_types = [
   "enums",
