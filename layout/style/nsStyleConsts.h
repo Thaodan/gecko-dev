@@ -316,13 +316,6 @@ enum class StyleTextOrientation : uint8_t {
   Sideways,
 };
 
-// Whether flexbox visibility: collapse items use legacy -moz-box behavior or
-// not.
-enum class StyleBoxCollapse : uint8_t {
-  Flex,
-  Legacy,
-};
-
 // See nsStyleText
 enum class StyleTextCombineUpright : uint8_t {
   None,

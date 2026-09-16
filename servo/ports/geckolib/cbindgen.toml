@@ -383,6 +383,7 @@ include = [
   "ColumnSpan",
   "MathShift",
   "Visibility",
+  "BoxCollapse",
 ]
 item_types = [
   "enums",
