@@ -374,13 +374,6 @@ enum class StyleStrokeLinejoin : uint8_t {
   Bevel,
 };
 
-// text-anchor
-enum class StyleTextAnchor : uint8_t {
-  Start,
-  Middle,
-  End,
-};
-
 // text-rendering
 enum class StyleTextRendering : uint8_t {
   Auto,

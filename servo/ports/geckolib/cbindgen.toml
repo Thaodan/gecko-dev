@@ -386,6 +386,7 @@ include = [
   "BoxCollapse",
   "TextOrientation",
   "ImageOrientation",
+  "TextAnchor",
 ]
 item_types = [
   "enums",
