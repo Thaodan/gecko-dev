@@ -425,6 +425,7 @@ include = [
   "DirectionProperty",
   "TextDecorationStyle",
   "ColorInterpolation",
+  "FontOpticalSizing",
 ]
 item_types = [
   "enums",

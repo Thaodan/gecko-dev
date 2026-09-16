@@ -77,7 +77,8 @@ struct nsFont final {
 
   // Whether automatic optical sizing should be applied to variation fonts
   // that include an 'opsz' axis
-  uint8_t opticalSizing = NS_FONT_OPTICAL_SIZING_AUTO;
+  mozilla::StyleFontOpticalSizing opticalSizing =
+      mozilla::StyleFontOpticalSizing::Auto;
 
   // Synthesis setting, controls use of fake bolding/italics/small-caps
   mozilla::StyleFontSynthesis synthesisWeight =
