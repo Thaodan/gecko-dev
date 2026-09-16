@@ -66,7 +66,8 @@ struct nsFont final {
       mozilla::StyleFontVariantNumeric::NORMAL;
   uint8_t variantPosition = NS_FONT_VARIANT_POSITION_NORMAL;
   uint8_t variantWidth = NS_FONT_VARIANT_WIDTH_NORMAL;
-  StyleFontVariantEmoji variantEmoji = StyleFontVariantEmoji::Normal;
+  mozilla::StyleFontVariantEmoji variantEmoji =
+      mozilla::StyleFontVariantEmoji::Normal;
 
   // Smoothing - controls subpixel-antialiasing (currently OSX only)
   uint8_t smoothing = NS_FONT_SMOOTHING_AUTO;

@@ -421,6 +421,7 @@ include = [
   "Blend",
   "MathStyle",
   "MathVariant",
+  "FontVariantEmoji",
 ]
 item_types = [
   "enums",
