@@ -1,5 +1,4 @@
 [DEFAULT]
-prefs = ["dom.xslt.enabled=true"]
 tags = "condprof"
 support-files = [
   "abrupt_completion_worker.js",
