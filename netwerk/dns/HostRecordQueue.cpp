@@ -74,8 +74,8 @@ void HostRecordQueue::AddToEvictionQ(
         head->CheckExpiration(TimeStamp::Now()) != nsHostRecord::EXP_EXPIRED;
     if (!head->negative) {
       // record the age of the entry upon eviction. Only positive records have a
-      // valid mValidStart (set in PrepareRecordExpiration); negative records may
-      // leave it null, so computing the age there would assert.
+      // valid mValidStart (set in PrepareRecordExpiration); negative records
+      // may leave it null, so computing the age there would assert.
       TimeDuration age = TimeStamp::NowLoRes() - head->mValidStart;
       if (head->IsAddrRecord()) {
         glean::dns::cleanup_age.AccumulateRawDuration(age);
