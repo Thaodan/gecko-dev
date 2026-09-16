@@ -255,12 +255,6 @@ enum class StyleWhiteSpaceCollapse : uint8_t {
 };
 
 // See nsStyleText
-enum class StyleTextWrapMode : uint8_t {
-  Wrap = 0,
-  Nowrap,
-};
-
-// See nsStyleText
 // TODO: this will become StyleTextWrapStyle when we turn text-wrap
 // (see https://bugzilla.mozilla.org/show_bug.cgi?id=1758391) and
 // white-space (https://bugzilla.mozilla.org/show_bug.cgi?id=1852478)
