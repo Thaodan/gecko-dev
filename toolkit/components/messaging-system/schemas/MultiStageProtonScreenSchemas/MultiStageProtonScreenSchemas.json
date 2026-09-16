@@ -28,7 +28,7 @@
         "position": {
           "type": "string",
           "description": "The layout position of the screen.",
-          "enum": ["center", "center-large", "split", "callout", "card-stack"]
+          "enum": ["center", "center-large", "split", "callout"]
         },
         "fullscreen": {
           "type": "boolean",

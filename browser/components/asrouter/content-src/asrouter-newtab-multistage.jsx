@@ -13,10 +13,6 @@ function MultistageWithDismiss({ config, handleDismiss, handleBlock }) {
     handleDismiss?.();
   }
 
-  // The card-stack template has its own inline dismiss button, so it doesn't
-  // need the corner one.
-  const isCardStack = config.screens?.[0]?.content?.position === "card-stack";
-
   return (
     <div
       className="multistage-newtab-wrapper"
@@ -28,15 +24,13 @@ function MultistageWithDismiss({ config, handleDismiss, handleBlock }) {
           : { height: "500px" }
       }
     >
-      {isCardStack ? null : (
-        <moz-button
-          type="icon ghost"
-          size="small"
-          iconsrc="chrome://global/skin/icons/close.svg"
-          data-l10n-id="newtab-activation-window-message-dismiss-button"
-          onClick={onDismiss}
-        />
-      )}
+      <moz-button
+        type="icon ghost"
+        size="small"
+        iconsrc="chrome://global/skin/icons/close.svg"
+        data-l10n-id="newtab-activation-window-message-dismiss-button"
+        onClick={onDismiss}
+      />
       <MultiStageAboutWelcome
         defaultScreens={config.screens}
         message_id={config.id}
