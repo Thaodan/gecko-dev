@@ -238,11 +238,6 @@ enum class StyleUnicodeBidi : uint8_t {
   Plaintext
 };
 
-enum class StyleTableLayout : uint8_t {
-  Auto,
-  Fixed,
-};
-
 // See nsStyleUIReset
 enum class StyleImeMode : uint8_t {
   Auto,

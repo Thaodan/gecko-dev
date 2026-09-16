@@ -407,6 +407,7 @@ include = [
   "MaskType",
   "MaskMode",
   "MaskComposite",
+  "TableLayout",
 ]
 item_types = [
   "enums",
