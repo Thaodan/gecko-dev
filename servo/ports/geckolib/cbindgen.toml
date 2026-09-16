@@ -406,6 +406,7 @@ include = [
   "ObjectFit",
   "MaskType",
   "MaskMode",
+  "MaskComposite",
 ]
 item_types = [
   "enums",

@@ -288,14 +288,6 @@ enum class StyleBlend : uint8_t {
   PlusLighter,
 };
 
-// composite
-enum class StyleMaskComposite : uint8_t {
-  Add = 0,
-  Subtract,
-  Intersect,
-  Exclude
-};
-
 }  // namespace mozilla
 
 #endif /* nsStyleConsts_h_ */
