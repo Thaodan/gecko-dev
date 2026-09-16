@@ -1154,6 +1154,16 @@ struct StreamPayloadHelper<TimeDuration, aFormat> {
   }
 };
 
+template <MarkerSchema::Format aFormat>
+struct StreamPayloadHelper<TimeStamp, aFormat> {
+  static void Stream(baseprofiler::SpliceableJSONWriter& aWriter,
+                     const Span<const char> aKey, const TimeStamp& aTimeStamp) {
+    static_assert(aFormat == MarkerSchema::Format::Time,
+                  "Wrong MarkerSchema::Format for TimeStamp");
+    aWriter.TimeProperty(aKey, aTimeStamp);
+  }
+};
+
 template <MarkerSchema::InputType IT>
 struct InputTypeToCpp;
 template <>
