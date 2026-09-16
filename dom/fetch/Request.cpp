@@ -8,6 +8,7 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_network.h"
+#include "mozilla/dom/BodyExtractor.h"
 #include "mozilla/dom/Fetch.h"
 #include "mozilla/dom/FetchUtil.h"
 #include "mozilla/dom/Headers.h"
@@ -141,6 +142,7 @@ SafeRefPtr<Request> Request::Constructor(
 
   RefPtr<AbortSignal> signal;
   bool bodyFromInit = false;
+  RefPtr<FetchStreamReader> temporaryStreamReader;
 
   if (aInput.IsRequest()) {
     RefPtr<Request> inputReq = &aInput.GetAsRequest();
@@ -463,11 +465,87 @@ SafeRefPtr<Request> Request::Constructor(
       const fetch::OwningBodyInit& bodyInit = bodyInitNullable.Value();
       nsCOMPtr<nsIInputStream> stream;
       nsAutoCString contentTypeWithCharset;
-      uint64_t contentLength = 0;
-      aRv = ExtractByteStreamFromBody(bodyInit, getter_AddRefs(stream),
-                                      contentTypeWithCharset, contentLength);
-      if (NS_WARN_IF(aRv.Failed())) {
-        return nullptr;
+      uint64_t extractedLength = 0;
+      int64_t contentLength = 0;
+
+      // ReadableStream is in the BodyInit union unconditionally, because WebIDL
+      // typedefs cannot be pref-gated. Until the feature ships, keep converting
+      // it to a USVString, which is what the union used to do.
+      const bool streamBodyDisabled =
+          bodyInit.IsReadableStream() &&
+          !StaticPrefs::dom_fetch_streaming_upload();
+
+      // Handle ReadableStream bodies separately
+      if (streamBodyDisabled) {
+        nsAutoString stringified(u"[object ReadableStream]"_ns);
+        nsAutoCString charset;
+        BodyExtractor<const nsAString> body(&stringified);
+        aRv = body.GetAsStream(getter_AddRefs(stream), &extractedLength,
+                               contentTypeWithCharset, charset);
+        if (NS_WARN_IF(aRv.Failed())) {
+          return nullptr;
+        }
+        contentLength = static_cast<int64_t>(extractedLength);
+      } else if (bodyInit.IsReadableStream()) {
+        aRv.MightThrowJSException();
+
+        ReadableStream& readableStream = bodyInit.GetAsReadableStream();
+
+        // https://fetch.spec.whatwg.org/#concept-bodyinit-extract step 10,
+        // ReadableStream case: extract is invoked with the request's keepalive,
+        // and a streaming body cannot be combined with it.
+        if (request->GetKeepalive()) {
+          aRv.ThrowTypeError(
+              "keepalive cannot be used with a ReadableStream body");
+          return nullptr;
+        }
+
+        if (readableStream.Locked() || readableStream.Disturbed()) {
+          aRv.ThrowTypeError<MSG_FETCH_BODY_CONSUMED_ERROR>();
+          return nullptr;
+        }
+
+        // Mark that this request has a ReadableStream body
+        request->SetHasStreamBody(true);
+
+        // If this is a DOM generated ReadableStream, extract the inputStream
+        if (nsIInputStream* underlyingSource =
+                readableStream.MaybeGetInputStreamIfUnread()) {
+          stream = underlyingSource;
+        } else {
+          // For JS-created streams, use FetchStreamReader
+          RefPtr<FetchStreamReader> streamReader;
+          nsCOMPtr<nsIInputStream> pipeInputStream;
+          aRv = FetchStreamReader::Create(aCx, aGlobal,
+                                          getter_AddRefs(streamReader),
+                                          getter_AddRefs(pipeInputStream));
+          if (NS_WARN_IF(aRv.Failed())) {
+            return nullptr;
+          }
+
+          // Start consuming immediately
+          streamReader->StartConsuming(aCx, &readableStream, aRv);
+          if (NS_WARN_IF(aRv.Failed())) {
+            return nullptr;
+          }
+
+          stream = pipeInputStream.forget();
+
+          // Store stream reader to keep it alive
+          temporaryStreamReader = streamReader.forget();
+        }
+
+        // The length is only known once the stream ends.
+        contentLength = -1;
+        contentTypeWithCharset.SetIsVoid(true);
+      } else {
+        aRv =
+            ExtractByteStreamFromBody(bodyInit, getter_AddRefs(stream),
+                                      contentTypeWithCharset, extractedLength);
+        if (NS_WARN_IF(aRv.Failed())) {
+          return nullptr;
+        }
+        contentLength = static_cast<int64_t>(extractedLength);
       }
 
       nsCOMPtr<nsIInputStream> temporaryBody = stream;
@@ -486,11 +564,16 @@ SafeRefPtr<Request> Request::Constructor(
       }
 
       request->SetBody(temporaryBody, contentLength);
+      request->SetHasStreamBody(hasStreamBody);
     }
   }
 
   auto domRequest =
       MakeSafeRefPtr<Request>(aGlobal, std::move(request), signal);
+
+  if (temporaryStreamReader) {
+    domRequest->mFetchStreamReader = temporaryStreamReader.forget();
+  }
 
   if (aInput.IsRequest() && !bodyFromInit) {
     RefPtr<Request> inputReq = &aInput.GetAsRequest();
