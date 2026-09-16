@@ -709,6 +709,7 @@ cbindgen-types = [
     { gecko = "StyleBoxSizing", servo = "crate::values::computed::BoxSizing" },
     { gecko = "StyleObjectFit", servo = "crate::values::computed::ObjectFit" },
     { gecko = "StyleMaskType", servo = "crate::values::computed::MaskType" },
+    { gecko = "StyleMaskMode", servo = "crate::values::computed::MaskMode" },
 ]
 
 mapped-generic-types = [

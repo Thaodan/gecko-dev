@@ -405,6 +405,7 @@ include = [
   "BoxSizing",
   "ObjectFit",
   "MaskType",
+  "MaskMode",
 ]
 item_types = [
   "enums",

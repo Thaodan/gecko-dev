@@ -118,9 +118,6 @@ enum class StyleImageLayerRepeat : uint8_t {
   Round
 };
 
-// Mask mode
-enum class StyleMaskMode : uint8_t { Alpha = 0, Luminance, MatchSource };
-
 // See nsStyleVisibility
 enum class StyleDirection : uint8_t { Ltr, Rtl };
 
