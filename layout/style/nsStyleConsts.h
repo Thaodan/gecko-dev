@@ -216,12 +216,6 @@ enum class StyleWhiteSpaceCollapse : uint8_t {
 
 // See nsStyleSVG
 
-// -moz-window-shadow
-enum class StyleWindowShadow : uint8_t {
-  Auto,
-  None,
-};
-
 // color-interpolation and color-interpolation-filters
 enum class StyleColorInterpolation : uint8_t {
   Auto = 0,

@@ -412,6 +412,7 @@ include = [
   "ImeMode",
   "ScrollbarWidth",
   "WindowDragging",
+  "WindowShadow",
 ]
 item_types = [
   "enums",
