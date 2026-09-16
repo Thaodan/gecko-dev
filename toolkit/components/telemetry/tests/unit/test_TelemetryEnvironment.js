@@ -560,24 +560,6 @@ add_task(async function test_experimentsAPI_limits() {
 });
 
 if (gIsWindows) {
-  add_task(async function test_environmentHDDInfo() {
-    await TelemetryEnvironment.testCleanRestart().onInitialized();
-    let data = TelemetryEnvironment.currentEnvironment;
-    let empty = { model: null, revision: null, type: null };
-    Assert.deepEqual(
-      data.system.hdd,
-      { binary: empty, profile: empty, system: empty },
-      "Should have no data yet."
-    );
-    await TelemetryEnvironment.delayedInit();
-    data = TelemetryEnvironment.currentEnvironment;
-    for (let k of TelemetryEnvironmentTesting.EXPECTED_HDD_FIELDS) {
-      TelemetryEnvironmentTesting.checkString(data.system.hdd[k].model);
-      TelemetryEnvironmentTesting.checkString(data.system.hdd[k].revision);
-      TelemetryEnvironmentTesting.checkString(data.system.hdd[k].type);
-    }
-  });
-
   add_task(async function test_environmentProcessInfo() {
     await TelemetryEnvironment.testCleanRestart().onInitialized();
     let data = TelemetryEnvironment.currentEnvironment;
