@@ -34,10 +34,9 @@ const { RustAutofillStore } = ChromeUtils.importESModule(
 const { SqlError } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustAutofill.sys.mjs"
 );
-const { AddressStorageMigrator, AutofillStorageMigrator } =
-  ChromeUtils.importESModule(
-    "resource://autofill/AutofillStorageMigrator.sys.mjs"
-  );
+const { AddressStorageMigrator } = ChromeUtils.importESModule(
+  "resource://autofill/AddressStorageMigrator.sys.mjs"
+);
 const { FormAutofill } = ChromeUtils.importESModule(
   "resource://autofill/FormAutofill.sys.mjs"
 );
@@ -1681,8 +1680,8 @@ add_task(async function test_a_reporting_failure_still_counts_the_attempt() {
 
   // Telemetry must not decide the outcome. Stubbed at the migrator, since
   // Glean's own metrics cannot be replaced from a test.
-  const orig = AutofillStorageMigrator.prototype._report;
-  AutofillStorageMigrator.prototype._report = () => {
+  const orig = AddressStorageMigrator.prototype._report;
+  AddressStorageMigrator.prototype._report = () => {
     throw new Error("injected telemetry failure");
   };
 
@@ -1696,7 +1695,7 @@ add_task(async function test_a_reporting_failure_still_counts_the_attempt() {
     );
     Assert.equal(getInt(ATTEMPTS_PREF), 0, "and nothing held against it");
   } finally {
-    AutofillStorageMigrator.prototype._report = orig;
+    AddressStorageMigrator.prototype._report = orig;
   }
 
   await s._finalize();
@@ -1705,8 +1704,8 @@ add_task(async function test_a_reporting_failure_still_counts_the_attempt() {
 add_task(async function test_a_reporting_failure_still_ends_the_dry_run() {
   let { s } = await setupStorageWithRecords("mig-noreport-dry.json", ["One"]);
 
-  const orig = AutofillStorageMigrator.prototype._report;
-  AutofillStorageMigrator.prototype._report = () => {
+  const orig = AddressStorageMigrator.prototype._report;
+  AddressStorageMigrator.prototype._report = () => {
     throw new Error("injected telemetry failure");
   };
 
@@ -1721,7 +1720,7 @@ add_task(async function test_a_reporting_failure_still_ends_the_dry_run() {
     );
     Assert.ok(!getBool(ACTIVE_PREF), "and did not switch the profile");
   } finally {
-    AutofillStorageMigrator.prototype._report = orig;
+    AddressStorageMigrator.prototype._report = orig;
   }
 
   await s._finalize();
