@@ -689,6 +689,7 @@ cbindgen-types = [
     { gecko = "StyleVisibility", servo = "crate::values::computed::Visibility" },
     { gecko = "StyleBoxCollapse", servo = "crate::values::computed::BoxCollapse" },
     { gecko = "StyleTextOrientation", servo = "crate::values::computed::TextOrientation" },
+    { gecko = "StyleImageOrientation", servo = "crate::values::computed::ImageOrientation" },
 ]
 
 mapped-generic-types = [

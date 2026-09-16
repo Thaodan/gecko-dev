@@ -88,12 +88,6 @@ enum class StyleHyphens : uint8_t {
   Auto,
 };
 
-// image-orientation
-enum class StyleImageOrientation : uint8_t {
-  None,
-  FromImage,
-};
-
 // scrollbar-width
 enum class StyleScrollbarWidth : uint8_t {
   Auto,
