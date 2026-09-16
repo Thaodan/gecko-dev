@@ -43,7 +43,6 @@ tasks:
             docker-image:
                 in-tree: debian12-rpm-repackage
         mozharness:
-            run-as-root: true
             use-caches: false
             config:
                 by-build-platform:
