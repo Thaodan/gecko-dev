@@ -1567,6 +1567,7 @@ function CreateContainerTabMenu(event) {
     return;
   }
   createUserContextMenu(event, {
+    useAccessKeys: false,
     showDefaultTab: true,
     containerSource: "new_tab_button",
   });
