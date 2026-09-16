@@ -684,6 +684,7 @@ cbindgen-types = [
     { gecko = "StyleBackfaceVisibility", servo = "crate::values::computed::BackfaceVisibility" },
     { gecko = "StyleOrient", servo = "crate::values::computed::Orient" },
     { gecko = "StyleColumnFill", servo = "crate::values::computed::ColumnFill" },
+    { gecko = "StyleColumnSpan", servo = "crate::values::computed::ColumnSpan" },
 ]
 
 mapped-generic-types = [

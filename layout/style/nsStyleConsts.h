@@ -52,11 +52,6 @@ enum class StyleBoxShadowType : uint8_t {
   Inset,
 };
 
-enum class StyleColumnSpan : uint8_t {
-  None,
-  All,
-};
-
 // Define geometry box for clip-path's reference-box, background-clip,
 // background-origin, mask-clip, mask-origin, shape-box and transform-box.
 enum class StyleGeometryBox : uint8_t {

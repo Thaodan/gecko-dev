@@ -380,6 +380,7 @@ include = [
   "BackfaceVisibility",
   "Orient",
   "ColumnFill",
+  "ColumnSpan",
 ]
 item_types = [
   "enums",
