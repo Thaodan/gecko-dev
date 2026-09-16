@@ -416,6 +416,7 @@ include = [
   "FieldSizing",
   "BoxAlign",
   "BoxDirection",
+  "BoxOrient",
 ]
 item_types = [
   "enums",
