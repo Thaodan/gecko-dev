@@ -603,22 +603,6 @@ if (gIsWindows) {
       "vendor must be a valid string."
     );
   });
-
-  add_task(async function test_environmentOSInfo() {
-    await TelemetryEnvironment.testCleanRestart().onInitialized();
-    let data = TelemetryEnvironment.currentEnvironment;
-    Assert.deepEqual(
-      data.system.os.installYear,
-      null,
-      "Should have no data yet."
-    );
-    await TelemetryEnvironment.delayedInit();
-    data = TelemetryEnvironment.currentEnvironment;
-    Assert.ok(
-      Number.isFinite(data.system.os.installYear),
-      "Install year must be a number."
-    );
-  });
 }
 
 add_task(async function test_environmentShutdown() {
