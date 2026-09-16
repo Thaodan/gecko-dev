@@ -413,6 +413,7 @@ include = [
   "ScrollbarWidth",
   "WindowDragging",
   "WindowShadow",
+  "FieldSizing",
 ]
 item_types = [
   "enums",
