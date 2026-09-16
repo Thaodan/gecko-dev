@@ -169,8 +169,8 @@ class CollectionsToTabGroupsMigration(
                             theme = TabGroupTheme.default.name,
                             closed = true,
                             lastModified = dateTimeProvider.currentTimeMillis(),
-                        ),
-                    tabIds = recoverableTabs.map { it.state.id },
+                            tabIds = recoverableTabs.map { it.state.id },
+                        )
                 )
                 MigrationResult.TAB_GROUP_CREATED
             }

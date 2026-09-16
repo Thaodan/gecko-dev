@@ -250,7 +250,7 @@ private fun FenixOverlayPreview() {
             override val tabGroupDataFlow: Flow<TabGroupData>
                 get() = flowOf()
 
-            override suspend fun createTabGroupWithTabs(tabGroup: TabGroup, tabIds: List<String>) {}
+            override suspend fun createTabGroupWithTabs(tabGroup: TabGroup) {}
 
             override suspend fun closeTabGroup(tabGroupId: String) {}
 

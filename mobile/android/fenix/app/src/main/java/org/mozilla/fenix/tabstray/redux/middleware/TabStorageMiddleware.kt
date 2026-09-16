@@ -688,11 +688,9 @@ class TabStorageMiddleware(
                 title = name,
                 theme = theme.toStorageValue(),
                 lastModified = dateTimeProvider.currentTimeMillis(),
+                tabIds = listOf(newTabId),
             )
-        tabGroupRepository.createTabGroupWithTabs(
-            tabGroup = tabGroup,
-            tabIds = listOf(newTabId),
-        )
+        tabGroupRepository.createTabGroupWithTabs(tabGroup = tabGroup)
         mainScope.launch {
             store.dispatch(
                 TabGroupAction.OpenCreatedTabGroup(
@@ -758,11 +756,9 @@ class TabStorageMiddleware(
                 title = formState.name,
                 theme = formState.theme.toStorageValue(),
                 lastModified = dateTimeProvider.currentTimeMillis(),
+                tabIds = listOf(sourceId, destinationId),
             )
-        tabGroupRepository.createTabGroupWithTabs(
-            tabGroup = tabGroup,
-            tabIds = listOf(sourceId, destinationId),
-        )
+        tabGroupRepository.createTabGroupWithTabs(tabGroup = tabGroup)
         return tabGroup.id
     }
 
@@ -770,13 +766,15 @@ class TabStorageMiddleware(
         formState: TabGroupFormState,
         selectedTabIds: List<String>,
     ): String? {
+        val savedTabGroup =
+            TabGroup(
+                title = formState.name,
+                theme = formState.theme.toStorageValue(),
+                lastModified = dateTimeProvider.currentTimeMillis(),
+                tabIds = selectedTabIds,
+            )
+
         if (formState.tabGroupId == null) {
-            val newTabGroup =
-                TabGroup(
-                    title = formState.name,
-                    theme = formState.theme.toStorageValue(),
-                    lastModified = dateTimeProvider.currentTimeMillis(),
-                )
             if (selectedTabIds.isNotEmpty()) {
                 // Obtain the ID of the selected tab that appears sequentially first in the tab data to sequence
                 // the rest of the selected tabs against it.
@@ -791,24 +789,13 @@ class TabStorageMiddleware(
                     targetTabId = sequentiallyFirstTabId,
                 )
 
-                tabGroupRepository.createTabGroupWithTabs(
-                    tabGroup = newTabGroup,
-                    tabIds = selectedTabIds,
-                )
+                tabGroupRepository.createTabGroupWithTabs(tabGroup = savedTabGroup)
             } else {
-                tabGroupRepository.addNewTabGroup(newTabGroup)
+                tabGroupRepository.addNewTabGroup(savedTabGroup)
             }
-            return newTabGroup.id
+            return savedTabGroup.id
         } else {
-            tabGroupRepository.updateTabGroup(
-                tabGroup =
-                    TabGroup(
-                        id = formState.tabGroupId,
-                        title = formState.name,
-                        theme = formState.theme.toStorageValue(),
-                        lastModified = dateTimeProvider.currentTimeMillis(),
-                    )
-            )
+            tabGroupRepository.updateTabGroup(tabGroup = savedTabGroup.copy(id = formState.tabGroupId))
         }
         return null
     }

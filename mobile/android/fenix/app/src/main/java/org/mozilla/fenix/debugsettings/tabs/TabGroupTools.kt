@@ -142,6 +142,7 @@ fun TabGroupTools(
 private fun generateTabGroup(
     counter: Int,
     isClosed: Boolean = false,
+    tabIDs: List<String>,
     timestamp: Long = System.currentTimeMillis(),
 ): TabGroup {
     return TabGroup(
@@ -149,6 +150,7 @@ private fun generateTabGroup(
         theme = TabGroupTheme.entries.random().name,
         closed = isClosed,
         lastModified = timestamp,
+        tabIds = tabIDs,
     )
 }
 
@@ -191,12 +193,10 @@ private suspend fun autoPopulateTabGroupsUseCase(
                 theme = theme,
                 closed = false,
                 lastModified = now,
+                tabIds = groupTabs.map { it.id },
             )
 
-        tabGroupRepository.createTabGroupWithTabs(
-            tabGroup = newGroup,
-            tabIds = groupTabs.map { it.id },
-        )
+        tabGroupRepository.createTabGroupWithTabs(tabGroup = newGroup)
 
         val ungroupedCountToGenerate =
             when (index) {
@@ -227,20 +227,28 @@ private suspend fun createTabGroupsUseCase(
     getAndIncrementCounter: () -> Int,
 ) {
     repeat(groupQuantity) {
-        val newGroup = generateTabGroup(counter = getAndIncrementCounter(), isClosed = isClosed)
         if (tabsPerGroup > 0) {
             val realTabs =
                 List(tabsPerGroup) { index ->
                     createTab(url = "https://example.com", title = "Generated Tab ${index + 1}")
                 }
+            val newGroup =
+                generateTabGroup(
+                    counter = getAndIncrementCounter(),
+                    isClosed = isClosed,
+                    tabIDs = realTabs.map { it.id },
+                )
 
             browserStore.dispatch(TabListAction.AddMultipleTabsAction(tabs = realTabs))
 
-            tabGroupRepository.createTabGroupWithTabs(
-                tabGroup = newGroup,
-                tabIds = realTabs.map { it.id },
-            )
+            tabGroupRepository.createTabGroupWithTabs(tabGroup = newGroup)
         } else {
+            val newGroup =
+                generateTabGroup(
+                    counter = getAndIncrementCounter(),
+                    isClosed = isClosed,
+                    tabIDs = emptyList(),
+                )
             tabGroupRepository.addNewTabGroup(tabGroup = newGroup)
         }
     }
@@ -530,12 +538,9 @@ private val PreviewTabGroupRepository =
         override val tabGroupDataFlow: Flow<TabGroupData>
             get() = mutableTabGroupFlow
 
-        override suspend fun createTabGroupWithTabs(
-            tabGroup: TabGroup,
-            tabIds: List<String>,
-        ) {
+        override suspend fun createTabGroupWithTabs(tabGroup: TabGroup) {
             val updatedAssignments = HashMap(mutableTabGroupFlow.value.tabGroupAssignments)
-            tabIds.forEach { id -> updatedAssignments[id] = tabGroup.id }
+            tabGroup.tabIds.forEach { id -> updatedAssignments[id] = tabGroup.id }
             mutableTabGroupFlow.emit(
                 mutableTabGroupFlow.value.copy(
                     tabGroups = mutableTabGroupFlow.value.tabGroups + tabGroup,

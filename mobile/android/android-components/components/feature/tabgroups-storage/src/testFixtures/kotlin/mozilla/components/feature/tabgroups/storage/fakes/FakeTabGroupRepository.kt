@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-package org.mozilla.fenix.tabgroups.fixtures
+package mozilla.components.feature.tabgroups.storage.fakes
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,12 +21,9 @@ class FakeTabGroupRepository(
     override val tabGroupDataFlow: Flow<TabGroupData>
         field: MutableStateFlow<TabGroupData> = MutableStateFlow(initialTabGroupData)
 
-    override suspend fun createTabGroupWithTabs(
-        tabGroup: TabGroup,
-        tabIds: List<String>,
-    ) {
+    override suspend fun createTabGroupWithTabs(tabGroup: TabGroup) {
         val updatedAssignments = HashMap(tabGroupDataFlow.value.tabGroupAssignments)
-        tabIds.forEach { id ->
+        tabGroup.tabIds.forEach { id ->
             updatedAssignments[id] = tabGroup.id
         }
         tabGroupDataFlow.emit(
@@ -149,7 +146,9 @@ class FakeTabGroupRepository(
         deleteTabGroupAssignmentsById.invoke(tabIds)
     }
 
-    override suspend fun deleteAllTabGroupAssignmentsForGroup(tabGroupId: String) {}
+    override suspend fun deleteAllTabGroupAssignmentsForGroup(tabGroupId: String) {
+        // no-op
+    }
 
     override suspend fun deleteAllTabGroupData() {
         tabGroupDataFlow.emit(TabGroupData())
