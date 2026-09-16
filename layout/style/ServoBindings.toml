@@ -728,6 +728,7 @@ cbindgen-types = [
     { gecko = "StyleFontVariantEmoji", servo = "crate::values::computed::FontVariantEmoji" },
     { gecko = "StyleDirection", servo = "crate::values::computed::DirectionProperty" },
     { gecko = "StyleTextDecorationStyle", servo = "crate::values::computed::TextDecorationStyle" },
+    { gecko = "StyleColorInterpolation", servo = "crate::values::computed::ColorInterpolation" },
 ]
 
 mapped-generic-types = [

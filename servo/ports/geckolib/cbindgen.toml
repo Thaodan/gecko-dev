@@ -424,6 +424,7 @@ include = [
   "FontVariantEmoji",
   "DirectionProperty",
   "TextDecorationStyle",
+  "ColorInterpolation",
 ]
 item_types = [
   "enums",

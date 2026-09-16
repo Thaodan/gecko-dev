@@ -141,13 +141,6 @@ enum class StyleWhiteSpaceCollapse : uint8_t {
 
 // See nsStyleSVG
 
-// color-interpolation and color-interpolation-filters
-enum class StyleColorInterpolation : uint8_t {
-  Auto = 0,
-  Srgb = 1,
-  Linearrgb = 2,
-};
-
 }  // namespace mozilla
 
 #endif /* nsStyleConsts_h_ */
