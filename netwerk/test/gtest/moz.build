@@ -22,6 +22,7 @@ UNIFIED_SOURCES += [
     "TestHttpAuthUtils.cpp",
     "TestHttpChannel.cpp",
     "TestHttpResponseHead.cpp",
+    "TestHttpTransactionRestart.cpp",
     "TestIDNA.cpp",
     "TestInputStreamTransport.cpp",
     "TestIsValidIp.cpp",

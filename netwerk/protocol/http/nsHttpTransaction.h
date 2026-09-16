@@ -9,6 +9,7 @@
 #include "EventTokenBucket.h"
 #include "HttpTransactionShell.h"
 #include "TimingStruct.h"
+#include "gtest/MozGtestFriend.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/net/DNS.h"
 #include "mozilla/net/NeckoChannelParams.h"
@@ -281,6 +282,8 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   virtual ~nsHttpTransaction();
 
   [[nodiscard]] nsresult Restart();
+  FRIEND_TEST(HttpTransactionRestart,
+              RestartRefusesStartedStreamingRequestBody);
   // For an accepted 0-RTT request, report connectEnd and requestStart at the
   // early-data send point. Caller must hold mLock.
   void Apply0RTTTimingOverride();

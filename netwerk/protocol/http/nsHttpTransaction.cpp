@@ -773,8 +773,9 @@ void nsHttpTransaction::OnTransportStatus(nsITransport* transport,
     }
 
     // when uploading, we include the request headers in the progress
-    // notifications.
-    progressMax = mRequestSize;
+    // notifications. A streaming body has no length, so mRequestSize only
+    // covers the headers and the total has to be reported as unknown.
+    progressMax = mRequestBodyIsStreaming ? -1 : mRequestSize;
   } else {
     progress = 0;
     progressMax = 0;
@@ -824,6 +825,18 @@ nsresult nsHttpTransaction::ReadSegments(nsAHttpSegmentReader* reader,
   if (mTransactionDone) {
     *countRead = 0;
     return mStatus;
+  }
+
+  // A length-less body cannot be framed on HTTP/1.x. Fail here, before any of
+  // it is written, rather than after the whole upload has gone out.
+  if (mRequestBodyIsStreaming && mConnection &&
+      mConnection->Version() < HttpVersion::v2_0) {
+    LOG(
+        ("nsHttpTransaction::ReadSegments %p streaming upload needs HTTP/2 or "
+         "HTTP/3, got version %u\n",
+         this, static_cast<uint32_t>(mConnection->Version())));
+    *countRead = 0;
+    return NS_ERROR_NET_BODY_NOT_REPLAYABLE;
   }
 
   if (!m0RTTInProgress) {
@@ -1965,6 +1978,20 @@ void nsHttpTransaction::SetRestartReason(TRANSACTION_RESTART_REASON aReason) {
 nsresult nsHttpTransaction::Restart() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
+  // The pipe backing a streaming body cannot be rewound, so replaying it
+  // after anything has been read would re-send from mid-request.
+  if (mRequestBodyIsStreaming) {
+    int64_t position = 0;
+    nsCOMPtr<nsITellableStream> tellable = do_QueryInterface(mRequestStream);
+    if (!tellable || NS_FAILED(tellable->Tell(&position)) || position != 0) {
+      LOG(
+          ("nsHttpTransaction::Restart %p streaming request body already "
+           "started, cannot replay it; failing transaction\n",
+           this));
+      return NS_ERROR_NET_RESET;
+    }
+  }
+
   // limit the number of restart attempts - bug 92224
   if (++mRestartCount >= gHttpHandler->MaxRequestAttempts()) {
     LOG(("reached max request attempts, failing transaction @%p\n", this));
@@ -2577,7 +2604,13 @@ nsresult nsHttpTransaction::HandleContentStart() {
           // NS_HTTP_STICKY_CONNECTION is set. In the case that a connection
           // already passed NTLM authentication, restarting the transaction will
           // cause the connection to be closed.
-          if (!mRestartCount && !(mCaps & NS_HTTP_STICKY_CONNECTION)) {
+          // Also skip the restart when the request body is a non-replayable
+          // streaming upload: the retry is only permitted when the body's
+          // source is non-null, so a 421 must be surfaced as-is. See
+          // https://fetch.spec.whatwg.org/#concept-http-network-or-cache-fetch
+          // step 17.
+          if (!mRestartCount && !(mCaps & NS_HTTP_STICKY_CONNECTION) &&
+              !mRequestBodyIsStreaming) {
             mCaps &= ~NS_HTTP_ALLOW_KEEPALIVE;
             mForceRestart = true;  // force restart has built in loop protection
             return NS_ERROR_NET_RESET;
