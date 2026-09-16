@@ -70,9 +70,6 @@ enum class StyleImageLayerRepeat : uint8_t {
 };
 
 // See nsStyleVisibility
-enum class StyleDirection : uint8_t { Ltr, Rtl };
-
-// See nsStyleVisibility
 // NOTE: WritingModes.h depends on the particular values used here.
 
 // Single-bit flag, used in combination with VerticalLR and RL to specify

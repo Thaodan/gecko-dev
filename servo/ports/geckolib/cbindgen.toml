@@ -422,6 +422,7 @@ include = [
   "MathStyle",
   "MathVariant",
   "FontVariantEmoji",
+  "DirectionProperty",
 ]
 item_types = [
   "enums",
@@ -435,6 +436,7 @@ renaming_overrides_prefixing = true
 
 # Prevent some renaming for Gecko types that cbindgen doesn't otherwise understand.
 [export.rename]
+"DirectionProperty" = "StyleDirection"
 "nscolor" = "nscolor"
 "nsAtom" = "nsAtom"
 "nsIURI" = "nsIURI"
