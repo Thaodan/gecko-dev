@@ -391,6 +391,7 @@ include = [
   "StrokeLinecap",
   "StrokeLinejoin",
   "BorderCollapse",
+  "EmptyCells",
 ]
 item_types = [
   "enums",

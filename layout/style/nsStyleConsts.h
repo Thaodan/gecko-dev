@@ -321,11 +321,6 @@ enum class StyleTableLayout : uint8_t {
   Fixed,
 };
 
-enum class StyleEmptyCells : uint8_t {
-  Hide,
-  Show,
-};
-
 // See nsStyleUIReset
 enum class StyleImeMode : uint8_t {
   Auto,
