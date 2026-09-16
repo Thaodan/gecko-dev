@@ -541,7 +541,7 @@ index 88890be798..c9aefc297b 100644
  #include "rtc_base/memory/aligned_malloc.h"
  
 diff --git a/media/BUILD.gn b/media/BUILD.gn
-index 0901a780e2..47f04203b4 100644
+index 2bc9408831..a30e6911e0 100644
 --- a/media/BUILD.gn
 +++ b/media/BUILD.gn
 @@ -42,8 +42,12 @@ rtc_library("rtc_sdp_video_format_utils") {
