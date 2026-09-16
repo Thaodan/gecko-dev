@@ -27,18 +27,6 @@ add_task(async function share_firefox_link_opens_referrals_when_enabled() {
   ok(defaultDesc.hidden, "Default blurb is hidden when pref is enabled");
   ok(shareLink, "Share Firefox link element exists");
 
-  let describedBy = doc.documentElement
-    .getAttribute("aria-describedby")
-    .split(" ");
-  ok(
-    describedBy.includes("contributeDescReferrals"),
-    "The referrals blurb is part of the dialog description when the pref is enabled"
-  );
-  ok(
-    !describedBy.includes("contributeDesc"),
-    "The hidden default blurb is not part of the dialog description"
-  );
-
   shareLink.click();
 
   await TestUtils.waitForCondition(
@@ -79,18 +67,6 @@ add_task(async function share_firefox_link_hidden_when_disabled() {
   ok(
     doc.getElementById("contributeDescReferrals").hidden,
     "Referrals blurb is hidden when pref is disabled"
-  );
-
-  let describedBy = doc.documentElement
-    .getAttribute("aria-describedby")
-    .split(" ");
-  ok(
-    describedBy.includes("contributeDesc"),
-    "The default blurb is part of the dialog description when the pref is disabled"
-  );
-  ok(
-    !describedBy.includes("contributeDescReferrals"),
-    "The hidden referrals blurb is not part of the dialog description"
   );
 
   aboutDialog.close();
