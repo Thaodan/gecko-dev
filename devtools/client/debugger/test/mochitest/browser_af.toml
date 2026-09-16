@@ -53,9 +53,6 @@ fail-if = [
 ["browser_dbg-breakpoints-cond-functional.js"]
 
 ["browser_dbg-breakpoints-cond-shortcut.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-breakpoints-cond-source-maps.js"]
 
@@ -65,9 +62,6 @@ fail-if = [
 ]
 
 ["browser_dbg-breakpoints-debugger-statement.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-breakpoints-duplicate-functions.js"]
 
