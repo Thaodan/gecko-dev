@@ -268,13 +268,6 @@ enum class StyleTextSecurity : uint8_t {
   Square,
 };
 
-// See nsStyleVisibility
-enum class StyleVisibility : uint8_t {
-  Hidden,
-  Visible,
-  Collapse,
-};
-
 // See nsStyleText
 enum class StyleWhiteSpaceCollapse : uint8_t {
   Collapse = 0,

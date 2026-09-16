@@ -382,6 +382,7 @@ include = [
   "ColumnFill",
   "ColumnSpan",
   "MathShift",
+  "Visibility",
 ]
 item_types = [
   "enums",
