@@ -280,7 +280,11 @@ async function setupFormReviewTest() {
     Region._setHomeRegion("US", false);
 
     await SpecialPowers.pushPrefEnv({
-      set: [["browser.smartwindow.smartformfill.enabled", true]],
+      set: [
+        [SMART_FORM_FILL_PREF, true],
+        // The test forms are smaller than the minimum the feature ships with.
+        [MIN_FORM_FIELDS_PREF, 1],
+      ],
     });
     context.prefEnvPushed = true;
 
