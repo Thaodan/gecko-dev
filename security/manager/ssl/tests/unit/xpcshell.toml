@@ -5,8 +5,8 @@ firefox-appdir = "browser"
 prefs = [
   "security.pki.certificate_transparency.mode=1",
 ]
-run-if = [
-  "!msix", # Bug 1809477
+skip-if = [
+  "msix", # Bug 1809477
 ]
 support-files = [
   "bad_certs/**",
