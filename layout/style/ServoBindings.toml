@@ -681,6 +681,7 @@ cbindgen-types = [
     { gecko = "StyleTopLayer", servo = "crate::values::computed::TopLayer" },
     { gecko = "StyleScrollBehavior", servo = "crate::values::computed::ScrollBehavior" },
     { gecko = "StyleIsolation", servo = "crate::values::computed::Isolation" },
+    { gecko = "StyleBackfaceVisibility", servo = "crate::values::computed::BackfaceVisibility" },
 ]
 
 mapped-generic-types = [

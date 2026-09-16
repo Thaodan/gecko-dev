@@ -444,9 +444,6 @@ enum class StyleColorInterpolation : uint8_t {
   Linearrgb = 2,
 };
 
-// 3d Transforms - Backface visibility
-enum class StyleBackfaceVisibility : uint8_t { Hidden = 0, Visible = 1 };
-
 // blending
 enum class StyleBlend : uint8_t {
   Normal = 0,

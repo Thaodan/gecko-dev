@@ -377,6 +377,7 @@ include = [
   "TopLayer",
   "ScrollBehavior",
   "Isolation",
+  "BackfaceVisibility",
 ]
 item_types = [
   "enums",
