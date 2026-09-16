@@ -423,6 +423,7 @@ treeherder:
         'lib-fetch-httpurlconnecti': 'lib-fetch-httpurlconnection'
         'feature-webcompat-reporte': 'feature-webcompat-reporter'
         'feature-protection-dashbo': 'feature-protection-dashboard'
+        'feature-tabdata-coordinat': 'feature-tabdata-coordinator'
 
         # Groups aren't generated off buildconfig.yml:
         'samples-browser': 'samples-browser'
