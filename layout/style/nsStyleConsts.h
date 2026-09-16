@@ -352,14 +352,6 @@ enum class StyleMaskType : uint8_t {
   Alpha,
 };
 
-// shape-rendering
-enum class StyleShapeRendering : uint8_t {
-  Auto,
-  Optimizespeed,
-  Crispedges,
-  Geometricprecision,
-};
-
 // stroke-linecap
 enum class StyleStrokeLinecap : uint8_t {
   Butt,
