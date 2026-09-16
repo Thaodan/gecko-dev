@@ -390,6 +390,7 @@ include = [
   "ShapeRendering",
   "StrokeLinecap",
   "StrokeLinejoin",
+  "BorderCollapse",
 ]
 item_types = [
   "enums",

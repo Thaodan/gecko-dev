@@ -131,9 +131,6 @@ enum class StyleImageLayerRepeat : uint8_t {
 // Mask mode
 enum class StyleMaskMode : uint8_t { Alpha = 0, Luminance, MatchSource };
 
-// See nsStyleTable
-enum class StyleBorderCollapse : uint8_t { Collapse, Separate };
-
 // See nsStyleVisibility
 enum class StyleDirection : uint8_t { Ltr, Rtl };
 
