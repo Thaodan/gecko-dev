@@ -772,6 +772,9 @@ class LensCameraFragment(private val now: () -> Long = DefaultDateTimeProvider()
 
         private val BY_AREA = compareBy<Size> { it.width.toLong() * it.height }
 
+        // Widest ratio difference still treated as the same aspect ratio when picking a preview size.
+        private const val ASPECT_RATIO_TOLERANCE = 0.02
+
         private const val DEGREES_FULL_ROTATION = 360
 
         private val ORIENTATIONS =
@@ -810,10 +813,16 @@ class LensCameraFragment(private val now: () -> Long = DefaultDateTimeProvider()
         }
 
         /**
-         * Picks the preview size: the smallest size that matches [aspectRatio] and covers the view, falling back to
-         * progressively looser criteria. Every branch but the last stays within [maxWidth] x [maxHeight], because a
+         * Picks the preview size: the smallest size that matches [aspectRatio] and covers the view, falling back to the
+         * largest matching size when nothing covers it. Both of those stay within [maxWidth] x [maxHeight], because a
          * preview stream above those bounds is not a PREVIEW-size stream and can fail the whole capture session on
-         * LIMITED and LEGACY devices.
+         * LIMITED and LEGACY devices; only the fallback for a device offering nothing within them at all can return a
+         * larger size.
+         *
+         * Matching is on the ratio closest to [aspectRatio] within [ASPECT_RATIO_TOLERANCE] rather than an exact match,
+         * because sensors routinely report a maximum capture size that is only approximately 4:3 or 16:9 (a Pixel 7's
+         * 4080x3072 is 1.328, not 1.333). An exact match rejects every realistic preview size on those devices and
+         * silently selects a tiny one.
          */
         @VisibleForTesting
         internal fun chooseOptimalSize(
@@ -825,19 +834,21 @@ class LensCameraFragment(private val now: () -> Long = DefaultDateTimeProvider()
             aspectRatio: Size,
         ): Size {
             require(choices.isNotEmpty()) { "No preview sizes available from camera" }
+            val target = aspectRatio.width.toDouble() / aspectRatio.height
+            val ratioDelta = { size: Size -> abs(size.width.toDouble() / size.height - target) }
+
             val withinBounds = choices.filter { it.width <= maxWidth && it.height <= maxHeight }
-            val w = aspectRatio.width
-            val h = aspectRatio.height
-            val matching = withinBounds.filter { it.height == it.width * h / w }
+            // The device offers no size within the preview bounds at all; the smallest is the closest we get.
+            if (withinBounds.isEmpty()) return Collections.min(choices.asList(), BY_AREA)
+
+            val closest = withinBounds.minOf(ratioDelta)
+            val matching = withinBounds.filter { ratioDelta(it) <= closest + ASPECT_RATIO_TOLERANCE }
             val bigEnough = matching.filter { it.width >= textureViewWidth && it.height >= textureViewHeight }
-            return when {
-                bigEnough.isNotEmpty() -> Collections.min(bigEnough, BY_AREA)
+            return if (bigEnough.isNotEmpty()) {
+                Collections.min(bigEnough, BY_AREA)
+            } else {
                 // Right aspect ratio, but nothing covers the view, so the preview is upscaled.
-                matching.isNotEmpty() -> Collections.max(matching, BY_AREA)
-                // Nothing shares the capture aspect ratio. A letterboxed preview beats a rejected session.
-                withinBounds.isNotEmpty() -> Collections.max(withinBounds, BY_AREA)
-                // The device offers no size within the preview bounds at all; the smallest is the closest we get.
-                else -> Collections.min(choices.asList(), BY_AREA)
+                Collections.max(matching, BY_AREA)
             }
         }
 

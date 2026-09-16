@@ -355,7 +355,7 @@ class LensCameraFragmentTest {
     }
 
     @Test
-    fun `GIVEN no aspect ratio match WHEN chooseOptimalSize is called THEN largest in-bounds size is returned`() {
+    fun `GIVEN no exact aspect ratio match WHEN chooseOptimalSize is called THEN closest available ratio is returned`() {
         val size =
             LensCameraFragment.chooseOptimalSize(
                 arrayOf(Size(1024, 768), Size(786, 480)),
@@ -366,8 +366,58 @@ class LensCameraFragmentTest {
                 Size(16, 9),
             )
 
-        assertEquals(1024, size.width)
-        assertEquals(768, size.height)
+        assertEquals(786, size.width)
+        assertEquals(480, size.height)
+    }
+
+    @Test
+    fun `GIVEN a capture size that is only approximately 4-3 WHEN chooseOptimalSize is called THEN the largest 4-3 preview size is returned`() {
+        val size =
+            LensCameraFragment.chooseOptimalSize(
+                arrayOf(Size(320, 240), Size(640, 480), Size(1280, 960), Size(1440, 1080)),
+                2400,
+                1080,
+                1920,
+                1080,
+                // Pixel 7 rear camera reports 4080x3072, a ratio of 1.328 rather than 1.333.
+                Size(4080, 3072),
+            )
+
+        assertEquals(1440, size.width)
+        assertEquals(1080, size.height)
+    }
+
+    @Test
+    fun `GIVEN a Samsung style capture size WHEN chooseOptimalSize is called THEN the largest 4-3 preview size is returned`() {
+        val size =
+            LensCameraFragment.chooseOptimalSize(
+                arrayOf(Size(640, 480), Size(1440, 1080)),
+                2400,
+                1080,
+                1920,
+                1080,
+                Size(4624, 3472),
+            )
+
+        assertEquals(1440, size.width)
+        assertEquals(1080, size.height)
+    }
+
+    @Test
+    fun `GIVEN a size just outside the ratio tolerance WHEN chooseOptimalSize is called THEN it is not treated as matching`() {
+        // 1600x1080 is 1.481, which is 0.148 away from the closest candidate's ratio and well outside the tolerance.
+        val size =
+            LensCameraFragment.chooseOptimalSize(
+                arrayOf(Size(1440, 1080), Size(1600, 1080)),
+                2400,
+                1080,
+                1920,
+                1080,
+                Size(4, 3),
+            )
+
+        assertEquals(1440, size.width)
+        assertEquals(1080, size.height)
     }
 
     @Test
