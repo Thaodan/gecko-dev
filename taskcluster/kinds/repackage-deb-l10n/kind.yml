@@ -35,7 +35,6 @@ tasks:
             docker-image: {"in-tree": "debian12-repackage"}
             max-run-time: 600
         mozharness:
-            run-as-root: true
             use-caches: false
             config:
                 by-build-platform:
