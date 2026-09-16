@@ -1564,11 +1564,7 @@ pub extern "C" fn Servo_Element_IsDisplayContents(element: &RawGeckoElement) -> 
     let data = element
         .borrow_data()
         .expect("Invoking Servo_Element_IsDisplayContents on unstyled element");
-    data.styles
-        .primary()
-        .get_box()
-        .clone_display()
-        .is_contents()
+    data.styles.primary().get_box().get_display().is_contents()
 }
 
 #[unsafe(no_mangle)]
@@ -5037,7 +5033,7 @@ pub extern "C" fn Servo_ComputedValues_BlockifiedDisplay(
     style: &ComputedValues,
     is_root_element: bool,
 ) -> u16 {
-    let display = style.get_box().clone_display();
+    let display = *style.get_box().get_display();
     let blockified_display = display.equivalent_block_display(is_root_element);
     blockified_display.to_u16()
 }
