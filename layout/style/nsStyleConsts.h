@@ -78,13 +78,6 @@ enum class StyleGeometryBox : uint8_t {
                           // background-clip only.
 };
 
-// scrollbar-width
-enum class StyleScrollbarWidth : uint8_t {
-  Auto,
-  Thin,
-  None,
-};
-
 // field-sizing
 enum class StyleFieldSizing : bool {
   Fixed,

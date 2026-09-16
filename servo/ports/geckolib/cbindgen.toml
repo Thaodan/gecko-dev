@@ -410,6 +410,7 @@ include = [
   "TableLayout",
   "UnicodeBidi",
   "ImeMode",
+  "ScrollbarWidth",
 ]
 item_types = [
   "enums",

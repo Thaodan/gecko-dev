@@ -714,6 +714,7 @@ cbindgen-types = [
     { gecko = "StyleTableLayout", servo = "crate::values::computed::TableLayout" },
     { gecko = "StyleUnicodeBidi", servo = "crate::values::computed::UnicodeBidi" },
     { gecko = "StyleImeMode", servo = "crate::values::computed::ImeMode" },
+    { gecko = "StyleScrollbarWidth", servo = "crate::values::computed::ScrollbarWidth" },
 ]
 
 mapped-generic-types = [
