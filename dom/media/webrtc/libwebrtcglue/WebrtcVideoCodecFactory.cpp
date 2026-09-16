@@ -51,33 +51,55 @@ static media::DecodeSupportSet WebrtcSoftwareDecodeFallback(
   return {};
 }
 
-/* static */
-RefPtr<PlatformDecoderModule::SupportsDecoderPromise>
-WebrtcVideoDecoderFactory::SupportsCodec(const MediaExtendedMIMEType& aMime,
-                                         const SupportDecoderParams& aParams) {
-  const auto codec =
-      webrtc::PayloadStringToCodecType(std::string(aMime.Subtype().View()));
+// Resolve aPlatformSupport, and when it reports nothing fall back to
+// libwebrtc's built-in software/GMP decode support. Shared by SupportsCodec
+// and StrictSupportsCodec, which differ only in how the platform support is
+// obtained.
+static RefPtr<PlatformDecoderModule::SupportsDecoderPromise>
+WithWebrtcDecodeFallback(
+    webrtc::VideoCodecType aCodec, const MediaExtendedMIMEType& aMime,
+    const SupportDecoderParams& aParams,
+    RefPtr<PlatformDecoderModule::SupportsDecoderPromise> aPlatformSupport) {
   // SupportDecoderParams is stack-only and holds a reference to its config, so
   // clone the bits the fallback needs to survive the asynchronous wait.
   UniquePtr<TrackInfo> config = aParams.mConfig.Clone();
   const media::VideoFrameRate rate = aParams.mRate;
   // A failed platform query counts as no platform support, so libwebrtc's
   // built-in fallback still applies.
-  return WebrtcMediaDataDecoder::Supports(codec, aParams)
-      ->Then(GetCurrentSerialEventTarget(), __func__,
-             [codec, aMime, config = std::move(config),
-              rate](PlatformDecoderModule::SupportsDecoderPromise::
-                        ResolveOrRejectValue&& aValue) {
-               if (aValue.IsResolve() && !aValue.ResolveValue().isEmpty()) {
-                 return PlatformDecoderModule::SupportsDecoderPromise::
-                     CreateAndResolve(aValue.ResolveValue(), __func__);
-               }
-               SupportDecoderParams params{*config, rate};
-               return PlatformDecoderModule::SupportsDecoderPromise::
-                   CreateAndResolve(
-                       WebrtcSoftwareDecodeFallback(codec, aMime, params),
-                       __func__);
-             });
+  return aPlatformSupport->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [aCodec, aMime, config = std::move(config), rate](
+          PlatformDecoderModule::SupportsDecoderPromise::ResolveOrRejectValue&&
+              aValue) {
+        if (aValue.IsResolve() && !aValue.ResolveValue().isEmpty()) {
+          return PlatformDecoderModule::SupportsDecoderPromise::
+              CreateAndResolve(aValue.ResolveValue(), __func__);
+        }
+        SupportDecoderParams params{*config, rate};
+        return PlatformDecoderModule::SupportsDecoderPromise::CreateAndResolve(
+            WebrtcSoftwareDecodeFallback(aCodec, aMime, params), __func__);
+      });
+}
+
+/* static */
+RefPtr<PlatformDecoderModule::SupportsDecoderPromise>
+WebrtcVideoDecoderFactory::SupportsCodec(const MediaExtendedMIMEType& aMime,
+                                         const SupportDecoderParams& aParams) {
+  const auto codec =
+      webrtc::PayloadStringToCodecType(std::string(aMime.Subtype().View()));
+  return WithWebrtcDecodeFallback(
+      codec, aMime, aParams, WebrtcMediaDataDecoder::Supports(codec, aParams));
+}
+
+/* static */
+RefPtr<PlatformDecoderModule::SupportsDecoderPromise>
+WebrtcVideoDecoderFactory::StrictSupportsCodec(
+    const MediaExtendedMIMEType& aMime, const SupportDecoderParams& aParams) {
+  const auto codec =
+      webrtc::PayloadStringToCodecType(std::string(aMime.Subtype().View()));
+  return WithWebrtcDecodeFallback(
+      codec, aMime, aParams,
+      WebrtcMediaDataDecoder::StrictSupports(codec, aParams));
 }
 
 // libwebrtc's built-in software encode support for aConfig, independent of any
