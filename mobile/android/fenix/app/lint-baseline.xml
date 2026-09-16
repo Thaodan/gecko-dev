@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 9.2.1" type="baseline" client="gradle" dependencies="false" name="AGP (9.2.1)" variant="all" version="9.2.1">
+<issues format="6" by="lint 9.4.0" type="baseline" client="gradle" dependencies="false" name="AGP (9.4.0)" variant="all" version="9.4.0">
 
     <issue
         id="ComposeIconButtonUsage"
@@ -41,8 +41,30 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/org/mozilla/fenix/trackingprotection/TrackingProtectionCategoryItem.kt"
-            line="28"
+            line="43"
             column="13"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 33 (current min is 26): `android.content.ClipDescription#EXTRA_IS_SENSITIVE`"
+        errorLine1="                    putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true)"
+        errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/share/ShareController.kt"
+            line="299"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 33 (current min is 26): `android.content.ClipDescription#EXTRA_IS_SENSITIVE`"
+        errorLine1="                    putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true)"
+        errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/share/ShareController.kt"
+            line="299"
+            column="32"/>
     </issue>
 
     <issue
@@ -52,30 +74,30 @@
         errorLine2="               ~~~~~~~~~~~">
         <location
             file="src/main/java/org/mozilla/fenix/components/lens/LensCameraFragment.kt"
-            line="211"
+            line="193"
             column="16"/>
     </issue>
 
     <issue
         id="UseFragmentContent"
         message="Prefer content {} instead of manually constructing a ComposeView in onCreateView()."
-        errorLine1="    ): View = ComposeView(requireContext()).apply {"
-        errorLine2="              ~~~~~~~~~~~">
+        errorLine1="        ComposeView(requireContext()).apply {"
+        errorLine2="        ~~~~~~~~~~~">
         <location
             file="src/main/java/org/mozilla/fenix/components/menu/MenuDialogFragment.kt"
-            line="256"
-            column="15"/>
+            line="258"
+            column="9"/>
     </issue>
 
     <issue
         id="UseFragmentContent"
         message="Prefer content {} instead of manually constructing a ComposeView in onCreateView()."
-        errorLine1="    ): View = ComposeView(requireContext()).apply {"
-        errorLine2="              ~~~~~~~~~~~">
+        errorLine1="        ComposeView(requireContext()).apply {"
+        errorLine2="        ~~~~~~~~~~~">
         <location
             file="src/main/java/org/mozilla/fenix/translations/TranslationsDialogFragment.kt"
-            line="97"
-            column="15"/>
+            line="95"
+            column="9"/>
     </issue>
 
     <issue
@@ -85,7 +107,7 @@
         errorLine2="               ~~~~~~~~~~~">
         <location
             file="src/main/java/org/mozilla/fenix/pbmlock/UnlockPrivateTabsFragment.kt"
-            line="56"
+            line="55"
             column="16"/>
     </issue>
 
@@ -96,7 +118,7 @@
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/org/mozilla/fenix/ext/Context.kt"
-            line="78"
+            line="72"
             column="9"/>
     </issue>
 
@@ -118,7 +140,7 @@
         errorLine2="         ~~~~~~~~">
         <location
             file="src/main/AndroidManifest.xml"
-            line="755"
+            line="764"
             column="10"/>
     </issue>
 
@@ -140,7 +162,7 @@
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/org/mozilla/fenix/library/history/HistoryView.kt"
-            line="152"
+            line="145"
             column="9"/>
     </issue>
 
@@ -211,7 +233,7 @@
         errorLine2="         ~~~~~~~~~">
         <location
             file="src/main/res/layout/library_site_item.xml"
-            line="30"
+            line="26"
             column="10"/>
     </issue>
 
@@ -224,6 +246,61 @@
             file="src/main/res/layout/sign_in_preference.xml"
             line="17"
             column="6"/>
+    </issue>
+
+    <issue
+        id="AssertTrueInsteadOfAssertIs"
+        message="Use assertIs&lt;IllegalStateException>() for better failure messages and smart casts"
+        errorLine1="        assertTrue(failure is IllegalStateException)"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidTest/java/org/mozilla/fenix/ui/efficiency/devtools/NavigationGraphContractTest.kt"
+            line="73"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="AssertTrueInsteadOfAssertIs"
+        message="Use assertIs&lt;IllegalArgumentException>() for better failure messages and smart casts"
+        errorLine1="        assertTrue(failure is IllegalArgumentException)"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidTest/java/org/mozilla/fenix/ui/efficiency/devtools/NavigationGraphContractTest.kt"
+            line="83"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="AssertTrueInsteadOfAssertIs"
+        message="Use assertIs&lt;NavigationEffect.CreateBookmark>() for better failure messages and smart casts"
+        errorLine1="        assertTrue(edge?.effects?.single() is NavigationEffect.CreateBookmark)"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidTest/java/org/mozilla/fenix/ui/efficiency/devtools/NavigationGraphContractTest.kt"
+            line="103"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="AssertTrueInsteadOfAssertIs"
+        message="Use assertIs&lt;IllegalStateException>() for better failure messages and smart casts"
+        errorLine1="        assertTrue(failure is IllegalStateException)"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidTest/java/org/mozilla/fenix/ui/efficiency/devtools/NavigationGraphContractTest.kt"
+            line="157"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="AssertTrueInsteadOfAssertIs"
+        message="Use assertIs&lt;IllegalArgumentException>() for better failure messages and smart casts"
+        errorLine1="        assertTrue(error is IllegalArgumentException)"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidTest/java/org/mozilla/fenix/ui/efficiency/devtools/SelectorContainerContractTest.kt"
+            line="42"
+            column="9"/>
     </issue>
 
 </issues>
