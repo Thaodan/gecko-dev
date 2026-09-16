@@ -81,13 +81,6 @@ enum class StyleGeometryBox : uint8_t {
                           // background-clip only.
 };
 
-// Hyphens
-enum class StyleHyphens : uint8_t {
-  None,
-  Manual,
-  Auto,
-};
-
 // scrollbar-width
 enum class StyleScrollbarWidth : uint8_t {
   Auto,

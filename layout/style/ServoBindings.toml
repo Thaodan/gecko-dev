@@ -696,6 +696,7 @@ cbindgen-types = [
     { gecko = "StyleStrokeLinejoin", servo = "crate::values::computed::StrokeLinejoin" },
     { gecko = "StyleBorderCollapse", servo = "crate::values::computed::BorderCollapse" },
     { gecko = "StyleEmptyCells", servo = "crate::values::computed::EmptyCells" },
+    { gecko = "StyleHyphens", servo = "crate::values::computed::Hyphens" },
 ]
 
 mapped-generic-types = [

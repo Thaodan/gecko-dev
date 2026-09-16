@@ -392,6 +392,7 @@ include = [
   "StrokeLinejoin",
   "BorderCollapse",
   "EmptyCells",
+  "Hyphens",
 ]
 item_types = [
   "enums",
