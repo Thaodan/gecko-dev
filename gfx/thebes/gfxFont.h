@@ -175,7 +175,7 @@ struct gfxFontStyle {
   // 7 bytes of padding at the end of the struct.
 
   // caps variant (small-caps, petite-caps, etc.)
-  uint8_t variantCaps : 3;  // uses range 0..6
+  mozilla::StyleFontVariantCaps variantCaps : 3;  // uses range 0..6
 
   // sub/superscript variant
   mozilla::StyleFontVariantPosition variantSubSuper : 2;  // uses range 0..2
@@ -1622,7 +1622,8 @@ class gfxFont {
 
   // whether the font supports "real" small caps, petite caps etc.
   // aFallbackToSmallCaps true when petite caps should fallback to small caps
-  bool SupportsVariantCaps(Script aScript, uint32_t aVariantCaps,
+  bool SupportsVariantCaps(Script aScript,
+                           mozilla::StyleFontVariantCaps aVariantCaps,
                            bool& aFallbackToSmallCaps,
                            bool& aSyntheticLowerToSmallCaps,
                            bool& aSyntheticUpperToSmallCaps);

@@ -2945,7 +2945,7 @@ void gfxFontGroup::InitScriptRun(DrawTarget* aDrawTarget, gfxTextRun* aTextRun,
           // glyph layout failed! treat as missing glyphs
           matchedFont = nullptr;
         }
-      } else if (mStyle.variantCaps != NS_FONT_VARIANT_CAPS_NORMAL &&
+      } else if (mStyle.variantCaps != StyleFontVariantCaps::Normal &&
                  mStyle.allowSyntheticSmallCaps &&
                  !matchedFont->SupportsVariantCaps(
                      aRunScript, mStyle.variantCaps, petiteToSmallCaps,

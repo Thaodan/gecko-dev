@@ -7,7 +7,7 @@
 
 #include <cstdint>
 
-#include "gfxFontConstants.h"  // for NS_FONT_KERNING_AUTO, etc
+#include "gfxFontConstants.h"  // for NS_FONT_VARIANT_WIDTH_NORMAL, etc
 #include "gfxFontVariations.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/StyleColorInlines.h"  // for StyleAbsoluteColor
@@ -61,7 +61,8 @@ struct nsFont final {
   mozilla::StyleFontVariantEastAsian variantEastAsian =
       mozilla::StyleFontVariantEastAsian::NORMAL;
 
-  uint8_t variantCaps = NS_FONT_VARIANT_CAPS_NORMAL;
+  mozilla::StyleFontVariantCaps variantCaps =
+      mozilla::StyleFontVariantCaps::Normal;
   mozilla::StyleFontVariantNumeric variantNumeric =
       mozilla::StyleFontVariantNumeric::NORMAL;
   mozilla::StyleFontVariantPosition variantPosition =

@@ -242,7 +242,7 @@ void nsFont::AddFontFeaturesToStyle(gfxFontStyle* aStyle,
   // indicate common-path case when neither variantCaps or variantSubSuper are
   // set
   aStyle->noFallbackVariantFeatures =
-      (aStyle->variantCaps == NS_FONT_VARIANT_CAPS_NORMAL) &&
+      (aStyle->variantCaps == StyleFontVariantCaps::Normal) &&
       (variantPosition == StyleFontVariantPosition::Normal);
 
   // If the feature list is not empty, we insert a "fake" feature with tag=0
