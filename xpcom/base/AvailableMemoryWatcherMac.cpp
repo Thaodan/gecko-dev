@@ -9,7 +9,6 @@
 #include "AvailableMemoryWatcher.h"
 #include "Logging.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/ipc/CrashReporterHost.h"
 #include "nsICrashReporter.h"
 #include "nsISupports.h"
 #include "nsITimer.h"

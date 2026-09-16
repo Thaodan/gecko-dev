@@ -1385,7 +1385,7 @@ static void WriteAnnotations(AnnotationWriter& aWriter,
                              const AnnotationTable& aAnnotations) {
   for (auto key : MakeEnumeratedRange(Annotation::Count)) {
     const nsCString& value = aAnnotations[key];
-    if (!value.IsEmpty() && ShouldIncludeAnnotation(key, value.get())) {
+    if (!value.IsEmpty()) {
       aWriter.Write(key, value.get(), value.Length());
     }
   }
@@ -3190,6 +3190,20 @@ bool WriteExtraFile(const nsAString& id, const AnnotationTable& annotations) {
   return WriteExtraFile(pw, annotations);
 }
 
+// This filters out annotations that have specific values we don't want to
+// include and adds common annotations which are present in every crash report
+// including crash time, uptime, etc...
+static void AddSharedAnnotations(AnnotationTable& aAnnotations) {
+  for (auto key : MakeEnumeratedRange(Annotation::Count)) {
+    if (!aAnnotations[key].IsEmpty() &&
+        !ShouldIncludeAnnotation(key, aAnnotations[key].get())) {
+      aAnnotations[key] = EmptyCString();
+    }
+  }
+
+  AddCommonAnnotations(aAnnotations);
+}
+
 // It really only makes sense to call this function when
 // ShouldReport() is true.
 // Uses dumpFile's filename to generate memoryReport's filename (same name
@@ -3542,7 +3556,7 @@ bool TakeMinidumpForChild(GeckoChildID aChildId, nsIFile** dump,
 
   nsresult rv = ReadExtraFile(extra, aAnnotations);
 
-  // Unconditionally remove the temporary .extra file, it will be regenerated
+  // Unconditionally remove the temporary .extra file, it will be regenarated
   // later when we finalize the crash report.
   extra->Remove(false);
 
@@ -3552,7 +3566,7 @@ bool TakeMinidumpForChild(GeckoChildID aChildId, nsIFile** dump,
     return false;
   }
 
-  AddCommonAnnotations(aAnnotations);
+  AddSharedAnnotations(aAnnotations);
 
   if (error.Length() > 0) {
     aAnnotations[Annotation::DumperError] = std::move(error);
@@ -3617,6 +3631,33 @@ static void RenameAdditionalHangMinidump(nsIFile* minidump,
   }
 }
 
+// Stores the minidump in the nsIFile pointed by the |context| parameter.
+static bool PairedDumpCallback(
+#ifdef XP_LINUX
+    const MinidumpDescriptor& descriptor,
+#else
+    const XP_CHAR* dump_path, const XP_CHAR* minidump_id,
+#endif
+    void* context,
+#ifdef XP_WIN
+    EXCEPTION_POINTERS* /*unused*/, MDRawAssertionInfo* /*unused*/,
+#endif
+    const phc::AddrInfo* addrInfo, bool succeeded) {
+  XP_CHAR* path = static_cast<XP_CHAR*>(context);
+  size_t size = XP_PATH_MAX;
+
+#ifdef XP_LINUX
+  Concat(path, descriptor.path(), &size);
+#else
+  path = Concat(path, dump_path, &size);
+  path = Concat(path, XP_PATH_SEPARATOR, &size);
+  path = Concat(path, minidump_id, &size);
+  Concat(path, dumpFileExtension, &size);
+#endif
+
+  return true;
+}
+
 ThreadId CurrentThreadId() {
 #if defined(XP_WIN)
   return ::GetCurrentThreadId();
@@ -3631,7 +3672,8 @@ ThreadId CurrentThreadId() {
 #endif
 }
 
-bool CreateMinidumpsAndPair(GeckoChildID aId, ThreadId aTargetBlamedThread,
+bool CreateMinidumpsAndPair(ProcessHandle aTargetHandle,
+                            ThreadId aTargetBlamedThread,
                             const nsACString& aIncomingPairName,
                             AnnotationTable& aTargetAnnotations,
                             nsIFile** aMainDumpOut) {
@@ -3640,66 +3682,56 @@ bool CreateMinidumpsAndPair(GeckoChildID aId, ThreadId aTargetBlamedThread,
   }
 
   AutoIOInterposerDisable disableIOInterposition;
-#if defined(XP_WIN) && defined(DEBUG) && defined(HAS_DLL_BLOCKLIST)
-  DllBlocklist_Shutdown();
+
+  xpstring dump_path;
+#ifndef XP_LINUX
+  dump_path = gExceptionHandler->dump_path();
+#else
+  dump_path = gExceptionHandler->minidump_descriptor().directory();
 #endif
 
-  CrashReport* crash_report = nullptr;
+  // Ugly, but due to Breakpad limitations we can't allocate memory in the
+  // callback when generating a dump of the calling process.
+  XP_CHAR minidumpPath[XP_PATH_MAX] = {};
 
-  {
-    StaticMutexAutoLock lock(gCrashHelperClientMutex);
-    if (gCrashHelperClient) {
-#if defined(XP_DARWIN)
-      // We need to make a copy of this right as the Rust code will take
-      // ownership of it (and eventually dispose of the right).
-      aTargetBlamedThread = RetainMachSendRight(aTargetBlamedThread).release();
-#endif  // defined(XP_DARWIN)
-      crash_report =
-          generate_crash_report(gCrashHelperClient, aId, aTargetBlamedThread);
-    }
-  }
-
-  if (!crash_report) {
+  // dump the target
+  if (!google_breakpad::ExceptionHandler::WriteMinidumpForChild(
+          aTargetHandle, aTargetBlamedThread,
+#if defined(XP_LINUX) && defined(MOZ_OXIDIZED_BREAKPAD)
+          /* auxvInfo */ nullptr,
+#endif  // defined(XP_LINUX) && defined(MOZ_OXIDIZED_BREAKPAD)
+          dump_path, PairedDumpCallback, static_cast<void*>(minidumpPath)
+#ifdef XP_WIN
+                                             ,
+          GetMinidumpType()
+#endif
+              )) {
     return false;
   }
 
   nsCOMPtr<nsIFile> targetMinidump;
-  CreateFileFromPath(xpstring((XP_CHAR*)crash_report->path),
-                     getter_AddRefs(targetMinidump));
-  nsCString error =
-      crash_report->error ? nsCString(crash_report->error) : ""_ns;
-  release_crash_report(crash_report);
+  CreateFileFromPath(xpstring(minidumpPath), getter_AddRefs(targetMinidump));
   MOZ_ASSERT(targetMinidump);
 
-  nsCOMPtr<nsIFile> extra = nullptr;
-  NS_ENSURE_TRUE(GetExtraFileForMinidump(targetMinidump, getter_AddRefs(extra)),
-                 false);
-
-  // Create a dump of the main process.
-  {
-    StaticMutexAutoLock lock(gCrashHelperClientMutex);
-    crash_report =
-        generate_crash_report(gCrashHelperClient, 0, CurrentThreadId());
-  }
-
-  if (!crash_report) {
-    // We're leaving behind a minidump, clean it up?
+  // Create a dump of this process.
+  if (!google_breakpad::ExceptionHandler::WriteMinidump(
+          dump_path,
+#ifdef XP_MACOSX
+          true,
+#endif
+          PairedDumpCallback, static_cast<void*>(minidumpPath)
+#ifdef XP_WIN
+                                  ,
+          GetMinidumpType()
+#endif
+              )) {
+    targetMinidump->Remove(false);
     return false;
   }
 
   nsCOMPtr<nsIFile> incomingDump;
-  CreateFileFromPath(xpstring((XP_CHAR*)crash_report->path),
-                     getter_AddRefs(incomingDump));
-  release_crash_report(crash_report);
+  CreateFileFromPath(xpstring(minidumpPath), getter_AddRefs(incomingDump));
   MOZ_ASSERT(incomingDump);
-
-  // We're ignoring the errors we might have encountered while dumping the
-  // parent, they're not really important in this context and we don't need
-  // the crash annotations either.
-  nsCOMPtr<nsIFile> incomingExtra = nullptr;
-  if (GetExtraFileForMinidump(incomingDump, getter_AddRefs(incomingExtra))) {
-    incomingExtra->Remove(false);
-  }
 
   RenameAdditionalHangMinidump(incomingDump, targetMinidump, aIncomingPairName);
 
@@ -3707,24 +3739,12 @@ bool CreateMinidumpsAndPair(GeckoChildID aId, ThreadId aTargetBlamedThread,
     MoveToPending(targetMinidump, nullptr, nullptr);
     MoveToPending(incomingDump, nullptr, nullptr);
   }
+#if defined(DEBUG) && defined(HAS_DLL_BLOCKLIST)
+  DllBlocklist_Shutdown();
+#endif
 
-  nsresult rv = ReadExtraFile(extra, aTargetAnnotations);
-
-  // Unconditionally remove the temporary .extra file, it will be regenerated
-  // later when we finalize the crash report.
-  extra->Remove(false);
-
-  if (rv != NS_OK) {
-    // TODO: We failed to read the annotations, this will leave an orphaned
-    // crash that we won't be able to submit. Clean everything up instead?
-    return false;
-  }
-
-  AddCommonAnnotations(aTargetAnnotations);
-
-  if (error.Length() > 0) {
-    aTargetAnnotations[Annotation::DumperError] = std::move(error);
-  }
+  AddSharedAnnotations(aTargetAnnotations);
+  // TODO: Retrieve annotations from child process
 
   targetMinidump.forget(aMainDumpOut);
 

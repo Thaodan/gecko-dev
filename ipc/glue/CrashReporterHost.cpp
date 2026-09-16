@@ -124,19 +124,6 @@ void CrashReporterHost::DeleteCrashReport() {
   }
 }
 
-bool CrashReporterHost::GenerateMinidumpAndPair(
-    GeckoChildProcessHost* aChildProcessHost, const nsACString& aPairName) {
-  AnnotationTable annotations;
-  nsCOMPtr<nsIFile> targetDump;
-  if (!CrashReporter::CreateMinidumpsAndPair(
-          aChildProcessHost->GetChildID(), GetRawThreadId(), aPairName,
-          annotations, getter_AddRefs(targetDump))) {
-    return false;
-  }
-
-  return AdoptMinidump(targetDump, annotations);
-}
-
 const char* CrashReporterHost::ProcessType() const {
   return XRE_ChildProcessTypeToAnnotation(mProcessType);
 }
