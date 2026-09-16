@@ -163,6 +163,7 @@ InternalRequest::InternalRequest(const IPCInternalRequest& aIPCRequest)
       mPriorityMode(aIPCRequest.requestPriority()),
       mIntegrity(aIPCRequest.integrity()),
       mKeepalive(aIPCRequest.keepalive()),
+      mHasStreamBody(aIPCRequest.hasStreamBody()),
       mFragment(aIPCRequest.fragment()),
       mEmbedderPolicy(aIPCRequest.embedderPolicy()),
       mInterceptionContentPolicyType(
@@ -212,6 +213,7 @@ void InternalRequest::ToIPCInternalRequest(
   aIPCRequest->requestPriority() = mPriorityMode;
   aIPCRequest->integrity() = mIntegrity;
   aIPCRequest->keepalive() = mKeepalive;
+  aIPCRequest->hasStreamBody() = mHasStreamBody;
   aIPCRequest->fragment() = mFragment;
   aIPCRequest->embedderPolicy() = mEmbedderPolicy;
 
