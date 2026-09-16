@@ -381,6 +381,7 @@ include = [
   "Orient",
   "ColumnFill",
   "ColumnSpan",
+  "MathShift",
 ]
 item_types = [
   "enums",
