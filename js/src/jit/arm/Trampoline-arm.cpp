@@ -436,11 +436,10 @@ bool JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm,
   // push the return address, while the caller must ensure that the address
   // is stored in lr on entry. This allows the VM wrapper to work with both
   // direct calls and tail calls.
-  // First push the return address, then the frame pointer to finish the exit
-  // frame, then link it up.
-  masm.pushRegs(LinkRegister, FramePointer);
-  // This adjustment is for Push(FramePointer).
-  masm.adjustFrame(sizeof(intptr_t));
+  masm.pushReturnAddress();
+
+  // Push the frame pointer to finish the exit frame, then link it up.
+  masm.Push(FramePointer);
   masm.moveStackPtrTo(FramePointer);
   masm.loadJSContext(cxreg);
   masm.enterExitFrame(cxreg, regs.getAny(), id);
@@ -541,13 +540,17 @@ uint32_t JitRuntime::generatePreBarrier(JSContext* cx, MacroAssembler& masm,
   Register temp1 = r2;
   Register temp2 = r3;
   Register temp3 = r4;
-  masm.pushRegs(temp1, temp2, temp3);
+  masm.push(temp1);
+  masm.push(temp2);
+  masm.push(temp3);
 
   Label noBarrier;
   masm.emitPreBarrierFastPath(type, temp1, temp2, temp3, &noBarrier);
 
   // Call into C++ to mark this GC thing.
-  masm.popRegs(temp3, temp2, temp1);
+  masm.pop(temp3);
+  masm.pop(temp2);
+  masm.pop(temp1);
 
   LiveRegisterSet save;
   save.set() =
@@ -565,7 +568,9 @@ uint32_t JitRuntime::generatePreBarrier(JSContext* cx, MacroAssembler& masm,
   masm.ret();
 
   masm.bind(&noBarrier);
-  masm.popRegs(temp3, temp2, temp1);
+  masm.pop(temp3);
+  masm.pop(temp2);
+  masm.pop(temp1);
   masm.ret();
 
   return offset;

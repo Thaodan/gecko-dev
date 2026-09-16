@@ -6955,11 +6955,10 @@ bool BaselineCodeGen<Handler>::emitPrologue() {
 
 #ifdef JS_USE_LINK_REGISTER
   // Push link register from generateEnterJIT()'s BLR.
-  masm.pushRegs(LinkRegister, FramePointer);
-#else
-  masm.push(FramePointer);
+  masm.pushReturnAddress();
 #endif
 
+  masm.push(FramePointer);
   masm.moveStackPtrTo(FramePointer);
 
   masm.checkStackAlignment();
@@ -7545,7 +7544,8 @@ JitCode* JitRuntime::generateDebugTrapHandler(JSContext* cx,
   VMFunctionId id = VMFunctionToId<Fn, jit::HandleDebugTrap>::id;
   TrampolinePtr code = cx->runtime()->jitRuntime()->getVMWrapper(id);
 
-  masm.pushRegs(scratch1, scratch2);
+  masm.push(scratch1);
+  masm.push(scratch2);
   EmitBaselineCallVM(code, masm);
 
   EmitBaselineLeaveStubFrame(masm);

@@ -113,9 +113,14 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm,
   // Save non-volatile registers. These must be saved by the trampoline, rather
   // than by the JIT'd code, because they are scanned by the conservative
   // scanner.
-  masm.pushRegs(rbx, r12, r13, r14, r15);
+  masm.push(rbx);
+  masm.push(r12);
+  masm.push(r13);
+  masm.push(r14);
+  masm.push(r15);
 #if defined(_WIN64)
-  masm.pushRegs(rdi, rsi);
+  masm.push(rdi);
+  masm.push(rsi);
 
   // 16-byte aligment for vmovdqa
   masm.subq(Imm32(sizeof(EnterJITStackEntry::XMM) + 8), rsp);
@@ -171,8 +176,10 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm,
 
     // Push return address
     masm.mov(&returnLabel, scratch);
+    masm.push(scratch);
+
     // Frame prologue.
-    masm.pushRegs(scratch, rbp);
+    masm.push(rbp);
     masm.mov(rsp, rbp);
 
     // Reserve frame.
@@ -272,9 +279,14 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm,
 
   masm.addq(Imm32(sizeof(EnterJITStackEntry::XMM) + 8), rsp);
 
-  masm.popRegs(rsi, rdi);
+  masm.pop(rsi);
+  masm.pop(rdi);
 #endif
-  masm.popRegs(r15, r14, r13, r12, rbx);
+  masm.pop(r15);
+  masm.pop(r14);
+  masm.pop(r13);
+  masm.pop(r12);
+  masm.pop(rbx);
 
   // Restore frame pointer and return.
   masm.pop(rbp);
@@ -525,13 +537,17 @@ uint32_t JitRuntime::generatePreBarrier(JSContext* cx, MacroAssembler& masm,
   Register temp1 = rax;
   Register temp2 = rbx;
   Register temp3 = rcx;
-  masm.pushRegs(temp1, temp2, temp3);
+  masm.push(temp1);
+  masm.push(temp2);
+  masm.push(temp3);
 
   Label noBarrier;
   masm.emitPreBarrierFastPath(type, temp1, temp2, temp3, &noBarrier);
 
   // Call into C++ to mark this GC thing.
-  masm.popRegs(temp3, temp2, temp1);
+  masm.pop(temp3);
+  masm.pop(temp2);
+  masm.pop(temp1);
 
   LiveRegisterSet regs =
       LiveRegisterSet(GeneralRegisterSet(Registers::VolatileMask),
@@ -549,7 +565,9 @@ uint32_t JitRuntime::generatePreBarrier(JSContext* cx, MacroAssembler& masm,
   masm.ret();
 
   masm.bind(&noBarrier);
-  masm.popRegs(temp3, temp2, temp1);
+  masm.pop(temp3);
+  masm.pop(temp2);
+  masm.pop(temp1);
   masm.ret();
 
   return offset;

@@ -2821,7 +2821,8 @@ void CreateDependentString::generate(MacroAssembler& masm,
 
     masm.store32(temp1_, Address(string_, JSString::offsetOfLength()));
 
-    masm.pushRegs(string_, base);
+    masm.push(string_);
+    masm.push(base);
 
     MOZ_ASSERT(startIndexAddress.base == FramePointer,
                "startIndexAddress is still valid after stack pushes");
@@ -2836,7 +2837,8 @@ void CreateDependentString::generate(MacroAssembler& masm,
 
     CopyStringChars(masm, string_, temp2_, temp1_, base, encoding_);
 
-    masm.popRegs(base, string_);
+    masm.pop(base);
+    masm.pop(string_);
 
     masm.jump(&done);
   }
@@ -2949,10 +2951,9 @@ static JitCode* GenerateRegExpMatchStubShared(JSContext* cx,
   AutoCreatedBy acb(masm, "GenerateRegExpMatchStubShared");
 
 #ifdef JS_USE_LINK_REGISTER
-  masm.pushRegs(LinkRegister, FramePointer);
-#else
-  masm.push(FramePointer);
+  masm.pushReturnAddress();
 #endif
+  masm.push(FramePointer);
   masm.moveStackPtrTo(FramePointer);
 
   Label notFoundZeroLastIndex;
@@ -3390,10 +3391,9 @@ JitCode* JitZone::generateRegExpSearcherStub(JSContext* cx) {
   AutoCreatedBy acb(masm, "JitZone::generateRegExpSearcherStub");
 
 #ifdef JS_USE_LINK_REGISTER
-  masm.pushRegs(LinkRegister, FramePointer);
-#else
-  masm.push(FramePointer);
+  masm.pushReturnAddress();
 #endif
+  masm.push(FramePointer);
   masm.moveStackPtrTo(FramePointer);
 
 #ifdef DEBUG
@@ -3522,10 +3522,9 @@ JitCode* JitZone::generateRegExpExecTestStub(JSContext* cx) {
   AutoCreatedBy acb(masm, "JitZone::generateRegExpExecTestStub");
 
 #ifdef JS_USE_LINK_REGISTER
-  masm.pushRegs(LinkRegister, FramePointer);
-#else
-  masm.push(FramePointer);
+  masm.pushReturnAddress();
 #endif
+  masm.push(FramePointer);
   masm.moveStackPtrTo(FramePointer);
 
   // We are free to clobber all registers, as LRegExpExecTest is a call
@@ -6924,7 +6923,8 @@ void JitRuntime::generateIonGenericHandleUnderflow(MacroAssembler& masm,
   // We also set up a register pointing to the last copied argument. On x86
   // we don't have enough registers, so we spill the calleeReg and numMissing.
   if (mustSpill) {
-    masm.pushRegs(calleeReg, numMissing);
+    masm.push(calleeReg);
+    masm.push(numMissing);
   }
   masm.computeEffectiveAddress(BaseValueIndex(src, argcReg), srcEnd);
 
@@ -7014,10 +7014,12 @@ void JitRuntime::generateIonGenericCallNativeFunction(MacroAssembler& masm,
   // trampoline, this code does not use a tail call.
   masm.push(FrameDescriptor(FrameType::IonJS));
 #ifdef JS_USE_LINK_REGISTER
-  masm.pushRegs(LinkRegister, FramePointer);
+  masm.pushReturnAddress();
 #else
-  masm.pushRegs(returnAddrReg, FramePointer);
+  masm.push(returnAddrReg);
 #endif
+
+  masm.push(FramePointer);
   masm.moveStackPtrTo(FramePointer);
   masm.enterFakeExitFrameForNative(contextReg, scratch, isConstructing);
 
@@ -8508,7 +8510,8 @@ void CodeGenerator::emitAssertResultV(const ValueOperand input,
 
   Register temp1 = regs.takeAny();
   Register temp2 = regs.takeAny();
-  masm.pushRegs(temp1, temp2);
+  masm.push(temp1);
+  masm.push(temp2);
 
   // Don't check if the script has been invalidated. In that case invalid
   // types are expected (until we reach the OsiPoint and bailout).
@@ -8533,7 +8536,8 @@ void CodeGenerator::emitAssertResultV(const ValueOperand input,
   }
 
   masm.bind(&done);
-  masm.popRegs(temp2, temp1);
+  masm.pop(temp2);
+  masm.pop(temp1);
 }
 
 void CodeGenerator::emitGCThingResultChecks(LInstruction* lir,
@@ -14367,11 +14371,9 @@ JitCode* JitZone::generateStringConcatStub(JSContext* cx) {
 
   Label failure;
 #ifdef JS_USE_LINK_REGISTER
-  masm.pushRegs(LinkRegister, FramePointer);
-  masm.adjustFrame(sizeof(intptr_t));
-#else
-  masm.Push(FramePointer);
+  masm.pushReturnAddress();
 #endif
+  masm.Push(FramePointer);
   masm.moveStackPtrTo(FramePointer);
 
   // If lhs is empty, return rhs.
@@ -14475,11 +14477,9 @@ void JitRuntime::generateLazyLinkStub(MacroAssembler& masm) {
   lazyLinkStubOffset_ = startTrampolineCode(masm);
 
 #ifdef JS_USE_LINK_REGISTER
-  masm.pushRegs(LinkRegister, FramePointer);
-  masm.adjustFrame(sizeof(intptr_t));
-#else
-  masm.Push(FramePointer);
+  masm.pushReturnAddress();
 #endif
+  masm.Push(FramePointer);
   masm.moveStackPtrTo(FramePointer);
 
   AllocatableGeneralRegisterSet regs(GeneralRegisterSet::Volatile());
@@ -14500,12 +14500,12 @@ void JitRuntime::generateLazyLinkStub(MacroAssembler& masm) {
 
   // Discard exit frame and restore frame pointer.
   masm.leaveExitFrame(0);
+  masm.pop(FramePointer);
+
 #ifdef JS_USE_LINK_REGISTER
   // Restore the return address such that the emitPrologue function of the
   // CodeGenerator can push it back on the stack with pushReturnAddress.
-  masm.popRegs(FramePointer, LinkRegister);
-#else
-  masm.pop(FramePointer);
+  masm.popReturnAddress();
 #endif
   masm.jump(ReturnReg);
 }
@@ -14516,11 +14516,9 @@ void JitRuntime::generateInterpreterStub(MacroAssembler& masm) {
   interpreterStubOffset_ = startTrampolineCode(masm);
 
 #ifdef JS_USE_LINK_REGISTER
-  masm.pushRegs(LinkRegister, FramePointer);
-  masm.adjustFrame(sizeof(intptr_t));
-#else
-  masm.Push(FramePointer);
+  masm.pushReturnAddress();
 #endif
+  masm.Push(FramePointer);
   masm.moveStackPtrTo(FramePointer);
 
   AllocatableGeneralRegisterSet regs(GeneralRegisterSet::Volatile());
