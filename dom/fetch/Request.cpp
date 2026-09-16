@@ -74,6 +74,7 @@ SafeRefPtr<InternalRequest> Request::GetInternalRequest() {
 }
 
 namespace {
+
 already_AddRefed<nsIURI> ParseURL(nsIGlobalObject* aGlobal,
                                   const nsACString& aInput, ErrorResult& aRv) {
   nsCOMPtr<nsIURI> baseURI;
@@ -573,6 +574,9 @@ SafeRefPtr<Request> Request::Constructor(
 
   if (temporaryStreamReader) {
     domRequest->mFetchStreamReader = temporaryStreamReader.forget();
+    if (signal) {
+      domRequest->mFetchStreamReader->FollowSignal(signal);
+    }
   }
 
   if (aInput.IsRequest() && !bodyFromInit) {
