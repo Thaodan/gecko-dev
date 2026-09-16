@@ -184,6 +184,30 @@ def test_filterpaths(test):
             },
             id="Excluding .py files returns only non-.py files, also from subdirs.",
         ),
+        pytest.param(
+            {
+                "paths": ["subdir2"],
+                "config": {},
+                "expected": ["subdir2/c.js", "subdir2/c.py", "subdir2/noext"],
+            },
+            id="A directory expands to all of its files when nothing filters it.",
+        ),
+        pytest.param(
+            {
+                "paths": ["subdir2"],
+                "config": {"exclude": ["subdir2/c.py"]},
+                "expected": ["subdir2/c.js", "subdir2/noext"],
+            },
+            id="Excludes apply to a directory that nothing else filters.",
+        ),
+        pytest.param(
+            {
+                "paths": ["subdir2"],
+                "config": {"exclude_extensions": ["py"]},
+                "expected": ["subdir2/c.js", "subdir2/noext"],
+            },
+            id="A file with no extension survives exclude_extensions.",
+        ),
     ),
 )
 def test_expand_exclusions(test):

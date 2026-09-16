@@ -371,11 +371,6 @@ def expand_exclusions(paths, config, root):
             yield path
             continue
 
-        # If there are neither extensions nor exclude_extensions, we can't do
-        # anything useful with a directory. Skip:
-        if not extensions and not exclude_extensions:
-            continue
-
         # This is a directory. Check we don't have excludes for ancestors of
         # this path. Mess with slashes to avoid "foo/bar" matching "foo/barry".
         parent_path = os.path.dirname(path.rstrip("/")) + "/"
@@ -388,10 +383,7 @@ def expand_exclusions(paths, config, root):
         ]
 
         finder = FileFinder(path, ignore=ignore, find_dotfiles=find_dotfiles)
-        if extensions:
-            for p, f in finder.find("**"):
-                if os.path.splitext(p)[1] in extensions:
-                    yield os.path.join(path, p)
-        else:
-            for p, f in finder.find("**/*.*"):
-                yield os.path.join(path, p)
+        for p, f in finder.find("**"):
+            if extensions and os.path.splitext(p)[1] not in extensions:
+                continue
+            yield os.path.join(path, p)
