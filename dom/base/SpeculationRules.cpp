@@ -234,16 +234,6 @@ void SpeculationRules::EnactCandidates(nsIURI* aURL, Eagerness aTriggerLevel) {
   }
 }
 
-void SpeculationRules::AddLink(Element* aElement) {
-  mLinks.Insert(aElement);
-  ConsiderLoads();
-}
-
-void SpeculationRules::RemoveLink(Element* aElement) {
-  mLinks.Remove(aElement);
-  ConsiderLoads();
-}
-
 // https://html.spec.whatwg.org/#find-matching-links
 void SpeculationRules::FindMatchingLinks(nsTArray<const Element*>& aLinks) {
   // Step 2.
