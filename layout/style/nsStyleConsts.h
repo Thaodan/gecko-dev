@@ -221,9 +221,6 @@ enum class ListStyle : uint8_t {
   UpperAlpha
 };
 
-// See nsStyleList
-enum class StyleListStylePosition : uint8_t { Inside, Outside };
-
 // See nsStylePosition.mObjectFit
 enum class StyleObjectFit : uint8_t {
   Fill,

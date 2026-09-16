@@ -400,6 +400,7 @@ include = [
   "TextSecurity",
   "TextWrapMode",
   "TextWrapStyle",
+  "ListStylePosition",
 ]
 item_types = [
   "enums",
