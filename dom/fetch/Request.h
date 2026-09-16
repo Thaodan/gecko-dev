@@ -56,6 +56,8 @@ class Request final : public FetchBody<Request>, public nsWrapperCache {
 
   bool Keepalive() const { return mRequest->GetKeepalive(); }
 
+  RequestDuplex Duplex() const { return RequestDuplex::Half; }
+
   bool MozErrors() const { return mRequest->MozErrors(); }
 
   RequestDestination Destination() const { return mRequest->Destination(); }

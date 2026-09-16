@@ -52,6 +52,7 @@ SafeRefPtr<InternalRequest> InternalRequest::GetRequestConstructorCopy(
   copy->mCacheMode = mCacheMode;
   copy->mRedirectMode = mRedirectMode;
   copy->mPriorityMode = mPriorityMode;
+  copy->mHasStreamBody = mHasStreamBody;
   copy->mContentPolicyTypeOverridden = mContentPolicyTypeOverridden;
 
   copy->mPreferredAlternativeDataType = mPreferredAlternativeDataType;
@@ -123,6 +124,7 @@ InternalRequest::InternalRequest(const InternalRequest& aOther,
       mIntegrity(aOther.mIntegrity),
       mKeepalive(aOther.mKeepalive),
       mMozErrors(aOther.mMozErrors),
+      mHasStreamBody(aOther.mHasStreamBody),
       mFragment(aOther.mFragment),
       mSkipServiceWorker(aOther.mSkipServiceWorker),
       mSkipWasmCaching(aOther.mSkipWasmCaching),

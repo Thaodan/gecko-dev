@@ -48,6 +48,9 @@ interface Request {
   [BinaryName="getOrCreateSignal"]
   readonly attribute AbortSignal signal;
 
+  [Pref="dom.fetch.streaming_upload"]
+  readonly attribute RequestDuplex duplex;
+
   [Throws,
    NewObject] Request clone();
 
@@ -105,6 +108,9 @@ dictionary RequestInit {
 
   AbortSignal? signal;
 
+  [Pref="dom.fetch.streaming_upload"]
+  RequestDuplex duplex;
+
   [Pref="network.fetchpriority.enabled"]
   RequestPriority priority;
 
@@ -124,3 +130,4 @@ enum RequestCredentials { "omit", "same-origin", "include" };
 enum RequestCache { "default", "no-store", "reload", "no-cache", "force-cache", "only-if-cached" };
 enum RequestRedirect { "follow", "error", "manual" };
 enum RequestPriority { "high" , "low" , "auto" };
+enum RequestDuplex { "half" };
