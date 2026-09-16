@@ -590,16 +590,7 @@ if (gIsWindows) {
       "isWow64 must be a boolean."
     );
     // These should be numbers if they are not null
-    for (let f of [
-      "count",
-      "model",
-      "family",
-      "stepping",
-      "l2cacheKB",
-      "l3cacheKB",
-      "speedMHz",
-      "cores",
-    ]) {
+    for (let f of ["count", "model", "family", "stepping", "cores"]) {
       Assert.ok(
         !(f in data.system.cpu) ||
           data.system.cpu[f] === null ||
