@@ -614,7 +614,7 @@ bool nsTextPaintStyle::GetSelectionUnderline(nsIFrame* aFrame,
   nscolor color = LookAndFeel::Color(styleIDs.mLine, aFrame);
   const int32_t lineStyle = LookAndFeel::GetInt(styleIDs.mLineStyle);
   auto style = static_cast<StyleTextDecorationStyle>(lineStyle);
-  if (lineStyle > static_cast<int32_t>(StyleTextDecorationStyle::Sentinel)) {
+  if (lineStyle > static_cast<int32_t>(StyleTextDecorationStyle::Wavy)) {
     NS_ERROR("Invalid underline style value is specified");
     style = StyleTextDecorationStyle::Solid;
   }

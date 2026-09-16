@@ -423,6 +423,7 @@ include = [
   "MathVariant",
   "FontVariantEmoji",
   "DirectionProperty",
+  "TextDecorationStyle",
 ]
 item_types = [
   "enums",

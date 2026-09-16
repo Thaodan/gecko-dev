@@ -130,17 +130,6 @@ enum class ListStyle : uint8_t {
 };
 
 // See nsStyleText
-enum class StyleTextDecorationStyle : uint8_t {
-  None,  // not in CSS spec, mapped to -moz-none
-  Dotted,
-  Dashed,
-  Solid,
-  Double,
-  Wavy,
-  Sentinel = Wavy
-};
-
-// See nsStyleText
 enum class StyleWhiteSpaceCollapse : uint8_t {
   Collapse = 0,
   // TODO: Discard not yet supported
