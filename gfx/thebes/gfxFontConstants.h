@@ -22,12 +22,6 @@
 #define NS_FONT_WEIGHT_BOLD 700
 #define NS_FONT_WEIGHT_THIN 100
 
-#define NS_FONT_SMOOTHING_AUTO 0
-#define NS_FONT_SMOOTHING_GRAYSCALE 1
-/* For -webkit-font-smoothing; behaves the same as AUTO, but not aliased for
-   parsing/serialization because that would confuse tests. */
-#define NS_FONT_SMOOTHING_SUBPIXEL_ANTIALIASED 2
-
 #define NS_FONT_VARIANT_ALTERNATES_NORMAL 0
 // alternates - simple enumerated values
 #define NS_FONT_VARIANT_ALTERNATES_HISTORICAL (1 << 0)

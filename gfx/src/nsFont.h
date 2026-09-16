@@ -70,7 +70,7 @@ struct nsFont final {
       mozilla::StyleFontVariantEmoji::Normal;
 
   // Smoothing - controls subpixel-antialiasing (currently OSX only)
-  uint8_t smoothing = NS_FONT_SMOOTHING_AUTO;
+  mozilla::StyleFontSmoothing smoothing = mozilla::StyleFontSmoothing::Auto;
 
   // Kerning
   mozilla::StyleFontKerning kerning = mozilla::StyleFontKerning::Auto;

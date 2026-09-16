@@ -427,6 +427,7 @@ include = [
   "ColorInterpolation",
   "FontOpticalSizing",
   "FontKerning",
+  "FontSmoothing",
 ]
 item_types = [
   "enums",

@@ -731,6 +731,7 @@ cbindgen-types = [
     { gecko = "StyleColorInterpolation", servo = "crate::values::computed::ColorInterpolation" },
     { gecko = "StyleFontOpticalSizing", servo = "crate::values::computed::FontOpticalSizing" },
     { gecko = "StyleFontKerning", servo = "crate::values::computed::FontKerning" },
+    { gecko = "StyleFontSmoothing", servo = "crate::values::computed::FontSmoothing" },
 ]
 
 mapped-generic-types = [
