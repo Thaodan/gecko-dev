@@ -157,6 +157,7 @@ linux64-zucchini-bin:
     fetches:
         toolchain:
             - linux64-clang-toolchain
+            - sysroot-x86_64-linux-gnu
     run:
         script: build-zucchini.sh
         sparse-profile: null
