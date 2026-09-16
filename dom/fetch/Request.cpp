@@ -6,6 +6,7 @@
 
 #include "js/Value.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/dom/Fetch.h"
 #include "mozilla/dom/FetchUtil.h"
@@ -429,6 +430,28 @@ SafeRefPtr<Request> Request::Constructor(
     // method is guaranteed to be uppercase due to step 14.2 above.
     if (method.EqualsLiteral("HEAD") || method.EqualsLiteral("GET")) {
       aRv.ThrowTypeError("HEAD or GET Request cannot have a body.");
+      return nullptr;
+    }
+  }
+
+  // Step 39: validate a body whose source is null before extraction starts
+  // consuming it. With the pref off, stream bodies are stringified instead.
+  const bool hasInitBody =
+      aInit.mBody.WasPassed() && !aInit.mBody.Value().IsNull();
+  const bool hasStreamBody =
+      hasInitBody ? StaticPrefs::dom_fetch_streaming_upload() &&
+                        aInit.mBody.Value().Value().IsReadableStream()
+                  : request->HasStreamBody();
+  if (hasStreamBody) {
+    if (hasInitBody && !aInit.mDuplex.WasPassed()) {
+      aRv.ThrowTypeError(
+          "duplex parameter is required when body is a ReadableStream");
+      return nullptr;
+    }
+    if (request->Mode() != RequestMode::Same_origin &&
+        request->Mode() != RequestMode::Cors) {
+      aRv.ThrowTypeError(
+          "ReadableStream bodies require same-origin or cors mode");
       return nullptr;
     }
   }

@@ -846,7 +846,9 @@ nsresult FetchDriver::HttpFetch(
     AutoTArray<nsCString, 5> unsafeHeaders;
     mRequest->Headers()->GetUnsafeHeaders(unsafeHeaders);
     nsCOMPtr<nsILoadInfo> loadInfo = chan->LoadInfo();
-    loadInfo->SetCorsPreflightInfo(unsafeHeaders, false);
+    // Request constructor step 39.3: a body with a null source sets the
+    // use-CORS-preflight flag, even with a safelisted method and headers.
+    loadInfo->SetCorsPreflightInfo(unsafeHeaders, mRequest->HasStreamBody());
   }
 
   if (mIsTrackingFetch && StaticPrefs::network_http_tailing_enabled() && cos) {
