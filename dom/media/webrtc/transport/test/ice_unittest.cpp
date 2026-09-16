@@ -1297,8 +1297,9 @@ class IceTestPeer : public sigslot::has_slots<> {
   }
 
   void PacketReceived(NrIceMediaStream* stream, int component,
-                      const unsigned char* data, int len) {
-    std::cerr << name_ << ": received " << len << " bytes" << std::endl;
+                      MediaPacket& packet) {
+    std::cerr << name_ << ": received " << packet.len() << " bytes"
+              << std::endl;
     ++received_;
   }
 

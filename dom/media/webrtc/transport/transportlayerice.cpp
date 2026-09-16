@@ -143,21 +143,14 @@ void TransportLayerIce::IceFailed(NrIceMediaStream* stream) {
 }
 
 void TransportLayerIce::IcePacketReceived(NrIceMediaStream* stream,
-                                          int component,
-                                          const unsigned char* data, int len) {
+                                          int component, MediaPacket& packet) {
   CheckThread();
   // We get packets for both components, so ignore the ones that aren't
   // for us.
   if (component_ != component) return;
 
   MOZ_MTLOG(ML_DEBUG, LAYER_INFO << "PacketReceived(" << stream->name() << ","
-                                 << component << "," << len << ")");
-  // Might be useful to allow MediaPacket to borrow a buffer (ie; not take
-  // ownership, but copy it if the MediaPacket is moved). This could be a
-  // footgun though with MediaPackets that end up on the heap.
-  MediaPacket packet;
-  packet.Copy(data, len);
-  packet.Categorize();
+                                 << component << "," << packet.len() << ")");
 
   SignalPacketReceived(this, packet);
 }

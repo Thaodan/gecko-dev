@@ -680,6 +680,15 @@ bool NrIceMediaStream::HasStream(nr_ice_media_stream* stream) const {
   return (stream == stream_) || (stream == old_stream_);
 }
 
+void NrIceMediaStream::PacketReceived(nr_ice_media_stream* stream,
+                                      int component_id,
+                                      const unsigned char* data, int len) {
+  MediaPacket packet;
+  packet.Copy(data, len);
+  packet.Categorize();
+  SignalPacketReceived(this, component_id, packet);
+}
+
 nsresult NrIceMediaStream::SendPacket(int component_id,
                                       const unsigned char* data, size_t len) {
   nr_ice_media_stream* stream = old_stream_ ? old_stream_ : stream_;
