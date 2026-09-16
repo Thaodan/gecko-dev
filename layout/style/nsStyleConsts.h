@@ -261,11 +261,6 @@ enum class ListStyle : uint8_t {
 // See nsStyleList
 enum class StyleListStylePosition : uint8_t { Inside, Outside };
 
-enum class StyleIsolation : uint8_t {
-  Auto,
-  Isolate,
-};
-
 // See nsStylePosition.mObjectFit
 enum class StyleObjectFit : uint8_t {
   Fill,

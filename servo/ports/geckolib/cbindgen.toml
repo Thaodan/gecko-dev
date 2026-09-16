@@ -376,6 +376,7 @@ include = [
   "FloatEdge",
   "TopLayer",
   "ScrollBehavior",
+  "Isolation",
 ]
 item_types = [
   "enums",
