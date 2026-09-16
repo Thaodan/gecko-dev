@@ -567,7 +567,7 @@ void gfxFontShaper::MergeFontFeatures(
   if (styleRuleFeatures.IsEmpty() && aFontFeatures.IsEmpty() &&
       !aDisableLigatures &&
       aStyle->variantCaps == NS_FONT_VARIANT_CAPS_NORMAL &&
-      aStyle->variantSubSuper == NS_FONT_VARIANT_POSITION_NORMAL &&
+      aStyle->variantSubSuper == StyleFontVariantPosition::Normal &&
       aStyle->variantAlternates.IsEmpty()) {
     return;
   }
@@ -641,12 +641,12 @@ void gfxFontShaper::MergeFontFeatures(
 
   // font-variant-position - handled here due to the need for fallback
   switch (aStyle->variantSubSuper) {
-    case NS_FONT_VARIANT_POSITION_NORMAL:
+    case StyleFontVariantPosition::Normal:
       break;
-    case NS_FONT_VARIANT_POSITION_SUPER:
+    case StyleFontVariantPosition::Super:
       addOrReplace(gfxFontFeature{HB_TAG('s', 'u', 'p', 's'), 1});
       break;
-    case NS_FONT_VARIANT_POSITION_SUB:
+    case StyleFontVariantPosition::Sub:
       addOrReplace(gfxFontFeature{HB_TAG('s', 'u', 'b', 's'), 1});
       break;
     default:
@@ -1665,7 +1665,7 @@ bool gfxFont::SupportsVariantCaps(Script aScript, uint32_t aVariantCaps,
   return ok;
 }
 
-bool gfxFont::SupportsSubSuperscript(uint32_t aSubSuperscript,
+bool gfxFont::SupportsSubSuperscript(StyleFontVariantPosition aSubSuperscript,
                                      const uint8_t* aString, uint32_t aLength,
                                      Script aRunScript) {
   NS_ConvertASCIItoUTF16 unicodeString(reinterpret_cast<const char*>(aString),
@@ -1674,14 +1674,14 @@ bool gfxFont::SupportsSubSuperscript(uint32_t aSubSuperscript,
                                 aRunScript);
 }
 
-bool gfxFont::SupportsSubSuperscript(uint32_t aSubSuperscript,
+bool gfxFont::SupportsSubSuperscript(StyleFontVariantPosition aSubSuperscript,
                                      const char16_t* aString, uint32_t aLength,
                                      Script aRunScript) {
-  NS_ASSERTION(aSubSuperscript == NS_FONT_VARIANT_POSITION_SUPER ||
-                   aSubSuperscript == NS_FONT_VARIANT_POSITION_SUB,
+  NS_ASSERTION(aSubSuperscript == StyleFontVariantPosition::Super ||
+                   aSubSuperscript == StyleFontVariantPosition::Sub,
                "unknown value of font-variant-position");
 
-  uint32_t feature = aSubSuperscript == NS_FONT_VARIANT_POSITION_SUPER
+  uint32_t feature = aSubSuperscript == StyleFontVariantPosition::Super
                          ? HB_TAG('s', 'u', 'p', 's')
                          : HB_TAG('s', 'u', 'b', 's');
 
@@ -4909,7 +4909,7 @@ gfxFontStyle::gfxFontStyle()
       width(FontWidth::NORMAL),
       style(FontSlantStyle::NORMAL),
       variantCaps(NS_FONT_VARIANT_CAPS_NORMAL),
-      variantSubSuper(NS_FONT_VARIANT_POSITION_NORMAL),
+      variantSubSuper(StyleFontVariantPosition::Normal),
       sizeAdjustBasis(uint8_t(FontSizeAdjust::Tag::None)),
       systemFont(false),
       printerFont(false),
@@ -4940,7 +4940,7 @@ gfxFontStyle::gfxFontStyle(
       width(aWidth),
       style(aStyle),
       variantCaps(NS_FONT_VARIANT_CAPS_NORMAL),
-      variantSubSuper(NS_FONT_VARIANT_POSITION_NORMAL),
+      variantSubSuper(StyleFontVariantPosition::Normal),
       systemFont(aSystemFont),
       printerFont(aPrinterFont),
 #ifdef XP_WIN
@@ -5008,12 +5008,12 @@ PLDHashNumber gfxFontStyle::Hash() const {
 }
 
 void gfxFontStyle::AdjustForSubSuperscript(int32_t aAppUnitsPerDevPixel) {
-  MOZ_ASSERT(
-      variantSubSuper != NS_FONT_VARIANT_POSITION_NORMAL && baselineOffset == 0,
-      "can't adjust this style for sub/superscript");
+  MOZ_ASSERT(variantSubSuper != StyleFontVariantPosition::Normal &&
+                 baselineOffset == 0,
+             "can't adjust this style for sub/superscript");
 
   // calculate the baseline offset (before changing the size)
-  if (variantSubSuper == NS_FONT_VARIANT_POSITION_SUPER) {
+  if (variantSubSuper == StyleFontVariantPosition::Super) {
     baselineOffset = size * -NS_FONT_SUPERSCRIPT_OFFSET_RATIO;
   } else {
     baselineOffset = size * NS_FONT_SUBSCRIPT_OFFSET_RATIO;
@@ -5033,7 +5033,7 @@ void gfxFontStyle::AdjustForSubSuperscript(int32_t aAppUnitsPerDevPixel) {
   }
 
   // clear the variant field
-  variantSubSuper = NS_FONT_VARIANT_POSITION_NORMAL;
+  variantSubSuper = StyleFontVariantPosition::Normal;
 }
 
 bool gfxFont::TryGetMathTable() {

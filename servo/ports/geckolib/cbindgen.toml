@@ -428,6 +428,7 @@ include = [
   "FontOpticalSizing",
   "FontKerning",
   "FontSmoothing",
+  "FontVariantPosition",
 ]
 item_types = [
   "enums",

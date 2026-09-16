@@ -64,7 +64,8 @@ struct nsFont final {
   uint8_t variantCaps = NS_FONT_VARIANT_CAPS_NORMAL;
   mozilla::StyleFontVariantNumeric variantNumeric =
       mozilla::StyleFontVariantNumeric::NORMAL;
-  uint8_t variantPosition = NS_FONT_VARIANT_POSITION_NORMAL;
+  mozilla::StyleFontVariantPosition variantPosition =
+      mozilla::StyleFontVariantPosition::Normal;
   uint8_t variantWidth = NS_FONT_VARIANT_WIDTH_NORMAL;
   mozilla::StyleFontVariantEmoji variantEmoji =
       mozilla::StyleFontVariantEmoji::Normal;

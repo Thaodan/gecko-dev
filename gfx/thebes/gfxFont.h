@@ -178,7 +178,7 @@ struct gfxFontStyle {
   uint8_t variantCaps : 3;  // uses range 0..6
 
   // sub/superscript variant
-  uint8_t variantSubSuper : 2;  // uses range 0..2
+  mozilla::StyleFontVariantPosition variantSubSuper : 2;  // uses range 0..2
 
   // font metric used as basis of font-size-adjust
   uint8_t sizeAdjustBasis : 3;  // uses range 0..4
@@ -1630,11 +1630,13 @@ class gfxFont {
   // whether the font supports subscript/superscript feature
   // for fallback, need to verify that all characters in the run
   // have variant substitutions
-  bool SupportsSubSuperscript(uint32_t aSubSuperscript, const uint8_t* aString,
-                              uint32_t aLength, Script aRunScript);
+  bool SupportsSubSuperscript(mozilla::StyleFontVariantPosition aSubSuperscript,
+                              const uint8_t* aString, uint32_t aLength,
+                              Script aRunScript);
 
-  bool SupportsSubSuperscript(uint32_t aSubSuperscript, const char16_t* aString,
-                              uint32_t aLength, Script aRunScript);
+  bool SupportsSubSuperscript(mozilla::StyleFontVariantPosition aSubSuperscript,
+                              const char16_t* aString, uint32_t aLength,
+                              Script aRunScript);
 
   // whether the specified feature will apply to the given character
   bool FeatureWillHandleChar(Script aRunScript, uint32_t aFeature,
