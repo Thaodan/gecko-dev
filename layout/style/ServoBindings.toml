@@ -701,6 +701,7 @@ cbindgen-types = [
     { gecko = "StyleRubyAlign", servo = "crate::values::computed::RubyAlign" },
     { gecko = "StyleTextCombineUpright", servo = "crate::values::computed::TextCombineUpright" },
     { gecko = "StyleTextRendering", servo = "crate::values::computed::TextRendering" },
+    { gecko = "StyleTextSecurity", servo = "crate::values::computed::TextSecurity" },
 ]
 
 mapped-generic-types = [

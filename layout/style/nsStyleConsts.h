@@ -245,14 +245,6 @@ enum class StyleTextDecorationStyle : uint8_t {
 };
 
 // See nsStyleText
-enum class StyleTextSecurity : uint8_t {
-  None,
-  Circle,
-  Disc,
-  Square,
-};
-
-// See nsStyleText
 enum class StyleWhiteSpaceCollapse : uint8_t {
   Collapse = 0,
   // TODO: Discard not yet supported
