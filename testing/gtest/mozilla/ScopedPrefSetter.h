@@ -17,26 +17,50 @@
 
 namespace mozilla {
 
-// Sets boolean preferences for the lifetime of the instance and restores the
+// Sets preferences for the lifetime of the instance and restores the
 // previous values on destruction, so a test does not leak its pref changes into
 // later tests. Must be constructed and destroyed on the main thread.
+template <typename T>
 class MOZ_RAII ScopedPrefSetter {
+ private:
+  static nsresult SetPref(const char* aName, T aValue,
+                          PrefValueKind aKind = PrefValueKind::User) {
+    if constexpr (std::is_same_v<T, bool>) {
+      return Preferences::SetBool(aName, aValue, aKind);
+    } else if constexpr (std::is_same_v<T, uint32_t>) {
+      return Preferences::SetUint(aName, aValue, aKind);
+    } else {
+      static_assert(false, "Type not supported with SetPref");
+    }
+  }
+
+  static T GetPref(const char* aName, T aFallback,
+                   PrefValueKind aKind = PrefValueKind::User) {
+    if constexpr (std::is_same_v<T, bool>) {
+      return Preferences::GetBool(aName, aFallback, aKind);
+    } else if constexpr (std::is_same_v<T, uint32_t>) {
+      return Preferences::GetUint(aName, aFallback, aKind);
+    } else {
+      static_assert(false, "Type not supported with GetPref");
+    }
+  }
+
  public:
   struct PrefAndValue {
     const char* mPrefName;
-    bool mValue;
+    T mValue;
   };
 
-  ScopedPrefSetter(const char* aPrefName, bool aValue)
+  ScopedPrefSetter(const char* aPrefName, T aValue)
       : ScopedPrefSetter({{aPrefName, aValue}}) {}
 
   explicit ScopedPrefSetter(std::initializer_list<PrefAndValue> aPrefs) {
     MOZ_ASSERT(NS_IsMainThread());
     mOriginalValues.SetCapacity(aPrefs.size());
     for (const auto& pref : aPrefs) {
-      mOriginalValues.AppendElement(PrefAndValue{
-          pref.mPrefName, Preferences::GetBool(pref.mPrefName, false)});
-      Preferences::SetBool(pref.mPrefName, pref.mValue);
+      mOriginalValues.AppendElement(
+          PrefAndValue{pref.mPrefName, GetPref(pref.mPrefName, T{})});
+      SetPref(pref.mPrefName, pref.mValue);
     }
   }
 
@@ -44,7 +68,7 @@ class MOZ_RAII ScopedPrefSetter {
     MOZ_ASSERT(NS_IsMainThread());
     while (!mOriginalValues.IsEmpty()) {
       const auto pref = mOriginalValues.PopLastElement();
-      Preferences::SetBool(pref.mPrefName, pref.mValue);
+      SetPref(pref.mPrefName, pref.mValue);
     }
   }
 

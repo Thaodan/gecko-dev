@@ -122,11 +122,12 @@ static media::EncodeSupportSet WebrtcLibwebrtcEncodeSupport(
   return libwebrtcSupport;
 }
 
-// Platform encode support for aConfig, where a failed query counts as no
-// platform support so libwebrtc's built-in support is still reported.
+// Resolve aPlatformSupport, where a failed query counts as no platform support
+// so libwebrtc's built-in support is still reported.
 static RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
-PlatformEncodeSupportOrNone(const EncoderConfig& aConfig) {
-  return MediaDataCodec::SupportsEncoderCodec(aConfig)->Then(
+PlatformEncodeSupportOrNone(
+    RefPtr<PlatformEncoderModule::SupportsEncoderPromise> aPlatformSupport) {
+  return aPlatformSupport->Then(
       GetCurrentSerialEventTarget(), __func__,
       [](PlatformEncoderModule::SupportsEncoderPromise::ResolveOrRejectValue&&
              aValue) {
@@ -137,9 +138,15 @@ PlatformEncodeSupportOrNone(const EncoderConfig& aConfig) {
       });
 }
 
-/* static */
-RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
-WebrtcVideoEncoderFactory::SupportsCodec(const EncoderConfig& aConfig) {
+// Combine libwebrtc's built-in software encode support with the platform
+// encoder support produced by aPemSupport, honouring the encoder-creation
+// strategy. aPemSupport is invoked lazily (and at most once) so the strict
+// path only creates a probe encoder when the platform support is actually
+// consulted. Shared by SupportsCodec and StrictSupportsCodec.
+template <typename PemSupportFn>
+static RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
+EncoderSupportsWithPemFn(const EncoderConfig& aConfig,
+                         PemSupportFn&& aPemSupport) {
   const auto strategy = static_cast<EncoderCreationStrategy>(
       StaticPrefs::media_webrtc_encoder_creation_strategy());
   const media::EncodeSupportSet libwebrtcSupport =
@@ -151,32 +158,49 @@ WebrtcVideoEncoderFactory::SupportsCodec(const EncoderConfig& aConfig) {
       // capability is intentionally hidden to keep reported support aligned
       // with the encoder that will actually be used.
       if (libwebrtcSupport.isEmpty()) {
-        return PlatformEncodeSupportOrNone(aConfig);
+        return PlatformEncodeSupportOrNone(aPemSupport());
       }
       return PlatformEncoderModule::SupportsEncoderPromise::CreateAndResolve(
           libwebrtcSupport, __func__);
     }
     case EncoderCreationStrategy::PreferPlatformEncoder: {
-      return PlatformEncodeSupportOrNone(aConfig)->Map(
-          GetCurrentSerialEventTarget(), __func__,
-          [libwebrtcSupport](media::EncodeSupportSet aPemSupport) {
-            return aPemSupport + libwebrtcSupport;
-          });
+      return PlatformEncodeSupportOrNone(aPemSupport())
+          ->Map(GetCurrentSerialEventTarget(), __func__,
+                [libwebrtcSupport](media::EncodeSupportSet aPemSupport) {
+                  return aPemSupport + libwebrtcSupport;
+                });
     }
     case EncoderCreationStrategy::PreferHwPlatformEncoder: {
       if (libwebrtcSupport.isEmpty()) {
-        return PlatformEncodeSupportOrNone(aConfig);
+        return PlatformEncodeSupportOrNone(aPemSupport());
       }
-      return PlatformEncodeSupportOrNone(aConfig)->Map(
-          GetCurrentSerialEventTarget(), __func__,
-          [libwebrtcSupport](media::EncodeSupportSet aPemSupport) {
-            return (aPemSupport - media::EncodeSupport::SoftwareEncode) +
-                   libwebrtcSupport;
-          });
+      return PlatformEncodeSupportOrNone(aPemSupport())
+          ->Map(GetCurrentSerialEventTarget(), __func__,
+                [libwebrtcSupport](media::EncodeSupportSet aPemSupport) {
+                  return (aPemSupport - media::EncodeSupport::SoftwareEncode) +
+                         libwebrtcSupport;
+                });
     }
   }
   return PlatformEncoderModule::SupportsEncoderPromise::CreateAndResolve(
       media::EncodeSupportSet{}, __func__);
+}
+
+/* static */
+RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
+WebrtcVideoEncoderFactory::SupportsCodec(const EncoderConfig& aConfig) {
+  return EncoderSupportsWithPemFn(aConfig, [&aConfig]() {
+    return MediaDataCodec::SupportsEncoderCodec(aConfig);
+  });
+}
+
+/* static */
+RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
+WebrtcVideoEncoderFactory::StrictSupportsCodec(
+    const EncoderConfig& aConfig, const RefPtr<TaskQueue>& aTaskQueue) {
+  return EncoderSupportsWithPemFn(aConfig, [&aConfig, &aTaskQueue]() {
+    return MediaDataCodec::StrictSupportsEncoderCodec(aConfig, aTaskQueue);
+  });
 }
 
 std::unique_ptr<webrtc::VideoDecoder> WebrtcVideoDecoderFactory::Create(
