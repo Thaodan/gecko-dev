@@ -372,6 +372,7 @@ include = [
   "ListStyleType",
   "LinkParameters",
   "BoxDecorationBreak",
+  "ImageLayerAttachment",
 ]
 item_types = [
   "enums",

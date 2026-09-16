@@ -149,9 +149,6 @@ enum class StyleOrient : uint8_t {
 };
 
 // See nsStyleImageLayers
-enum class StyleImageLayerAttachment : uint8_t { Scroll, Fixed, Local };
-
-// See nsStyleImageLayers
 enum class StyleImageLayerRepeat : uint8_t {
   NoRepeat = 0x00,
   RepeatX,
