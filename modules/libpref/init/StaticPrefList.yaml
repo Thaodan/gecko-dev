@@ -13368,7 +13368,11 @@
 
 - name: media.webspeech.recognition.enable
   type: bool
+#ifndef ANDROID
+  value: @IS_NIGHTLY_BUILD@
+#else
   value: false
+#endif
   mirror: always
 
 # Whether start() offers to download the on-device model for its language when
