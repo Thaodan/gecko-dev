@@ -352,13 +352,6 @@ enum class StyleMaskType : uint8_t {
   Alpha,
 };
 
-// stroke-linejoin
-enum class StyleStrokeLinejoin : uint8_t {
-  Miter,
-  Round,
-  Bevel,
-};
-
 // text-rendering
 enum class StyleTextRendering : uint8_t {
   Auto,

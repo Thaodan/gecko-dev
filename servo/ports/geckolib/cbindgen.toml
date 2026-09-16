@@ -389,6 +389,7 @@ include = [
   "TextAnchor",
   "ShapeRendering",
   "StrokeLinecap",
+  "StrokeLinejoin",
 ]
 item_types = [
   "enums",

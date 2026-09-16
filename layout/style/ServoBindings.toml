@@ -693,6 +693,7 @@ cbindgen-types = [
     { gecko = "StyleTextAnchor", servo = "crate::values::computed::TextAnchor" },
     { gecko = "StyleShapeRendering", servo = "crate::values::computed::ShapeRendering" },
     { gecko = "StyleStrokeLinecap", servo = "crate::values::computed::StrokeLinecap" },
+    { gecko = "StyleStrokeLinejoin", servo = "crate::values::computed::StrokeLinejoin" },
 ]
 
 mapped-generic-types = [
