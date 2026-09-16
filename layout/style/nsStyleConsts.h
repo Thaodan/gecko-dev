@@ -188,27 +188,6 @@ enum class StyleColorInterpolation : uint8_t {
   Linearrgb = 2,
 };
 
-// blending
-enum class StyleBlend : uint8_t {
-  Normal = 0,
-  Multiply,
-  Screen,
-  Overlay,
-  Darken,
-  Lighten,
-  ColorDodge,
-  ColorBurn,
-  HardLight,
-  SoftLight,
-  Difference,
-  Exclusion,
-  Hue,
-  Saturation,
-  Color,
-  Luminosity,
-  PlusLighter,
-};
-
 }  // namespace mozilla
 
 #endif /* nsStyleConsts_h_ */
