@@ -449,6 +449,9 @@ linux64-wine:
     fetches:
         fetch:
             - wine
+        toolchain:
+            - linux64-gcc-11
+            - linux64-toolchain-sysroot-gcc11
 
 linux64-winchecksec:
     description: "winchecksec"
