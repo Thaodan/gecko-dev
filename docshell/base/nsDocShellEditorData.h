@@ -32,7 +32,6 @@ class nsDocShellEditorData {
   SetHTMLEditor(mozilla::HTMLEditor* aHTMLEditor);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void TearDownEditor();
   nsresult DetachFromWindow();
-  nsresult ReattachToWindow(nsDocShell* aDocShell);
   bool WaitingForLoad() const { return mMakeEditable; }
 
  protected:
