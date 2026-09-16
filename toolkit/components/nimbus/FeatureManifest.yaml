@@ -3321,12 +3321,6 @@ networking:
       setPref:
         branch: default
         pref: "network.dnsCacheExpirationGracePeriod"
-    dnsNegativeCacheExpiration:
-      description: Lifetime (in seconds) of a negative (failed/empty) DNS cache entry.
-      type: int
-      setPref:
-        branch: default
-        pref: "network.dnsNegativeCacheExpiration"
     http3UseNSPRForIO:
       description: true by default using legacy UDP IO via NSPR. When set to false, uses new UDP IO via Fast UDP for Firefox project.
       type: boolean

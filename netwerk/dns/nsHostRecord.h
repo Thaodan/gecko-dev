@@ -407,6 +407,4 @@ static inline bool IsLowPriority(nsIDNSService::DNSFlags flags) {
   return flags & nsHostRecord::DNS_PRIORITY_LOW;
 }
 
-nsLiteralCString RecordFamilyLabel(nsHostRecord* aRec);
-
 #endif  // nsHostRecord_h_
