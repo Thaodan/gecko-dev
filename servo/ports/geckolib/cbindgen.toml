@@ -419,6 +419,7 @@ include = [
   "BoxOrient",
   "BoxPack",
   "Blend",
+  "MathStyle",
 ]
 item_types = [
   "enums",
