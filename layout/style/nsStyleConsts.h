@@ -15,15 +15,6 @@
 
 namespace mozilla {
 
-// box-align
-enum class StyleBoxAlign : uint8_t {
-  Stretch,
-  Start,
-  Center,
-  Baseline,
-  End,
-};
-
 // box-direction
 enum class StyleBoxDirection : uint8_t {
   Normal,
