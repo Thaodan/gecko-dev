@@ -88,8 +88,9 @@ function formatOptions(options) {
 
 /**
  * One phase a PageExtractor call can go through. `name` is what lands in
- * the marker's `phase` field, for correlating with code; `label` is the
- * plain-language description a non-developer reading a shared profile sees.
+ * the marker's `phase` field and in `page_extractor.phase`, for correlating
+ * with code; `label` is the plain-language description a non-developer
+ * reading a shared profile sees.
  *
  * @typedef {object} PageExtractorPhase
  * @property {string} name - The phase as recorded, e.g. "dom-extract".
@@ -103,8 +104,9 @@ function formatOptions(options) {
  * @typedef {object} TraceId
  * @property {number} id - Numbers the trace within this session, and names
  *   the `PageExtractor #<id>` profiler track its markers are drawn on.
- * @property {string} flowId - The flow the trace belongs to. One flow can
- *   span several traces, so this is the coarser of the two.
+ * @property {string} flowId - The flow the trace belongs to, recorded as
+ *   `page_extractor.phase`'s `flow_id`. One flow can span several traces,
+ *   so this is the coarser of the two.
  */
 
 // Counts traces so each gets its own profiler track: concurrent calls don't
@@ -117,11 +119,73 @@ const DEFAULT_MARKER_COLOR = "blue";
 const HANDLED_OUTCOME_MARKER_COLOR = "yellow";
 const ERROR_MARKER_COLOR = "red";
 
+let submissionScheduled = false;
+
 /**
- * Accumulates data for one PageExtractor instrumentation event, and on
- * `finish()` fans it out to a profiler marker (only while profiling),
- * keyed by a `TraceId` so related markers across the parent and content
- * processes describe the same request.
+ * The page-extractor ping is submitted on `idle-daily`, from the parent
+ * process only. Scheduled on the first recorded event rather than at module
+ * load, so a session that never extracts a page never submits, and content
+ * processes (whose events reach the parent through FOG) never try to.
+ *
+ * Events already recorded outlive a session in Glean's database, so a
+ * session that ends before `idle-daily` fires loses nothing.
+ */
+function scheduleSubmission() {
+  if (
+    submissionScheduled ||
+    Services.appinfo.processType !== Services.appinfo.PROCESS_TYPE_DEFAULT
+  ) {
+    return;
+  }
+  submissionScheduled = true;
+  Services.obs.addObserver(
+    () => GleanPings.pageExtractor.submit(),
+    "idle-daily"
+  );
+}
+
+// Maps this.#data's camelCase field names to page_extractor.phase's
+// extra_keys in metrics.yaml. Keep these two lists in sync.
+const GLEAN_EXTRA_KEYS = {
+  process: "process",
+  phase: "phase",
+  strategy: "strategy",
+  siteStrategy: "site_strategy",
+  status: "status",
+  errorName: "error_name",
+  textLength: "text_length",
+  linkCount: "link_count",
+  canvasCount: "canvas_count",
+};
+
+// Page-derived counts, bucketed before recording so an exact value can't
+// fingerprint the page (data review). duration_ms measures our own work,
+// so it stays exact. The profiler marker keeps exact values for everything.
+const GLEAN_BUCKETED_KEYS = new Set([
+  "text_length",
+  "link_count",
+  "canvas_count",
+]);
+
+/**
+ * Rounds a count down to a power of two; 0 stays 0. Counts are string and
+ * array lengths, so they fit the 32-bit range Math.clz32 works on.
+ *
+ * @param {number} count
+ * @returns {number}
+ */
+function bucketToPowerOfTwo(count) {
+  if (count <= 0) {
+    return 0;
+  }
+  return 2 ** (31 - Math.clz32(count));
+}
+
+/**
+ * Accumulates data for one PageExtractor instrumentation event. `finish()`
+ * always records a `page_extractor.phase` Glean event, and a profiler
+ * marker only while profiling; both are keyed by a `TraceId` so parent- and
+ * content-process records describe the same request.
  *
  * `PageExtractorEvent.trace()` is the entry point for the common case of
  * measuring one task from start to finish. The constructor and `finish()`
@@ -136,8 +200,9 @@ export class PageExtractorEvent {
    * adding or renaming one only touches this file.
    *
    * Callers name a phase through this object rather than by string, so a
-   * misspelling is `undefined` and throws below, instead of silently
-   * producing a marker with a misspelled label.
+   * misspelling is `undefined` and throws below, rather than silently
+   * mislabelling a marker and fragmenting `page_extractor.phase` under a
+   * slice that doesn't exist.
    */
   static Phase = Object.freeze({
     headlessExtractor: {
@@ -234,7 +299,8 @@ export class PageExtractorEvent {
   /**
    * The trace this event belongs to. Pass it as a nested
    * PageExtractorEvent's `traceId`, over IPC included, so that phase lands
-   * on the same profiler track.
+   * on the same profiler track and correlates with this one in
+   * `page_extractor.phase`.
    *
    * @returns {TraceId}
    */
@@ -258,6 +324,24 @@ export class PageExtractorEvent {
     }
     this.#finished = true;
     this.addData(data);
+
+    const gleanPayload = {
+      flow_id: this.#traceId.flowId,
+    };
+    for (const [dataKey, gleanKey] of Object.entries(GLEAN_EXTRA_KEYS)) {
+      const value = this.#data[dataKey];
+      gleanPayload[gleanKey] =
+        value !== undefined && GLEAN_BUCKETED_KEYS.has(gleanKey)
+          ? bucketToPowerOfTwo(value)
+          : value;
+    }
+    gleanPayload.duration_ms = Math.round(ChromeUtils.now() - this.#startTime);
+
+    // Recorded before the profiler-active check: Glean is the permanent
+    // record, the profiler marker isn't.
+    Glean.pageExtractor.phase.record(gleanPayload);
+    scheduleSubmission();
+
     if (!Services.profiler.IsActive()) {
       return;
     }
