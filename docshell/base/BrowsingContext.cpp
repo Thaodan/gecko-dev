@@ -2340,7 +2340,7 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
     if (!effectiveRemoteType.IsNotRemote() &&
         !ContentTriggeredURILoadIsAllowed(aLoadState->URI(),
                                           effectiveRemoteType)) {
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+#ifdef DEBUG
       nsAutoCString aboutModuleOrScheme;
       if (aLoadState->URI()->SchemeIs("about")) {
         (void)NS_GetAboutModuleName(aLoadState->URI(), aboutModuleOrScheme);
