@@ -130,6 +130,16 @@ function init() {
   contributeDescReferrals.hidden = !referralsEnabled;
 
   if (referralsEnabled) {
+    let describedBy = document.documentElement
+      .getAttribute("aria-describedby")
+      .split(" ");
+    describedBy[describedBy.indexOf("contributeDesc")] =
+      "contributeDescReferrals";
+    document.documentElement.setAttribute(
+      "aria-describedby",
+      describedBy.join(" ")
+    );
+
     contributeDescReferrals.addEventListener(
       "click",
       event => {
