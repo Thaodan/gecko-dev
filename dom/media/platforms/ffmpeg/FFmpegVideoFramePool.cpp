@@ -47,7 +47,9 @@ VideoFrameSurface<LIBAV_VER>::VideoFrameSurface(DMABufSurface* aSurface,
       mAVHWFrameContext(nullptr),
       mHWAVBuffer(nullptr),
       mFFMPEGSurfaceID(aFFMPEGSurfaceID),
-      mHoldByFFmpeg(false) {
+      mHoldByFFmpeg(false),
+      mUsedByRenderer(false),
+      mVulkanCopySlotIndex(-1) {
   // Create global refcount object to track mSurface usage over
   // gects rendering engine. We can't release it until it's used
   // by GL compositor / WebRender.
@@ -132,9 +134,13 @@ void VideoFrameSurface<LIBAV_VER>::ReleaseVAAPIData(bool aForFrameRecycle) {
     mSurface->ReleaseSurface();
   }
 
-  if (aForFrameRecycle && IsUsedByRenderer()) {
+#ifdef DEBUG
+  // The race we warn about here is precisely the one the cached
+  // IsUsedByRenderer() can't see, so query the global ref directly.
+  if (aForFrameRecycle && mSurface->IsGlobalRefSet()) {
     NS_WARNING("Reusing live dmabuf surface, visual glitches ahead");
   }
+#endif
 }
 
 VideoFramePool<LIBAV_VER>::VideoFramePool(int aFFMPEGPoolSize)
@@ -150,12 +156,33 @@ VideoFramePool<LIBAV_VER>::~VideoFramePool() {
   mDMABufSurfaces.Clear();
 }
 
+void VideoFramePool<LIBAV_VER>::UpdateRendererUsageLocked()
+{
+  if (mDMABufSurfaces.IsEmpty()) {
+    return;
+  }
+
+  AutoTArray<int, 32> refCountFds;
+  refCountFds.SetCapacity(mDMABufSurfaces.Length());
+  for (const auto& surface : mDMABufSurfaces) {
+    refCountFds.AppendElement(surface->mSurface->GetGlobalRefCountFd());
+  }
+
+  AutoTArray<bool, 32> refSet;
+  DMABufSurface::GetGlobalRefsSet(refCountFds, refSet);
+
+  for (size_t i = 0; i < mDMABufSurfaces.Length(); i++) {
+    mDMABufSurfaces[i]->mUsedByRenderer = refSet[i];
+  }
+}
+
 bool VideoFramePool<LIBAV_VER>::IsVulkanFrameSlotInUseByRenderer(
     int32_t aSlotIndex) {
   if (aSlotIndex < 0) {
     return false;
   }
   MutexAutoLock lock(mSurfaceLock);
+  UpdateRendererUsageLocked();
   for (const auto& surface : mDMABufSurfaces) {
     if (surface->mVulkanCopySlotIndex == aSlotIndex) {
       return surface->IsUsedByRenderer();
@@ -166,6 +193,7 @@ bool VideoFramePool<LIBAV_VER>::IsVulkanFrameSlotInUseByRenderer(
 
 void VideoFramePool<LIBAV_VER>::ReleaseUnusedVAAPIFrames() {
   MutexAutoLock lock(mSurfaceLock);
+  UpdateRendererUsageLocked();
   for (const auto& surface : mDMABufSurfaces) {
     if (!surface->mHoldByFFmpeg && surface->IsUsedByRenderer()) {
       DMABUF_LOG("Copied and used surface UID {}",
@@ -234,7 +262,7 @@ VideoFramePool<LIBAV_VER>::GetFreeVideoFrameSurfaceLocked(
   return nullptr;
 }
 
-bool VideoFramePool<LIBAV_VER>::ShouldCopySurface() {
+bool VideoFramePool<LIBAV_VER>::ShouldCopySurfaceLocked() {
   // Number of used HW surfaces.
   int surfacesUsed = 0;
   int surfacesUsedFFmpeg = 0;
@@ -320,8 +348,9 @@ VideoFramePool<LIBAV_VER>::GetVideoFrameSurface(
   }
 
   MutexAutoLock lock(mSurfaceLock);
+  UpdateRendererUsageLocked();
 
-  bool copySurface = mTextureCopyWorks && ShouldCopySurface();
+  bool copySurface = mTextureCopyWorks && ShouldCopySurfaceLocked();
 
   VASurfaceID ffmpegSurfaceID = (uintptr_t)aAVFrame->data[3];
   MOZ_DIAGNOSTIC_ASSERT(ffmpegSurfaceID != sInvalidFFMPEGSurfaceID,
@@ -396,6 +425,7 @@ VideoFramePool<LIBAV_VER>::GetVideoFrameSurface(
   }
 
   MutexAutoLock lock(mSurfaceLock);
+  UpdateRendererUsageLocked();
 
   RefPtr<VideoFrameSurface<LIBAV_VER>> videoSurface =
       GetTargetVideoFrameSurfaceLocked(lock, sInvalidFFMPEGSurfaceID,
@@ -619,6 +649,7 @@ VideoFramePool<LIBAV_VER>::GetVideoFrameSurface(AVDRMFrameDescriptor& aDesc,
   int crop_height = (int)layerDesc->height;
 
   MutexAutoLock lock(mSurfaceLock);
+  UpdateRendererUsageLocked();
 
   RefPtr<VideoFrameSurface<LIBAV_VER>> videoSurface =
       GetTargetVideoFrameSurfaceLocked(lock, sInvalidFFMPEGSurfaceID,
@@ -635,7 +666,7 @@ VideoFramePool<LIBAV_VER>::GetVideoFrameSurface(AVDRMFrameDescriptor& aDesc,
                surface->GetUID());
   }
 
-  bool copySurface = mTextureCopyWorks && ShouldCopySurface();
+  bool copySurface = mTextureCopyWorks && ShouldCopySurfaceLocked();
   if (!surface->UpdateYUVData(layerDesc.value(), crop_width, crop_height,
                               copySurface)) {
     if (!copySurface) {

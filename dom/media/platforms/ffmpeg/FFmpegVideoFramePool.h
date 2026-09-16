@@ -113,7 +113,9 @@ class VideoFrameSurface<LIBAV_VER> {
 
   // Check if DMABufSurface is used by any gecko rendering process
   // (WebRender or GL compositor) or by DMABUFSurfaceImage/VideoData.
-  bool IsUsedByRenderer() const { return mSurface->IsGlobalRefSet(); }
+  //
+  // It's set by VideoFramePool::UpdateRendererUsageLocked().
+  bool IsUsedByRenderer() const { return mUsedByRenderer; }
 
   // Surface points to dmabuf memmory owned by ffmpeg.
   bool IsFFMPEGSurface() const { return !!mLib; }
@@ -127,7 +129,8 @@ class VideoFrameSurface<LIBAV_VER> {
   AVBufferRef* mHWAVBuffer;
   VASurfaceID mFFMPEGSurfaceID;
   bool mHoldByFFmpeg;
-  int32_t mVulkanCopySlotIndex = -1;
+  bool mUsedByRenderer;
+  int32_t mVulkanCopySlotIndex;
 };
 
 // VideoFramePool class is thread-safe.
@@ -153,6 +156,10 @@ class VideoFramePool<LIBAV_VER> {
   bool IsVulkanFrameSlotInUseByRenderer(int32_t aSlotIndex);
 
  private:
+  // Refresh VideoFrameSurface::IsUsedByRenderer() of all pooled surfaces.
+  // It's a single poll() call for the whole pool, so it's meant to be called
+  // once per decoded frame rather than per surface.
+  void UpdateRendererUsageLocked() MOZ_REQUIRES(mSurfaceLock);
   RefPtr<VideoFrameSurface<LIBAV_VER>> GetTargetVideoFrameSurfaceLocked(
       const MutexAutoLock& aProofOfLock, VASurfaceID aFFmpegSurfaceID,
       bool aRecycleSurface);
@@ -160,7 +167,7 @@ class VideoFramePool<LIBAV_VER> {
       const MutexAutoLock& aProofOfLock, VASurfaceID aFFMPEGSurfaceID);
   RefPtr<VideoFrameSurface<LIBAV_VER>> GetFreeVideoFrameSurfaceLocked(
       const MutexAutoLock& aProofOfLock);
-  bool ShouldCopySurface();
+  bool ShouldCopySurfaceLocked()  MOZ_REQUIRES(mSurfaceLock);
 
  private:
   // Protect mDMABufSurfaces pool access
