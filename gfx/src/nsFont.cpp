@@ -150,11 +150,11 @@ void nsFont::AddFontFeaturesToStyle(gfxFontStyle* aStyle,
   setting.mTag = aVertical ? TRUETYPE_TAG('v', 'k', 'r', 'n')
                            : TRUETYPE_TAG('k', 'e', 'r', 'n');
   switch (kerning) {
-    case NS_FONT_KERNING_NONE:
+    case StyleFontKerning::None:
       setting.mValue = 0;
       aStyle->featureSettings.AppendElement(setting);
       break;
-    case NS_FONT_KERNING_NORMAL:
+    case StyleFontKerning::Normal:
       setting.mValue = 1;
       aStyle->featureSettings.AppendElement(setting);
       break;
