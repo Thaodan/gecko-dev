@@ -24,12 +24,6 @@ enum class StyleBoxAlign : uint8_t {
   End,
 };
 
-// box-decoration-break
-enum class StyleBoxDecorationBreak : uint8_t {
-  Slice,
-  Clone,
-};
-
 // box-direction
 enum class StyleBoxDirection : uint8_t {
   Normal,
