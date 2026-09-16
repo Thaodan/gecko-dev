@@ -59,12 +59,13 @@ WebSocketEventListenerChild::RecvWebSocketMessageAvailable(
 }
 
 mozilla::ipc::IPCResult WebSocketEventListenerChild::RecvWebSocketClosed(
-    const uint32_t& aWebSocketSerialID, const bool& aWasClean,
-    const uint16_t& aCode, const nsString& aReason) {
+    const uint32_t& aWebSocketSerialID, const uint64_t& aHttpChannelId,
+    const bool& aWasClean, const uint16_t& aCode, const nsString& aReason) {
   if (mService) {
     nsCOMPtr<nsIEventTarget> target = GetNeckoTarget();
-    mService->WebSocketClosed(aWebSocketSerialID, mInnerWindowID, aWasClean,
-                              aCode, aReason, target);
+    mService->WebSocketClosed(aWebSocketSerialID, mInnerWindowID,
+                              aHttpChannelId, aWasClean, aCode, aReason,
+                              target);
   }
 
   return IPC_OK();

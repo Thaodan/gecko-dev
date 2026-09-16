@@ -72,10 +72,11 @@ var listener = {
     }
   },
 
-  webSocketClosed(aWebSocketSerialID, aWasClean,
-                            aCode, aReason) {
+  webSocketClosed(aWebSocketSerialID, aHttpChannelId, aWasClean,
+                  aCode, aReason) {
     info("WebSocketClosed");
 
+    ok(aHttpChannelId > 0, "Channel ID received");
     ok(aWasClean, "The socket is closed in a clean state");
     is(aCode, 1000, "Exit code 1000");
     ok(!aReason.length, "No reason");

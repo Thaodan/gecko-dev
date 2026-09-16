@@ -72,9 +72,11 @@ WebSocketEventListenerParent::WebSocketOpened(uint32_t aWebSocketSerialID,
 
 NS_IMETHODIMP
 WebSocketEventListenerParent::WebSocketClosed(uint32_t aWebSocketSerialID,
+                                              uint64_t aHttpChannelId,
                                               bool aWasClean, uint16_t aCode,
                                               const nsAString& aReason) {
-  (void)SendWebSocketClosed(aWebSocketSerialID, aWasClean, aCode, aReason);
+  (void)SendWebSocketClosed(aWebSocketSerialID, aHttpChannelId, aWasClean,
+                            aCode, aReason);
   return NS_OK;
 }
 

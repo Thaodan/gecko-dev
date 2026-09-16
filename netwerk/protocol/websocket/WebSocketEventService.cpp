@@ -160,9 +160,10 @@ class WebSocketMessageAvailableRunnable final : public WebSocketBaseRunnable {
 class WebSocketClosedRunnable final : public WebSocketBaseRunnable {
  public:
   WebSocketClosedRunnable(uint32_t aWebSocketSerialID, uint64_t aInnerWindowID,
-                          bool aWasClean, uint16_t aCode,
-                          const nsAString& aReason)
+                          uint64_t aHttpChannelId, bool aWasClean,
+                          uint16_t aCode, const nsAString& aReason)
       : WebSocketBaseRunnable(aWebSocketSerialID, aInnerWindowID),
+        mHttpChannelId(aHttpChannelId),
         mWasClean(aWasClean),
         mCode(aCode),
         mReason(aReason) {}
@@ -170,10 +171,11 @@ class WebSocketClosedRunnable final : public WebSocketBaseRunnable {
  private:
   virtual void DoWork(nsIWebSocketEventListener* aListener) override {
     DebugOnly<nsresult> rv = aListener->WebSocketClosed(
-        mWebSocketSerialID, mWasClean, mCode, mReason);
+        mWebSocketSerialID, mHttpChannelId, mWasClean, mCode, mReason);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "WebSocketClosed failed");
   }
 
+  uint64_t mHttpChannelId;
   bool mWasClean;
   uint16_t mCode;
   const nsString mReason;
@@ -278,6 +280,7 @@ void WebSocketEventService::WebSocketMessageAvailable(
 
 void WebSocketEventService::WebSocketClosed(uint32_t aWebSocketSerialID,
                                             uint64_t aInnerWindowID,
+                                            uint64_t aHttpChannelId,
                                             bool aWasClean, uint16_t aCode,
                                             const nsAString& aReason,
                                             nsIEventTarget* aTarget) {
@@ -287,7 +290,8 @@ void WebSocketEventService::WebSocketClosed(uint32_t aWebSocketSerialID,
   }
 
   RefPtr runnable = MakeRefPtr<WebSocketClosedRunnable>(
-      aWebSocketSerialID, aInnerWindowID, aWasClean, aCode, aReason);
+      aWebSocketSerialID, aInnerWindowID, aHttpChannelId, aWasClean, aCode,
+      aReason);
   DebugOnly<nsresult> rv = aTarget
                                ? aTarget->Dispatch(runnable, NS_DISPATCH_NORMAL)
                                : NS_DispatchToMainThread(runnable);

@@ -54,7 +54,8 @@ class WebSocketEventService final : public nsIWebSocketEventService,
                                  nsIEventTarget* aTarget = nullptr);
 
   void WebSocketClosed(uint32_t aWebSocketSerialID, uint64_t aInnerWindowID,
-                       bool aWasClean, uint16_t aCode, const nsAString& aReason,
+                       uint64_t aHttpChannelId, bool aWasClean, uint16_t aCode,
+                       const nsAString& aReason,
                        nsIEventTarget* aTarget = nullptr);
 
   void FrameReceived(uint32_t aWebSocketSerialID, uint64_t aInnerWindowID,
