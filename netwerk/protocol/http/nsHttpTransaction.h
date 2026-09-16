@@ -150,6 +150,9 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   bool ChannelPipeFull() { return mWaitingOnPipeOut; }
 
   // Locked methods to get and set timing info
+  // Replaces the domainLookup, connect and TLS timings with aTimes, which is
+  // empty for a transaction running on a connection it did not establish, so
+  // that it can't report a connect phase belonging to another connection.
   void BootstrapTimings(TimingStruct times);
   void SetConnectStart(mozilla::TimeStamp timeStamp, bool onlyIfNull = false);
   void SetConnectEnd(mozilla::TimeStamp timeStamp, bool onlyIfNull = false);

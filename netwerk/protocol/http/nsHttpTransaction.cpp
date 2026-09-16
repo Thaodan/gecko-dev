@@ -3033,11 +3033,17 @@ TimingStruct nsHttpTransaction::Timings() {
 
 void nsHttpTransaction::BootstrapTimings(TimingStruct times) {
   mozilla::MutexAutoLock lock(mLock);
-  TimeStamp savedRequestStart = mTimings.requestStart;
-  mTimings = times;
-  if (!savedRequestStart.IsNull() && mTimings.requestStart.IsNull()) {
-    mTimings.requestStart = savedRequestStart;
-  }
+  // Only the connection phase is bootstrapped: it is owned by whoever
+  // established the connection this transaction runs on. The request and
+  // response timings are recorded by the transaction itself and must survive,
+  // because the connection phase can be reported after the request was already
+  // sent (a handshake finishing after 0-RTT data went out, for example).
+  mTimings.domainLookupStart = times.domainLookupStart;
+  mTimings.domainLookupEnd = times.domainLookupEnd;
+  mTimings.connectStart = times.connectStart;
+  mTimings.tcpConnectEnd = times.tcpConnectEnd;
+  mTimings.secureConnectionStart = times.secureConnectionStart;
+  mTimings.connectEnd = times.connectEnd;
 
   // Clamp connectStart to domainLookupEnd: with HE the state machine can start
   // a connection attempt as soon as one address family (A or AAAA) resolves
@@ -3079,17 +3085,18 @@ void nsHttpTransaction::Apply0RTTTimingOverride() {
   mLock.AssertCurrentThreadOwns();
   // Only when this request's early data (0-RTT) was accepted; otherwise
   // connectEnd keeps the full-handshake time set elsewhere.
-  if (mEarlyDataDisposition != EARLY_ACCEPTED || mEarlyDataSentTime.IsNull()) {
+  // Without a connect phase there is nothing to override: a transaction on a
+  // reused connection reports none, and a connectEnd on its own would be
+  // incoherent.
+  if (mEarlyDataDisposition != EARLY_ACCEPTED || mEarlyDataSentTime.IsNull() ||
+      mTimings.connectStart.IsNull()) {
     return;
   }
   // The request went out as early data, so connectEnd must exclude the
   // ServerHello round trip: report it (and requestStart) at the early-data
   // send. See "record connection timing info":
   // https://fetch.spec.whatwg.org/#record-connection-timing-info
-  TimeStamp early = mEarlyDataSentTime;
-  if (!mTimings.connectStart.IsNull() && early < mTimings.connectStart) {
-    early = mTimings.connectStart;
-  }
+  TimeStamp early = std::max(mEarlyDataSentTime, mTimings.connectStart);
   mTimings.connectEnd = early;
   mTimings.requestStart = early;
 }
