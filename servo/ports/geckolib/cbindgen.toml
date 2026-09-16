@@ -430,6 +430,7 @@ include = [
   "FontSmoothing",
   "FontVariantPosition",
   "FontVariantCaps",
+  "WhiteSpaceCollapse",
 ]
 item_types = [
   "enums",

@@ -129,16 +129,6 @@ enum class ListStyle : uint8_t {
   UpperAlpha
 };
 
-// See nsStyleText
-enum class StyleWhiteSpaceCollapse : uint8_t {
-  Collapse = 0,
-  // TODO: Discard not yet supported
-  Preserve,
-  PreserveBreaks,
-  PreserveSpaces,
-  BreakSpaces,
-};
-
 // See nsStyleSVG
 
 }  // namespace mozilla
