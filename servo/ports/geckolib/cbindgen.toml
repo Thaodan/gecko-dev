@@ -394,6 +394,7 @@ include = [
   "EmptyCells",
   "Hyphens",
   "TextSizeAdjust",
+  "RubyAlign",
 ]
 item_types = [
   "enums",

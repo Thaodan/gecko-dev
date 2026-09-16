@@ -279,14 +279,6 @@ enum class StyleTextWrapStyle : uint8_t {
   Balance,
 };
 
-// ruby-align, see nsStyleText
-enum class StyleRubyAlign : uint8_t {
-  Start,
-  Center,
-  SpaceBetween,
-  SpaceAround,
-};
-
 // See nsStyleText
 enum class StyleTextCombineUpright : uint8_t {
   None,
