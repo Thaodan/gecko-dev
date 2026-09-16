@@ -2954,6 +2954,7 @@ dependencies = [
  "mozglue-static",
  "mozilla-central-workspace-hack",
  "mp4parse-gtest",
+ "noise-gtest",
  "nsstring-gtest",
  "swgl",
  "xpcom-gtest",
@@ -3039,6 +3040,7 @@ dependencies = [
  "mp4parse_capi",
  "neqo_glue",
  "netwerk_helper",
+ "noise",
  "nserror",
  "nsstring",
  "oblivious_http",
@@ -5736,6 +5738,25 @@ dependencies = [
  "serde_json",
  "tempfile",
  "url",
+]
+
+[[package]]
+name = "noise"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "nserror",
+ "nss-rs",
+ "thin-vec",
+ "xpcom",
+]
+
+[[package]]
+name = "noise-gtest"
+version = "0.1.0"
+dependencies = [
+ "noise",
+ "nss-rs",
 ]
 
 [[package]]
