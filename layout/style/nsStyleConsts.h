@@ -210,15 +210,6 @@ enum class ListStyle : uint8_t {
   UpperAlpha
 };
 
-// See nsStylePosition.mObjectFit
-enum class StyleObjectFit : uint8_t {
-  Fill,
-  Contain,
-  Cover,
-  None,
-  ScaleDown,
-};
-
 // See nsStyleText
 enum class StyleTextDecorationStyle : uint8_t {
   None,  // not in CSS spec, mapped to -moz-none

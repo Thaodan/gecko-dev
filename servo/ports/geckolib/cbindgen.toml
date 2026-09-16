@@ -403,6 +403,7 @@ include = [
   "ListStylePosition",
   "FlexDirection",
   "BoxSizing",
+  "ObjectFit",
 ]
 item_types = [
   "enums",
