@@ -481,3 +481,15 @@ aiwindow-resume-card-resume = Resume
 aiwindow-resume-card-dismiss =
     .title = Dismiss { $text }
     .aria-label = Dismiss { $text }
+
+## Resume section
+## Toggles between showing a couple of "Pick up where you left off" resume
+## cards and showing all of them.
+
+aiwindow-resume-section-heading = Jump back in
+# Variables:
+#   $count (Number) - Total number of resume cards in the section
+aiwindow-resume-section-show-more = Show more ({ $count })
+# Variables:
+#   $count (Number) - Total number of resume cards in the section
+aiwindow-resume-section-show-less = Show less ({ $count })
