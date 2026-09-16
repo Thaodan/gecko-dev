@@ -58,6 +58,16 @@ ChromeUtils.defineESModuleGetters(lazy, {
 const PREF_LOGLEVEL = "browser.policies.loglevel";
 const BROWSER_DOCUMENT_URL = AppConstants.BROWSER_CHROME_URL;
 
+// The only prefs read when clearing at shutdown.
+const CLEAR_ON_SHUTDOWN_PREFS = {
+  BrowsingHistoryAndDownloads:
+    "privacy.clearOnShutdown_v2.browsingHistoryAndDownloads",
+  CookiesAndStorage: "privacy.clearOnShutdown_v2.cookiesAndStorage",
+  Cache: "privacy.clearOnShutdown_v2.cache",
+  FormData: "privacy.clearOnShutdown_v2.formdata",
+  SiteSettings: "privacy.clearOnShutdown_v2.siteSettings",
+};
+
 ChromeUtils.defineLazyGetter(lazy, "log", () => {
   const { ConsoleAPI } = ChromeUtils.importESModule(
     "resource://gre/modules/Console.sys.mjs"
@@ -687,6 +697,39 @@ export var Policies = {
             "Certificates",
             `Unable to import certificates - ${e}`
           )
+        );
+      }
+    },
+  },
+
+  ClearOnShutdown: {
+    onBeforeUIStartup(manager, param) {
+      if (typeof param === "boolean") {
+        lazy.PoliciesUtils.setAndLockPref(
+          "privacy.sanitize.sanitizeOnShutdown",
+          param
+        );
+        for (const pref of Object.values(CLEAR_ON_SHUTDOWN_PREFS)) {
+          lazy.PoliciesUtils.setAndLockPref(pref, param);
+        }
+        return;
+      }
+
+      // Named categories are enforced; the rest are left to the user.
+      lazy.PoliciesUtils.setAndLockPref(
+        "privacy.sanitize.sanitizeOnShutdown",
+        true
+      );
+      for (const [member, pref] of Object.entries(CLEAR_ON_SHUTDOWN_PREFS)) {
+        if (member in param) {
+          lazy.PoliciesUtils.setAndLockPref(pref, param[member]);
+        }
+      }
+
+      if (param.Exceptions) {
+        lazy.addAllowDenyPermissions(
+          "persist-data-on-shutdown",
+          param.Exceptions
         );
       }
     },
@@ -3080,6 +3123,12 @@ export var Policies = {
 
   SanitizeOnShutdown: {
     onBeforeUIStartup(manager, param) {
+      if (manager.getActivePolicies().ClearOnShutdown) {
+        lazy.log.error(
+          "SanitizeOnShutdown is ignored when ClearOnShutdown is also set."
+        );
+        return;
+      }
       if (typeof param === "boolean") {
         lazy.PoliciesUtils.setAndLockPref(
           "privacy.sanitize.sanitizeOnShutdown",
