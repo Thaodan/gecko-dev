@@ -352,13 +352,6 @@ enum class StyleMaskType : uint8_t {
   Alpha,
 };
 
-// stroke-linecap
-enum class StyleStrokeLinecap : uint8_t {
-  Butt,
-  Round,
-  Square,
-};
-
 // stroke-linejoin
 enum class StyleStrokeLinejoin : uint8_t {
   Miter,

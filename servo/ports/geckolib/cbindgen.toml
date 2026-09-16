@@ -388,6 +388,7 @@ include = [
   "ImageOrientation",
   "TextAnchor",
   "ShapeRendering",
+  "StrokeLinecap",
 ]
 item_types = [
   "enums",

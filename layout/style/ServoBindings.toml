@@ -692,6 +692,7 @@ cbindgen-types = [
     { gecko = "StyleImageOrientation", servo = "crate::values::computed::ImageOrientation" },
     { gecko = "StyleTextAnchor", servo = "crate::values::computed::TextAnchor" },
     { gecko = "StyleShapeRendering", servo = "crate::values::computed::ShapeRendering" },
+    { gecko = "StyleStrokeLinecap", servo = "crate::values::computed::StrokeLinecap" },
 ]
 
 mapped-generic-types = [
