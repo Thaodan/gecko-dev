@@ -400,7 +400,7 @@
     --icon-size-xxlarge: var(--size-item-xlarge);
 
     /** info-bar **/
-    --info-bar-border-color: light-dark(var(--color-violet-desaturated-20), var(--color-gray-60));
+    --info-bar-border-color: var(--border-color-deemphasized);
     --info-bar-margin: 4px;
 
     /** input **/
@@ -600,9 +600,6 @@
       --icon-color-information: var(--icon-color);
       --icon-color-success: var(--icon-color);
       --icon-color-warning: var(--icon-color);
-
-      /** info-bar **/
-      --info-bar-border-color: CanvasText;
 
       /** opacity **/
       --opacity-deemphasized: 1;
@@ -984,6 +981,7 @@
       --icon-size-xlarge: var(--size-item-large);
 
       /** info-bar **/
+      --info-bar-border-color: light-dark(var(--color-violet-desaturated-20), var(--color-gray-60));
       --info-bar-margin: 0;
 
       /** input **/
@@ -1054,6 +1052,9 @@
 
     @layer tokens-prefers-contrast-nova {
       @media (prefers-contrast) {
+        /** info-bar **/
+        --info-bar-border-color: CanvasText;
+
         /** text-color **/
         --text-color: CanvasText;
         --text-color-error: inherit;
