@@ -15,14 +15,6 @@
 
 namespace mozilla {
 
-// box-pack
-enum class StyleBoxPack : uint8_t {
-  Start,
-  Center,
-  End,
-  Justify,
-};
-
 // box-shadow
 enum class StyleBoxShadowType : uint8_t {
   Inset,

@@ -721,6 +721,7 @@ cbindgen-types = [
     { gecko = "StyleBoxAlign", servo = "crate::values::computed::BoxAlign" },
     { gecko = "StyleBoxDirection", servo = "crate::values::computed::BoxDirection" },
     { gecko = "StyleBoxOrient", servo = "crate::values::computed::BoxOrient" },
+    { gecko = "StyleBoxPack", servo = "crate::values::computed::BoxPack" },
 ]
 
 mapped-generic-types = [
