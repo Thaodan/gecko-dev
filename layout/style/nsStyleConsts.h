@@ -44,9 +44,6 @@ enum class StyleBoxPack : uint8_t {
   Justify,
 };
 
-// box-sizing
-enum class StyleBoxSizing : uint8_t { ContentBox, BorderBox };
-
 // box-shadow
 enum class StyleBoxShadowType : uint8_t {
   Inset,

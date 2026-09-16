@@ -402,6 +402,7 @@ include = [
   "TextWrapStyle",
   "ListStylePosition",
   "FlexDirection",
+  "BoxSizing",
 ]
 item_types = [
   "enums",
