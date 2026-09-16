@@ -2,17 +2,6 @@
 <issues format="6" by="lint 9.4.0" type="baseline" client="gradle" dependencies="false" name="AGP (9.4.0)" variant="all" version="9.4.0">
 
     <issue
-        id="AppBundleLocaleChanges"
-        message="Found dynamic locale changes, but did not find corresponding Play Core library calls for downloading languages and splitting by language is not disabled in the `bundle` configuration"
-        errorLine1="            configuration.setLocale(locale)"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/focus/locale/screen/LanguageMiddleware.kt"
-            line="84"
-            column="13"/>
-    </issue>
-
-    <issue
         id="ButtonStyleXmlDetector"
         message="All buttons must have a style, try using NeutralButton or similar."
         errorLine1="    &lt;Button"
