@@ -302,7 +302,7 @@
 
 - name: accessibility.tagged_pdf_output.enabled
   type: bool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
 
 # Whether to enable support for the UI Automation API on Windows. Values:
