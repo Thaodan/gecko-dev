@@ -350,6 +350,7 @@ class LensCameraFragment(private val now: () -> Long = DefaultDateTimeProvider()
                     map.getOutputSizes(ImageFormat.YUV_420_888),
                     lensPreviewConstraints.maxWidth,
                     lensPreviewConstraints.maxHeight,
+                    optimalSize,
                 )
 
             qrImageReader =
@@ -802,14 +803,25 @@ class LensCameraFragment(private val now: () -> Long = DefaultDateTimeProvider()
          * [QrAnalyzer]'s target, so analysis costs about what it does in the standalone QR scanner. Requesting
          * [QrAnalyzer.YUV_WIDTH] x [QrAnalyzer.YUV_HEIGHT] directly relies on the platform substituting a supported
          * size, which not every device does.
+         *
+         * Sizes sharing [aspectRatio] within [ASPECT_RATIO_TOLERANCE] are preferred over sizes closer to the target
+         * area, so the analysed frame is framed the same way as the preview the user is aiming with. On a device
+         * offering YUV sizes in several ratios, a code near the edge of the viewfinder is otherwise outside the frame
+         * that gets analysed.
          */
         @VisibleForTesting
-        internal fun chooseQrSize(choices: Array<Size>?, maxWidth: Int, maxHeight: Int): Size {
+        internal fun chooseQrSize(choices: Array<Size>?, maxWidth: Int, maxHeight: Int, aspectRatio: Size): Size {
             if (choices.isNullOrEmpty()) return Size(QrAnalyzer.YUV_WIDTH, QrAnalyzer.YUV_HEIGHT)
             val withinBounds = choices.filter { it.width <= maxWidth && it.height <= maxHeight }
             val candidates = withinBounds.ifEmpty { listOf(Collections.min(choices.asList(), BY_AREA)) }
+
+            val ratio = aspectRatio.width.toDouble() / aspectRatio.height
+            val ratioDelta = { size: Size -> abs(size.width.toDouble() / size.height - ratio) }
+            val closest = candidates.minOf(ratioDelta)
+            val matching = candidates.filter { ratioDelta(it) <= closest + ASPECT_RATIO_TOLERANCE }
+
             val target = QrAnalyzer.YUV_WIDTH.toLong() * QrAnalyzer.YUV_HEIGHT
-            return Collections.min(candidates, compareBy { abs(it.width.toLong() * it.height - target) })
+            return Collections.min(matching, compareBy { abs(it.width.toLong() * it.height - target) })
         }
 
         /**

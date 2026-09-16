@@ -483,9 +483,10 @@ class LensCameraFragmentTest {
     fun `GIVEN supported YUV sizes WHEN chooseQrSize is called THEN the one closest to the analyzer target is returned`() {
         val size =
             LensCameraFragment.chooseQrSize(
-                arrayOf(Size(1920, 1080), Size(800, 600), Size(176, 144)),
+                arrayOf(Size(1440, 1080), Size(800, 600), Size(176, 144)),
                 1920,
                 1080,
+                Size(1440, 1080),
             )
 
         // 800x600 is nearest QrAnalyzer's 786x786 target area.
@@ -500,6 +501,7 @@ class LensCameraFragmentTest {
                 arrayOf(Size(4608, 3456), Size(640, 480)),
                 1920,
                 1080,
+                Size(1440, 1080),
             )
 
         assertEquals(640, size.width)
@@ -508,15 +510,50 @@ class LensCameraFragmentTest {
 
     @Test
     fun `GIVEN no YUV size fits the preview bounds WHEN chooseQrSize is called THEN the smallest size is returned`() {
-        val size = LensCameraFragment.chooseQrSize(arrayOf(Size(4608, 3456), Size(2560, 1920)), 1920, 1080)
+        val size =
+            LensCameraFragment.chooseQrSize(
+                arrayOf(Size(4608, 3456), Size(2560, 1920)),
+                1920,
+                1080,
+                Size(1440, 1080),
+            )
 
         assertEquals(2560, size.width)
         assertEquals(1920, size.height)
     }
 
     @Test
+    fun `GIVEN a closer size of the wrong ratio WHEN chooseQrSize is called THEN the one matching the preview is returned`() {
+        val size =
+            LensCameraFragment.chooseQrSize(
+                arrayOf(Size(800, 800), Size(1024, 768)),
+                1920,
+                1080,
+                Size(1440, 1080),
+            )
+
+        // 800x800 is 640000 px, far nearer the 617796 px target than 1024x768's 786432, but it is not 4:3.
+        assertEquals(1024, size.width)
+        assertEquals(768, size.height)
+    }
+
+    @Test
+    fun `GIVEN a 16-9 preview WHEN chooseQrSize is called THEN a 16-9 YUV size is returned`() {
+        val size =
+            LensCameraFragment.chooseQrSize(
+                arrayOf(Size(1024, 768), Size(1280, 720)),
+                1920,
+                1080,
+                Size(1920, 1080),
+            )
+
+        assertEquals(1280, size.width)
+        assertEquals(720, size.height)
+    }
+
+    @Test
     fun `GIVEN the camera reports no YUV sizes WHEN chooseQrSize is called THEN the analyzer default is returned`() {
-        val size = LensCameraFragment.chooseQrSize(null, 1920, 1080)
+        val size = LensCameraFragment.chooseQrSize(null, 1920, 1080, Size(1440, 1080))
 
         assertEquals(QrAnalyzer.YUV_WIDTH, size.width)
         assertEquals(QrAnalyzer.YUV_HEIGHT, size.height)
