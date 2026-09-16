@@ -69,11 +69,16 @@
         disabled="true"
       />
     </box>
-    <html:moz-message-bar
+    <hbox
       id="warning-message"
-      type="warning"
-      data-l10n-id="browser-languages-update-error"
+      class="message-bar message-bar-warning"
       hidden="true"
-    ></html:moz-message-bar>
+    >
+      <html:img class="message-bar-icon" />
+      <description
+        class="message-bar-description"
+        data-l10n-id="browser-languages-error"
+      />
+    </hbox>
   </dialog>
 </window>
