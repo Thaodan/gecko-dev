@@ -20,8 +20,8 @@ enum class StyleBoxShadowType : uint8_t {
   Inset,
 };
 
-// Define geometry box for clip-path's reference-box, background-clip,
-// background-origin, mask-clip, mask-origin, shape-box and transform-box.
+// Define geometry box for clip-path's reference-box, shape-box and
+// transform-box, and the resolved box of the background / mask layers.
 enum class StyleGeometryBox : uint8_t {
   ContentBox,  // Used by everything, except transform-box.
   PaddingBox,  // Used by everything, except transform-box.

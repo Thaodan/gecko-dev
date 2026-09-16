@@ -431,6 +431,7 @@ include = [
   "FontVariantPosition",
   "FontVariantCaps",
   "WhiteSpaceCollapse",
+  "BackgroundOrigin",
 ]
 item_types = [
   "enums",
