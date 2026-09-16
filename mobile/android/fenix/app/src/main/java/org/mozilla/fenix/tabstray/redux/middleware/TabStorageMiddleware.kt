@@ -18,6 +18,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.state.TabSessionState
+import mozilla.components.feature.tabgroups.storage.data.TabGroup
+import mozilla.components.feature.tabgroups.storage.data.TabGroupData
+import mozilla.components.feature.tabgroups.storage.repository.TabGroupRepository
 import mozilla.components.feature.tabs.TabsUseCases.MoveTabsUseCase
 import mozilla.components.feature.tabs.TabsUseCases.RemoveTabsUseCase
 import mozilla.components.lib.state.Middleware
@@ -26,9 +29,6 @@ import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.DateTimeProvider
 import mozilla.components.support.utils.DefaultDateTimeProvider
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
-import org.mozilla.fenix.tabgroups.storage.data.TabGroup
-import org.mozilla.fenix.tabgroups.storage.data.TabGroupData
-import org.mozilla.fenix.tabgroups.storage.repository.TabGroupRepository
 import org.mozilla.fenix.tabstray.data.TabData
 import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.data.TabStorageUpdate

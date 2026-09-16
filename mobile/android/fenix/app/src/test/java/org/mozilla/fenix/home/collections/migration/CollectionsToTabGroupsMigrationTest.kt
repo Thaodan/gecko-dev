@@ -35,7 +35,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.components.TabCollectionStorage
 import org.mozilla.fenix.home.collections.migration.fake.FakeCollectionsMigrationRepository
-import org.mozilla.fenix.tabgroups.fakes.FakeTabGroupRepository
+import org.mozilla.fenix.tabgroups.fixtures.FakeTabGroupRepository
 import org.mozilla.fenix.tabstray.data.TabGroupTheme
 
 @OptIn(ExperimentalCoroutinesApi::class)

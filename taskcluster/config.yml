@@ -336,6 +336,7 @@ treeherder:
         'feature-summarize': 'feature-summarize'
         'feature-syncedtabs': 'feature-syncedtabs'
         'feature-tab-collections': 'feature-tab-collections'
+        'feature-tabgroups-storage': 'feature-tabgroups-storage'
         'feature-tabs': 'feature-tabs'
         'feature-toolbar': 'feature-toolbar'
         'feature-top-sites': 'feature-top-sites'

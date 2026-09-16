@@ -27,6 +27,9 @@ import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.feature.tabgroups.storage.data.TabGroup
+import mozilla.components.feature.tabgroups.storage.data.TabGroupData
+import mozilla.components.feature.tabgroups.storage.repository.TabGroupRepository
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.feature.tabs.TabsUseCases.MoveTabsUseCase
 import mozilla.components.feature.tabs.TabsUseCases.RemoveTabsUseCase
@@ -36,10 +39,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
-import org.mozilla.fenix.tabgroups.fakes.FakeTabGroupRepository
-import org.mozilla.fenix.tabgroups.storage.data.TabGroup
-import org.mozilla.fenix.tabgroups.storage.data.TabGroupData
-import org.mozilla.fenix.tabgroups.storage.repository.TabGroupRepository
+import org.mozilla.fenix.tabgroups.fixtures.FakeTabGroupRepository
 import org.mozilla.fenix.tabstray.data.TabData
 import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.data.TabsTrayItem

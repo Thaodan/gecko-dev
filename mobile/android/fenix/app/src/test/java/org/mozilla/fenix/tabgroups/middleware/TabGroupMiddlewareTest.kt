@@ -13,8 +13,7 @@ import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.TabListAction
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mozilla.fenix.tabgroups.fakes.FakeTabGroupRepository
-import org.mozilla.fenix.tabgroups.storage.redux.middleware.TabGroupMiddleware
+import org.mozilla.fenix.tabgroups.fixtures.FakeTabGroupRepository
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
