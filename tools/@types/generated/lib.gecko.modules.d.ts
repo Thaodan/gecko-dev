@@ -8,6 +8,7 @@ export interface Modules {
   "chrome://browser/content/aiwindow/components/agent-monitor-panel.mjs": typeof import("chrome://browser/content/aiwindow/components/agent-monitor-panel.mjs"),
   "chrome://browser/content/aiwindow/components/monitor-error-copy.mjs": typeof import("chrome://browser/content/aiwindow/components/monitor-error-copy.mjs"),
   "chrome://browser/content/aiwindow/components/smartwindow-group-tabs.mjs": typeof import("chrome://browser/content/aiwindow/components/smartwindow-group-tabs.mjs"),
+  "chrome://browser/content/aiwindow/modules/AgentCommands.mjs": typeof import("chrome://browser/content/aiwindow/modules/AgentCommands.mjs"),
   "chrome://browser/content/aiwindow/modules/ChatMarkdownParser.mjs": typeof import("chrome://browser/content/aiwindow/modules/ChatMarkdownParser.mjs"),
   "chrome://browser/content/aiwindow/modules/SmartFormFillConstants.mjs": typeof import("chrome://browser/content/aiwindow/modules/SmartFormFillConstants.mjs"),
   "chrome://browser/content/asrouter/components/menu-message.mjs": typeof import("chrome://browser/content/asrouter/components/menu-message.mjs"),

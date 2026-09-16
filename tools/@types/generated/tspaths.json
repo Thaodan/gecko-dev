@@ -139,6 +139,9 @@
       "chrome://browser/content/aiwindow/components/website-chip-container.mjs": [
         "../../../browser/components/aiwindow/ui/components/website-chip-container/website-chip-container.mjs"
       ],
+      "chrome://browser/content/aiwindow/modules/AgentCommands.mjs": [
+        "../../../browser/components/aiwindow/ui/modules/AgentCommands.mjs"
+      ],
       "chrome://browser/content/aiwindow/modules/ChatMarkdownParser.mjs": [
         "../../../browser/components/aiwindow/ui/modules/ChatMarkdownParser.mjs"
       ],
