@@ -399,6 +399,7 @@ include = [
   "TextRendering",
   "TextSecurity",
   "TextWrapMode",
+  "TextWrapStyle",
 ]
 item_types = [
   "enums",

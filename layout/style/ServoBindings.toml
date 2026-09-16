@@ -703,6 +703,7 @@ cbindgen-types = [
     { gecko = "StyleTextRendering", servo = "crate::values::computed::TextRendering" },
     { gecko = "StyleTextSecurity", servo = "crate::values::computed::TextSecurity" },
     { gecko = "StyleTextWrapMode", servo = "crate::values::computed::TextWrapMode" },
+    { gecko = "StyleTextWrapStyle", servo = "crate::values::computed::TextWrapStyle" },
 ]
 
 mapped-generic-types = [
