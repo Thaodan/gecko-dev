@@ -115,16 +115,13 @@ class FetchStreamReader final : public GlobalTeardownObserver,
   void StartConsuming(JSContext* aCx, ReadableStream* aStream,
                       ErrorResult& aRv);
 
-  // True once StartConsuming() has acquired a reader on the JS stream. A
-  // Request built from a ReadableStream body starts consuming it during
-  // construction, so callers that drive consumption lazily must not start it
-  // a second time.
+  // True once StartConsuming() has acquired a reader on the JS stream.
   bool IsConsuming() const { return !!mReader; }
 
   // Have this FetchStreamReader follow aSignal so that the underlying
   // ReadableStream's cancel algorithm fires (with the signal's reason) when
-  // the fetch is aborted. An aSignal that has already aborted is handled
-  // immediately, since AbortFollower::Follow() ignores such a signal.
+  // the fetch is aborted. aSignal must not have aborted already: Follow()
+  // ignores such a signal, and fetch() cancels the body itself in that case.
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void FollowSignal(AbortSignalImpl* aSignal);
 

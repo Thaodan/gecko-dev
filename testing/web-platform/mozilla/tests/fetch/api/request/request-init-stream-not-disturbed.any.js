@@ -2,8 +2,7 @@
 
 // https://fetch.spec.whatwg.org/#concept-bodyinit-extract does not read a
 // ReadableStream, so a Request constructor that throws must leave the stream
-// untouched. Gecko starts pumping the stream during construction, which makes
-// the ordering of the duplex check observable.
+// untouched.
 
 function newStream() {
   return new ReadableStream({

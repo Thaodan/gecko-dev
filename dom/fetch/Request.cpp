@@ -13,11 +13,15 @@
 #include "mozilla/dom/FetchUtil.h"
 #include "mozilla/dom/Headers.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/ReadableStreamBinding.h"
 #include "mozilla/dom/ReadableStreamDefaultReader.h"
+#include "mozilla/dom/TransformStream.h"
+#include "mozilla/dom/TransformStreamBinding.h"
 #include "mozilla/dom/URL.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRunnable.h"
+#include "mozilla/dom/WritableStream.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "nsIURI.h"
 #include "nsNetUtil.h"
@@ -158,7 +162,7 @@ SafeRefPtr<Request> Request::Constructor(
       hasCopiedBody = true;
     } else {
       inputReq->GetBody(getter_AddRefs(body));
-      if (inputReq->BodyUsed()) {
+      if (inputReq->IsBodyUnusable()) {
         aRv.ThrowTypeError<MSG_FETCH_BODY_CONSUMED_ERROR>();
         return nullptr;
       }
@@ -441,8 +445,8 @@ SafeRefPtr<Request> Request::Constructor(
     }
   }
 
-  // Step 39: validate a body whose source is null before extraction starts
-  // consuming it. With the pref off, stream bodies are stringified instead.
+  // Step 39: validate a body whose source is null. With the pref off, stream
+  // bodies are stringified instead.
   const bool hasInitBody =
       aInit.mBody.WasPassed() && !aInit.mBody.Value().IsNull();
   const bool hasStreamBody =
@@ -510,8 +514,6 @@ SafeRefPtr<Request> Request::Constructor(
           return nullptr;
         }
 
-        // Mark that this request has a ReadableStream body
-        request->SetHasStreamBody(true);
         temporaryStreamBody = &readableStream;
 
         // If this is a DOM generated ReadableStream, extract the inputStream
@@ -525,12 +527,6 @@ SafeRefPtr<Request> Request::Constructor(
           aRv = FetchStreamReader::Create(aCx, aGlobal,
                                           getter_AddRefs(streamReader),
                                           getter_AddRefs(pipeInputStream));
-          if (NS_WARN_IF(aRv.Failed())) {
-            return nullptr;
-          }
-
-          // Start consuming immediately
-          streamReader->StartConsuming(aCx, &readableStream, aRv);
           if (NS_WARN_IF(aRv.Failed())) {
             return nullptr;
           }
@@ -577,14 +573,8 @@ SafeRefPtr<Request> Request::Constructor(
   auto domRequest =
       MakeSafeRefPtr<Request>(aGlobal, std::move(request), signal);
 
-  // Ahead of SetReadableStreamBody, which errors the stream outright when the
-  // signal has already aborted. Cancelling an errored stream skips its cancel
-  // algorithm, so the reader has to get there while the stream is readable.
   if (temporaryStreamReader) {
     domRequest->mFetchStreamReader = temporaryStreamReader.forget();
-    if (signal) {
-      domRequest->mFetchStreamReader->FollowSignal(signal);
-    }
   }
 
   if (temporaryStreamBody) {
@@ -596,6 +586,41 @@ SafeRefPtr<Request> Request::Constructor(
     nsCOMPtr<nsIInputStream> body;
     inputReq->GetBody(getter_AddRefs(body));
     if (body) {
+      if (inputReq->mFetchStreamReader) {
+        // Step 41: proxy the JS stream with a single consumer and preserve
+        // backpressure until the new Request is consumed.
+        JS::Rooted<JSObject*> globalObject(aCx, aGlobal->GetGlobalJSObject());
+        GlobalObject global(aCx, globalObject);
+        RefPtr<TransformStream> transform = TransformStream::Constructor(
+            global, Optional<JS::Handle<JSObject*>>(), QueuingStrategy(),
+            QueuingStrategy(), aRv);
+        if (aRv.Failed()) {
+          return nullptr;
+        }
+        ReadableWritablePair pair;
+        pair.mReadable = transform->Readable();
+        pair.mWritable = transform->Writable();
+        RefPtr<ReadableStream> source = inputReq->mReadableStreamBody;
+        // PipeThrough() locks the source, which is what leaves inputReq
+        // unusable. SetBodyUsed() must not be called on it: that would start
+        // its reader consuming a stream the pipe already holds.
+        RefPtr<ReadableStream> proxy =
+            source->PipeThrough(pair, StreamPipeOptions(), aRv);
+        if (aRv.Failed()) {
+          return nullptr;
+        }
+        nsCOMPtr<nsIInputStream> proxyInput;
+        aRv = FetchStreamReader::Create(
+            aCx, aGlobal, getter_AddRefs(domRequest->mFetchStreamReader),
+            getter_AddRefs(proxyInput));
+        if (aRv.Failed()) {
+          return nullptr;
+        }
+        domRequest->SetBody(nullptr, 0);
+        domRequest->SetBody(proxyInput, -1);
+        domRequest->SetReadableStreamBody(aCx, proxy);
+        return domRequest;
+      }
       inputReq->SetBody(nullptr, 0);
       inputReq->SetBodyUsed(aCx, aRv);
       if (NS_WARN_IF(aRv.Failed())) {
@@ -606,9 +631,19 @@ SafeRefPtr<Request> Request::Constructor(
   return domRequest;
 }
 
-SafeRefPtr<Request> Request::Clone(ErrorResult& aRv) {
-  if (BodyUsed()) {
+SafeRefPtr<Request> Request::Clone(JSContext* aCx, ErrorResult& aRv) {
+  if (IsBodyUnusable()) {
     aRv.ThrowTypeError<MSG_FETCH_BODY_CONSUMED_ERROR>();
+    return nullptr;
+  }
+
+  RefPtr<ReadableStream> body;
+  RefPtr<FetchStreamReader> streamReader;
+  nsCOMPtr<nsIInputStream> inputStream;
+  MaybeTeeReadableStreamBody(aCx, getter_AddRefs(body),
+                             getter_AddRefs(streamReader),
+                             getter_AddRefs(inputStream), aRv);
+  if (aRv.Failed()) {
     return nullptr;
   }
 
@@ -618,13 +653,29 @@ SafeRefPtr<Request> Request::Clone(ErrorResult& aRv) {
     return nullptr;
   }
 
-  // InternalRequest::Clone() may have replaced our underlying input stream (a
-  // non-cloneable body is now consumed by the cloning copy). If an unread
-  // native ReadableStream still reflects this request's body, repoint it at the
-  // current stream so the original is not read from two places.
-  MaybeRebindReadableStreamBody();
+  auto clone =
+      MakeSafeRefPtr<Request>(mGlobal, std::move(ir), GetOrCreateSignal());
+  if (body) {
+    clone->SetBody(nullptr, 0);
+    clone->SetBody(inputStream, -1);
+    clone->mFetchStreamReader = streamReader.forget();
+    clone->SetReadableStreamBody(aCx, body);
+  } else {
+    // Rebind a native stream if cloning replaced its underlying input stream.
+    MaybeRebindReadableStreamBody();
+  }
+  return clone;
+}
 
-  return MakeSafeRefPtr<Request>(mGlobal, std::move(ir), GetOrCreateSignal());
+void Request::FollowBodySignal() {
+  if (!mSignal) {
+    return;
+  }
+  if (mFetchStreamReader) {
+    mFetchStreamReader->FollowSignal(mSignal);
+  } else if (mReadableStreamBody) {
+    Follow(mSignal);
+  }
 }
 
 Headers* Request::Headers_() {
@@ -647,7 +698,7 @@ AbortSignal* Request::GetOrCreateSignal() {
 AbortSignalImpl* Request::GetSignalImpl() const { return mSignal; }
 
 AbortSignalImpl* Request::GetSignalImplToConsumeBody() const {
-  // This is a hack, see Response::GetSignalImplToConsumeBody.
+  // The signal controls fetch(), not consumption of an unused Request's body.
   return nullptr;
 }
 

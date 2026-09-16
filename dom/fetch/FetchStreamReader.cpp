@@ -268,12 +268,10 @@ void FetchStreamReader::ReleaseState(nsresult aStatus) {
 void FetchStreamReader::FollowSignal(AbortSignalImpl* aSignal) {
   MOZ_ASSERT(aSignal);
   MOZ_ASSERT(!mAbortFollower);
+  // Follow() ignores an already-aborted signal; fetch() cancels the body
+  // itself in that case and never gets here.
+  MOZ_ASSERT(!aSignal->Aborted());
   if (mStreamClosed) {
-    return;
-  }
-  // Follow() ignores an already-aborted signal, so it would never call back.
-  if (aSignal->Aborted()) {
-    RunAbortAlgorithm(aSignal);
     return;
   }
   mAbortFollower = new FetchStreamReaderAbortFollower(this);
