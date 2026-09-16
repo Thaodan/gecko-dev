@@ -393,6 +393,7 @@ include = [
   "BorderCollapse",
   "EmptyCells",
   "Hyphens",
+  "TextSizeAdjust",
 ]
 item_types = [
   "enums",
