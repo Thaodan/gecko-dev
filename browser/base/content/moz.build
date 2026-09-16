@@ -11,7 +11,7 @@ with Files("docs/**"):
 with Files("pageinfo/**"):
     BUG_COMPONENT = ("Firefox", "Page Info Window")
 
-with Files("test/browser-about/**"):
+with Files("test/about/**"):
     BUG_COMPONENT = ("Firefox", "General")
 
 with Files("test/browser-alerts/**"):
@@ -23,10 +23,10 @@ with Files("test/browser-captivePortal/**"):
 with Files("test/chrome/**"):
     BUG_COMPONENT = ("Firefox", "General")
 
-with Files("test/browser-contextMenu/**"):
+with Files("test/contextMenu/**"):
     BUG_COMPONENT = ("Firefox", "Menus")
 
-with Files("test/browser-forms/**"):
+with Files("test/forms/**"):
     BUG_COMPONENT = ("Core", "Layout: Form Controls")
 
 with Files("test/browser-historySwipeAnimation/**"):
@@ -44,13 +44,13 @@ with Files("test/browser-pageActions*/**"):
 with Files("test/browser-pageinfo/**"):
     BUG_COMPONENT = ("Firefox", "Page Info Window")
 
-with Files("test/browser-performance/**"):
+with Files("test/performance/**"):
     BUG_COMPONENT = ("Toolkit", "Performance Monitoring")
 
-with Files("test/browser-performance/browser_appmenu.js"):
+with Files("test/performance/browser_appmenu.js"):
     BUG_COMPONENT = ("Firefox", "Menus")
 
-with Files("test/browser-permissions/**"):
+with Files("test/permissions/**"):
     BUG_COMPONENT = ("Firefox", "Site Permissions")
 
 with Files("test/browser-plugins/**"):
@@ -59,7 +59,7 @@ with Files("test/browser-plugins/**"):
 with Files("test/browser-popupNotifications/**"):
     BUG_COMPONENT = ("Toolkit", "PopupNotifications and Notification Bars")
 
-with Files("test/browser-popups/**"):
+with Files("test/popups/**"):
     BUG_COMPONENT = ("Firefox", "Site Permissions")
 
 with Files("test/browser-referrer/**"):
@@ -71,16 +71,19 @@ with Files("test/browser-sanitize/**"):
 with Files("test/browser-scroll-to-text-fragment/**"):
     BUG_COMPONENT = ("Core", "DOM: Navigation")
 
-with Files("test/browser-siteIdentity/**"):
+with Files("test/siteIdentity/**"):
     BUG_COMPONENT = ("Firefox", "Site Identity")
+
+with Files("test/sidebar/**"):
+    BUG_COMPONENT = ("Firefox", "General")
 
 with Files("test/browser-startup/**"):
     BUG_COMPONENT = ("Firefox", "General")
 
-with Files("test/browser-static/**"):
+with Files("test/static/**"):
     BUG_COMPONENT = ("Firefox", "General")
 
-with Files("test/browser-sync/**"):
+with Files("test/sync/**"):
     BUG_COMPONENT = ("Firefox", "Sync")
 
 with Files("test/browser-tabdialogs/**"):
@@ -89,7 +92,7 @@ with Files("test/browser-tabdialogs/**"):
 with Files("test/browser-notificationbox/**"):
     BUG_COMPONENT = ("Firefox", "Tabbed Browser")
 
-with Files("test/browser-tabPrompts/**"):
+with Files("test/tabPrompts/**"):
     BUG_COMPONENT = ("Firefox", "Tabbed Browser")
 
 with Files("test/browser-tabcrashed/**"):
@@ -101,13 +104,13 @@ with Files("test/browser-touch/**"):
 with Files("test/browser-utilityOverlay/**"):
     BUG_COMPONENT = ("Firefox", "Tabbed Browser")
 
-with Files("test/browser-protectionsUI/**"):
+with Files("test/protectionsUI/**"):
     BUG_COMPONENT = ("Firefox", "Protections UI")
 
-with Files("test/browser-webextensions/**"):
+with Files("test/webextensions/**"):
     BUG_COMPONENT = ("WebExtensions", "Untriaged")
 
-with Files("test/browser-webrtc/**"):
+with Files("test/webrtc/**"):
     BUG_COMPONENT = ("Core", "WebRTC")
 
 with Files("test/browser-zoom/**"):

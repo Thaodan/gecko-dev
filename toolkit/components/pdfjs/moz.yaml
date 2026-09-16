@@ -53,7 +53,7 @@ updatebot:
     fuzzy-query: "'debug | 'opt !san !android !macos !ios"
     fuzzy-paths:
       - toolkit/components/pdfjs/test
-      - browser/base/content/test/browser-static
+      - browser/base/content/test/static
     tasks:
       - type: vendoring
         enabled: true

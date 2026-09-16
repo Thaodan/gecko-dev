@@ -11,7 +11,7 @@ add_task(async function () {
     .newFileURI(dir)
     .spec.replace(
       "/components/tabbrowser/test/browser/tabs/",
-      "/base/content/test/browser-general/"
+      "/base/content/test/general/"
     );
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, uriString);
   registerCleanupFunction(async function () {

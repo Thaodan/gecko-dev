@@ -121,7 +121,7 @@ def find_all_specifications(command_context):
     and returns them as a list."""
     specifications = []
     inclusions = [
-        "browser/base/content/test/browser-siteIdentity/",
+        "browser/base/content/test/siteIdentity/",
         "netwerk/test/marionette",
         "netwerk/test/unit",
         "security/manager/ssl",

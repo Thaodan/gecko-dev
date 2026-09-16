@@ -51,7 +51,8 @@ export default [
   "browser/app/",
   "browser/branding/**/firefox-branding.js",
   // Gzipped test file.
-  "browser/base/content/test/browser-general/gZipOfflineChild.html",
+  "browser/base/content/test/general/gZipOfflineChild.html",
+  "browser/base/content/test/urlbar/file_blank_but_not_blank.html",
   // Pre-processed template file
   "browser/components/backup/content/archive.template.html",
   // Test files that are really json not js, and don't need to be linted.

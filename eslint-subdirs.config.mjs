@@ -44,7 +44,7 @@ export default [
   ...(await convertConfigurationFile("accessible/tests/mochitest")),
   ...(await convertConfigurationFile("browser")),
   ...(await convertConfigurationFile(
-    "browser/base/content/test/browser-webextensions"
+    "browser/base/content/test/webextensions"
   )),
   ...(await convertConfigurationFile("browser/components")),
   ...(await convertConfigurationFile(
