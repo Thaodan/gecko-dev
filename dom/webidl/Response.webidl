@@ -37,8 +37,9 @@ interface Response {
 };
 Response includes Body;
 
-// This should be part of Body but we don't want to expose body to request yet.
-// See bug 1387483.
+// This should be part of the Body mixin, but Request's copy is gated on
+// dom.fetch.streaming_upload while this one ships unconditionally, so the two
+// are declared separately. See Request.webidl.
 partial interface Response {
   [GetterThrows]
   readonly attribute ReadableStream? body;

@@ -144,6 +144,10 @@ SafeRefPtr<Request> Request::Constructor(
   RefPtr<AbortSignal> signal;
   bool bodyFromInit = false;
   RefPtr<FetchStreamReader> temporaryStreamReader;
+  // The spec keeps the exact ReadableStream object passed as init["body"], so
+  // that request.body is reference-equal to it. Remember it here and attach it
+  // to the Request once that has been constructed.
+  RefPtr<ReadableStream> temporaryStreamBody;
 
   if (aInput.IsRequest()) {
     RefPtr<Request> inputReq = &aInput.GetAsRequest();
@@ -508,6 +512,7 @@ SafeRefPtr<Request> Request::Constructor(
 
         // Mark that this request has a ReadableStream body
         request->SetHasStreamBody(true);
+        temporaryStreamBody = &readableStream;
 
         // If this is a DOM generated ReadableStream, extract the inputStream
         if (nsIInputStream* underlyingSource =
@@ -572,11 +577,18 @@ SafeRefPtr<Request> Request::Constructor(
   auto domRequest =
       MakeSafeRefPtr<Request>(aGlobal, std::move(request), signal);
 
+  // Ahead of SetReadableStreamBody, which errors the stream outright when the
+  // signal has already aborted. Cancelling an errored stream skips its cancel
+  // algorithm, so the reader has to get there while the stream is readable.
   if (temporaryStreamReader) {
     domRequest->mFetchStreamReader = temporaryStreamReader.forget();
     if (signal) {
       domRequest->mFetchStreamReader->FollowSignal(signal);
     }
+  }
+
+  if (temporaryStreamBody) {
+    domRequest->SetReadableStreamBody(aCx, temporaryStreamBody);
   }
 
   if (aInput.IsRequest() && !bodyFromInit) {

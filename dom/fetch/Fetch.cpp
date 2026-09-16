@@ -1364,7 +1364,9 @@ void FetchBody<Derived>::SetBodyUsed(JSContext* aCx, ErrorResult& aRv) {
     if (mFetchStreamReader) {
       // Having FetchStreamReader means there's no nsIInputStream underlying it
       MOZ_ASSERT(!mReadableStreamBody->MaybeGetInputStreamIfUnread());
-      mFetchStreamReader->StartConsuming(aCx, mReadableStreamBody, aRv);
+      if (!mFetchStreamReader->IsConsuming()) {
+        mFetchStreamReader->StartConsuming(aCx, mReadableStreamBody, aRv);
+      }
       return;
     }
     // We should have nsIInputStream at this point as long as it's still

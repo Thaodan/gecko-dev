@@ -51,6 +51,12 @@ interface Request {
   [Pref="dom.fetch.streaming_upload"]
   readonly attribute RequestDuplex duplex;
 
+  // Spec-wise this belongs to the Body mixin, but Response's copy ships
+  // unconditionally while this one is pref-gated, so the two are declared
+  // separately. See Response.webidl.
+  [GetterThrows, Pref="dom.fetch.streaming_upload"]
+  readonly attribute ReadableStream? body;
+
   [Throws,
    NewObject] Request clone();
 
