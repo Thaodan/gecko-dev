@@ -20,7 +20,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AutofillDataTypes: "resource://gre/modules/shared/AutofillDataTypes.sys.mjs",
   CreditCard: "resource://gre/modules/CreditCard.sys.mjs",
-  AddressStorageMigrator: "resource://autofill/AddressStorageMigrator.sys.mjs",
+  AddressStorageMigrator: "resource://autofill/AutofillStorageMigrator.sys.mjs",
   JSONFile: "resource://gre/modules/JSONFile.sys.mjs",
   OSKeyStore: "resource://gre/modules/OSKeyStore.sys.mjs",
   Passports: "resource://autofill/PassportStorage.sys.mjs",
