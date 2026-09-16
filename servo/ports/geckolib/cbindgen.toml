@@ -415,6 +415,7 @@ include = [
   "WindowShadow",
   "FieldSizing",
   "BoxAlign",
+  "BoxDirection",
 ]
 item_types = [
   "enums",

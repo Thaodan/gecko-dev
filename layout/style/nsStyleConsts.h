@@ -15,12 +15,6 @@
 
 namespace mozilla {
 
-// box-direction
-enum class StyleBoxDirection : uint8_t {
-  Normal,
-  Reverse,
-};
-
 // box-orient
 enum class StyleBoxOrient : uint8_t {
   Horizontal,
