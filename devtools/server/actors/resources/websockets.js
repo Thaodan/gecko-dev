@@ -128,12 +128,7 @@ class WebSocketWatcher {
     this.onAvailable([resource]);
   }
 
-  frameReceived(webSocketSerialID, frame) {
-    const httpChannelId = this.connections.get(webSocketSerialID);
-    if (!httpChannelId) {
-      return;
-    }
-
+  frameReceived(_webSocketSerialID, httpChannelId, frame) {
     const payload = WebSocketWatcher.prepareFramePayload(
       this.targetActor,
       frame
@@ -157,13 +152,7 @@ class WebSocketWatcher {
     this.onAvailable([resource]);
   }
 
-  frameSent(webSocketSerialID, frame) {
-    const httpChannelId = this.connections.get(webSocketSerialID);
-
-    if (!httpChannelId) {
-      return;
-    }
-
+  frameSent(_webSocketSerialID, httpChannelId, frame) {
     const payload = WebSocketWatcher.prepareFramePayload(
       this.targetActor,
       frame

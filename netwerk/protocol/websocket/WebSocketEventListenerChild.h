@@ -39,9 +39,11 @@ class WebSocketEventListenerChild final : public PWebSocketEventListenerChild,
       const uint16_t& aCode, const nsString& aReason);
 
   mozilla::ipc::IPCResult RecvFrameReceived(
-      const uint32_t& aWebSocketSerialID, const WebSocketFrameData& aFrameData);
+      const uint32_t& aWebSocketSerialID, const uint64_t& aHttpChannelId,
+      const WebSocketFrameData& aFrameData);
 
   mozilla::ipc::IPCResult RecvFrameSent(const uint32_t& aWebSocketSerialID,
+                                        const uint64_t& aHttpChannelId,
                                         const WebSocketFrameData& aFrameData);
 
   void Close();
