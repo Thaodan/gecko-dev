@@ -18,10 +18,11 @@
 namespace mozilla {
 
 /**
- * Before creating a decoder or encoder, Alloc() must be called on the policy
- * to get a token object as a permission to create it. The token should stay
- * alive until Shutdown() is called on the codec. The destructor of the token
- * will restore the codec count so it is available for next calls of Alloc().
+ * Before calling PDMFactory::CreateDecoder(), Alloc() must be called on the
+ * policy to get a token object as a permission to create a decoder. The
+ * token should stay alive until Shutdown() is called on the decoder. The
+ * destructor of the token will restore the decoder count so it is available
+ * for next calls of Alloc().
  */
 class AllocPolicy {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AllocPolicy)
@@ -42,18 +43,15 @@ class AllocPolicy {
 };
 
 /**
- * This is a singleton which controls the number of decoders and encoders that
- * can be created concurrently. Decoders and encoders are counted separately.
- * Instance() will return the global AllocPolicy for the given codec kind and
- * TrackType.
+ * This is a singleton which controls the number of decoders that can be created
+ * concurrently.
+ * Instance() will return the TrackType global AllocPolicy.
  * Instance() will always return a non-null value.
  */
 class GlobalAllocPolicy {
  public:
-  enum class Kind { Decoder, Encoder };
-  // Get the singleton for the given codec kind and track type. Thread-safe.
-  static NotNull<AllocPolicy*> Instance(Kind aKind,
-                                        TrackInfo::TrackType aTrack);
+  // Get the singleton for the given track type. Thread-safe.
+  static NotNull<AllocPolicy*> Instance(TrackInfo::TrackType aTrack);
 
  private:
   // Protect access to Instance().
@@ -94,22 +92,15 @@ class AllocPolicyImpl : public AllocPolicy {
 };
 
 /**
- * This class allows to track and serialise a single decoder or encoder
- * allocation at a time. A token is only handed out once the corresponding
- * GlobalAllocPolicy has also granted one.
+ * This class allows to track and serialise a single decoder allocation at a
+ * time
  */
 class SingleAllocPolicy : public AllocPolicyImpl {
   using TrackType = TrackInfo::TrackType;
-  using Kind = GlobalAllocPolicy::Kind;
 
  public:
   SingleAllocPolicy(TrackType aTrack, TaskQueue* aOwnerThread)
-      : SingleAllocPolicy(Kind::Decoder, aTrack, aOwnerThread) {}
-  SingleAllocPolicy(Kind aKind, TrackType aTrack, TaskQueue* aOwnerThread)
-      : AllocPolicyImpl(1),
-        mKind(aKind),
-        mTrack(aTrack),
-        mOwnerThread(aOwnerThread) {}
+      : AllocPolicyImpl(1), mTrack(aTrack), mOwnerThread(aOwnerThread) {}
 
   RefPtr<Promise> Alloc() override;
 
@@ -121,7 +112,6 @@ class SingleAllocPolicy : public AllocPolicyImpl {
   class AutoDeallocCombinedToken;
   virtual ~SingleAllocPolicy();
 
-  const Kind mKind;
   const TrackType mTrack;
   RefPtr<TaskQueue> mOwnerThread;
   MozPromiseHolder<Promise> mPendingPromise;

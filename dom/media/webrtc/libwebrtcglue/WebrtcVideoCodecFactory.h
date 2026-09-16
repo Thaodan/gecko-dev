@@ -15,7 +15,6 @@
 #include "api/video_codecs/video_encoder_factory.h"
 
 namespace mozilla {
-class AllocPolicy;
 class EncoderConfig;
 class MediaExtendedMIMEType;
 struct SupportDecoderParams;
@@ -81,13 +80,6 @@ class WebrtcVideoDecoderFactory : public GmpPluginNotifier,
   static RefPtr<PlatformDecoderModule::SupportsDecoderPromise> SupportsCodec(
       const MediaExtendedMIMEType& aMime, const SupportDecoderParams& aParams);
 
-  // Strict variant of SupportsCodec(): actually creates the decoder and probes
-  // it for hardware acceleration rather than trusting the reported support.
-  // Used by MediaCapabilities. Must be called off the main thread.
-  static RefPtr<PlatformDecoderModule::SupportsDecoderPromise>
-  StrictSupportsCodec(const MediaExtendedMIMEType& aMime,
-                      const SupportDecoderParams& aParams);
-
  private:
   const std::string mPCHandle;
   const TrackingId mTrackingId;
@@ -138,16 +130,6 @@ class WebrtcVideoEncoderFactory : public GmpPluginNotifierInterface,
   // support. Used by MediaCapabilities. Must be called off the main thread.
   static RefPtr<PlatformEncoderModule::SupportsEncoderPromise> SupportsCodec(
       const EncoderConfig& aConfig);
-
-  // Strict variant of SupportsCodec(): actually creates the encoder on
-  // aTaskQueue, allocated through aPolicy (or the global encoder policy if
-  // null), and probes it for hardware acceleration rather than trusting the
-  // reported support. Used by MediaCapabilities. Must be called off the main
-  // thread.
-  static RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
-  StrictSupportsCodec(const EncoderConfig& aConfig,
-                      const RefPtr<TaskQueue>& aTaskQueue,
-                      AllocPolicy* aPolicy);
 
   void DisconnectAll() override { mInternalFactory->DisconnectAll(); }
 
