@@ -12,6 +12,7 @@
 #include "PlatformEncoderModule.h"
 
 namespace mozilla {
+class AllocPolicy;
 class EncoderConfig;
 class MediaExtendedMIMEType;
 class TaskQueue;
@@ -28,7 +29,8 @@ SupportsVideoEncodeForWebrtc(const EncoderConfig& aConfig);
 
 // Strict variants of the above: instead of trusting the reported codec
 // support, they actually create the codec and probe it for hardware
-// acceleration (the encoder is created on aTaskQueue). More expensive; used by
+// acceleration (the encoder is created on aTaskQueue and allocated through
+// aPolicy, or the global encoder policy if null). More expensive; used by
 // MediaCapabilities for its cache-disabled path.
 // Must be called off the main thread as a decoder may be created synchronously.
 [[nodiscard]] RefPtr<PlatformDecoderModule::SupportsDecoderPromise>
@@ -36,7 +38,8 @@ StrictSupportsVideoDecodeForWebrtc(const MediaExtendedMIMEType& aMime,
                                    const SupportDecoderParams& aParams);
 [[nodiscard]] RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
 StrictSupportsVideoEncodeForWebrtc(const EncoderConfig& aConfig,
-                                   const RefPtr<TaskQueue>& aTaskQueue);
+                                   const RefPtr<TaskQueue>& aTaskQueue,
+                                   AllocPolicy* aPolicy);
 
 // Interface for querying WebRTC codec support and hardware acceleration.
 //

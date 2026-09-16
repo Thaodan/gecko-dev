@@ -77,26 +77,34 @@ static int32_t MediaDecoderLimitDefault() { return -1; }
 
 StaticMutex GlobalAllocPolicy::sMutex;
 
-NotNull<AllocPolicy*> GlobalAllocPolicy::Instance(TrackType aTrack) {
-  StaticMutexAutoLock lock(sMutex);
-  if (aTrack == TrackType::kAudioTrack) {
-    static RefPtr<AllocPolicyImpl> sAudioPolicy = []() {
-      SchedulerGroup::Dispatch(NS_NewRunnableFunction(
-          "GlobalAllocPolicy::GlobalAllocPolicy:Audio", []() {
-            ClearOnShutdown(&sAudioPolicy, ShutdownPhase::XPCOMShutdownThreads);
-          }));
-      return new AllocPolicyImpl(MediaDecoderLimitDefault());
-    }();
-    return WrapNotNull(sAudioPolicy.get());
-  }
-  static RefPtr<AllocPolicyImpl> sVideoPolicy = []() {
-    SchedulerGroup::Dispatch(NS_NewRunnableFunction(
-        "GlobalAllocPolicy::GlobalAllocPolicy:Audio", []() {
-          ClearOnShutdown(&sVideoPolicy, ShutdownPhase::XPCOMShutdownThreads);
+// Lazily creates the process-wide policy for one (Kind, TrackType) pair and
+// clears it on shutdown. Must be called with GlobalAllocPolicy::sMutex held.
+template <GlobalAllocPolicy::Kind aKind, TrackType aTrack>
+static NotNull<AllocPolicy*> GlobalAllocPolicyInstance() {
+  static RefPtr<AllocPolicyImpl> sPolicy = []() {
+    SchedulerGroup::Dispatch(
+        NS_NewRunnableFunction("GlobalAllocPolicy::GlobalAllocPolicy", []() {
+          ClearOnShutdown(&sPolicy, ShutdownPhase::XPCOMShutdownThreads);
         }));
     return new AllocPolicyImpl(MediaDecoderLimitDefault());
   }();
-  return WrapNotNull(sVideoPolicy.get());
+  return WrapNotNull(sPolicy.get());
+}
+
+NotNull<AllocPolicy*> GlobalAllocPolicy::Instance(Kind aKind,
+                                                  TrackType aTrack) {
+  StaticMutexAutoLock lock(sMutex);
+  const bool audio = aTrack == TrackType::kAudioTrack;
+  if (aKind == Kind::Encoder) {
+    return audio ? GlobalAllocPolicyInstance<Kind::Encoder,
+                                             TrackType::kAudioTrack>()
+                 : GlobalAllocPolicyInstance<Kind::Encoder,
+                                             TrackType::kVideoTrack>();
+  }
+  return audio ? GlobalAllocPolicyInstance<Kind::Decoder,
+                                           TrackType::kAudioTrack>()
+               : GlobalAllocPolicyInstance<Kind::Decoder,
+                                           TrackType::kVideoTrack>();
 }
 
 class SingleAllocPolicy::AutoDeallocCombinedToken : public Token {
@@ -123,7 +131,7 @@ auto SingleAllocPolicy::Alloc() -> RefPtr<Promise> {
       [self](RefPtr<Token> aToken) {
         RefPtr<Token> localToken = std::move(aToken);
         RefPtr<Promise> p = self->mPendingPromise.Ensure(__func__);
-        GlobalAllocPolicy::Instance(self->mTrack)
+        GlobalAllocPolicy::Instance(self->mKind, self->mTrack)
             ->Alloc()
             ->Then(
                 self->mOwnerThread, __func__,
@@ -180,7 +188,9 @@ RefPtr<ShutdownPromise> AllocationWrapper::Shutdown() {
 AllocationWrapper::CreateDecoder(const CreateDecoderParams& aParams,
                                  AllocPolicy* aPolicy) {
   RefPtr<AllocateDecoderPromise> p =
-      (aPolicy ? aPolicy : GlobalAllocPolicy::Instance(aParams.mType))
+      (aPolicy ? aPolicy
+               : GlobalAllocPolicy::Instance(GlobalAllocPolicy::Kind::Decoder,
+                                             aParams.mType))
           ->Alloc()
           ->Then(
               GetCurrentSerialEventTarget(), __func__,
