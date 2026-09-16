@@ -161,27 +161,28 @@ class VideoFramePool<LIBAV_VER> {
   // once per decoded frame rather than per surface.
   void UpdateRendererUsageLocked() MOZ_REQUIRES(mSurfaceLock);
   RefPtr<VideoFrameSurface<LIBAV_VER>> GetTargetVideoFrameSurfaceLocked(
-      const MutexAutoLock& aProofOfLock, VASurfaceID aFFmpegSurfaceID,
-      bool aRecycleSurface);
+      VASurfaceID aFFmpegSurfaceID, bool aRecycleSurface)
+      MOZ_REQUIRES(mSurfaceLock);
   RefPtr<VideoFrameSurface<LIBAV_VER>> GetFFmpegVideoFrameSurfaceLocked(
-      const MutexAutoLock& aProofOfLock, VASurfaceID aFFMPEGSurfaceID);
-  RefPtr<VideoFrameSurface<LIBAV_VER>> GetFreeVideoFrameSurfaceLocked(
-      const MutexAutoLock& aProofOfLock);
-  bool ShouldCopySurfaceLocked()  MOZ_REQUIRES(mSurfaceLock);
+      VASurfaceID aFFMPEGSurfaceID) MOZ_REQUIRES(mSurfaceLock);
+  RefPtr<VideoFrameSurface<LIBAV_VER>> GetFreeVideoFrameSurfaceLocked()
+      MOZ_REQUIRES(mSurfaceLock);
+  bool ShouldCopySurfaceLocked() MOZ_REQUIRES(mSurfaceLock);
 
  private:
   // Protect mDMABufSurfaces pool access
-  Mutex mSurfaceLock MOZ_UNANNOTATED;
-  nsTArray<RefPtr<VideoFrameSurface<LIBAV_VER>>> mDMABufSurfaces;
+  Mutex mSurfaceLock;
+  nsTArray<RefPtr<VideoFrameSurface<LIBAV_VER>>> mDMABufSurfaces
+      MOZ_GUARDED_BY(mSurfaceLock);
   // Maximal number of dmabuf surfaces allocated by ffmpeg for decoded video
   // frames. Can be adjusted by extra_hw_frames at InitVAAPICodecContext().
   // Zero meand unlimited / dynamically allocated pool.
-  int mMaxFFMPEGPoolSize;
+  int mMaxFFMPEGPoolSize MOZ_GUARDED_BY(mSurfaceLock);
   // We may fail to create texture over DMABuf memory due to driver bugs so
   // check that before we export first DMABuf video frame.
-  Maybe<bool> mTextureCreationWorks;
+  Maybe<bool> mTextureCreationWorks MOZ_GUARDED_BY(mSurfaceLock);
   // We may fail to copy DMABuf memory on NVIDIA drivers.
-  bool mTextureCopyWorks = true;
+  bool mTextureCopyWorks MOZ_GUARDED_BY(mSurfaceLock) = true;
 };
 
 }  // namespace mozilla
