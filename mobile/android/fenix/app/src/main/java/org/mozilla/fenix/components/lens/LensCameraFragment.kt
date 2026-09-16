@@ -36,12 +36,11 @@ import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.content.FileProvider
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResult
+import androidx.fragment.compose.content
 import java.io.File
 import java.io.IOException
 import java.util.Collections
@@ -190,34 +189,30 @@ class LensCameraFragment(private val now: () -> Long = DefaultDateTimeProvider()
         outState.putBoolean(STATE_QR_RESULT_SENT, qrResultSent)
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        return ComposeView(requireContext()).apply {
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent {
-                val mode by cameraMode.collectAsState()
-                LensCameraScreen(
-                    state =
-                        LensCameraState(
-                            showError = showCameraError.value,
-                            mode = mode,
-                            previewAspectRatio = previewAspectRatio.value,
-                        ),
-                    onModeChange = ::handleModeChanged,
-                    onClose = { handleResult(null) },
-                    onShutter = { captureStillImage() },
-                    onGallery = { requestGalleryPick() },
-                    textureViewProvider = { ctx ->
-                        TextureView(ctx).also { view ->
-                            textureView = view
-                            if (isResumed) {
-                                startCamera()
-                            }
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
+        content {
+            val mode by cameraMode.collectAsState()
+            LensCameraScreen(
+                state =
+                    LensCameraState(
+                        showError = showCameraError.value,
+                        mode = mode,
+                        previewAspectRatio = previewAspectRatio.value,
+                    ),
+                onModeChange = ::handleModeChanged,
+                onClose = { handleResult(null) },
+                onShutter = { captureStillImage() },
+                onGallery = { requestGalleryPick() },
+                textureViewProvider = { ctx ->
+                    TextureView(ctx).also { view ->
+                        textureView = view
+                        if (isResumed) {
+                            startCamera()
                         }
-                    },
-                )
-            }
+                    }
+                },
+            )
         }
-    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         view.isFocusableInTouchMode = true
