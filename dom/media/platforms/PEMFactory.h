@@ -10,7 +10,6 @@
 
 namespace mozilla {
 
-class AllocPolicy;
 class StaticMutex;
 enum class RemoteMediaIn;
 
@@ -43,19 +42,6 @@ class PEMFactory final {
   RefPtr<PEMSupportsEncoderPromise> SupportsAsync(
       const EncoderConfig& aConfig) const;
 
-  // Strictest support query: actually creates the encoder that would handle
-  // aConfig on aTaskQueue, initializes it, and reports support reflecting
-  // whether that encoder is hardware-accelerated. Whereas SupportsAsync()
-  // trusts the reported codec support, this verifies it by briefly creating
-  // (and immediately destroying) a real encoder, so it is correspondingly more
-  // expensive. Resolves with an empty EncodeSupportSet if the encoder cannot
-  // be created or initialized. The encoder is allocated through aPolicy, or
-  // the per-track encoder GlobalAllocPolicy if aPolicy is null, and holds its
-  // token until its shutdown completes. Must be called off the main thread.
-  RefPtr<PEMSupportsEncoderPromise> StrictSupportsAsync(
-      const EncoderConfig& aConfig, const RefPtr<TaskQueue>& aTaskQueue,
-      AllocPolicy* aPolicy = nullptr);
-
   static media::MediaCodecsSupported Supported(bool aForceRefresh = false);
   static media::EncodeSupportSet SupportsCodec(
       CodecType aCodec, const media::MediaCodecsSupported& aSupported,
@@ -71,6 +57,7 @@ class PEMFactory final {
   RefPtr<PlatformEncoderModule::CreateEncoderPromise>
   CheckAndMaybeCreateEncoder(const EncoderConfig& aConfig, uint32_t aIndex,
                              const RefPtr<TaskQueue>& aTaskQueue);
+
   RefPtr<PlatformEncoderModule::CreateEncoderPromise> CreateEncoderWithPEM(
       PlatformEncoderModule* aPEM, const EncoderConfig& aConfig,
       const RefPtr<TaskQueue>& aTaskQueue);

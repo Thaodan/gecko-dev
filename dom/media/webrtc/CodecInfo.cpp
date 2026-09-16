@@ -31,22 +31,6 @@ SupportsVideoDecodeForWebrtc(const MediaExtendedMIMEType& aMime,
   return WebrtcVideoDecoderFactory::SupportsCodec(aMime, aParams);
 }
 
-// Strict variant: create the decoder and probe it for hardware acceleration.
-RefPtr<PlatformDecoderModule::SupportsDecoderPromise>
-StrictSupportsVideoDecodeForWebrtc(const MediaExtendedMIMEType& aMime,
-                                   const SupportDecoderParams& aParams) {
-  return WebrtcVideoDecoderFactory::StrictSupportsCodec(aMime, aParams);
-}
-
-// Strict variant: create the encoder and probe it for hardware acceleration.
-RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
-StrictSupportsVideoEncodeForWebrtc(const EncoderConfig& aConfig,
-                                   const RefPtr<TaskQueue>& aTaskQueue,
-                                   AllocPolicy* aPolicy) {
-  return WebrtcVideoEncoderFactory::StrictSupportsCodec(aConfig, aTaskQueue,
-                                                        aPolicy);
-}
-
 // Implementation class that samples codec preferences once at construction.
 class CodecInfoImpl final : public WebrtcCodecInfo {
  public:
@@ -155,20 +139,6 @@ SupportsVideoDecodeForWebrtc(const MediaExtendedMIMEType&,
                              const SupportDecoderParams&) {
   return PlatformDecoderModule::SupportsDecoderPromise::CreateAndResolve(
       media::DecodeSupportSet{}, __func__);
-}
-
-RefPtr<PlatformDecoderModule::SupportsDecoderPromise>
-StrictSupportsVideoDecodeForWebrtc(const MediaExtendedMIMEType&,
-                                   const SupportDecoderParams&) {
-  return PlatformDecoderModule::SupportsDecoderPromise::CreateAndResolve(
-      media::DecodeSupportSet{}, __func__);
-}
-
-RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
-StrictSupportsVideoEncodeForWebrtc(const EncoderConfig&,
-                                   const RefPtr<TaskQueue>&) {
-  return PlatformEncoderModule::SupportsEncoderPromise::CreateAndResolve(
-      media::EncodeSupportSet{}, __func__);
 }
 
 class CodecInfoStub final : public WebrtcCodecInfo {

@@ -16,7 +16,6 @@
 
 namespace mozilla {
 
-class AllocPolicy;
 class WebrtcVideoDecoder;
 class WebrtcVideoEncoder;
 
@@ -47,19 +46,6 @@ class MediaDataCodec {
    */
   static RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
   SupportsEncoderCodec(const EncoderConfig& aConfig);
-
-  /**
-   * Strict variant of SupportsEncoderCodec(): actually creates the encoder
-   * that would encode aConfig on aTaskQueue and reports support reflecting
-   * whether it is hardware-accelerated, rather than trusting the reported
-   * codec support. Uses PEMFactory::StrictSupportsAsync(), allocating the
-   * probe encoder through aPolicy (or the global encoder policy if null).
-   * Used by MediaCapabilities.
-   */
-  static RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
-  StrictSupportsEncoderCodec(const EncoderConfig& aConfig,
-                             const RefPtr<TaskQueue>& aTaskQueue,
-                             AllocPolicy* aPolicy);
 
   /**
    * Create encoder object for codec format |aFormat|. Return |nullptr| when
