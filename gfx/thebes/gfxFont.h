@@ -2403,21 +2403,21 @@ class gfxFont {
   // Returns TRUE but leaves mIsValid=FALSE if the font seems to be broken.
   // Returns FALSE if the font does not appear to be an sfnt at all,
   // and should be handled (if possible) using other APIs.
-  bool InitMetricsFromSfntTables(Metrics& aMetrics);
+  bool InitMetricsFromSfntTables();
 
 #if MOZ_FONTATIONS
   // Initialize metrics using the font entry's Skrifa font reference.
   // Returns false if unsuccessful (e.g. the entry has no Skrifa font).
-  bool InitMetricsFromSkrifa(Metrics& aMetrics);
+  bool InitMetricsFromSkrifa();
 #endif
 
   // Helper to calculate various derived metrics from the results of
   // InitMetricsFromSfntTables or equivalent platform code
-  void CalculateDerivedMetrics(Metrics& aMetrics);
+  void CalculateDerivedMetrics();
 
   // some fonts have bad metrics, this method sanitize them.
   // if this font has bad underline offset, aIsBadUnderlineFont should be true.
-  void SanitizeMetrics(Metrics* aMetrics, bool aIsBadUnderlineFont);
+  void SanitizeMetrics(bool aIsBadUnderlineFont);
 
   bool RenderSVGGlyph(gfxContext* aContext,
                       mozilla::layout::TextDrawTarget* aTextDrawer,
