@@ -228,15 +228,6 @@ enum class StyleWhiteSpaceCollapse : uint8_t {
   BreakSpaces,
 };
 
-// See nsStyleUIReset
-enum class StyleImeMode : uint8_t {
-  Auto,
-  Normal,
-  Active,
-  Disabled,
-  Inactive,
-};
-
 // See nsStyleSVG
 
 // -moz-window-shadow

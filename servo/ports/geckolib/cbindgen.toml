@@ -409,6 +409,7 @@ include = [
   "MaskComposite",
   "TableLayout",
   "UnicodeBidi",
+  "ImeMode",
 ]
 item_types = [
   "enums",
