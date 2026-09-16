@@ -13,12 +13,12 @@ const { DeferredTask } = ChromeUtils.importESModule(
 );
 
 const toolsNameMap = {
+  viewOpenTabsSidebar: "opentabs",
+  viewBookmarksSidebar: "bookmarks",
   viewGenaiChatSidebar: "aichat",
   viewGenaiPageAssistSidebar: "aipageassist",
-  viewTabsSidebar: "syncedtabs",
   viewHistorySidebar: "history",
-  viewBookmarksSidebar: "bookmarks",
-  viewOpenTabsSidebar: "opentabs",
+  viewTabsSidebar: "syncedtabs",
   viewCPMSidebar: "passwords",
   viewResourceMonitorSidebar: "resourcemonitor",
 };
