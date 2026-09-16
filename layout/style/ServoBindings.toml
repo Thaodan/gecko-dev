@@ -712,6 +712,7 @@ cbindgen-types = [
     { gecko = "StyleMaskMode", servo = "crate::values::computed::MaskMode" },
     { gecko = "StyleMaskComposite", servo = "crate::values::computed::MaskComposite" },
     { gecko = "StyleTableLayout", servo = "crate::values::computed::TableLayout" },
+    { gecko = "StyleUnicodeBidi", servo = "crate::values::computed::UnicodeBidi" },
 ]
 
 mapped-generic-types = [

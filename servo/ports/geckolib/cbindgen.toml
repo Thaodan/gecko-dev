@@ -408,6 +408,7 @@ include = [
   "MaskMode",
   "MaskComposite",
   "TableLayout",
+  "UnicodeBidi",
 ]
 item_types = [
   "enums",

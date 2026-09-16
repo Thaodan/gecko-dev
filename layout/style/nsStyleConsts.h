@@ -228,16 +228,6 @@ enum class StyleWhiteSpaceCollapse : uint8_t {
   BreakSpaces,
 };
 
-// See nsStyleText
-enum class StyleUnicodeBidi : uint8_t {
-  Normal,
-  Embed,
-  Isolate,
-  BidiOverride,
-  IsolateOverride,
-  Plaintext
-};
-
 // See nsStyleUIReset
 enum class StyleImeMode : uint8_t {
   Auto,
