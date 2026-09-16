@@ -679,6 +679,7 @@ cbindgen-types = [
     { gecko = "StyleImageLayerAttachment", servo = "crate::values::computed::ImageLayerAttachment" },
     { gecko = "StyleFloatEdge", servo = "crate::values::computed::FloatEdge" },
     { gecko = "StyleTopLayer", servo = "crate::values::computed::TopLayer" },
+    { gecko = "StyleScrollBehavior", servo = "crate::values::computed::ScrollBehavior" },
 ]
 
 mapped-generic-types = [

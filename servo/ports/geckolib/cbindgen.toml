@@ -375,6 +375,7 @@ include = [
   "ImageLayerAttachment",
   "FloatEdge",
   "TopLayer",
+  "ScrollBehavior",
 ]
 item_types = [
   "enums",

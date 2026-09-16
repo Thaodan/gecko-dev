@@ -481,12 +481,6 @@ enum class StyleMaskComposite : uint8_t {
   Exclude
 };
 
-// scroll-behavior
-enum class StyleScrollBehavior : uint8_t {
-  Auto,
-  Smooth,
-};
-
 }  // namespace mozilla
 
 #endif /* nsStyleConsts_h_ */
