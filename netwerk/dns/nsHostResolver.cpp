@@ -63,10 +63,6 @@
 using namespace mozilla;
 using namespace mozilla::net;
 
-// None of our implementations expose a TTL for negative responses, so we use a
-// constant always.
-static const unsigned int NEGATIVE_RECORD_LIFETIME = 60;
-
 //----------------------------------------------------------------------------
 
 // Use a persistent thread pool in order to avoid spinning up new threads all
@@ -1317,9 +1313,13 @@ void nsHostResolver::PrepareRecordExpirationAddrRecord(
   MOZ_ASSERT(((bool)rec->addr_info) != rec->negative);
   mQueue.mLock.AssertCurrentThreadOwns();
   if (!rec->addr_info) {
-    rec->SetExpiration(TimeStamp::NowLoRes(), NEGATIVE_RECORD_LIFETIME, 0);
+    // None of our implementations expose a TTL for negative responses, so we
+    // use a configurable constant lifetime.
+    unsigned int negativeLifetime =
+        StaticPrefs::network_dnsNegativeCacheExpiration();
+    rec->SetExpiration(TimeStamp::NowLoRes(), negativeLifetime, 0);
     LOG(("Caching host [%s] negative record for %u seconds.\n", rec->host.get(),
-         NEGATIVE_RECORD_LIFETIME));
+         negativeLifetime));
     return;
   }
 
