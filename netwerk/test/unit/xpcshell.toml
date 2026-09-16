@@ -763,6 +763,13 @@ run-if = [
 
 ["test_extract_charset_from_content_type.js"]
 
+["test_fetch_streaming_upload.js"]
+run-sequentially = ["true"] # http3server + node servers
+prefs = ["dom.fetch.streaming_upload=true"] # nightly-only by default
+skip-if = [
+  "os == 'win' && msix",
+]
+
 ["test_file_protocol.js"]
 
 ["test_file_root.js"]
