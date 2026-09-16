@@ -146,7 +146,7 @@ support-files = [
 
 ["browser_policy_search_engine.js"]
 support-files = [
-  "!/browser/base/content/test/contextMenu/subtst_contextmenu_add_search_engine.html",
+  "!/browser/base/content/test/browser-contextMenu/subtst_contextmenu_add_search_engine.html",
 ]
 
 ["browser_policy_searchbar.js"]
