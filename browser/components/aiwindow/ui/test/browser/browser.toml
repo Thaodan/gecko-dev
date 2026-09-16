@@ -361,6 +361,8 @@ skip-if = [
   "os == 'win' && debug && standalone", # Bug 2028654
 ]
 
+["browser_smartwindow_resume_card.js"]
+
 ["browser_smartwindow_retry_context.js"]
 
 ["browser_smartwindow_run_search.js"]
