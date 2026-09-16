@@ -134,14 +134,6 @@ enum class StyleWindowDragging : uint8_t {
   NoDrag,
 };
 
-// orient
-enum class StyleOrient : uint8_t {
-  Inline,
-  Block,
-  Horizontal,
-  Vertical,
-};
-
 // See nsStyleImageLayers
 enum class StyleImageLayerRepeat : uint8_t {
   NoRepeat = 0x00,

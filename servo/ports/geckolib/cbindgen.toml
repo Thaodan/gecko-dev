@@ -378,6 +378,7 @@ include = [
   "ScrollBehavior",
   "Isolation",
   "BackfaceVisibility",
+  "Orient",
 ]
 item_types = [
   "enums",
