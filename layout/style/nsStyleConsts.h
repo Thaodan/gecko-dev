@@ -309,13 +309,6 @@ enum class StyleTextSizeAdjust : uint8_t {
   Auto,
 };
 
-// See nsStyleVisibility
-enum class StyleTextOrientation : uint8_t {
-  Mixed,
-  Upright,
-  Sideways,
-};
-
 // See nsStyleText
 enum class StyleTextCombineUpright : uint8_t {
   None,

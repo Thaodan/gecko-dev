@@ -384,6 +384,7 @@ include = [
   "MathShift",
   "Visibility",
   "BoxCollapse",
+  "TextOrientation",
 ]
 item_types = [
   "enums",
