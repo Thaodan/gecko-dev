@@ -410,13 +410,13 @@ class JS_PUBLIC_API ReadOnlyCompileOptions : public TransitiveCompileOptions {
   bool isRunOnce = false;
   bool noScriptRval = false;
 
+  ReadOnlyCompileOptions(const ReadOnlyCompileOptions&) = delete;
+  ReadOnlyCompileOptions& operator=(const ReadOnlyCompileOptions&) = delete;
+
  protected:
   ReadOnlyCompileOptions() = default;
 
   void copyPODNonTransitiveOptions(const ReadOnlyCompileOptions& rhs);
-
-  ReadOnlyCompileOptions(const ReadOnlyCompileOptions&) = delete;
-  ReadOnlyCompileOptions& operator=(const ReadOnlyCompileOptions&) = delete;
 
  public:
 #if defined(DEBUG) || defined(JS_JITSPEW)
@@ -460,6 +460,9 @@ class JS_PUBLIC_API OwningCompileOptions final : public ReadOnlyCompileOptions {
 
   ~OwningCompileOptions();
 
+  OwningCompileOptions(const OwningCompileOptions&) = delete;
+  OwningCompileOptions& operator=(const OwningCompileOptions&) = delete;
+
  private:
   template <typename ContextT>
   bool copyImpl(ContextT* cx, const ReadOnlyCompileOptions& rhs);
@@ -494,9 +497,6 @@ class JS_PUBLIC_API OwningCompileOptions final : public ReadOnlyCompileOptions {
 
  private:
   void release();
-
-  OwningCompileOptions(const OwningCompileOptions&) = delete;
-  OwningCompileOptions& operator=(const OwningCompileOptions&) = delete;
 };
 
 /**
@@ -758,11 +758,11 @@ class JS_PUBLIC_API ReadOnlyDecodeOptions {
   uint32_t introductionLineno = 0;
   uint32_t introductionOffset = 0;
 
- protected:
-  ReadOnlyDecodeOptions() = default;
-
   ReadOnlyDecodeOptions(const ReadOnlyDecodeOptions&) = delete;
   ReadOnlyDecodeOptions& operator=(const ReadOnlyDecodeOptions&) = delete;
+
+ protected:
+  ReadOnlyDecodeOptions() = default;
 
   template <typename T>
   void copyPODOptionsFrom(const T& options) {
@@ -811,6 +811,9 @@ class JS_PUBLIC_API OwningDecodeOptions final : public ReadOnlyDecodeOptions {
 
   ~OwningDecodeOptions();
 
+  OwningDecodeOptions(const OwningDecodeOptions&) = delete;
+  OwningDecodeOptions& operator=(const OwningDecodeOptions&) = delete;
+
   bool copy(JS::FrontendContext* maybeFc, const ReadOnlyDecodeOptions& rhs);
   void infallibleCopy(const ReadOnlyDecodeOptions& rhs);
 
@@ -818,9 +821,6 @@ class JS_PUBLIC_API OwningDecodeOptions final : public ReadOnlyDecodeOptions {
 
  private:
   void release();
-
-  OwningDecodeOptions(const OwningDecodeOptions&) = delete;
-  OwningDecodeOptions& operator=(const OwningDecodeOptions&) = delete;
 };
 
 }  // namespace JS
