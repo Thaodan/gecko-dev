@@ -519,49 +519,38 @@ static uint32_t Vp8EncoderThreads(const uint32_t aPixels,
   return 1;
 #endif
 }
-static bool IsWebRTCSWEncodeSmooth(const VideoConfiguration& aConfig) {
-  const auto shouldForceSmooth =
-      StaticPrefs::media_mediacapabilities_webrtc_encode_smooth_override();
-  if (shouldForceSmooth == 1) {
-    return true;
-  } else if (shouldForceSmooth == 2) {
-    return false;
-  }
-
-  const NS_ConvertUTF16toUTF8 mimeStr(aConfig.mContentType);
-  const int32_t slash = mimeStr.FindChar('/');
-  if (slash < 0) {
-    return false;
-  }
-  const auto afterSlash = Substring(mimeStr, slash + 1);
-  const int32_t semi = afterSlash.FindChar(';');
-  nsAutoCString codecStr(semi >= 0 ? Substring(afterSlash, 0, semi)
-                                   : afterSlash);
-  codecStr.Trim(" \t");
-
+static bool IsSWEncodeSmooth(const CodecType aCodec,
+                             const VideoConfiguration& aConfig) {
   // ratio = clip_duration / wall_time at 60fps: >1.0 means faster than
   // real-time. threads = libwebrtc thread count used during measurement. For
   // non-standard resolutions: rounds up to nearest standard bucket
   // Approximates scaling linearly by framerate and thread count.
   static const struct {
-    const char* codec;
+    CodecType codec;
     uint32_t w, h;
     float ratio;  // realtime ratio at 60fps; >1.0 = faster than real-time
     uint32_t threads;
   } kMeasured[] = {
-      {"h264", 426, 240, 2.06f, 1},   {"h264", 854, 480, 1.71f, 1},
-      {"h264", 1280, 720, 1.51f, 1},  {"h264", 1920, 1080, 1.37f, 1},
-      {"h264", 3840, 2160, 0.47f, 1},  // not smooth at 60fps
-      {"av1", 426, 240, 2.10f, 2},    {"av1", 854, 480, 1.43f, 4},
-      {"av1", 1280, 720, 0.98f, 4},   // not smooth at 60fps
-      {"av1", 1920, 1080, 0.73f, 4},  // not smooth at 60fps
-      {"av1", 3840, 2160, 0.26f, 4},  // not smooth at 60fps
-      {"vp9", 426, 240, 1.94f, 1},    {"vp9", 854, 480, 1.85f, 2},
-      {"vp9", 1280, 720, 1.64f, 4},   {"vp9", 1920, 1080, 1.20f, 4},
-      {"vp9", 3840, 2160, 0.50f, 4},  // not smooth at 60fps
-      {"vp8", 426, 240, 2.01f, 1},    {"vp8", 854, 480, 1.80f, 3},
-      {"vp8", 1280, 720, 1.54f, 3},   {"vp8", 1920, 1080, 1.31f, 3},
-      {"vp8", 3840, 2160, 0.55f, 3},  // not smooth at 60fps
+      {CodecType::H264, 426, 240, 2.06f, 1},
+      {CodecType::H264, 854, 480, 1.71f, 1},
+      {CodecType::H264, 1280, 720, 1.51f, 1},
+      {CodecType::H264, 1920, 1080, 1.37f, 1},
+      {CodecType::H264, 3840, 2160, 0.47f, 1},  // not smooth at 60fps
+      {CodecType::AV1, 426, 240, 2.10f, 2},
+      {CodecType::AV1, 854, 480, 1.43f, 4},
+      {CodecType::AV1, 1280, 720, 0.98f, 4},   // not smooth at 60fps
+      {CodecType::AV1, 1920, 1080, 0.73f, 4},  // not smooth at 60fps
+      {CodecType::AV1, 3840, 2160, 0.26f, 4},  // not smooth at 60fps
+      {CodecType::VP9, 426, 240, 1.94f, 1},
+      {CodecType::VP9, 854, 480, 1.85f, 2},
+      {CodecType::VP9, 1280, 720, 1.64f, 4},
+      {CodecType::VP9, 1920, 1080, 1.20f, 4},
+      {CodecType::VP9, 3840, 2160, 0.50f, 4},  // not smooth at 60fps
+      {CodecType::VP8, 426, 240, 2.01f, 1},
+      {CodecType::VP8, 854, 480, 1.80f, 3},
+      {CodecType::VP8, 1280, 720, 1.54f, 3},
+      {CodecType::VP8, 1920, 1080, 1.31f, 3},
+      {CodecType::VP8, 3840, 2160, 0.55f, 3},  // not smooth at 60fps
   };
 
   const CheckedInt<uint32_t> pixelCount =
@@ -576,13 +565,14 @@ static bool IsWebRTCSWEncodeSmooth(const VideoConfiguration& aConfig) {
   const uint32_t cores =
       std::max(1u, static_cast<uint32_t>(GetNumberOfProcessors()));
 
-  // Actual thread count for this machine and codec.
-  uint32_t actualThreads = 1;  // h264 (openh264) is always single-threaded
-  if (codecStr.EqualsIgnoreCase("av1")) {
+  // Single-threaded default. OpenH264 media.gmp.encoder.multithreaded exists,
+  // isn't hooked up to WebRTC and is buggy, at least for decode. Bug 2065570.
+  uint32_t actualThreads = 1;
+  if (aCodec == CodecType::AV1) {
     actualThreads = Av1EncoderThreads(pixels, cores);
-  } else if (codecStr.EqualsIgnoreCase("vp9")) {
+  } else if (aCodec == CodecType::VP9) {
     actualThreads = Vp9EncoderThreads(pixels, cores);
-  } else if (codecStr.EqualsIgnoreCase("vp8")) {
+  } else if (aCodec == CodecType::VP8) {
     actualThreads = Vp8EncoderThreads(pixels, cores);
   }
 
@@ -591,7 +581,7 @@ static bool IsWebRTCSWEncodeSmooth(const VideoConfiguration& aConfig) {
   // (rounds up, conservative).
   int32_t bucketIdx = -1;
   for (int32_t i = 0; i < static_cast<int32_t>(std::size(kMeasured)); i++) {
-    if (!codecStr.EqualsIgnoreCase(kMeasured[i].codec)) {
+    if (aCodec != kMeasured[i].codec) {
       continue;
     } else if (kMeasured[i].w * kMeasured[i].h >= pixels) {
       bucketIdx = i;
@@ -607,6 +597,18 @@ static bool IsWebRTCSWEncodeSmooth(const VideoConfiguration& aConfig) {
       bucket.ratio * (60.0f / static_cast<float>(rfps)) *
       (static_cast<float>(actualThreads) / static_cast<float>(bucket.threads));
   return scaledRatio >= 1.0f;
+}
+
+static bool IsWebRTCSWEncodeSmooth(const CodecType aCodec,
+                                   const VideoConfiguration& aConfig) {
+  const auto shouldForceSmooth =
+      StaticPrefs::media_mediacapabilities_webrtc_encode_smooth_override();
+  if (shouldForceSmooth == 1) {
+    return true;
+  } else if (shouldForceSmooth == 2) {
+    return false;
+  }
+  return IsSWEncodeSmooth(aCodec, aConfig);
 }
 
 // Gets the global's event target and creates a new DOMMozPromiseRequestHolder
@@ -1508,11 +1510,12 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
           return PromiseType::CreateAndResolve(
               std::move(unsupported), "MediaCapabilities::EncodingInfo");
         }
+        const CodecType codec = WebrtcMimeToCodecType(*videoMime);
         auto encoderConfig = BuildEncoderConfig(*videoMime, v);
         return SupportsVideoEncodeForWebrtc(encoderConfig)
             ->Then(
                 GetCurrentSerialEventTarget(), __func__,
-                [aConfiguration,
+                [aConfiguration, codec,
                  info](media::EncodeSupportSet aVideoSupport) mutable
                     -> RefPtr<PromiseType> {
                   if (aVideoSupport.isEmpty()) {
@@ -1542,7 +1545,8 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
                   // benchmarking code similar to what we had in the tree
                   // earlier for decoding which was removed due to maintenance
                   // concerns.
-                  info.mSmooth &= hwSupported || IsWebRTCSWEncodeSmooth(v);
+                  info.mSmooth &=
+                      hwSupported || IsWebRTCSWEncodeSmooth(codec, v);
 
                   // Step 10: If the user agent is able to encode the media
                   // represented by configuration in a power efficient manner,
