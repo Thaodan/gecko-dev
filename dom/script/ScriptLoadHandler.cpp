@@ -252,6 +252,7 @@ bool ScriptLoadHandler::TrySetDecoder(nsIChannel* aChannel,
 
   // JavaScript modules are always UTF-8.
   if (mRequest->IsModuleRequest()) {
+    MOZ_ASSERT(!mRequest->getLoadedScript()->mClassicScriptEncoding);
     mDecoder = MakeUnique<ScriptDecoder>(UTF_8_ENCODING,
                                          ScriptDecoder::BOMHandling::Remove);
     return true;
@@ -270,6 +271,8 @@ bool ScriptLoadHandler::TrySetDecoder(nsIChannel* aChannel,
   const Encoding* encoding;
   std::tie(encoding, std::ignore) = Encoding::ForBOM(Span(aData, aDataLength));
   if (encoding) {
+    mRequest->getLoadedScript()->mClassicScriptEncoding =
+        (const Encoding*)encoding;
     mDecoder =
         MakeUnique<ScriptDecoder>(encoding, ScriptDecoder::BOMHandling::Remove);
     return true;
@@ -279,12 +282,15 @@ bool ScriptLoadHandler::TrySetDecoder(nsIChannel* aChannel,
   nsAutoCString label;
   if (NS_SUCCEEDED(aChannel->GetContentCharset(label)) &&
       (encoding = Encoding::ForLabel(label))) {
+    mRequest->getLoadedScript()->mClassicScriptEncoding =
+        (const Encoding*)encoding;
     mDecoder =
         MakeUnique<ScriptDecoder>(encoding, ScriptDecoder::BOMHandling::Ignore);
     return true;
   }
 
   encoding = mScriptLoader->GetClassicScriptFallbackEncoding(mRequest);
+  mRequest->getLoadedScript()->mClassicScriptEncoding = encoding;
   mDecoder =
       MakeUnique<ScriptDecoder>(encoding, ScriptDecoder::BOMHandling::Ignore);
   return true;
@@ -548,6 +554,32 @@ nsresult ScriptLoadHandler::DoOnStreamComplete(nsIChannel* aChannel,
 
       uint32_t alignedSRILength = JS::AlignTranscodingBytecodeOffset(sriLength);
       mRequest->SetAlignedSRILength(alignedSRILength);
+
+      const char* encodingString =
+          reinterpret_cast<const char*>(buf.begin() + alignedSRILength);
+      size_t encodingStringLen = strlen(encodingString);
+      if (mRequest->IsModuleRequest()) {
+        if (encodingStringLen != 0) {
+          return aChannel->Cancel(mScriptLoader->RestartLoad(mRequest));
+        }
+      } else {
+        const Encoding* cacheEncoding = nullptr;
+        if (encodingStringLen != 0) {
+          cacheEncoding =
+              Encoding::ForLabel(Span(encodingString, encodingStringLen));
+          if (!cacheEncoding) {
+            return aChannel->Cancel(mScriptLoader->RestartLoad(mRequest));
+          }
+        }
+
+        const Encoding* actualEncoding =
+            mScriptLoader->GetClassicScriptFallbackEncoding(mRequest);
+        if (cacheEncoding != actualEncoding) {
+          return aChannel->Cancel(mScriptLoader->RestartLoad(mRequest));
+        }
+
+        mRequest->getLoadedScript()->mClassicScriptEncoding = cacheEncoding;
+      }
 
       Vector<uint8_t> compressed;
       // mRequest has the compressed data, but will be filled with the
