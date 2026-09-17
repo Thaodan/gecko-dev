@@ -641,8 +641,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   // Circumvent https://github.com/llvm/llvm-project/issues/36032
   static constexpr JitDiscardOptions DefaultJitDiscardOptions() { return {}; }
 
-  void maybeDiscardJitCode(JS::GCContext* gcx);
-
   // Discard JIT code regardless of isPreservingCode().
   void forceDiscardJitCode(
       JS::GCContext* gcx,
