@@ -407,7 +407,9 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
    * Defer freeing any allocated blocks until after the next minor GC.
    */
   discardedStubSpace.freeAllAfterMinorGC(this);
-  jitZone()->purgeIonCacheIRStubInfo();
+  for (RealmsInZoneIter r(this); !r.done(); r.next()) {
+    r->jitRealm().purgeIonCacheIRStubInfo();
+  }
 
   // Generate a profile marker
   if (gcx->runtime()->geckoProfiler().enabled()) {

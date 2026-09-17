@@ -5,12 +5,17 @@
 #ifndef jit_JitRealm_h
 #define jit_JitRealm_h
 
+#include "mozilla/Assertions.h"
 #include "mozilla/MemoryReporting.h"
 
 #include <stddef.h>
+#include <utility>
 
 #include "jit/BaselineCompileQueue.h"
+#include "jit/CacheIRStubKey.h"
 #include "jit/ICStubSpace.h"
+#include "js/AllocPolicy.h"
+#include "js/HashTable.h"
 
 class JSScript;
 class JSTracer;
@@ -26,10 +31,28 @@ class JitRealm {
   // Allocated space for CacheIR stubs.
   ICStubSpace stubSpace_;
 
+  // Set of CacheIRStubInfo instances used by Ion stubs in this realm.
+  using IonCacheIRStubInfoSet =
+      HashSet<CacheIRStubKey, CacheIRStubKey, SystemAllocPolicy>;
+  IonCacheIRStubInfoSet ionCacheIRStubInfoSet_;
+
  public:
   BaselineCompileQueue& baselineCompileQueue() { return baselineCompileQueue_; }
 
   ICStubSpace* stubSpace() { return &stubSpace_; }
+
+  CacheIRStubInfo* getIonCacheIRStubInfo(const CacheIRStubKey::Lookup& key) {
+    IonCacheIRStubInfoSet::Ptr p = ionCacheIRStubInfoSet_.lookup(key);
+    return p ? p->stubInfo.get() : nullptr;
+  }
+  [[nodiscard]] bool putIonCacheIRStubInfo(const CacheIRStubKey::Lookup& lookup,
+                                           CacheIRStubKey& key) {
+    IonCacheIRStubInfoSet::AddPtr p =
+        ionCacheIRStubInfoSet_.lookupForAdd(lookup);
+    MOZ_ASSERT(!p);
+    return ionCacheIRStubInfoSet_.add(p, std::move(key));
+  }
+  void purgeIonCacheIRStubInfo() { ionCacheIRStubInfoSet_.clearAndCompact(); }
 
   void removeFromCompileQueue(JSScript* script) {
     baselineCompileQueue_.remove(script);
@@ -40,6 +63,8 @@ class JitRealm {
   void addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
                               size_t* cacheIRStubs) const {
     *cacheIRStubs += stubSpace_.sizeOfExcludingThis(mallocSizeOf);
+    *cacheIRStubs +=
+        ionCacheIRStubInfoSet_.shallowSizeOfExcludingThis(mallocSizeOf);
   }
 
   static constexpr size_t offsetOfBaselineCompileQueue() {

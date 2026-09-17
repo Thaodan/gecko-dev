@@ -2018,7 +2018,7 @@ void IonIC::attachCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
     return;
   }
 
-  JitZone* jitZone = cx->zone()->jitZone();
+  JitRealm& jitRealm = script()->realm()->jitRealm();
 
   constexpr uint32_t stubDataOffset = sizeof(IonICStub);
   static_assert(stubDataOffset % sizeof(uint64_t) == 0,
@@ -2027,7 +2027,7 @@ void IonIC::attachCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
   // Try to reuse a previously-allocated CacheIRStubInfo.
   CacheIRStubKey::Lookup lookup(kind, ICStubEngine::IonIC, writer.codeStart(),
                                 writer.codeLength());
-  CacheIRStubInfo* stubInfo = jitZone->getIonCacheIRStubInfo(lookup);
+  CacheIRStubInfo* stubInfo = jitRealm.getIonCacheIRStubInfo(lookup);
   if (!stubInfo) {
     // Allocate the shared CacheIRStubInfo. Note that the
     // putIonCacheIRStubInfo call below will transfer ownership to
@@ -2043,7 +2043,7 @@ void IonIC::attachCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
     }
 
     CacheIRStubKey key(stubInfo);
-    if (!jitZone->putIonCacheIRStubInfo(lookup, key)) {
+    if (!jitRealm.putIonCacheIRStubInfo(lookup, key)) {
       return;
     }
   }
@@ -2070,7 +2070,7 @@ void IonIC::attachCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
   // because the stub code is rooted separately when we make a VM call, and
   // stub code should never access the IonICStub after making a VM call. The
   // IonICStub::poison method poisons the stub to catch bugs in this area.
-  ICStubSpace* stubSpace = script()->realm()->jitRealm().stubSpace();
+  ICStubSpace* stubSpace = jitRealm.stubSpace();
   void* newStubMem = stubSpace->alloc(bytesNeeded);
   if (!newStubMem) {
     return;

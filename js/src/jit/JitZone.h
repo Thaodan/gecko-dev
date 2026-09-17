@@ -81,12 +81,8 @@ class JitZone {
       mozilla::EnumeratedArray<StubKind, Code, size_t(StubKind::Count)>;
 
  private:
-  // Set of CacheIRStubInfo instances used by Ion stubs in this Zone.
-  using IonCacheIRStubInfoSet =
-      HashSet<CacheIRStubKey, CacheIRStubKey, SystemAllocPolicy>;
-  IonCacheIRStubInfoSet ionCacheIRStubInfoSet_;
-
-  // Map CacheIRStubKey to shared JitCode objects.
+  // Map CacheIRStubKey to shared JitCode objects. We store this in JitZone
+  // instead of JitRealm because we want to share stub code across realms.
   using BaselineCacheIRStubCodeMap =
       GCHashMap<CacheIRStubKey, WeakHeapPtr<JitCode*>, CacheIRStubKey,
                 SystemAllocPolicy, BaselineCacheIRStubCodeMapGCPolicy>;
@@ -181,19 +177,6 @@ class JitZone {
     MOZ_ASSERT(!p);
     return baselineCacheIRStubCodes_.add(p, std::move(key), stubCode);
   }
-
-  CacheIRStubInfo* getIonCacheIRStubInfo(const CacheIRStubKey::Lookup& key) {
-    IonCacheIRStubInfoSet::Ptr p = ionCacheIRStubInfoSet_.lookup(key);
-    return p ? p->stubInfo.get() : nullptr;
-  }
-  [[nodiscard]] bool putIonCacheIRStubInfo(const CacheIRStubKey::Lookup& lookup,
-                                           CacheIRStubKey& key) {
-    IonCacheIRStubInfoSet::AddPtr p =
-        ionCacheIRStubInfoSet_.lookupForAdd(lookup);
-    MOZ_ASSERT(!p);
-    return ionCacheIRStubInfoSet_.add(p, std::move(key));
-  }
-  void purgeIonCacheIRStubInfo() { ionCacheIRStubInfoSet_.clearAndCompact(); }
 
   ExecutableAllocator& execAlloc() { return execAlloc_.ref(); }
   const ExecutableAllocator& execAlloc() const { return execAlloc_.ref(); }
