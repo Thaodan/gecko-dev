@@ -7,11 +7,14 @@ package org.mozilla.fenix.components.toolbar
 import android.content.Context
 import android.view.Gravity
 import android.view.ViewGroup
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams
 import androidx.core.view.isVisible
 import mozilla.components.compose.browser.toolbar.NavigationBar
@@ -50,11 +53,13 @@ class BrowserNavigationBar(
                     customTabSessionId == null && settings.shouldShowTabStripAtBottom
                 }
 
-                Column {
-                    if (shouldShowTabStrip) {
-                        tabStripContent().invoke()
+                FirefoxTheme {
+                    Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
+                        if (shouldShowTabStrip) {
+                            tabStripContent().invoke()
+                        }
+                        DefaultNavigationBarContent()
                     }
-                    DefaultNavigationBarContent()
                 }
             }
             .apply {

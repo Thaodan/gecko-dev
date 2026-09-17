@@ -9,6 +9,8 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -174,7 +176,9 @@ class BrowserToolbarComposable(
                                         searchSuggestionsContent(Modifier.weight(1f))
                                     }
                                     if (shouldShowTabStripAtBottom) {
-                                        tabStripContent()
+                                        Box(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
+                                            tabStripContent()
+                                        }
                                     }
                                     BrowserToolbar(
                                         store = toolbarStore,
