@@ -3483,19 +3483,11 @@ SVGBBox SVGTextFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
     return bbox;
   }
 
-  return GetSubtreeBBox(nullptr, aToBBoxUserspace, aFlags);
-}
-
-SVGBBox SVGTextFrame::GetSubtreeBBox(const nsIFrame* aSubtree,
-                                     const Matrix& aToBBoxUserspace,
-                                     SVGBBoxFlags aFlags) {
   UpdateGlyphPositioning();
 
   nsPresContext* presContext = PresContext();
 
-  SVGBBox bbox;
-  TextRenderedRunIterator it(
-      this, TextRenderedRunIterator::RenderedRunFilter::AllFrames, aSubtree);
+  TextRenderedRunIterator it(this);
   for (TextRenderedRun run = it.Current(); run.mFrame; run = it.Next()) {
     TextRenderedRun::GeometryFlags flags =
         TextRenderedRunFlagsForBBoxContribution(run, aFlags);
