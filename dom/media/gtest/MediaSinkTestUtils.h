@@ -9,9 +9,11 @@
 
 #include "AudioSink.h"
 #include "AudioSinkWrapper.h"
+#include "ImageContainer.h"
 #include "MediaData.h"
 #include "MediaInfo.h"
 #include "MediaQueue.h"
+#include "VideoFrameContainer.h"
 #include "gtest/gtest.h"
 #include "nsThreadUtils.h"
 
@@ -50,6 +52,35 @@ inline RefPtr<AudioSinkWrapper> MakeAudioSinkWrapper(
   return new AudioSinkWrapper(
       AbstractThread::GetCurrent(), aQueue, std::move(creator), aVolume,
       /*playbackRate*/ 1.0, /*preservesPitch*/ true, /*sinkDevice*/ nullptr);
+}
+
+inline already_AddRefed<VideoFrameContainer> MakeSinkTestVideoFrameContainer(
+    MediaDecoderOwner* aOwner) {
+  RefPtr container = new VideoFrameContainer(
+      aOwner, MakeAndAddRef<layers::ImageContainer>(
+                  layers::ImageUsageType::VideoFrameContainer,
+#ifdef MOZ_WIDGET_ANDROID
+                  // TODO(bug 1922144): Android should use ASYNCHRONOUS too.
+                  layers::ImageContainer::SYNCHRONOUS
+#else
+                  layers::ImageContainer::ASYNCHRONOUS
+#endif
+                  ));
+  return container.forget();
+}
+
+// A 1x1 image, enough for sink tests that identify frames by their timestamps
+// rather than by their contents.
+inline RefPtr<layers::Image> MakeSinkTest1x1Image(
+    layers::ImageContainer* aContainer) {
+  RefPtr image = aContainer->CreatePlanarYCbCrImage();
+  static uint8_t pixel[] = {0x00};
+  layers::PlanarYCbCrData data;
+  data.mYChannel = data.mCbChannel = data.mCrChannel = pixel;
+  data.mYStride = data.mCbCrStride = 1;
+  data.mPictureRect = gfx::IntRect(0, 0, 1, 1);
+  image->CopyData(data);
+  return image;
 }
 
 }  // namespace mozilla
