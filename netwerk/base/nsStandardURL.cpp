@@ -127,7 +127,6 @@ int32_t nsStandardURL::nsSegmentEncoder::EncodeSegmentCount(
 
       nsAutoCString valid;  // has to be declared in this scope
       if (MOZ_UNLIKELY(!IsUtf8(span.From(upTo)))) {
-        MOZ_ASSERT_UNREACHABLE("Invalid UTF-8 passed to nsStandardURL.");
         // It's UB to pass invalid UTF-8 to
         // EncodeFromUTF8WithoutReplacement(), so let's make our input valid
         // UTF-8 by replacing invalid sequences with the REPLACEMENT
