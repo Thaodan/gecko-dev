@@ -1434,9 +1434,6 @@ nsresult nsStandardURL::SetSpecWithEncoding(const nsACString& input,
     return NS_ERROR_MALFORMED_URI;
   }
 
-  // Make a backup of the current URL
-  nsStandardURL prevURL(false, false);
-  prevURL.CopyMembers(this, eHonorRef, ""_ns);
   Clear();
 
   if (IsSpecialProtocol(filteredURI)) {
@@ -1475,10 +1472,9 @@ nsresult nsStandardURL::SetSpecWithEncoding(const nsACString& input,
   }
 
   if (NS_FAILED(rv)) {
+    // A late failure leaves the segments describing |spec| while mSpec is
+    // still empty, which callers' SanityCheck() would treat as out of range.
     Clear();
-    // If parsing the spec has failed, restore the old URL
-    // so we don't end up with an empty URL.
-    CopyMembers(&prevURL, eHonorRef, ""_ns);
     return rv;
   }
 
