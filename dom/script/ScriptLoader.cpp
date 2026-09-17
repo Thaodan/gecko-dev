@@ -2756,8 +2756,9 @@ nsresult ScriptLoader::CreateOffThreadTask(
 
   if (aRequest->IsRetrievedAsSerializedStencil()) {
     JS::DecodeOptions decodeOptions(aOptions);
-    RefPtr<ScriptDecodeTask> decodeTask = new ScriptDecodeTask(
-        aRequest->TakeSRIAndSerializedStencil(), aRequest->GetSRILength());
+    RefPtr<ScriptDecodeTask> decodeTask =
+        new ScriptDecodeTask(aRequest->TakeSRIAndSerializedStencil(),
+                             aRequest->GetSerializedStencilOffset());
     nsresult rv = decodeTask->Init(decodeOptions);
     if (NS_FAILED(rv)) {
       aRequest->RestoreSRIAndSerializedStencil(
@@ -4062,7 +4063,8 @@ nsresult ScriptLoader::MaybePrepareForDiskCacheAfterExecute(
   }
 
   TRACE_FOR_TEST(aRequest, "diskcache:register");
-  MOZ_ASSERT(aRequest->GetSRILength() == aRequest->SRI().length());
+  MOZ_ASSERT(aRequest->GetSerializedStencilOffset() ==
+             aRequest->SRI().length());
   RegisterForDiskCache(aRequest);
 
   return aRv;
@@ -4406,8 +4408,8 @@ bool ScriptLoader::EncodeAndCompress(
     JS::FrontendContext* aFc, const JS::loader::LoadedScript* aLoadedScript,
     JS::Stencil* aStencil, const JS::TranscodeBuffer& aSRI,
     Vector<uint8_t>& aCompressed) {
-  size_t SRILength = aSRI.length();
-  MOZ_ASSERT(JS::IsTranscodingBytecodeOffsetAligned(SRILength));
+  size_t alignedSRILength = aSRI.length();
+  MOZ_ASSERT(JS::IsTranscodingBytecodeOffsetAligned(alignedSRILength));
 
   JS::TranscodeBuffer SRIAndSerializedStencil;
   if (!SRIAndSerializedStencil.appendAll(aSRI)) {
@@ -4428,7 +4430,7 @@ bool ScriptLoader::EncodeAndCompress(
   }
 
   // TODO probably need to move this to a helper thread
-  if (!ScriptBytecodeCompress(SRIAndSerializedStencil, SRILength,
+  if (!ScriptBytecodeCompress(SRIAndSerializedStencil, alignedSRILength,
                               aCompressed)) {
     return false;
   }
@@ -5029,15 +5031,15 @@ nsresult ScriptLoader::SaveSRIHash(
   MOZ_ASSERT(srilen == len);
 
   MOZ_ASSERT(sri.length() == len);
-  aRequest->SetSRILength(len);
 
-  if (aRequest->GetSRILength() != len) {
-    // The serialized stencil is aligned in the buffer, and space might be
-    // reserved for padding after the SRI hash.
-    if (!sri.resize(aRequest->GetSRILength())) {
+  size_t alignedSRILength = JS::AlignTranscodingBytecodeOffset(len);
+  if (alignedSRILength != len) {
+    if (!sri.resize(alignedSRILength)) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
   }
+
+  aRequest->SetAlignedSRILength(alignedSRILength);
 
   return NS_OK;
 }
