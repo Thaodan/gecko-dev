@@ -103,10 +103,10 @@ class nsDOMAttributeMap final : public nsISupports, public nsWrapperCache {
   Element* GetContent() { return mContent; }
 
   /**
-   * Called when mContent is adopted into a new document.
-   * Adopts all cached Attr nodes into aManager's document.
+   * Called when mContent is moved into a new document.
+   * Updates the nodeinfos of all owned nodes.
    */
-  void AdoptCachedAttributes(nsNodeInfoManager* aManager);
+  nsresult SetOwnerDocument(Document* aDocument);
 
   /**
    * Drop an attribute from the map's cache (does not remove the attribute

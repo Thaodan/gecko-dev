@@ -94,11 +94,12 @@ NS_INTERFACE_MAP_END
 NS_IMPL_CYCLE_COLLECTING_ADDREF(nsDOMAttributeMap)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(nsDOMAttributeMap)
 
-void nsDOMAttributeMap::AdoptCachedAttributes(nsNodeInfoManager* aManager) {
+nsresult nsDOMAttributeMap::SetOwnerDocument(Document* aDocument) {
   for (const auto& entry : mAttributeCache.Values()) {
-    IgnoredErrorResult rv;
-    entry->Adopt(aManager, rv);
+    nsresult rv = entry->SetOwnerDocument(aDocument);
+    NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
   }
+  return NS_OK;
 }
 
 void nsDOMAttributeMap::DropAttribute(int32_t aNamespaceID,
