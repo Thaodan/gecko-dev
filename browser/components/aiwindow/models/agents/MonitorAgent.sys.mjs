@@ -55,6 +55,8 @@ const AlertNotification = Components.Constructor(
   "initWithObject"
 );
 
+const TASKS_PAGE_URL = "about:smartwindowtasks";
+
 let gMonitors = null;
 let gLoadPromise = null;
 let gShuttingDown = false;
@@ -181,6 +183,7 @@ export const MonitorAgent = {
     }
     monitor.scheduleNextRun();
     this._refreshInitialSnapshot(monitor);
+    this._notifyMonitorCreated(monitor);
     const telemetryData = monitorTelemetryExtra(monitor);
     telemetryData.source = source;
     Glean.smartWindow.monitorCreate.record(telemetryData);
@@ -482,19 +485,108 @@ export const MonitorAgent = {
       return;
     }
 
-    const [titleFallback, bodyFallback, snoozeTitle, dismissTitle] =
-      lazy.l10n.formatValuesSync([
-        "ai-tasks-monitor-notification-title",
-        "ai-tasks-monitor-notification-body",
-        "ai-tasks-monitor-notification-snooze",
-        "ai-tasks-monitor-notification-dismiss",
-      ]);
-    const title = monitor.title || titleFallback;
-    const text = entry.resultExplanation || bodyFallback;
     const url = monitor.watchUrls[0];
     const id = monitor.id;
+    const recordClick = clickType =>
+      Glean.smartWindow.monitorNotificationClick.record({
+        ...monitorTelemetryExtra(monitor),
+        click_type: clickType,
+      });
 
+    const shown = this._showMonitorAlert(monitor, {
+      text: entry.resultExplanation,
+      textId: "ai-tasks-monitor-notification-body",
+      actions: [
+        {
+          action: NOTIFICATION_ACTIONS.SNOOZE,
+          titleId: "ai-tasks-monitor-notification-snooze",
+        },
+        {
+          action: NOTIFICATION_ACTIONS.DISMISS,
+          titleId: "ai-tasks-monitor-notification-dismiss",
+        },
+      ],
+      onClick: action => {
+        if (!action) {
+          if (url) {
+            recordClick("open_url");
+            this._openWatchedUrl(url);
+          }
+          return;
+        }
+        if (action === NOTIFICATION_ACTIONS.SNOOZE) {
+          recordClick("snooze");
+          this.snoozeMonitor(id).catch(error =>
+            lazy.log.error("Failed to snooze monitor", error)
+          );
+          return;
+        }
+        if (action === NOTIFICATION_ACTIONS.DISMISS) {
+          recordClick("dismiss");
+          this.muteMonitorNotifications(id).catch(error =>
+            lazy.log.error("Failed to mute monitor notifications", error)
+          );
+        }
+      },
+    });
+
+    if (shown) {
+      Glean.smartWindow.monitorNotificationSend.record(
+        monitorTelemetryExtra(monitor)
+      );
+    }
+  },
+
+  /**
+   * Shows a one-off desktop notification right after a monitor is created so
+   * the user knows a match will arrive the same way. Clicking the body opens
+   * the tasks page listing the monitors.
+   *
+   * @param {Monitor} monitor - The monitor that was just created
+   */
+  _notifyMonitorCreated(monitor) {
+    this._showMonitorAlert(monitor, {
+      textId: "ai-tasks-monitor-created-notification-body",
+      textArgs: {
+        site: URL.parse(monitor.watchUrls[0])?.hostname ?? "",
+        extraCount: monitor.watchUrls.length - 1,
+      },
+      onClick: action => {
+        if (!action) {
+          this._openWatchedUrl(TASKS_PAGE_URL);
+        }
+      },
+    });
+  },
+
+  /**
+   * Shows a desktop notification about a monitor, titled with the monitor's
+   * name. Best effort: any failure is logged and never reaches the caller, so
+   * a notification problem cannot fail the operation that triggered it.
+   *
+   * @param {Monitor} monitor - The monitor the notification is about
+   * @param {object} options
+   * @param {string} [options.text] - Body text; when empty, textId is used
+   * @param {string} options.textId - Fluent id of the body text
+   * @param {object} [options.textArgs] - Fluent arguments for textId
+   * @param {Array<{action: string, titleId: string}>} [options.actions] -
+   *   Action buttons, each with the Fluent id of its label
+   * @param {(action: string|null) => void} options.onClick - Called with the
+   *   clicked action, or null when the body itself was clicked
+   * @returns {boolean} Whether the notification was shown
+   */
+  _showMonitorAlert(
+    monitor,
+    { text, textId, textArgs, actions = [], onClick }
+  ) {
     try {
+      const [titleFallback, body, ...actionTitles] = lazy.l10n.formatValuesSync(
+        [
+          "ai-tasks-monitor-notification-title",
+          { id: textId, args: textArgs },
+          ...actions.map(({ titleId }) => titleId),
+        ]
+      );
       const alertsService = Cc["@mozilla.org/alerts-service;1"].getService(
         Ci.nsIAlertsService
       );
@@ -503,71 +595,25 @@ export const MonitorAgent = {
           if (topic !== "alertclickcallback") {
             return;
           }
-
-          // Notification body clicked.
-          if (!subject) {
-            if (url) {
-              // Record telemetry for opening URL
-              const telemetryData = {
-                ...monitorTelemetryExtra(monitor),
-                click_type: "open_url",
-              };
-              Glean.smartWindow.monitorNotificationClick.record(telemetryData);
-
-              this._openWatchedUrl(url);
-            }
-            return;
-          }
-
-          const action = subject.QueryInterface(Ci.nsIAlertAction).action;
-
-          if (action === NOTIFICATION_ACTIONS.SNOOZE) {
-            // Record telemetry for snooze action
-            const telemetryData = {
-              ...monitorTelemetryExtra(monitor),
-              click_type: "snooze",
-            };
-            Glean.smartWindow.monitorNotificationClick.record(telemetryData);
-
-            this.snoozeMonitor(id).catch(error =>
-              lazy.log.error("Failed to snooze monitor", error)
-            );
-            return;
-          }
-
-          if (action === NOTIFICATION_ACTIONS.DISMISS) {
-            // Record telemetry for dismiss action
-            const telemetryData = {
-              ...monitorTelemetryExtra(monitor),
-              click_type: "dismiss",
-            };
-            Glean.smartWindow.monitorNotificationClick.record(telemetryData);
-
-            this.muteMonitorNotifications(id).catch(error =>
-              lazy.log.error("Failed to mute monitor notifications", error)
-            );
-          }
+          onClick(
+            subject ? subject.QueryInterface(Ci.nsIAlertAction).action : null
+          );
         },
       };
-
       const alert = new AlertNotification({
-        title,
-        text,
+        title: monitor.title || titleFallback,
+        text: text || body,
         textClickable: true,
-        actions: [
-          { action: NOTIFICATION_ACTIONS.SNOOZE, title: snoozeTitle },
-          { action: NOTIFICATION_ACTIONS.DISMISS, title: dismissTitle },
-        ],
+        actions: actions.map(({ action }, i) => ({
+          action,
+          title: actionTitles[i],
+        })),
       });
-
       alertsService.showAlert(alert, observer);
-
-      // Record telemetry for notification being sent (after successful showAlert)
-      Glean.smartWindow.monitorNotificationSend.record(
-        monitorTelemetryExtra(monitor)
-      );
+      return true;
     } catch (error) {
       lazy.log.error("Failed to show monitor notification", error);
+      return false;
     }
   },
 
