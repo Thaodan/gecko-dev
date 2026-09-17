@@ -103,6 +103,21 @@ JS_PUBLIC_API void JS::SetModuleMetadataHook(JSRuntime* rt,
   rt->moduleMetadataHook = func;
 }
 
+// Get the module object of the enclosing scopes of a dynamic import.
+static ModuleObject* GetEnclosingModule(JSScript* script) {
+  // Only valid while |script| is running: bodyScope() reads the script's
+  // immutable data, which relazification discards.
+  MOZ_ASSERT(script->hasBytecode());
+
+  for (Scope* scope = script->bodyScope(); scope; scope = scope->enclosing()) {
+    if (scope->is<ModuleScope>()) {
+      return scope->as<ModuleScope>().module();
+    }
+  }
+
+  return nullptr;
+}
+
 // Get the module record from a |referrer| value built by
 // ReferrerValueForScript, or nullptr if the referrer is not a module.
 static ModuleObject* ReferrerModuleOrNull(Handle<Value> referrer) {
@@ -120,13 +135,16 @@ static ModuleObject* ReferrerModuleOrNull(Handle<Value> referrer) {
 
 // Build the referrer value from |script|, and the returned JS::Value is passed
 // to HostLoadImportedModule hook.
-// If |script| is a module, then the ObjectValue of the ModuleObject is
-// returned. Otherwise the original private value of the |script| is returned.
+// |script| could be a function script inside a module script, in which case
+// script.isModule() is false. To determine if |script| is from a module script,
+// we walk out to the enclosing module scope to check that, if it is, then the
+// ObjectValue of the ModuleObject is returned. Otherwise the original private
+// value of the |script| is returned.
 static Value ReferrerValueForScript(JSScript* script) {
   MOZ_ASSERT(script, "a dynamic import call always has a running script");
 
-  if (script->isModule()) {
-    return ObjectValue(*script->module());
+  if (ModuleObject* module = GetEnclosingModule(script)) {
+    return ObjectValue(*module);
   }
 
   return script->sourceObject()->getPrivate();
