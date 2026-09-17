@@ -25,7 +25,7 @@ import org.junit.Test
 import org.mozilla.fenix.R
 import org.mozilla.fenix.utils.Settings
 
-class DefaultTopSitesBindingTest {
+class DefaultPinnedSitesBindingTest {
 
     private lateinit var browserStore: BrowserStore
     private lateinit var topSitesStorage: DefaultTopSitesStorage
@@ -44,9 +44,9 @@ class DefaultTopSitesBindingTest {
 
         browserStore = BrowserStore()
 
-        every { resources.openRawResource(R.raw.initial_shortcuts) } answers
+        every { resources.openRawResource(R.raw.default_pinned_shortcuts) } answers
             {
-                this.javaClass.classLoader!!.getResourceAsStream("raw/test_initial_shortcuts.json")!!
+                this.javaClass.classLoader!!.getResourceAsStream("raw/test_default_pinned_shortcuts.json")!!
             }
     }
 
@@ -76,11 +76,11 @@ class DefaultTopSitesBindingTest {
 
             browserStore.dispatch(SearchAction.SetRegionAction(RegionState.Default))
 
-            val topSites = binding.getTopSites(region = "XX")
+            val pinnedSites = binding.getPinnedSites(region = "XX")
             dispatcher.scheduler.advanceUntilIdle()
 
             coVerify {
-                topSitesStorage.addTopSites(topSites = topSites.map { it.title to it.url }, isDefault = true)
+                topSitesStorage.addTopSites(topSites = pinnedSites.map { it.title to it.url }, isDefault = true)
                 settings.defaultTopSitesAdded = true
             }
         }
@@ -96,11 +96,11 @@ class DefaultTopSitesBindingTest {
 
             browserStore.dispatch(SearchAction.SetRegionAction(RegionState(home = region, current = region)))
 
-            val topSites = binding.getTopSites(region = region)
+            val pinnedSites = binding.getPinnedSites(region = region)
             dispatcher.scheduler.advanceUntilIdle()
 
             coVerify {
-                topSitesStorage.addTopSites(topSites = topSites.map { it.title to it.url }, isDefault = true)
+                topSitesStorage.addTopSites(topSites = pinnedSites.map { it.title to it.url }, isDefault = true)
                 settings.defaultTopSitesAdded = true
             }
         }
@@ -123,77 +123,77 @@ class DefaultTopSitesBindingTest {
         }
 
     @Test
-    fun `GIVEN region is in an included region WHEN getTopSites is called THEN the sites for that region are returned`() =
+    fun `GIVEN region is in an included region WHEN getPinnedSites is called THEN the sites for that region are returned`() =
         runTest(dispatcher) {
             val binding = createBinding()
-            val topSites = binding.getTopSites(region = "US")
+            val pinnedSites = binding.getPinnedSites(region = "US")
 
-            assertEquals(7, topSites.size)
-            assertEquals("US Region Site", topSites[0].title)
-            assertEquals("https://www.example1.com/", topSites[0].url)
-            assertEquals("CA Excluded Region Site", topSites[1].title)
-            assertEquals("https://www.example2.com/", topSites[1].url)
-            assertEquals("All Region Site", topSites[2].title)
-            assertEquals("https://www.example3.com/", topSites[2].url)
-            assertEquals("www.example4.com", topSites[3].title)
-            assertEquals("https://www.example4.com/", topSites[3].url)
-            assertEquals("www.example5.com", topSites[4].title)
-            assertEquals("https://www.example5.com/", topSites[4].url)
-            assertEquals("www.example6.com", topSites[5].title)
-            assertEquals("https://www.example6.com/", topSites[5].url)
-            assertEquals("www.example7.com", topSites[6].title)
-            assertEquals("https://www.example7.com/", topSites[6].url)
+            assertEquals(7, pinnedSites.size)
+            assertEquals("US Region Site", pinnedSites[0].title)
+            assertEquals("https://www.example1.com/", pinnedSites[0].url)
+            assertEquals("CA Excluded Region Site", pinnedSites[1].title)
+            assertEquals("https://www.example2.com/", pinnedSites[1].url)
+            assertEquals("All Region Site", pinnedSites[2].title)
+            assertEquals("https://www.example3.com/", pinnedSites[2].url)
+            assertEquals("www.example4.com", pinnedSites[3].title)
+            assertEquals("https://www.example4.com/", pinnedSites[3].url)
+            assertEquals("www.example5.com", pinnedSites[4].title)
+            assertEquals("https://www.example5.com/", pinnedSites[4].url)
+            assertEquals("www.example6.com", pinnedSites[5].title)
+            assertEquals("https://www.example6.com/", pinnedSites[5].url)
+            assertEquals("www.example7.com", pinnedSites[6].title)
+            assertEquals("https://www.example7.com/", pinnedSites[6].url)
         }
 
     @Test
-    fun `GIVEN region is in an excluded region WHEN getTopSites is called THEN the sites for that region are not returned`() =
+    fun `GIVEN region is in an excluded region WHEN getPinnedSites is called THEN the sites for that region are not returned`() =
         runTest(dispatcher) {
             val binding = createBinding()
-            val topSites = binding.getTopSites(region = "CA")
+            val pinnedSites = binding.getPinnedSites(region = "CA")
 
-            assertEquals(5, topSites.size)
-            assertEquals("All Region Site", topSites[0].title)
-            assertEquals("https://www.example3.com/", topSites[0].url)
-            assertEquals("www.example4.com", topSites[1].title)
-            assertEquals("https://www.example4.com/", topSites[1].url)
-            assertEquals("www.example5.com", topSites[2].title)
-            assertEquals("https://www.example5.com/", topSites[2].url)
-            assertEquals("www.example6.com", topSites[3].title)
-            assertEquals("https://www.example6.com/", topSites[3].url)
-            assertEquals("www.example7.com", topSites[4].title)
-            assertEquals("https://www.example7.com/", topSites[4].url)
+            assertEquals(5, pinnedSites.size)
+            assertEquals("All Region Site", pinnedSites[0].title)
+            assertEquals("https://www.example3.com/", pinnedSites[0].url)
+            assertEquals("www.example4.com", pinnedSites[1].title)
+            assertEquals("https://www.example4.com/", pinnedSites[1].url)
+            assertEquals("www.example5.com", pinnedSites[2].title)
+            assertEquals("https://www.example5.com/", pinnedSites[2].url)
+            assertEquals("www.example6.com", pinnedSites[3].title)
+            assertEquals("https://www.example6.com/", pinnedSites[3].url)
+            assertEquals("www.example7.com", pinnedSites[4].title)
+            assertEquals("https://www.example7.com/", pinnedSites[4].url)
         }
 
     @Test
-    fun `GIVEN the default region region WHEN getTopSites is called THEN the sites for that region are returned`() =
+    fun `GIVEN the default region region WHEN getPinnedSites is called THEN the sites for that region are returned`() =
         runTest(dispatcher) {
             val binding = createBinding()
-            val topSites = binding.getTopSites(region = "XX")
+            val pinnedSites = binding.getPinnedSites(region = "XX")
 
-            assertEquals(6, topSites.size)
-            assertEquals("CA Excluded Region Site", topSites[0].title)
-            assertEquals("https://www.example2.com/", topSites[0].url)
-            assertEquals("All Region Site", topSites[1].title)
-            assertEquals("https://www.example3.com/", topSites[1].url)
-            assertEquals("www.example4.com", topSites[2].title)
-            assertEquals("https://www.example4.com/", topSites[2].url)
-            assertEquals("www.example5.com", topSites[3].title)
-            assertEquals("https://www.example5.com/", topSites[3].url)
-            assertEquals("www.example6.com", topSites[4].title)
-            assertEquals("https://www.example6.com/", topSites[4].url)
-            assertEquals("www.example7.com", topSites[5].title)
-            assertEquals("https://www.example7.com/", topSites[5].url)
+            assertEquals(6, pinnedSites.size)
+            assertEquals("CA Excluded Region Site", pinnedSites[0].title)
+            assertEquals("https://www.example2.com/", pinnedSites[0].url)
+            assertEquals("All Region Site", pinnedSites[1].title)
+            assertEquals("https://www.example3.com/", pinnedSites[1].url)
+            assertEquals("www.example4.com", pinnedSites[2].title)
+            assertEquals("https://www.example4.com/", pinnedSites[2].url)
+            assertEquals("www.example5.com", pinnedSites[3].title)
+            assertEquals("https://www.example5.com/", pinnedSites[3].url)
+            assertEquals("www.example6.com", pinnedSites[4].title)
+            assertEquals("https://www.example6.com/", pinnedSites[4].url)
+            assertEquals("www.example7.com", pinnedSites[5].title)
+            assertEquals("https://www.example7.com/", pinnedSites[5].url)
         }
 
     @Test
-    fun `GIVEN the raw resource is missing WHEN getTopSites is called THEN return empty list and report crash`() =
+    fun `GIVEN the raw resource is missing WHEN getPinnedSites is called THEN return empty list and report crash`() =
         runTest(dispatcher) {
-            every { resources.openRawResource(R.raw.initial_shortcuts) } throws Resources.NotFoundException()
+            every { resources.openRawResource(R.raw.default_pinned_shortcuts) } throws Resources.NotFoundException()
 
             val binding = createBinding()
-            val topSites = binding.getTopSites(region = "XX")
+            val pinnedSites = binding.getPinnedSites(region = "XX")
 
-            assertTrue(topSites.isEmpty())
+            assertTrue(pinnedSites.isEmpty())
             verify {
                 crashReporter.recordCrashBreadcrumb(any())
                 crashReporter.submitCaughtException(any<Resources.NotFoundException>())
@@ -205,17 +205,17 @@ class DefaultTopSitesBindingTest {
         }
 
     @Test
-    fun `GIVEN invalid json WHEN getTopSites is called THEN return empty list and report crash`() =
+    fun `GIVEN invalid json WHEN getPinnedSites is called THEN return empty list and report crash`() =
         runTest(dispatcher) {
             val malformedJson =
                 "{\"data\": [{\"url\": \"https://example.com\", \"title\": \"Valid\"}, {\"id\": \"invalid\"}]}"
-            every { resources.openRawResource(R.raw.initial_shortcuts) } returns
+            every { resources.openRawResource(R.raw.default_pinned_shortcuts) } returns
                 ByteArrayInputStream(malformedJson.toByteArray())
 
             val binding = createBinding()
-            val topSites = binding.getTopSites(region = "XX")
+            val pinnedSites = binding.getPinnedSites(region = "XX")
 
-            assertTrue(topSites.isEmpty())
+            assertTrue(pinnedSites.isEmpty())
             verify {
                 crashReporter.recordCrashBreadcrumb(any())
                 crashReporter.submitCaughtException(any<SerializationException>())
@@ -227,16 +227,16 @@ class DefaultTopSitesBindingTest {
         }
 
     @Test
-    fun `GIVEN malformed json WHEN getTopSites is called THEN return empty list and report crash for illegal argument`() =
+    fun `GIVEN malformed json WHEN getPinnedSites is called THEN return empty list and report crash for illegal argument`() =
         runTest(dispatcher) {
             val malformedJson = "this is not a valid json"
-            every { resources.openRawResource(R.raw.initial_shortcuts) } returns
+            every { resources.openRawResource(R.raw.default_pinned_shortcuts) } returns
                 ByteArrayInputStream(malformedJson.toByteArray())
 
             val binding = createBinding()
-            val topSites = binding.getTopSites(region = "XX")
+            val pinnedSites = binding.getPinnedSites(region = "XX")
 
-            assertTrue(topSites.isEmpty())
+            assertTrue(pinnedSites.isEmpty())
             verify {
                 crashReporter.recordCrashBreadcrumb(any())
                 crashReporter.submitCaughtException(any<SerializationException>())
@@ -248,7 +248,7 @@ class DefaultTopSitesBindingTest {
         }
 
     private fun createBinding(isReleased: Boolean = true) =
-        DefaultTopSitesBinding(
+        DefaultPinnedSitesBinding(
             browserStore = browserStore,
             topSitesStorage = topSitesStorage,
             settings = settings,
