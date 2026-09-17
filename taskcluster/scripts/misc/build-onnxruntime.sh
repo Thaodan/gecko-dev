@@ -67,7 +67,7 @@ case ${target_platform} in
         HARDENING_FLAGS="-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -fstack-protector-strong"
         ;;
     Linux)
-        HARDENING_FLAGS="-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -fstack-clash-protection -fstack-protector-strong -fcf-protection"
+        HARDENING_FLAGS="-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -fstack-clash-protection -fstack-protector-strong"
         # Even the sysroot's libstdc++ is newer than the one Firefox targets, and
         # std::filesystem, which onnxruntime uses, can't be shimmed the way
         # build/unix/stdc++compat does it, so link it statically. Only the Ort* C
@@ -77,8 +77,22 @@ case ${target_platform} in
         # This library is shipped to users, so build it against the same sysroot
         # Firefox itself uses rather than the build machine's system headers and
         # libraries, which are much newer than what Firefox supports.
-        sysroot="$MOZ_FETCHES_DIR/sysroot-x86_64-linux-gnu"
-        extra_args=(--cmake_extra_defines CMAKE_SYSROOT=$sysroot)
+        case $target_arch in
+            aarch64)
+                sysroot=$MOZ_FETCHES_DIR/sysroot-aarch64-linux-gnu
+                extra_args=(--cmake_extra_defines CMAKE_SYSTEM_NAME=Linux CMAKE_SYSTEM_PROCESSOR=aarch64 CMAKE_C_COMPILER_TARGET=aarch64-unknown-linux-gnu CMAKE_CXX_COMPILER_TARGET=aarch64-unknown-linux-gnu CMAKE_ASM_COMPILER_TARGET=aarch64-unknown-linux-gnu CMAKE_SYSROOT=$sysroot)
+                ;;
+            x64)
+                sysroot=$MOZ_FETCHES_DIR/sysroot-x86_64-linux-gnu
+                extra_args=(--cmake_extra_defines CMAKE_SYSROOT=$sysroot)
+                HARDENING_FLAGS="$HARDENING_FLAGS -fcf-protection"
+                ;;
+            *)
+                echo "ERROR: unsupported Linux architecture $target_arch" >&2
+                exit 1
+                ;;
+        esac
+        TARGET_FLAGS="-fuse-ld=lld -Wno-unused-command-line-argument"
         prefix=lib
         extension=so
         ;;
@@ -90,12 +104,16 @@ case ${target_platform} in
         EXTRA_CXX_FLAGS="-Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now"
         ;;
     Windows)
-        # Still use visual studio there, compilation through clang-cl is not
-        # supported upstream.
+        # Still use VS there, compilation through clang-cl is not supported by onnxruntime.
         case $target_arch in
             x86)
                 extra_args=(--cmake_extra_defines CMAKE_SYSTEM_NAME=Windows CMAKE_SYSTEM_PROCESSOR=x86)
                 export TARGET=i686-pc-windows-msvc
+                ;;
+            aarch64)
+                # armasm64 rejects kleidiai's gnu-style .S files; clang-cl could assemble them.
+                extra_args=(--arm64 --no_kleidiai --cmake_extra_defines CMAKE_SYSTEM_NAME=Windows CMAKE_SYSTEM_PROCESSOR=ARM64)
+                export TARGET=aarch64-pc-windows-msvc
                 ;;
         esac
         HARDENING_FLAGS="/guard:cf"
@@ -105,6 +123,12 @@ case ${target_platform} in
         # build.py appends its own CMAKE_C_FLAGS/CMAKE_CXX_FLAGS=/MP after the extra defines and
         # cmake keeps the last definition, which would drop ours. /MP does nothing under Ninja.
         sed -i -e 's/if njobs > 1:/if False:/' "$MOZ_FETCHES_DIR/onnxruntime/tools/ci_build/build.py"
+        if [ "$target_arch" = "aarch64" ]; then
+            # x64-hosted rc.exe; the arm64 SDK bin ships an ARM64-hosted one.
+            export PATH="${UNIX_VSPATH}/${SDKDIR}/bin/${SDK_VERSION}/x64:${PATH}"
+            # build.py refuses Ninja+arm64 outside a VS Cross Tools shell; vs-setup.sh already provides that env.
+            sed -i -e 's/if cpu_arch == "32bit" or args.arm or args.arm64 or args.arm64ec:/if False:/' "$MOZ_FETCHES_DIR/onnxruntime/tools/ci_build/build.py"
+        fi
         export CC=cl.exe
         export CXX=cl.exe
         prefix=
@@ -180,7 +204,7 @@ cp $onnx_builddir/$build_type/${prefix}onnxruntime.${extension} $onnx_folder/
 case $target_arch in
     x86) expected_arch=i386 ;;
     x64|x86_64) expected_arch=x86_64 ;;
-    arm64|arm64-v8a) expected_arch=aarch64 ;;
+    aarch64|arm64|arm64-v8a) expected_arch=aarch64 ;;
     armeabi-v7a) expected_arch=arm ;;
     *)
         echo "ERROR: no expected architecture declared for $target_platform $target_arch" >&2
