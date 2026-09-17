@@ -82,11 +82,10 @@ NS_IMPL_CYCLE_COLLECTION(ScriptLoadRequest, mLoadContext)
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(ScriptLoadRequest)
 NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
-ScriptLoadRequest::ScriptLoadRequest(ScriptKind aKind,
-                                     const SRIMetadata& aIntegrity,
-                                     nsIURI* aReferrer,
-                                     LoadContextBase* aContext,
-                                     const mozilla::Encoding* aClassicScriptHintEncoding)
+ScriptLoadRequest::ScriptLoadRequest(
+    ScriptKind aKind, const SRIMetadata& aIntegrity, nsIURI* aReferrer,
+    LoadContextBase* aContext,
+    const mozilla::Encoding* aClassicScriptHintEncoding)
     : mKind(aKind),
       mState(State::CheckingCache),
       mFetchSourceOnly(false),
