@@ -589,7 +589,6 @@ class BaselineInterpreter {
     return codeAtOffset(bailoutResumePrologueOffset_);
   }
 
-  uint8_t* retAddrForIC(JSOp op) const;
   uint8_t* bailoutStubAddrForIC(JSOp op) const;
 
   TrampolinePtr interpretOpAddr() const {
