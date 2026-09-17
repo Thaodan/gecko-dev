@@ -9,6 +9,21 @@
 
 namespace mozilla {
 
+static VideoRotation ToVideoRotation(webrtc::VideoRotation aRotation) {
+  switch (aRotation) {
+    case webrtc::kVideoRotation_0:
+      return VideoRotation::kDegree_0;
+    case webrtc::kVideoRotation_90:
+      return VideoRotation::kDegree_90;
+    case webrtc::kVideoRotation_180:
+      return VideoRotation::kDegree_180;
+    case webrtc::kVideoRotation_270:
+      return VideoRotation::kDegree_270;
+  }
+  MOZ_ASSERT_UNREACHABLE("Bad webrtc::VideoRotation value");
+  return VideoRotation::kDegree_0;
+}
+
 uint32_t VideoFrameUtils::TotalRequiredBufferSize(
     const webrtc::VideoFrame& aVideoFrame) {
   auto i420 = aVideoFrame.video_frame_buffer()->ToI420();
@@ -32,7 +47,7 @@ void VideoFrameUtils::InitFrameBufferProperties(
   aDestProps.rtpTimeStamp() = aVideoFrame.rtp_timestamp();
   aDestProps.ntpTimeMs() = aVideoFrame.ntp_time_ms();
   aDestProps.renderTimeMs() = aVideoFrame.render_time_ms();
-  aDestProps.rotation() = aVideoFrame.rotation();
+  aDestProps.rotation() = ToVideoRotation(aVideoFrame.rotation());
 
   auto i420 = aVideoFrame.video_frame_buffer()->ToI420();
   auto height = i420->height();
