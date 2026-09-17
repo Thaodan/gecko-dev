@@ -5646,7 +5646,8 @@ nsRect nsTextFrame::UpdateTextEmphasis(WritingMode aWM,
       normalizeRubyMetrics ? PresContext()->RubyPositioningFactor() : 0.0f;
 
   // Calculate the baseline offset
-  LogicalSide side = styleText->TextEmphasisSide(aWM, StyleFont()->GetLangAtom());
+  LogicalSide side =
+      styleText->TextEmphasisSide(aWM, StyleFont()->GetLangAtom());
   LogicalSize frameSize = GetLogicalSize(aWM);
   // The overflow rect is inflated in the inline direction by half
   // advance of the emphasis mark on each side, so that even if a mark
@@ -10981,9 +10982,8 @@ void nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
           // We only pass a language code to FindFirstLetterRange if it was
           // explicit in the content.
           const nsStyleFont* styleFont = StyleFont();
-          const nsAtom* lang = styleFont->mExplicitLanguage
-                                   ? styleFont->GetLangAtom()
-                                   : nullptr;
+          const nsAtom* lang =
+              styleFont->mExplicitLanguage ? styleFont->GetLangAtom() : nullptr;
           completedFirstLetter =
               FindFirstLetterRange(characterDataBuffer, lang, mTextRun, offset,
                                    iter, &firstLetterLength);
