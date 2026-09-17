@@ -680,7 +680,9 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   void unscheduleGC() { gcScheduled_ = false; }
   bool isGCScheduled() { return gcScheduled_; }
 
+#ifdef DEBUG
   bool isAnyRealmPreservingCode();
+#endif
 
   void changeGCState(js::gc::GCRuntime* gc, GCState prev, GCState next);
 

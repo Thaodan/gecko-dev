@@ -302,6 +302,7 @@ void Zone::checkStringWrappersAfterMovingGC() {
 }
 #endif
 
+#ifdef DEBUG
 bool Zone::isAnyRealmPreservingCode() {
   for (RealmsInZoneIter r(this); !r.done(); r.next()) {
     if (r->jitRealm().isPreservingCode()) {
@@ -310,6 +311,7 @@ bool Zone::isAnyRealmPreservingCode() {
   }
   return false;
 }
+#endif
 
 void Zone::discardJitCodeForAllRealms(JS::GCContext* gcx) {
   MOZ_ASSERT(!isAnyRealmPreservingCode());

@@ -909,14 +909,11 @@ class GCRuntime {
   bool prepareZonesForCollection(bool* isFullOut);
   void endPreparePhase();
   void beginMarkPhase(AutoGCSession& session);
-  bool shouldPreserveJITCode(JS::Realm* realm,
-                             const mozilla::TimeStamp& currentTime,
-                             bool canAllocateMoreCode,
-                             bool isActiveCompartment);
+  bool shouldRealmPreserveJitCode(JS::Realm* realm,
+                                  const mozilla::TimeStamp& currentTime);
   void setRealmPreserveJitCodeFlags(JS::Zone* zone,
                                     const mozilla::TimeStamp& currentTime,
-                                    bool canAllocateMoreCode,
-                                    JS::Compartment* activeCompartment);
+                                    bool canAllocateMoreCode);
   void clearRealmPreserveJitCodeFlags(JS::Zone* zone);
   void maybeDiscardJitCodeForGC();
   void startBackgroundFreeAfterMinorGC();

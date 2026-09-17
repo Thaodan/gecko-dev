@@ -2722,33 +2722,8 @@ void GCRuntime::purgeRuntime() {
   marker().unmarkGrayStack.clearAndFree();
 }
 
-bool GCRuntime::shouldPreserveJITCode(Realm* realm,
-                                      const TimeStamp& currentTime,
-                                      bool canAllocateMoreCode,
-                                      bool isActiveCompartment) {
-  // During shutdown, we must clean everything up, for the sake of leak
-  // detection.
-  if (isShutdownGC()) {
-    return false;
-  }
-
-  // A shrinking GC is trying to clear out as much as it can, and so we should
-  // not preserve JIT code here!
-  if (isShrinkingGC()) {
-    return false;
-  }
-
-  // We are close to our allocatable code limit, so let's try to clean it out.
-  if (!canAllocateMoreCode) {
-    return false;
-  }
-
-  // The topmost frame of JIT code is in this compartment, and so we should
-  // try to preserve this zone's code.
-  if (isActiveCompartment) {
-    return true;
-  }
-
+bool GCRuntime::shouldRealmPreserveJitCode(Realm* realm,
+                                           const TimeStamp& currentTime) {
   // The gcPreserveJitCode testing function was used.
   if (alwaysPreserveCode) {
     return true;
@@ -2960,13 +2935,51 @@ bool GCRuntime::prepareZonesForCollection(bool* isFullOut) {
 
 void GCRuntime::setRealmPreserveJitCodeFlags(Zone* zone,
                                              const TimeStamp& currentTime,
-                                             bool canAllocateMoreCode,
-                                             Compartment* activeCompartment) {
+                                             bool canAllocateMoreCode) {
+  MOZ_ASSERT(!zone->isAnyRealmPreservingCode());
+
+  // During shutdown, we must clean everything up, for the sake of leak
+  // detection.
+  if (isShutdownGC()) {
+    return;
+  }
+
+  // A shrinking GC is trying to clear out as much as it can, and so we should
+  // not preserve JIT code here!
+  if (isShrinkingGC()) {
+    return;
+  }
+
+  // We are close to our allocatable code limit, so let's try to clean it out.
+  if (!canAllocateMoreCode) {
+    return;
+  }
+
+  // We're able to preserve JIT code, so check the heuristics for each realm.
+  bool preservingAllRealms = true;
   for (RealmsInZoneIter r(zone); !r.done(); r.next()) {
-    bool isActiveCompartment = r->compartment() == activeCompartment;
-    bool preserve = shouldPreserveJITCode(r, currentTime, canAllocateMoreCode,
-                                          isActiveCompartment);
-    r->jitRealm().setPreservingCode(preserve);
+    if (shouldRealmPreserveJitCode(r, currentTime)) {
+      r->jitRealm().setPreservingCode(true);
+    } else {
+      preservingAllRealms = false;
+    }
+  }
+  if (preservingAllRealms) {
+    return;
+  }
+
+  // Also preserve JIT code for realms that have JS JIT frames on the stack.
+  JSContext* cx = rt->mainContextFromOwnThread();
+  for (jit::JitActivationIterator iter(cx); !iter.done(); ++iter) {
+    if (iter->compartment()->zone() != zone) {
+      continue;
+    }
+    for (OnlyJSJitFrameIter frames(iter); !frames.done(); ++frames) {
+      const jit::JSJitFrameIter& frame = frames.frame();
+      if (frame.isScripted()) {
+        frame.script()->realm()->jitRealm().setPreservingCode(true);
+      }
+    }
   }
 }
 
@@ -2987,20 +3000,13 @@ void GCRuntime::maybeDiscardJitCodeForGC() {
   bool canAllocateMoreCode = jit::CanLikelyAllocateMoreExecutableMemory();
   TimeStamp currentTime = TimeStamp::Now();
 
-  Compartment* activeCompartment = nullptr;
-  jit::JitActivationIterator activation(rt->mainContextFromOwnThread());
-  if (!activation.done()) {
-    activeCompartment = activation->compartment();
-  }
-
   js::CancelOffThreadCompile(rt, JS::Zone::Prepare);
   for (GCZonesIter zone(this); !zone.done(); zone.next()) {
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::MARK_DISCARD_CODE);
 
     // Set the preserve-code flag for each realm that should preserve JIT code.
     // Code outside this scope assumes these flags are cleared.
-    setRealmPreserveJitCodeFlags(zone, currentTime, canAllocateMoreCode,
-                                 activeCompartment);
+    setRealmPreserveJitCodeFlags(zone, currentTime, canAllocateMoreCode);
     auto clearFlags =
         MakeScopeExit([&] { clearRealmPreserveJitCodeFlags(zone); });
 
