@@ -725,17 +725,17 @@ void* ChunkCache::Recycle(size_t aSize, size_t aAlignment) {
     if (!node) {
       return nullptr;
     }
-    size_t leadsize = ALIGNMENT_CEILING((uintptr_t)node->mAddr, aAlignment) -
-                      (uintptr_t)node->mAddr;
-    MOZ_ASSERT(node->mSize >= leadsize + aSize);
-    size_t trailsize = node->mSize - leadsize - aSize;
-    if (leadsize != 0 && trailsize != 0 && !new_node) {
+    size_t lead_size = ALIGNMENT_CEILING((uintptr_t)node->mAddr, aAlignment) -
+                       (uintptr_t)node->mAddr;
+    MOZ_ASSERT(node->mSize >= lead_size + aSize);
+    size_t trail_size = node->mSize - lead_size - aSize;
+    if (lead_size != 0 && trail_size != 0 && !new_node) {
       // Splitting on both sides requires a second node but
       // BaseAlloc::alloc() failed to allocate one (although unlikely).
       // Abort here and maybe the caller can map fresh pages.
       return nullptr;
     }
-    ret = (void*)((uintptr_t)node->mAddr + leadsize);
+    ret = (void*)((uintptr_t)node->mAddr + lead_size);
 
     // All recycled chunks are zeroed (because they're purged) before being
     // recycled.
@@ -744,20 +744,20 @@ void* ChunkCache::Recycle(size_t aSize, size_t aAlignment) {
     // Remove node from the tree.
     gChunksBySize.Remove(node);
     gChunksByAddress.Remove(node);
-    if (leadsize != 0) {
+    if (lead_size != 0) {
       // Insert the leading space as a smaller chunk.
-      node->mSize = leadsize;
+      node->mSize = lead_size;
       gChunksBySize.Insert(node);
       gChunksByAddress.Insert(node);
       node = nullptr;
     }
-    if (trailsize != 0) {
+    if (trail_size != 0) {
       // Insert the trailing space as a smaller chunk.
       if (!node) {
         node = new_node.release();
       }
       node->mAddr = (void*)((uintptr_t)(ret) + aSize);
-      node->mSize = trailsize;
+      node->mSize = trail_size;
       node->mChunkType = ZEROED_CHUNK;
       gChunksBySize.Insert(node);
       gChunksByAddress.Insert(node);
