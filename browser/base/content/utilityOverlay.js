@@ -265,7 +265,9 @@ function createUserContextMenu(
 
     let menuitem = createMenuItem({
       name: identity.name,
-      l10nId: identity.l10nId,
+      l10nId: ContextualIdentityService.getUserContextL10nId(
+        identity.userContextId
+      ),
     });
     menuitem.setAttribute("data-usercontextid", identity.userContextId);
 

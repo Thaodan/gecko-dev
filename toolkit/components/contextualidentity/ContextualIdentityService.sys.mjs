@@ -4,7 +4,7 @@
 
 // The maximum valid numeric value for the userContextId.
 const MAX_USER_CONTEXT_ID = -1 >>> 0;
-const LAST_CONTAINERS_JSON_VERSION = 7;
+const LAST_CONTAINERS_JSON_VERSION = 8;
 const SAVE_DELAY_MS = 1500;
 const CONTEXTUAL_IDENTITY_ENABLED_PREF = "privacy.userContext.enabled";
 
@@ -325,7 +325,9 @@ _ContextualIdentityService.prototype = {
 
     // Clone the array
     for (let identity of this._defaultIdentities) {
-      this._identities.push(Object.assign({}, identity));
+      let stored = Object.assign({}, identity);
+      delete stored.l10nId;
+      this._identities.push(stored);
     }
     this._openedIdentities = new Set();
     this._siteAssociations = new Map();
@@ -499,7 +501,6 @@ _ContextualIdentityService.prototype = {
       identity.name = name;
       identity.color = color;
       identity.icon = icon;
-      delete identity.l10nId;
 
       this.saveSoon();
       Services.obs.notifyObservers(
@@ -743,6 +744,11 @@ _ContextualIdentityService.prototype = {
       saveNeeded = true;
     }
 
+    if (data.version == 7) {
+      data = this.migrate7to8(data);
+      saveNeeded = true;
+    }
+
     if (data.version != LAST_CONTAINERS_JSON_VERSION) {
       dump(
         "ERROR - ContextualIdentityService - Unknown version found in " +
@@ -864,6 +870,22 @@ _ContextualIdentityService.prototype = {
     return "";
   },
 
+  /**
+   * @param {number} userContextId
+   * @returns {string|undefined}
+   *   The Fluent id of a default identity the user hasn't renamed, undefined
+   *   for a renamed or user-created one.
+   */
+  getUserContextL10nId(userContextId) {
+    let identity = this.getPublicIdentityFromId(userContextId);
+    if (!identity || identity.name) {
+      return undefined;
+    }
+    return this._defaultIdentities.find(
+      info => info.public && info.userContextId == userContextId
+    )?.l10nId;
+  },
+
   getUserContextLabel(userContextId) {
     let identity = this.getPublicIdentityFromId(userContextId);
 
@@ -872,8 +894,9 @@ _ContextualIdentityService.prototype = {
       return identity.name;
     }
 
-    if (identity?.l10nId) {
-      return this.formatContextLabel(identity.l10nId);
+    let l10nId = this.getUserContextL10nId(userContextId);
+    if (l10nId) {
+      return this.formatContextLabel(l10nId);
     }
 
     return "";
@@ -1144,6 +1167,20 @@ _ContextualIdentityService.prototype = {
     }
 
     data.version = 7;
+
+    return data;
+  },
+
+  migrate7to8(data) {
+    // Migrating from 7 to 8 is:
+    // - dropping the l10nId property; the default identities' Fluent ids are
+    //   read from _defaultIdentities
+    // - increasing the version id.
+    for (let identity of data.identities) {
+      delete identity.l10nId;
+    }
+
+    data.version = 8;
 
     return data;
   },

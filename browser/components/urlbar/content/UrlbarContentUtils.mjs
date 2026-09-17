@@ -233,7 +233,9 @@ export function getContainers() {
     ContextualIdentityService.getPublicIdentities().map(identity => ({
       userContextId: identity.userContextId,
       name: identity.name,
-      l10nId: identity.l10nId,
+      l10nId: ContextualIdentityService.getUserContextL10nId(
+        identity.userContextId
+      ),
       iconURL: ContextualIdentityService.getContainerIconURL(identity.icon),
       colorCode: ContextualIdentityService.getContainerColorCode(
         identity.color
