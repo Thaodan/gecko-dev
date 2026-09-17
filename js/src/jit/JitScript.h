@@ -514,7 +514,7 @@ class alignas(uintptr_t) JitScript final
                              BaselineScript* baselineScript);
   void maybeRemoveFromCompileQueue(JSScript* script) {
     if (isBaselineQueued()) {
-      script->realm()->removeFromCompileQueue(script);
+      script->realm()->jitRealm().removeFromCompileQueue(script);
     }
   }
 

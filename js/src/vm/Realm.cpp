@@ -305,7 +305,7 @@ void Realm::traceRoots(JSTracer* trc,
   }
 
   objects_.trace(trc);
-  baselineCompileQueue_.trace(trc);
+  jitRealm_.trace(trc);
 }
 
 void ObjectRealm::finishRoots() {
@@ -381,10 +381,6 @@ void Realm::purge() {
   plainObjectAssignCache.purge();
   plainObjectSpreadCache.purge();
   objects_.iteratorCache.clearAndCompact();
-}
-
-void Realm::removeFromCompileQueue(JSScript* script) {
-  baselineCompileQueue_.remove(script);
 }
 
 // Check to see if this individual realm is recording allocations. Debuggers or
