@@ -240,6 +240,12 @@ static gfx::IntSize ClampedIntSize(uint32_t aWidth, uint32_t aHeight) {
       static_cast<int32_t>(std::min<uint32_t>(aHeight, INT32_MAX)));
 }
 
+static bool IsLowResolution(const VideoConfiguration& aConfig) {
+  const CheckedInt<uint32_t> pixels =
+      CheckedInt<uint32_t>(aConfig.mWidth) * aConfig.mHeight;
+  return pixels.isValid() && pixels.value() <= kLowResolutionPixelCount;
+}
+
 static CodecType WebrtcMimeToCodecType(const MediaExtendedMIMEType& aMime) {
   const nsCString& mime = aMime.Type().AsString();
   if (mime.EqualsLiteral("video/h264")) {
@@ -1369,6 +1375,33 @@ MediaCapabilities::CheckEncryptedDecodingSupport(
       aConfiguration.mKeySystemConfiguration.Value().mKeySystem, configs);
 }
 
+// Steps 8 through 11 for the "record" type. MediaRecorder encodes video in
+// software, so there is no encoder factory to query. aVideoMime is set only
+// for a video stream that was found supported.
+static void CreateRecordEncodingInfo(
+    const MediaEncodingConfiguration& aConfiguration, Promise* aPromise,
+    const Maybe<MediaExtendedMIMEType>& aVideoMime) {
+  // Step 8: Set supported to true.
+  MediaCapabilitiesInfo info;
+  info.mSupported = true;
+
+  if (aVideoMime) {
+    MOZ_ASSERT(aConfiguration.mVideo.WasPassed());
+    const auto& v = aConfiguration.mVideo.Value();
+    // Steps 9 and 10, video. CanRecordVideoTrackWith accepts only VP8.
+    info.mSmooth = IsSWEncodeSmooth(CodecType::VP8, v);
+    info.mPowerEfficient = IsLowResolution(v);
+  } else {
+    // Steps 9 and 10, audio. Audio encode is always smooth and power efficient.
+    info.mSmooth = true;
+    info.mPowerEfficient = true;
+  }
+
+  // Step 11: Return info.
+  LOG("{} -> {}", aConfiguration, info);
+  aPromise->MaybeResolve(std::move(info));
+}
+
 // https://w3c.github.io/media-capabilities/#abstract-opdef-create-a-mediacapabilitiesencodinginfo
 already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
     const MediaEncodingConfiguration& aConfiguration, ErrorResult& aRv) {
@@ -1456,8 +1489,33 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
     encodePromise->MaybeResolve(std::move(info));
     return encodePromise.forget();
   }
+  MOZ_ASSERT(videoSupported == CodecSupport::Supported ||
+             audioSupported == CodecSupport::Supported);
 
-  // Step 8: Otherwise, set supported to true.
+  // Steps 8 through 11 are type specific: WebRTC queries the encoder
+  // factories, MediaRecorder does not.
+  switch (aConfiguration.mType) {
+    case MediaEncodingType::Record:
+      CreateRecordEncodingInfo(aConfiguration, encodePromise, videoMime);
+      return encodePromise.forget();
+    case MediaEncodingType::Webrtc:
+      CreateWebRTCEncodingInfo(aConfiguration, encodePromise, videoMime);
+      return encodePromise.forget();
+  }
+  MOZ_ASSERT_UNREACHABLE("Unhandled MediaEncodingType");
+  info.mSupported = false;
+  info.mSmooth = false;
+  info.mPowerEfficient = false;
+  encodePromise->MaybeResolve(std::move(info));
+  return encodePromise.forget();
+}
+
+// Steps 8 through 11 for the "webrtc" type.
+void MediaCapabilities::CreateWebRTCEncodingInfo(
+    const MediaEncodingConfiguration& aConfiguration, Promise* aPromise,
+    const Maybe<MediaExtendedMIMEType>& aVideoMime) {
+  // Step 8: Set supported to true.
+  MediaCapabilitiesInfo info;
   info.mSupported = true;
 
   // We defer checking specific encoder support to a background TaskQueue, and
@@ -1472,7 +1530,7 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
           "MediaCapabilities::EncodingInfo")) {
     // Worker is shutting down. Per spec, leave the promise pending; it will
     // be cleaned up by GC when the worker is torn down.
-    return encodePromise.forget();
+    return;
   }
 
   RefPtr<TaskQueue> taskQueue =
@@ -1480,19 +1538,16 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
                         "MediaCapabilities::TaskQueue");
   InvokeAsync(
       taskQueue, __func__,
-      [aConfiguration, videoMime, videoSupported, audioMime, audioSupported,
+      [aConfiguration, videoMime = aVideoMime,
        info = std::move(info)]() mutable -> RefPtr<PromiseType> {
         // Step 7 returns early if neither audio nor video are
         // supported. If video isn't supported, audio must be - they
         // can't both be unknown. We can assume audio encoding, which
         // should be smooth and powerEfficient.
-        MOZ_ASSERT(audioSupported == CodecSupport::Supported ||
-                   videoSupported == CodecSupport::Supported);
-        (void)audioSupported;
         info.mSmooth = true;
         info.mPowerEfficient = true;
 
-        if (videoSupported != CodecSupport::Supported) {
+        if (!videoMime) {
           LOG("{} -> {}", aConfiguration, info);
           return PromiseType::CreateAndResolve(
               std::move(info), "MediaCapabilities::EncodingInfo");
@@ -1528,12 +1583,6 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
                   const auto& v = aConfiguration.mVideo.Value();
                   const bool hwSupported = aVideoSupport.contains(
                       media::EncodeSupport::HardwareEncode);
-                  const CheckedInt<uint32_t> pixels =
-                      CheckedInt<uint32_t>(v.mWidth) *
-                      CheckedInt<uint32_t>(v.mHeight);
-                  const bool lowResolution =
-                      pixels.isValid() &&
-                      pixels.value() <= kLowResolutionPixelCount;
 
                   // Step 9: If the user agent is able to encode the media
                   // represented by configuration at the indicated framerate,
@@ -1565,7 +1614,7 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
                   // encoding power efficiency unless the device's power source
                   // has side effects such as enabling different encoding or
                   // decoding modules.
-                  info.mPowerEfficient &= (hwSupported || lowResolution);
+                  info.mPowerEfficient &= (hwSupported || IsLowResolution(v));
 
                   LOG("{} -> {}", aConfiguration, info);
                   return PromiseType::CreateAndResolve(
@@ -1581,7 +1630,7 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
       })
       ->Then(
           targetThread, __func__,
-          [encodePromise, workerRef, holder,
+          [encodePromise = RefPtr(aPromise), workerRef, holder,
            aConfiguration](MediaCapabilitiesInfo aInfo) {
             holder->Complete();
             nsIGlobalObject* global = holder->GetParentObject();
@@ -1591,7 +1640,6 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
           },
           [] { MOZ_CRASH("Unexpected"); })
       ->Track(*holder);
-  return encodePromise.forget();
 }
 
 bool MediaCapabilities::CheckTypeForMediaSource(
