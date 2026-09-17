@@ -1528,6 +1528,7 @@ abstract class BaseBrowserFragment :
         FirefoxTheme {
             TabStrip(
                 showTabCounterButton = false,
+                hideWhenKeyboardShown = settings.shouldUseBottomTabStrip,
                 onAddTabClick = {
                     if (settings.enableHomepageAsNewTab) {
                         requireComponents.useCases.fenixBrowserUseCases.addNewHomepageTab(

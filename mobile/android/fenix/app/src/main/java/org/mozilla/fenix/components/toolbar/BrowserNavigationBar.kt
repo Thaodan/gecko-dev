@@ -7,6 +7,10 @@ package org.mozilla.fenix.components.toolbar
 import android.content.Context
 import android.view.Gravity
 import android.view.ViewGroup
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.MaterialTheme
@@ -14,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams
 import androidx.core.view.isVisible
@@ -26,6 +31,8 @@ import mozilla.components.support.utils.keyboardAsState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.Settings
+
+private const val NAVBAR_VISIBILITY_ANIMATION_MS = 150
 
 /**
  * A wrapper over the [NavigationBar] composable that provides enhanced customization and lifecycle-aware integration.
@@ -104,13 +111,27 @@ class BrowserNavigationBar(
                 false
             }
 
-        if (uiState.displayState.navigationActions.isNotEmpty() && !isKeyboardVisible) {
-            FirefoxTheme {
-                NavigationBar(
-                    actions = uiState.displayState.navigationActions,
-                    toolbarGravity = toolbarGravity,
-                    onInteraction = { toolbarStore.dispatch(it) },
-                )
+        if (uiState.displayState.navigationActions.isNotEmpty()) {
+            AnimatedVisibility(
+                visible = !isKeyboardVisible,
+                enter =
+                    expandVertically(
+                        expandFrom = Alignment.Top,
+                        animationSpec = tween(durationMillis = NAVBAR_VISIBILITY_ANIMATION_MS),
+                    ),
+                exit =
+                    shrinkVertically(
+                        shrinkTowards = Alignment.Top,
+                        animationSpec = tween(durationMillis = NAVBAR_VISIBILITY_ANIMATION_MS),
+                    ),
+            ) {
+                FirefoxTheme {
+                    NavigationBar(
+                        actions = uiState.displayState.navigationActions,
+                        toolbarGravity = toolbarGravity,
+                        onInteraction = { toolbarStore.dispatch(it) },
+                    )
+                }
             }
         }
     }
