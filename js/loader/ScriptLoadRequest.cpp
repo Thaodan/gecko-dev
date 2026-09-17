@@ -245,4 +245,15 @@ void ScriptLoadRequest::NoCacheEntryFound(
   mState = State::Fetching;
 }
 
+void ScriptLoadRequest::ResetCacheEntry() {
+  MOZ_ASSERT(IsRetrievedFromMemoryCache());
+
+  mIsRetrievedFromMemoryCache = false;
+
+  // mFetchInfo can be reused from SetCacheEntry.
+  // mLoadedScript cannot be reused.
+  mLoadedScript = new LoadedScript(mKind, mLoadedScript->GetURI());
+  mState = State::Fetching;
+}
+
 }  // namespace JS::loader

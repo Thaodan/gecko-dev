@@ -666,6 +666,9 @@ void ScriptLoader::RunScriptWhenSafe(ScriptLoadRequest* aRequest) {
 
 nsresult ScriptLoader::RestartLoad(ScriptLoadRequest* aRequest) {
   aRequest->getLoadedScript()->DropSRIOrSRIAndSerializedStencil();
+  if (aRequest->IsRetrievedFromMemoryCache()) {
+    aRequest->ResetCacheEntry();
+  }
   TRACE_FOR_TEST(aRequest, "load:fallback");
 
   // Notify preload restart so that we can register this preload request again.
@@ -710,9 +713,9 @@ static nsSecurityFlags CORSModeToSecurityFlags(CORSMode aCORSMode) {
   return securityFlags;
 }
 
-void ScriptLoader::OnDelayedReady(
-    ScriptLoadRequest* aRequest,
-    const Maybe<nsAutoString>& aCharsetForPreload) {
+void ScriptLoader::OnDelayedReady(ScriptLoadRequest* aRequest,
+                                  const Maybe<nsAutoString>& aCharsetForPreload,
+                                  bool aDelayedEncodingCheck) {
   if (!mDocument) {
     return;
   }
@@ -724,6 +727,20 @@ void ScriptLoader::OnDelayedReady(
   MOZ_ASSERT(aRequest->IsRetrievedFromMemoryCache());
   MOZ_ASSERT(aRequest->IsDelayingReady());
 
+  if (aDelayedEncodingCheck) {
+    if (aRequest->getLoadedScript()->mClassicScriptEncoding !=
+        GetClassicScriptFallbackEncoding(aRequest)) {
+      LOG(
+          ("ScriptLoader (%p): Restarting "
+           "ScriptLoadRequest(%p) because of encoding mismatch %s.",
+           this, aRequest, aRequest->URI()->GetSpecOrDefault().get()));
+      RestartLoad(aRequest);
+      return;
+    }
+
+    EmulateNetworkEvents(aRequest, aCharsetForPreload);
+  }
+
   aRequest->SetReady();
   MaybeMoveToLoadedList(aRequest);
   ProcessPendingRequests();
@@ -733,15 +750,31 @@ nsresult ScriptLoader::StartClassicLoad(
     ScriptLoadRequest* aRequest,
     const Maybe<nsAutoString>& aCharsetForPreload) {
   if (aRequest->IsRetrievedFromMemoryCache()) {
-    // NOTE: The network event need to be dispatched in the current call stack,
-    //       in order to reflect it in the DevTools Network Monitor.
-    EmulateNetworkEvents(aRequest, aCharsetForPreload);
+    // The network event need to be dispatched in the current call stack,
+    // in order to reflect it in the DevTools Network Monitor.
+    //
+    // Script preloads which depends on the document encoding need to delay it,
+    // given the encoding check is skipped in ScriptLoader::TryUseCache.
+    // In this case the network event cannot be dispatched here.  Such requests
+    // will lack the call stack, but given the following, it should be okay:
+    //   - The initial document load's preloads don't have the call stack
+    //   - Later script loads done with script elements don't perform preloads.
+    //     Insertion with document.write etc does, but that should be rare.
+    bool delayedEncodingCheck = false;
+    if (aRequest->IsClassicScript() &&
+        aRequest->GetScriptLoadContext()->IsPreload() &&
+        aRequest->getLoadedScript()->DependsOnClassicScriptHintEncoding() &&
+        !aRequest->mClassicScriptHintEncoding) {
+      delayedEncodingCheck = true;
+    } else {
+      EmulateNetworkEvents(aRequest, aCharsetForPreload);
+    }
 
     nsCOMPtr<nsIRunnable> runnable =
         mozilla::NewRunnableMethod<RefPtr<ScriptLoadRequest>,
-                                   const Maybe<nsAutoString>>(
+                                   const Maybe<nsAutoString>, bool>(
             "ScriptLoader::OnDelayedReady", this, &ScriptLoader::OnDelayedReady,
-            aRequest, aCharsetForPreload);
+            aRequest, aCharsetForPreload, delayedEncodingCheck);
     mDocument->Dispatch(runnable.forget());
     return NS_OK;
   }
@@ -1362,6 +1395,44 @@ void ScriptLoader::TryUseCache(ReferrerPolicy aReferrerPolicy,
          this, aRequest->getLoadedScript(), aRequest,
          aRequest->URI()->GetSpecOrDefault().get()));
     return;
+  }
+
+  if (aRequest->IsClassicScript() &&
+      cacheResult.mCompleteValue->DependsOnClassicScriptHintEncoding() &&
+      cacheResult.mCompleteValue->mClassicScriptEncoding !=
+          GetClassicScriptFallbackEncoding(aRequest)) {
+    // See ScriptLoadHandler::TrySetDecoder for the
+    // DependsOnClassicScriptHintEncoding flag handling.
+    //
+    // If this branch is taken, there are multiple cases:
+    //   - If the request has hint charset, the hint charset should be used for
+    //     decoding the script.  The cache entry is decoded with different
+    //     encoding, and thus this cache entry shouldn't be used.
+    //   - If the request has no hint charset, either the document's charset
+    //     or the fallback windows-1252 should be used.
+    //     - For script preloads performed during the speculative loading, the
+    //       document's charset might not have been reflecting the actual
+    //       document's encoding yet.  We should wait for it before deciding
+    //       whether to use the cache or not.
+    //     - For regular loads, the cache entry is decoded with the
+    //       different encoding, and thus this cache entry shouldn't be used.
+    if (aRequestType == ScriptLoadRequestType::Preload &&
+        !aRequest->mClassicScriptHintEncoding) {
+      // Defer the decision to the ScriptLoader::OnDelayedReady.
+      LOG(
+          ("ScriptLoader (%p): Deferring the encoding comparion for a "
+           "preload ScriptLoadRequest(%p) without a hint encoding %s.",
+           this, aRequest,
+           cacheResult.mCompleteValue->GetURI()->GetSpecOrDefault().get()));
+    } else {
+      aRequest->NoCacheEntryFound(aReferrerPolicy, aFetchOptions, aURI);
+      LOG(
+          ("ScriptLoader (%p): Created LoadedScript (%p) for "
+           "ScriptLoadRequest(%p) because cache has different encoding %s.",
+           this, aRequest->getLoadedScript(), aRequest,
+           aRequest->URI()->GetSpecOrDefault().get()));
+      return;
+    }
   }
 
   if (!cacheResult.mCompleteValue->IsSRIMetadataReusableBy(

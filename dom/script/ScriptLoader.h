@@ -588,9 +588,19 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   nsresult StartClassicLoad(ScriptLoadRequest* aRequest,
                             const Maybe<nsAutoString>& aCharsetForPreload);
 
+  /**
+   * Used for in-memory cached classic scripts, in order to delay the
+   * script processing.
+   *
+   * The delay is used for the following two purposes:
+   *   - Avoid processing scripts in the same event tick as the script load,
+   *     which can cause web compat issues
+   *   - Wait for the document's encoding to stabilize, for script preloads
+   */
   MOZ_CAN_RUN_SCRIPT void OnDelayedReady(
       ScriptLoadRequest* aRequest,
-      const Maybe<nsAutoString>& aCharsetForPreload);
+      const Maybe<nsAutoString>& aCharsetForPreload,
+      bool aDelayedEncodingCheck);
 
   static void PrepareCacheInfoChannel(nsIChannel* aChannel,
                                       ScriptLoadRequest* aRequest);

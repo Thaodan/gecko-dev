@@ -240,6 +240,9 @@ class ScriptLoadRequest : public nsISupports,
   void NoCacheEntryFound(mozilla::dom::ReferrerPolicy aReferrerPolicy,
                          ScriptFetchOptions* aFetchOptions, nsIURI* aURI);
 
+  // Undo CacheEntryFound and perform the equivalent of NoCacheEntryFound.
+  void ResetCacheEntry();
+
  private:
   void SetCacheEntry(LoadedScript* aLoadedScript,
                      ScriptFetchOptions* aFetchOptions);

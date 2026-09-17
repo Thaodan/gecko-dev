@@ -290,6 +290,7 @@ bool ScriptLoadHandler::TrySetDecoder(nsIChannel* aChannel,
   }
 
   encoding = mScriptLoader->GetClassicScriptFallbackEncoding(mRequest);
+  mRequest->getLoadedScript()->SetDependsOnClassicScriptHintEncoding();
   mRequest->getLoadedScript()->mClassicScriptEncoding = encoding;
   mDecoder =
       MakeUnique<ScriptDecoder>(encoding, ScriptDecoder::BOMHandling::Ignore);
