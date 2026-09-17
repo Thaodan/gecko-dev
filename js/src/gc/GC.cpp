@@ -2000,10 +2000,11 @@ bool js::gc::IsCurrentlyAnimating(const TimeStamp& lastAnimationTime,
          currentTime < (lastAnimationTime + oneSecond);
 }
 
-static bool DiscardedCodeRecently(Zone* zone, const TimeStamp& currentTime) {
+static bool DiscardedCodeRecently(Realm* realm, const TimeStamp& currentTime) {
+  TimeStamp lastDiscarded = realm->jitRealm().lastDiscardedCodeTime();
   static const auto thirtySeconds = TimeDuration::FromSeconds(30);
-  return !zone->lastDiscardedCodeTime().IsNull() &&
-         currentTime < (zone->lastDiscardedCodeTime() + thirtySeconds);
+  return !lastDiscarded.IsNull() &&
+         currentTime < (lastDiscarded + thirtySeconds);
 }
 
 bool GCRuntime::shouldCompact() {
@@ -2762,7 +2763,7 @@ bool GCRuntime::shouldPreserveJITCode(Realm* realm,
   // we can preserve jit code; however we shouldn't hold onto JIT code forever
   // during animation.
   if (IsCurrentlyAnimating(realm->lastAnimationTime, currentTime) &&
-      DiscardedCodeRecently(realm->zone(), currentTime)) {
+      DiscardedCodeRecently(realm, currentTime)) {
     return true;
   }
 
@@ -2973,7 +2974,7 @@ void GCRuntime::maybeDiscardJitCodeForGC() {
     bool resetNurserySites = pz.shouldResetNurseryAllocSites();
     bool resetPretenuredSites = pz.shouldResetPretenuredAllocSites();
 
-    if (!zone->isPreservingCode()) {
+    if (!zone->isAnyRealmPreservingCode()) {
       Zone::JitDiscardOptions options;
       options.discardJitScripts = true;
       options.resetNurseryAllocSites = resetNurserySites;
@@ -3184,10 +3185,6 @@ void BackgroundUnmarkTask::unmark() {
 void GCRuntime::endPreparePhase() {
   MOZ_ASSERT(unmarkTask.isIdle());
 
-  for (GCZonesIter zone(this); !zone.done(); zone.next()) {
-    zone->setPreservingCode(false);
-  }
-
   // Discard JIT code more aggressively if the process is approaching its
   // executable code limit.
   bool canAllocateMoreCode = jit::CanLikelyAllocateMoreExecutableMemory();
@@ -3211,10 +3208,9 @@ void GCRuntime::endPreparePhase() {
       if (r->shouldTraceGlobal() || !r->zone()->isGCScheduled()) {
         c->gcState.maybeAlive = true;
       }
-      if (shouldPreserveJITCode(r, currentTime, canAllocateMoreCode,
-                                isActiveCompartment)) {
-        r->zone()->setPreservingCode(true);
-      }
+      bool preserve = shouldPreserveJITCode(r, currentTime, canAllocateMoreCode,
+                                            isActiveCompartment);
+      r->jitRealm().setPreservingCode(preserve);
       if (r->hasBeenEnteredIgnoringJit()) {
         c->gcState.hasEnteredRealm = true;
       }

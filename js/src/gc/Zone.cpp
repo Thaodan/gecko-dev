@@ -171,7 +171,6 @@ JS::Zone::Zone(JSRuntime* rt, Kind kind)
       shapeZone_(this),
       gcScheduled_(false),
       gcScheduledSaved_(false),
-      gcPreserveCode_(false),
       keepPropMapTables_(false),
       wasCollected_(false),
       listNext_(NotOnList),
@@ -303,20 +302,29 @@ void Zone::checkStringWrappersAfterMovingGC() {
 }
 #endif
 
+bool Zone::isAnyRealmPreservingCode() {
+  for (RealmsInZoneIter r(this); !r.done(); r.next()) {
+    if (r->jitRealm().isPreservingCode()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void Zone::forceDiscardJitCode(JS::GCContext* gcx,
                                const JitDiscardOptions& options) {
   if (!jitZone()) {
     return;
   }
 
-  if (options.discardJitScripts) {
-    lastDiscardedCodeTime_ = mozilla::TimeStamp::Now();
-  }
-
   // Move the IC stub data of each realm in this zone to a separate LifoAlloc.
   // Stubs that must survive are copied back to their realm's stub space below.
   jit::ICStubSpace discardedStubSpace;
+  const mozilla::TimeStamp now = mozilla::TimeStamp::Now();
   for (RealmsInZoneIter r(this); !r.done(); r.next()) {
+    if (options.discardJitScripts) {
+      r->jitRealm().setLastDiscardedCodeTime(now);
+    }
     discardedStubSpace.transferFrom(*r->jitRealm().stubSpace());
   }
 
@@ -536,7 +544,7 @@ Zone* Zone::nextZone() const {
 void Zone::prepareForMovingGC() {
   JS::GCContext* gcx = runtimeFromMainThread()->gcContext();
 
-  MOZ_ASSERT(!isPreservingCode());
+  MOZ_ASSERT(!isAnyRealmPreservingCode());
   forceDiscardJitCode(gcx);
 }
 

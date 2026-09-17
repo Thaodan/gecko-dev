@@ -561,13 +561,8 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   // metadata builder.
   js::MainThreadOrIonCompileData<size_t> numRealmsWithAllocMetadataBuilder_{0};
 
-  // Last time at which JIT code was discarded for this zone. This is only set
-  // when JitScripts and Baseline code are discarded as well.
-  js::MainThreadData<mozilla::TimeStamp> lastDiscardedCodeTime_;
-
   js::MainThreadData<bool> gcScheduled_;
   js::MainThreadData<bool> gcScheduledSaved_;
-  js::MainThreadData<bool> gcPreserveCode_;
   js::MainThreadData<bool> keepPropMapTables_;
   js::MainThreadData<bool> wasCollected_;
 
@@ -641,7 +636,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   // Circumvent https://github.com/llvm/llvm-project/issues/36032
   static constexpr JitDiscardOptions DefaultJitDiscardOptions() { return {}; }
 
-  // Discard JIT code regardless of isPreservingCode().
+  // Discard JIT code regardless of isAnyRealmPreservingCode().
   void forceDiscardJitCode(
       JS::GCContext* gcx,
       const JitDiscardOptions& options = DefaultJitDiscardOptions());
@@ -686,12 +681,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   void unscheduleGC() { gcScheduled_ = false; }
   bool isGCScheduled() { return gcScheduled_; }
 
-  void setPreservingCode(bool preserving) { gcPreserveCode_ = preserving; }
-  bool isPreservingCode() const { return gcPreserveCode_; }
-
-  mozilla::TimeStamp lastDiscardedCodeTime() const {
-    return lastDiscardedCodeTime_;
-  }
+  bool isAnyRealmPreservingCode();
 
   void changeGCState(js::gc::GCRuntime* gc, GCState prev, GCState next);
 
