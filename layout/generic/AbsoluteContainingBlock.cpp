@@ -542,6 +542,7 @@ static AnchorPosResolutionCache PopulateAnchorResolutionCache(
     const nsIFrame* aKidFrame, AnchorPosReferenceData* aData,
     bool aReuseUnfragmentedAnchorPosReferences) {
   MOZ_ASSERT(aKidFrame->HasAnchorPosReference());
+  aData->mFrameTreeDepth = aKidFrame->GetDepthInFrameTree();
   if (aReuseUnfragmentedAnchorPosReferences) [[unlikely]] {
     MOZ_ASSERT(
         aKidFrame->FirstInFlow()->HasProperty(UnfragmentedPositionProperty()));
@@ -846,7 +847,6 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
       if (!referenceData) {
         referenceData = kidFrame->SetOrUpdateDeletableProperty(
             nsIFrame::AnchorPosReferences());
-        referenceData->mFrameTreeDepth = kidFrame->GetDepthInFrameTree();
       }
       anchorPosResolutionCache = Some(PopulateAnchorResolutionCache(
           kidFrame, referenceData, reuseUnfragmentedAnchorPosReferences));

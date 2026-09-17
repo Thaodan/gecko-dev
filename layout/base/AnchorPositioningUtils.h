@@ -324,7 +324,8 @@ struct AnchorPositioningUtils {
   static nsIFrame* FindFirstAcceptableAnchor(
       const ScopedNameRef& aName, const nsIFrame* aPositionedFrame,
       const nsTArray<AnchorPosAnchorInfo>& aPossibleAnchorFrames,
-      uint32_t aPositionedFrameTreeDepth);
+      uint32_t aPositionedFrameTreeDepth,
+      nsTArray<size_t>* aTopLayerIndexCache);
 
   static Maybe<nsRect> GetAnchorPosRect(
       const nsIFrame* aAbsoluteContainingBlock, const nsIFrame* aAnchor,

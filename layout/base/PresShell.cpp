@@ -11637,7 +11637,8 @@ nsIFrame* PresShell::GetAbsoluteContainingBlock(nsIFrame* aFrame) {
 
 nsIFrame* PresShell::GetAnchorPosAnchor(
     const ScopedNameRef& aName, const nsIFrame* aPositionedFrame,
-    uint32_t aPositionedFrameTreeDepth) const {
+    uint32_t aPositionedFrameTreeDepth,
+    AnchorPosAnchorTopLayerIndexCache* aTopLayerIndexCache) const {
   MOZ_ASSERT(aName.mName);
   MOZ_ASSERT(!aName.mName->IsEmpty());
   MOZ_ASSERT(mLazyAnchorPosAnchorChanges.IsEmpty());
@@ -11648,8 +11649,17 @@ nsIFrame* PresShell::GetAnchorPosAnchor(
         .mAnchorFrame;
   }
   if (const auto& entry = mAnchorPosAnchors.Lookup(aName.mName)) {
+    auto cacheEntry = [&]() -> nsTArray<size_t>* {
+      if (!aTopLayerIndexCache) {
+        return nullptr;
+      }
+      auto& v =
+          aTopLayerIndexCache->LookupOrInsert(aName.mName, entry->Length());
+      return &v;
+    }();
     return AnchorPositioningUtils::FindFirstAcceptableAnchor(
-        aName, aPositionedFrame, entry.Data(), aPositionedFrameTreeDepth);
+        aName, aPositionedFrame, entry.Data(), aPositionedFrameTreeDepth,
+        cacheEntry);
   }
   return nullptr;
 }
@@ -11664,7 +11674,7 @@ void PresShell::CollectAnchorNames(const nsIFrame* aPositionedFrame,
     ScopedNameRef scopedName{name, anchorTreeScope};
     if (AnchorPositioningUtils::FindFirstAcceptableAnchor(
             scopedName, aPositionedFrame, iter.Data(),
-            aPositionedFrame->GetDepthInFrameTree())) {
+            aPositionedFrame->GetDepthInFrameTree(), nullptr)) {
       aResult.AppendElement(nsDependentAtomString(name));
     }
   }
@@ -11855,6 +11865,7 @@ PresShell::AnchorPosUpdateResult PresShell::UpdateAnchorPosLayout() {
 
   auto result = AnchorPosUpdateResult::Flushed;
   AUTO_PROFILER_MARKER_UNTYPED("UpdateAnchorPosLayout", LAYOUT, {});
+  AnchorPosAnchorTopLayerIndexCache topLayerCache;
   for (auto* positioned : mAnchorPosPositioned) {
     MOZ_ASSERT(positioned->IsAbsolutelyPositioned(),
                "Anchor positioned frame is not absolutely positioned?");
@@ -11879,7 +11890,8 @@ PresShell::AnchorPosUpdateResult PresShell::UpdateAnchorPosLayout() {
       }
       const ScopedNameRef& usedName = *usedAnchorName;
       const auto* anchor = GetAnchorPosAnchor(
-          usedName, positioned, anchorPosReferenceData->mFrameTreeDepth);
+          usedName, positioned, anchorPosReferenceData->mFrameTreeDepth,
+          &topLayerCache);
       if (!anchor) {
         return Nothing{};
       }

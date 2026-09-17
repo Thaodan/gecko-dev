@@ -203,12 +203,18 @@ class TopLayerChecker {
   }
 
  public:
+  size_t IndexFor(const nsIFrame* aFrame) const {
+    return GetIndex(aFrame, mTopLayer);
+  }
+
   explicit TopLayerChecker(const nsIFrame* aPositionedFrame)
       : mTopLayer{aPositionedFrame->GetContent()->OwnerDoc()->GetTopLayer()},
         mPositionedTopLayerIndex{GetIndex(aPositionedFrame, mTopLayer)} {}
 
-  int32_t Compare(const nsIFrame* aPossibleAnchorFrame) {
-    const auto anchorTopLayerIndex = GetIndex(aPossibleAnchorFrame, mTopLayer);
+  int32_t Compare(const nsIFrame* aPossibleAnchorFrame,
+                  Maybe<size_t> aCachedAnchorTopLayerIndex) {
+    const auto anchorTopLayerIndex = aCachedAnchorTopLayerIndex.valueOrFrom(
+        [&]() { return GetIndex(aPossibleAnchorFrame, mTopLayer); });
     if (mPositionedTopLayerIndex == anchorTopLayerIndex) {
       return 0;
     }
@@ -235,10 +241,12 @@ bool IsAnchorLaidOutStrictlyBeforeElement(
     const AnchorPosAnchorInfo& aPossibleAnchor,
     const nsIFrame* aPositionedFrame, uint32_t aPositionedFrameTreeDepth,
     const nsTArray<const nsIFrame*>& aPositionedFrameAncestors,
-    TopLayerChecker& aTopLayerChecker) {
+    TopLayerChecker& aTopLayerChecker,
+    Maybe<size_t> aCachedAnchorTopLayerIndex) {
   // 1. positioned el is in a higher top layer than possible anchor,
   // see https://drafts.csswg.org/css-position-4/#in-a-higher-top-layer
-  const auto topLayerResult = aTopLayerChecker.Compare(aPossibleAnchor.mAnchor);
+  const auto topLayerResult = aTopLayerChecker.Compare(
+      aPossibleAnchor.mAnchor, aCachedAnchorTopLayerIndex);
 
   if (topLayerResult != 0) {
     return topLayerResult > 0;
@@ -409,7 +417,8 @@ bool IsAcceptableAnchorElement(
     const AnchorPosAnchorInfo& aPossibleAnchor, const ScopedNameRef* aName,
     const nsIFrame* aPositionedFrame, uint32_t aPositionedFrameTreeDepth,
     LazyAncestorHolder& aPositionedFrameAncestorHolder,
-    TopLayerChecker& aTopLayerChecker) {
+    TopLayerChecker& aTopLayerChecker,
+    Maybe<size_t> aCachedAnchorTopLayerIndex) {
   MOZ_ASSERT(aPossibleAnchor.mAnchor);
   MOZ_ASSERT(aPositionedFrame);
 
@@ -431,7 +440,8 @@ bool IsAcceptableAnchorElement(
   }
   if (!IsAnchorLaidOutStrictlyBeforeElement(
           aPossibleAnchor, aPositionedFrame, aPositionedFrameTreeDepth,
-          aPositionedFrameAncestorHolder.GetAncestors(), aTopLayerChecker)) {
+          aPositionedFrameAncestorHolder.GetAncestors(), aTopLayerChecker,
+          aCachedAnchorTopLayerIndex)) {
     return false;
   }
   if (aName && !IsAnchorInScopeForPositionedElement(
@@ -498,13 +508,29 @@ AnchorPosDefaultAnchorCache::AnchorPosDefaultAnchorCache(
 nsIFrame* AnchorPositioningUtils::FindFirstAcceptableAnchor(
     const ScopedNameRef& aName, const nsIFrame* aPositionedFrame,
     const nsTArray<AnchorPosAnchorInfo>& aPossibleAnchorFrames,
-    uint32_t aPositionedFrameTreeDepth) {
+    uint32_t aPositionedFrameTreeDepth, nsTArray<size_t>* aTopLayerIndexCache) {
   LazyAncestorHolder positionedFrameAncestorHolder(aPositionedFrame);
   TopLayerChecker topLayerHolder{aPositionedFrame};
 
   for (auto it = aPossibleAnchorFrames.rbegin();
        it != aPossibleAnchorFrames.rend(); ++it) {
     nsIFrame* possibleAnchorFrame = it->mAnchor;
+    const auto anchorTopLayerIndex = [&]() -> Maybe<size_t> {
+      // Instead of pushing to front, work with the index cache in the reverse
+      // order.
+      const auto i = std::distance(it, aPossibleAnchorFrames.rend());
+      MOZ_ASSERT(i >= 0);
+      if (!aTopLayerIndexCache) {
+        return Nothing{};
+      }
+      if (static_cast<size_t>(i) >= aTopLayerIndexCache->Length()) {
+        const auto topLayer = topLayerHolder.IndexFor(possibleAnchorFrame);
+        aTopLayerIndexCache->AppendElement(topLayer);
+        return Some(topLayer);
+      }
+
+      return Some((*aTopLayerIndexCache)[i]);
+    }();
     if (!DoTreeScopedPropertiesOfElementApplyToContent(
             aName, possibleAnchorFrame, aPositionedFrame)) {
       // Skip anchors in different shadow trees.
@@ -515,9 +541,10 @@ nsIFrame* AnchorPositioningUtils::FindFirstAcceptableAnchor(
                    possibleAnchorFrame->GetContent()->OwnerDoc(),
                "Anchor and positiond frames in different documents?");
     // Check if the possible anchor is an acceptable anchor element.
-    if (IsAcceptableAnchorElement(
-            *it, &aName, aPositionedFrame, aPositionedFrameTreeDepth,
-            positionedFrameAncestorHolder, topLayerHolder)) {
+    if (IsAcceptableAnchorElement(*it, &aName, aPositionedFrame,
+                                  aPositionedFrameTreeDepth,
+                                  positionedFrameAncestorHolder, topLayerHolder,
+                                  anchorTopLayerIndex)) {
       return possibleAnchorFrame;
     }
   }
@@ -916,9 +943,10 @@ auto AnchorPositioningUtils::GetAnchorPosImplicitAnchor(const nsIFrame* aFrame)
   }
   LazyAncestorHolder ancestorHolder(aFrame);
   TopLayerChecker topLayerHolder{aFrame};
-  if (!IsAcceptableAnchorElement(
-          AnchorPosAnchorInfo{anchorFrame}, /* aName = */ nullptr, aFrame,
-          aFrame->GetDepthInFrameTree(), ancestorHolder, topLayerHolder)) {
+  if (!IsAcceptableAnchorElement(AnchorPosAnchorInfo{anchorFrame},
+                                 /* aName = */ nullptr, aFrame,
+                                 aFrame->GetDepthInFrameTree(), ancestorHolder,
+                                 topLayerHolder, Nothing{})) {
     return {};
   }
   return {anchorFrame, kind};
@@ -1046,10 +1074,12 @@ struct ScrollShifts {
 
   nsPoint Sum() const { return mChainedDelta + mScrollCompensatedDelta; }
 };
+
 static ScrollShifts FindScrollCompensatedAnchorShift(
     const PresShell* aPresShell, const nsIFrame* aPositioned,
     const AnchorPosReferenceData& aReferenceData,
-    const AppliedShifts& aAppliedShifts) {
+    const AppliedShifts& aAppliedShifts,
+    AnchorPosAnchorTopLayerIndexCache& aTopLayerIndexCache) {
   MOZ_ASSERT(aPositioned->IsAbsolutelyPositioned(),
              "Anchor positioned frame is not absolutely positioned?");
   const auto* defaultAnchorName = aReferenceData.mDefaultAnchorName.get();
@@ -1059,7 +1089,7 @@ static ScrollShifts FindScrollCompensatedAnchorShift(
   const StyleCascadeLevel& anchorTreeScope = aReferenceData.mAnchorTreeScope;
   auto* defaultAnchor = aPresShell->GetAnchorPosAnchor(
       {defaultAnchorName, anchorTreeScope}, aPositioned,
-      aReferenceData.mFrameTreeDepth);
+      aReferenceData.mFrameTreeDepth, &aTopLayerIndexCache);
   if (!defaultAnchor) {
     return {};
   }
@@ -1084,7 +1114,8 @@ static ScrollShifts FindScrollCompensatedAnchorShift(
       return *delta;
     }
     return FindScrollCompensatedAnchorShift(aPresShell, defaultAnchor,
-                                            *referenceData, aAppliedShifts)
+                                            *referenceData, aAppliedShifts,
+                                            aTopLayerIndexCache)
         .Sum();
   }();
 
@@ -1107,12 +1138,14 @@ static ScrollShifts FindScrollCompensatedAnchorShift(
 }
 
 // https://drafts.csswg.org/css-anchor-position-1/#default-scroll-shift
-static void UpdateScrollShift(PresShell* aPresShell, nsIFrame* aPositioned,
-                              AnchorPosReferenceData& aReferenceData,
-                              OverflowChangedTracker& aOct,
-                              AppliedShifts& aAppliedShifts) {
-  const auto scrollShifts = FindScrollCompensatedAnchorShift(
-      aPresShell, aPositioned, aReferenceData, aAppliedShifts);
+static void UpdateScrollShift(
+    PresShell* aPresShell, nsIFrame* aPositioned,
+    AnchorPosReferenceData& aReferenceData, OverflowChangedTracker& aOct,
+    AppliedShifts& aAppliedShifts,
+    AnchorPosAnchorTopLayerIndexCache& aTopLayerIndexCache) {
+  const auto scrollShifts =
+      FindScrollCompensatedAnchorShift(aPresShell, aPositioned, aReferenceData,
+                                       aAppliedShifts, aTopLayerIndexCache);
   auto delta = scrollShifts.Sum();
   if (delta == nsPoint()) {
     return;
@@ -1204,7 +1237,8 @@ static bool AnchorIsEffectivelyHidden(nsIFrame* aAnchor) {
 
 static bool ComputePositionVisibility(
     PresShell* aPresShell, nsIFrame* aPositioned,
-    AnchorPosReferenceData& aReferencedAnchors) {
+    AnchorPosReferenceData& aReferencedAnchors,
+    AnchorPosAnchorTopLayerIndexCache& aTopLayerIndexCache) {
   auto vis = aPositioned->StylePosition()->mPositionVisibility;
   if (vis & StylePositionVisibility::ALWAYS) {
     MOZ_ASSERT(vis == StylePositionVisibility::ALWAYS,
@@ -1232,7 +1266,7 @@ static bool ComputePositionVisibility(
     if (defaultAnchorName) {
       auto* defaultAnchor = aPresShell->GetAnchorPosAnchor(
           {defaultAnchorName, anchorTreeScope}, aPositioned,
-          aReferencedAnchors.mFrameTreeDepth);
+          aReferencedAnchors.mFrameTreeDepth, &aTopLayerIndexCache);
       if (defaultAnchor && AnchorIsEffectivelyHidden(defaultAnchor)) {
         return false;
       }
@@ -1295,6 +1329,7 @@ bool AnchorPositioningUtils::TriggerLayoutOnOverflow(PresShell* aPresShell,
 
   OverflowChangedTracker oct;
   AppliedShifts appliedShifts;
+  AnchorPosAnchorTopLayerIndexCache topLayerCache;
   for (auto* positioned : aPresShell->GetAnchorPosPositioned()) {
     AnchorPosReferenceData* referencedAnchors =
         positioned->GetProperty(nsIFrame::AnchorPosReferences());
@@ -1304,7 +1339,7 @@ bool AnchorPositioningUtils::TriggerLayoutOnOverflow(PresShell* aPresShell,
 
     if (aFirstIteration) {
       UpdateScrollShift(aPresShell, positioned, *referencedAnchors, oct,
-                        appliedShifts);
+                        appliedShifts, topLayerCache);
     }
 
     if (TriggerFallbackReflow(aPresShell, positioned, *referencedAnchors,
@@ -1316,8 +1351,8 @@ bool AnchorPositioningUtils::TriggerLayoutOnOverflow(PresShell* aPresShell,
       // We'll come back to evaluate position-visibility later.
       continue;
     }
-    const bool shouldBeVisible =
-        ComputePositionVisibility(aPresShell, positioned, *referencedAnchors);
+    const bool shouldBeVisible = ComputePositionVisibility(
+        aPresShell, positioned, *referencedAnchors, topLayerCache);
     const bool isVisible =
         !positioned->HasAnyStateBits(NS_FRAME_POSITION_VISIBILITY_HIDDEN);
     if (shouldBeVisible != isVisible) {
