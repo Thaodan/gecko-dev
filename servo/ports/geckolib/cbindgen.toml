@@ -124,6 +124,8 @@ include = [
   "CaptionSide",
   "ColorGamut",
   "DominantBaseline",
+  "FontFeatureSettings",
+  "FontVariationSettings",
   "FontSizeAdjust",
   "FontPalette",
   "FontLanguageOverride",
@@ -481,11 +483,9 @@ renaming_overrides_prefixing = true
 "FontFaceDescriptorId" = "FontFaceDescriptorId"
 "CounterStyleDescriptorId" = "CounterStyleDescriptorId"
 "nsresult" = "nsresult"
-"gfxFontFeature" = "gfxFontFeature"
 "gfxFontFeatureValueSet" = "gfxFontFeatureValueSet"
 "GeckoFontMetrics" = "GeckoFontMetrics"
 "SeenPtrs" = "SeenPtrs"
-"gfxFontVariation" = "gfxFontVariation"
 "URLExtraData" = "URLExtraData"
 "Keyframe" = "Keyframe"
 "nsChangeHint" = "nsChangeHint"
