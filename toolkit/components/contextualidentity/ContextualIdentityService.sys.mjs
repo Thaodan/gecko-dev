@@ -870,36 +870,21 @@ _ContextualIdentityService.prototype = {
     return "";
   },
 
-  /**
-   * @param {number} userContextId
-   * @returns {string|undefined}
-   *   The Fluent id of a default identity the user hasn't renamed, undefined
-   *   for a renamed or user-created one.
-   */
-  getUserContextL10nId(userContextId) {
-    let identity = this.getPublicIdentityFromId(userContextId);
-    if (!identity || identity.name) {
-      return undefined;
-    }
-    return this._defaultIdentities.find(
-      info => info.public && info.userContextId == userContextId
-    )?.l10nId;
-  },
-
   getUserContextLabel(userContextId) {
     let identity = this.getPublicIdentityFromId(userContextId);
+    if (!identity) {
+      return "";
+    }
 
     // We cannot localize the user-created identity names.
-    if (identity?.name) {
+    if (identity.name) {
       return identity.name;
     }
 
-    let l10nId = this.getUserContextL10nId(userContextId);
-    if (l10nId) {
-      return this.formatContextLabel(l10nId);
-    }
-
-    return "";
+    let l10nId = this._defaultIdentities.find(
+      info => info.public && info.userContextId == userContextId
+    )?.l10nId;
+    return l10nId ? this.formatContextLabel(l10nId) : "";
   },
 
   get containerColors() {

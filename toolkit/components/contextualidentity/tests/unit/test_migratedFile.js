@@ -184,17 +184,6 @@ add_task(async function migratedFileV6() {
   await IOUtils.writeJSON(path, oldFileData, { tmpPath: path + ".tmp" });
 
   let cis = ContextualIdentityService.createNewInstanceForTesting(path);
-  Assert.deepEqual(
-    [1, 2, 3, 4, 5].map(id => cis.getUserContextL10nId(id)),
-    [
-      "user-context-personal2",
-      "user-context-work2",
-      "user-context-banking2",
-      "user-context-shopping2",
-      undefined,
-    ],
-    "Default identities use the renamed Fluent ids"
-  );
   checkDefaultLabels(cis);
   equal(
     cis.getUserContextLabel(5),
@@ -261,17 +250,6 @@ add_task(async function migratedFileV7() {
   );
 
   let cis = ContextualIdentityService.createNewInstanceForTesting(path);
-  Assert.deepEqual(
-    [1, 2, 3, 4, 5].map(id => cis.getUserContextL10nId(id)),
-    [
-      "user-context-personal2",
-      "user-context-work2",
-      "user-context-banking2",
-      undefined,
-      undefined,
-    ],
-    "Unrenamed default identities get the code's Fluent ids"
-  );
   Assert.deepEqual(
     [1, 2, 3, 4, 5].map(id => cis.getUserContextLabel(id)),
     [
