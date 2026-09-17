@@ -3289,7 +3289,7 @@ void CanvasRenderingContext2D::UpdateFilter(bool aFlushIfNeeded) {
                         ? currentFontStyle->StyleFont()->mLineHeight
                         : StyleLineHeight::Normal();
   auto* language = currentFontStyle
-                       ? currentFontStyle->StyleFont()->mLanguage.get()
+                       ? currentFontStyle->StyleFont()->GetLangAtom()
                        : nullptr;
   bool explicitLanguage =
       state.fontComputedStyle &&

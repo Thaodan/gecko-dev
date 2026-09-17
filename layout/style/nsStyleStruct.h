@@ -146,6 +146,11 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont {
 
   nsAtom* GetFontPaletteAtom() const { return mFontPalette._0.AsAtom(); }
 
+  nsAtom* GetLangAtom() const {
+    auto* atom = mLanguage.AsAtom();
+    return atom == nsGkAtoms::empty ? nullptr : atom;
+  }
+
   nsFont mFont;
 
   // Our "computed size". Can be different from mFont.size which is our "actual
@@ -184,7 +189,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont {
   // The value mSize would have had if scriptminsize had never been applied
   mozilla::NonNegativeLength mScriptUnconstrainedSize;
   mozilla::Length mScriptMinSize;
-  RefPtr<nsAtom> mLanguage;
+  mozilla::StyleXLang mLanguage;
 };
 
 struct nsStyleImageLayers {
