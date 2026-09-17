@@ -2604,7 +2604,9 @@ void jit::InvalidateAll(JS::GCContext* gcx, Zone* zone) {
   for (JitActivationIterator iter(cx); !iter.done(); ++iter) {
     if (iter->compartment()->zone() == zone) {
       JitSpew(JitSpew_IonInvalidate, "Invalidating all frames for GC");
-      InvalidateActivation(gcx, iter, [](JSScript*) { return true; });
+      InvalidateActivation(gcx, iter, [](JSScript* script) {
+        return !script->realm()->jitRealm().isPreservingCode();
+      });
     }
   }
 }

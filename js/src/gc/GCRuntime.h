@@ -913,6 +913,11 @@ class GCRuntime {
                              const mozilla::TimeStamp& currentTime,
                              bool canAllocateMoreCode,
                              bool isActiveCompartment);
+  void setRealmPreserveJitCodeFlags(JS::Zone* zone,
+                                    const mozilla::TimeStamp& currentTime,
+                                    bool canAllocateMoreCode,
+                                    JS::Compartment* activeCompartment);
+  void clearRealmPreserveJitCodeFlags(JS::Zone* zone);
   void maybeDiscardJitCodeForGC();
   void startBackgroundFreeAfterMinorGC();
   void relazifyFunctionsForShrinkingGC();

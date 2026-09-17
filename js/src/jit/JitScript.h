@@ -668,6 +668,8 @@ class MOZ_RAII AutoKeepJitScripts {
 
 // Mark ICScripts on the stack as active, so that they are not discarded
 // during GC, and copy active Baseline IC stubs to their realm's stub space.
+// Frames in realms that are preserving their JIT code are ignored because
+// their stubs are not discarded.
 void MarkActiveICScriptsAndCopyStubs(Zone* zone);
 
 #ifdef JS_STRUCTURED_SPEW

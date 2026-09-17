@@ -773,8 +773,17 @@ using StubHashMap = HashMap<ICCacheIRStub*, ICCacheIRStub*,
 static void MarkActiveICScriptsAndCopyStubs(
     JSContext* cx, const JitActivationIterator& activation,
     StubHashMap& alreadyClonedStubs) {
+  auto isPreservingCode = [](JSScript* script) {
+    return script->realm()->jitRealm().isPreservingCode();
+  };
+
   for (OnlyJSJitFrameIter iter(activation); !iter.done(); ++iter) {
     const JSJitFrameIter& frame = iter.frame();
+
+    if (frame.isScripted() && isPreservingCode(frame.script())) {
+      continue;
+    }
+
     switch (frame.type()) {
       case FrameType::BaselineJS:
         frame.script()->jitScript()->icScript()->setActive();
@@ -794,21 +803,22 @@ static void MarkActiveICScriptsAndCopyStubs(
           MOZ_RELEASE_ASSERT(callerIter.frame().type() ==
                              FrameType::BaselineJS);
           JSScript* callerScript = callerIter.frame().script();
-
-          ICCacheIRStub* stub = layout->maybeStubPtr()->toCacheIRStub();
-          auto lookup = alreadyClonedStubs.lookupForAdd(stub);
-          if (!lookup) {
-            ICStubSpace& newStubSpace =
-                *callerScript->realm()->jitRealm().stubSpace();
-            ICCacheIRStub* newStub =
-                stub->clone(cx->runtime(), newStubSpace,
-                            ICCacheIRStub::ICScriptHandling::MarkActive);
-            AutoEnterOOMUnsafeRegion oomUnsafe;
-            if (!alreadyClonedStubs.add(lookup, stub, newStub)) {
-              oomUnsafe.crash("MarkActiveICScriptsAndCopyStubs");
+          if (!isPreservingCode(callerScript)) {
+            ICCacheIRStub* stub = layout->maybeStubPtr()->toCacheIRStub();
+            auto lookup = alreadyClonedStubs.lookupForAdd(stub);
+            if (!lookup) {
+              ICStubSpace& newStubSpace =
+                  *callerScript->realm()->jitRealm().stubSpace();
+              ICCacheIRStub* newStub =
+                  stub->clone(cx->runtime(), newStubSpace,
+                              ICCacheIRStub::ICScriptHandling::MarkActive);
+              AutoEnterOOMUnsafeRegion oomUnsafe;
+              if (!alreadyClonedStubs.add(lookup, stub, newStub)) {
+                oomUnsafe.crash("MarkActiveICScriptsAndCopyStubs");
+              }
             }
+            layout->setStubPtr(lookup->value());
           }
-          layout->setStubPtr(lookup->value());
         }
         break;
       }
@@ -818,7 +828,9 @@ static void MarkActiveICScriptsAndCopyStubs(
               frame.exitFrame()->as<LazyLinkExitFrameLayout>();
           JSScript* script =
               ScriptFromCalleeToken(ll->jsFrame()->calleeToken());
-          script->jitScript()->icScript()->setActive();
+          if (!isPreservingCode(script)) {
+            script->jitScript()->icScript()->setActive();
+          }
         }
         break;
       case FrameType::Bailout:

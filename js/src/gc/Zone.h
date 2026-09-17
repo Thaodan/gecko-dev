@@ -636,13 +636,12 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   // Circumvent https://github.com/llvm/llvm-project/issues/36032
   static constexpr JitDiscardOptions DefaultJitDiscardOptions() { return {}; }
 
-  // Discard JIT code regardless of isAnyRealmPreservingCode().
-  void forceDiscardJitCode(
-      JS::GCContext* gcx,
-      const JitDiscardOptions& options = DefaultJitDiscardOptions());
+  // Discard JIT code, except for realms we're preserving JIT code for.
+  // See GCRuntime::maybeDiscardJitCodeForGC.
+  void discardJitCode(JS::GCContext* gcx, const JitDiscardOptions& options =
+                                              DefaultJitDiscardOptions());
 
-  void resetAllocSitesAndInvalidate(bool resetNurserySites,
-                                    bool resetPretenuredSites);
+  void discardJitCodeForAllRealms(JS::GCContext* gcx);
 
   void traceWeakJitScripts(JSTracer* trc);
 
