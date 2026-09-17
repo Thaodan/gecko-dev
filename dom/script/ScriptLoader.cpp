@@ -33,6 +33,7 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ConsoleReportCollector.h"
 #include "mozilla/CycleCollectedJSContext.h"
+#include "mozilla/Encoding.h"
 #include "mozilla/EventQueue.h"
 #include "mozilla/LoadInfo.h"
 #include "mozilla/Logging.h"
@@ -1267,7 +1268,8 @@ already_AddRefed<ScriptLoadRequest> ScriptLoader::CreateLoadRequest(
     CORSMode aCORSMode, const nsAString& aNonce,
     RequestPriority aRequestPriority, const SRIMetadata& aIntegrity,
     ReferrerPolicy aReferrerPolicy, ParserMetadata aParserMetadata,
-    ScriptLoadRequestType aRequestType) {
+    ScriptLoadRequestType aRequestType,
+    const Encoding* aClassicScriptPreloadHintEncoding) {
   nsIURI* referrer = mDocument->GetDocumentURIAsReferrer();
   RefPtr<ScriptFetchOptions> fetchOptions =
       new ScriptFetchOptions(aCORSMode, aNonce, aRequestPriority,
@@ -1287,8 +1289,26 @@ already_AddRefed<ScriptLoadRequest> ScriptLoader::CreateLoadRequest(
              (StaticPrefs::dom_speculation_rules_enabled() &&
               aKind == ScriptKind::eSpeculationRules));
 
-  RefPtr<ScriptLoadRequest> request =
-      new ScriptLoadRequest(aKind, aIntegrity, referrer, context);
+  const Encoding* classicScriptHintEncoding = nullptr;
+  if (aKind == ScriptKind::eClassic) {
+    if (aRequestType == ScriptLoadRequestType::Preload) {
+      classicScriptHintEncoding = aClassicScriptPreloadHintEncoding;
+    } else {
+      MOZ_ASSERT(aClassicScriptPreloadHintEncoding == nullptr);
+
+      nsAutoString classicScriptHintCharset;
+      aElement->GetScriptCharset(classicScriptHintCharset);
+      if (!classicScriptHintCharset.IsEmpty()) {
+        classicScriptHintEncoding =
+            Encoding::ForLabel(classicScriptHintCharset);
+      }
+    }
+  } else {
+    MOZ_ASSERT(aClassicScriptPreloadHintEncoding == nullptr);
+  }
+
+  RefPtr<ScriptLoadRequest> request = new ScriptLoadRequest(
+      aKind, aIntegrity, referrer, context, classicScriptHintEncoding);
 
   TryUseCache(aReferrerPolicy, fetchOptions, aURI, request, aElement, aNonce,
               aRequestType);
@@ -1595,10 +1615,11 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
     ReferrerPolicy referrerPolicy = GetReferrerPolicy(aElement);
     ParserMetadata parserMetadata = GetParserMetadata(aElement);
 
-    request = CreateLoadRequest(
-        aScriptKind, scriptURI, aElement, VoidString(), principal, ourCORSMode,
-        nonce, FetchPriorityToRequestPriority(fetchPriority), sriMetadata,
-        referrerPolicy, parserMetadata, ScriptLoadRequestType::External);
+    request = CreateLoadRequest(aScriptKind, scriptURI, aElement, VoidString(),
+                                principal, ourCORSMode, nonce,
+                                FetchPriorityToRequestPriority(fetchPriority),
+                                sriMetadata, referrerPolicy, parserMetadata,
+                                ScriptLoadRequestType::External, nullptr);
 
     PROFILER_MARKER("ScriptLoader::ProcessExternalScript CreateLoadRequest", JS,
                     {mozilla::MarkerStack::Capture()}, FlowMarker,
@@ -1840,7 +1861,7 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
       mDocument->NodePrincipal(), corsMode, nonce,
       FetchPriorityToRequestPriority(fetchPriority),
       SRIMetadata(),  // SRI doesn't apply
-      referrerPolicy, parserMetadata, ScriptLoadRequestType::Inline);
+      referrerPolicy, parserMetadata, ScriptLoadRequestType::Inline, nullptr);
   request->GetScriptLoadContext()->mIsInline = true;
   request->GetScriptLoadContext()->mLineNo = aElement->GetScriptLineNumber();
   request->GetScriptLoadContext()->mColumnNo =
@@ -2044,18 +2065,18 @@ ScriptLoadRequest* ScriptLoader::LookupPreloadRequest(
     request->SetReady();
   }
 
-  nsString preloadCharset(mPreloads[i].mCharset);
   mPreloads.RemoveElementAt(i);
 
   // Double-check that the charset the preload used is the same as the charset
   // we have now.
   nsAutoString elementCharset;
   aElement->GetScriptCharset(elementCharset);
+  const Encoding* elementEncoding = Encoding::ForLabel(elementCharset);
 
   // Bug 1832361: charset and crossorigin attributes shouldn't affect matching
   // of module scripts and modulepreload
-  if (!request->IsModuleRequest() &&
-      (!elementCharset.Equals(preloadCharset) ||
+  if (request->IsClassicScript() &&
+      (request->mClassicScriptHintEncoding != elementEncoding ||
        aElement->GetCORSMode() != request->CORSMode())) {
     // Drop the preload.
     request->Cancel();
@@ -5551,6 +5572,11 @@ void ScriptLoader::PreloadURI(
   const auto requestPriority = FetchPriorityToRequestPriority(
       nsGenericHTMLElement::ToFetchPriority(aFetchPriority));
 
+  const Encoding* classicScriptHintEncoding = nullptr;
+  if (scriptKind == ScriptKind::eClassic) {
+    classicScriptHintEncoding = Encoding::ForLabel(aCharset);
+  }
+
   // For link type "modulepreload":
   // https://html.spec.whatwg.org/multipage/links.html#link-type-modulepreload
   // Step 11. Let options be a script fetch options whose cryptographic nonce is
@@ -5567,7 +5593,7 @@ void ScriptLoader::PreloadURI(
       sriMetadata, aReferrerPolicy,
       aLinkPreload ? ParserMetadata::NotParserInserted
                    : ParserMetadata::ParserInserted,
-      ScriptLoadRequestType::Preload);
+      ScriptLoadRequestType::Preload, classicScriptHintEncoding);
   request->GetScriptLoadContext()->mIsInline = false;
   request->GetScriptLoadContext()->mScriptFromHead = aScriptFromHead;
   request->GetScriptLoadContext()->SetScriptMode(aDefer, aAsync, aLinkPreload);
@@ -5606,7 +5632,6 @@ void ScriptLoader::PreloadURI(
 
   PreloadInfo* pi = mPreloads.AppendElement();
   pi->mRequest = request;
-  pi->mCharset = aCharset;
 }
 
 void ScriptLoader::AddDeferRequest(ScriptLoadRequest* aRequest) {

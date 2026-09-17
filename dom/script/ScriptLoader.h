@@ -15,6 +15,7 @@
 #include "js/loader/ScriptLoadRequestList.h"
 #include "js/loader/ScriptLoaderInterface.h"
 #include "mozilla/CORSMode.h"
+#include "mozilla/Encoding.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/dom/ScriptLoadContext.h"
@@ -491,7 +492,8 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
       RequestPriority aRequestPriority, const SRIMetadata& aIntegrity,
       ReferrerPolicy aReferrerPolicy,
       JS::loader::ParserMetadata aParserMetadata,
-      ScriptLoadRequestType aRequestType);
+      ScriptLoadRequestType aRequestType,
+      const Encoding* aClassicScriptPreloadHintEncoding);
 
   /**
    * Helper function to lookup the cache entry and associate it to the
@@ -968,7 +970,6 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   // In mRequests, the additional information here is stored by the element.
   struct PreloadInfo {
     RefPtr<ScriptLoadRequest> mRequest;
-    nsString mCharset;
   };
 
   friend void ImplCycleCollectionUnlink(ScriptLoader::PreloadInfo& aField);
