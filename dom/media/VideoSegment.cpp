@@ -177,8 +177,7 @@ void VideoSegment::AppendWebrtcRemoteFrame(
 void VideoSegment::AppendWebrtcLocalFrame(
     already_AddRefed<Image> aImage, const IntSize& aIntrinsicSize,
     const PrincipalHandle& aPrincipalHandle, bool aForceBlack,
-    TimeStamp aTimeStamp, TimeStamp aWebrtcCaptureTime,
-    VideoRotation aRotation) {
+    TimeStamp aTimeStamp, TimeStamp aWebrtcCaptureTime) {
   VideoChunk* chunk = AppendChunk(0);
   chunk->mTimeStamp = aTimeStamp;
   chunk->mWebrtcCaptureTime = AsVariant(aWebrtcCaptureTime);
@@ -187,7 +186,6 @@ void VideoSegment::AppendWebrtcLocalFrame(
   frame.SetForceBlack(aForceBlack);
   frame.SetPrincipalHandle(aPrincipalHandle);
   chunk->mFrame.TakeFrom(&frame);
-  chunk->mRotation = aRotation;
 }
 
 VideoSegment::VideoSegment()
