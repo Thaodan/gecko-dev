@@ -52,6 +52,8 @@ namespace mozilla {
 // Forward declaration for `StyleLengthPercentage::AsCalc`, which
 // references the type below in the generated code.
 struct StyleCalcLengthPercentage;
+// Same but for `AsPercentage`.
+struct StylePercentage;
 
 // Forward declaration for `StyleVariableReferenceValue`, which references the
 // the type below in the generated code.
@@ -128,6 +130,7 @@ struct PseudoStyleRequest;
 
 template <typename L>
 union StyleGenericCalcNode;
+union StyleSpecifiedLeaf;
 
 namespace css {
 class Loader;
