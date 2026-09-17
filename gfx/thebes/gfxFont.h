@@ -112,7 +112,7 @@ struct gfxFontStyle {
   // (3) are guaranteed to be mutually exclusive
 
   // custom opentype feature settings
-  mozilla::StyleFontFeatureSettings featureSettings;
+  CopyableTArray<gfxFontFeature> featureSettings;
 
   // Some font-variant property values require font-specific settings
   // defined via @font-feature-values rules.  These are resolved after
@@ -125,7 +125,7 @@ struct gfxFontStyle {
   RefPtr<gfxFontFeatureValueSet> featureValueLookup;
 
   // opentype variation settings
-  mozilla::StyleFontVariationSettings variationSettings;
+  CopyableTArray<gfxFontVariation> variationSettings;
 
   // The logical size of the font, in pixels
   gfxFloat size;

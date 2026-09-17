@@ -475,8 +475,8 @@ static void LookupAlternateValues(const gfxFontFeatureValueSet& aFeatureLookup,
       if (nn == 0 || nn > MAX_CVXX_VALUE) {
         continue;
       }
-      feature.value = values.Length() > 1 ? values[1] : 1;
-      feature.tag = HB_TAG('c', 'v', ('0' + nn / 10), ('0' + nn % 10));
+      feature.mValue = values.Length() > 1 ? values[1] : 1;
+      feature.mTag = HB_TAG('c', 'v', ('0' + nn / 10), ('0' + nn % 10));
       aFontFeatures.AppendElement(feature);
     }
     return;
@@ -488,12 +488,12 @@ static void LookupAlternateValues(const gfxFontFeatureValueSet& aFeatureLookup,
           aFamily, NS_FONT_VARIANT_ALTERNATES_STYLESET, ident.AsAtom());
 
       // styleset(1 2 7) ==> 'ss01' = 1, 'ss02' = 1, 'ss07' = 1
-      feature.value = 1;
+      feature.mValue = 1;
       for (uint32_t nn : values) {
         if (nn == 0 || nn > MAX_SSXX_VALUE) {
           continue;
         }
-        feature.tag = HB_TAG('s', 's', ('0' + nn / 10), ('0' + nn % 10));
+        feature.mTag = HB_TAG('s', 's', ('0' + nn / 10), ('0' + nn % 10));
         aFontFeatures.AppendElement(feature);
       }
     }
@@ -532,21 +532,21 @@ static void LookupAlternateValues(const gfxFontFeatureValueSet& aFeatureLookup,
   MOZ_ASSERT(values.Length() == 1,
              "too many values for font-specific font-variant-alternates");
 
-  feature.value = values[0];
+  feature.mValue = values[0];
   switch (aAlternates.tag) {
     case Tag::Swash:  // swsh, cswh
-      feature.tag = HB_TAG('s', 'w', 's', 'h');
+      feature.mTag = HB_TAG('s', 'w', 's', 'h');
       aFontFeatures.AppendElement(feature);
-      feature.tag = HB_TAG('c', 's', 'w', 'h');
+      feature.mTag = HB_TAG('c', 's', 'w', 'h');
       break;
     case Tag::Stylistic:  // salt
-      feature.tag = HB_TAG('s', 'a', 'l', 't');
+      feature.mTag = HB_TAG('s', 'a', 'l', 't');
       break;
     case Tag::Ornaments:  // ornm
-      feature.tag = HB_TAG('o', 'r', 'n', 'm');
+      feature.mTag = HB_TAG('o', 'r', 'n', 'm');
       break;
     case Tag::Annotation:  // nalt
-      feature.tag = HB_TAG('n', 'a', 'l', 't');
+      feature.mTag = HB_TAG('n', 'a', 'l', 't');
       break;
     default:
       MOZ_ASSERT_UNREACHABLE("how?");
@@ -576,10 +576,10 @@ void gfxFontShaper::MergeFontFeatures(
 
   struct FeatureTagCmp {
     bool Equals(const gfxFontFeature& a, const gfxFontFeature& b) const {
-      return a.tag == b.tag;
+      return a.mTag == b.mTag;
     }
     bool LessThan(const gfxFontFeature& a, const gfxFontFeature& b) const {
-      return a.tag < b.tag;
+      return a.mTag < b.mTag;
     }
   } cmp;
 
@@ -588,7 +588,7 @@ void gfxFontShaper::MergeFontFeatures(
     if (index == nsTArray<gfxFontFeature>::NoIndex) {
       mergedFeatures.InsertElementSorted(aFeature, cmp);
     } else {
-      mergedFeatures[index].value = aFeature.value;
+      mergedFeatures[index].mValue = aFeature.mValue;
     }
   };
 
@@ -664,7 +664,7 @@ void gfxFontShaper::MergeFontFeatures(
     }
 
     for (const gfxFontFeature& feature : featureList) {
-      addOrReplace(gfxFontFeature{feature.tag, feature.value});
+      addOrReplace(gfxFontFeature{feature.mTag, feature.mValue});
     }
   }
 
@@ -689,8 +689,8 @@ void gfxFontShaper::MergeFontFeatures(
       // features may be overridden by aDisableLigatures, while low-level
       // features specified directly as tags will come last and therefore
       // take precedence over everything else.
-      if (feature.tag) {
-        addOrReplace(gfxFontFeature{feature.tag, feature.value});
+      if (feature.mTag) {
+        addOrReplace(gfxFontFeature{feature.mTag, feature.mValue});
       } else if (aDisableLigatures) {
         // Handle ligature-disabling setting at the boundary between high-
         // and low-level features.
@@ -700,7 +700,7 @@ void gfxFontShaper::MergeFontFeatures(
   }
 
   for (const auto& f : mergedFeatures) {
-    aHandleFeature(f.tag, f.value, aHandleFeatureData);
+    aHandleFeature(f.mTag, f.mValue, aHandleFeatureData);
   }
 }
 
@@ -1767,9 +1767,9 @@ bool gfxFont::HasFeatureSet(uint32_t aFeature, bool& aFeatureOn) {
   count = fontFeatures.Length();
   for (i = 0; i < count; i++) {
     const gfxFontFeature& feature = fontFeatures.ElementAt(i);
-    if (feature.tag == aFeature) {
+    if (feature.mTag == aFeature) {
       featureSet = true;
-      aFeatureOn = (feature.value != 0);
+      aFeatureOn = (feature.mValue != 0);
     }
   }
 
@@ -1778,9 +1778,9 @@ bool gfxFont::HasFeatureSet(uint32_t aFeature, bool& aFeatureOn) {
   count = styleFeatures.Length();
   for (i = 0; i < count; i++) {
     const gfxFontFeature& feature = styleFeatures.ElementAt(i);
-    if (feature.tag == aFeature) {
+    if (feature.mTag == aFeature) {
       featureSet = true;
-      aFeatureOn = (feature.value != 0);
+      aFeatureOn = (feature.mValue != 0);
     }
   }
 

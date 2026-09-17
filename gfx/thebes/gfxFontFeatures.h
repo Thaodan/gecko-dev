@@ -5,15 +5,13 @@
 #ifndef GFX_FONT_FEATURES_H
 #define GFX_FONT_FEATURES_H
 
-#include "mozilla/ServoStyleConsts.h"
+#include "mozilla/gfx/FontFeature.h"
 #include "nsAtom.h"
 #include "nsString.h"
 #include "nsTArray.h"
 #include "nsTHashtable.h"
 
-// An OpenType feature tag and value pair, shared with the style system
-// (font-feature-settings).
-using gfxFontFeature = mozilla::StyleFeatureTagValue<int32_t>;
+using gfxFontFeature = mozilla::gfx::FontFeature;
 
 class gfxFontFeatureValueSet final {
  public:

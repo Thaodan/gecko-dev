@@ -4612,11 +4612,11 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
   gfxFontFeature setting{TRUETYPE_TAG('k', 'e', 'r', 'n'), 0};
   switch (state.fontKerning) {
     case CanvasFontKerning::None:
-      setting.value = 0;
+      setting.mValue = 0;
       fontStyle.featureSettings.AppendElement(setting);
       break;
     case CanvasFontKerning::Normal:
-      setting.value = 1;
+      setting.mValue = 1;
       fontStyle.featureSettings.AppendElement(setting);
       break;
     default:
