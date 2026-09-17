@@ -3190,6 +3190,17 @@ static bool WillDetachFromShadowOnUnbind(const Element& aElement,
          (aNullParent || !aElement.GetParent()->IsInShadowTree());
 }
 
+void Element::NodeInfoChanged(Document* aOldDoc) {
+  FragmentOrElement::NodeInfoChanged(aOldDoc);
+  // https://dom.spec.whatwg.org/#concept-node-adopt
+  // 3.3.1. Set the node document of each attribute in inclusiveDescendant's
+  //        attribute list to document.
+  mAttrs.NodeInfoChanged(NodeInfoManager());
+  if (nsDOMAttributeMap* attributeMap = GetAttributeMap()) {
+    attributeMap->AdoptCachedAttributes(NodeInfoManager());
+  }
+}
+
 void Element::UnbindFromTree(UnbindContext& aContext) {
   const bool nullParent = aContext.IsUnbindRoot(this);
 
