@@ -254,7 +254,7 @@ fun Fragment.getBottomToolbarHeight(
     val isMicrosurveyEnabled = settings.shouldShowMicrosurveyPrompt
     val isToolbarAtBottom = settings.toolbarPosition == ToolbarPosition.BOTTOM
     val isNavBarEnabled = settings.shouldUseExpandedToolbar && isTallWindow() && !isWideWindow()
-    val isTabStripEnabled = includeTabStripIfAvailable && settings.isTabStripEnabled && settings.shouldUseBottomTabStrip
+    val shouldShowTabStrip = includeTabStripIfAvailable && settings.shouldShowTabStripAtBottom
 
     val microsurveyHeight =
         if (isMicrosurveyEnabled) {
@@ -271,7 +271,7 @@ fun Fragment.getBottomToolbarHeight(
         }
 
     val tabstripHeight =
-        when (isTabStripEnabled) {
+        when (shouldShowTabStrip) {
             true -> pixelSizeFor(R.dimen.tab_strip_height)
             else -> 0
         }
@@ -301,15 +301,21 @@ fun Fragment.getBottomToolbarHeight(
 fun Fragment.getTopToolbarHeight(includeTabStripIfAvailable: Boolean = true): Int {
     val settings = requireComponents.settings
     val isToolbarAtTop = settings.toolbarPosition == ToolbarPosition.TOP
-    val toolbarHeight = settings.getBrowserToolbarHeight(requireContext())
+    val shouldShowTabStrip = includeTabStripIfAvailable && settings.shouldShowTabStripAtTop
 
-    return if (includeTabStripIfAvailable && settings.isTabStripEnabled) {
-        toolbarHeight + pixelSizeFor(R.dimen.tab_strip_height)
-    } else if (isToolbarAtTop) {
-        toolbarHeight
-    } else {
-        0
-    }
+    val toolbarHeight =
+        when (isToolbarAtTop) {
+            true -> settings.getBrowserToolbarHeight(requireContext())
+            else -> 0
+        }
+
+    val tabStripHeight =
+        when (shouldShowTabStrip) {
+            true -> pixelSizeFor(R.dimen.tab_strip_height)
+            else -> 0
+        }
+
+    return toolbarHeight + tabStripHeight
 }
 
 /**

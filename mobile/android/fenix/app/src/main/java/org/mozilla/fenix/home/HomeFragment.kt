@@ -730,13 +730,17 @@ class HomeFragment : Fragment(), UserInteractionHandler, OnLongPressedListener {
                                     ToolbarSlot(captureToolbarBounds, { toolbarBoundsInRoot = it }) {
                                         toolbarView.Content()
                                     }
+                                } else {
+                                    if (settings.shouldShowTabStripAtTop) {
+                                        TabStrip()
+                                    }
                                 }
                             },
                             bottomBar = {
                                 if (isToolbarAtTop) {
                                     ToolbarSlot(captureToolbarBounds, { navbarBoundsInRoot = it }) {
                                         Column {
-                                            if (settings.isTabStripEnabled && settings.shouldUseBottomTabStrip) {
+                                            if (settings.shouldShowTabStripAtBottom) {
                                                 TabStrip()
                                             }
                                             homeNavigationBar?.Content()

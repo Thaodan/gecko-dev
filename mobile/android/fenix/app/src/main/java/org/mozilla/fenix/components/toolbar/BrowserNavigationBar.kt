@@ -9,10 +9,8 @@ import android.view.Gravity
 import android.view.ViewGroup
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams
 import androidx.core.view.isVisible
@@ -49,7 +47,7 @@ class BrowserNavigationBar(
     val layout =
         NavigationBarComposeView(context) {
                 val shouldShowTabStrip = remember {
-                    customTabSessionId == null && settings.isTabStripEnabled && settings.shouldUseBottomTabStrip
+                    customTabSessionId == null && settings.shouldShowTabStripAtBottom
                 }
 
                 Column {
@@ -61,24 +59,17 @@ class BrowserNavigationBar(
             }
             .apply {
                 id = R.id.navigation_bar
-                addToParent(this)
-                setNavbarDynamicBehavior(this)
+                // Add this to the container only if it is to be shown on it's own, at the bottom of the screen.
+                // If the toolbar is at the bottom the navigation bar is composed inside the toolbar's own View
+                // - see [asComposable] - so this must never become a child of the container.
+                if (!settings.shouldUseBottomToolbar) {
+                    addToParent(this)
+                    setNavbarDynamicBehavior(this)
+                }
             }
 
-    /**
-     * Returns a [Composable] function that renders the default navigation bar content and ensures that the associated
-     * view-based layout is removed from its parent to prevent UI overlap.
-     */
+    /** Returns a [Composable] function that renders the default navigation bar content. */
     fun asComposable(): @Composable () -> Unit = {
-        val removed = remember { mutableStateOf(false) }
-
-        if (!removed.value) {
-            SideEffect {
-                (layout.parent as? ViewGroup)?.removeView(layout)
-                removed.value = true
-            }
-        }
-
         DefaultNavigationBarContent()
     }
 
@@ -133,7 +124,7 @@ class BrowserNavigationBar(
     }
 
     private fun setNavbarDynamicBehavior(view: NavigationBarComposeView) {
-        if (!settings.shouldUseBottomToolbar && settings.isDynamicToolbarEnabled) {
+        if (settings.isDynamicToolbarEnabled) {
             (view.layoutParams as LayoutParams).apply {
                 behavior = NavbarToolbarSyncBehavior(context)
             }

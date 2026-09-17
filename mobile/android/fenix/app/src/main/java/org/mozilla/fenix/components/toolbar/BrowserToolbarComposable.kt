@@ -98,10 +98,14 @@ class BrowserToolbarComposable(
     val layout: View =
         ScrollableToolbarComposeView(activity, this) {
                 val isSearching = toolbarStore.observeAsComposableState { it.isEditMode() }.value
-                val shouldShowTabStrip: Boolean = remember { shouldShowTabStrip() }
+                val shouldShowTabStripAtTop = remember {
+                    customTabSession == null && settings.shouldShowTabStripAtTop
+                }
+                val shouldShowTabStripAtBottom = remember {
+                    customTabSession == null && settings.shouldShowTabStripAtBottom
+                }
                 val customColors = browserScreenStore.observeAsComposableState { it.customTabColors }
                 val shouldUseBottomToolbar = remember { settings.shouldUseBottomToolbar }
-                val shouldUseBottomTabStrip = remember { settings.shouldUseBottomTabStrip }
 
                 val toolbarState by toolbarStore.stateFlow.collectAsState()
                 val toolbarCFR = toolbarState.displayState.cfr
@@ -150,7 +154,7 @@ class BrowserToolbarComposable(
                         when (!shouldUseBottomToolbar) {
                             true ->
                                 Column(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
-                                    if (shouldShowTabStrip && !shouldUseBottomTabStrip) {
+                                    if (shouldShowTabStripAtTop) {
                                         tabStripContent()
                                     }
                                     BrowserToolbar(
@@ -169,7 +173,7 @@ class BrowserToolbarComposable(
                                     if (customTabSession == null) {
                                         searchSuggestionsContent(Modifier.weight(1f))
                                     }
-                                    if (shouldShowTabStrip && shouldUseBottomTabStrip) {
+                                    if (shouldShowTabStripAtBottom) {
                                         tabStripContent()
                                     }
                                     BrowserToolbar(
@@ -308,8 +312,6 @@ class BrowserToolbarComposable(
             }
         }
     }
-
-    private fun shouldShowTabStrip() = customTabSession == null && settings.isTabStripEnabled
 
     private fun setupShowingToolbarsAfterKeyboardHidden() {
         container.addView(

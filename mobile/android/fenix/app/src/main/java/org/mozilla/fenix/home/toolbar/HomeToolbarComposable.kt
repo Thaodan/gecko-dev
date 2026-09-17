@@ -147,10 +147,14 @@ internal class HomeToolbarComposable(
 
     @Composable
     private fun ToolbarContent(wallpaperTextColor: Color?) {
-        val shouldShowTabStrip: Boolean = remember { settings.isTabStripEnabled }
         val shouldUseBottomToolbar = remember { settings.shouldUseBottomToolbar }
-        val shouldUseBottomTabStrip = remember { settings.shouldUseBottomTabStrip }
-        val isTabStripShownTogetherWithAddressBar = remember { shouldUseBottomToolbar == shouldUseBottomTabStrip }
+        val shouldShowTabStrip = remember {
+            if (shouldUseBottomToolbar) {
+                settings.shouldShowTabStripAtBottom
+            } else {
+                settings.shouldShowTabStripAtTop
+            }
+        }
 
         Column(
             modifier =
@@ -163,7 +167,7 @@ internal class HomeToolbarComposable(
                 searchSuggestionsContent(Modifier.weight(1f))
             }
 
-            if (shouldShowTabStrip && isTabStripShownTogetherWithAddressBar) {
+            if (shouldShowTabStrip) {
                 tabStripContent()
             }
 

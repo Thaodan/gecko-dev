@@ -1654,6 +1654,12 @@ class Settings(
                 ToolbarPosition.TOP
             }
 
+    val shouldShowTabStripAtTop: Boolean
+        get() = isTabStripEnabled && tabStripPosition == ToolbarPosition.TOP
+
+    val shouldShowTabStripAtBottom: Boolean
+        get() = isTabStripEnabled && tabStripPosition == ToolbarPosition.BOTTOM
+
     /**
      * Check each active accessibility service to see if it can perform gestures, if any can, then it is *likely* a
      * switch service is enabled. We are assuming this to be the case based on #7486
