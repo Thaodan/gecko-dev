@@ -328,6 +328,13 @@ async function clickAt(browser, x, y, n = 1) {
 async function clickOn(browser, selector) {
   await waitForSelector(browser, selector);
   info(`Click on: ${selector}`);
+  await SpecialPowers.spawn(browser, [selector], sel => {
+    content.document.querySelector(sel).scrollIntoView({
+      behavior: "instant",
+      block: "nearest",
+      inline: "nearest",
+    });
+  });
   // Resolve the target and dispatch its click in the same content query.
   await BrowserTestUtils.synthesizeMouseAtCenter(selector, {}, browser);
   await TestUtils.waitForTick();
