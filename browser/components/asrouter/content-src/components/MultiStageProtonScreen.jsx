@@ -723,14 +723,17 @@ export class ProtonScreen extends React.PureComponent {
 
   getEffectiveBackground(content) {
     if (content.position !== "split") {
+      const gradient =
+        content.zap_border_gradient ||
+        "linear-gradient(96deg, #B89CFF 20.68%, #FF9565 79.34%)";
       const combinedBackground =
         content.background && content.zap_border
-          ? `linear-gradient(96deg, #B89CFF 20.68%, #FF9565 79.34%) border-box border-area, image(${content.background}) padding-box`
+          ? `${gradient} border-box border-area, image(${content.background}) padding-box`
           : content.background;
 
       const combinedBackgroundStatic =
         content.background_static && content.zap_border
-          ? `linear-gradient(96deg, #B89CFF 20.68%, #FF9565 79.34%) border-box border-area, image(${content.background_static}) padding-box`
+          ? `${gradient} border-box border-area, image(${content.background_static}) padding-box`
           : content.background_static;
 
       return this.props.animationsPaused && content.background_static
@@ -1432,6 +1435,10 @@ export const screenContentShape = {
   // 'absolute_position' or 'arrow_position'. There is no effect if HCM or a
   // custom theme add-on is enabled.
   zap_shadow: PropTypes.bool,
+  // If present, a custom gradient to use in conjuction with the
+  // 'background' and 'zap_border' properties. Only applied if
+  // both other properties are present.
+  zap_border_gradient: PropTypes.string,
   // An optional object representing a large illustration to show above other
   // content.
   logo: PropTypes.shape({
