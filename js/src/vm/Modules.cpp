@@ -64,7 +64,7 @@ static bool TryStartDynamicModuleImport(JSContext* cx, HandleScript script,
                                         HandleValue optionsArg,
                                         HandleObject promise,
                                         ImportPhase phase);
-static bool ContinueDynamicImport(JSContext* cx, Handle<JSObject*> referrer,
+static bool ContinueDynamicImport(JSContext* cx,
                                   Handle<PromiseObject*> promiseCapability,
                                   Handle<ModuleObject*> module,
                                   ImportPhase phase, bool usePromise);
@@ -194,7 +194,7 @@ JS_PUBLIC_API bool JS::FinishLoadingImportedModule(
   // Step 3.a. Perform ContinueDynamicImport(payload, result).
   MOZ_ASSERT(object->is<PromiseObject>());
   Rooted<PromiseObject*> promise(cx, &object->as<PromiseObject>());
-  return ContinueDynamicImport(cx, referrerModule, promise, module,
+  return ContinueDynamicImport(cx, promise, module,
                                moduleRequest->as<ModuleRequestObject>().phase(),
                                usePromise);
 }
@@ -3058,21 +3058,16 @@ bool js::OnModuleEvaluationFailure(JSContext* cx,
 // It is used to marshal some arguments and pass them through to the promise
 // resolve and reject callbacks. It holds a reference to the referencing private
 // to keep it alive until it is needed.
-//
-// TODO: The |referrer| field is used to keep the importing module alive while
-// the import operation is happening. It is possible that this is no longer
-// required.
 class DynamicImportContextObject : public NativeObject {
  public:
-  enum { ReferrerSlot = 0, PromiseSlot, ModuleSlot, PhaseSlot, SlotCount };
+  enum { PromiseSlot = 0, ModuleSlot, PhaseSlot, SlotCount };
 
   static const JSClass class_;
 
   [[nodiscard]] static DynamicImportContextObject* create(
-      JSContext* cx, Handle<JSObject*> referrer, Handle<PromiseObject*> promise,
+      JSContext* cx, Handle<PromiseObject*> promise,
       Handle<ModuleObject*> module, ImportPhase phase);
 
-  JSObject* referrer() const;
   PromiseObject* promise() const;
   ModuleObject* module() const;
   ImportPhase phase() const;
@@ -3087,30 +3082,18 @@ const JSClass DynamicImportContextObject::class_ = {
 
 /* static */
 DynamicImportContextObject* DynamicImportContextObject::create(
-    JSContext* cx, Handle<JSObject*> referrer, Handle<PromiseObject*> promise,
-    Handle<ModuleObject*> module, ImportPhase phase) {
+    JSContext* cx, Handle<PromiseObject*> promise, Handle<ModuleObject*> module,
+    ImportPhase phase) {
   Rooted<DynamicImportContextObject*> self(
       cx, NewObjectWithGivenProto<DynamicImportContextObject>(cx, nullptr));
   if (!self) {
     return nullptr;
   }
 
-  if (referrer) {
-    self->initReservedSlot(ReferrerSlot, ObjectValue(*referrer));
-  }
   self->initReservedSlot(PromiseSlot, ObjectValue(*promise));
   self->initReservedSlot(ModuleSlot, ObjectValue(*module));
   self->initReservedSlot(PhaseSlot, Int32Value(int32_t(phase)));
   return self;
-}
-
-JSObject* DynamicImportContextObject::referrer() const {
-  Value value = getReservedSlot(ReferrerSlot);
-  if (value.isUndefined()) {
-    return nullptr;
-  }
-
-  return &value.toObject();
 }
 
 PromiseObject* DynamicImportContextObject::promise() const {
@@ -3142,7 +3125,7 @@ ImportPhase DynamicImportContextObject::phase() const {
 
 // https://tc39.es/ecma262/#sec-ContinueDynamicImport
 /* static */
-bool ContinueDynamicImport(JSContext* cx, Handle<JSObject*> referrer,
+bool ContinueDynamicImport(JSContext* cx,
                            Handle<PromiseObject*> promiseCapability,
                            Handle<ModuleObject*> module, ImportPhase phase,
                            bool usePromise) {
@@ -3180,8 +3163,8 @@ bool ContinueDynamicImport(JSContext* cx, Handle<JSObject*> referrer,
   // Step 6. Let linkAndEvaluateClosure be a new Abstract Closure with no
   // parameters that captures module, promiseCapability, and onRejected...
   Rooted<DynamicImportContextObject*> context(
-      cx, DynamicImportContextObject::create(cx, referrer, promiseCapability,
-                                             module, phase));
+      cx,
+      DynamicImportContextObject::create(cx, promiseCapability, module, phase));
   if (!context) {
     return RejectPromiseWithPendingError(cx, promiseCapability);
   }
