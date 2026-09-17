@@ -6696,6 +6696,7 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "fnv",
+ "mozbuild",
  "mozilla-central-workspace-hack",
  "windows-sys",
 ]
