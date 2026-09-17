@@ -461,30 +461,29 @@ bool net_IsAbsoluteURL(const nsACString& uri) {
 void net_FilterURIString(const nsACString& input, nsACString& result) {
   result.Truncate();
 
-  const auto* start = input.BeginReading();
-  const auto* end = input.EndReading();
+  const char* start = input.BeginReading();
+  const char* end = input.EndReading();
 
-  // Trim off leading and trailing invalid chars.
-  auto charFilter = [](char c) { return static_cast<uint8_t>(c) > 0x20; };
-  const auto* newStart = std::find_if(start, end, charFilter);
-  const auto* newEnd =
-      std::find_if(std::reverse_iterator<decltype(end)>(end),
-                   std::reverse_iterator<decltype(newStart)>(newStart),
-                   charFilter)
-          .base();
-
-  // Check if chars need to be stripped.
+  // Single-pass scan:
+  //   - find the first byte > 0x20 (leading-trim boundary)
+  //   - track the last byte > 0x20 (trailing-trim boundary)
+  //   - detect embedded CR/LF/Tab anywhere in the trimmed range
+  const char* newStart = start;
+  while (newStart != end && static_cast<uint8_t>(*newStart) <= 0x20) {
+    ++newStart;
+  }
+  const char* newEnd = newStart;
   bool needsStrip = false;
-  const ASCIIMaskArray& mask = ASCIIMask::MaskCRLFTab();
-  for (const auto* itr = start; itr != end; ++itr) {
-    if (ASCIIMask::IsMasked(mask, *itr)) {
+  for (const char* p = newStart; p != end; ++p) {
+    char c = *p;
+    if (static_cast<uint8_t>(c) > 0x20) {
+      newEnd = p + 1;
+    } else if (c == '\t' || c == '\n' || c == '\r') {
       needsStrip = true;
-      break;
     }
   }
 
-  // Just use the passed in string rather than creating new copies if no
-  // changes are necessary.
+  // Fast path: no trim and nothing to strip -> share the buffer.
   if (newStart == start && newEnd == end && !needsStrip) {
     result = input;
     return;
@@ -492,7 +491,7 @@ void net_FilterURIString(const nsACString& input, nsACString& result) {
 
   result.Assign(Substring(newStart, newEnd));
   if (needsStrip) {
-    result.StripTaggedASCII(mask);
+    result.StripTaggedASCII(ASCIIMask::MaskCRLFTab());
   }
 }
 
