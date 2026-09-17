@@ -767,12 +767,11 @@ int MediaEngineRemoteVideoSource::DeliverFrame(
     MOZ_ASSERT(mState == kStarted);
     VideoSegment segment;
     mScaledImageSize = image->GetSize();
-    segment.AppendWebrtcLocalFrame(image.forget(), mScaledImageSize, mPrincipal,
-                                   /* aForceBlack */ false, TimeStamp::Now(),
-                                   aProps.captureTime(),
-                                   aProps.rotationApplied()
-                                       ? VideoRotation::kDegree_0
-                                       : aProps.originalRotationRequired());
+    segment.AppendWebrtcLocalFrame(
+        image.forget(), mScaledImageSize, mPrincipal,
+        /* aForceBlack */ false, TimeStamp::Now(), aProps.captureTime(),
+        aProps.rotationApplied() ? VideoRotation::kDegree_0
+                                 : aProps.originalRotationRequired());
     mTrack->AppendData(&segment);
   }
 
