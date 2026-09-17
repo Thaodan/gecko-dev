@@ -17078,7 +17078,7 @@
 # to the tail of the EvictionQ.
 - name: network.dns.mru_to_tail
   type: RelaxedAtomicBool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
 
 # Whether to add additional record IPs to the cache
