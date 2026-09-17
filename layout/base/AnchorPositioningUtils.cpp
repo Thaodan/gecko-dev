@@ -255,14 +255,16 @@ bool IsAnchorLaidOutStrictlyBeforeElement(
   // containing blocks as well.
   // See also: https://github.com/w3c/csswg-drafts/issues/12674
   const nsIFrame* anchorContainingBlock = aPossibleAnchorFrame->GetParent();
+  const auto* positionedContainingBlockFirstContinuation =
+      nsLayoutUtils::FirstContinuationOrIBSplitSibling(
+          positionedContainingBlock);
 
   // 2. Both elements are in the same top layer but have different
   // containing blocks and positioned el's containing block is an
   // ancestor of possible anchor's containing block in the containing
   // block chain, aka one of the following:
   if (nsLayoutUtils::FirstContinuationOrIBSplitSibling(anchorContainingBlock) !=
-      nsLayoutUtils::FirstContinuationOrIBSplitSibling(
-          positionedContainingBlock)) {
+      positionedContainingBlockFirstContinuation) {
     // 2.1 positioned el's containing block is the viewport, and
     // possible anchor's containing block isn't.
     if (positionedContainingBlock->IsViewportFrame() &&
@@ -271,9 +273,7 @@ bool IsAnchorLaidOutStrictlyBeforeElement(
                                                    aPossibleAnchorFrame);
     }
 
-    auto isLastContainingBlockOrderable =
-        [&aPositionedFrame, &aPositionedFrameAncestors, &anchorContainingBlock,
-         &positionedContainingBlock]() -> bool {
+    auto isLastContainingBlockOrderable = [&]() -> bool {
       const nsIFrame* it = anchorContainingBlock;
       while (it) {
         const nsIFrame* parentContainingBlock = it->GetParent();
@@ -283,8 +283,7 @@ bool IsAnchorLaidOutStrictlyBeforeElement(
 
         if (nsLayoutUtils::FirstContinuationOrIBSplitSibling(
                 parentContainingBlock) ==
-            nsLayoutUtils::FirstContinuationOrIBSplitSibling(
-                positionedContainingBlock)) {
+            positionedContainingBlockFirstContinuation) {
           return !it->IsAbsolutelyPositioned() ||
                  nsLayoutUtils::CompareTreePosition(it, aPositionedFrame,
                                                     aPositionedFrameAncestors,
