@@ -106,14 +106,14 @@ gfxMacFont::gfxMacFont(const RefPtr<UnscaledFontMac>& aUnscaledFont,
     }
 
     static_assert(
-        sizeof(gfxFontVariation) == sizeof(FontVariation) &&
-            offsetof(gfxFontVariation, tag) == offsetof(FontVariation, mTag) &&
+        sizeof(gfxFontVariation) == sizeof(wr::FontVariation) &&
+            offsetof(gfxFontVariation, tag) == offsetof(wr::FontVariation, tag) &&
             offsetof(gfxFontVariation, value) ==
-                offsetof(FontVariation, mValue),
+                offsetof(FontVariation, value),
         "gfxFontVariation vs Moz2D FontVariation struct mismatch!");
     mCGFont = UnscaledFontMac::CreateCGFontWithVariations(
         baseFont, aUnscaledFont->CGAxesCache(), aUnscaledFont->CTAxesCache(),
-        vars.Length(), reinterpret_cast<const FontVariation*>(vars.Elements()));
+        vars.Length(), reinterpret_cast<const wr::FontVariation*>(vars.Elements()));
     if (!mCGFont) {
       ::CFRetain(baseFont);
       mCGFont = baseFont;
