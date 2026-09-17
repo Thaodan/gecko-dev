@@ -23,8 +23,7 @@
 #include "nsDOMString.h"
 #include "nsEscape.h"
 #include "nsIFile.h"
-#include "nsIURLParser.h"
-#include "nsNetCID.h"
+#include "nsURLParsers.h"
 #include "prnetdb.h"
 
 using namespace mozilla;
@@ -39,9 +38,9 @@ static StaticMutex gInitLock MOZ_ANNOTATED;
 // The relaxed memory ordering is fine here as we write this only when holding
 // gInitLock and only ever set it true once during EnsureGlobalsAreInited.
 static Atomic<bool, MemoryOrdering::Relaxed> gInitialized(false);
-static StaticRefPtr<nsIURLParser> gNoAuthURLParser;
-static StaticRefPtr<nsIURLParser> gAuthURLParser;
-static StaticRefPtr<nsIURLParser> gStdURLParser;
+static StaticRefPtr<nsBaseURLParser> gNoAuthURLParser;
+static StaticRefPtr<nsBaseURLParser> gAuthURLParser;
+static StaticRefPtr<nsBaseURLParser> gStdURLParser;
 
 static void EnsureGlobalsAreInited() {
   if (!gInitialized) {
@@ -52,25 +51,11 @@ static void EnsureGlobalsAreInited() {
       return;
     }
 
-    nsCOMPtr<nsIURLParser> parser;
-
-    parser = do_GetService(NS_NOAUTHURLPARSER_CONTRACTID);
-    NS_ASSERTION(parser, "failed getting 'noauth' url parser");
-    if (parser) {
-      gNoAuthURLParser = parser.forget();
-    }
-
-    parser = do_GetService(NS_AUTHURLPARSER_CONTRACTID);
-    NS_ASSERTION(parser, "failed getting 'auth' url parser");
-    if (parser) {
-      gAuthURLParser = parser.forget();
-    }
-
-    parser = do_GetService(NS_STDURLPARSER_CONTRACTID);
-    NS_ASSERTION(parser, "failed getting 'std' url parser");
-    if (parser) {
-      gStdURLParser = parser.forget();
-    }
+    // Constructed directly, not via the component manager: nsStandardURL needs
+    // the concrete type. The contract IDs stay registered for other consumers.
+    gNoAuthURLParser = new nsNoAuthURLParser();
+    gAuthURLParser = new nsAuthURLParser();
+    gStdURLParser = new nsStdURLParser();
 
     gInitialized = true;
   }
@@ -92,21 +77,21 @@ void net_ShutdownURLHelper() {
 // nsIURLParser getters
 //----------------------------------------------------------------------------
 
-already_AddRefed<nsIURLParser> net_GetAuthURLParser() {
+already_AddRefed<nsBaseURLParser> net_GetAuthURLParser() {
   EnsureGlobalsAreInited();
-  RefPtr<nsIURLParser> keepMe = gAuthURLParser;
+  RefPtr<nsBaseURLParser> keepMe = gAuthURLParser;
   return keepMe.forget();
 }
 
-already_AddRefed<nsIURLParser> net_GetNoAuthURLParser() {
+already_AddRefed<nsBaseURLParser> net_GetNoAuthURLParser() {
   EnsureGlobalsAreInited();
-  RefPtr<nsIURLParser> keepMe = gNoAuthURLParser;
+  RefPtr<nsBaseURLParser> keepMe = gNoAuthURLParser;
   return keepMe.forget();
 }
 
-already_AddRefed<nsIURLParser> net_GetStdURLParser() {
+already_AddRefed<nsBaseURLParser> net_GetStdURLParser() {
   EnsureGlobalsAreInited();
-  RefPtr<nsIURLParser> keepMe = gStdURLParser;
+  RefPtr<nsBaseURLParser> keepMe = gStdURLParser;
   return keepMe.forget();
 }
 
@@ -176,7 +161,7 @@ nsresult net_ParseFileURL(const nsACString& inURL, nsACString& outDirectory,
     return NS_ERROR_UNEXPECTED;
   }
 
-  nsCOMPtr<nsIURLParser> parser = net_GetNoAuthURLParser();
+  RefPtr<nsBaseURLParser> parser = net_GetNoAuthURLParser();
   NS_ENSURE_TRUE(parser, NS_ERROR_UNEXPECTED);
 
   uint32_t pathPos, filepathPos, directoryPos, basenamePos, extensionPos;
