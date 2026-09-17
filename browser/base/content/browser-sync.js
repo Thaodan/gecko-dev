@@ -1884,9 +1884,6 @@ var gSync = {
 
   onCommand(button) {
     switch (button.id) {
-      case "PanelUI-fxa-menu-setup-sync-button":
-        this.openSyncSetup("sync_settings", button);
-        break;
       case "PanelUI-fxa-menu-get-firefox-mobile":
         this.emitFxaToolbarTelemetry("get_firefox_for_mobile_cta", button);
         this.openGetFirefoxMobile();
@@ -2189,10 +2186,6 @@ var gSync = {
       document,
       "PanelUI-fxa-menu-manage-account-separator"
     );
-    const syncSetupEl = PanelMultiView.getViewNode(
-      document,
-      "PanelUI-fxa-menu-setup-sync-container"
-    );
     const syncStatusBtn = PanelMultiView.getViewNode(
       document,
       "PanelUI-fxa-menu-sync-status-button"
@@ -2200,17 +2193,12 @@ var gSync = {
     const fxaToolbarMenuButton = document.getElementById(
       "fxa-toolbar-menu-button"
     );
-    const syncSetupSeparator = PanelMultiView.getViewNode(
-      document,
-      "PanelUI-set-up-sync-separator"
-    );
 
     let fxaAvatarLabelEl = document.getElementById("fxa-avatar-label");
 
     // Reset FxA/Sync UI elements to default, which is signed out
     syncStatusBtn.hidden = true;
     signedInContainer.prepend(syncStatusBtn);
-    syncSetupEl.setAttribute("hidden", "true");
     signedInContainer.hidden = false;
     manageAccountButtonEl.hidden = true;
     manageAccountSeparator.hidden = true;
@@ -2325,7 +2313,6 @@ var gSync = {
         manageAccountButtonEl.hidden = false;
         signOutSeparator.hidden = false;
         signedInContainer.hidden = false;
-        syncSetupSeparator.setAttribute("hidden", "true");
 
         // Reposition profiles elements
         manageAccountSeparator.remove();

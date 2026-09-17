@@ -238,7 +238,6 @@ add_task(async function test_ui_state_signedin() {
     ],
     disabledItems: [],
     hiddenItems: [
-      "PanelUI-fxa-menu-setup-sync-container",
       // "Get Firefox for mobile" is only offered while sync is off.
       "PanelUI-fxa-menu-get-firefox-mobile",
     ],
@@ -655,7 +654,7 @@ add_task(async function test_ui_state_signed_in() {
       "PanelUI-fxa-menu-sync-status-button",
     ],
     disabledItems: [],
-    hiddenItems: ["PanelUI-fxa-menu-setup-sync-container"],
+    hiddenItems: [],
     visibleItems: ["PanelUI-fxa-menu-get-firefox-mobile"],
   });
   checkFxAAvatar("signedin");
@@ -696,7 +695,7 @@ add_task(async function test_ui_state_signed_in_no_display_name() {
       "PanelUI-fxa-menu-sync-status-button",
     ],
     disabledItems: [],
-    hiddenItems: ["PanelUI-fxa-menu-setup-sync-container"],
+    hiddenItems: [],
     visibleItems: ["PanelUI-fxa-menu-get-firefox-mobile"],
   });
   checkFxAAvatar("signedin");
@@ -740,7 +739,7 @@ add_task(async function test_ui_state_unverified() {
       "PanelUI-fxa-menu-sync-status-button",
     ],
     disabledItems: [],
-    hiddenItems: ["PanelUI-fxa-menu-setup-sync-container"],
+    hiddenItems: [],
     visibleItems: ["PanelUI-fxa-menu-get-firefox-mobile"],
   });
   checkFxAAvatar("unverified");
@@ -788,7 +787,7 @@ add_task(async function test_ui_state_loginFailed() {
       "PanelUI-fxa-menu-sync-status-button",
     ],
     disabledItems: [],
-    hiddenItems: ["PanelUI-fxa-menu-setup-sync-container"],
+    hiddenItems: [],
     visibleItems: ["PanelUI-fxa-menu-get-firefox-mobile"],
   });
   checkFxAAvatar("login-failed");
@@ -1403,7 +1402,7 @@ add_task(async function test_experiment_ui_state_signedin() {
       "PanelUI-fxa-menu-vpn-button",
     ],
     disabledItems: [],
-    hiddenItems: ["PanelUI-fxa-menu-setup-sync-container"],
+    hiddenItems: [],
     visibleItems: [],
   });
   checkFxAAvatar("signedin");
@@ -1453,7 +1452,7 @@ add_task(async function test_new_sync_setup_ui() {
       "PanelUI-fxa-menu-sync-status-button",
     ],
     disabledItems: [],
-    hiddenItems: ["PanelUI-fxa-menu-setup-sync-container"],
+    hiddenItems: [],
     visibleItems: ["PanelUI-fxa-menu-get-firefox-mobile"],
   });
 
@@ -1525,7 +1524,7 @@ add_task(async function test_ui_privacy_tools_in_use_signedin() {
       "PanelUI-fxa-menu-vpn-button",
     ],
     disabledItems: [],
-    hiddenItems: ["PanelUI-fxa-menu-setup-sync-container"],
+    hiddenItems: [],
     visibleItems: [
       // The in-use tool stays visible under "Privacy tools".
       "PanelUI-fxa-menu-relay-button",
