@@ -187,8 +187,8 @@ pub extern "C" fn keystore_is_dek_extractable(
 
 /// Report whether a DEK record exists for `dek_name`. A missing DEK is
 /// reported as `false`, not `NS_ERROR_NOT_AVAILABLE`, and no wrapping KEK
-/// needs to be unlocked, so a caller can distinguish "no such DEK" from
-/// "every wrapping KEK is locked".
+/// needs to be unlocked -- unlike `keystore_get_dek_automatic`, which cannot
+/// distinguish "no such DEK" from "every wrapping KEK is locked".
 #[no_mangle]
 pub extern "C" fn keystore_dek_exists(
     handle: &KeystoreHandle,
@@ -226,6 +226,28 @@ pub extern "C" fn keystore_get_dek(
     let kek_ref_str = kek_ref.to_utf8();
 
     match handle.keystore.get_dek(&dek_name_str, &kek_ref_str) {
+        Ok((dek_bytes, _cipher_suite)) => {
+            *ret_dek = ThinVec::from(dek_bytes.as_slice());
+            NS_OK
+        }
+        Err(e) => error_to_nsresult(&e),
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn keystore_get_dek_automatic(
+    handle: &KeystoreHandle,
+    dek_name: &nsACString,
+    ret_dek: &mut ThinVec<u8>,
+) -> nsresult {
+    if dek_name.is_empty() {
+        log::error!("DEK name cannot be empty");
+        return NS_ERROR_INVALID_ARG;
+    }
+
+    let dek_name_str = dek_name.to_utf8();
+
+    match handle.keystore.get_dek_automatic(&dek_name_str) {
         Ok((dek_bytes, _cipher_suite)) => {
             *ret_dek = ThinVec::from(dek_bytes.as_slice());
             NS_OK

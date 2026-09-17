@@ -163,8 +163,8 @@ interface nsILockstore : nsISupports
    * missing DEK resolves with `false` rather than rejecting, and no
    * wrapping KEK needs to be unlocked — so this distinguishes "no key
    * has ever been created here" from "a key exists but every KEK
-   * wrapping it is locked", which `getDek` reports as
-   * NS_ERROR_NOT_AVAILABLE. Callers that must not overwrite
+   * wrapping it is locked", which `getDek` / `getDekAutomatic` both
+   * report as NS_ERROR_NOT_AVAILABLE. Callers that must not overwrite
    * existing ciphertext should gate on this before creating a DEK.
    *
    * Touches SQLite (loads the DEK metadata row), hence async. An empty
@@ -297,6 +297,21 @@ interface nsILockstore : nsISupports
    */
   [implicit_jscontext]
   Promise getDek(in AUTF8String dekName, in AUTF8String kekRef);
+
+  /**
+   * Return the raw DEK bytes for `dekName` by automatically selecting
+   * a KEK. Iterates all KEKs that wrap the DEK for `dekName` and
+   * picks the first one that is currently unlocked. The DEK must have
+   * been created with `extractable = true`.
+   *
+   * The Promise resolves with an `Array<octet>` (same format as `getDek`)
+   * and rejects with:
+   *   - NS_ERROR_NOT_AVAILABLE if no KEK wrapping this DEK is currently
+   *     unlocked, or if no DEK exists for `dekName`.
+   *   - NS_ERROR_INVALID_ARG if `dekName` is empty.
+   */
+  [implicit_jscontext]
+  Promise getDekAutomatic(in AUTF8String dekName);
 
   /* --- KEK creation --------------------------------------------------- */
 

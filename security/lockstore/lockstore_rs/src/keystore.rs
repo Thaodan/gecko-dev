@@ -531,6 +531,21 @@ impl Keystore {
         Ok((dek, cipher_suite))
     }
 
+    pub fn get_dek_automatic(
+        &self,
+        dek_name: &str,
+    ) -> Result<(Zeroizing<Vec<u8>>, CipherSuite), LockstoreError> {
+        let kek_refs = self.list_keks(dek_name)?;
+
+        for kek_ref in &kek_refs {
+            if matches!(self.is_kek_unlocked(kek_ref), Ok(true)) {
+                return self.get_dek(dek_name, kek_ref);
+            }
+        }
+
+        Err(LockstoreError::Locked)
+    }
+
     /// Encrypts `plaintext` with the DEK for `(dek_name, kek_ref)`. The returned
     /// blob is self-describing: `[cipher_suite_id(1)] || [nonce] || [ciphertext+tag]`.
     /// The DEK does not need to be extractable; the DEK bytes never leave Lockstore.

@@ -493,6 +493,14 @@ Result<nsTArray<uint8_t>, nsresult> LockstoreService::DoGetDek(
   return out;
 }
 
+Result<nsTArray<uint8_t>, nsresult> LockstoreService::DoGetDekAutomatic(
+    const nsACString& aDekName) {
+  LOCKSTORE_SYNC_PREAMBLE;
+  nsTArray<uint8_t> out;
+  MOZ_TRY(keystore_get_dek_automatic(mKeystore, &aDekName, &out));
+  return out;
+}
+
 Result<nsCString, nsresult> LockstoreService::DoCreateKek(
     const nsACString& aKekType, const nsACString& aIdentifier,
     const nsACString& aSecret, uint64_t aCacheTimeoutMs) {
@@ -665,6 +673,14 @@ LockstoreService::GetDek(const nsACString& aDekName, const nsACString& aKekRef,
                          JSContext* aCx, Promise** aPromise) {
   return ImplXpcomMethod(this, aCx, aPromise, &LockstoreService::DoGetDek,
                          nsCString{aDekName}, nsCString{aKekRef});
+}
+
+NS_IMETHODIMP
+LockstoreService::GetDekAutomatic(const nsACString& aDekName, JSContext* aCx,
+                                  Promise** aPromise) {
+  return ImplXpcomMethod(this, aCx, aPromise,
+                         &LockstoreService::DoGetDekAutomatic,
+                         nsCString{aDekName});
 }
 
 NS_IMETHODIMP
