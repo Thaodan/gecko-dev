@@ -21,7 +21,6 @@
 #include "jit/CacheIRAOT.h"
 #include "jit/CacheIRStubKey.h"
 #include "jit/ExecutableAllocator.h"
-#include "jit/ICStubSpace.h"
 #include "jit/Invalidation.h"
 #include "jit/JitScript.h"
 #include "js/AllocPolicy.h"
@@ -82,9 +81,6 @@ class JitZone {
       mozilla::EnumeratedArray<StubKind, Code, size_t(StubKind::Count)>;
 
  private:
-  // Allocated space for CacheIR stubs.
-  ICStubSpace stubSpace_;
-
   // Set of CacheIRStubInfo instances used by Ion stubs in this Zone.
   using IonCacheIRStubInfoSet =
       HashSet<CacheIRStubKey, CacheIRStubKey, SystemAllocPolicy>;
@@ -166,10 +162,7 @@ class JitZone {
   void traceWeak(JSTracer* trc, Zone* zone);
 
   void addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
-                              JS::CodeSizes* code, size_t* jitZone,
-                              size_t* cacheIRStubs) const;
-
-  ICStubSpace* stubSpace() { return &stubSpace_; }
+                              JS::CodeSizes* code, size_t* jitZone) const;
 
   JitCode* getBaselineCacheIRStubCode(const CacheIRStubKey::Lookup& key,
                                       CacheIRStubInfo** stubInfo) {

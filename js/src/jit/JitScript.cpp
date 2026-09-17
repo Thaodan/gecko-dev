@@ -512,7 +512,7 @@ void JitScript::purgeInactiveICScripts() {
   }
 }
 
-void JitScript::purgeStubs(JSScript* script, ICStubSpace& newStubSpace) {
+void JitScript::purgeStubs(JSScript* script) {
   MOZ_ASSERT(script->jitScript() == this);
 
   Zone* zone = script->zone();
@@ -526,6 +526,10 @@ void JitScript::purgeStubs(JSScript* script, ICStubSpace& newStubSpace) {
   }
 
   JitSpew(JitSpew_BaselineIC, "Purging optimized stubs");
+
+  // We can use the stub space of the outer script's JitRealm for all ICScripts
+  // because we never inline cross-realm calls.
+  ICStubSpace& newStubSpace = *script->realm()->jitRealm().stubSpace();
 
   forEachICScript(
       [&](ICScript* script) { script->purgeStubs(zone, newStubSpace); });
@@ -768,7 +772,7 @@ using StubHashMap = HashMap<ICCacheIRStub*, ICCacheIRStub*,
 
 static void MarkActiveICScriptsAndCopyStubs(
     JSContext* cx, const JitActivationIterator& activation,
-    ICStubSpace& newStubSpace, StubHashMap& alreadyClonedStubs) {
+    StubHashMap& alreadyClonedStubs) {
   for (OnlyJSJitFrameIter iter(activation); !iter.done(); ++iter) {
     const JSJitFrameIter& frame = iter.frame();
     switch (frame.type()) {
@@ -783,9 +787,19 @@ static void MarkActiveICScriptsAndCopyStubs(
       case FrameType::BaselineStub: {
         auto* layout = reinterpret_cast<BaselineStubFrameLayout*>(frame.fp());
         if (layout->maybeStubPtr() && !layout->maybeStubPtr()->isFallback()) {
+          // The stub belongs to the caller's JitScript, so clone it into the
+          // stub space for the caller's realm.
+          OnlyJSJitFrameIter callerIter(iter);
+          ++callerIter;
+          MOZ_RELEASE_ASSERT(callerIter.frame().type() ==
+                             FrameType::BaselineJS);
+          JSScript* callerScript = callerIter.frame().script();
+
           ICCacheIRStub* stub = layout->maybeStubPtr()->toCacheIRStub();
           auto lookup = alreadyClonedStubs.lookupForAdd(stub);
           if (!lookup) {
+            ICStubSpace& newStubSpace =
+                *callerScript->realm()->jitRealm().stubSpace();
             ICCacheIRStub* newStub =
                 stub->clone(cx->runtime(), newStubSpace,
                             ICCacheIRStub::ICScriptHandling::MarkActive);
@@ -826,8 +840,7 @@ static void MarkActiveICScriptsAndCopyStubs(
   }
 }
 
-void jit::MarkActiveICScriptsAndCopyStubs(Zone* zone,
-                                          ICStubSpace& newStubSpace) {
+void jit::MarkActiveICScriptsAndCopyStubs(Zone* zone) {
   if (zone->isAtomsZone()) {
     return;
   }
@@ -835,8 +848,7 @@ void jit::MarkActiveICScriptsAndCopyStubs(Zone* zone,
   JSContext* cx = TlsContext.get();
   for (JitActivationIterator iter(cx); !iter.done(); ++iter) {
     if (iter->compartment()->zone() == zone) {
-      MarkActiveICScriptsAndCopyStubs(cx, iter, newStubSpace,
-                                      alreadyClonedStubs);
+      MarkActiveICScriptsAndCopyStubs(cx, iter, alreadyClonedStubs);
     }
   }
 }

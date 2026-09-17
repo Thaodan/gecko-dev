@@ -313,10 +313,12 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
     lastDiscardedCodeTime_ = mozilla::TimeStamp::Now();
   }
 
-  // Copy Baseline IC stubs that are active on the stack to a new LifoAlloc.
-  // After freeing stub memory, these chunks are then transferred to the
-  // zone-wide allocator.
-  jit::ICStubSpace newStubSpace;
+  // Move the IC stub data of each realm in this zone to a separate LifoAlloc.
+  // Stubs that must survive are copied back to their realm's stub space below.
+  jit::ICStubSpace discardedStubSpace;
+  for (RealmsInZoneIter r(this); !r.done(); r.next()) {
+    discardedStubSpace.transferFrom(*r->jitRealm().stubSpace());
+  }
 
 #ifdef DEBUG
   // Assert no ICScripts are marked as active.
@@ -326,7 +328,7 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
 #endif
 
   // Mark ICScripts on the stack as active and copy active Baseline stubs.
-  jit::MarkActiveICScriptsAndCopyStubs(this, newStubSpace);
+  jit::MarkActiveICScriptsAndCopyStubs(this);
 
   // Invalidate all Ion code in this zone.
   jit::InvalidateAll(gcx, this);
@@ -370,10 +372,11 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
         }
 
         // If we did not release the JitScript, we need to purge IC stubs
-        // because the ICStubSpace will be purged below. Also purge all
-        // trial-inlined ICScripts that are not active on the stack.
+        // because their stub data was moved to discardedStubSpace above.
+        // Also purge all trial-inlined ICScripts that are not active on
+        // the stack.
         jitScript->purgeInactiveICScripts();
-        jitScript->purgeStubs(script, newStubSpace);
+        jitScript->purgeStubs(script);
 
         if (options.resetNurseryAllocSites ||
             options.resetPretenuredAllocSites) {
@@ -397,14 +400,13 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
 
   /*
    * When scripts contain pointers to nursery things, the store buffer
-   * can contain entries that point into the optimized stub space. Since
+   * can contain entries that point into the discarded stub space. Since
    * this method can be called outside the context of a GC, this situation
    * could result in us trying to mark invalid store buffer entries.
    *
    * Defer freeing any allocated blocks until after the next minor GC.
    */
-  jitZone()->stubSpace()->freeAllAfterMinorGC(this);
-  jitZone()->stubSpace()->transferFrom(newStubSpace);
+  discardedStubSpace.freeAllAfterMinorGC(this);
   jitZone()->purgeIonCacheIRStubInfo();
 
   // Generate a profile marker
@@ -553,15 +555,15 @@ void Zone::purgeAtomCache() {
 
 void Zone::addSizeOfIncludingThis(
     mozilla::MallocSizeOf mallocSizeOf, size_t* zoneObject, JS::CodeSizes* code,
-    size_t* regexpZone, size_t* jitZone, size_t* cacheIRStubs,
-    size_t* objectFusesArg, size_t* uniqueIdMap, size_t* initialPropMapTable,
-    size_t* shapeTables, size_t* atomReferenceBitmaps,
-    size_t* compartmentObjects, size_t* crossCompartmentWrappersTables,
-    size_t* compartmentsPrivateData, size_t* scriptCountsMapArg) {
+    size_t* regexpZone, size_t* jitZone, size_t* objectFusesArg,
+    size_t* uniqueIdMap, size_t* initialPropMapTable, size_t* shapeTables,
+    size_t* atomReferenceBitmaps, size_t* compartmentObjects,
+    size_t* crossCompartmentWrappersTables, size_t* compartmentsPrivateData,
+    size_t* scriptCountsMapArg) {
   *zoneObject += mallocSizeOf(this);
   *regexpZone += regExps().sizeOfIncludingThis(mallocSizeOf);
   if (jitZone_) {
-    jitZone_->addSizeOfIncludingThis(mallocSizeOf, code, jitZone, cacheIRStubs);
+    jitZone_->addSizeOfIncludingThis(mallocSizeOf, code, jitZone);
   }
   *objectFusesArg += objectFuses.sizeOfExcludingThis(mallocSizeOf);
   *uniqueIdMap += uniqueIds().shallowSizeOfExcludingThis(mallocSizeOf);

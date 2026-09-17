@@ -640,7 +640,8 @@ void Realm::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
                                    size_t* innerViewsArg,
                                    size_t* objectMetadataTablesArg,
                                    size_t* savedStacksSet,
-                                   size_t* nonSyntacticLexicalEnvironmentsArg) {
+                                   size_t* nonSyntacticLexicalEnvironmentsArg,
+                                   size_t* cacheIRStubs) {
   *realmObject += mallocSizeOf(this);
   wasm.addSizeOfExcludingThis(mallocSizeOf, realmTables);
 
@@ -649,6 +650,8 @@ void Realm::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
                                   nonSyntacticLexicalEnvironmentsArg);
 
   *savedStacksSet += savedStacks_.sizeOfExcludingThis(mallocSizeOf);
+
+  jitRealm_.addSizeOfExcludingThis(mallocSizeOf, cacheIRStubs);
 }
 
 bool Realm::shouldCaptureStackForThrow() {

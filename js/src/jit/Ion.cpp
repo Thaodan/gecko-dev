@@ -560,16 +560,14 @@ void JitZone::finishScriptTableRoots() {
 }
 
 void JitZone::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
-                                     JS::CodeSizes* code, size_t* jitZone,
-                                     size_t* cacheIRStubs) const {
+                                     JS::CodeSizes* code,
+                                     size_t* jitZone) const {
   *jitZone += mallocSizeOf(this);
   *jitZone +=
       baselineCacheIRStubCodes_.shallowSizeOfExcludingThis(mallocSizeOf);
   *jitZone += ionCacheIRStubInfoSet_.shallowSizeOfExcludingThis(mallocSizeOf);
 
   execAlloc().addSizeOfCode(code);
-
-  *cacheIRStubs += stubSpace_.sizeOfExcludingThis(mallocSizeOf);
 }
 
 void JitCodeHeader::init(JitCode* jitCode) {

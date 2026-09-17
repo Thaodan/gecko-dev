@@ -510,7 +510,8 @@ class JS::Realm : public JS::shadow::Realm {
                               size_t* innerViewsArg,
                               size_t* objectMetadataTablesArg,
                               size_t* savedStacksSet,
-                              size_t* nonSyntacticLexicalEnvironmentsArg);
+                              size_t* nonSyntacticLexicalEnvironmentsArg,
+                              size_t* cacheIRStubs);
 
   JS::Zone* zone() { return zone_; }
   const JS::Zone* zone() const { return zone_; }

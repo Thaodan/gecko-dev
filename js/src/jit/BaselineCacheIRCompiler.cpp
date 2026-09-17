@@ -2298,7 +2298,8 @@ ICAttachResult js::jit::AttachBaselineCacheIRStubLocked(
 
   size_t bytesNeeded = stubInfo->stubDataOffset() + stubInfo->stubDataSize();
 
-  void* newStubMem = cx->zone()->jitZone()->stubSpace()->alloc(bytesNeeded);
+  void* newStubMem =
+      outerScript->realm()->jitRealm().stubSpace()->alloc(bytesNeeded);
   if (!newStubMem) {
     return ICAttachResult::OOM;
   }

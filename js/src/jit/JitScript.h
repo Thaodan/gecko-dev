@@ -478,7 +478,7 @@ class alignas(uintptr_t) JitScript final
 
   void trace(JSTracer* trc);
   void traceWeak(JSTracer* trc);
-  void purgeStubs(JSScript* script, ICStubSpace& newStubSpace);
+  void purgeStubs(JSScript* script);
 
   void purgeInactiveICScripts();
 
@@ -667,8 +667,8 @@ class MOZ_RAII AutoKeepJitScripts {
 };
 
 // Mark ICScripts on the stack as active, so that they are not discarded
-// during GC, and copy active Baseline IC stubs to the new stub space.
-void MarkActiveICScriptsAndCopyStubs(Zone* zone, ICStubSpace& newStubSpace);
+// during GC, and copy active Baseline IC stubs to their realm's stub space.
+void MarkActiveICScriptsAndCopyStubs(Zone* zone);
 
 #ifdef JS_STRUCTURED_SPEW
 void JitSpewBaselineICStats(JSScript* script, const char* dumpReason);
