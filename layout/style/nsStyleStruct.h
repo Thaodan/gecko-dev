@@ -1054,8 +1054,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
   mozilla::StyleObjectFit mObjectFit;
   mozilla::StyleBoxSizing mBoxSizing;
   int32_t mOrder;
-  float mFlexGrow;
-  float mFlexShrink;
+  mozilla::StyleNonNegativeNumber mFlexGrow;
+  mozilla::StyleNonNegativeNumber mFlexShrink;
   mozilla::StyleZIndex mZIndex;
 
   mozilla::StyleGridTemplateComponent mGridTemplateColumns;
@@ -2253,7 +2253,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleXUL {
   STYLE_STRUCT(nsStyleXUL)
   nsStyleXUL();
 
-  float mBoxFlex;
+  mozilla::StyleNonNegativeNumber mBoxFlex;
   int32_t mBoxOrdinal;
   mozilla::StyleBoxAlign mBoxAlign;
   mozilla::StyleBoxDirection mBoxDirection;
@@ -2308,7 +2308,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVG {
   mozilla::StyleSVGWidth mStrokeWidth;
 
   mozilla::StyleSVGOpacity mFillOpacity;
-  float mStrokeMiterlimit;
+  mozilla::StyleNonNegativeNumber mStrokeMiterlimit;
   mozilla::StyleSVGOpacity mStrokeOpacity;
 
   mozilla::StyleFillRule mClipRule;
