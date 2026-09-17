@@ -111,7 +111,6 @@ LoadedScript::LoadedScript(ScriptKind aKind, nsIURI* aURI)
       mIsDirty(false),
       mTookLongInPreviousRuns(false),
       mIsEverHitFromMemoryCache(false),
-      mDependsOnClassicScriptHintEncoding(false),
       mURI(aURI),
       mReceivedScriptTextLength(0) {
   MOZ_ASSERT(mURI);

@@ -6,7 +6,6 @@
 #define js_loader_LoadedScript_h
 
 #include "mozilla/dom/SRIMetadata.h"  // mozilla::dom::SRIMetadata
-#include "mozilla/Encoding.h"         // ENCODING_NAME_MAX_LENGTH
 #include "mozilla/Maybe.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/MemoryReporting.h"
@@ -405,19 +404,13 @@ class LoadedScript final : public nsISupports {
 
   // ---- Methods shared between both consumers ----
 
-  size_t GetSerializedStencilOffset() const {
+  size_t GetSRILength() const {
     MOZ_ASSERT(CanHaveSRIOnly() || CanHaveSRIAndSerializedStencil());
     return mSerializedStencilOffset;
   }
-
-  static constexpr size_t EncodingHeaderSize = 16;
-
-  void SetAlignedSRILength(size_t aAlignedSRILength) {
+  void SetSRILength(size_t sriLength) {
     MOZ_ASSERT(CanHaveSRIOnly() || CanHaveSRIAndSerializedStencil());
-    MOZ_ASSERT(JS::IsTranscodingBytecodeOffsetAligned(aAlignedSRILength));
-    static_assert(ENCODING_NAME_MAX_LENGTH < EncodingHeaderSize,
-                  "The encoding name should fit the fixed-length header");
-    mSerializedStencilOffset = aAlignedSRILength + EncodingHeaderSize;
+    mSerializedStencilOffset = AlignTranscodingBytecodeOffset(sriLength);
   }
 
   bool HasNoSRIOrSRIAndSerializedStencil() const {
@@ -495,14 +488,6 @@ class LoadedScript final : public nsISupports {
   // one.
   bool IsSRIMetadataReusableBy(const mozilla::dom::SRIMetadata& aSRIMetadata);
 
-  bool DependsOnClassicScriptHintEncoding() const {
-    return mDependsOnClassicScriptHintEncoding;
-  }
-
-  void SetDependsOnClassicScriptHintEncoding() {
-    mDependsOnClassicScriptHintEncoding = true;
-  }
-
  public:
   // Fields.
 
@@ -571,9 +556,6 @@ class LoadedScript final : public nsISupports {
   // Set to true if this entry is ever used in the current process.
   uint64_t mIsEverHitFromMemoryCache : 1;
 
-  // Set to true if this script depends on the hint encoding.
-  uint64_t mDependsOnClassicScriptHintEncoding : 1;
-
   nsCOMPtr<nsIURI> mURI;
 
   // The final ScriptFetchInfo::mBaseURL value of the
@@ -600,21 +582,14 @@ class LoadedScript final : public nsISupports {
   size_t mReceivedScriptTextLength;
 
   // Holds either of the following for non-inline scripts:
+  //   * The SRI serialized hash and the paddings, which is calculated when
+  //     receiving the source text
+  //   * The SRI, padding, and the serialized Stencil, which is received
+  //     from necko. The data is laid out according to ScriptBytecodeDataLayout
+  //     or, if compression is enabled, ScriptBytecodeCompressedDataLayout.
   //
-  // * For scripts loaded as source text
-  //   - SRI (variable length)
-  //     calculated while receiving the source text
-  //   - Padding (aligns to 4 bytes)
-  // * For scripts loaded as serialized stencil
-  //   - SRI (variable length)
-  //   - Padding (aligns to 4 bytes)
-  //   - Encoding header (16 bytes)
-  //     0-terminated and 0-padded string of the encoding name
-  //     empty string for modules
-  //   - Serialized Stencil (variable length)
-  //
-  // For the serialized stencil case, this field becomes empty while a decode
-  // task owns the bytes, and permanently if it is cancelled.
+  // Empty while a decode task owns the bytes, and permanently if it is
+  // cancelled.
   TranscodeBuffer mSRIAndSerializedStencil;
 
   // Holds the stencil for the script, cached for the subsequent requests.
@@ -627,11 +602,6 @@ class LoadedScript final : public nsISupports {
   // IsTextSource() or IsCachedStencil(), and it's cleared after saving to the
   // necko cache, and thus, this field is used only once.
   nsCOMPtr<nsICacheEntryWriteHandle> mCacheEntry;
-
-  // The encoding that's used for decoding the received script source.
-  // This is an optional field, and can be left nullptr if the consumer
-  // doesn't use it.
-  const mozilla::Encoding* mClassicScriptEncoding = nullptr;
 };
 
 // Provide accessors for any classes `Derived` which is providing the
@@ -728,12 +698,9 @@ class LoadedScriptDelegate {
     GetLoadedScript()->RestoreSRIAndSerializedStencil(std::move(aBuffer));
   }
 
-  size_t GetSerializedStencilOffset() const {
-    return GetLoadedScript()->GetSerializedStencilOffset();
-  }
-
-  void SetAlignedSRILength(size_t aAlignedSRILength) {
-    GetLoadedScript()->SetAlignedSRILength(aAlignedSRILength);
+  size_t GetSRILength() const { return GetLoadedScript()->GetSRILength(); }
+  void SetSRILength(size_t sriLength) {
+    GetLoadedScript()->SetSRILength(sriLength);
   }
 
   void SetTookLongInPreviousRuns() {
