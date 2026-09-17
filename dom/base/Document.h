@@ -1615,6 +1615,9 @@ class Document : public nsINode,
   EditContext* GetActiveEditContext() const { return mActiveEditContext; }
   // https://w3c.github.io/edit-context/#dfn-update-the-text-edit-context
   MOZ_CAN_RUN_SCRIPT void UpdateTextEditContext();
+  // Deactivate the current EditContext and, even if the active editor
+  // is not an EditContext, commit the current composition.
+  MOZ_CAN_RUN_SCRIPT void DeactivateEditContextAndEndComposition();
 
   void SetKeyPressEventModel(uint16_t aKeyPressEventModel);
 
