@@ -16,13 +16,13 @@ from mozlog.formatters import TestSummaryFormatter
         ),
         pytest.param(
             {"action": "log", "level": "ERROR", "message": "boom"},
-            False,
-            id="log_error_dropped",
+            True,
+            id="log_error_kept",
         ),
         pytest.param(
             {"action": "log", "level": "CRITICAL", "message": "crit"},
-            False,
-            id="log_critical_dropped",
+            True,
+            id="log_critical_kept",
         ),
         pytest.param(
             {"action": "log", "level": "WARNING", "message": "warn"},
@@ -191,6 +191,31 @@ def test_testsummary_strips_noise_fields():
     assert result["expected"] == "PASS"
 
 
+def test_testsummary_log_error_keeps_only_level_and_message():
+    fmt = TestSummaryFormatter()
+    message = (
+        "TEST-UNEXPECTED-FAIL | LeakSanitizer leak at nsTimer, NS_NewTimer"
+        " | netwerk/test/browser/browser.toml"
+    )
+    record = {
+        "action": "log",
+        "time": 1787844653959,
+        "thread": "MainThread",
+        "pid": 9594,
+        "source": "mochitest",
+        "level": "ERROR",
+        "message": message,
+    }
+    out = fmt(record)
+    result = json.loads(out)
+    assert result == {
+        "action": "log",
+        "time": 1787844653959,
+        "level": "ERROR",
+        "message": message,
+    }
+
+
 def test_testsummary_crash_keeps_stack():
     fmt = TestSummaryFormatter()
     record = {
@@ -228,22 +253,25 @@ def test_testsummary_emits_test_start_and_end_separately():
     assert result_end["status"] == "OK"
 
 
-def test_testsummary_keeps_a_harness_abort_only_as_a_test_end():
+def test_testsummary_keeps_a_harness_abort_as_log_and_test_end():
     """
-    A harness abort reported as a log line cannot reach the summary, which is why
-    RemoteProcessMonitor emits a test_end for it as well.
+    A harness abort reaches the summary as an ERROR log line, but only the
+    test_end RemoteProcessMonitor emits alongside it carries a status and the
+    test it is attributed to.
     """
     fmt = TestSummaryFormatter()
     message = "application timed out after 370 seconds with no output"
 
-    assert (
+    log_record = json.loads(
         fmt({
             "action": "log",
             "level": "ERROR",
             "message": f"TEST-UNEXPECTED-FAIL | test_foo | {message}",
         })
-        is None
     )
+    assert log_record["level"] == "ERROR"
+    assert "test" not in log_record
+    assert "status" not in log_record
 
     result = json.loads(
         fmt({
