@@ -434,8 +434,8 @@ static void CollectVariationsFromDictionary(const void* aKey,
   }
 }
 
-static bool GetVariationsForCTFont(CTFontRef aCTFont,
-                                   std::vector<wr::FontVariation>* aOutVariations) {
+static bool GetVariationsForCTFont(
+    CTFontRef aCTFont, std::vector<wr::FontVariation>* aOutVariations) {
   if (!aCTFont) {
     return true;
   }

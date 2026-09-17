@@ -64,11 +64,9 @@ class UnscaledFontMac final : public UnscaledFont {
       const wr::FontInstancePlatformOptions* aPlatformOptions,
       const wr::FontVariation* aVariations, uint32_t aNumVariations) override;
 
-  static CGFontRef CreateCGFontWithVariations(CGFontRef aFont,
-                                              CFArrayRef& aCGAxesCache,
-                                              CFArrayRef& aCTAxesCache,
-                                              uint32_t aVariationCount,
-                                              const wr::FontVariation* aVariations);
+  static CGFontRef CreateCGFontWithVariations(
+      CGFontRef aFont, CFArrayRef& aCGAxesCache, CFArrayRef& aCTAxesCache,
+      uint32_t aVariationCount, const wr::FontVariation* aVariations);
 
   // Generate a font descriptor to send to WebRender. The descriptor consists
   // of a string that concatenates the PostScript name of the font and the path
