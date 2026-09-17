@@ -2,11 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-:root {
-  --button-text-color-disable: var(--aitab-text-color-deemphasized);
-}
-
 .aitab-page-actions {
+  --button-icon-fill: currentColor;
+
   display: flex;
   gap: var(--space-medium);
 }
@@ -16,6 +14,7 @@
   border-radius: var(--border-radius-medium);
   padding: var(--space-large);
   background-color: var(--background-color-box);
+  color: var(--text-color);
 
   &::backdrop {
     background-color: var(--background-color-overlay);
