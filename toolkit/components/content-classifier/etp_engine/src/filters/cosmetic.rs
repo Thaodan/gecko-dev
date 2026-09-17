@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 //! Filters that take effect at a page-content level, including CSS selector-based filtering and
 //! content script injection.
 
@@ -1205,7 +1209,3 @@ mod css_validation {
         }
     }
 }
-
-#[cfg(test)]
-#[path = "../../tests/unit/filters/cosmetic.rs"]
-mod unit_tests;

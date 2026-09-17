@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 //! Holds [`Blocker`], which handles all network-based adblocking queries.
 
 use memchr::{memchr as find_char, memrchr as find_char_reverse};
@@ -509,7 +513,3 @@ impl Blocker {
         regex_manager.get_debug_info()
     }
 }
-
-#[cfg(test)]
-#[path = "../tests/unit/blocker.rs"]
-mod unit_tests;

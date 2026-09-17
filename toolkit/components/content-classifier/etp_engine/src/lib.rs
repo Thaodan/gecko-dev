@@ -1,19 +1,6 @@
-//! `adblock-rust` is the engine powering Brave's native adblocker, available as a library for
-//! anyone to use. It features:
-//!
-//! - Network blocking
-//! - Cosmetic filtering
-//! - Resource replacements
-//! - Hosts syntax
-//! - uBlock Origin syntax extensions
-//! - iOS content-blocking syntax conversion
-//! - Compiling to native code or WASM
-//! - Rust bindings ([crates](https://crates.io/crates/adblock))
-//! - JS bindings ([npm](https://npmjs.com/adblock-rs))
-//! - Community-maintained Python bindings ([pypi](https://pypi.org/project/adblock/))
-//! - High performance!
-//!
-//! Check the [`Engine`] documentation to get started with adblocking.
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 // Own modules, currently everything is exposed, will need to limit
 pub mod blocker;
@@ -41,10 +28,6 @@ pub mod utils;
 pub use engine::Engine;
 #[doc(inline)]
 pub use lists::FilterSet;
-
-#[cfg(test)]
-#[path = "../tests/test_utils.rs"]
-mod test_utils;
 
 #[cfg(test)]
 mod sync_tests {

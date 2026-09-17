@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 //! In adblocking terms, [`Resource`]s are special placeholder scripts, images,
 //! video files, etc. that can be returned as drop-in replacements for harmful
 //! equivalents from remote servers. Resources also encompass scriptlets, which
@@ -35,10 +39,10 @@ use serde::{Deserialize, Serialize};
 /// ### Example
 ///
 /// ```
-/// # use adblock::Engine;
-/// # use adblock::lists::ParseOptions;
-/// # use adblock::resources::{MimeType, PermissionMask, Resource, ResourceStorage, ResourceType};
-/// # let mut filter_set = adblock::lists::FilterSet::default();
+/// # use etp_engine::Engine;
+/// # use etp_engine::lists::ParseOptions;
+/// # use etp_engine::resources::{MimeType, PermissionMask, Resource, ResourceStorage, ResourceType};
+/// # let mut filter_set = etp_engine::lists::FilterSet::default();
 /// # let untrusted_filters = vec![""];
 /// # let trusted_filters = vec![""];
 /// const COOKIE_ACCESS: PermissionMask = PermissionMask::from_bits(0b00000001);

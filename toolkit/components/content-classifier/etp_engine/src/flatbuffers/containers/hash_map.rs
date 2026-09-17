@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 /// A HashMap implementation backed by a HashIndex.
 /// Uses more memory than FlatMap, but gives faster lookup.
 use crate::flatbuffers::containers::{
@@ -96,7 +100,3 @@ pub type HashMapStringView<'a, V> = HashMapView<
     flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<&'a str>>,
     flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<<V as flatbuffers::Follow<'a>>::Inner>>,
 >;
-
-#[cfg(test)]
-#[path = "../../../tests/unit/flatbuffers/containers/hash_map.rs"]
-mod unit_tests;

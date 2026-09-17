@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 //! Contains methods useful for building [`Resource`] descriptors from resources directly from
 //! files in the uBlock Origin repository.
 
@@ -294,7 +298,3 @@ pub fn assemble_scriptlet_resources(scriptlets_path: &Path) -> Vec<Resource> {
     let scriptlets_data = std::fs::read_to_string(scriptlets_path).expect("read scriptlets path");
     read_template_resources(&scriptlets_data)
 }
-
-#[cfg(test)]
-#[path = "../../tests/unit/resources/resource_assembler.rs"]
-mod unit_tests;

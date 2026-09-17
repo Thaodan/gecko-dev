@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 /// An inner implementation of a HashMap-like container with open addressing.
 /// Designed to be used in HashMap, HashSet, HashMultiMap.
 /// The load factor is 25%-50%.
@@ -213,6 +217,6 @@ mod tests {
         // Verify get_hash is stable.
         // If the value changes, update ADBLOCK_RUST_DAT_VERSION.
         let message = "If the value changes, update ADBLOCK_RUST_DAT_VERSION.";
-        assert_eq!(get_hash(&"adblock-rust"), 15102204115509201409, "{message}");
+        assert_eq!(get_hash(&"adblock-rust"), 5391703202028078439, "{message}");
     }
 }

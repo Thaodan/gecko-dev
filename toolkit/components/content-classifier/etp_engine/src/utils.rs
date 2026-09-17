@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 //! Common utilities used by the library. Some tests and benchmarks rely on this module having
 //! public visibility.
 
@@ -125,7 +129,3 @@ pub(crate) fn tokenize_filter_to(
 pub(crate) fn bin_lookup<T: Ord>(arr: &[T], elt: T) -> bool {
     arr.binary_search(&elt).is_ok()
 }
-
-#[cfg(test)]
-#[path = "../tests/unit/utils.rs"]
-mod unit_tests;

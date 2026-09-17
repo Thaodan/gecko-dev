@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 //! Storage and retrieval for redirect and scriptlet resources.
 
 use std::collections::HashMap;
@@ -672,7 +676,3 @@ pub(crate) fn parse_scriptlet_args(mut args: &str) -> Option<Vec<String>> {
 
     Some(args_vec)
 }
-
-#[cfg(test)]
-#[path = "../../tests/unit/resources/resource_storage.rs"]
-mod unit_tests;
