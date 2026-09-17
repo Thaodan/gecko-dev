@@ -128,7 +128,6 @@ struct PseudoStyleRequest;
 
 template <typename L>
 union StyleGenericCalcNode;
-union StyleSpecifiedLeaf;
 
 namespace css {
 class Loader;

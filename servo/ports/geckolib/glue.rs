@@ -11639,11 +11639,16 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
 
     // At the moment, we're only supporting top-level Math function
     // TODO: we should handle simple values too.
-    let Ok(Token::Function(name)) = parser.next() else {
-        return;
-    };
-    let Ok(math_func) = CalcNode::math_function(&parser_context, name) else {
-        return;
+    let math_func = match parser.next() {
+        Ok(Token::Function(name)) => match CalcNode::math_function(&parser_context, name) {
+            Ok(f) => f,
+            Err(_) => {
+                return;
+            },
+        },
+        _ => {
+            return;
+        },
     };
 
     let flags = CalcParseFlags {
