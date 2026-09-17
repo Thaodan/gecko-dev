@@ -7,6 +7,7 @@ package org.mozilla.fenix.components.toolbar
 import android.content.Context
 import android.view.Gravity
 import android.view.ViewGroup
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
@@ -32,18 +33,31 @@ import org.mozilla.fenix.utils.Settings
  * @param container [ViewGroup] which will serve as parent of this View.
  * @param toolbarStore [BrowserToolbarStore] containing the navigation bar state.
  * @param settings [Settings] object to get the toolbar position and other settings.
+ * @param customTabSessionId session ID of the custom tab in which the navigation bar is shown.
  * @param hideWhenKeyboardShown If true, navigation bar will be hidden when the keyboard is visible.
+ * @param tabStripContent Composable content for the tab strip when shown together with the navigation bar.
  */
 class BrowserNavigationBar(
     private val context: Context,
     private val container: ViewGroup,
     private val toolbarStore: BrowserToolbarStore,
     private val settings: Settings,
+    private val customTabSessionId: String? = null,
     private val hideWhenKeyboardShown: Boolean,
+    private val tabStripContent: () -> @Composable () -> Unit,
 ) {
     val layout =
         NavigationBarComposeView(context) {
-                DefaultNavigationBarContent()
+                val shouldShowTabStrip = remember {
+                    customTabSessionId == null && settings.isTabStripEnabled && settings.shouldUseBottomTabStrip
+                }
+
+                Column {
+                    if (shouldShowTabStrip) {
+                        tabStripContent().invoke()
+                    }
+                    DefaultNavigationBarContent()
+                }
             }
             .apply {
                 id = R.id.navigation_bar

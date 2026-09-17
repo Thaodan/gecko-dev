@@ -1437,7 +1437,9 @@ abstract class BaseBrowserFragment :
                 container = binding.browserLayout,
                 toolbarStore = toolbarStore,
                 settings = settings,
+                customTabSessionId = customTabSessionId,
                 hideWhenKeyboardShown = true,
+                tabStripContent = { buildTabStrip(appStore, settings) },
             )
 
         // set the summarize CFR binding only for regular, non-custom tabs
