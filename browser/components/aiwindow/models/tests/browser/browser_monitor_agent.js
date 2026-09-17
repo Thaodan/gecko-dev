@@ -35,6 +35,7 @@ const { PURPOSES } = ChromeUtils.importESModule(
 
 const {
   Monitor,
+  MONITOR_ERROR_CODES,
   TOTAL_NUM_MONITORS,
   TOTAL_NUM_URLS_IN_MONITOR,
   trimAndFilterWatchUrls,
@@ -962,36 +963,64 @@ add_task(async function test_createMonitor_returns_id() {
   }
 });
 
-add_task(async function test_limit_number_of_monitors() {
+add_task(async function test_limit_number_of_active_monitors() {
+  const watchUrls = Array.from(
+    { length: 2 },
+    (_, i) => `https://example.com/page${i}`
+  );
+  const createMonitor = () =>
+    MonitorAgent.createMonitor({
+      prompt: "Check if any product price is below $300.",
+      watchUrls,
+      schedule: { type: "interval", hours: 1 },
+      source: "test",
+    });
+  const activeCount = async () =>
+    (await MonitorAgent.listMonitors()).filter(m => m.enabled).length;
+  const limitError = error =>
+    error.code === MONITOR_ERROR_CODES.ACTIVE_LIMIT &&
+    error.limit === TOTAL_NUM_MONITORS &&
+    /Cannot have more than \d+ active monitors\./.test(error.message);
+
   try {
-    // create more monitors than the allowed number
-    const watchUrls = Array.from(
-      { length: 2 },
-      (_, i) => `https://example.com/page${i}`
-    );
     await resetMonitorAgentForTesting();
+    const ids = [];
     for (let i = 0; i < TOTAL_NUM_MONITORS; i++) {
-      await MonitorAgent.createMonitor({
-        prompt: "Check if any product price is below $300.",
-        watchUrls,
-        schedule: { type: "interval", hours: 1 },
-        source: "test",
-      });
+      ids.push(await createMonitor());
     }
     await Assert.rejects(
-      MonitorAgent.createMonitor({
-        prompt: "Check if any product price is below $300.",
-        watchUrls,
-        schedule: { type: "interval", hours: 1 },
-        source: "test",
-      }),
-      /Cannot create more than \d+ monitors\./,
-      `The monitor should limit the number of monitors to ${TOTAL_NUM_MONITORS}`
+      createMonitor(),
+      limitError,
+      `Creating past ${TOTAL_NUM_MONITORS} active monitors should be rejected`
     );
+    Assert.equal(await activeCount(), TOTAL_NUM_MONITORS);
+
+    // Pausing a monitor frees a slot: paused monitors don't count.
+    await MonitorAgent.pauseMonitor(ids[0], true);
+    Assert.equal(await activeCount(), TOTAL_NUM_MONITORS - 1);
+    const extraId = await createMonitor();
     Assert.equal(
       (await MonitorAgent.listMonitors()).length,
-      TOTAL_NUM_MONITORS
+      TOTAL_NUM_MONITORS + 1,
+      "Paused monitors can exceed the active limit"
     );
+    Assert.equal(await activeCount(), TOTAL_NUM_MONITORS);
+
+    // Resuming the paused monitor would exceed the active limit.
+    await Assert.rejects(
+      MonitorAgent.pauseMonitor(ids[0], false),
+      limitError,
+      "Resuming past the active limit should be rejected"
+    );
+    const paused = (await MonitorAgent.listMonitors()).find(
+      m => m.id === ids[0]
+    );
+    Assert.ok(!paused.enabled, "Rejected resume leaves the monitor paused");
+
+    // Pausing another monitor makes room to resume.
+    await MonitorAgent.pauseMonitor(extraId, true);
+    await MonitorAgent.pauseMonitor(ids[0], false);
+    Assert.equal(await activeCount(), TOTAL_NUM_MONITORS);
   } finally {
     await resetMonitorAgentForTesting();
   }

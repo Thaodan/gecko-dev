@@ -161,6 +161,9 @@ ai-tasks-alert-error-no-pages = Add at least one page to watch.
 ai-tasks-alert-error-max-urls = { $maxUrls ->
  *[other] You can watch up to { $maxUrls } pages. Delete one to add another.
 }
+# Shown when creating or resuming a task is refused because the limit of
+# active tasks has been reached. Paused tasks don’t count toward the limit.
+ai-tasks-alert-error-active-limit = You’ve reached the limit of active tasks. Pause or delete one to add or resume another.
 
 ## Accessibility - ARIA labels and accessibility text
 
