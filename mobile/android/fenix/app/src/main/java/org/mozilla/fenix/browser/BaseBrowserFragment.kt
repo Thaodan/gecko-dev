@@ -233,7 +233,6 @@ import org.mozilla.fenix.pbmlock.NavigationOrigin
 import org.mozilla.fenix.pbmlock.observePrivateModeLock
 import org.mozilla.fenix.perf.MarkersFragmentLifecycleCallbacks
 import org.mozilla.fenix.search.awesomebar.AwesomeBarComposable
-import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.settings.biometric.BiometricPromptFeature
 import org.mozilla.fenix.settings.downloads.DownloadLocationManager
 import org.mozilla.fenix.snackbar.FenixSnackbarDelegate
@@ -471,10 +470,6 @@ abstract class BaseBrowserFragment :
                         if (customTabSessionId != null) NavigationOrigin.CUSTOM_TAB else NavigationOrigin.TAB
                     )
                 )
-        }
-
-        if (!requireComponents.fenixOnboarding.userHasBeenOnboarded()) {
-            observeTabSource(requireComponents.core.store)
         }
 
         requireContext().accessibilityManager.addAccessibilityStateChangeListener(this)
@@ -1959,30 +1954,6 @@ abstract class BaseBrowserFragment :
         downloadDialog?.dismiss()
     }
 
-    @VisibleForTesting
-    @Suppress("ComplexCondition")
-    internal fun observeTabSource(
-        store: BrowserStore,
-        mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
-    ) {
-        consumeFlow(store, mainDispatcher = mainDispatcher) { flow ->
-            flow
-                .mapNotNull { state ->
-                    state.selectedTab
-                }
-                .collect {
-                    if (
-                        !requireComponents.fenixOnboarding.userHasBeenOnboarded() &&
-                            it.content.loadRequest?.triggeredByRedirect != true &&
-                            it.source !is SessionState.Source.External &&
-                            it.content.url !in onboardingLinksList
-                    ) {
-                        requireComponents.fenixOnboarding.finish()
-                    }
-                }
-        }
-    }
-
     private fun handleTabSelected(selectedTab: TabSessionState, isCustomTabSession: Boolean) {
         if (!this.isRemoving && !isCustomTabSession) {
             updateThemeForSession(selectedTab)
@@ -2392,12 +2363,6 @@ abstract class BaseBrowserFragment :
         private const val REQUEST_CODE_PROMPT_PERMISSIONS = 2
         private const val REQUEST_CODE_APP_PERMISSIONS = 3
         private const val LAST_SAVED_GENERATED_PASSWORD = "last_saved_generated_password"
-
-        val onboardingLinksList: List<String> =
-            listOf(
-                SupportUtils.getMozillaPageUrl(SupportUtils.MozillaPage.PRIVACY_NOTICE),
-                SupportUtils.FXACCOUNT_SUMO_URL,
-            )
     }
 
     override fun onAccessibilityStateChanged(enabled: Boolean) {
