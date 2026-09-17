@@ -331,7 +331,26 @@ class AVSyncTest : public ::testing::Test {
   //
   // Anchor and slope are both pinned: a superseded clock shifts every frame
   // equally, a wrong rate tilts the line.
-  void ExpectScheduleMatchesClock(double aEpsilonSec, const char* aWhen) {
+  //
+  // Rearranged, each image implies the instant the sink anchored on, and that
+  // instant must already have passed. Reading the clock here samples a later
+  // instant than the sink did, by however long the machine took to get from
+  // one to the other, so the implied anchor trails now by an amount that is
+  // not ours to predict. A superseded clock moves it the other way, ahead of
+  // now by the distance the clock has since advanced, and no correct schedule
+  // is anchored in the future:
+  //
+  //        <---- lag, loosely bounded ----><- lead, tightly bounded
+  //   -----+--------------------------------+------------------------> wall
+  //      anchor                            now
+  //      (fresh)                                    anchor (stale)
+  //
+  // So the two directions get very different bounds. The tight side is the one
+  // that catches the bug, and it no longer has to absorb scheduling noise.
+  static constexpr double kMaxAnchorLagSec = 0.250;
+  static constexpr double kMaxAnchorLeadSec = 0.002;
+
+  void ExpectScheduleMatchesClock(const char* aWhen) {
     TimeStamp t;
     const TimeUnit clock = mVideoSink->GetPosition(&t);
     const double rate = mVideoSink->PlaybackRate();
@@ -351,11 +370,19 @@ class AVSyncTest : public ::testing::Test {
       }
       const double wanted = (image.mMediaTime - clock).ToSeconds() / rate;
       const double got = (image.mTimeStamp - t).ToSeconds();
-      EXPECT_NEAR(got, wanted, aEpsilonSec)
+      const double lead = got - wanted;
+      EXPECT_LE(lead, kMaxAnchorLeadSec)
           << "frame at " << image.mMediaTime.ToSeconds() << "s is scheduled "
           << got * 1000.0 << "ms from now, but a clock of " << clock.ToSeconds()
-          << "s at rate " << rate << " calls for " << wanted * 1000.0 << "ms "
-          << aWhen;
+          << "s at rate " << rate << " calls for " << wanted * 1000.0
+          << "ms, so the schedule is anchored " << lead * 1000.0
+          << "ms in the future " << aWhen;
+      EXPECT_GE(lead, -kMaxAnchorLagSec)
+          << "frame at " << image.mMediaTime.ToSeconds() << "s is scheduled "
+          << got * 1000.0 << "ms from now, but a clock of " << clock.ToSeconds()
+          << "s at rate " << rate << " calls for " << wanted * 1000.0
+          << "ms, so the schedule is anchored " << -lead * 1000.0
+          << "ms too far back " << aWhen;
       ++checked;
     }
     EXPECT_EQ(size_t(checked), images.Length())
@@ -367,10 +394,11 @@ class AVSyncTest : public ::testing::Test {
   //   media   M0 --dM--> M1 --dM--> M2
   //   wall    T0 --dT--> T1 --dT--> T2        dT == dM / rate
   //
-  // Implied by the check above, so not independent. Kept because it bounds the
-  // gap directly: both frames can sit within epsilon while the gap is off by
-  // twice it. It also names the offending pair.
-  void ExpectCadenceMatchesRate(double aEpsilonSec, const char* aWhen) {
+  void ExpectCadenceMatchesRate(const char* aWhen) {
+    // Both sides are differences between two images of one schedule, so the
+    // instant the check runs cancels and nothing here depends on the machine.
+    // That is what lets the bound be this tight.
+    constexpr double kCadenceEpsilonSec = 0.002;
     const double rate = mVideoSink->PlaybackRate();
     nsTArray<ImageContainer::OwningImage> images;
     mContainer->GetImageContainer()->GetCurrentImages(&images);
@@ -386,7 +414,7 @@ class AVSyncTest : public ::testing::Test {
           (images[i].mMediaTime - images[i - 1].mMediaTime).ToSeconds() / rate;
       const double got =
           (images[i].mTimeStamp - images[i - 1].mTimeStamp).ToSeconds();
-      EXPECT_NEAR(got, wanted, aEpsilonSec)
+      EXPECT_NEAR(got, wanted, kCadenceEpsilonSec)
           << "frames " << images[i - 1].mMediaTime.ToSeconds() << "s and "
           << images[i].mMediaTime.ToSeconds() << "s are " << got * 1000.0
           << "ms apart, but rate " << rate << " calls for " << wanted * 1000.0
@@ -395,14 +423,8 @@ class AVSyncTest : public ::testing::Test {
   }
 
   void ExpectCorrectClockAndCadence(const char* aWhen) {
-    // Bounds the wall-clock gap between the sink deriving a schedule and this
-    // check reading the clock: a driven callback is the only thing that moves
-    // the clock, so nothing but scheduling separates the two reads. It is a
-    // budget for that gap, not a statement about how far out of sync playback
-    // may be; at 60fps or above it already spans more than one frame.
-    constexpr double kScheduleEpsilonSec = 0.020;
-    ExpectScheduleMatchesClock(kScheduleEpsilonSec, aWhen);
-    ExpectCadenceMatchesRate(kScheduleEpsilonSec, aWhen);
+    ExpectScheduleMatchesClock(aWhen);
+    ExpectCadenceMatchesRate(aWhen);
   }
 
   MediaInfo mInfo;
