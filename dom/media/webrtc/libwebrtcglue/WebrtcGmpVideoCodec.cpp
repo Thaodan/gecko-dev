@@ -95,10 +95,6 @@ media::EncodeSupportSet WebrtcGmpEncoderSupports(const EncoderConfig& aConfig) {
   return media::EncodeSupport::SoftwareEncode;
 }
 
-// QP scaling thresholds.
-static const int kLowH264QpThreshold = 24;
-static const int kHighH264QpThreshold = 37;
-
 // Encoder.
 WebrtcGmpVideoEncoder::WebrtcGmpVideoEncoder(
     const webrtc::SdpVideoFormat& aFormat, std::string aPCHandle)
