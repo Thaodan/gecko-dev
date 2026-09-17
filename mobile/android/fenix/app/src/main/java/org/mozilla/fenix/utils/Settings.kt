@@ -1633,9 +1633,22 @@ class Settings(
 
     val toolbarPosition: ToolbarPosition
         get() =
-            if (isTabStripEnabled) {
+            if (shouldUseBottomToolbar) {
+                ToolbarPosition.BOTTOM
+            } else {
                 ToolbarPosition.TOP
-            } else if (shouldUseBottomToolbar) {
+            }
+
+    var shouldUseBottomTabStrip by
+        booleanPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_tab_bar_bottom),
+            default = false,
+            persistDefaultIfNotExists = true,
+        )
+
+    val tabStripPosition: ToolbarPosition
+        get() =
+            if (shouldUseBottomTabStrip) {
                 ToolbarPosition.BOTTOM
             } else {
                 ToolbarPosition.TOP

@@ -100,7 +100,8 @@ class BrowserToolbarComposable(
                 val isSearching = toolbarStore.observeAsComposableState { it.isEditMode() }.value
                 val shouldShowTabStrip: Boolean = remember { shouldShowTabStrip() }
                 val customColors = browserScreenStore.observeAsComposableState { it.customTabColors }
-                val shouldUseBottomToolbar = remember(settings) { settings.shouldUseBottomToolbar }
+                val shouldUseBottomToolbar = remember { settings.shouldUseBottomToolbar }
+                val shouldUseBottomTabStrip = remember { settings.shouldUseBottomTabStrip }
 
                 val toolbarState by toolbarStore.stateFlow.collectAsState()
                 val toolbarCFR = toolbarState.displayState.cfr
@@ -146,10 +147,12 @@ class BrowserToolbarComposable(
                         }
 
                     MaterialTheme(colorScheme = colorScheme) {
-                        when (shouldShowTabStrip) {
+                        when (!shouldUseBottomToolbar) {
                             true ->
                                 Column(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
-                                    tabStripContent()
+                                    if (shouldShowTabStrip && !shouldUseBottomTabStrip) {
+                                        tabStripContent()
+                                    }
                                     BrowserToolbar(
                                         store = toolbarStore,
                                         cfr = toolbarCFR,
@@ -163,44 +166,33 @@ class BrowserToolbarComposable(
 
                             false ->
                                 Column(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
-                                    if (shouldUseBottomToolbar) {
-                                        if (customTabSession == null) {
-                                            searchSuggestionsContent(Modifier.weight(1f))
-                                        }
-                                        BrowserToolbar(
-                                            store = toolbarStore,
-                                            cfr = toolbarCFR,
-                                            useMinimalBottomToolbarWhenEnteringText =
-                                                settings.shouldUseMinimalBottomToolbarWhenEnteringText,
-                                        )
-                                        navigationBarContent?.invoke()
-                                    } else {
-                                        BrowserToolbar(
-                                            store = toolbarStore,
-                                            cfr = toolbarCFR,
-                                            useMinimalBottomToolbarWhenEnteringText =
-                                                settings.shouldUseMinimalBottomToolbarWhenEnteringText,
-                                        )
-                                        if (customTabSession == null) {
-                                            searchSuggestionsContent(Modifier.weight(1f))
-                                        }
+                                    if (customTabSession == null) {
+                                        searchSuggestionsContent(Modifier.weight(1f))
                                     }
+                                    if (shouldShowTabStrip && shouldUseBottomTabStrip) {
+                                        tabStripContent()
+                                    }
+                                    BrowserToolbar(
+                                        store = toolbarStore,
+                                        cfr = toolbarCFR,
+                                        useMinimalBottomToolbarWhenEnteringText =
+                                            settings.shouldUseMinimalBottomToolbarWhenEnteringText,
+                                    )
+                                    navigationBarContent?.invoke()
                                 }
                         }
                     }
                 }
             }
             .apply {
-                if (!shouldShowTabStrip()) {
-                    val params = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
-
-                    when (settings.toolbarPosition) {
-                        TOP -> params.gravity = Gravity.TOP
-                        BOTTOM -> params.gravity = Gravity.BOTTOM
+                layoutParams =
+                    LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
+                        gravity =
+                            when (settings.toolbarPosition) {
+                                TOP -> Gravity.TOP
+                                BOTTOM -> Gravity.BOTTOM
+                            }
                     }
-
-                    layoutParams = params
-                }
             }
 
     init {

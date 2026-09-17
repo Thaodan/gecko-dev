@@ -893,7 +893,11 @@ abstract class BaseBrowserFragment :
                     },
             )
 
-        val bottomToolbarHeight = getBottomToolbarHeight(includeNavBarIfEnabled = customTabSessionId == null)
+        val bottomToolbarHeight =
+            getBottomToolbarHeight(
+                includeTabStripIfAvailable = customTabSessionId == null,
+                includeNavBarIfEnabled = customTabSessionId == null,
+            )
 
         downloadFeature.onDownloadStopped = { downloadState, _, downloadJobStatus ->
             handleOnDownloadFinished(
@@ -1225,8 +1229,8 @@ abstract class BaseBrowserFragment :
                         getTopToolbarHeightValue = { includeTabStrip ->
                             this.getTopToolbarHeight(includeTabStrip)
                         },
-                        getBottomToolbarHeightValue = { includeNavBar ->
-                            this.getBottomToolbarHeight(includeNavBar)
+                        getBottomToolbarHeightValue = { includeTabStrip, includeNavBar ->
+                            this.getBottomToolbarHeight(includeTabStrip, includeNavBar)
                         },
                     )
                     .apply {
@@ -2143,7 +2147,11 @@ abstract class BaseBrowserFragment :
         if (fullScreenFeature.get()?.isFullScreen == true) return 0 to 0
 
         val topToolbarHeight = getTopToolbarHeight(includeTabStripIfAvailable = customTabSessionId == null)
-        val bottomToolbarHeight = getBottomToolbarHeight(includeNavBarIfEnabled = customTabSessionId == null)
+        val bottomToolbarHeight =
+            getBottomToolbarHeight(
+                includeTabStripIfAvailable = customTabSessionId == null,
+                includeNavBarIfEnabled = customTabSessionId == null,
+            )
 
         return topToolbarHeight to bottomToolbarHeight
     }
@@ -2304,7 +2312,11 @@ abstract class BaseBrowserFragment :
         val isFullscreen = fullScreenFeature.get()?.isFullScreen == true
         val shouldToolbarsBeHidden = isFullscreen || !webAppToolbarShouldBeVisible
         val topToolbarHeight = getTopToolbarHeight(includeTabStripIfAvailable = customTabSessionId == null)
-        val bottomToolbarHeight = getBottomToolbarHeight(includeNavBarIfEnabled = customTabSessionId == null)
+        val bottomToolbarHeight =
+            getBottomToolbarHeight(
+                includeTabStripIfAvailable = customTabSessionId == null,
+                includeNavBarIfEnabled = customTabSessionId == null,
+            )
 
         initializeEngineView(
             topToolbarHeight = if (shouldToolbarsBeHidden) 0 else topToolbarHeight,
