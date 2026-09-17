@@ -23,11 +23,12 @@ const TEST_ADDRESS = {
   "additional-name": "Jose",
   "family-name": "Garcia",
   organization: "Mozilla",
-  "street-address": "160 Main Street",
+  "street-address": "160 Main Street\nApt 4",
   "address-level2": "Springfield",
   "address-level1": "CA",
   "postal-code": "90210",
   country: "US",
+  tel: "+16505551234",
   email: "manuel.garcia@example.com",
 };
 
@@ -36,21 +37,29 @@ const TEST_FORM = `<form id="form">
   <input id="additional-name" autocomplete="additional-name">
   <input id="family-name" autocomplete="family-name">
   <input id="organization" autocomplete="organization">
-  <input id="street-address" autocomplete="street-address">
+  <input id="address-line1" autocomplete="address-line1">
+  <input id="address-line2" autocomplete="address-line2">
   <input id="address-level2" autocomplete="address-level2">
   <input id="postal-code" autocomplete="postal-code">
+  <input id="tel" autocomplete="tel">
   <input id="email" autocomplete="email">
   <input type="submit"/>
 </form>`;
 
-// The fields the form fills, which is every one above except the two that a
-// form does not round-trip as typed: country is not in the form, and
-// address-level1 is filled from the region rather than the stored value.
-const EXPECTED_FILL = (({
-  country: _country,
-  "address-level1": _level1,
-  ...rest
-}) => rest)(TEST_ADDRESS);
+// The fields the form fills. country is not in the form, and address-level1 is
+// filled from the region rather than the stored value. street-address is held
+// in a single column and split back into lines on read, so the form carries the
+// lines instead and the expectations below name them.
+const EXPECTED_FILL = {
+  ...(({
+    country: _country,
+    "address-level1": _level1,
+    "street-address": _street,
+    ...rest
+  }) => rest)(TEST_ADDRESS),
+  "address-line1": "160 Main Street",
+  "address-line2": "Apt 4",
+};
 
 /**
  * Move the profile to the store the pref names and wait for it, the way the
@@ -75,9 +84,16 @@ add_setup(async function () {
       ["extensions.formautofill.addresses.capture.requiredFields", ""],
     ],
   });
+
+  // FormAutofillStorage adds its ENABLED_PREF observer at the end of
+  // initialize(), so a flip before that promise resolves is never observed:
+  // switchTo() would find no switch to wait for and the store would not change
+  // hands. Nothing else here initializes the storage before the first flip.
+  await formAutofillStorage.initialize();
+
   registerCleanupFunction(async () => {
     await removeAllRecords();
-    Services.prefs.setBoolPref(ENABLED_PREF, true);
+    Services.prefs.setBoolPref(ENABLED_PREF, false);
     await formAutofillStorage._addressSwitch;
   });
 });
@@ -125,11 +141,11 @@ add_task(async function test_an_address_captured_after_the_switch_is_saved() {
 
     const onPopupShown = waitForPopupShown();
     await focusUpdateSubmitForm(browser, {
-      focusSelector: "#street-address",
+      focusSelector: "#address-line1",
       newValues: {
         "#given-name": "Captured",
         "#family-name": "Person",
-        "#street-address": "1 Rust Road",
+        "#address-line1": "1 Rust Road",
         "#address-level2": "Springfield",
         "#postal-code": "90210",
       },
@@ -206,9 +222,6 @@ function assertCleanMigration(direction, total) {
   );
 }
 
-// Skipped until the Application Services bump lands. updateAddress does not
-// refresh time_last_modified there yet, so an edit made against the Rust store
-// still looks unchanged to the copy back and JSON keeps the old value.
 add_task(async function test_addresses_survive_a_switch_in_both_directions() {
   // Three addresses saved while JSON is serving, which is the state every
   // profile that has ever used autofill starts the migration in.
@@ -285,4 +298,4 @@ add_task(async function test_addresses_survive_a_switch_in_both_directions() {
   assertCleanMigration("to_json", beforeSwitchBack.length);
 
   await removeAllRecords();
-}).skip();
+});
