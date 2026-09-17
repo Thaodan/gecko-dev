@@ -214,11 +214,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_merino_client).apply {
-            isChecked = settings.enableMerinoClient
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_homepage_weather_widget).apply {
             isChecked = settings.enableHomepageWeatherWidget
             onPreferenceChangeListener = SharedPreferenceUpdater()

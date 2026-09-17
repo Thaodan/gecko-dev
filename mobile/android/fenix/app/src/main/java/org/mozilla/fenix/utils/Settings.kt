@@ -2589,13 +2589,6 @@ class Settings(
             default = { FxNimbus.features.showMoreShortcuts.value().enabled },
         )
 
-    /** Indicates if Merino Client is enabled. */
-    var enableMerinoClient by
-        booleanPreference(
-            key = appContext.getPreferenceKey(R.string.pref_key_enable_merino_client),
-            default = { FxNimbus.features.merinoClient.value().enabled },
-        )
-
     /** Indicates if the Homepage Weather Widget is enabled. */
     var enableHomepageWeatherWidget by
         booleanPreference(

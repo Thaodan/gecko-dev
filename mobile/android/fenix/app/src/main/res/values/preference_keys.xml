@@ -483,7 +483,6 @@
     <string name="pref_key_enable_ads_client_for_stories" translatable="false">pref_key_enable_ads_client_for_stories</string>
     <string name="pref_key_enable_add_shortcuts_improvement" translatable="false">pref_key_enable_add_shortcuts_improvement</string>
     <string name="pref_key_show_more_shortcuts" translatable="false">pref_key_show_more_shortcuts</string>
-    <string name="pref_key_enable_merino_client" translatable="false">pref_key_enable_merino_client</string>
     <string name="pref_key_enable_homepage_weather_widget" translatable="false">pref_key_enable_homepage_weather_widget</string>
     <string name="pref_key_show_homepage_weather_widget" translatable="false">pref_key_show_homepage_weather_widget</string>
     <string name="pref_key_use_minimal_bottom_toolbar_while_entering_text" translatable="false">pref_key_use_minimal_bottom_toolbar_while_entering_text</string>"
