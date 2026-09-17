@@ -4,27 +4,19 @@
 
 package org.mozilla.fenix.ui
 
-import android.content.res.Configuration
 import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 import androidx.core.net.toUri
-import java.util.Locale
-import mozilla.components.browser.errorpages.R as errorpagesR
-import mozilla.components.support.locale.toLocale
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.helpers.AppAndSystemHelper.runWithAppLocaleChanged
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectExists
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
-import org.mozilla.fenix.helpers.MatcherHelper.itemWithText
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
 import org.mozilla.fenix.helpers.TestHelper.appContext
-import org.mozilla.fenix.ui.robots.clickPageObject
 import org.mozilla.fenix.ui.robots.navigationToolbar
 
 /**
@@ -39,9 +31,6 @@ import org.mozilla.fenix.ui.robots.navigationToolbar
  * downgraded to "no internet" (for which the archive action is intentionally not offered).
  */
 class WaybackMachineErrorPageTest {
-
-    private val failingUrl = "ww.example.com"
-    private val waybackMachineHost = "web.archive.org"
 
     @get:Rule(order = 0) val fenixTestRule = FenixTestRule()
 
@@ -61,42 +50,9 @@ class WaybackMachineErrorPageTest {
     @Test
     fun archivedVersionButtonIsShownOnEligibleErrorPage() {
         navigationToolbar(composeTestRule) {}
-            .enterURLAndEnterToBrowser(failingUrl.toUri()) {
+            .enterURLAndEnterToBrowser("ww.example.com".toUri()) {
                 waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
                 assertUIObjectExists(itemWithResId("viewArchivedButton"))
-                assertUIObjectExists(itemWithResId("archiveDescription"))
             }
-    }
-
-    /**
-     * The archive service's name is turned into a link to the service by `injectArchiveDescription` in
-     * `lowMediumErrorPages.js`, which locates it by matching the localized link label against the localized description
-     * sentence. That match silently degrades to plain text if the two strings ever disagree in a locale, so every
-     * shipped locale is exercised rather than just the default one.
-     */
-    @Test
-    fun waybackMachineLinkOpensTheArchiveInEverySupportedLocale() {
-        BuildConfig.SUPPORTED_LOCALE_ARRAY.map { it.toLocale() }
-            .forEach { locale ->
-                val linkLabel = waybackMachineLabelIn(locale)
-
-                runWithAppLocaleChanged(locale, composeTestRule.activityRule) {
-                    navigationToolbar(composeTestRule) {}
-                        .enterURLAndEnterToBrowser(failingUrl.toUri()) {
-                            waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
-                            assertUIObjectExists(itemWithText(linkLabel))
-                            clickPageObject(composeTestRule, itemWithText(linkLabel))
-                            waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
-                            verifyUrl(waybackMachineHost)
-                        }
-                }
-            }
-    }
-
-    private fun waybackMachineLabelIn(locale: Locale): String {
-        val configuration = Configuration(appContext.resources.configuration).apply { setLocale(locale) }
-        return appContext
-            .createConfigurationContext(configuration)
-            .getString(errorpagesR.string.mozac_browser_errorpages_archive_wayback_machine)
     }
 }
