@@ -7,7 +7,6 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/EnumeratedArray.h"
-#include "mozilla/HashFunctions.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
@@ -20,6 +19,7 @@
 #include "gc/Marking.h"
 #include "gc/WeakMap.h"
 #include "jit/CacheIRAOT.h"
+#include "jit/CacheIRStubKey.h"
 #include "jit/ExecutableAllocator.h"
 #include "jit/ICStubSpace.h"
 #include "jit/Invalidation.h"
@@ -43,8 +43,6 @@ class BaseScript;
 
 namespace jit {
 
-enum class CacheKind : uint8_t;
-class CacheIRStubInfo;
 class JitCode;
 class JitScript;
 
@@ -59,46 +57,6 @@ class JitScript;
  *  automatically removed.
  */
 using EntryTrampolineMap = WeakMap<BaseScript*, JitCode*, ZoneAllocPolicy>;
-
-enum class ICStubEngine : uint8_t {
-  // Baseline IC, see BaselineIC.h.
-  Baseline = 0,
-
-  // Ion IC, see IonIC.h.
-  IonIC
-};
-
-struct CacheIRStubKey : public DefaultHasher<CacheIRStubKey> {
-  struct Lookup {
-    const uint8_t* code;
-    uint32_t length;
-    HashNumber hash;
-    CacheKind kind;
-    ICStubEngine engine;
-
-    Lookup(CacheKind kind, ICStubEngine engine, const uint8_t* code,
-           uint32_t length)
-        : code(code),
-          length(length),
-          hash(mozilla::AddToHash(mozilla::HashBytes(code, length),
-                                  uint32_t(kind), uint32_t(engine))),
-          kind(kind),
-          engine(engine) {}
-  };
-
-  static HashNumber hash(const Lookup& l) { return l.hash; }
-  static bool match(const CacheIRStubKey& entry, const Lookup& l);
-
-  UniquePtr<CacheIRStubInfo, JS::FreePolicy> stubInfo;
-
-  explicit CacheIRStubKey(CacheIRStubInfo* info) : stubInfo(info) {}
-  CacheIRStubKey(CacheIRStubKey&& other)
-      : stubInfo(std::move(other.stubInfo)) {}
-
-  void operator=(CacheIRStubKey&& other) {
-    stubInfo = std::move(other.stubInfo);
-  }
-};
 
 struct BaselineCacheIRStubCodeMapGCPolicy {
   static bool traceWeak(JSTracer* trc, CacheIRStubKey*,
