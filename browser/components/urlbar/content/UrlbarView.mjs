@@ -4186,6 +4186,7 @@ export class UrlbarView {
     return (
       UrlbarPrefs.get("contextMenu.featureGate") &&
       this.input.handlesOpenInCommands &&
+      result.type != UrlbarShared.RESULT_TYPE.TAB_SWITCH &&
       !!UrlbarShared.getLoadRequestFromResult(result)
     );
   }
