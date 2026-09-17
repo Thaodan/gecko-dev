@@ -20,8 +20,8 @@
  */
 
 /**
- * pdfjsVersion = 6.4.156
- * pdfjsBuild = 58550d5b4
+ * pdfjsVersion = 6.4.160
+ * pdfjsBuild = ee470d5db
  */
 
 ;// ./src/shared/util.js
@@ -34089,6 +34089,7 @@ const PatternType = {
 };
 const TEXT_CHUNK_BATCH_SIZE = 10;
 const deferred = Promise.resolve();
+const argIsDict = arg => arg instanceof Dict;
 function normalizeBlendMode(value, parsingArray = false) {
   if (Array.isArray(value)) {
     for (const val of value) {
@@ -35681,14 +35682,14 @@ class PartialEvaluator {
             args = [args[0].name, args[1] instanceof Dict ? args[1].get("MCID") : null];
             break;
           case OPS.beginMarkedContent:
-            if (args?.some(arg => arg instanceof Dict)) {
+            if (args?.some(argIsDict)) {
               warn(`getOperatorList - ignoring operator: ${fn}`);
               continue;
             }
             markedContentLevel++;
             break;
           case OPS.endMarkedContent:
-            if (args?.some(arg => arg instanceof Dict)) {
+            if (args?.some(argIsDict)) {
               warn(`getOperatorList - ignoring operator: ${fn}`);
               continue;
             }
@@ -35698,7 +35699,7 @@ class PartialEvaluator {
             markedContentLevel--;
             break;
           default:
-            if (args?.some(arg => arg instanceof Dict)) {
+            if (args?.some(argIsDict)) {
               warn(`getOperatorList - ignoring operator: ${fn}`);
               continue;
             }
@@ -64541,7 +64542,7 @@ class WorkerMessageHandler {
       docId,
       apiVersion
     } = docParams;
-    const workerVersion = "6.4.156";
+    const workerVersion = "6.4.160";
     if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` + `the Worker version "${workerVersion}".`);
     }
