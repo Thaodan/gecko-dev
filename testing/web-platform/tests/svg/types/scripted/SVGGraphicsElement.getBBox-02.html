@@ -15,7 +15,7 @@
       let tspan = document.querySelector('tspan');
       let bbox = tspan.getBBox();
       for (let property of ['x', 'y', 'width', 'height'])
-        assert_approx_equals(bbox[property], 100, 2, property);
+        assert_equals(bbox[property], 100, property);
     });
   });
 </script>
