@@ -1466,6 +1466,20 @@ nsresult nsHttpConnectionMgr::MakeNewConnection(
   // because we have already determined there are no idle connections
   // to our destination
 
+  if (mNumIdleConns + mNumActiveConns + 1 >= mMaxConns &&
+      profiler_thread_is_being_profiled_for_markers()) {
+    // The marker payload has no 16-bit integer format.
+    uint32_t active = mNumActiveConns;
+    uint32_t idle = mNumIdleConns;
+    uint32_t maxConns = mMaxConns;
+    nsCString origin(ent->mConnInfo->GetOrigin());
+    PROFILER_MARKER_SIMPLE_PAYLOAD_WITH_LABEL(
+        "HttpConnectionLimit", NETWORK,
+        "active={marker.data.active} idle={marker.data.idle} "
+        "max={marker.data.maxConns} for {marker.data.origin}",
+        active, idle, maxConns, origin);
+  }
+
   if ((mNumIdleConns + mNumActiveConns + 1 >= mMaxConns) && mNumIdleConns) {
     // If the global number of connections is preventing the opening of new
     // connections to a host without idle connections, then close them
