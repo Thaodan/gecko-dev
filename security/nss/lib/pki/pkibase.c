@@ -132,9 +132,8 @@ nssPKIObject_Destroy(
     nssPKIObject *object)
 {
     PRUint32 i;
-    PRInt32 refCount = PR_ATOMIC_DECREMENT(&object->refCount);
-    PORT_ReleaseAssert(refCount >= 0);
-    if (refCount == 0) {
+    PR_ASSERT(object->refCount > 0);
+    if (PR_ATOMIC_DECREMENT(&object->refCount) == 0) {
         for (i = 0; i < object->numInstances; i++) {
             nssCryptokiObject_Destroy(object->instances[i]);
         }
@@ -149,8 +148,7 @@ NSS_IMPLEMENT nssPKIObject *
 nssPKIObject_AddRef(
     nssPKIObject *object)
 {
-    PRInt32 refCount = PR_ATOMIC_INCREMENT(&object->refCount);
-    PORT_ReleaseAssert(refCount > 1);
+    PR_ATOMIC_INCREMENT(&object->refCount);
     return object;
 }
 

@@ -17,10 +17,9 @@ EXPORTS = \
 	$(NULL)
 
 PRIVATE_EXPORTS = \
-	dev3hack.h \
-	pk11hpkei.h \
 	secmodi.h \
 	secmodti.h \
+	dev3hack.h \
 	$(NULL)
 
 MODULE = nss

@@ -346,13 +346,12 @@ CheckSequenceTemplate(const SEC_ASN1Template* sequenceTemplate)
 
 static SECStatus DecodeItem(void* dest,
                             const SEC_ASN1Template* templateEntry,
-                            SECItem* src, PLArenaPool* arena, PRBool checkTag,
-                            unsigned long max_elements);
+                            SECItem* src, PLArenaPool* arena, PRBool checkTag);
 
 static SECStatus
 DecodeSequence(void* dest,
                const SEC_ASN1Template* templateEntry,
-               SECItem* src, PLArenaPool* arena, unsigned long max_elements)
+               SECItem* src, PLArenaPool* arena)
 {
     SECStatus rv = SECSuccess;
     SECItem source;
@@ -379,8 +378,7 @@ DecodeSequence(void* dest,
             sequenceEntry = &sequenceTemplate[seqindex++];
             if ((sequenceEntry && sequenceEntry->kind) &&
                 (sequenceEntry->kind != SEC_ASN1_SKIP_REST)) {
-                rv = DecodeItem(dest, sequenceEntry, &sequence, arena, PR_TRUE,
-                                max_elements);
+                rv = DecodeItem(dest, sequenceEntry, &sequence, arena, PR_TRUE);
             }
         } while ((SECSuccess == rv) &&
                  (sequenceEntry->kind &&
@@ -402,22 +400,20 @@ DecodeSequence(void* dest,
 static SECStatus
 DecodeInline(void* dest,
              const SEC_ASN1Template* templateEntry,
-             SECItem* src, PLArenaPool* arena, PRBool checkTag,
-             unsigned long max_elements)
+             SECItem* src, PLArenaPool* arena, PRBool checkTag)
 {
     const SEC_ASN1Template* inlineTemplate =
         SEC_ASN1GetSubtemplate(templateEntry,
                                (char*)dest + templateEntry->offset,
                                PR_FALSE);
     return DecodeItem((void*)((char*)dest + templateEntry->offset),
-                      inlineTemplate, src, arena, checkTag, max_elements);
+                      inlineTemplate, src, arena, checkTag);
 }
 
 static SECStatus
 DecodePointer(void* dest,
               const SEC_ASN1Template* templateEntry,
-              SECItem* src, PLArenaPool* arena, PRBool checkTag,
-              unsigned long max_elements)
+              SECItem* src, PLArenaPool* arena, PRBool checkTag)
 {
     const SEC_ASN1Template* ptrTemplate =
         SEC_ASN1GetSubtemplate(templateEntry,
@@ -430,8 +426,7 @@ DecodePointer(void* dest,
     void* subdata = PORT_ArenaZAlloc(arena, ptrTemplate->size);
     *(void**)((char*)dest + templateEntry->offset) = subdata;
     if (subdata) {
-        return DecodeItem(subdata, ptrTemplate, src, arena, checkTag,
-                          max_elements);
+        return DecodeItem(subdata, ptrTemplate, src, arena, checkTag);
     } else {
         PORT_SetError(SEC_ERROR_NO_MEMORY);
         return SECFailure;
@@ -441,21 +436,21 @@ DecodePointer(void* dest,
 static SECStatus
 DecodeImplicit(void* dest,
                const SEC_ASN1Template* templateEntry,
-               SECItem* src, PLArenaPool* arena, unsigned long max_elements)
+               SECItem* src, PLArenaPool* arena)
 {
     if (templateEntry->kind & SEC_ASN1_POINTER) {
         return DecodePointer((void*)((char*)dest),
-                             templateEntry, src, arena, PR_FALSE, max_elements);
+                             templateEntry, src, arena, PR_FALSE);
     } else {
         return DecodeInline((void*)((char*)dest),
-                            templateEntry, src, arena, PR_FALSE, max_elements);
+                            templateEntry, src, arena, PR_FALSE);
     }
 }
 
 static SECStatus
 DecodeChoice(void* dest,
              const SEC_ASN1Template* templateEntry,
-             SECItem* src, PLArenaPool* arena, unsigned long max_elements)
+             SECItem* src, PLArenaPool* arena)
 {
     SECStatus rv = SECSuccess;
     SECItem choice;
@@ -473,8 +468,7 @@ DecodeChoice(void* dest,
         choice = *src;
         choiceEntry = &choiceTemplate[choiceindex++];
         if (choiceEntry->kind) {
-            rv = DecodeItem(dest, choiceEntry, &choice, arena, PR_TRUE,
-                            max_elements);
+            rv = DecodeItem(dest, choiceEntry, &choice, arena, PR_TRUE);
         }
     } while ((SECFailure == rv) && (choiceEntry->kind));
 
@@ -500,7 +494,7 @@ DecodeChoice(void* dest,
 static SECStatus
 DecodeGroup(void* dest,
             const SEC_ASN1Template* templateEntry,
-            SECItem* src, PLArenaPool* arena, unsigned long max_elements)
+            SECItem* src, PLArenaPool* arena)
 {
     SECStatus rv = SECSuccess;
     SECItem source;
@@ -535,12 +529,6 @@ DecodeGroup(void* dest,
                 totalEntries++;
             }
         } while ((SECSuccess == rv) && (counter.len));
-
-        if (SECSuccess == rv && max_elements > 0 &&
-            totalEntries > max_elements) {
-            PORT_SetError(SEC_ERROR_BAD_DER);
-            rv = SECFailure;
-        }
 
         /* Limit entry data to 1 GiB. */
         if (SECSuccess == rv && subTemplate->size &&
@@ -579,8 +567,7 @@ DecodeGroup(void* dest,
                 rv = SECFailure;
                 break;
             }
-            rv = DecodeItem(entries[entryIndex++], subTemplate, &group, arena,
-                            PR_TRUE, max_elements);
+            rv = DecodeItem(entries[entryIndex++], subTemplate, &group, arena, PR_TRUE);
         } while ((SECSuccess == rv) && (group.len));
     /* we should be at the end of the set by now */
     /* save the entries where requested */
@@ -592,7 +579,7 @@ DecodeGroup(void* dest,
 static SECStatus
 DecodeExplicit(void* dest,
                const SEC_ASN1Template* templateEntry,
-               SECItem* src, PLArenaPool* arena, unsigned long max_elements)
+               SECItem* src, PLArenaPool* arena)
 {
     SECStatus rv = SECSuccess;
     SECItem subItem;
@@ -602,11 +589,9 @@ DecodeExplicit(void* dest,
 
     if (SECSuccess == rv) {
         if (templateEntry->kind & SEC_ASN1_POINTER) {
-            rv = DecodePointer(dest, templateEntry, &subItem, arena, PR_TRUE,
-                               max_elements);
+            rv = DecodePointer(dest, templateEntry, &subItem, arena, PR_TRUE);
         } else {
-            rv = DecodeInline(dest, templateEntry, &subItem, arena, PR_TRUE,
-                              max_elements);
+            rv = DecodeInline(dest, templateEntry, &subItem, arena, PR_TRUE);
         }
     }
 
@@ -618,8 +603,7 @@ DecodeExplicit(void* dest,
 static SECStatus
 DecodeItem(void* dest,
            const SEC_ASN1Template* templateEntry,
-           SECItem* src, PLArenaPool* arena, PRBool checkTag,
-           unsigned long max_elements)
+           SECItem* src, PLArenaPool* arena, PRBool checkTag)
 {
     SECStatus rv = SECSuccess;
     SECItem temp;
@@ -720,23 +704,21 @@ DecodeItem(void* dest,
         /* first, check the component class */
         if (kind & SEC_ASN1_INLINE) {
             /* decode inline template */
-            rv = DecodeInline(dest, templateEntry, &temp, arena, PR_TRUE,
-                              max_elements);
+            rv = DecodeInline(dest, templateEntry, &temp, arena, PR_TRUE);
         }
 
         else if (kind & SEC_ASN1_EXPLICIT) {
-            rv = DecodeExplicit(dest, templateEntry, &temp, arena, max_elements);
+            rv = DecodeExplicit(dest, templateEntry, &temp, arena);
         } else if ((SEC_ASN1_UNIVERSAL != (kind & SEC_ASN1_CLASS_MASK)) &&
 
                    (!(kind & SEC_ASN1_EXPLICIT))) {
 
             /* decode implicitly tagged components */
-            rv = DecodeImplicit(dest, templateEntry, &temp, arena, max_elements);
+            rv = DecodeImplicit(dest, templateEntry, &temp, arena);
         } else if (kind & SEC_ASN1_POINTER) {
-            rv = DecodePointer(dest, templateEntry, &temp, arena, PR_TRUE,
-                               max_elements);
+            rv = DecodePointer(dest, templateEntry, &temp, arena, PR_TRUE);
         } else if (kind & SEC_ASN1_CHOICE) {
-            rv = DecodeChoice(dest, templateEntry, &temp, arena, max_elements);
+            rv = DecodeChoice(dest, templateEntry, &temp, arena);
         } else if (kind & SEC_ASN1_ANY) {
             /* catch-all ANY type, don't decode */
             save = PR_TRUE;
@@ -748,7 +730,7 @@ DecodeItem(void* dest,
         } else if (kind & SEC_ASN1_GROUP) {
             if ((SEC_ASN1_SEQUENCE == (kind & SEC_ASN1_TAGNUM_MASK)) ||
                 (SEC_ASN1_SET == (kind & SEC_ASN1_TAGNUM_MASK))) {
-                rv = DecodeGroup(dest, templateEntry, &temp, arena, max_elements);
+                rv = DecodeGroup(dest, templateEntry, &temp, arena);
             } else {
                 /* a group can only be a SET OF or SEQUENCE OF */
                 PORT_SetError(SEC_ERROR_BAD_TEMPLATE);
@@ -756,7 +738,7 @@ DecodeItem(void* dest,
             }
         } else if (SEC_ASN1_SEQUENCE == (kind & SEC_ASN1_TAGNUM_MASK)) {
             /* plain SEQUENCE */
-            rv = DecodeSequence(dest, templateEntry, &temp, arena, max_elements);
+            rv = DecodeSequence(dest, templateEntry, &temp, arena);
         } else {
             /* handle all other types as "save" */
             /* we should only get here for primitive universal types */
@@ -857,49 +839,9 @@ SEC_QuickDERDecodeItem(PLArenaPool* arena, void* dest,
         rv = SECFailure;
     }
 
-    if (SECSuccess == rv && src->len > SEC_ASN1D_MAX_INPUT_SIZE) {
-        PORT_SetError(SEC_ERROR_BAD_DER);
-        rv = SECFailure;
-    }
-
     if (SECSuccess == rv) {
         newsrc = *src;
-        rv = DecodeItem(dest, templateEntry, &newsrc, arena, PR_TRUE,
-                        SEC_ASN1D_MAX_ELEMENTS);
-        if (SECSuccess == rv && newsrc.len) {
-            rv = SECFailure;
-            PORT_SetError(SEC_ERROR_EXTRA_INPUT);
-        }
-    }
-
-    return rv;
-}
-
-SECStatus
-SEC_QuickDERDecodeItemWithLimits(PLArenaPool* arena, void* dest,
-                                 const SEC_ASN1Template* templateEntry,
-                                 const SECItem* src,
-                                 unsigned long max_input_size,
-                                 unsigned long max_elements)
-{
-    SECStatus rv = SECSuccess;
-    SECItem newsrc;
-
-    if (!arena || !templateEntry || !src) {
-        PORT_SetError(SEC_ERROR_INVALID_ARGS);
-        rv = SECFailure;
-    }
-
-    if (SECSuccess == rv && max_input_size > 0 &&
-        src->len > max_input_size) {
-        PORT_SetError(SEC_ERROR_BAD_DER);
-        rv = SECFailure;
-    }
-
-    if (SECSuccess == rv) {
-        newsrc = *src;
-        rv = DecodeItem(dest, templateEntry, &newsrc, arena, PR_TRUE,
-                        max_elements);
+        rv = DecodeItem(dest, templateEntry, &newsrc, arena, PR_TRUE);
         if (SECSuccess == rv && newsrc.len) {
             rv = SECFailure;
             PORT_SetError(SEC_ERROR_EXTRA_INPUT);

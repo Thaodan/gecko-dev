@@ -67,10 +67,6 @@ pk11_getKeyFromList(PK11SlotInfo *slot, PRBool needSession)
     }
     PR_Unlock(slot->freeListLock);
     if (symKey) {
-        /* A key on the free list has been fully released; anything else
-         * means it is still in use somewhere and must not be recycled. */
-        PORT_ReleaseAssert(symKey->refCount == 0);
-        PORT_ReleaseAssert(symKey->slot == NULL);
         symKey->next = NULL;
         if (!needSession) {
             return symKey;
@@ -85,11 +81,10 @@ pk11_getKeyFromList(PK11SlotInfo *slot, PRBool needSession)
         PORT_Assert(symKey->session != CK_INVALID_HANDLE);
         if (symKey->session != CK_INVALID_HANDLE)
             return symKey;
-        /* We haven't set this key's reference count yet, so release the
-         * struct directly rather than through PK11_FreeSymKey, which would
-         * drive the count negative and abort. It's unlikely pk11_GetNewSession
-         * will succeed if we call it a second time. */
-        PORT_Free(symKey);
+        PK11_FreeSymKey(symKey);
+        /* if we are here, we need a session, but couldn't get one, it's
+         * unlikely we pk11_GetNewSession will succeed if we call it a second
+         * time. */
         return NULL;
     }
 
@@ -103,7 +98,7 @@ pk11_getKeyFromList(PK11SlotInfo *slot, PRBool needSession)
         symKey->session = pk11_GetNewSession(slot, &symKey->sessionOwner);
         PORT_Assert(symKey->session != CK_INVALID_HANDLE);
         if (symKey->session == CK_INVALID_HANDLE) {
-            PORT_Free(symKey);
+            PK11_FreeSymKey(symKey);
             symKey = NULL;
         }
     } else {
@@ -188,19 +183,12 @@ PK11_FreeSymKey(PK11SymKey *symKey)
 {
     PK11SlotInfo *slot;
     PRBool freeit = PR_TRUE;
-    PRInt32 newRefCount;
 
     if (!symKey) {
         return;
     }
 
-    newRefCount = PR_ATOMIC_DECREMENT(&symKey->refCount);
-    /* A negative count means this key was already freed (its struct may be
-     * on the slot's free list awaiting reuse). Abort, like an allocator that
-     * detects a double free, before the corrupted struct can be handed out
-     * to a new key. */
-    PORT_ReleaseAssert(newRefCount >= 0);
-    if (newRefCount == 0) {
+    if (PR_ATOMIC_DECREMENT(&symKey->refCount) == 0) {
         PK11SymKey *parent = symKey->parent;
 
         symKey->parent = NULL;
@@ -261,10 +249,7 @@ PK11_FreeSymKey(PK11SymKey *symKey)
 PK11SymKey *
 PK11_ReferenceSymKey(PK11SymKey *symKey)
 {
-    PRInt32 newRefCount = PR_ATOMIC_INCREMENT(&symKey->refCount);
-    /* A count of one after incrementing means the key was already freed;
-     * abort before the new reference is used to operate on freed memory. */
-    PORT_ReleaseAssert(newRefCount > 1);
+    PR_ATOMIC_INCREMENT(&symKey->refCount);
     return symKey;
 }
 
@@ -2455,7 +2440,6 @@ pk11_PubDeriveECKeyWithKDF(
                     key_size = pk11_ECPubKeySize(pubKey);
                     if (key_size == 0) {
                         PK11_FreeSymKey(symKey);
-                        PORT_SetError(SEC_ERROR_INVALID_KEY);
                         return NULL;
                     }
                     break;

@@ -40,9 +40,7 @@ tls13_ReleaseAntiReplayContext(SSLAntiReplayContext *ctx)
     if (!ctx) {
         return;
     }
-    PRInt32 refCount = PR_ATOMIC_DECREMENT(&ctx->refCount);
-    PORT_ReleaseAssert(refCount >= 0);
-    if (refCount != 0) {
+    if (PR_ATOMIC_DECREMENT(&ctx->refCount) >= 1) {
         return;
     }
 
@@ -69,8 +67,7 @@ SSLAntiReplayContext *
 tls13_RefAntiReplayContext(SSLAntiReplayContext *ctx)
 {
     PORT_Assert(ctx);
-    PRInt32 refCount = PR_ATOMIC_INCREMENT(&ctx->refCount);
-    PORT_ReleaseAssert(refCount > 1);
+    PR_ATOMIC_INCREMENT(&ctx->refCount);
     return ctx;
 }
 

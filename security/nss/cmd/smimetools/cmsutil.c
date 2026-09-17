@@ -736,17 +736,10 @@ loser:
     return NULL;
 }
 
-/* The CMS layer takes ownership of the key this returns, so hand out a
- * new reference rather than the caller's. */
 PK11SymKey *
 dkcb(void *arg, SECAlgorithmID *algid)
 {
-    PK11SymKey *bulkkey = (PK11SymKey *)arg;
-
-    if (bulkkey == NULL) {
-        return NULL;
-    }
-    return PK11_ReferenceSymKey(bulkkey);
+    return (PK11SymKey *)arg;
 }
 
 static SECStatus
@@ -1576,6 +1569,10 @@ main(int argc, char **argv)
                 SECU_PrintError(progName, "problem encrypting");
                 exitstatus = 1;
             }
+            if (encryptOptions.bulkkey) {
+                PK11_FreeSymKey(encryptOptions.bulkkey);
+                encryptOptions.bulkkey = NULL;
+            }
             break;
         case ENVELOPE: /* -E */
             envelopeOptions.options = &options;
@@ -1673,10 +1670,6 @@ main(int argc, char **argv)
 loser:
     if (cmsg)
         NSS_CMSMessage_Destroy(cmsg);
-    if (encryptOptions.bulkkey) {
-        PK11_FreeSymKey(encryptOptions.bulkkey);
-        encryptOptions.bulkkey = NULL;
-    }
     if (outFile != stdout)
         fclose(outFile);
 

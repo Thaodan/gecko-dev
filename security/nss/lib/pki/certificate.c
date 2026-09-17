@@ -18,11 +18,11 @@
 #include "dev.h"
 #endif /* DEV_H */
 
-#include "hasht.h"
-#include "pk11func.h"
-#include "pki3hack.h"
 #include "pkistore.h"
-#include "secmodi.h"
+
+#include "pki3hack.h"
+#include "pk11func.h"
+#include "hasht.h"
 
 #ifndef BASE_H
 #include "base.h"
@@ -30,41 +30,20 @@
 
 extern const NSSError NSS_ERROR_NOT_FOUND;
 
-NSS_IMPLEMENT PRStatus
-nssCertificate_SetCertKeyID(NSSCertificate *c)
-{
-    c->id.data = NULL;
-    c->id.size = 0;
-
-    SECItem secDER;
-    SECITEM_FROM_NSSITEM(&secDER, &c->encoding);
-    SECItem *keyID = pk11_mkcertKeyIDFromDER(&secDER);
-    if (!keyID) {
-        return PR_FAILURE;
-    }
-    nssItem_Create(c->object.arena, &c->id, keyID->len, keyID->data);
-    SECITEM_FreeItem(keyID, PR_TRUE);
-
-    return c->id.data && c->id.size ? PR_SUCCESS : PR_FAILURE;
-}
-
 /* Creates a certificate from a base object */
 NSS_IMPLEMENT NSSCertificate *
 nssCertificate_Create(
     nssPKIObject *object)
 {
-    PR_ASSERT(object->lockType == nssPKIMonitor);
-
     PRStatus status;
     NSSCertificate *rvCert;
+    nssArenaMark *mark;
     NSSArena *arena = object->arena;
-    nssArenaMark *mark = nssArena_Mark(arena);
-    if (!mark) {
-        return NULL;
-    }
+    PR_ASSERT(object->lockType == nssPKIMonitor);
+    mark = nssArena_Mark(arena);
     rvCert = nss_ZNEW(arena, NSSCertificate);
     if (!rvCert) {
-        return NULL;
+        return (NSSCertificate *)NULL;
     }
     rvCert->object = *object;
     /* XXX should choose instance based on some criteria */
@@ -87,15 +66,12 @@ nssCertificate_Create(
         !rvCert->issuer.size ||
         !rvCert->serial.data ||
         !rvCert->serial.size) {
-        nssArena_Release(arena, mark);
-        return NULL;
+        if (mark)
+            nssArena_Release(arena, mark);
+        return (NSSCertificate *)NULL;
     }
-    if ((!rvCert->id.data || !rvCert->id.size) &&
-        nssCertificate_SetCertKeyID(rvCert) != PR_SUCCESS) {
-        nssArena_Release(arena, mark);
-        return NULL;
-    }
-    nssArena_Unmark(arena, mark);
+    if (mark)
+        nssArena_Unmark(arena, mark);
     return rvCert;
 }
 
@@ -155,9 +131,7 @@ nssCertificate_Destroy(
     // necessary even though the refcounting is atomic. Go figure.
 
     // Return early if this isn't the last reference.
-    PRInt32 refCount = PR_ATOMIC_DECREMENT(&c->object.refCount);
-    PORT_ReleaseAssert(refCount >= 0);
-    if (refCount != 0) {
+    if (PR_ATOMIC_DECREMENT(&c->object.refCount) != 0) {
         nssPKIObject_Unlock(&c->object);
         if (cc) {
             nssCertificateStore_Unlock(cc->certStore, &lockTrace, &unlockTrace);

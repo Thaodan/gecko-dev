@@ -15,7 +15,6 @@
 #include "pk11func.h"
 #include "dev3hack.h"
 #include "secerr.h"
-#include "hasht.h"
 
 extern const NSSError NSS_ERROR_NOT_FOUND;
 extern const NSSError NSS_ERROR_INVALID_ARGUMENT;
@@ -29,9 +28,7 @@ nssToken_Destroy(
     NSSToken *tok)
 {
     if (tok) {
-        PRInt32 refCount = PR_ATOMIC_DECREMENT(&tok->base.refCount);
-        PORT_ReleaseAssert(refCount >= 0);
-        if (refCount == 0) {
+        if (PR_ATOMIC_DECREMENT(&tok->base.refCount) == 0) {
             PK11_FreeSlot(tok->pk11slot);
             PR_DestroyLock(tok->base.lock);
             nssTokenObjectCache_Destroy(tok->cache);
@@ -53,8 +50,7 @@ NSS_IMPLEMENT NSSToken *
 nssToken_AddRef(
     NSSToken *tok)
 {
-    PRInt32 refCount = PR_ATOMIC_INCREMENT(&tok->base.refCount);
-    PORT_ReleaseAssert(refCount > 1);
+    PR_ATOMIC_INCREMENT(&tok->base.refCount);
     return tok;
 }
 
@@ -1302,8 +1298,8 @@ nssToken_Digest(
     /* XXX the standard says this should work, but it doesn't */
     ckrv = CKAPI(epv)->C_Digest(session->handle, NULL, 0, NULL, &digestLen);
     if (ckrv != CKR_OK) {
-        nssSession_ExitMonitor(session);
-        return NULL;
+	nssSession_ExitMonitor(session);
+	return NULL;
     }
 #endif
     digestLen = 0; /* XXX for now */

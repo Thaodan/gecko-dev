@@ -27,7 +27,7 @@
 #endif /* NSS_DISABLE_SSE2 */
 #endif
 
-#if defined(__aarch64__) || defined(_M_ARM64)
+#ifdef __aarch64__
 #include <arm_neon.h>
 #endif
 
@@ -82,7 +82,7 @@ typedef SECStatus (*ghash_t)(gcmHashContext *, const unsigned char *,
 pre_align struct gcmHashContextStr {
 #ifdef NSS_X86_OR_X64
     __m128i x, h;
-#elif defined(__aarch64__) || defined(_M_ARM64)
+#elif defined(__aarch64__)
     uint64x2_t x, h;
 #elif defined(USE_PPC_CRYPTO)
     vec_u64 x, h;

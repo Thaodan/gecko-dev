@@ -437,9 +437,6 @@ NSS=trustOrder=100
     COMMON=${TEST_COMMON-$common}
     export COMMON
 
-    TSAN_SUPPRESSIONS_FILE=${COMMON}/tsan_suppressions.txt
-    export TSAN_OPTIONS="suppressions=${TSAN_SUPPRESSIONS_FILE}"
-
     DIST=${DIST-${MOZILLA_ROOT}/dist}
     TESTDIR=${TESTDIR-${MOZILLA_ROOT}/tests_results/security}
 
