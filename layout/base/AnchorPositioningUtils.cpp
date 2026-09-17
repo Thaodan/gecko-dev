@@ -204,8 +204,7 @@ class TopLayerChecker {
 
  public:
   explicit TopLayerChecker(const nsIFrame* aPositionedFrame)
-      : mTopLayer{
-            aPositionedFrame->GetContent()->OwnerDoc()->GetTopLayer()},
+      : mTopLayer{aPositionedFrame->GetContent()->OwnerDoc()->GetTopLayer()},
         mPositionedTopLayerIndex{GetIndex(aPositionedFrame, mTopLayer)} {}
 
   int32_t Compare(const nsIFrame* aPossibleAnchorFrame) {
@@ -233,12 +232,13 @@ bool IsContainingBlockGeneratedByElement(const nsIFrame* aContainingBlock) {
 }
 
 bool IsAnchorLaidOutStrictlyBeforeElement(
-    const nsIFrame* aPossibleAnchorFrame, const nsIFrame* aPositionedFrame,
+    const AnchorPosAnchorInfo& aPossibleAnchor,
+    const nsIFrame* aPositionedFrame, uint32_t aPositionedFrameTreeDepth,
     const nsTArray<const nsIFrame*>& aPositionedFrameAncestors,
     TopLayerChecker& aTopLayerChecker) {
   // 1. positioned el is in a higher top layer than possible anchor,
   // see https://drafts.csswg.org/css-position-4/#in-a-higher-top-layer
-  const auto topLayerResult = aTopLayerChecker.Compare(aPossibleAnchorFrame);
+  const auto topLayerResult = aTopLayerChecker.Compare(aPossibleAnchor.mAnchor);
 
   if (topLayerResult != 0) {
     return topLayerResult > 0;
@@ -254,7 +254,7 @@ bool IsAnchorLaidOutStrictlyBeforeElement(
   // have inline elements as a containing block). Some WPT rely on inline
   // containing blocks as well.
   // See also: https://github.com/w3c/csswg-drafts/issues/12674
-  const nsIFrame* anchorContainingBlock = aPossibleAnchorFrame->GetParent();
+  const nsIFrame* anchorContainingBlock = aPossibleAnchor.mAnchor->GetParent();
   const auto* positionedContainingBlockFirstContinuation =
       nsLayoutUtils::FirstContinuationOrIBSplitSibling(
           positionedContainingBlock);
@@ -270,14 +270,20 @@ bool IsAnchorLaidOutStrictlyBeforeElement(
     if (positionedContainingBlock->IsViewportFrame() &&
         !anchorContainingBlock->IsViewportFrame()) {
       return !nsLayoutUtils::IsProperAncestorFrame(aPositionedFrame,
-                                                   aPossibleAnchorFrame);
+                                                   aPossibleAnchor.mAnchor);
     }
-
     auto isLastContainingBlockOrderable = [&]() -> bool {
+      const auto positionedContainingBlockFrameDepth =
+          aPositionedFrameTreeDepth - 1;
       const nsIFrame* it = anchorContainingBlock;
+      auto itFrameDepth = aPossibleAnchor.mFrameTreeDepth - 1;
       while (it) {
         const nsIFrame* parentContainingBlock = it->GetParent();
         if (!parentContainingBlock) {
+          return false;
+        }
+        itFrameDepth--;
+        if (itFrameDepth < positionedContainingBlockFrameDepth) {
           return false;
         }
 
@@ -326,12 +332,12 @@ bool IsAnchorLaidOutStrictlyBeforeElement(
   // containing block, and are both absolutely positioned, and possible
   // anchor is earlier in flat tree order than positioned el.
   const bool isAnchorAbsolutelyPositioned =
-      aPossibleAnchorFrame->IsAbsolutelyPositioned();
+      aPossibleAnchor.mAnchor->IsAbsolutelyPositioned();
   if (isAnchorAbsolutelyPositioned) {
     // We must have checked that the positioned element is absolutely
     // positioned by now.
     return nsLayoutUtils::CompareTreePosition(
-               aPossibleAnchorFrame, aPositionedFrame,
+               aPossibleAnchor.mAnchor, aPositionedFrame,
                aPositionedFrameAncestors, nullptr) < 0;
   }
 
@@ -400,11 +406,11 @@ class LazyAncestorHolder {
 };
 
 bool IsAcceptableAnchorElement(
-    const nsIFrame* aPossibleAnchorFrame, const ScopedNameRef* aName,
-    const nsIFrame* aPositionedFrame,
+    const AnchorPosAnchorInfo& aPossibleAnchor, const ScopedNameRef* aName,
+    const nsIFrame* aPositionedFrame, uint32_t aPositionedFrameTreeDepth,
     LazyAncestorHolder& aPositionedFrameAncestorHolder,
     TopLayerChecker& aTopLayerChecker) {
-  MOZ_ASSERT(aPossibleAnchorFrame);
+  MOZ_ASSERT(aPossibleAnchor.mAnchor);
   MOZ_ASSERT(aPositionedFrame);
 
   // An element possible anchor is an acceptable anchor element for an
@@ -420,26 +426,29 @@ bool IsAcceptableAnchorElement(
   // The phrase "element or a fully styleable tree-abiding pseudo-element"
   // used by the spec is taken to mean
   // "either not a pseudo-element or a pseudo-element of a specific kind".
-  if (!IsFullyStyleableTreeAbidingOrNotPseudoElement(aPossibleAnchorFrame)) {
+  if (!IsFullyStyleableTreeAbidingOrNotPseudoElement(aPossibleAnchor.mAnchor)) {
     return false;
   }
   if (!IsAnchorLaidOutStrictlyBeforeElement(
-          aPossibleAnchorFrame, aPositionedFrame,
+          aPossibleAnchor, aPositionedFrame, aPositionedFrameTreeDepth,
           aPositionedFrameAncestorHolder.GetAncestors(), aTopLayerChecker)) {
     return false;
   }
   if (aName && !IsAnchorInScopeForPositionedElement(
-                   *aName, aPossibleAnchorFrame, aPositionedFrame)) {
+                   *aName, aPossibleAnchor.mAnchor, aPositionedFrame)) {
     return false;
   }
-  if (!IsPositionedElementAlsoSkippedWhenAnchorIsSkipped(aPossibleAnchorFrame,
-                                                         aPositionedFrame)) {
+  if (!IsPositionedElementAlsoSkippedWhenAnchorIsSkipped(
+          aPossibleAnchor.mAnchor, aPositionedFrame)) {
     return false;
   }
   return true;
 }
 
 }  // namespace
+
+AnchorPosAnchorInfo::AnchorPosAnchorInfo(nsIFrame* aAnchor)
+    : mAnchor{aAnchor}, mFrameTreeDepth{aAnchor->GetDepthInFrameTree()} {}
 
 AnchorPosReferenceData::Result AnchorPosReferenceData::InsertOrModify(
     const ScopedNameRef& aKey, const bool aNeedOffset) {
@@ -488,13 +497,14 @@ AnchorPosDefaultAnchorCache::AnchorPosDefaultAnchorCache(
 
 nsIFrame* AnchorPositioningUtils::FindFirstAcceptableAnchor(
     const ScopedNameRef& aName, const nsIFrame* aPositionedFrame,
-    const nsTArray<nsIFrame*>& aPossibleAnchorFrames) {
+    const nsTArray<AnchorPosAnchorInfo>& aPossibleAnchorFrames,
+    uint32_t aPositionedFrameTreeDepth) {
   LazyAncestorHolder positionedFrameAncestorHolder(aPositionedFrame);
   TopLayerChecker topLayerHolder{aPositionedFrame};
 
   for (auto it = aPossibleAnchorFrames.rbegin();
        it != aPossibleAnchorFrames.rend(); ++it) {
-    const nsIFrame* possibleAnchorFrame = *it;
+    nsIFrame* possibleAnchorFrame = it->mAnchor;
     if (!DoTreeScopedPropertiesOfElementApplyToContent(
             aName, possibleAnchorFrame, aPositionedFrame)) {
       // Skip anchors in different shadow trees.
@@ -505,10 +515,10 @@ nsIFrame* AnchorPositioningUtils::FindFirstAcceptableAnchor(
                    possibleAnchorFrame->GetContent()->OwnerDoc(),
                "Anchor and positiond frames in different documents?");
     // Check if the possible anchor is an acceptable anchor element.
-    if (IsAcceptableAnchorElement(*it, &aName, aPositionedFrame,
-                                  positionedFrameAncestorHolder,
-                                  topLayerHolder)) {
-      return *it;
+    if (IsAcceptableAnchorElement(
+            *it, &aName, aPositionedFrame, aPositionedFrameTreeDepth,
+            positionedFrameAncestorHolder, topLayerHolder)) {
+      return possibleAnchorFrame;
     }
   }
 
@@ -517,10 +527,12 @@ nsIFrame* AnchorPositioningUtils::FindFirstAcceptableAnchor(
 }
 
 static const nsIFrame* GetAnchorOf(const nsIFrame* aPositioned,
-                                   const ScopedNameRef& aAnchorName) {
+                                   const ScopedNameRef& aAnchorName,
+                                   uint32_t aFrameTreeDepth) {
   const auto* presShell = aPositioned->PresShell();
   MOZ_ASSERT(presShell, "No PresShell for frame?");
-  return presShell->GetAnchorPosAnchor(aAnchorName, aPositioned);
+  return presShell->GetAnchorPosAnchor(aAnchorName, aPositioned,
+                                       aFrameTreeDepth);
 }
 
 Maybe<nsRect> AnchorPositioningUtils::GetAnchorPosRect(
@@ -589,8 +601,12 @@ Maybe<AnchorPosInfo> AnchorPositioningUtils::ResolveAnchorPosRect(
     }
     entry = result.mEntry;
   }
+  uint32_t frameTreeDepth =
+      !aResolutionCache || !aResolutionCache->mReferenceData
+          ? aPositioned->GetDepthInFrameTree()
+          : aResolutionCache->mReferenceData->mFrameTreeDepth;
 
-  const auto* anchor = GetAnchorOf(aPositioned, *anchorName);
+  const auto* anchor = GetAnchorOf(aPositioned, *anchorName, frameTreeDepth);
   if (!anchor) {
     // If we have a cached entry, just check that it resolved to nothing last
     // time as well.
@@ -669,7 +685,10 @@ Maybe<nsSize> AnchorPositioningUtils::ResolveAnchorPosSize(
     }
     entry = result.mEntry;
   }
-  const auto* anchor = GetAnchorOf(aPositioned, *anchorName);
+  uint32_t frameTreeDepth = referencedAnchors
+                                ? referencedAnchors->mFrameTreeDepth
+                                : aPositioned->GetDepthInFrameTree();
+  const auto* anchor = GetAnchorOf(aPositioned, *anchorName, frameTreeDepth);
   if (!anchor) {
     return Nothing{};
   }
@@ -897,8 +916,9 @@ auto AnchorPositioningUtils::GetAnchorPosImplicitAnchor(const nsIFrame* aFrame)
   }
   LazyAncestorHolder ancestorHolder(aFrame);
   TopLayerChecker topLayerHolder{aFrame};
-  if (!IsAcceptableAnchorElement(anchorFrame, /* aName = */ nullptr, aFrame,
-                                 ancestorHolder, topLayerHolder)) {
+  if (!IsAcceptableAnchorElement(
+          AnchorPosAnchorInfo{anchorFrame}, /* aName = */ nullptr, aFrame,
+          aFrame->GetDepthInFrameTree(), ancestorHolder, topLayerHolder)) {
     return {};
   }
   return {anchorFrame, kind};
@@ -995,7 +1015,8 @@ nsIFrame* AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(
   StyleCascadeLevel anchorTreeScope = pos->mPositionAnchor.scope;
   nsIFrame* anchor =
       const_cast<nsIFrame*>(aFrame->PresShell()->GetAnchorPosAnchor(
-          {defaultAnchorName, anchorTreeScope}, aFrame));
+          {defaultAnchorName, anchorTreeScope}, aFrame,
+          aFrame->GetDepthInFrameTree()));
   // TODO Bug 1997026 We need to update the anchor finding code so this can't
   // happen. For now we just detect it and reject it.
   if (anchor && !nsLayoutUtils::IsProperAncestorFrameConsideringContinuations(
@@ -1037,7 +1058,8 @@ static ScrollShifts FindScrollCompensatedAnchorShift(
   }
   const StyleCascadeLevel& anchorTreeScope = aReferenceData.mAnchorTreeScope;
   auto* defaultAnchor = aPresShell->GetAnchorPosAnchor(
-      {defaultAnchorName, anchorTreeScope}, aPositioned);
+      {defaultAnchorName, anchorTreeScope}, aPositioned,
+      aReferenceData.mFrameTreeDepth);
   if (!defaultAnchor) {
     return {};
   }
@@ -1209,7 +1231,8 @@ static bool ComputePositionVisibility(
     auto anchorTreeScope = aReferencedAnchors.mAnchorTreeScope;
     if (defaultAnchorName) {
       auto* defaultAnchor = aPresShell->GetAnchorPosAnchor(
-          {defaultAnchorName, anchorTreeScope}, aPositioned);
+          {defaultAnchorName, anchorTreeScope}, aPositioned,
+          aReferencedAnchors.mFrameTreeDepth);
       if (defaultAnchor && AnchorIsEffectivelyHidden(defaultAnchor)) {
         return false;
       }

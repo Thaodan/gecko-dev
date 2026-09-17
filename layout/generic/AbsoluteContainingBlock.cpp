@@ -552,7 +552,7 @@ static AnchorPosResolutionCache PopulateAnchorResolutionCache(
       const auto* presShell = aKidFrame->PresShell();
       cache.mAnchor = presShell->GetAnchorPosAnchor(
           ScopedNameRef{aData->mDefaultAnchorName, aData->mAnchorTreeScope},
-          aKidFrame->FirstInFlow());
+          aKidFrame->FirstInFlow(), aData->mFrameTreeDepth);
       MOZ_ASSERT(cache.mAnchor);
       cache.mScrollContainer =
           AnchorPositioningUtils::GetNearestScrollFrame(cache.mAnchor)
@@ -846,6 +846,7 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
       if (!referenceData) {
         referenceData = kidFrame->SetOrUpdateDeletableProperty(
             nsIFrame::AnchorPosReferences());
+        referenceData->mFrameTreeDepth = kidFrame->GetDepthInFrameTree();
       }
       anchorPosResolutionCache = Some(PopulateAnchorResolutionCache(
           kidFrame, referenceData, reuseUnfragmentedAnchorPosReferences));
