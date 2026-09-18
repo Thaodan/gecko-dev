@@ -116,6 +116,7 @@
 #include "mozilla/dom/Sanitizer.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/ShadowRoot.h"
+#include "mozilla/dom/SpeculationRules.h"
 #include "mozilla/dom/StylePropertyMapReadOnly.h"
 #include "mozilla/dom/Text.h"
 #include "mozilla/dom/TreeIterator.h"
@@ -4721,6 +4722,7 @@ void Element::GetEventTargetParentForLinks(EventChainPreVisitor& aVisitor) {
     case eFocus:
     case eMouseOut:
     case eBlur:
+    case ePointerDown:
       break;
     default:
       return;
@@ -4768,7 +4770,11 @@ void Element::GetEventTargetParentForLinks(EventChainPreVisitor& aVisitor) {
       }
       break;
     }
-
+    case ePointerDown:
+      if (auto* speculationRules = OwnerDoc()->GetSpeculationRules()) {
+        speculationRules->PointerDown(this);
+      }
+      break;
     default:
       // switch not in sync with the optimization switch earlier in this
       // function

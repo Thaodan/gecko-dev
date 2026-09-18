@@ -349,4 +349,14 @@ void SpeculationRules::HoverTimerFired(nsITimer* aTimer, void* aClosure) {
   }
 }
 
+void SpeculationRules::PointerDown(Element* aLink) {
+  if (mCandidateGroups.IsEmpty()) {
+    return;
+  }
+
+  if (nsCOMPtr<nsIURI> uri = aLink->GetHrefURI()) {
+    EnactCandidates(uri, Eagerness::Conservative);
+  }
+}
+
 }  // namespace mozilla::dom

@@ -45,6 +45,7 @@ class SpeculationRules final {
   void FindMatchingLinks(nsTArray<const Element*>& aLinks);
 
   void HoverContentChanged(nsIContent* aContent);
+  void PointerDown(Element* aContent);
 
  private:
   virtual ~SpeculationRules();
