@@ -23,9 +23,6 @@
 #include "nsGtkKeyUtils.h"
 #include "nsString.h"
 #include "nsWindow.h"
-#ifdef MOZ_WAYLAND
-#  include "nsWindowWayland.h"
-#endif
 #include "prenv.h"
 #include "prtime.h"
 
@@ -3207,8 +3204,13 @@ void IMContextWrapper::SetCursorPosition(GtkIMContext* aContext) {
   GdkRectangle area = rootWindow->DevicePixelsToGdkRectRoundOut(rect);
   gtk_im_context_set_cursor_location(aContext, &area);
 #ifdef MOZ_WAYLAND
-  if (mOwnerWindow && mOwnerWindow->AsWayland()) {
-    mOwnerWindow->AsWayland()->ForceToplevelCommit();
+  if (GdkIsWaylandDisplay()) {
+    if (mOwnerWindow) {
+      GdkWindow* gdkWindow = mOwnerWindow->GetToplevelGdkWindow();
+      if (gdkWindow) {
+        gdk_window_invalidate_rect(gdkWindow, nullptr, false);
+      }
+    }
   }
 #endif
 }
