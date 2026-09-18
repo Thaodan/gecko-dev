@@ -4,6 +4,7 @@
 
 import {
   isSpaceOverridden,
+  selectWidgetsRowAd,
   SPACE_IDS,
 } from "resource://newtab/common/PageLayoutVariants.mjs";
 
@@ -162,8 +163,13 @@ export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
         // Since banner-type ads are placed by row and don't use the normal spoc position,
         // dont combine with content
         const excludedSpocs = ["billboard", "leaderboard"];
+        // @experiment(remove) { bug 2069496 }
+        // The widgets row takes one ad off the top, so every story ad shifts
+        // up a position. It is the same object the row renders, so drop that
+        // one item and leave any other ad sharing its url in place.
+        const rowAd = selectWidgetsRowAd(prefs, spocs);
         const filteredSpocs = spocsData?.items?.filter(
-          item => !excludedSpocs.includes(item.format)
+          item => !excludedSpocs.includes(item.format) && item !== rowAd
         );
         result = fillSpocPositionsForPlacement(
           result,
