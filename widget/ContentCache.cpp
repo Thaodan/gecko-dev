@@ -1405,18 +1405,19 @@ void ContentCacheInParent::OnSelectionEvent(
 
 void ContentCacheInParent::OnContentCommandEvent(
     const WidgetContentCommandEvent& aContentCommandEvent) {
-  MOZ_LOG(sContentCacheLog, LogLevel::Info,
-          ("0x%p OnContentCommandEvent(aEvent={ "
-           "mMessage=%s, mString=\"%s\", mSelection={ mReplaceSrcString=\"%s\" "
-           "mOffset=%u, mPreventSetSelection=%s }, mOnlyEnabledCheck=%s })",
-           this, ToChar(aContentCommandEvent.mMessage),
-           ToString(aContentCommandEvent.mString).c_str(),
-           ToString(aContentCommandEvent.mSelection.mReplaceSrcString).c_str(),
-           aContentCommandEvent.mSelection.mOffset,
-           TrueOrFalse(aContentCommandEvent.mSelection.mPreventSetSelection),
-           TrueOrFalse(aContentCommandEvent.mOnlyEnabledCheck)));
+  MOZ_LOG_FMT(
+      sContentCacheLog, LogLevel::Info,
+      "{} OnContentCommandEvent(aEvent={{ "
+      "mMessage={}, mString=\"{}\", mSelection={{ mReplaceSrcString=\"{}\" "
+      "mOffset={}, mPreventSetSelection={} }}, mOnlyEnabledCheck={} }})",
+      static_cast<void*>(this), ToChar(aContentCommandEvent.mMessage),
+      ToString(aContentCommandEvent.mString),
+      ToString(aContentCommandEvent.mSelection.mReplaceSrcString),
+      aContentCommandEvent.mSelection.mOffset,
+      aContentCommandEvent.mSelection.mPreventSetSelection,
+      aContentCommandEvent.mOnlyEnabledCheck);
 
-  MOZ_ASSERT(!aContentCommandEvent.mOnlyEnabledCheck);
+  MOZ_ASSERT(!aContentCommandEvent.ShouldCheckEnabledOnly());
 
 #if MOZ_DIAGNOSTIC_ASSERT_ENABLED && !defined(FUZZING_SNAPSHOT)
   mDispatchedEventMessages.AppendElement(aContentCommandEvent.mMessage);

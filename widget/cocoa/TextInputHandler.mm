@@ -5365,8 +5365,7 @@ void IMEInputHandler::ReplaceTextForTextSubstitution(
   replaceTextEvent.mString = Some(insertStr);
   replaceTextEvent.mSelection.mReplaceSrcString = aOriginalString;
   replaceTextEvent.mSelection.mOffset = aRange.location;
-  replaceTextEvent.mSelection.mPreventSetSelection =
-      aPreventSetSelection == PreventSetSelection::Yes;
+  replaceTextEvent.mSelection.mPreventSetSelection = aPreventSetSelection;
   DispatchEvent(replaceTextEvent);
   if (!replaceTextEvent.mSucceeded || Destroyed()) {
     MOZ_LOG(

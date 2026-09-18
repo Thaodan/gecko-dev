@@ -5962,7 +5962,7 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
       // is plain text format.
       if (wParam == 0 || wParam == CF_TEXT || wParam == CF_UNICODETEXT) {
         WidgetContentCommandEvent command(true, eContentCommandPaste, this,
-                                          true);
+                                          OnlyEnabledCheck::Yes);
         DispatchWindowEvent(command);
         *aRetValue = (LRESULT)(command.mSucceeded && command.mIsEnabled);
         result = true;
@@ -5970,14 +5970,16 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
     } break;
 
     case EM_CANUNDO: {
-      WidgetContentCommandEvent command(true, eContentCommandUndo, this, true);
+      WidgetContentCommandEvent command(true, eContentCommandUndo, this,
+                                        OnlyEnabledCheck::Yes);
       DispatchWindowEvent(command);
       *aRetValue = (LRESULT)(command.mSucceeded && command.mIsEnabled);
       result = true;
     } break;
 
     case EM_CANREDO: {
-      WidgetContentCommandEvent command(true, eContentCommandRedo, this, true);
+      WidgetContentCommandEvent command(true, eContentCommandRedo, this,
+                                        OnlyEnabledCheck::Yes);
       DispatchWindowEvent(command);
       *aRetValue = (LRESULT)(command.mSucceeded && command.mIsEnabled);
       result = true;

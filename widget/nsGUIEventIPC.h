@@ -691,6 +691,12 @@ struct ParamTraits<mozilla::WidgetSelectionEvent> {
   }
 };
 
+template <>
+struct ParamTraits<mozilla::PreventSetSelection>
+    : ContiguousEnumSerializerInclusive<mozilla::PreventSetSelection,
+                                        mozilla::PreventSetSelection::No,
+                                        mozilla::PreventSetSelection::Yes> {};
+
 DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::widget::NativeIMEContext,
                                   mRawNativeIMEContext, mOriginProcessID);
 

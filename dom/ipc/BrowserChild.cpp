@@ -2678,7 +2678,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvNormalPriorityInsertText(
 
 mozilla::ipc::IPCResult BrowserChild::RecvReplaceText(
     const nsString& aReplaceSrcString, const nsString& aStringToInsert,
-    uint32_t aOffset, bool aPreventSetSelection) {
+    uint32_t aOffset, PreventSetSelection aPreventSetSelection) {
   // Use normal event path to reach focused document.
   WidgetContentCommandEvent localEvent(true, eContentCommandReplaceText,
                                        mPuppetWidget);
@@ -2693,7 +2693,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvReplaceText(
 
 mozilla::ipc::IPCResult BrowserChild::RecvNormalPriorityReplaceText(
     const nsString& aReplaceSrcString, const nsString& aStringToInsert,
-    uint32_t aOffset, bool aPreventSetSelection) {
+    uint32_t aOffset, PreventSetSelection aPreventSetSelection) {
   return RecvReplaceText(aReplaceSrcString, aStringToInsert, aOffset,
                          aPreventSetSelection);
 }

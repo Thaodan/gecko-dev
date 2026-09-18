@@ -7259,7 +7259,7 @@ nsresult EventStateManager::DoContentCommandEvent(
   }
   if (XRE_IsParentProcess() && maybeNeedToHandleInRemote) {
     if (BrowserParent* remote = BrowserParent::GetFocused()) {
-      if (!aEvent->mOnlyEnabledCheck) {
+      if (!aEvent->ShouldCheckEnabledOnly()) {
         remote->SendSimpleContentCommandEvent(*aEvent);
       }
       // XXX The command may be disabled in the parent process.  Perhaps, we
@@ -7286,7 +7286,7 @@ nsresult EventStateManager::DoContentCommandEvent(
     rv = controller->IsCommandEnabled(cmd, &canDoIt);
     NS_ENSURE_SUCCESS(rv, rv);
     aEvent->mIsEnabled = canDoIt;
-    if (canDoIt && !aEvent->mOnlyEnabledCheck) {
+    if (canDoIt && !aEvent->ShouldCheckEnabledOnly()) {
       switch (aEvent->mMessage) {
         case eContentCommandPasteTransferable: {
           BrowserParent* remote = BrowserParent::GetFocused();
@@ -7360,7 +7360,7 @@ nsresult EventStateManager::DoContentCommandInsertTextEvent(
   if (XRE_IsParentProcess()) {
     // Handle it in focused content process if there is.
     if (BrowserParent* remote = BrowserParent::GetFocused()) {
-      if (!aEvent->mOnlyEnabledCheck) {
+      if (!aEvent->ShouldCheckEnabledOnly()) {
         remote->SendInsertText(*aEvent);
       }
       // XXX The remote process may be not editable right now.  Therefore, this
@@ -7401,7 +7401,7 @@ nsresult EventStateManager::DoContentCommandReplaceTextEvent(
   if (XRE_IsParentProcess()) {
     // Handle it in focused content process if there is.
     if (BrowserParent* remote = BrowserParent::GetFocused()) {
-      if (!aEvent->mOnlyEnabledCheck) {
+      if (!aEvent->ShouldCheckEnabledOnly()) {
         (void)remote->SendReplaceText(*aEvent);
       }
       // XXX The remote process may be not editable right now.  Therefore, this
@@ -7461,9 +7461,7 @@ nsresult EventStateManager::DoContentCommandReplaceTextEvent(
   rv = activeEditor->ReplaceTextAsAction(
       aEvent->mString.ref(), range,
       TextEditor::AllowBeforeInputEventCancelable::Yes,
-      aEvent->mSelection.mPreventSetSelection
-          ? EditorBase::PreventSetSelection::Yes
-          : EditorBase::PreventSetSelection::No);
+      aEvent->mSelection.mPreventSetSelection);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aEvent->mSucceeded = false;
     return NS_OK;
@@ -7507,7 +7505,7 @@ nsresult EventStateManager::DoContentCommandScrollEvent(
                                                 sf, 0, aEvent->mScroll.mAmount))
          : false;
 
-  if (!aEvent->mIsEnabled || aEvent->mOnlyEnabledCheck) {
+  if (!aEvent->mIsEnabled || aEvent->ShouldCheckEnabledOnly()) {
     return NS_OK;
   }
 

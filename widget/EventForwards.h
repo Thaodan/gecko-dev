@@ -419,6 +419,28 @@ inline bool IsCancelableBeforeInputEvent(EditorInputType aInputType) {
   }
 }
 
+enum class OnlyEnabledCheck : bool { No, Yes };
+
+inline auto format_as(OnlyEnabledCheck aOnlyEnabledCheck) {
+  return aOnlyEnabledCheck == OnlyEnabledCheck::Yes ? "Yes" : "No";
+}
+
+inline std::ostream& operator<<(std::ostream& aStream,
+                                OnlyEnabledCheck aOnlyEnabledCheck) {
+  return aStream << format_as(aOnlyEnabledCheck);
+}
+
+enum class PreventSetSelection : bool { No, Yes };
+
+inline auto format_as(PreventSetSelection aPrevent) {
+  return aPrevent == PreventSetSelection::Yes ? "Yes" : "No";
+}
+
+inline std::ostream& operator<<(std::ostream& aStream,
+                                PreventSetSelection aPrevent) {
+  return aStream << format_as(aPrevent);
+}
+
 #define NS_DEFINE_COMMAND(aName, aCommandStr) , aName
 #define NS_DEFINE_COMMAND_WITH_PARAM(aName, aCommandStr, aParam) , aName
 #define NS_DEFINE_COMMAND_NO_EXEC_COMMAND(aName) , aName

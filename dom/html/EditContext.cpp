@@ -654,10 +654,9 @@ void EditContext::DoContentCommandReplaceText(
     return;
   }
   // Dispatch textupdate
-  UpdateTextAndFireEvent(
-      replaceOffset, replaceOffset + replaceLength, *aEvent.mString,
-      aEvent.mSelection.mPreventSetSelection ? PreventSetSelection::Yes
-                                             : PreventSetSelection::No);
+  UpdateTextAndFireEvent(replaceOffset, replaceOffset + replaceLength,
+                         *aEvent.mString,
+                         aEvent.mSelection.mPreventSetSelection);
   aEvent.mSucceeded = true;
 }
 

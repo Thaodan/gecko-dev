@@ -2440,7 +2440,9 @@ nsDOMWindowUtils::SendContentCommandEvent(const nsAString& aType,
     event.mSelection.mReplaceSrcString = aReplaceSrcString;
     event.mSelection.mOffset = aOffset;
     event.mSelection.mPreventSetSelection =
-        !!(aAdditionalFlags & CONTENT_COMMAND_FLAG_PREVENT_SET_SELECTION);
+        aAdditionalFlags & CONTENT_COMMAND_FLAG_PREVENT_SET_SELECTION
+            ? PreventSetSelection::Yes
+            : PreventSetSelection::No;
   } else if (msg == eContentCommandPasteTransferable) {
     event.mTransferable = aTransferable;
   }
