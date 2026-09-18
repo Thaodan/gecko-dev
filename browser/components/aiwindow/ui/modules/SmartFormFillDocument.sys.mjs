@@ -968,7 +968,11 @@ export class SmartFormFillDocument {
       this.#onMutation(mutations);
     });
 
-    this.#observeRoot(this.#doc.documentElement);
+    // Observed on the document rather than its element: a framework that
+    // hydrates the whole document can replace documentElement, which would
+    // strand the observer on a detached tree and stop Smart Form Fill from
+    // ever seeing the replacement fields.
+    this.#observeRoot(this.#doc);
   }
 
   /**
