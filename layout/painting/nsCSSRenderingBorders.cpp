@@ -3655,8 +3655,8 @@ ImgDrawResult nsCSSBorderImageRenderer::CreateWebRenderCommands(
             (float)(mImageSize.width) / appUnitsPerDevPixel,
             (float)(mImageSize.height) / appUnitsPerDevPixel, mFill,
             wr::ToDeviceIntSideOffsets(slice[0], slice[1], slice[2], slice[3]),
-            wr::ToLayoutVector2D(startPoint), wr::ToLayoutVector2D(endPoint), stops,
-            extendMode);
+            wr::ToLayoutVector2D(startPoint), wr::ToLayoutVector2D(endPoint),
+            stops, extendMode);
       } else if (gradient.IsRadial()) {
         aBuilder.PushBorderRadialGradient(
             dest, clip, !aItem->BackfaceIsHidden(),
