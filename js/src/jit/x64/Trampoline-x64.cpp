@@ -152,7 +152,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm,
                                        reg_argc);
   }
 
-  CodeLabel returnLabel;
+  Label returnLabel;
   Label oomReturnLabel;
   if (mode != EnterJitMode::GeneratorResume) {
     // Handle Interpreter -> Baseline OSR.
@@ -166,13 +166,20 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm,
     Label notOsr;
     masm.branchTestPtr(Assembler::Zero, OsrFrameReg, OsrFrameReg, &notOsr);
 
+    // Push a return address onto the stack that actually jumps to the OSR
+    // cleanup code. This balances the shadow stack for when the Baseline frame
+    // eventually returns.
+    Label osrEntry;
+    masm.call(&osrEntry);
+    masm.jump(&returnLabel);
+
+    masm.bind(&osrEntry);
+
     Register numStackValues = regs.takeAny();
     masm.movq(numStackValuesAddr, numStackValues);
 
-    // Push return address
-    masm.mov(&returnLabel, scratch);
     // Frame prologue.
-    masm.pushRegs(scratch, rbp);
+    masm.push(rbp);
     masm.mov(rsp, rbp);
 
     // Reserve frame.
@@ -243,7 +250,6 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm,
   if (mode != EnterJitMode::GeneratorResume) {
     // Interpreter -> Baseline OSR will return here.
     masm.bind(&returnLabel);
-    masm.addCodeLabel(returnLabel);
     masm.bind(&oomReturnLabel);
   }
 
