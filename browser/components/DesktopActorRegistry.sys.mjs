@@ -289,7 +289,7 @@ let JSWINDOWACTORS = {
         "AITab:OpenLink": { wantUntrusted: true },
       },
     },
-    matches: ["about:aitab", "about:aitab?*"],
+    matches: ["about:smartpage", "about:smartpage?*"],
     remoteTypes: ["privilegedabout"],
     enablePreference: "browser.smartwindow.aitab.enabled",
   },
