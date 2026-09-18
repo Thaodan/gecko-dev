@@ -983,9 +983,9 @@ sortedcontainers==2.4.0 \
     --hash=sha256:25caa5a06cc30b6b83d11423433f65d1f9d76c4c6a0c90e3379eaa43b9bfdb88 \
     --hash=sha256:a163dcaede0f1c021485e957a39245190e74249897e2ae4b2aa38595db237ee0
     # via cyclonedx-python-lib
-taskcluster==93.1.5 \
-    --hash=sha256:1b7ed171f5c22a5fdae60618f81a12b0ec27e3f6347539d0d823f26ff41a1d7b \
-    --hash=sha256:e16606e13ad4881211fdc52ebaab8b05df7a56681ecbb236897f1c56e1149779
+taskcluster==110.0.0 \
+    --hash=sha256:04d32762b56f5bdff73e75c7542c1557abaf36f5f4d0c2f0a4e39fd12fc9fd11 \
+    --hash=sha256:f982a2d13379c3c5f72ab98c5d95264116f8765854345cf86eab95992cc1e7a8
     # via mozilla-third-party-python-vendor-dir
 taskcluster-urls==13.0.1 \
     --hash=sha256:b25e122ecec249c4299ac7b20b08db76e3e2025bdaeb699a9d444556de5fd367 \
