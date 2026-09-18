@@ -370,19 +370,6 @@ void unmapPages(void* p, size_t size) {
 
 END_TEST(testGCAllocator)
 
-class AutoAddGCRootsTracer {
-  JSContext* cx_;
-  JSTraceDataOp traceOp_;
-  void* data_;
-
- public:
-  AutoAddGCRootsTracer(JSContext* cx, JSTraceDataOp traceOp, void* data)
-      : cx_(cx), traceOp_(traceOp), data_(data) {
-    JS_AddExtraGCRootsTracer(cx, traceOp, data);
-  }
-  ~AutoAddGCRootsTracer() { JS_RemoveExtraGCRootsTracer(cx_, traceOp_, data_); }
-};
-
 static size_t SomeAllocSizes[] = {16,
                                   17,
                                   31,
@@ -431,9 +418,14 @@ class BufferHolderObject : public NativeObject {
  public:
   static const JSClass class_;
 
-  static BufferHolderObject* create(JSContext* cx);
+  static BufferHolderObject* create(JSContext* cx, size_t count = 1);
 
-  void setBuffer(void* buffer);
+  void setBuffer(void* buffer, size_t index = 0) { buffers()[index] = buffer; }
+
+  using BufferVector = Vector<void*, 1, SystemAllocPolicy>;
+  BufferVector& buffers() {
+    return *reinterpret_cast<BufferVector*>(getFixedSlot(0).toPrivate());
+  }
 
  private:
   static const JSClassOps classOps_;
@@ -450,30 +442,30 @@ const JSClassOps BufferHolderObject::classOps_ = {
 };
 
 /* static */
-BufferHolderObject* BufferHolderObject::create(JSContext* cx) {
+BufferHolderObject* BufferHolderObject::create(JSContext* cx, size_t count) {
+  auto buffers = MakeUnique<BufferVector>();
+  if (!buffers || !buffers->resize(count)) {
+    return nullptr;
+  }
+
+  for (auto& buffer : *buffers) {
+    buffer = nullptr;
+  }
+
   NativeObject* obj = NewObjectWithGivenProto(cx, &class_, nullptr);
   if (!obj) {
     return nullptr;
   }
 
-  BufferHolderObject* holder = &obj->as<BufferHolderObject>();
-  holder->setBuffer(nullptr);
-  return holder;
-}
-
-void BufferHolderObject::setBuffer(void* buffer) {
-  setFixedSlot(0, JS::PrivateValue(buffer));
+  obj->setFixedSlot(0, PrivateValue(buffers.release()));
+  return &obj->as<BufferHolderObject>();
 }
 
 /* static */
 void BufferHolderObject::trace(JSTracer* trc, JSObject* obj) {
-  NativeObject* holder = &obj->as<NativeObject>();
-  void* buffer = holder->getFixedSlot(0).toPrivate();
-  if (buffer) {
+  auto* holder = &obj->as<BufferHolderObject>();
+  for (auto& buffer : holder->buffers()) {
     TraceBufferEdge(trc, &buffer, "BufferHolderObject buffer");
-    if (buffer != holder->getFixedSlot(0).toPrivate()) {
-      holder->setFixedSlot(0, JS::PrivateValue(buffer));
-    }
   }
 }
 
@@ -841,18 +833,15 @@ BEGIN_TEST(testBufferAllocator_stress) {
   fprintf(stderr, "Random seed: 0x%x\n", seed);
   std::srand(seed);
 
-  Rooted<PlainObject*> holder(
-      cx, NewPlainObject(cx, {.allocKind = gc::AllocKind::OBJECT2}));
-  CHECK(holder);
-
   JS::NonIncrementalGC(cx, JS::GCOptions::Shrink, JS::GCReason::API);
   Zone* zone = cx->zone();
 
   size_t initialGCHeapSize = zone->gcHeapSize.bytes();
   size_t initialMallocHeapSize = zone->mallocHeapSize.bytes();
 
-  void* liveAllocs[MaxLiveAllocs];
-  mozilla::PodZero(&liveAllocs);
+  Rooted<BufferHolderObject*> holder(
+      cx, BufferHolderObject::create(cx, MaxLiveAllocs));
+  CHECK(holder);
 
   AutoGCParameter setMaxHeap(cx, JSGC_MAX_BYTES, uint32_t(-1));
   AutoGCParameter param1(cx, JSGC_INCREMENTAL_GC_ENABLED, true);
@@ -862,8 +851,7 @@ BEGIN_TEST(testBufferAllocator_stress) {
   JS::SetGCZeal(cx, 10, 50);
 #endif
 
-  holder->initFixedSlot(0, JS::PrivateValue(&liveAllocs));
-  AutoAddGCRootsTracer addTracer(cx, traceAllocs, &holder);
+  BufferHolderObject::BufferVector& liveAllocs = holder->buffers();
 
   for (size_t i = 0; i < Iterations; i++) {
     size_t index = std::rand() % MaxLiveAllocs;
@@ -901,7 +889,7 @@ BEGIN_TEST(testBufferAllocator_stress) {
     }
   }
 
-  mozilla::PodArrayZero(liveAllocs);
+  holder = nullptr;
 
 #ifdef JS_GC_ZEAL
   JS::SetGCZeal(cx, 0, 100);
