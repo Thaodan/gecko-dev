@@ -754,7 +754,7 @@ describe("<CardSections />", () => {
       expect(cardTabIndex(container, 1)).toBe(-1);
     });
 
-    it("should preserve focus on the same card after focus-driven layout sync when falling back to card order", () => {
+    it("should move the tab stop off a card the synced layout hides", () => {
       Object.defineProperty(window, "innerWidth", {
         writable: true,
         configurable: true,
@@ -847,9 +847,11 @@ describe("<CardSections />", () => {
       window.innerWidth = 800;
       fireEvent.focus(container.querySelector(".ds-section-grid.ds-card-grid"));
 
-      expect(cardTabIndex(container, 0)).toBe(-1);
+      // col-2 has no tile at position 2, so CSS hides that card. The tab stop
+      // cannot stay on it or the section becomes unreachable by Tab.
+      expect(cardTabIndex(container, 0)).toBe(0);
       expect(cardTabIndex(container, 1)).toBe(-1);
-      expect(cardTabIndex(container, 2)).toBe(0);
+      expect(cardTabIndex(container, 2)).toBe(-1);
     });
 
     it("should update focused index when onFocus is called", () => {
@@ -880,6 +882,38 @@ describe("<CardSections />", () => {
 
       expect(cardTabIndex(container, 0)).toBe(-1);
       expect(cardTabIndex(container, 1)).toBe(0);
+    });
+
+    describe("layout observer", () => {
+      afterEach(() => {
+        delete globalThis.ResizeObserver;
+      });
+
+      it("starts observing the grid on first focus, and only once", () => {
+        const observed = [];
+        globalThis.ResizeObserver = class {
+          observe(el) {
+            observed.push(el);
+          }
+          disconnect() {}
+        };
+        const novaState = {
+          ...INITIAL_STATE,
+          Prefs: {
+            ...INITIAL_STATE.Prefs,
+            values: { ...INITIAL_STATE.Prefs.values, "nova.enabled": true },
+          },
+        };
+
+        const { container } = renderCardSections({}, novaState);
+        const grid = container.querySelector(".ds-section-grid.ds-card-grid");
+        expect(observed).toHaveLength(0);
+
+        fireEvent.focus(grid);
+        fireEvent.focus(grid);
+
+        expect(observed).toEqual([grid]);
+      });
     });
 
     describe("handleCardKeyDown", () => {
