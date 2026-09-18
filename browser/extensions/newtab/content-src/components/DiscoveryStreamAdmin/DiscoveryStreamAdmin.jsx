@@ -110,6 +110,13 @@ const PAGE_LAYOUTS_INFO = {
     label: "Spaces (Buttons at the top)",
     description: "Same as above, with the segmented control above the content.",
   },
+  // @experiment(remove) { bug 2069496 }
+  [PAGE_LAYOUT_VARIANTS.WIDGETS_AD_LARGE]: {
+    label: "Widgets row ad (large)",
+    description:
+      "Nova, plus a large sponsored card at the end of the first widget row. " +
+      "At one card column it sits second. It stays large when minimized.",
+  },
 };
 
 // Falls back to the raw pref value for a variant with no PAGE_LAYOUTS_INFO entry.

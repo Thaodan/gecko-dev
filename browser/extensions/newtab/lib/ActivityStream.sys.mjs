@@ -2319,7 +2319,7 @@ export const PREFS_CONFIG = new Map([
     "pageLayouts.variant",
     {
       title:
-        "Name of the active newtab page layout variant, for layout experimentation. One of nova-full-width, side-by-side-content-lead, side-by-side-widgets-lead, side-by-side-content-lead-five, side-by-side-widgets-lead-five, spaces-buttons-top, spaces-buttons-bottom, auto-minimize-widgets. The -five variants reach five card columns counting the widgets column, the others four. The spaces variants split the band into separately-navigable panels and differ only in where the segmented control sits. The auto-minimize-widgets variant collapses the widgets section to its title row shortly after load. Overridden by trainhopConfig.pageLayouts.variant.",
+        "Name of the active newtab page layout variant, for layout experimentation. One of nova-full-width, side-by-side-content-lead, side-by-side-widgets-lead, side-by-side-content-lead-five, side-by-side-widgets-lead-five, spaces-buttons-top, spaces-buttons-bottom, auto-minimize-widgets, widgets-ad-large. The -five variants reach five card columns counting the widgets column, the others four. The spaces variants split the band into separately-navigable panels and differ only in where the segmented control sits. The auto-minimize-widgets variant collapses the widgets section to its title row shortly after load. The widgets-ad-large variant puts a large sponsored card at the end of the first widget row. At one card column it sits second instead. Overridden by trainhopConfig.pageLayouts.variant.",
       value: "nova-full-width",
     },
   ],

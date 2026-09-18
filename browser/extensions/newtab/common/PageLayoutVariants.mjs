@@ -26,6 +26,8 @@ export const PAGE_LAYOUT_VARIANTS = {
   SPACES_BUTTONS_BOTTOM: "spaces-buttons-bottom",
   // @experiment(remove) { bug 2066527 }
   AUTO_MINIMIZE_WIDGETS: "auto-minimize-widgets",
+  // @experiment(remove) { bug 2069496 }
+  WIDGETS_AD_LARGE: "widgets-ad-large",
 };
 
 export const DEFAULT_PAGE_LAYOUT_VARIANT = PAGE_LAYOUT_VARIANTS.NOVA_FULL_WIDTH;
