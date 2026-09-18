@@ -344,7 +344,7 @@ var allowlist = [
   // Bug 1984409: We're doing backups to cloud-synced locations first. We'll do local backups eventually,
   // and this file will be needed for that.
   {
-    file: "resource://app/modules/backup/CookiesBackupResource.sys.mjs",
+    file: "moz-src:///browser/components/backup/resources/CookiesBackupResource.sys.mjs",
   },
 ];
 

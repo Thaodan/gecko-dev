@@ -29,7 +29,7 @@ const { Referrals } = ChromeUtils.importESModule(
   "resource:///modules/referrals/Referrals.sys.mjs"
 );
 const lazy = XPCOMUtils.declareLazy({
-  BackupService: "resource:///modules/backup/BackupService.sys.mjs",
+  BackupService: "moz-src:///browser/components/backup/BackupService.sys.mjs",
   Weave: "resource://services-sync/main.sys.mjs",
 
   SelectableProfileService:
