@@ -63,7 +63,6 @@ void WindowsStackWalkInitialization() {
 
     if (locksArePlausible) {
       InitializeStackWalkLocks(stackWalkLocks);
-      return;
     }
   }
 
