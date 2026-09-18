@@ -125,7 +125,8 @@ class JS_PUBLIC_API PrefableCompileOptions {
 #else
             false
 #endif
-        ) {}
+        ) {
+  }
 
   bool sourcePhaseImports() const { return sourcePhaseImports_; }
   PrefableCompileOptions& setSourcePhaseImports(bool enabled) {
