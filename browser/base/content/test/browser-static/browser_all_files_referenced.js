@@ -29,11 +29,9 @@ var gExceptionPaths = [
   "chrome://activity-stream/content/data/content/tippytop/images/",
   "chrome://activity-stream/content/data/content/tippytop/favicons/",
   // These resources are referenced by messages delivered through Remote Settings
-  "chrome://activity-stream/content/data/content/assets/mr-amo-collection.svg",
   "chrome://activity-stream/content/data/content/assets/person-typing.svg",
   "chrome://activity-stream/content/data/content/assets/tabs-side-zap-transparent.svg",
   "chrome://activity-stream/content/data/content/assets/tabs-top-zap-transparent.svg",
-  "chrome://activity-stream/content/data/content/assets/nuo-taborientation.svg",
   "chrome://activity-stream/content/data/content/assets/euo-tab-orientation.svg",
   "chrome://activity-stream/content/data/content/assets/euo-chatbot.svg",
   "chrome://browser/content/assets/moz-vpn.svg",
