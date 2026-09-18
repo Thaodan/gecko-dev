@@ -211,7 +211,7 @@ index bc38e57c46..1426f8b01a 100644
      }
  
 diff --git a/api/BUILD.gn b/api/BUILD.gn
-index 388473fe53..4b56279c30 100644
+index 43fbd57ea2..e09098c6f2 100644
 --- a/api/BUILD.gn
 +++ b/api/BUILD.gn
 @@ -34,6 +34,9 @@ rtc_library("enable_media") {
@@ -308,7 +308,7 @@ index 388473fe53..4b56279c30 100644
  
  rtc_library("frame_generator_api") {
    visibility = [ "*" ]
-@@ -929,6 +958,7 @@ rtc_library("create_frame_generator") {
+@@ -930,6 +959,7 @@ rtc_library("create_frame_generator") {
    ]
  }
  
@@ -316,7 +316,7 @@ index 388473fe53..4b56279c30 100644
  rtc_library("create_peer_connection_quality_test_frame_generator") {
    visibility = [ "*" ]
    testonly = true
-@@ -946,6 +976,7 @@ rtc_library("create_peer_connection_quality_test_frame_generator") {
+@@ -947,6 +977,7 @@ rtc_library("create_peer_connection_quality_test_frame_generator") {
      "units:time_delta",
    ]
  }
@@ -324,7 +324,7 @@ index 388473fe53..4b56279c30 100644
  
  rtc_source_set("data_channel_event_observer_interface") {
    visibility = [ "*" ]
-@@ -1126,6 +1157,7 @@ rtc_source_set("refcountedbase") {
+@@ -1127,6 +1158,7 @@ rtc_source_set("refcountedbase") {
  }
  
  rtc_library("ice_transport_factory") {
@@ -332,7 +332,7 @@ index 388473fe53..4b56279c30 100644
    visibility = [ "*" ]
    sources = [
      "ice_transport_factory.cc",
-@@ -1143,6 +1175,7 @@ rtc_library("ice_transport_factory") {
+@@ -1144,6 +1176,7 @@ rtc_library("ice_transport_factory") {
      "../rtc_base/system:rtc_export",
    ]
  }
@@ -1194,7 +1194,7 @@ index c0fb04ac82..af412f6890 100644
      deps += [
        "..:logging",
 diff --git a/test/BUILD.gn b/test/BUILD.gn
-index 6da703b300..19d6793cc7 100644
+index e7ba2e3aa7..5845080988 100644
 --- a/test/BUILD.gn
 +++ b/test/BUILD.gn
 @@ -279,6 +279,7 @@ rtc_library("audio_test_common") {
@@ -1236,7 +1236,7 @@ index 6da703b300..19d6793cc7 100644
      sources += [ "testsupport/jpeg_frame_writer.cc" ]
    } else {
      sources += [ "testsupport/jpeg_frame_writer_ios.cc" ]
-@@ -1825,6 +1833,7 @@ if (!build_with_chromium) {
+@@ -1853,6 +1861,7 @@ if (!build_with_chromium) {
    }
  }
  
@@ -1244,7 +1244,7 @@ index 6da703b300..19d6793cc7 100644
  if (!build_with_chromium && is_android) {
    rtc_android_library("native_test_java") {
      testonly = true
-@@ -1867,6 +1876,7 @@ if (!build_with_chromium && is_android) {
+@@ -1895,6 +1904,7 @@ if (!build_with_chromium && is_android) {
      sources = [ "android/org/webrtc/native_test/NativeTestWebrtc.java" ]
    }
  }
@@ -1253,7 +1253,7 @@ index 6da703b300..19d6793cc7 100644
  rtc_library("call_config_utils") {
    testonly = true
 diff --git a/video/BUILD.gn b/video/BUILD.gn
-index 4c5c7dec65..4f4c6d1515 100644
+index 0b8261ec03..c329c613c6 100644
 --- a/video/BUILD.gn
 +++ b/video/BUILD.gn
 @@ -16,7 +16,7 @@ rtc_library("video_stream_encoder_interface") {
