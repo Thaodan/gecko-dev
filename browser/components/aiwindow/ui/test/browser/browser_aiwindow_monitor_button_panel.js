@@ -210,6 +210,13 @@ add_task(async function test_monitor_panel_list_rows() {
     );
     await TestUtils.waitForCondition(() => metas.every(m => m.textContent));
 
+    const count = contents.shadowRoot.querySelector(".monitor-footer-count");
+    Assert.equal(
+      JSON.parse(count.getAttribute("data-l10n-args")).used,
+      1,
+      "The footer counts only active monitors toward the limit"
+    );
+
     const chips = [...rows].map(row =>
       row.querySelector("monitor-status-chip")
     );

@@ -4,6 +4,7 @@
 
 import {
   Monitor,
+  MonitorLimitError,
   monitorAgeMs,
   trimAndFilterWatchUrls,
   urlListsEqual,
@@ -87,6 +88,16 @@ class MonitorAgentShutdownError extends Error {
   }
 }
 
+function activeMonitorCount() {
+  let count = 0;
+  for (const monitor of gMonitors.values()) {
+    if (monitor.enabled) {
+      count++;
+    }
+  }
+  return count;
+}
+
 function monitorTelemetryExtra(monitor) {
   return {
     monitors: gMonitors?.size ?? 0,
@@ -152,7 +163,7 @@ export const MonitorAgent = {
    * @param {object} options.schedule - Schedule configuration (type, hours, etc.)
    * @param {string} [options.source="unknown"] - Source of monitor creation for telemetry (e.g., "in_line_chat", "about_page", "test")
    * @returns {Promise<string>} The ID of the created monitor
-   * @throws {Error} If the maximum number of monitors has been reached
+   * @throws {MonitorLimitError} If the maximum number of active monitors has been reached
    */
   async createMonitor({
     prompt,
@@ -162,10 +173,8 @@ export const MonitorAgent = {
     source = "unknown",
   }) {
     await this._ensureLoaded();
-    if (gMonitors.size >= TOTAL_NUM_MONITORS) {
-      throw new Error(
-        `Cannot create more than ${TOTAL_NUM_MONITORS} monitors.`
-      );
+    if (activeMonitorCount() >= TOTAL_NUM_MONITORS) {
+      throw new MonitorLimitError(TOTAL_NUM_MONITORS);
     }
 
     const monitor = new Monitor({
@@ -227,6 +236,9 @@ export const MonitorAgent = {
         .getNextRunTime(new Date().toISOString())
         .toISOString();
     } else if (!monitor.enabled && next.enabled) {
+      if (activeMonitorCount() >= TOTAL_NUM_MONITORS) {
+        throw new MonitorLimitError(TOTAL_NUM_MONITORS);
+      }
       // else if so we don't compute nextRunTime twice
       // Re-enabling: schedule the next run a full interval from now rather than
       // reusing a stale nextRunTime that may already be in the past.
@@ -386,9 +398,6 @@ export const MonitorAgent = {
   async _loadMonitors() {
     const monitors = new Map();
     for (const savedMonitor of await lazy.MonitorStore.listMonitors()) {
-      if (monitors.size >= TOTAL_NUM_MONITORS) {
-        break;
-      }
       try {
         const monitor = Monitor.fromJSON(savedMonitor);
         monitors.set(monitor.id, monitor);
