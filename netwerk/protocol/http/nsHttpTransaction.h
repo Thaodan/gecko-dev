@@ -230,10 +230,6 @@ class nsHttpTransaction final : public nsAHttpTransaction,
 
   bool IsWebsocketUpgrade();
 
-  // True while a WebSocket/WebTransport upgrade may still move to another
-  // connection, i.e. before any response byte has arrived.
-  bool CanRestartUpgradeBeforeResponse();
-
   void OnProxyConnectComplete(ProxyConnectResponseHead* aResponseHead) override;
   void SetFlat407Headers(const nsACString& aHeaders);
 
