@@ -416,7 +416,13 @@ urlbar:
       fallbackPref: browser.urlbar.newtab.featureGate
       description: >-
         Feature gate that controls whether about:newtab and about:home show the
-        address bar in place of the handoff search bar.
+        search bar in place of the handoff search bar.
+    newtabVariantA:
+      type: boolean
+      fallbackPref: browser.urlbar.newtab.variantA
+      description: >-
+        Layout variant A for the about:newtab and about:home search bar; depends
+        on newtabFeatureGate.
     exposureResults:
       type: string
       setPref:

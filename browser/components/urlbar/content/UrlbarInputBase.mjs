@@ -153,6 +153,7 @@ export class UrlbarInputBase extends HTMLElement {
                it contains text even when searchmode-switcher-title is hidden. -->
           <span class="urlbar-visually-hidden" aria-hidden="true">a</span>
           <span class="searchmode-switcher-content">
+            <span class="searchmode-switcher-wordmark" aria-hidden="true" />
             <img class="searchmode-switcher-dropmarker"
                  data-l10n-id="urlbar-searchmode-dropmarker2"
                  draggable="false" />
@@ -776,6 +777,16 @@ ${
    */
   get isSearchbarSAP() {
     return UrlbarShared.isSearchbarSAP(this.#sapName);
+  }
+
+  /**
+   * Whether this bar shows layout variant A. New Tab's registrant sets the
+   * attribute from the urlbar's `newtabVariantA` Nimbus variable.
+   *
+   * @type {boolean}
+   */
+  get variantA() {
+    return this.hasAttribute("variant-a");
   }
 
   /**
