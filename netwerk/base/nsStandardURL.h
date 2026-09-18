@@ -32,7 +32,7 @@ class nsIBinaryOutputStream;
 class nsIIDNService;
 class nsIPrefBranch;
 class nsIFile;
-class nsIURLParser;
+class nsBaseURLParser;
 
 namespace mozilla {
 class Encoding;
@@ -325,7 +325,6 @@ class nsStandardURL : public nsIFileURL,
   int32_t ReplaceSegment(uint32_t pos, uint32_t len, const nsACString& val);
 
   nsresult ParseURL(const char* spec, int32_t specLen);
-  nsresult ParsePath(const char* spec, uint32_t pathPos, int32_t pathLen = -1);
 
   char* AppendToSubstring(uint32_t pos, int32_t len, const char* tail);
 
@@ -402,7 +401,8 @@ class nsStandardURL : public nsIFileURL,
   URLSegment mQuery;
   URLSegment mRef;
 
-  nsCOMPtr<nsIURLParser> mParser;
+  // Concretely typed so ParseAll() is reachable without a downcast.
+  RefPtr<nsBaseURLParser> mParser;
 
   // mFile is protected so subclasses can access it directly
  protected:
