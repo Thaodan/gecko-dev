@@ -876,7 +876,11 @@ export class BackupService extends EventTarget {
     backupInProgress: false,
     scheduledBackupsEnabled: lazy.scheduledBackupsPref,
     encryptionEnabled: false,
-    /** @type {number?} Number of seconds since UNIX epoch */
+    /**
+     * Number of seconds since UNIX epoch
+     *
+     * @type {number?}
+     */
     lastBackupDate: null,
     lastBackupFileName: lazy.lastBackupFileName,
     supportBaseLink: Services.urlFormatter.formatURLPref("app.support.baseURL"),
