@@ -1194,7 +1194,7 @@ index c0fb04ac82..af412f6890 100644
      deps += [
        "..:logging",
 diff --git a/test/BUILD.gn b/test/BUILD.gn
-index e2be88b322..992f212c50 100644
+index 6da703b300..19d6793cc7 100644
 --- a/test/BUILD.gn
 +++ b/test/BUILD.gn
 @@ -279,6 +279,7 @@ rtc_library("audio_test_common") {
@@ -1236,7 +1236,7 @@ index e2be88b322..992f212c50 100644
      sources += [ "testsupport/jpeg_frame_writer.cc" ]
    } else {
      sources += [ "testsupport/jpeg_frame_writer_ios.cc" ]
-@@ -1822,6 +1830,7 @@ if (!build_with_chromium) {
+@@ -1825,6 +1833,7 @@ if (!build_with_chromium) {
    }
  }
  
@@ -1244,7 +1244,7 @@ index e2be88b322..992f212c50 100644
  if (!build_with_chromium && is_android) {
    rtc_android_library("native_test_java") {
      testonly = true
-@@ -1864,6 +1873,7 @@ if (!build_with_chromium && is_android) {
+@@ -1867,6 +1876,7 @@ if (!build_with_chromium && is_android) {
      sources = [ "android/org/webrtc/native_test/NativeTestWebrtc.java" ]
    }
  }
