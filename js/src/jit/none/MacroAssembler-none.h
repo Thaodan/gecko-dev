@@ -86,6 +86,7 @@ class MacroAssemblerNone : public Assembler {
   void jump(T) {
     MOZ_CRASH();
   }
+  void retarget(Label*, Label*) { MOZ_CRASH(); }
   void writeCodePointer(CodeLabel* label) { MOZ_CRASH(); }
   void haltingAlign(size_t) { MOZ_CRASH(); }
   void nopAlign(size_t) { MOZ_CRASH(); }

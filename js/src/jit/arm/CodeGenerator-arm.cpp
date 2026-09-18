@@ -92,30 +92,6 @@ void CodeGeneratorARM::bailoutIf(Assembler::Condition condition,
   masm.ma_b(ool->entry(), condition);
 }
 
-void CodeGeneratorARM::bailoutFrom(Label* label, LSnapshot* snapshot) {
-  MOZ_ASSERT_IF(!masm.oom(), label->used());
-  MOZ_ASSERT_IF(!masm.oom(), !label->bound());
-
-  encode(snapshot);
-
-  InlineScriptTree* tree = snapshot->mir()->block()->trackedTree();
-  auto* ool = new (alloc()) LambdaOutOfLineCode(
-      [=, this](OutOfLineCode& ool) { emitBailoutOOL(snapshot); });
-
-  // All bailout code is associated with the bytecodeSite of the block we are
-  // bailing out from.
-  addOutOfLineCode(ool,
-                   new (alloc()) BytecodeSite(tree, tree->script()->code()));
-
-  masm.retarget(label, ool->entry());
-}
-
-void CodeGeneratorARM::bailout(LSnapshot* snapshot) {
-  Label label;
-  masm.ma_b(&label);
-  bailoutFrom(&label, snapshot);
-}
-
 void CodeGenerator::visitMinMaxD(LMinMaxD* ins) {
   FloatRegister first = ToFloatRegister(ins->first());
   FloatRegister second = ToFloatRegister(ins->second());
