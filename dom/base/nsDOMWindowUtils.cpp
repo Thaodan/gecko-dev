@@ -2377,23 +2377,24 @@ nsDOMWindowUtils::SendSelectionSetEvent(uint32_t aOffset, uint32_t aLength,
   *aResult = false;
 
   // get the widget to send the event to
-  nsCOMPtr<nsIWidget> widget = GetWidget();
-  if (!widget) {
+  const nsCOMPtr<nsIWidget> widget = GetWidget();
+  if (!widget) [[unlikely]] {
     return NS_ERROR_FAILURE;
   }
 
-  WidgetSelectionEvent selectionEvent(true, eSetSelection, widget);
-  InitEvent(selectionEvent);
+  const RefPtr<TextEventDispatcher> dispatcher =
+      widget->GetTextEventDispatcher();
+  if (NS_WARN_IF(!dispatcher)) [[unlikely]] {
+    return NS_ERROR_FAILURE;
+  }
 
-  selectionEvent.mOffset = aOffset;
-  selectionEvent.mLength = aLength;
-  selectionEvent.mReversed = (aAdditionalFlags & SELECTION_SET_FLAG_REVERSE);
-  selectionEvent.mExpandToClusterBoundary =
-      (aAdditionalFlags & SELECTION_EXPAND_TO_CLUSTER_BOUNDARY);
-
-  widget->DispatchEvent(&selectionEvent);
-
-  *aResult = selectionEvent.mSucceeded;
+  *aResult = dispatcher->DispatchSetSelectionEvent(
+      aOffset, aLength,
+      aAdditionalFlags & SELECTION_EXPAND_TO_CLUSTER_BOUNDARY
+          ? ExpandToClusterBoundary::Yes
+          : ExpandToClusterBoundary::No,
+      aAdditionalFlags & SELECTION_SET_FLAG_REVERSE ? RangeDirection::Reversed
+                                                    : RangeDirection::Normal);
   return NS_OK;
 }
 

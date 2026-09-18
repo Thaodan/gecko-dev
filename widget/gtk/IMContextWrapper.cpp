@@ -3418,21 +3418,22 @@ nsresult IMContextWrapper::DeleteText(GtkIMContext* aContext, int32_t aOffset,
       g_utf8_offset_to_pointer(utf8Str.get(), endInUTF8Characters);
 
   // Set selection to delete
-  WidgetSelectionEvent selectionEvent(true, eSetSelection, mLastFocusedWindow);
-
+  const RefPtr<TextEventDispatcher> dispatcher = GetTextEventDispatcher();
+  if (NS_WARN_IF(!dispatcher)) {
+    return NS_ERROR_FAILURE;
+  }
   nsDependentCSubstring utf8StrBeforeOffset(utf8Str, 0,
                                             charAtOffset - utf8Str.get());
-  selectionEvent.mOffset = NS_ConvertUTF8toUTF16(utf8StrBeforeOffset).Length();
+  const uint32_t offset = NS_ConvertUTF8toUTF16(utf8StrBeforeOffset).Length();
 
   nsDependentCSubstring utf8DeletingStr(utf8Str, utf8StrBeforeOffset.Length(),
                                         charAtEnd - charAtOffset);
-  selectionEvent.mLength = NS_ConvertUTF8toUTF16(utf8DeletingStr).Length();
+  const uint32_t length = NS_ConvertUTF8toUTF16(utf8DeletingStr).Length();
 
-  selectionEvent.mReversed = false;
-  selectionEvent.mExpandToClusterBoundary = false;
-  lastFocusedWindow->DispatchEvent(&selectionEvent);
+  const bool setSelectionSucceeded = dispatcher->DispatchSetSelectionEvent(
+      offset, length, ExpandToClusterBoundary::No);
 
-  if (!selectionEvent.mSucceeded || lastFocusedWindow != mLastFocusedWindow ||
+  if (!setSelectionSucceeded || lastFocusedWindow != mLastFocusedWindow ||
       lastFocusedWindow->Destroyed()) {
     MOZ_LOG(gIMELog, LogLevel::Error,
             ("0x%p   DeleteText(), FAILED, setting selection caused "

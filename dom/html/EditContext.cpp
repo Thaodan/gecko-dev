@@ -561,19 +561,19 @@ void EditContext::FireTextUpdate(uint32_t aUpdateRangeStart,
 
 void EditContext::DoSetSelection(WidgetSelectionEvent& aEvent) {
   MOZ_LOG_FMT(gEditContextLog, LogLevel::Debug,
-              "[{}] {} with offset={} length={} reversed={} "
+              "[{}] {} with offset={} length={} direction={} "
               "expandToClusterBoundary={}",
               static_cast<void*>(this), __func__, aEvent.mOffset,
-              aEvent.mLength, aEvent.mReversed,
+              aEvent.mLength, aEvent.mDirection,
               aEvent.mExpandToClusterBoundary);
   TextRange range(std::min(aEvent.mOffset, TextLength()),
                   std::min(aEvent.mOffset + aEvent.mLength, TextLength()));
-  if (aEvent.mExpandToClusterBoundary) {
+  if (aEvent.ShouldExpandToClusterBoundary()) {
     range = ExpandRangeToClusterBoundaries(range);
   }
   mSelectionStart = range.mStart;
   mSelectionEnd = range.mEnd;
-  if (aEvent.mReversed) {
+  if (aEvent.IsReversed()) {
     std::swap(mSelectionStart, mSelectionEnd);
   }
   if (IMEContentObserver* observer =

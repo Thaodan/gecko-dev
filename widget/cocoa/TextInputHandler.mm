@@ -5571,15 +5571,14 @@ TextInputHandlerBase::AttachNativeKeyEvent(WidgetKeyboardEvent& aKeyEvent) {
 
 bool TextInputHandlerBase::SetSelection(NSRange& aRange) {
   MOZ_ASSERT(!Destroyed());
+  MOZ_ASSERT(mDispatcher);
+  MOZ_ASSERT(mDispatcher->GetWidget() == mWidget);
 
-  RefPtr<TextInputHandlerBase> kungFuDeathGrip(this);
-  WidgetSelectionEvent selectionEvent(true, eSetSelection, mWidget);
-  selectionEvent.mOffset = aRange.location;
-  selectionEvent.mLength = aRange.length;
-  selectionEvent.mReversed = false;
-  selectionEvent.mExpandToClusterBoundary = false;
-  DispatchEvent(selectionEvent);
-  NS_ENSURE_TRUE(selectionEvent.mSucceeded, false);
+  RefPtr<TextEventDispatcher> dispatcher = mDispatcher;
+  NS_ENSURE_TRUE(dispatcher->DispatchSetSelectionEvent(
+                     aRange.location, aRange.length,
+                     ExpandToClusterBoundary::No, RangeDirection::Normal),
+                 false);
   return !Destroyed();
 }
 

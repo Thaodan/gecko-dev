@@ -276,6 +276,28 @@ Maybe<WritingMode> TextEventDispatcher::MaybeQueryWritingModeAtSelection()
   return Some(querySelectedTextEvent.mReply->mWritingMode);
 }
 
+void TextEventDispatcher::DispatchSetSelectionEvent(
+    WidgetSelectionEvent& aEvent) {
+  MOZ_ASSERT(mWidget == aEvent.mWidget);
+  DispatchEvent(mWidget, aEvent);
+}
+
+bool TextEventDispatcher::DispatchSetSelectionEvent(
+    uint32_t aOffset, uint32_t aLength,
+    ExpandToClusterBoundary aExpandToClusterBoundary,
+    RangeDirection aRangeDirection,
+    int16_t aReason /* = 0 (nsISelectionListener::NO_REASON) */) {
+  static_assert(nsISelectionListener::NO_REASON == 0);
+  WidgetSelectionEvent event(true, eSetSelection, mWidget);
+  event.mOffset = aOffset;
+  event.mLength = aLength;
+  event.mExpandToClusterBoundary = aExpandToClusterBoundary;
+  event.mDirection = aRangeDirection;
+  event.mReason = aReason;
+  DispatchSetSelectionEvent(event);
+  return event.mSucceeded;
+}
+
 nsEventStatus TextEventDispatcher::DispatchEvent(nsIWidget* aWidget,
                                                  WidgetGUIEvent& aEvent) {
   MOZ_ASSERT(!aEvent.AsInputEvent(), "Use DispatchInputEvent()");

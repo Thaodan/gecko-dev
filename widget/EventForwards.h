@@ -155,6 +155,28 @@ enum CodeNameIndex : uint8_t {
 
 const nsCString ToString(CodeNameIndex aCodeNameIndex);
 
+enum class ExpandToClusterBoundary : bool { No, Yes };
+
+inline auto format_as(ExpandToClusterBoundary aExpand) {
+  return aExpand == ExpandToClusterBoundary::Yes ? "Yes" : "No";
+}
+
+inline std::ostream& operator<<(std::ostream& aStream,
+                                ExpandToClusterBoundary aExpand) {
+  return aStream << format_as(aExpand);
+}
+
+enum class RangeDirection : bool { Normal, Reversed };
+
+inline auto format_as(RangeDirection aDirection) {
+  return aDirection == RangeDirection::Reversed ? "Reversed" : "Normal";
+}
+
+inline std::ostream& operator<<(std::ostream& aStream,
+                                RangeDirection aDirection) {
+  return aStream << format_as(aDirection);
+}
+
 #define NS_DEFINE_INPUTTYPE(aCPPName, aDOMName) e##aCPPName,
 
 using EditorInputTypeType = uint8_t;

@@ -1381,19 +1381,20 @@ bool ContentCacheInParent::OnCompositionEvent(
 
 void ContentCacheInParent::OnSelectionEvent(
     const WidgetSelectionEvent& aSelectionEvent) {
-  MOZ_LOG(sContentCacheLog, LogLevel::Info,
-          ("0x%p OnSelectionEvent(aEvent={ "
-           "mMessage=%s, mOffset=%u, mLength=%u, mReversed=%s, "
-           "mExpandToClusterBoundary=%s }), "
-           "PendingEventsNeedingAck()=%u, WidgetHasComposition()=%s, "
-           "mHandlingCompositions.Length()=%zu, HasPendingCommit()=%s, "
-           "mIsChildIgnoringCompositionEvents=%s",
-           this, ToChar(aSelectionEvent.mMessage), aSelectionEvent.mOffset,
-           aSelectionEvent.mLength, TrueOrFalse(aSelectionEvent.mReversed),
-           TrueOrFalse(aSelectionEvent.mExpandToClusterBoundary),
-           PendingEventsNeedingAck(), TrueOrFalse(WidgetHasComposition()),
-           mHandlingCompositions.Length(), TrueOrFalse(HasPendingCommit()),
-           TrueOrFalse(mIsChildIgnoringCompositionEvents)));
+  MOZ_LOG_FMT(sContentCacheLog, LogLevel::Info,
+              "{} OnSelectionEvent(aEvent={{ "
+              "mMessage={}, mOffset={}, mLength={}, mDirection={}, "
+              "mExpandToClusterBoundary={} }}), "
+              "PendingEventsNeedingAck()={}, WidgetHasComposition()={}, "
+              "mHandlingCompositions.Length()={}, HasPendingCommit()={}, "
+              "mIsChildIgnoringCompositionEvents={}",
+              static_cast<void*>(this), ToChar(aSelectionEvent.mMessage),
+              aSelectionEvent.mOffset, aSelectionEvent.mLength,
+              aSelectionEvent.mDirection,
+              aSelectionEvent.mExpandToClusterBoundary,
+              PendingEventsNeedingAck(), WidgetHasComposition(),
+              mHandlingCompositions.Length(), HasPendingCommit(),
+              mIsChildIgnoringCompositionEvents);
 
 #if MOZ_DIAGNOSTIC_ASSERT_ENABLED && !defined(FUZZING_SNAPSHOT)
   mDispatchedEventMessages.AppendElement(aSelectionEvent.mMessage);
