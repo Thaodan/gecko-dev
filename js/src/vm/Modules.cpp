@@ -701,7 +701,8 @@ static bool SyntheticModuleResolveExport(JSContext* cx,
                                          ModuleErrorInfo* errorInfoOut);
 static ModuleNamespaceObject* ModuleNamespaceCreate(
     JSContext* cx, Handle<ModuleObject*> module,
-    MutableHandle<UniquePtr<ExportNameVector>> exports);
+    MutableHandle<UniquePtr<ExportNameVector>> exports,
+    ImportPhase phase = ImportPhase::Evaluation);
 static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
                                MutableHandle<ModuleVector> stack, size_t index,
                                size_t* indexOut);
@@ -1252,16 +1253,23 @@ static bool SyntheticModuleResolveExport(JSContext* cx,
 }
 
 // https://tc39.es/ecma262/#sec-getmodulenamespace
-// ES2023 16.2.1.10 GetModuleNamespace
+// https://tc39.es/proposal-defer-import-eval/#sec-getmodulenamespace
 ModuleNamespaceObject* js::GetOrCreateModuleNamespace(
-    JSContext* cx, Handle<ModuleObject*> module) {
+    JSContext* cx, Handle<ModuleObject*> module,
+    ImportPhase phase /* = ImportPhase::Evaluation */) {
+  MOZ_ASSERT(phase == ImportPhase::Evaluation ||
+             phase == ImportPhase::Deferred);
+
   // Step 1. Assert: If module is a Cyclic Module Record, then module.[[Status]]
   //         is not new or unlinked.
   MOZ_ASSERT(module->status() != ModuleStatus::New &&
              module->status() != ModuleStatus::Unlinked);
 
-  // Step 2. Let namespace be module.[[Namespace]].
-  Rooted<ModuleNamespaceObject*> ns(cx, module->namespace_());
+  // Step 2. If phase is defer, then let namespace be module.[[DeferredNamespace]].
+  // Otherwise, let namespace be module.[[Namespace]].
+  Rooted<ModuleNamespaceObject*> ns(
+      cx, phase == ImportPhase::Deferred ? module->maybeDeferredNamespace()
+                                         : module->namespace_());
 
   // Step 3. If namespace is empty, then:
   if (!ns) {
@@ -1285,22 +1293,25 @@ ModuleNamespaceObject* js::GetOrCreateModuleNamespace(
     for (JSAtom* atom : exportedNames) {
       name = atom;
 
-      // Step 3.c.i. Let resolution be ? module.ResolveExport(name).
-      if (!ModuleResolveExport(cx, module, name, &resolution)) {
-        return nullptr;
-      }
+      // Step 3.c.i. If phase is not defer or name is not "then", then:
+      if (phase != ImportPhase::Deferred || name != cx->names().then) {
+        // Let resolution be ? module.ResolveExport(name).
+        if (!ModuleResolveExport(cx, module, name, &resolution)) {
+          return nullptr;
+        }
 
-      // Step 3.c.ii. If resolution is a ResolvedBinding Record, append name to
-      //              unambiguousNames.
-      if (resolution.isObject() && !unambiguousNames->append(name)) {
-        ReportOutOfMemory(cx);
-        return nullptr;
+        // Step 3.c.ii. If resolution is a ResolvedBinding Record, append name to
+        //              unambiguousNames.
+        if (resolution.isObject() && !unambiguousNames->append(name)) {
+          ReportOutOfMemory(cx);
+          return nullptr;
+        }
       }
     }
 
     // Step 3.d. Set namespace to ModuleNamespaceCreate(module,
-    //           unambiguousNames).
-    ns = ModuleNamespaceCreate(cx, module, &unambiguousNames);
+    //           unambiguousNames, phase).
+    ns = ModuleNamespaceCreate(cx, module, &unambiguousNames, phase);
   }
 
   // Step 4. Return namespace.
@@ -1359,13 +1370,11 @@ struct AtomComparator {
 };
 
 // https://tc39.es/ecma262/#sec-modulenamespacecreate
-// ES2023 10.4.6.12 ModuleNamespaceCreate
+// https://tc39.es/proposal-defer-import-eval/#sec-modulenamespacecreate
 static ModuleNamespaceObject* ModuleNamespaceCreate(
     JSContext* cx, Handle<ModuleObject*> module,
-    MutableHandle<UniquePtr<ExportNameVector>> exports) {
-  // Step 1. Assert: module.[[Namespace]] is empty.
-  MOZ_ASSERT(!module->namespace_());
-
+    MutableHandle<UniquePtr<ExportNameVector>> exports,
+    ImportPhase phase) {
   // Step 6. Let sortedExports be a List whose elements are the elements of
   //         exports ordered as if an Array of the same values had been sorted
   //         using %Array.prototype.sort% using undefined as comparefn.
@@ -1377,20 +1386,20 @@ static ModuleNamespaceObject* ModuleNamespaceCreate(
   MOZ_ALWAYS_TRUE(MergeSort(exports->begin(), exports->length(),
                             scratch.begin(), AtomComparator()));
 
-  // Steps 2 - 5.
+  // Step 9 - 10.
   Rooted<ModuleNamespaceObject*> ns(
-      cx, ModuleObject::createNamespace(cx, module, exports));
+      cx, ModuleObject::createNamespace(cx, module, exports, phase));
   if (!ns) {
     return nullptr;
   }
 
   // Pre-compute all binding mappings now instead of on each access.
   if (!ComputeNamespaceBindings(cx, module, ns)) {
-    module->clearNamespaceOnFailure();
+    module->clearNamespaceOnFailure(phase);
     return nullptr;
   }
 
-  // Step 10. Return M.
+  // Step 12. Return M.
   return ns;
 }
 

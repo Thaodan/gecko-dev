@@ -390,6 +390,12 @@ bool IndirectBindingMap::lookup(jsid name, ModuleEnvironmentObject** envOut,
 ///////////////////////////////////////////////////////////////////////////
 // ModuleNamespaceObject
 
+// Module namespace objects need 3 reserved slots (ExportsSlot, BindingsSlot,
+// DeferredSlot), so they use a custom proxy class instead of the default
+// ProxyClass which only has 2.
+static const JSClass moduleNamespaceProxyClass =
+    PROXY_CLASS_DEF("Module Namespace", JSCLASS_HAS_RESERVED_SLOTS(ModuleNamespaceObject::ModuleNamespaceSlot::SlotCount));
+
 /* static */
 constexpr ModuleNamespaceObject::ProxyHandler
     ModuleNamespaceObject::proxyHandler;
@@ -403,10 +409,12 @@ bool ModuleNamespaceObject::isInstance(HandleValue value) {
 ModuleNamespaceObject* ModuleNamespaceObject::create(
     JSContext* cx, Handle<ModuleObject*> module,
     MutableHandle<UniquePtr<ExportNameVector>> exports,
-    MutableHandle<UniquePtr<IndirectBindingMap>> bindings) {
+    MutableHandle<UniquePtr<IndirectBindingMap>> bindings,
+    ImportPhase phase) {
   RootedValue priv(cx, ObjectValue(*module));
   ProxyOptions options;
   options.setLazyProto(true);
+  options.setClass(&moduleNamespaceProxyClass);
 
   RootedObject object(
       cx, NewProxyObject(cx, &proxyHandler, priv, nullptr, options));
@@ -422,6 +430,37 @@ ModuleNamespaceObject* ModuleNamespaceObject::create(
                        PrivateValue(bindings.get().release()));
   AddCellMemory(object, sizeof(IndirectBindingMap),
                 MemoryUse::ModuleBindingMap);
+
+  // https://tc39.es/proposal-defer-import-eval/#sec-modulenamespacecreate
+  // Step 9. If phase is defer, then:
+  if (phase == ImportPhase::Deferred) {
+    //   a. Assert: module.[[DeferredNamespace]] is empty.
+    MOZ_ASSERT(!module->maybeDeferredNamespace());
+
+    //   b. Set module.[[DeferredNamespace]] to M.
+    Rooted<ModuleNamespaceObject*> ns(cx, &object->as<ModuleNamespaceObject>());
+    module->setDeferredNamespace(ns);
+
+    //   c. Set M.[[Deferred]] to true.
+    SetProxyReservedSlot(object, DeferredSlot, JS::TrueValue());
+
+    //   d. Let toStringTag be "Deferred Module".
+    //   Note. Implement in ModuleNamespaceObject::ProxyHandler.
+  } else {
+    // Step 10. Else:
+    //   a. Assert: module.[[Namespace]] is empty.
+    MOZ_ASSERT(!module->namespace_());
+
+    //   b. Set module.[[Namespace]] to M.
+    module->initReservedSlotTyped(ModuleObject::NAMESPACE_SLOT,
+                                  ObjectValue(*object));
+
+    //   c. Set M.[[Deferred]] to false.
+    SetProxyReservedSlot(object, DeferredSlot, JS::FalseValue());
+
+    //   d. Let toStringTag be "Module".
+    //   Note. Implement in ModuleNamespaceObject::ProxyHandler.
+  }
 
   return &object->as<ModuleNamespaceObject>();
 }
@@ -448,6 +487,10 @@ IndirectBindingMap& ModuleNamespaceObject::bindings() {
   auto* bindings = static_cast<IndirectBindingMap*>(value.toPrivate());
   MOZ_ASSERT(bindings);
   return *bindings;
+}
+
+bool ModuleNamespaceObject::isDeferred() const {
+  return GetProxyReservedSlot(this, DeferredSlot).toBoolean();
 }
 
 bool ModuleNamespaceObject::hasExports() const {
@@ -1164,6 +1207,18 @@ ModuleNamespaceObject* ModuleObject::namespace_() {
   return &value.toObject().as<ModuleNamespaceObject>();
 }
 
+ModuleNamespaceObject* ModuleObject::maybeDeferredNamespace() const {
+  Value value = getReservedSlotTyped(DEFERRED_NAMESPACE_SLOT);
+  if (value.isUndefined()) {
+    return nullptr;
+  }
+  return &value.toObject().as<ModuleNamespaceObject>();
+}
+
+void ModuleObject::setDeferredNamespace(Handle<ModuleNamespaceObject*> ns) {
+  setReservedSlotTyped(DEFERRED_NAMESPACE_SLOT, ObjectValue(*ns));
+}
+
 ScriptSourceObject* ModuleObject::scriptSourceObject() const {
   return cyclicModuleFields()->scriptSourceObject;
 }
@@ -1595,26 +1650,28 @@ void ModuleObject::onTopLevelEvaluationFinished(ModuleObject* module) {
 /* static */
 ModuleNamespaceObject* ModuleObject::createNamespace(
     JSContext* cx, Handle<ModuleObject*> self,
-    MutableHandle<UniquePtr<ExportNameVector>> exports) {
-  MOZ_ASSERT(!self->namespace_());
-
+    MutableHandle<UniquePtr<ExportNameVector>> exports,
+    ImportPhase phase) {
   Rooted<UniquePtr<IndirectBindingMap>> bindings(cx);
   bindings = cx->make_unique<IndirectBindingMap>();
   if (!bindings) {
     return nullptr;
   }
 
-  auto* ns = ModuleNamespaceObject::create(cx, self, exports, &bindings);
+  auto* ns = ModuleNamespaceObject::create(cx, self, exports, &bindings, phase);
   if (!ns) {
     return nullptr;
   }
 
-  self->initReservedSlotTyped(NAMESPACE_SLOT, ObjectValue(*ns));
   return ns;
 }
 
-void ModuleObject::clearNamespaceOnFailure() {
-  setReservedSlotTyped(NAMESPACE_SLOT, UndefinedValue());
+void ModuleObject::clearNamespaceOnFailure(ImportPhase phase) {
+  if (phase == ImportPhase::Deferred) {
+    setReservedSlotTyped(DEFERRED_NAMESPACE_SLOT, UndefinedValue());
+  } else {
+    setReservedSlotTyped(NAMESPACE_SLOT, UndefinedValue());
+  }
 }
 
 /* static */
@@ -2191,6 +2248,43 @@ bool ModuleBuilder::processAttributes(frontend::StencilModuleRequest& request,
   return true;
 }
 
+bool ModuleBuilder::processImportWithPhase(
+    frontend::NameNode* localNameNode,
+    frontend::TaggedParserAtomIndex specifier, frontend::NameNode* moduleSpec,
+    ImportPhase phase) {
+  using namespace js::frontend;
+  MOZ_ASSERT(phase == ImportPhase::Source || phase == ImportPhase::Deferred);
+
+  MaybeModuleRequestIndex moduleRequestIndex =
+      appendModuleRequest(specifier, nullptr, phase);
+  if (!moduleRequestIndex.isSome()) {
+    return false;
+  }
+
+  if (!maybeAppendRequestedModule(moduleRequestIndex, moduleSpec)) {
+    return false;
+  }
+
+  auto localName = localNameNode->atom();
+  markUsedByStencil(localName);
+
+  uint32_t line;
+  JS::LimitedColumnNumberOneOrigin column;
+  eitherParser_.computeLineAndColumn(localNameNode->pn_pos.begin, &line,
+                                     &column);
+
+  ImportNameValueType importNameValue =
+      phase == ImportPhase::Source ?
+          ImportNameValueType::Source :
+          ImportNameValueType::Namespace;
+
+  auto entry = StencilModuleEntry::importEntry(
+      moduleRequestIndex, localName, TaggedParserAtomIndex(), importNameValue,
+      line, JS::ColumnNumberOneOrigin(column));
+
+  return importEntries_.put(localName, entry);
+}
+
 bool ModuleBuilder::processImport(frontend::BinaryNode* importNode) {
   using namespace js::frontend;
 
@@ -2204,32 +2298,25 @@ bool ModuleBuilder::processImport(frontend::BinaryNode* importNode) {
 
   auto specifier = moduleSpec->atom();
 
-  if (importNode->as<ImportDeclarationNode>().phase() == ImportPhase::Source) {
+  ImportPhase phase = importNode->as<ImportDeclarationNode>().phase();
+  if (phase == ImportPhase::Source) {
     auto* localNameNode = &importNode->left()->as<NameNode>();
     MOZ_ASSERT(localNameNode->isKind(ParseNodeKind::Name));
 
-    MaybeModuleRequestIndex moduleRequestIndex =
-        appendModuleRequest(specifier, nullptr, ImportPhase::Source);
-    if (!moduleRequestIndex.isSome()) {
-      return false;
-    }
-
-    if (!maybeAppendRequestedModule(moduleRequestIndex, moduleSpec)) {
-      return false;
-    }
-
-    auto localName = localNameNode->atom();
-    markUsedByStencil(localName);
-
-    uint32_t line;
-    JS::LimitedColumnNumberOneOrigin column;
-    eitherParser_.computeLineAndColumn(localNameNode->pn_pos.begin, &line,
-                                       &column);
-
-    auto entry = StencilModuleEntry::importEntry(
-        moduleRequestIndex, localName, TaggedParserAtomIndex(),
-        ImportNameValueType::Source, line, JS::ColumnNumberOneOrigin(column));
-    return importEntries_.put(localName, entry);
+    return processImportWithPhase(localNameNode, specifier, moduleSpec,
+                                  ImportPhase::Source);
+  } else if (phase == ImportPhase::Deferred) {
+    // The left child is the importSpecSet list containing a single
+    // ImportNamespaceSpec; extract the NameNode from it.
+    auto* specList = &importNode->left()->as<ListNode>();
+    MOZ_ASSERT(specList->isKind(ParseNodeKind::ImportSpecList));
+    MOZ_ASSERT(specList->count() == 1);
+    auto* namespaceSpec = &specList->head()->as<UnaryNode>();
+    MOZ_ASSERT(namespaceSpec->isKind(ParseNodeKind::ImportNamespaceSpec));
+    auto* localNameNode = &namespaceSpec->kid()->as<NameNode>();
+    MOZ_ASSERT(localNameNode->isKind(ParseNodeKind::Name));
+    return processImportWithPhase(localNameNode, specifier, moduleSpec,
+                                  ImportPhase::Deferred);
   }
 
   auto* specList = &importNode->left()->as<ListNode>();

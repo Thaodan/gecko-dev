@@ -42,8 +42,9 @@ struct ModuleErrorInfo {
   bool isCircular = false;
 };
 
-ModuleNamespaceObject* GetOrCreateModuleNamespace(JSContext* cx,
-                                                  Handle<ModuleObject*> module);
+ModuleNamespaceObject* GetOrCreateModuleNamespace(
+    JSContext* cx, Handle<ModuleObject*> module,
+    ImportPhase phase = ImportPhase::Evaluation);
 
 void AsyncModuleExecutionFulfilled(JSContext* cx, Handle<ModuleObject*> module);
 

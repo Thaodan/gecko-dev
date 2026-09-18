@@ -6274,9 +6274,10 @@ static bool GetModuleEnvironmentNames(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  // The "*namespace*" binding is a detail of current implementation so hide
-  // it to give stable results in tests.
+  // The "*namespace*" and "*deferred-namespace*" bindings are implementation
+  // details, hide them to give stable results in tests.
   ids.eraseIfEqual(NameToId(cx->names().star_namespace_star_));
+  ids.eraseIfEqual(NameToId(cx->names().star_deferred_namespace_star_));
 
   uint32_t length = ids.length();
   Rooted<ArrayObject*> array(cx, NewDenseFullyAllocatedArray(cx, length));
