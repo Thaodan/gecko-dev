@@ -1281,6 +1281,7 @@ struct BaseMarkerType {
   // string is then copied into every ETW event.
   static constexpr bool ETWStoreName = false;
 
+  // Defines how ETW filters this marker at runtime.
   static constexpr MarkerSchema::ETWMarkerGroup Group =
       MarkerSchema::ETWMarkerGroup::Generic;
 
