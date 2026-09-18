@@ -44,7 +44,7 @@ index aff523be6c..f8d5e58730 100644
  }  // namespace
  
 diff --git a/audio/channel_receive.cc b/audio/channel_receive.cc
-index d0e97a71ed..201a261b77 100644
+index 97141d7fcb..4c35a5cbac 100644
 --- a/audio/channel_receive.cc
 +++ b/audio/channel_receive.cc
 @@ -120,12 +120,14 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(
@@ -70,7 +70,7 @@ index d0e97a71ed..201a261b77 100644
                   PacketRouter* absl_nonnull packet_router,
                   absl::AnyInvocable<void(const RtpPacketInfos&, Timestamp)
                                          const> on_frame_delivered_callback);
-@@ -586,6 +589,7 @@ ChannelReceive::ChannelReceive(
+@@ -580,6 +583,7 @@ ChannelReceive::ChannelReceive(
      const CryptoOptions& crypto_options,
      scoped_refptr<FrameTransformerInterface> frame_transformer,
      absl::AnyInvocable<void(uint32_t ssrc) &&> on_first_packet,
@@ -78,7 +78,7 @@ index d0e97a71ed..201a261b77 100644
      PacketRouter* absl_nonnull packet_router,
      absl::AnyInvocable<void(const RtpPacketInfos&, Timestamp) const>
          on_frame_delivered_callback)
-@@ -598,6 +602,7 @@ ChannelReceive::ChannelReceive(
+@@ -592,6 +596,7 @@ ChannelReceive::ChannelReceive(
                                      this,
                                      enable_non_sender_rtt,
                                      remote_ssrc,
@@ -86,7 +86,7 @@ index d0e97a71ed..201a261b77 100644
                                      packet_router)),
        remote_ssrc_(remote_ssrc),
        on_frame_delivered_callback_(std::move(on_frame_delivered_callback)),
-@@ -1217,6 +1222,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
+@@ -1204,6 +1209,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
      const CryptoOptions& crypto_options,
      scoped_refptr<FrameTransformerInterface> frame_transformer,
      absl::AnyInvocable<void(uint32_t ssrc) &&> on_first_packet,
@@ -94,7 +94,7 @@ index d0e97a71ed..201a261b77 100644
      PacketRouter* absl_nonnull packet_router,
      absl::AnyInvocable<void(const RtpPacketInfos&, Timestamp) const>
          on_frame_delivered_callback) {
-@@ -1225,7 +1231,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
+@@ -1212,7 +1218,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
        jitter_buffer_max_packets, jitter_buffer_fast_playout,
        jitter_buffer_min_delay_ms, enable_non_sender_rtt, decoder_factory,
        std::move(frame_decryptor), crypto_options, std::move(frame_transformer),
