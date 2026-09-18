@@ -338,6 +338,7 @@ var SessionFileInternal = {
             loadfail_reason: ` ${ex.name}: Corrupt session file (invalid JSON found)`,
           });
         } else {
+          corrupted = true;
           lazy.sessionStoreLogger.error(
             `Unexpected error when reading session file: ${key}`,
             ex
