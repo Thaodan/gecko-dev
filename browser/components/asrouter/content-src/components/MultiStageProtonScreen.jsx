@@ -38,6 +38,42 @@ const CORNER_IMAGE_ENTRANCE_ANIMATIONS = new Set([
   "zoom",
 ]);
 const DEFAULT_CORNER_IMAGE_ENTRANCE_ANIMATION = "none";
+// Direction-relative aliases for the positions above, mapped to [ltr, rtl] so
+// that `*-end` follows the reading direction the way inset-inline-end would.
+const CORNER_IMAGE_LOGICAL_POSITIONS = new Map([
+  ["bottom-start", ["bottom-left", "bottom-right"]],
+  ["bottom-end", ["bottom-right", "bottom-left"]],
+  ["top-start", ["top-left", "top-right"]],
+  ["top-end", ["top-right", "top-left"]],
+]);
+
+/**
+ * Resolves a corner_image position to one of CORNER_IMAGE_POSITIONS, so the
+ * rendered class is always a physical corner. Unsupported values fall back
+ * to bottom-right.
+ */
+function resolveCornerImagePosition(position) {
+  const logical = CORNER_IMAGE_LOGICAL_POSITIONS.get(position);
+  if (logical) {
+    const isRTL =
+      typeof document !== "undefined" &&
+      document.documentElement.matches(":dir(rtl)");
+    return logical[isRTL ? 1 : 0];
+  }
+  return CORNER_IMAGE_POSITIONS.has(position)
+    ? position
+    : DEFAULT_CORNER_IMAGE_POSITION;
+}
+
+/**
+ * Applies an image's `rtl` overrides when the document is right-to-left.
+ */
+function resolveDirectionalImage(image) {
+  const isRTL =
+    typeof document !== "undefined" &&
+    document.documentElement.matches(":dir(rtl)");
+  return isRTL && image?.rtl ? { ...image, ...image.rtl } : image;
+}
 
 export const MultiStageProtonScreen = props => {
   const {
@@ -484,21 +520,22 @@ export class ProtonScreen extends React.PureComponent {
     );
   }
 
-  renderPicture({
-    imageURL = "chrome://branding/content/about-logo.svg",
-    darkModeImageURL,
-    reducedMotionImageURL,
-    darkModeReducedMotionImageURL,
-    videoURL,
-    alt = "",
-    width,
-    height,
-    marginBlock,
-    marginInline,
-    style,
-    imgStyle,
-    className = "logo-container",
-  }) {
+  renderPicture(image) {
+    const {
+      imageURL = "chrome://branding/content/about-logo.svg",
+      darkModeImageURL,
+      reducedMotionImageURL,
+      darkModeReducedMotionImageURL,
+      videoURL,
+      alt = "",
+      width,
+      height,
+      marginBlock,
+      marginInline,
+      style,
+      imgStyle,
+      className = "logo-container",
+    } = resolveDirectionalImage(image);
     function getLoadingStrategy() {
       for (let url of [
         imageURL,
@@ -592,11 +629,9 @@ export class ProtonScreen extends React.PureComponent {
     );
   }
 
-  renderCornerImage() {
+  renderCornerImage(anchor) {
     const cornerImage = this.props.content.corner_image;
-    const position = CORNER_IMAGE_POSITIONS.has(cornerImage.position)
-      ? cornerImage.position
-      : DEFAULT_CORNER_IMAGE_POSITION;
+    const position = resolveCornerImagePosition(cornerImage.position);
     const entranceAnimation = cornerImage.entrance_animation ?? {};
     const entranceType = CORNER_IMAGE_ENTRANCE_ANIMATIONS.has(
       entranceAnimation.type
@@ -612,6 +647,7 @@ export class ProtonScreen extends React.PureComponent {
           reducedMotionImageURL: cornerImage.reducedMotionImageURL,
           darkModeReducedMotionImageURL:
             cornerImage.darkModeReducedMotionImageURL,
+          rtl: cornerImage.rtl,
           height: cornerImage.height,
           width: cornerImage.width,
           marginBlock: cornerImage.marginBlock,
@@ -624,7 +660,9 @@ export class ProtonScreen extends React.PureComponent {
             "--corner-image-entrance-delay": entranceAnimation.delay,
             ...cornerImage.style,
           },
-          className: `corner-image ${position} entrance-${entranceType}`,
+          className: `corner-image ${position}${
+            anchor === "screen" ? ` entrance-${entranceType}` : ""
+          }`,
         })}
       </div>
     );
@@ -992,8 +1030,14 @@ export class ProtonScreen extends React.PureComponent {
     const includeNoodles = content.has_noodles;
     const isCenterLargeFullscreen =
       content.position === "center-large" && !!content.fullscreen;
-    const includeCornerImage =
-      !!content.corner_image && isCenterLargeFullscreen;
+    // Where the corner image is anchored, which decides where it gets rendered.
+    // The fullscreen FRO layout anchors to the window, so its container stays a
+    // child of .screen. Every other layout anchors to the card instead, which
+    // means rendering inside .section-main (the positioned card wrapper).
+    let cornerImageAnchor = null;
+    if (content.corner_image) {
+      cornerImageAnchor = isCenterLargeFullscreen ? "screen" : "card";
+    }
     const secondaryCTATop = content.secondary_button_top ? (
       <SecondaryCTA
         content={content}
@@ -1069,7 +1113,9 @@ export class ProtonScreen extends React.PureComponent {
         }}
         no-rdm={content.no_rdm ? "" : null}
       >
-        {includeCornerImage ? this.renderCornerImage() : null}
+        {cornerImageAnchor === "screen"
+          ? this.renderCornerImage("screen")
+          : null}
         {isCenterPosition ? null : this.renderSecondarySection(content)}
         <div
           className={`section-main ${
@@ -1090,6 +1136,7 @@ export class ProtonScreen extends React.PureComponent {
             ])
           }
         >
+          {cornerImageAnchor === "card" ? this.renderCornerImage("card") : null}
           {isCenterLargeFullscreen ? null : secondaryCTATop}
           {includeNoodles ? this.renderNoodles() : null}
           {content.more_button ? this.renderMoreButton() : null}
@@ -1447,6 +1494,15 @@ export const screenContentShape = {
     // Ignored (falls back to the image URLs above) for users who prefer reduced
     // motion.
     videoURL: PropTypes.string,
+    // Right-to-left replacements for any of the URLs above, applied over them
+    // when the document is RTL. Omitted keys keep their base value.
+    rtl: PropTypes.shape({
+      imageURL: PropTypes.string,
+      darkModeImageURL: PropTypes.string,
+      reducedMotionImageURL: PropTypes.string,
+      darkModeReducedMotionImageURL: PropTypes.string,
+      videoURL: PropTypes.string,
+    }),
     // The <img> alt text.
     alt: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
     // The CSS style overriding the width property.
@@ -1455,8 +1511,8 @@ export const screenContentShape = {
     height: PropTypes.string,
   }),
   // An optional object representing an illustration anchored to a corner of the
-  // screen. Only rendered for screens with 'position' set to 'center-large' and
-  // 'fullscreen' set to true, which are the only ones that style it.
+  // screen. The fullscreen center-large layout anchors it to the window; every
+  // other layout anchors it to the card.
   corner_image: PropTypes.shape({
     // The image URL.
     imageURL: PropTypes.string,
@@ -1466,12 +1522,27 @@ export const screenContentShape = {
     reducedMotionImageURL: PropTypes.string,
     // The dark mode reduced motion image URL.
     darkModeReducedMotionImageURL: PropTypes.string,
+    // Right-to-left replacements for any of the URLs above, applied over them
+    // when the document is RTL. Omitted keys keep their base value.
+    rtl: PropTypes.shape({
+      imageURL: PropTypes.string,
+      darkModeImageURL: PropTypes.string,
+      reducedMotionImageURL: PropTypes.string,
+      darkModeReducedMotionImageURL: PropTypes.string,
+    }),
     // The corner the illustration is anchored to. Defaults to 'bottom-right'.
+    // The -start/-end values are direction-relative and resolve against the
+    // text direction, so they mirror in RTL; the left/right values are always
+    // that physical corner.
     position: PropTypes.oneOf([
       "bottom-left",
       "bottom-right",
       "top-left",
       "top-right",
+      "bottom-start",
+      "bottom-end",
+      "top-start",
+      "top-end",
     ]),
     // The CSS style overriding the width property.
     width: PropTypes.string,

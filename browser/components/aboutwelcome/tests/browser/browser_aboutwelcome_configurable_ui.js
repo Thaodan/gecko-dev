@@ -513,6 +513,58 @@ add_task(async function test_aboutwelcome_corner_image_positions() {
 });
 
 /**
+ * Test that the direction-relative corner positions resolve to the physical
+ * corner that matches the text direction
+ */
+add_task(async function test_aboutwelcome_corner_image_logical_positions() {
+  const LOGICAL_POSITIONS = {
+    "bottom-start": { ltr: "bottom-left", rtl: "bottom-right" },
+    "bottom-end": { ltr: "bottom-right", rtl: "bottom-left" },
+    "top-start": { ltr: "top-left", rtl: "top-right" },
+    "top-end": { ltr: "top-right", rtl: "top-left" },
+  };
+
+  for (const [position, expected] of Object.entries(LOGICAL_POSITIONS)) {
+    info(`Testing direction-relative corner image position: ${position}`);
+    // Two identical screens, so flipping the direction on the first can be
+    // observed on the second once it renders.
+    const screens = [
+      makeCornerImageScreen(`TEST_CORNER_IMAGE_${position}_LTR`, { position }),
+      makeCornerImageScreen(`TEST_CORNER_IMAGE_${position}_RTL`, { position }),
+    ];
+    let browser = await openAboutWelcome(JSON.stringify(screens));
+
+    await test_screen_content(
+      browser,
+      `resolves ${position} to ${expected.ltr} in LTR`,
+      // Expected selectors:
+      [`picture.corner-image.${expected.ltr}`],
+      // Unexpected selectors:
+      [
+        `picture.corner-image.${expected.rtl}`,
+        `picture.corner-image.${position}`,
+      ]
+    );
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      content.document.documentElement.setAttribute("dir", "rtl");
+    });
+    await onButtonClick(browser, "button.primary");
+
+    await test_screen_content(
+      browser,
+      `resolves ${position} to ${expected.rtl} in RTL`,
+      // Expected selectors:
+      [`picture.corner-image.${expected.rtl}`],
+      // Unexpected selectors:
+      [`picture.corner-image.${expected.ltr}`]
+    );
+
+    browser.closeBrowser();
+  }
+});
+
+/**
  * Test that a corner image position outside the allowlist, or omitted entirely,
  * falls back to bottom-right
  */
@@ -546,22 +598,24 @@ add_task(async function test_aboutwelcome_corner_image_fallback_position() {
 });
 
 /**
- * Test that the corner image only renders in the layout that styles it
+ * Test that layouts other than fullscreen center-large anchor the corner image
+ * to the card, by rendering it inside section-main rather than at screen level
  */
-add_task(async function test_aboutwelcome_corner_image_layout_gating() {
-  const UNSTYLED_LAYOUTS = [
+add_task(async function test_aboutwelcome_corner_image_card_anchored_layouts() {
+  const CARD_ANCHORED_LAYOUTS = [
     {
       label: "center-large without fullscreen",
       content: { fullscreen: false },
     },
     { label: "split", content: { position: "split" } },
+    { label: "center", content: { position: "center", fullscreen: false } },
   ];
 
-  for (const { label, content } of UNSTYLED_LAYOUTS) {
-    info(`Testing that the corner image is not rendered for ${label}`);
+  for (const { label, content } of CARD_ANCHORED_LAYOUTS) {
+    info(`Testing that the corner image anchors to the card for ${label}`);
     const screens = [
       makeCornerImageScreen(
-        "TEST_CORNER_IMAGE_GATING",
+        "TEST_CORNER_IMAGE_CARD_ANCHORED",
         { position: "bottom-right" },
         content
       ),
@@ -570,12 +624,26 @@ add_task(async function test_aboutwelcome_corner_image_layout_gating() {
 
     await test_screen_content(
       browser,
-      `does not render the corner image for ${label}`,
+      `renders the corner image inside section-main for ${label}`,
       // Expected selectors:
-      [".section-main"],
+      [
+        `.section-main > .corner-image-container picture.corner-image.bottom-right`,
+      ],
       // Unexpected selectors:
-      [".corner-image-container", "picture.corner-image"]
+      ["main.screen > .corner-image-container"]
     );
+
+    await test_element_styles(browser, "picture.corner-image", {
+      position: "absolute",
+      bottom: "0px",
+      right: "0px",
+    });
+
+    // The image has to be blockified, or the line box's baseline descender
+    // space stops it sitting flush with the bottom of its own picture box.
+    await test_element_styles(browser, "picture.corner-image .brand-logo", {
+      display: "block",
+    });
 
     browser.closeBrowser();
   }
@@ -1048,6 +1116,51 @@ add_task(async function test_aboutwelcome_logo_selection() {
   });
   // Test a screen config with no logos
   await testAboutWelcomeLogoFor();
+});
+
+/**
+ * Test that a corner image's `rtl` overrides are forwarded and applied
+ */
+add_task(async function test_aboutwelcome_corner_image_rtl_selection() {
+  const LTR_URL = "chrome://branding/content/icon16.png";
+  const RTL_URL = "chrome://branding/content/icon64.png";
+
+  const screens = [
+    makeCornerImageScreen("TEST_CORNER_IMAGE_RTL_1", {
+      imageURL: LTR_URL,
+      rtl: { imageURL: RTL_URL },
+    }),
+    makeCornerImageScreen("TEST_CORNER_IMAGE_RTL_2", {
+      imageURL: LTR_URL,
+      rtl: { imageURL: RTL_URL },
+    }),
+  ];
+  let browser = await openAboutWelcome(JSON.stringify(screens));
+
+  await test_screen_content(
+    browser,
+    "corner image uses the base URL in LTR",
+    // Expected selectors:
+    [`picture.corner-image .brand-logo[src="${LTR_URL}"]`],
+    // Unexpected selectors:
+    [`picture.corner-image .brand-logo[src="${RTL_URL}"]`]
+  );
+
+  await SpecialPowers.spawn(browser, [], async () => {
+    content.document.documentElement.setAttribute("dir", "rtl");
+  });
+  await onButtonClick(browser, "button.primary");
+
+  await test_screen_content(
+    browser,
+    "corner image uses the rtl URL in RTL",
+    // Expected selectors:
+    [`picture.corner-image .brand-logo[src="${RTL_URL}"]`],
+    // Unexpected selectors:
+    [`picture.corner-image .brand-logo[src="${LTR_URL}"]`]
+  );
+
+  browser.closeBrowser();
 });
 
 /**
