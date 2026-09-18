@@ -173,7 +173,6 @@ export let RemotePageAccessManager = {
         "SearchBannerDismissed",
         "OpenSearchPreferences",
         "SearchHandoff",
-        "TRIGGER_MESSAGING_EVENT",
       ],
       RPMSendQuery: [
         "IsPromoBlocked",

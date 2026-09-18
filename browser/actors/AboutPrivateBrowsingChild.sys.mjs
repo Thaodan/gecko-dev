@@ -31,9 +31,6 @@ export class AboutPrivateBrowsingChild extends RemotePageChild {
       window,
       { defineAs: "PrivateBrowsingPromoExposureTelemetry" }
     );
-    Cu.exportFunction(this.PrivateBrowsingRedesignEnabled.bind(this), window, {
-      defineAs: "PrivateBrowsingRedesignEnabled",
-    });
   }
 
   PrivateBrowsingRecordClick(source) {
@@ -53,12 +50,5 @@ export class AboutPrivateBrowsingChild extends RemotePageChild {
 
   PrivateBrowsingPromoExposureTelemetry() {
     lazy.NimbusFeatures.pbNewtab.recordExposureEvent({ once: false });
-  }
-
-  PrivateBrowsingRedesignEnabled() {
-    return Services.prefs.getBoolPref(
-      "browser.privateWindowRedesign.enabled",
-      false
-    );
   }
 }

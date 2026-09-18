@@ -1847,9 +1847,8 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
   }
   getEffectiveBackground(content) {
     if (content.position !== "split") {
-      const gradient = content.zap_border_gradient || "linear-gradient(96deg, #B89CFF 20.68%, #FF9565 79.34%)";
-      const combinedBackground = content.background && content.zap_border ? `${gradient} border-box border-area, image(${content.background}) padding-box` : content.background;
-      const combinedBackgroundStatic = content.background_static && content.zap_border ? `${gradient} border-box border-area, image(${content.background_static}) padding-box` : content.background_static;
+      const combinedBackground = content.background && content.zap_border ? `linear-gradient(96deg, #B89CFF 20.68%, #FF9565 79.34%) border-box border-area, image(${content.background}) padding-box` : content.background;
+      const combinedBackgroundStatic = content.background_static && content.zap_border ? `linear-gradient(96deg, #B89CFF 20.68%, #FF9565 79.34%) border-box border-area, image(${content.background_static}) padding-box` : content.background_static;
       return this.props.animationsPaused && content.background_static ? combinedBackgroundStatic : combinedBackground;
     }
     return this.props.animationsPaused && content.background_static ? content.background_static : content.background;
@@ -2292,10 +2291,6 @@ const screenContentShape = {
   // 'absolute_position' or 'arrow_position'. There is no effect if HCM or a
   // custom theme add-on is enabled.
   zap_shadow: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().bool),
-  // If present, a custom gradient to use in conjuction with the
-  // 'background' and 'zap_border' properties. Only applied if
-  // both other properties are present.
-  zap_border_gradient: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
   // An optional object representing a large illustration to show above other
   // content.
   logo: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().shape({
@@ -5559,17 +5554,15 @@ const TileList = props => {
   if (!content) {
     return null;
   }
-  const CONFIGURABLE_STYLES = ["background", "borderRadius", "color", "display", "height", "listStyle", "marginBlock", "marginBlockStart", "marginBlockEnd", "marginInline", "marginInlineStart", "paddingBlock", "paddingBlockStart", "paddingBlockEnd", "paddingInline", "paddingInlineStart", "paddingInlineEnd", "width"];
+  const CONFIGURABLE_STYLES = ["background", "borderRadius", "height", "marginBlock", "marginBlockStart", "marginBlockEnd", "marginInline", "paddingBlock", "paddingBlockStart", "paddingBlockEnd", "paddingInline", "paddingInlineStart", "paddingInlineEnd", "width"];
   return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     className: "tile-list-container"
   }, content.items.map(({
     icon,
-    text,
-    style
+    text
   }, index) => /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     key: index,
-    className: "tile-list-item",
-    style: _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_1__.MultiStageUtils.getValidStyle(style, CONFIGURABLE_STYLES)
+    className: "tile-list-item"
   }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     className: "tile-list-icon-wrapper"
   }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
