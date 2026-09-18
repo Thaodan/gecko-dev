@@ -224,6 +224,12 @@ let Player = {
   isUnpipWithoutPauseShortcut: e => e.shiftKey === true,
 
   /**
+   * Becomes true once the first Tab press puts focus on the play/pause or
+   * seek backwards buttons.
+   */
+  didTabOverrideControlFocus: false,
+
+  /**
    * Initializes the player browser, and sets up the initial state.
    *
    * @param {number} id
@@ -478,6 +484,22 @@ let Player = {
         if (event.keyCode == KeyEvent.DOM_VK_TAB) {
           this.controls.setAttribute(KEYING_ATTRIBUTE, true);
           this.showVideoControls();
+          // Tab order follows DOM order. To ensure Tab lands on primary controls
+          // after opening PiP for the first time, override the default Tab
+          // behaviour and focus on the primary buttons.
+          // Do not override in init() to prevent regressing the "space" play/pause shortcut.
+          if (
+            !this.didTabOverrideControlFocus &&
+            !this.controls.contains(document.activeElement)
+          ) {
+            this.didTabOverrideControlFocus = true;
+            event.preventDefault();
+            if (!event.shiftKey) {
+              this.playpauseButton.focus();
+            } else {
+              this.seekBackward.focus();
+            }
+          }
         } else if (event.keyCode == KeyEvent.DOM_VK_ESCAPE) {
           let isSettingsPanelInFocus = this.settingsPanel.contains(
             document.activeElement
@@ -1478,6 +1500,11 @@ let Player = {
   get seekBackward() {
     delete this.seekBackward;
     return (this.seekBackward = document.getElementById("seekBackward"));
+  },
+
+  get playpauseButton() {
+    delete this.playpauseButton;
+    return (this.playpauseButton = document.getElementById("playpause"));
   },
 
   get seekForward() {
