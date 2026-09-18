@@ -939,6 +939,9 @@ const TargetingGetters = {
   get isDefaultBrowserUncached() {
     return ShellService.isDefaultBrowser();
   },
+  get hasAttemptedSetDefault() {
+    return ShellService.attemptedSetDefaultThisSession;
+  },
   get isOneClickSetDefaultEnabled() {
     return QueryCache.getters.isOneClickSetDefaultEnabled
       .get()

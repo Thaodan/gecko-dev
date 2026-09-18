@@ -163,6 +163,11 @@ let ShellServiceInternal = {
     );
   },
 
+  _attemptedSetDefaultThisSession: false,
+  get attemptedSetDefaultThisSession() {
+    return this._attemptedSetDefaultThisSession;
+  },
+
   isDefaultBrowser(startupCheck, forAllTypes) {
     // If this is the first browser window, maintain internal state that we've
     // checked this session (so that subsequent window opens don't show the
@@ -444,6 +449,8 @@ let ShellServiceInternal = {
       lazy.log.warn("Setting the default browser is disallowed by policy");
       return;
     }
+
+    this._attemptedSetDefaultThisSession = true;
 
     // On Windows, our best chance is to set UserChoice, so try that first.
     if (
