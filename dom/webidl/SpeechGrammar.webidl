@@ -15,6 +15,7 @@
 interface SpeechGrammar {
     constructor();
 
+    [Throws]
     attribute DOMString src;
     [Throws]
     attribute float weight;

@@ -35,9 +35,13 @@ JSObject* SpeechGrammar::WrapObject(JSContext* aCx,
   return SpeechGrammar_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-void SpeechGrammar::GetSrc(nsString& aRetVal) const { aRetVal = mSrc; }
+void SpeechGrammar::GetSrc(nsString& aRetVal, ErrorResult& aRv) const {
+  aRetVal = mSrc;
+}
 
-void SpeechGrammar::SetSrc(const nsAString& aArg) { mSrc = aArg; }
+void SpeechGrammar::SetSrc(const nsAString& aArg, ErrorResult& aRv) {
+  mSrc = aArg;
+}
 
 float SpeechGrammar::GetWeight(ErrorResult& aRv) const {
   aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
