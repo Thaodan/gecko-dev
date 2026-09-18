@@ -1,15 +1,28 @@
 ---
 name: stack-split-commit
-description: Steps to reliably split a commit/change using the jj (jujutsu) VCS
+description: Split one large or hard-to-review commit into several commits that each stand on their own for review, in a git or a Jujutsu (jj) checkout. Use when asked to split a commit or patch, break up a big diff for review, or make a lumped commit more reviewable. One commit at a time - `stack-reorganize` restructures a whole stack.
 allowed-tools:
+  - Bash(git log:*)
+  - Bash(git show:*)
+  - Bash(git diff:*)
+  - Bash(git status:*)
+  - Bash(git branch:*)
+  - Bash(git checkout:*)
+  - Bash(git restore:*)
+  - Bash(git commit:*)
+  - Bash(git rebase:*)
+  - Bash(git reset:*)
+  - Bash(git apply:*)
   - Bash(jj log:*)
   - Bash(jj show:*)
+  - Bash(jj diff:*)
   - Bash(jj split:*)
   - Bash(jj commit:*)
   - Bash(jj new:*)
   - Bash(jj describe:*)
   - Bash(jj rebase:*)
   - Bash(jj edit:*)
+  - Bash(jj abandon:*)
   - Bash(jj restore:*)
   - Bash(jj file show:*)
   - Read
@@ -17,60 +30,67 @@ allowed-tools:
   - Glob
 ---
 
-# If the commit is to be split based on path
+# Splitting a commit into reviewable pieces
 
-1. Identify the commit to split - Use jj log to find the revision ID of the commit you want to split
-2. View the files in the commit - Use jj log -r <revision> --stat to see which files are in the
-commit
-3. Split the commit - Use jj split -r <revision> -m "description for first commit" <first-file-path>
-- The -r flag specifies which revision to split
-- The -m flag sets the description for the commit with the selected files
-- The file path argument specifies which file(s) go in the first commit
-- All remaining files automatically go into a new commit on top
-4. Update the second commit's description - Use jj describe -r <new-revision-id> -m "description for
-second commit" to set a proper description for the automatically created second commit
-5. Verify the split - Use jj log --stat to confirm each commit now contains only its respective file
+Split without changing the final tree. Every prefix of the result has to leave
+the tree building, linting and passing tests, and no commit may mention a
+concept that only a later commit introduces.
 
-Key points:
-- jj split with a fileset argument is non-interactive and deterministic (reliable)
-- The original commit keeps its position in history with the selected files
-- The remaining files go into a new commit automatically placed on top
-- Descendant commits are automatically rebased
+Pick the cuts by the rules below, then follow the mechanics for this
+checkout's version control system. Use jj where the checkout has a `.jj`
+directory at its root: it rebases descendants for you and records conflicts
+instead of halting. Do not fall back to git commands there even if available.
 
-# If the commit is to be split based on hunks (split changes in the same file)
+- Jujutsu (jj): `references/jj.md`
+- git: `references/git.md`
 
-1. Export the full diff
-jj show -r <changeid> --git > /tmp/full.patch
-2. Manually split the patch into separate files
-- Open full.patch in an editor
-- Create hunk-1.patch containing only the required hunks
-- Create hunk-2.patch containing only the remaining hunks
-- Etc.
-- IMPORTANT: Store patches outside the repo (e.g., /tmp/) so they don't disappear when switching revisions
-3. Go back to parent
-jj edit <parent-revision-id>
-4. Apply each patch and make
-jj new -m "description of hunk 1"
-patch -p1 < /tmp/hunk-1.patch
+## Split by concern, not by "new vs. deleted"
 
-jj new -m "description of hunk 2"
-patch -p1 < git apply /tmp/hunk-2.patch
+A reviewer checks a move or a replacement by diffing the new code against the
+code it replaces, so both go in the **same** commit.
 
-repeat as needed
+- A behavior-neutral **move**, such as inlining logic into a shared helper, is
+  one commit, old-out and new-in side by side.
+- A genuine **shape change**, such as an IPDL message or a data-format swap, is
+  a separate commit, again with old and new together.
+- A piece that both moves and changes behavior is split into the neutral move
+  and the behavior change.
 
-5. Abandon the original commit
-jj abandon <original-revision-id>
+## A cut may need code that neither end state contains
 
-Advantages:
-- ✅ Preserves exact line numbers and context
-- ✅ Good for complex hunks with specific formatting
-- ✅ Can be partially automated with tools like splitpatch or filterdiff
-- ✅ Patch files serve as documentation of what was split
+The intermediate state often needs code written for it alone: a
+compatibility stub so the earlier commit still builds, or an interim form of a
+function that neither the parent nor the target has. Write it; a later commit
+removes it. Don't assume every piece falls out of the original diff.
 
----
-Key Principles for RELIABLE Splitting:
+## Revisit each piece's message
 
-1. Avoid interactive tools - They're not scriptable or reproducible
-2. Store artifacts outside the repo - Patch files should be in /tmp/ or similar
-3. Verify each step - Use jj diff/jj show to confirm each commit contains only what you expect
-4. Clean up - Abandon the original multi-hunk commit when done
+The original's message now over-scopes, since it still describes what moved
+out: narrow it to its own piece, and write the new piece's message from
+scratch. The `firefox-commits` skill says what a message contains; what the
+split adds is a body line for what only the split made true, such as a claim
+of behavior-neutrality for a moved piece or an ordering that looks incidental
+but isn't. When a subagent builds the pieces, specify each subject and only
+the bodies that are warranted.
+
+## Review-tool side
+
+Submitting the split creates the new revisions but leaves the stack's
+parent/child edges where they were. `moz-phab reorg [start_rev] [end_rev]`
+recomputes them from the local order and previews the changes before acting
+(`docs/contributing/stack_quickref.md`).
+
+**Stop if the preview proposes abandoning a revision.** `reorg` abandons every
+revision that is in the remote stack but not in the local range (those already
+abandoned excepted), and narrowing the range grows that set: a WIP tip above
+the range and the landed floor of a partially-landed stack are remote-only
+under any range. `--no-abandon` re-wires the edges without the abandon
+transactions. Never re-push without explicit approval.
+
+## Splitting a revision that is already in review
+
+Keep the original revision on the piece that retains the subject, usually the
+higher-level concept: it keeps the `Differential Revision` trailer, so its
+revision updates in place with a smaller diff, and the extracted piece lands as
+`(New)` below it. The submit does not make the retained revision depend on the
+new one; `moz-phab reorg` does, per above. Revisit both messages as above.
