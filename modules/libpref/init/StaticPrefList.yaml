@@ -19492,6 +19492,12 @@
   value: 52428800  # 50MB
   mirror: always
 
+- name: security.connection_allowlists.enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
+
 # Which mechanism the secret decoder ring should use for encryption. Decryption
 # can always happen with all mechanisms.
 # 0 - DES3_CBC
