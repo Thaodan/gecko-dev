@@ -2368,15 +2368,14 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::GetTransformValue(
    * using the named transforms.  Until a real solution is found, we'll just
    * use this approach.
    */
-
-  // The zoomed refbox is used so we can resolve the percentages with the
-  // already zoomed lengths, and then unzoom everything together.
   nsStyleTransformMatrix::TransformReferenceBox refBox(mInnerFrame, nsRect());
   gfx::Matrix4x4 matrix = nsStyleTransformMatrix::ReadTransforms(
       aTransform, refBox, float(mozilla::AppUnitsPerCSSPixel()),
-      mInnerFrame->Style()->EffectiveZoom(),
-      nsStyleTransformMatrix::Zoomed::
-          No);  // We need to unzoom the translations for GetComputedStyle().
+      mozilla::StyleZoom::ONE);  // One is passed in, as computed value does not
+                                 // need zooming
+  // TODO(salipov, bug 2045846): Fix zooming for transforms other than matrix.
+  // Note that unzooming may be neded here for transforms using lengths as
+  // opposed to numbers.
 
   return MatrixToCSSValue(matrix);
 }

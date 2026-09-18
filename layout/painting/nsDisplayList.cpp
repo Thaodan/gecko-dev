@@ -6537,12 +6537,11 @@ Matrix4x4 nsDisplayTransform::GetResultingTransformMatrixInternal(
   if (aProperties.HasTransform()) {
     // Calling from the compositor side, where we don't have access to frames
     // but transforms already have appropriate zoom applied.
-    const StyleZoom zoom =
-        frame ? frame->Style()->EffectiveZoom() : StyleZoom::ONE;
+    const auto zoom = frame ? frame->Style()->EffectiveZoom() : StyleZoom::ONE;
     result = nsStyleTransformMatrix::ReadTransforms(
         aProperties.mTranslate, aProperties.mRotate, aProperties.mScale,
         aProperties.mMotion.ptrOr(nullptr), aProperties.mTransform, aRefBox,
-        aAppUnitsPerPixel, zoom, nsStyleTransformMatrix::Zoomed::Yes);
+        aAppUnitsPerPixel, zoom);
   }
 
   // Apply any translation due to 'transform-origin' and/or 'transform-box':

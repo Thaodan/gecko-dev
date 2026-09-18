@@ -12177,7 +12177,7 @@ gfx::Matrix nsIFrame::ComputeWidgetTransform() const {
   int32_t appUnitsPerDevPixel = PresContext()->AppUnitsPerDevPixel();
   gfx::Matrix4x4 matrix = nsStyleTransformMatrix::ReadTransforms(
       uiReset->mMozWindowTransform, refBox, float(appUnitsPerDevPixel),
-      mComputedStyle->EffectiveZoom(), nsStyleTransformMatrix::Zoomed::Yes);
+      mComputedStyle->EffectiveZoom());
 
   gfx::Matrix result2d;
   if (!matrix.CanDraw2D(&result2d)) {
