@@ -212,6 +212,9 @@ std::ostream& operator<<(std::ostream& aStream, nsDirection aDirection) {
 struct nsContentAndOffset {
   nsIContent* mContent = nullptr;
   int32_t mOffset = 0;
+  // Whether the boundary is a newline inside a text node rather than a <br> or
+  // a block frame.
+  bool mIsTerminalNewlineInText = false;
 };
 
 #include "nsILineIterator.h"
@@ -9752,6 +9755,7 @@ static nsContentAndOffset FindLineBreakInText(nsIFrame* aFrame,
   int32_t endOffset = aFrame->GetOffsets().second;
   result.mContent = aFrame->GetContent();
   result.mOffset = endOffset - (aDirection == eDirPrevious ? 0 : 1);
+  result.mIsTerminalNewlineInText = true;
   return result;
 }
 
@@ -9873,6 +9877,14 @@ nsresult nsIFrame::PeekOffsetForParagraph(PeekOffsetStruct* aPos) {
     if (blockFrameOrBR.mContent) {
       aPos->mResultContent = blockFrameOrBR.mContent;
       aPos->mContentOffset = blockFrameOrBR.mOffset;
+      if (blockFrameOrBR.mIsTerminalNewlineInText) {
+        // The boundary sits on the edge between the text frame ending with the
+        // newline and the one starting the next line, and it belongs to the
+        // latter. Associating the caret with the end of the preceding line
+        // instead leaves a later logical character move with nothing to do: it
+        // only re-associates the caret without advancing the offset.
+        aPos->mAttach = CaretAssociationHint::After;
+      }
       break;
     }
     frame = parent;
