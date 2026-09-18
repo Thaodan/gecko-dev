@@ -10,6 +10,7 @@ import {
   makeJSONSchemaBlob,
 } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
 import { Schedule } from "moz-src:///browser/components/aiwindow/models/agents/Schedule.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -31,6 +32,20 @@ ChromeUtils.defineLazyGetter(lazy, "log", () =>
     maxLogLevelPref: "browser.smartwindow.monitorAgent.logLevel",
   })
 );
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "expiryNoMatchDays",
+  "browser.smartwindow.agent.expiry.noMatchDays"
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "expiryMaxAgeDays",
+  "browser.smartwindow.agent.expiry.maxAgeDays"
+);
+
+// Milliseconds in a day, to turn the expiry prefs (in days) into elapsed time.
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 // TODO: Move these constants to RS: https://bugzilla.mozilla.org/show_bug.cgi?id=2054153
 export const MAX_HISTORY_ENTRIES = 30;
@@ -61,6 +76,18 @@ export const MONITOR_ERROR_CODES = Object.freeze({
   PROMPT_LOAD: "prompt_load_error",
   UNKNOWN: "unknown_error",
   ACTIVE_LIMIT: "active_limit_reached",
+});
+
+// Why a monitor paused itself. Stored on the monitor's expiry record.
+export const MONITOR_EXPIRY_REASONS = Object.freeze({
+  NO_MATCH: "no_match",
+  MAX_AGE: "max_age",
+});
+
+// Reads each expiry rule's window in days from its pref.
+const EXPIRY_RULE_DAYS = Object.freeze({
+  [MONITOR_EXPIRY_REASONS.NO_MATCH]: () => lazy.expiryNoMatchDays,
+  [MONITOR_EXPIRY_REASONS.MAX_AGE]: () => lazy.expiryMaxAgeDays,
 });
 
 /**
@@ -146,6 +173,14 @@ export class Monitor {
    * @param {string} [options.updatedAt] - Last update timestamp.
    * @param {string} [options.lastRunTime] - Last run timestamp.
    * @param {string} [options.nextRunTime] - Next run timestamp.
+   * @param {string} [options.activeSince] - Start of the current active
+   *   period, which the auto-expiry windows are measured from. Reset when the
+   *   monitor is resumed or its definition is edited.
+   * @param {string} [options.lastMatchAt] - Timestamp of the last run whose
+   *   condition was met.
+   * @param {{ expiredAt: string, reason: string }} [options.expiry] - Set
+   *   when the monitor paused itself, with the MONITOR_EXPIRY_REASONS entry
+   *   that applied.
    * @param {object[]} [options.history] - Saved monitor history entries.
    * @param {{ capturedAt: string, pageContent: string }} [options.initialSnapshot] -
    *   Page content extracted when the monitor was created, used as the
@@ -164,6 +199,9 @@ export class Monitor {
     updatedAt,
     lastRunTime,
     nextRunTime,
+    activeSince,
+    lastMatchAt = null,
+    expiry = null,
     history = [],
     initialSnapshot = null,
   } = {}) {
@@ -176,6 +214,7 @@ export class Monitor {
     createdAt ??= now;
     updatedAt ??= createdAt;
     lastRunTime ??= createdAt;
+    activeSince ??= createdAt;
 
     this.id = id;
     this.title = String(title ?? "").trim();
@@ -189,6 +228,9 @@ export class Monitor {
     this.lastRunTime = lastRunTime;
     this.nextRunTime =
       nextRunTime ?? schedule.getNextRunTime(lastRunTime).toISOString();
+    this.activeSince = activeSince;
+    this.lastMatchAt = lastMatchAt;
+    this.expiry = expiry;
     this.history = Array.isArray(history) ? history : [];
     this.initialSnapshot = initialSnapshot;
 
@@ -207,6 +249,7 @@ export class Monitor {
       throw new Error("Monitor is invalid.");
     }
 
+    const history = normalizeLoadedHistory(savedMonitor.history);
     return new Monitor({
       id: savedMonitor.id,
       title: savedMonitor.title,
@@ -219,7 +262,11 @@ export class Monitor {
       updatedAt: savedMonitor.updatedAt,
       lastRunTime: savedMonitor.lastRunTime,
       nextRunTime: savedMonitor.nextRunTime,
-      history: normalizeLoadedHistory(savedMonitor.history),
+      activeSince: savedMonitor.activeSince,
+      // monitors stored before lastMatchAt existed fall back to their history
+      lastMatchAt: savedMonitor.lastMatchAt ?? latestMatchTime(history),
+      expiry: savedMonitor.expiry ?? null,
+      history,
       initialSnapshot: savedMonitor.initialSnapshot ?? null,
     });
   }
@@ -251,6 +298,16 @@ export class Monitor {
     // may happen with manual runs or if the previous run took longer than the schedule interval
     if (this.#running) {
       return;
+    }
+
+    // a scheduled run of a monitor that hit an auto-expiry rule pauses it
+    // instead of checking; manual "check now" runs still go through
+    if (!manual) {
+      const expiryReason = this.getExpiryReason(checkedAt);
+      if (expiryReason) {
+        await lazy.MonitorAgent._expireMonitor(this, expiryReason);
+        return;
+      }
     }
 
     this.#running = true;
@@ -290,6 +347,9 @@ export class Monitor {
       historyEntry.status = "success";
       historyEntry.resultExplanation = result.explanation;
       historyEntry.conditionMet = result.conditionMet;
+      if (result.conditionMet) {
+        this.lastMatchAt = historyEntry.checkedAt;
+      }
     } catch (error) {
       historyEntry.status = "error";
       historyEntry.resultExplanation = error.message || String(error);
@@ -567,6 +627,33 @@ export class Monitor {
   }
 
   /**
+   * Auto-expiry rule the monitor has hit, or null while it may keep running.
+   * The maximum lifetime is measured from activeSince and the no-match window
+   * from the later of activeSince and lastMatchAt. A rule whose pref is zero
+   * or negative is disabled.
+   *
+   * @param {Date} [now]
+   * @returns {string|null} One of MONITOR_EXPIRY_REASONS, or null.
+   */
+  getExpiryReason(now = new Date()) {
+    const activeSince = Date.parse(this.activeSince);
+    if (!Number.isFinite(activeSince)) {
+      return null;
+    }
+    if (expiryRuleElapsed(MONITOR_EXPIRY_REASONS.MAX_AGE, activeSince, now)) {
+      return MONITOR_EXPIRY_REASONS.MAX_AGE;
+    }
+    const lastMatch = Date.parse(this.lastMatchAt);
+    const noMatchSince = Number.isFinite(lastMatch)
+      ? Math.max(activeSince, lastMatch)
+      : activeSince;
+    if (expiryRuleElapsed(MONITOR_EXPIRY_REASONS.NO_MATCH, noMatchSince, now)) {
+      return MONITOR_EXPIRY_REASONS.NO_MATCH;
+    }
+    return null;
+  }
+
+  /**
    * Parse the structured monitor result from a model response. Falls back to a
    * not-met result using the raw text when the JSON can't be parsed.
    *
@@ -623,6 +710,9 @@ export class Monitor {
       updatedAt: this.updatedAt,
       lastRunTime: this.lastRunTime,
       nextRunTime: this.nextRunTime,
+      activeSince: this.activeSince,
+      lastMatchAt: this.lastMatchAt,
+      expiry: this.expiry ? { ...this.expiry } : null,
       history: this.history.map(entry => ({ ...entry })),
       initialSnapshot: this.initialSnapshot
         ? { ...this.initialSnapshot }
@@ -743,6 +833,31 @@ async function withTimeout(promise, timeoutMs, onTimeout = null) {
   }
 }
 
+function latestMatchTime(history) {
+  return history.findLast(entry => entry?.conditionMet)?.checkedAt ?? null;
+}
+
+/**
+ * Number of days after which an auto-expiry rule pauses a monitor. Zero or
+ * negative means the rule is disabled, as does an unknown reason.
+ *
+ * @param {string} reason - One of MONITOR_EXPIRY_REASONS.
+ * @returns {number}
+ */
+export function expiryRuleDays(reason) {
+  const days = EXPIRY_RULE_DAYS[reason];
+  if (!days) {
+    lazy.log.error(`Unknown monitor expiry reason: ${reason}`);
+    return 0;
+  }
+  return days();
+}
+
+function expiryRuleElapsed(reason, sinceMs, now) {
+  const days = expiryRuleDays(reason);
+  return days > 0 && now.getTime() - sinceMs >= days * DAY_MS;
+}
+
 // A "running" entry that survived to a reload means the run was interrupted
 // (crash, shutdown) before it could finish, so reconcile it to an error.
 function normalizeLoadedHistory(history) {
@@ -850,6 +965,7 @@ function recordMonitorRunTelemetry(
     urls: monitor.watchUrls.length,
     length: monitor.monitorPrompt.length,
     age: monitorAgeMs(monitor),
+    active_age: monitorAgeMs(monitor, monitor.activeSince),
     schedule_type: monitor.schedule.type,
     prompt_version: promptVersion,
     enabled: monitor.enabled,
@@ -873,9 +989,15 @@ function recordMonitorRunTelemetry(
   Glean.smartWindow.monitorComplete.record(completeExtra);
 }
 
-export function monitorAgeMs(monitor) {
-  const createdAt = Date.parse(monitor.createdAt);
-  return Number.isFinite(createdAt) ? Math.max(0, Date.now() - createdAt) : 0;
+/**
+ * @param {Monitor} monitor
+ * @param {string} [since] - Timestamp to measure from, the creation time by
+ *   default.
+ * @returns {number} Milliseconds elapsed, 0 for an unparsable timestamp.
+ */
+export function monitorAgeMs(monitor, since = monitor.createdAt) {
+  const start = Date.parse(since);
+  return Number.isFinite(start) ? Math.max(0, Date.now() - start) : 0;
 }
 
 /**

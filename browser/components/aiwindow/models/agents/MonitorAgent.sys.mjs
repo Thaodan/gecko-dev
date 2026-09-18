@@ -5,11 +5,13 @@
 import {
   Monitor,
   MonitorLimitError,
+  expiryRuleDays,
   monitorAgeMs,
   trimAndFilterWatchUrls,
   urlListsEqual,
   TOTAL_NUM_MONITORS,
   MONITOR_ERROR_CODES,
+  MONITOR_EXPIRY_REASONS,
   MONITOR_PROMPT_VERSION,
   MONITOR_AGENTS_CHANGED_TOPIC,
   MONITOR_CONDITION_MET_TOPIC,
@@ -24,7 +26,16 @@ export {
   TOTAL_NUM_URLS_IN_MONITOR,
   MONITOR_AGENTS_CHANGED_TOPIC,
   MONITOR_CONDITION_MET_TOPIC,
+  MONITOR_EXPIRY_REASONS,
 } from "moz-src:///browser/components/aiwindow/models/agents/Monitor.sys.mjs";
+
+// Notification body shown for each auto-expiry reason.
+const EXPIRY_BODY_IDS = Object.freeze({
+  [MONITOR_EXPIRY_REASONS.NO_MATCH]:
+    "ai-tasks-monitor-expired-notification-body-no-match",
+  [MONITOR_EXPIRY_REASONS.MAX_AGE]:
+    "ai-tasks-monitor-expired-notification-body-max-age",
+});
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -66,6 +77,7 @@ const gNotifiedRunIds = new Set();
 export const NOTIFICATION_ACTIONS = {
   SNOOZE: "monitor-snooze",
   DISMISS: "monitor-dismiss",
+  RESUME: "monitor-resume",
 };
 
 function isShuttingDown() {
@@ -104,6 +116,7 @@ function monitorTelemetryExtra(monitor) {
     urls: monitor.watchUrls.length,
     length: monitor.monitorPrompt.length,
     age: monitorAgeMs(monitor),
+    active_age: monitorAgeMs(monitor, monitor.activeSince),
     schedule_type: monitor.schedule.type,
     prompt_version: MONITOR_PROMPT_VERSION,
     enabled: monitor.enabled,
@@ -133,6 +146,17 @@ export const MonitorAgent = {
 
     for (const monitor of gMonitors.values()) {
       monitor.restore();
+      // a monitor that outlived its expiry window while the browser was
+      // closed is paused right away instead of waiting for its next run
+      const expiryReason = monitor.enabled && monitor.getExpiryReason();
+      if (expiryReason) {
+        try {
+          await this._expireMonitor(monitor, expiryReason);
+        } catch (error) {
+          lazy.log.error(`Failed to expire monitor ${monitor.id}`, error);
+        }
+        continue;
+      }
       monitor.scheduleNextRun();
     }
   },
@@ -207,7 +231,9 @@ export const MonitorAgent = {
     }
 
     const next = {
+      activeSince: monitor.activeSince,
       enabled: monitor.enabled,
+      expiry: monitor.expiry,
       monitorPrompt: monitor.monitorPrompt,
       nextRunTime: monitor.nextRunTime,
       schedule: monitor.schedule,
@@ -265,29 +291,35 @@ export const MonitorAgent = {
       next.title !== monitor.title ||
       !urlListsEqual(next.watchUrls, monitor.watchUrls);
 
-    // save old in case the update fails, so we can restore it
-    const previous = {
-      enabled: monitor.enabled,
-      initialSnapshot: monitor.initialSnapshot,
-      monitorPrompt: monitor.monitorPrompt,
-      nextRunTime: monitor.nextRunTime,
-      schedule: monitor.schedule,
-      title: monitor.title,
-      updatedAt: monitor.updatedAt,
-      watchUrls: monitor.watchUrls,
-    };
+    const now = new Date().toISOString();
+    const resumed = !monitor.enabled && next.enabled;
+    // Only a resume clears the expiry record; an edit of a still-paused
+    // monitor keeps the reason it paused itself.
+    if (resumed) {
+      next.expiry = null;
+    }
+    // Resuming or editing restarts the auto-expiry windows, otherwise a
+    // monitor resumed after expiring would pause itself again on its next run.
+    // lastMatchAt is kept: the no-match window starts at the later of it and
+    // activeSince, so an older match no longer counts anyway.
+    if (resumed || definitionChanged) {
+      next.activeSince = now;
+    }
+    next.updatedAt = now;
+    if (definitionChanged) {
+      next.initialSnapshot = null;
+    }
 
-    monitor.enabled = next.enabled;
-    monitor.monitorPrompt = next.monitorPrompt;
-    monitor.nextRunTime = next.nextRunTime;
-    monitor.schedule = next.schedule;
-    monitor.title = next.title;
-    monitor.watchUrls = next.watchUrls;
-    monitor.updatedAt = new Date().toISOString();
+    // save old in case the update fails, so we can restore it; every field
+    // written to the monitor is a key of next, so previous is derived from it
+    const previous = Object.fromEntries(
+      Object.keys(next).map(key => [key, monitor[key]])
+    );
+
+    Object.assign(monitor, next);
     if (definitionChanged) {
       // stop any in-flight capture so a stale baseline can't land post-edit
       monitor.cancelSnapshotCapture();
-      monitor.initialSnapshot = null;
     }
     try {
       await this._saveAndNotify(monitor);
@@ -463,6 +495,87 @@ export const MonitorAgent = {
     if (monitor) {
       this._notifyIfConditionMet(monitor);
     }
+  },
+
+  /**
+   * Pauses a monitor that hit an auto-expiry rule, records why so the UI can
+   * tell, and lets the user know with a desktop notification offering to
+   * resume it.
+   *
+   * @param {Monitor} monitor
+   * @param {string} reason - One of MONITOR_EXPIRY_REASONS.
+   */
+  async _expireMonitor(monitor, reason) {
+    const now = new Date().toISOString();
+    const previous = {
+      enabled: monitor.enabled,
+      expiry: monitor.expiry,
+      updatedAt: monitor.updatedAt,
+    };
+    monitor.clearTimer();
+    monitor.enabled = false;
+    monitor.expiry = { expiredAt: now, reason };
+    monitor.updatedAt = now;
+    try {
+      await this._saveAndNotify(monitor);
+    } catch (error) {
+      // keep running in memory to match the store, and try again on the next
+      // scheduled slot rather than right away
+      Object.assign(monitor, previous);
+      monitor.nextRunTime = monitor.schedule.getNextRunTime(now).toISOString();
+      monitor.scheduleNextRun();
+      throw error;
+    }
+    lazy.log.info(`Monitor ${monitor.id} expired: ${reason}`);
+    Glean.smartWindow.monitorDisable.record(monitorTelemetryExtra(monitor));
+    this._notifyExpired(monitor, reason);
+  },
+
+  /**
+   * Desktop notification telling the user a monitor paused itself. Clicking
+   * the body opens the tasks page, the "resume" action turns the monitor back
+   * on. Sent even when the monitor's match notifications are muted, since it
+   * is about the monitor stopping rather than a match.
+   *
+   * @param {Monitor} monitor
+   * @param {string} reason - One of MONITOR_EXPIRY_REASONS.
+   */
+  _notifyExpired(monitor, reason) {
+    const bodyId = EXPIRY_BODY_IDS[reason];
+    if (!bodyId) {
+      lazy.log.error(`Unknown monitor expiry reason: ${reason}`);
+      return;
+    }
+    const id = monitor.id;
+    const recordClick = clickType =>
+      Glean.smartWindow.monitorNotificationClick.record({
+        ...monitorTelemetryExtra(monitor),
+        click_type: clickType,
+      });
+
+    this._showMonitorAlert(monitor, {
+      textId: bodyId,
+      textArgs: { days: expiryRuleDays(reason) },
+      actions: [
+        {
+          action: NOTIFICATION_ACTIONS.RESUME,
+          titleId: "ai-tasks-monitor-expired-notification-resume",
+        },
+      ],
+      onClick: action => {
+        if (action === NOTIFICATION_ACTIONS.RESUME) {
+          recordClick("resume");
+          this.pauseMonitor(id, false).catch(error =>
+            lazy.log.error("Failed to resume expired monitor", error)
+          );
+          return;
+        }
+        if (!action) {
+          recordClick("open_tasks");
+          this._openWatchedUrl(TASKS_PAGE_URL);
+        }
+      },
+    });
   },
 
   /**

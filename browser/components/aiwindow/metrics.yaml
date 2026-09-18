@@ -1868,6 +1868,12 @@ smart_window:
         unit: ms
         description: >
           Age of the monitor in milliseconds since it was created.
+      active_age:
+        type: quantity
+        unit: ms
+        description: >
+          Milliseconds since the monitor's current active period began: its
+          creation, or the last time it was resumed or edited.
       schedule_type:
         type: string
         description: >
@@ -1925,7 +1931,8 @@ smart_window:
   monitor_disable:
     type: event
     description: |
-      Recorded when a Smart Window monitor is disabled.
+      Recorded when a Smart Window monitor is disabled, either by the user or
+      because it paused itself after running too long without a match.
     bugs: *monitor_bugs
     data_reviews: *monitor_data_reviews
     data_sensitivity:
@@ -2007,6 +2014,7 @@ smart_window:
         type: string
         description: >
           Type of notification interaction: "open_url" (body clicked to open watched page), "snooze" (snooze button clicked), or "dismiss" (dismiss button clicked to mute notifications).
+          For the notification sent when a monitor pauses itself: "open_tasks" (body clicked to open the tasks page) or "resume" (resume button clicked).
 
   # The "Organize Tabs" events below describe one user journey, so they share a
   # vocabulary of extra keys. None of them record a URL, a tab title, or a

@@ -55,6 +55,17 @@ ai-tasks-monitor-created-notification-body =
        *[other] Now watching { $site } and { $extraCount } other pages. You’ll get a notification like this one when there’s a match.
     }
 
+# Desktop notification shown when a monitor pauses itself, either because it
+# went a long time without its condition being met or because it reached its
+# maximum lifetime. The notification title is the monitor's name.
+# Variables:
+#   $days (Number) - Number of days the monitor ran without a match
+ai-tasks-monitor-expired-notification-body-no-match = This task was automatically paused after { $days } days without a match. You can resume it anytime.
+# Variables:
+#   $days (Number) - Number of days the monitor has been running
+ai-tasks-monitor-expired-notification-body-max-age = This task was automatically paused after { $days } days. You can resume it anytime.
+ai-tasks-monitor-expired-notification-resume = Resume
+
 # Smart Window Alerts
 # This file contains localized strings for the Smart Window alerts feature,
 # which allows users to create alerts to monitor webpages for changes.
