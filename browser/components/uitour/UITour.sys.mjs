@@ -419,6 +419,11 @@ export var UITour = {
         break;
       }
 
+      case "showHome": {
+        this.showHome(window, browser, data.hash);
+        break;
+      }
+
       case "getConfiguration": {
         if (typeof data.configuration != "string") {
           lazy.log.warn("getConfiguration: No configuration option specified");
@@ -1497,9 +1502,10 @@ export var UITour = {
     }
   },
 
-  showNewTab(aWindow, aBrowser, aHash) {
+  // Shared by showNewTab and showHome.
+  _showPage(aWindow, aBrowser, aBaseUrl, aHash) {
     aWindow.gURLBar.focus();
-    let url = "about:newtab";
+    let url = aBaseUrl;
     if (typeof aHash == "string" && /^[a-zA-Z0-9_-]+$/.test(aHash)) {
       url += "#" + aHash;
     }
@@ -1511,6 +1517,14 @@ export var UITour = {
           {}
         ),
     });
+  },
+
+  showNewTab(aWindow, aBrowser, aHash) {
+    this._showPage(aWindow, aBrowser, "about:newtab", aHash);
+  },
+
+  showHome(aWindow, aBrowser, aHash) {
+    this._showPage(aWindow, aBrowser, "about:home", aHash);
   },
 
   showProtectionReport(aWindow, aBrowser) {
