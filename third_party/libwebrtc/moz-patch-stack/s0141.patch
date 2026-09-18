@@ -52,8 +52,8 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/98da8060c3ad5cf8d
  .../java/org/webrtc/VideoEncoderWrapper.java  |  12 +-
  .../org/webrtc/audio/WebRtcAudioRecord.java   |  21 +--
  .../org/webrtc/audio/WebRtcAudioTrack.java    |  15 +-
- webrtc.gni                                    |  19 +-
- 42 files changed, 241 insertions(+), 720 deletions(-)
+ webrtc.gni                                    |  20 +-
+ 42 files changed, 241 insertions(+), 721 deletions(-)
 
 diff --git a/examples/androidnativeapi/BUILD.gn b/examples/androidnativeapi/BUILD.gn
 index fd6a836223..28589325c3 100644
@@ -2049,7 +2049,7 @@ index 58f2743d16..40d4dacec9 100644
    // Sets all samples to be played out to zero if `mute` is true, i.e.,
    // ensures that the speaker is muted.
 diff --git a/webrtc.gni b/webrtc.gni
-index 5ad9e01541..927009f316 100644
+index ce8b4a6bac..46b9901027 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -31,10 +31,6 @@ if (is_ios) {
@@ -2063,7 +2063,7 @@ index 5ad9e01541..927009f316 100644
  if (is_mac) {
    import("//chromium/build/config/mac/rules.gni")
  }
-@@ -1097,12 +1093,7 @@ template("rtc_executable") {
+@@ -1097,13 +1093,7 @@ template("rtc_executable") {
  }
  
  template("rtc_shared_library") {
@@ -2072,12 +2072,13 @@ index 5ad9e01541..927009f316 100644
 -  } else {
 -    target_type = "shared_library"
 -  }
+-
 -  target(target_type, target_name) {
 +  shared_library(target_name) {
      forward_variables_from(invoker,
                             "*",
                             [
-@@ -1385,14 +1376,6 @@ if (is_android && !build_with_mozilla) {
+@@ -1387,14 +1377,6 @@ if (is_android && !build_with_mozilla) {
                                 "suppressed_configs",
                                 "visibility",
                               ])
