@@ -290,6 +290,8 @@ class ChannelReceive : public ChannelReceiveInterface,
 
   mutable Mutex neteq_mutex_;
   const std::unique_ptr<NetEq> neteq_ RTC_GUARDED_BY(neteq_mutex_);
+  // The system time of the last audio frame pulled from NetEq.
+  std::optional<Timestamp> last_playout_time_ RTC_GUARDED_BY(neteq_mutex_);
   acm2::ResamplerHelper resampler_helper_
       RTC_GUARDED_BY(audio_thread_race_checker_);
 
@@ -425,6 +427,7 @@ AudioMixer::Source::AudioFrameInfo ChannelReceive::GetAudioFrameWithInfo(
                      "sample_rate_hz", sample_rate_hz);
   RTC_DCHECK_RUNS_SERIALIZED(&audio_thread_race_checker_);
 
+  Timestamp now = env_.clock().CurrentTime();
   env_.event_log().Log(std::make_unique<RtcEventAudioPlayout>(remote_ssrc_));
 
   {
@@ -440,6 +443,7 @@ AudioMixer::Source::AudioFrameInfo ChannelReceive::GetAudioFrameWithInfo(
                        "error", 1);
       return AudioMixer::Source::AudioFrameInfo::kError;
     }
+    last_playout_time_ = now;
   }
 
   resampler_helper_.MaybeResample(sample_rate_hz, audio_frame);
@@ -522,8 +526,7 @@ AudioMixer::Source::AudioFrameInfo ChannelReceive::GetAudioFrameWithInfo(
   }
   audio_frame->packet_infos_ = RtpPacketInfos(std::move(packet_infos));
   if (!audio_frame->packet_infos_.empty() && on_frame_delivered_callback_) {
-    on_frame_delivered_callback_(audio_frame->packet_infos_,
-                                 env_.clock().CurrentTime());
+    on_frame_delivered_callback_(audio_frame->packet_infos_, now);
   }
 
   ++audio_frame_interval_count_;
@@ -655,6 +658,7 @@ void ChannelReceive::StopPlayout() {
   playing_ = false;
   output_audio_level_.ResetLevelFullRange();
   MutexLock lock(&neteq_mutex_);
+  last_playout_time_.reset();
   neteq_->FlushBuffers();
   if (nack_tracker_) {
     nack_tracker_->Reset();
@@ -1072,10 +1076,16 @@ bool ChannelReceive::SetMinimumPlayoutDelay(TimeDelta delay) {
 std::optional<Syncable::PlayoutInfo> ChannelReceive::GetPlayoutRtpTimestamp()
     const {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+
   std::optional<uint32_t> playout_timestamp;
+  Timestamp last_playout_time = Timestamp::Zero();
   int rtp_timestamp_rate_hz = 0;
   {
     MutexLock lock(&neteq_mutex_);
+    if (!last_playout_time_) {
+      return std::nullopt;
+    }
+    last_playout_time = *last_playout_time_;
     playout_timestamp = neteq_->GetPlayoutTimestamp();
     rtp_timestamp_rate_hz = GetRtpTimestampRateHzLocked();
   }
@@ -1097,7 +1107,7 @@ std::optional<Syncable::PlayoutInfo> ChannelReceive::GetPlayoutRtpTimestamp()
   uint32_t adjusted_playout_timestamp =
       *playout_timestamp - (delay_ms * (rtp_timestamp_rate_hz / 1000));
   return Syncable::PlayoutInfo{
-      .time = env_.clock().CurrentTime(),
+      .time = last_playout_time,
       .rtp_timestamp = adjusted_playout_timestamp,
   };
 }
