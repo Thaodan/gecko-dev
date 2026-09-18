@@ -394,7 +394,9 @@ bool IndirectBindingMap::lookup(jsid name, ModuleEnvironmentObject** envOut,
 // DeferredSlot), so they use a custom proxy class instead of the default
 // ProxyClass which only has 2.
 static const JSClass moduleNamespaceProxyClass =
-    PROXY_CLASS_DEF("Module Namespace", JSCLASS_HAS_RESERVED_SLOTS(ModuleNamespaceObject::ModuleNamespaceSlot::SlotCount));
+    PROXY_CLASS_DEF("Module Namespace",
+                    JSCLASS_HAS_RESERVED_SLOTS(
+                        ModuleNamespaceObject::ModuleNamespaceSlot::SlotCount));
 
 /* static */
 constexpr ModuleNamespaceObject::ProxyHandler
@@ -409,8 +411,7 @@ bool ModuleNamespaceObject::isInstance(HandleValue value) {
 ModuleNamespaceObject* ModuleNamespaceObject::create(
     JSContext* cx, Handle<ModuleObject*> module,
     MutableHandle<UniquePtr<ExportNameVector>> exports,
-    MutableHandle<UniquePtr<IndirectBindingMap>> bindings,
-    ImportPhase phase) {
+    MutableHandle<UniquePtr<IndirectBindingMap>> bindings, ImportPhase phase) {
   RootedValue priv(cx, ObjectValue(*module));
   ProxyOptions options;
   options.setLazyProto(true);
@@ -567,13 +568,52 @@ bool ModuleNamespaceObject::ProxyHandler::preventExtensions(
   return true;
 }
 
+// https://tc39.es/proposal-defer-import-eval/#sec-IsSymbolLikeNamespaceKey
+// IsSymbolLikeNamespaceKey(P, ns)
+static bool IsSymbolLikeNamespaceKey(JSContext* cx, const jsid& prop,
+                                     ModuleNamespaceObject* ns) {
+  // Step 1. If P is a Symbol, return true.
+  // Step 2. If ns.[[Deferred]] is true and P is "then", return true.
+  // Step 3. Return false.
+  return prop.isSymbol() || (ns->isDeferred() && prop.isAtom(cx->names().then));
+}
+
+// https://tc39.es/proposal-defer-import-eval/#sec-GetModuleExportsList
+static bool EnsureDeferredModuleEvaluated(JSContext* cx,
+                                          Handle<ModuleNamespaceObject*> ns) {
+  // Step 1. If O.[[Deferred]] is true, then:
+  if (ns->isDeferred()) {
+    // Step 1.a. Let m be O.[[Module]].
+    Rooted<ModuleObject*> module(cx, &ns->module());
+
+    // Step 1.b. Perform ? EvaluateModuleSync(m).
+    if (!js::EvaluateModuleSync(cx, module)) {
+      return false;
+    }
+
+    MOZ_ASSERT(module->status() == ModuleStatus::Evaluated);
+  }
+
+  // Step 2. Return O.[[Exports]].
+  //         (See function comment: callers read ns->bindings() instead.)
+  return true;
+}
+
+// https://tc39.es/ecma262/#sec-module-namespace-exotic-objects-getownproperty-p
+// https://tc39.es/proposal-defer-import-eval/#sec-module-namespace-exotic-objects-getownproperty-p
 bool ModuleNamespaceObject::ProxyHandler::getOwnPropertyDescriptor(
     JSContext* cx, HandleObject proxy, HandleId id,
     MutableHandle<mozilla::Maybe<PropertyDescriptor>> desc) const {
   Rooted<ModuleNamespaceObject*> ns(cx, &proxy->as<ModuleNamespaceObject>());
-  if (id.isSymbol()) {
+
+  // Step 1. If IsSymbolLikeNamespaceKey(P, O) is true, return
+  //         OrdinaryGetOwnProperty(O, P). This returns before Step 2, so
+  //         symbol-like keys never trigger deferred module evaluation.
+  if (IsSymbolLikeNamespaceKey(cx, id, ns)) {
     if (id.isWellKnownSymbol(JS::SymbolCode::toStringTag)) {
-      desc.set(Some(PropertyDescriptor::Data(StringValue(cx->names().Module))));
+      JSAtom* toStringTag =
+          ns->isDeferred() ? cx->names().DeferredModule : cx->names().Module;
+      desc.set(Some(PropertyDescriptor::Data(StringValue(toStringTag))));
       return true;
     }
 
@@ -581,6 +621,13 @@ bool ModuleNamespaceObject::ProxyHandler::getOwnPropertyDescriptor(
     return true;
   }
 
+  // Step 2. Let exports be ? GetModuleExportsList(O).
+  // Note: For a deferred namespace this evaluates the underlying module.
+  if (!EnsureDeferredModuleEvaluated(cx, ns)) {
+    return false;
+  }
+
+  // Step 3. If exports does not contain P, return undefined.
   const IndirectBindingMap& bindings = ns->bindings();
   ModuleEnvironmentObject* env;
   mozilla::Maybe<PropertyInfo> prop;
@@ -590,12 +637,15 @@ bool ModuleNamespaceObject::ProxyHandler::getOwnPropertyDescriptor(
     return true;
   }
 
+  // Step 4. Let value be ? O.[[Get]](P, O).
   RootedValue value(cx, env->getSlot(prop->slot()));
   if (value.isMagic(JS_UNINITIALIZED_LEXICAL)) {
     ReportUninitializedModuleBinding(cx, id);
     return false;
   }
 
+  // Step 5. Return PropertyDescriptor { [[Value]]: value, [[Writable]]: true,
+  //         [[Enumerable]]: true, [[Configurable]]: false }.
   desc.set(
       Some(PropertyDescriptor::Data(value, {JS::PropertyAttribute::Enumerable,
                                             JS::PropertyAttribute::Writable})));
@@ -635,41 +685,45 @@ static bool ValidatePropertyDescriptor(
   return result.succeed();
 }
 
+// https://tc39.es/ecma262/#sec-module-namespace-exotic-objects-defineownproperty-p-desc
+// https://tc39.es/proposal-defer-import-eval/#sec-module-namespace-exotic-objects-defineownproperty-p-desc
 bool ModuleNamespaceObject::ProxyHandler::defineProperty(
     JSContext* cx, HandleObject proxy, HandleId id,
     Handle<PropertyDescriptor> desc, ObjectOpResult& result) const {
-  if (id.isSymbol()) {
-    if (id.isWellKnownSymbol(JS::SymbolCode::toStringTag)) {
-      RootedValue value(cx, StringValue(cx->names().Module));
-      return ValidatePropertyDescriptor(cx, desc, false, false, false, value,
-                                        result);
-    }
-    return result.fail(JSMSG_CANT_DEFINE_PROP_OBJECT_NOT_EXTENSIBLE);
-  }
-
-  const IndirectBindingMap& bindings =
-      proxy->as<ModuleNamespaceObject>().bindings();
-  ModuleEnvironmentObject* env;
-  mozilla::Maybe<PropertyInfo> prop;
-  if (!bindings.lookup(id, &env, &prop)) {
-    return result.fail(JSMSG_CANT_DEFINE_PROP_OBJECT_NOT_EXTENSIBLE);
-  }
-
-  RootedValue value(cx, env->getSlot(prop->slot()));
-  if (value.isMagic(JS_UNINITIALIZED_LEXICAL)) {
-    ReportUninitializedModuleBinding(cx, id);
+  Rooted<mozilla::Maybe<PropertyDescriptor>> currentDesc(cx);
+  if (!getOwnPropertyDescriptor(cx, proxy, id, &currentDesc)) {
     return false;
   }
 
-  return ValidatePropertyDescriptor(cx, desc, true, true, false, value, result);
+  // Step 3. NOTE: If O.[[Deferred]] is true, the step above will ensure that
+  //         the module is evaluated.
+  //
+  // Impl note:
+  // This is only valid for non-symbol-like keys. For a symbol-like key,
+  // getOwnPropertyDescriptor returns at its own Step 1 without evaluating,
+  // matching spec Step 1 (return OrdinaryDefineOwnProperty), which returns
+  // before the evaluating Step 2.
+
+  if (currentDesc.isNothing()) {
+    return result.fail(JSMSG_CANT_DEFINE_PROP_OBJECT_NOT_EXTENSIBLE);
+  }
+
+  RootedValue value(cx, currentDesc->value());
+  return ValidatePropertyDescriptor(cx, desc, currentDesc->writable(),
+                                    currentDesc->enumerable(),
+                                    currentDesc->configurable(), value, result);
 }
 
 bool ModuleNamespaceObject::ProxyHandler::has(JSContext* cx, HandleObject proxy,
                                               HandleId id, bool* bp) const {
   Rooted<ModuleNamespaceObject*> ns(cx, &proxy->as<ModuleNamespaceObject>());
-  if (id.isSymbol()) {
+  if (IsSymbolLikeNamespaceKey(cx, id, ns)) {
     *bp = id.isWellKnownSymbol(JS::SymbolCode::toStringTag);
     return true;
+  }
+
+  if (!EnsureDeferredModuleEvaluated(cx, ns)) {
+    return false;
   }
 
   *bp = ns->bindings().has(id);
@@ -680,14 +734,20 @@ bool ModuleNamespaceObject::ProxyHandler::get(JSContext* cx, HandleObject proxy,
                                               HandleValue receiver, HandleId id,
                                               MutableHandleValue vp) const {
   Rooted<ModuleNamespaceObject*> ns(cx, &proxy->as<ModuleNamespaceObject>());
-  if (id.isSymbol()) {
+  if (IsSymbolLikeNamespaceKey(cx, id, ns)) {
     if (id.isWellKnownSymbol(JS::SymbolCode::toStringTag)) {
-      vp.setString(cx->names().Module);
+      JSAtom* toStringTag =
+          ns->isDeferred() ? cx->names().DeferredModule : cx->names().Module;
+      vp.setString(toStringTag);
       return true;
     }
 
     vp.setUndefined();
     return true;
+  }
+
+  if (!EnsureDeferredModuleEvaluated(cx, ns)) {
+    return false;
   }
 
   ModuleEnvironmentObject* env;
@@ -718,29 +778,46 @@ bool ModuleNamespaceObject::ProxyHandler::delete_(
     JSContext* cx, HandleObject proxy, HandleId id,
     ObjectOpResult& result) const {
   Rooted<ModuleNamespaceObject*> ns(cx, &proxy->as<ModuleNamespaceObject>());
-  if (id.isSymbol()) {
+  // Step 1. If IsSymbolLikeNamespaceKey(P, O), return OrdinaryDelete(O, P).
+  // The only ordinary property on a namespace is Symbol.toStringTag
+  // ([[Configurable]]: false); all other symbol-like keys are not present, so
+  // OrdinaryDelete succeeds for them.
+  if (IsSymbolLikeNamespaceKey(cx, id, ns)) {
     if (id.isWellKnownSymbol(JS::SymbolCode::toStringTag)) {
       return result.failCantDelete();
     }
-
     return result.succeed();
   }
 
+  // Step 2. Let exports be ? GetModuleExportsList(O).
+  if (!EnsureDeferredModuleEvaluated(cx, ns)) {
+    return false;
+  }
+
+  // Step 3. If exports contains P, return false.
   if (ns->bindings().has(id)) {
     return result.failCantDelete();
   }
 
+  // Step 4. Return true.
   return result.succeed();
 }
 
 bool ModuleNamespaceObject::ProxyHandler::ownPropertyKeys(
     JSContext* cx, HandleObject proxy, MutableHandleIdVector props) const {
   Rooted<ModuleNamespaceObject*> ns(cx, &proxy->as<ModuleNamespaceObject>());
+
+  // Step 1. Let exports be ? GetModuleExportsList(O).
+  if (!EnsureDeferredModuleEvaluated(cx, ns)) {
+    return false;
+  }
+
   uint32_t count = ns->exports().length();
   if (!props.reserve(props.length() + count + 1)) {
     return false;
   }
 
+  // Step 2-3. Return exports concatenated with symbol keys.
   for (JSAtom* atom : ns->exports()) {
     props.infallibleAppend(AtomToId(atom));
   }
@@ -1650,8 +1727,7 @@ void ModuleObject::onTopLevelEvaluationFinished(ModuleObject* module) {
 /* static */
 ModuleNamespaceObject* ModuleObject::createNamespace(
     JSContext* cx, Handle<ModuleObject*> self,
-    MutableHandle<UniquePtr<ExportNameVector>> exports,
-    ImportPhase phase) {
+    MutableHandle<UniquePtr<ExportNameVector>> exports, ImportPhase phase) {
   Rooted<UniquePtr<IndirectBindingMap>> bindings(cx);
   bindings = cx->make_unique<IndirectBindingMap>();
   if (!bindings) {
@@ -2273,10 +2349,9 @@ bool ModuleBuilder::processImportWithPhase(
   eitherParser_.computeLineAndColumn(localNameNode->pn_pos.begin, &line,
                                      &column);
 
-  ImportNameValueType importNameValue =
-      phase == ImportPhase::Source ?
-          ImportNameValueType::Source :
-          ImportNameValueType::Namespace;
+  ImportNameValueType importNameValue = phase == ImportPhase::Source
+                                            ? ImportNameValueType::Source
+                                            : ImportNameValueType::Namespace;
 
   auto entry = StencilModuleEntry::importEntry(
       moduleRequestIndex, localName, TaggedParserAtomIndex(), importNameValue,

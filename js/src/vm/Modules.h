@@ -46,6 +46,17 @@ ModuleNamespaceObject* GetOrCreateModuleNamespace(
     JSContext* cx, Handle<ModuleObject*> module,
     ImportPhase phase = ImportPhase::Evaluation);
 
+ModuleObject* GetImportedModule(JSContext* cx, Handle<ModuleObject*> referrer,
+                                Handle<ModuleRequestObject*> moduleRequest);
+
+// https://tc39.es/proposal-defer-import-eval/#sec-EvaluateModuleSync
+// Synchronously evaluates module, throwing a TypeError before evaluating if
+// module's evaluation would not return an already settled promise.
+bool EvaluateModuleSync(JSContext* cx, Handle<ModuleObject*> module);
+
+// https://tc39.es/proposal-defer-import-eval/#sec-IsModuleSCCEvaluated
+bool IsModuleSCCEvaluated(ModuleObject* module);
+
 void AsyncModuleExecutionFulfilled(JSContext* cx, Handle<ModuleObject*> module);
 
 // This function recusively calls AsyncModuleExecutionRejected on async parent

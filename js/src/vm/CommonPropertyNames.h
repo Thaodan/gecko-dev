@@ -325,6 +325,7 @@
   MACRO_(missingArguments, "missingArguments")                                 \
   MACRO_(module, "module")                                                     \
   MACRO_(Module, "Module")                                                     \
+  MACRO_(DeferredModule, "Deferred Module")                                    \
   MACRO_(month, "month")                                                       \
   MACRO_(monthCode, "monthCode")                                               \
   MACRO_(months, "months")                                                     \
