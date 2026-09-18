@@ -56,7 +56,7 @@ class MultipartBlobImpl final : public BaseBlobImpl {
                                          const nsAString& aContentType,
                                          ErrorResult& aRv) const override;
 
-  uint64_t GetSize(ErrorResult& aRv) const override { return mLength; }
+  uint64_t GetSize(ErrorResult& aRv) override { return mLength; }
 
   void CreateInputStream(nsIInputStream** aStream,
                          ErrorResult& aRv) const override;
