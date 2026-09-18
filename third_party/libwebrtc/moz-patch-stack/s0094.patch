@@ -262,7 +262,7 @@ index 96520cf02f..8112a3d28d 100644
  
  rtc_library("video_rtp_headers") {
 diff --git a/api/video_codecs/BUILD.gn b/api/video_codecs/BUILD.gn
-index 91d9672db2..b31a6dc01a 100644
+index 05ce8a8dc6..e040663131 100644
 --- a/api/video_codecs/BUILD.gn
 +++ b/api/video_codecs/BUILD.gn
 @@ -8,8 +8,8 @@
