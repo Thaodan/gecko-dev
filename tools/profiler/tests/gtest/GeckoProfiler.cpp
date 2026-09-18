@@ -2603,9 +2603,9 @@ TEST(GeckoProfiler, Markers)
       {}, GtestBaseMarkerTypeUniqueString{}, "gtest unique field value",
       "gtest plain field value"));
 
-  EXPECT_TRUE(profiler_add_marker_impl(
-      "Gtest base marker type graphs", geckoprofiler::category::OTHER, {},
-      GtestBaseMarkerTypeGraphs{}, 1.5, 2.5));
+  EXPECT_TRUE(profiler_add_marker_impl("Gtest base marker type graphs",
+                                       geckoprofiler::category::OTHER, {},
+                                       GtestBaseMarkerTypeGraphs{}, 1.5, 2.5));
 
   // Test PROFILER_MARKER_SIMPLE_PAYLOAD with various data types.
   int testInt = 42;
