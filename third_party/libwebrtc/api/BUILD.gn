@@ -303,6 +303,7 @@ if (!build_with_mozilla) {
   visibility = [ "*" ]
 
   sources = [
+    "encoded_video_frame_injector_interface.h",
     "rtp_sender_interface.cc",
     "rtp_sender_interface.h",
   ]
