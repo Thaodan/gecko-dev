@@ -27,7 +27,7 @@ from mozboot.bootstrap import MOZCONFIG_SUGGESTION_TEMPLATE
 # We need the NDK version in multiple different places, and it's inconvenient
 # to pass down the NDK version to all relevant places, so we have this global
 # variable.
-NDK_VERSION = "r29"
+NDK_VERSION = "r30"
 CMDLINE_TOOLS_VERSION_STRING = "23.0"
 CMDLINE_TOOLS_VERSION = "16111833"
 
