@@ -74,7 +74,7 @@ index 9962d2845d..485df8f5e1 100644
  # The python interpreter to use by default. On Windows, this will look
  # for python3.exe and python3.bat.
 diff --git a/BUILD.gn b/BUILD.gn
-index fa99ab6d9f..25ec0dfa4d 100644
+index 6c121ede53..f3b3c1ca23 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -21,8 +21,8 @@
@@ -108,7 +108,7 @@ index fa99ab6d9f..25ec0dfa4d 100644
      defines = []
  
      deps = [
-@@ -857,7 +857,7 @@ rtc_static_library("dcsctp") {
+@@ -858,7 +858,7 @@ rtc_static_library("dcsctp") {
    visibility = [ "//:default" ]
    sources = []
    complete_static_lib = true
@@ -117,7 +117,7 @@ index fa99ab6d9f..25ec0dfa4d 100644
    defines = []
    deps = [
      "net/dcsctp/public:factory",
-@@ -895,7 +895,7 @@ group("poison_default_neural_residual_echo_estimator") {
+@@ -896,7 +896,7 @@ group("poison_default_neural_residual_echo_estimator") {
  if (!build_with_chromium) {
    # Write debug logs to gn_logs.txt.
    # This is also required for Siso builds.
@@ -603,7 +603,7 @@ index 34e164f4a2..d3ee4f55b1 100644
  
  if (rtc_build_libsrtp) {
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index 2dc57b0d97..963eb70be3 100644
+index 9de0cee516..1886d83e61 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
 @@ -9,8 +9,8 @@
