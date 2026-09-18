@@ -20,7 +20,6 @@
 #include "nsIClassifiedChannel.h"
 #include "nsIContentClassifierService.h"
 #include "nsIContentClassifierRemoteSettingsClient.h"
-#include "nsIMemoryReporter.h"
 #include "nsISupportsImpl.h"
 #include "nsLiteralString.h"
 #include "nsTArray.h"
@@ -237,13 +236,11 @@ class ContentClassifierProbeReport final
 };
 
 class ContentClassifierService final : public nsIAsyncShutdownBlocker,
-                                       public nsIContentClassifierService,
-                                       public nsIMemoryReporter {
+                                       public nsIContentClassifierService {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIASYNCSHUTDOWNBLOCKER
   NS_DECL_NSICONTENTCLASSIFIERSERVICE
-  NS_DECL_NSIMEMORYREPORTER
 
   static already_AddRefed<ContentClassifierService> GetInstance();
 
@@ -292,8 +289,7 @@ class ContentClassifierService final : public nsIAsyncShutdownBlocker,
   // trailing exception engines see the propagated matched_rule.
   ContentClassifierResult ClassifyWithEngines(
       const nsTArray<RefPtr<ContentClassifierEngine>>& aEngines,
-      const ContentClassifierRequest& aRequest, bool aIndependentEngines)
-      MOZ_REQUIRES(mLock);
+      const ContentClassifierRequest& aRequest, bool aIndependentEngines);
 
   // Take a fresh pref snapshot, decide which active features need to be
   // (re)built — either because they have no engine yet, or because one of

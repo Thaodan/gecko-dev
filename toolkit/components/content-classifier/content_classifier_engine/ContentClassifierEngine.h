@@ -7,7 +7,6 @@
 
 #include "content_classifier_ffi.h"
 
-#include "mozilla/MemoryReporting.h"
 #include "nsError.h"
 #include "nsString.h"
 #include "nsTArray.h"
@@ -105,20 +104,6 @@ class ContentClassifierEngine final {
 
   ContentClassifierEngineResult CheckNetworkRequest(
       const ContentClassifierRequest& aRequest, bool aPreviouslyMatched);
-
-  // Heap usage of this engine, split by what holds it. See
-  // ContentClassifierEngineSizes for what is left out. |aMallocEnclosingSizeOf|
-  // must come from MOZ_DEFINE_MALLOC_ENCLOSING_SIZE_OF: parts of the engine are
-  // only reachable through interior pointers.
-  ContentClassifierEngineSizes SizeOfIncludingThis(
-      MallocSizeOf aMallocSizeOf, MallocSizeOf aMallocEnclosingSizeOf) const {
-    ContentClassifierEngineSizes sizes =
-        mEngine ? content_classifier_engine_size_of(mEngine, aMallocSizeOf,
-                                                    aMallocEnclosingSizeOf)
-                : ContentClassifierEngineSizes{};
-    sizes.objects += aMallocSizeOf(this);
-    return sizes;
-  }
 
  private:
   ~ContentClassifierEngine() {

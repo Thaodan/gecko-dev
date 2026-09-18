@@ -32,7 +32,6 @@
 #include "nsIURI.h"
 #include "nsIWritablePropertyBag2.h"
 #include "nsNetUtil.h"
-#include "nsPrintfCString.h"
 #include "nsProxyRelease.h"
 #include "nsContentUtils.h"
 #include "nsIWebProgressListener.h"
@@ -244,11 +243,7 @@ NS_IMETHODIMP ContentClassifierProbeReport::GetResults(
 }
 
 NS_IMPL_ISUPPORTS(ContentClassifierService, nsIAsyncShutdownBlocker,
-                  nsIContentClassifierService, nsIMemoryReporter)
-
-MOZ_DEFINE_MALLOC_SIZE_OF(ContentClassifierServiceMallocSizeOf)
-MOZ_DEFINE_MALLOC_ENCLOSING_SIZE_OF(
-    ContentClassifierServiceMallocEnclosingSizeOf)
+                  nsIContentClassifierService)
 
 ContentClassifierService::ContentClassifierService()
     : mLock("ContentClassifierService::mLock"),
@@ -261,93 +256,6 @@ ContentClassifierService::ContentClassifierService()
 }
 
 ContentClassifierService::~ContentClassifierService() = default;
-
-NS_IMETHODIMP ContentClassifierService::CollectReports(
-    nsIHandleReportCallback* aHandleReport, nsISupports* aData,
-    bool aAnonymize) {
-  // aAnonymize is ignored because the only variable path segment, the feature
-  // name, is a compile-time literal from kFeatures rather than content data.
-  struct EngineSizes {
-    nsCString mFeatureName;
-    ContentClassifierEngineSizes mSizes;
-  };
-
-  // Measure under the lock but report without it: the callback runs consumer
-  // code, which must not run with the service lock held.
-  nsTArray<EngineSizes> engines;
-  {
-    MutexAutoLock lock(mLock);
-    engines.SetCapacity(mEngines.Count());
-    for (const auto& entry : mEngines) {
-      engines.AppendElement(
-          EngineSizes{nsCString(entry.GetKey()),
-                      entry.GetData()->SizeOfIncludingThis(
-                          ContentClassifierServiceMallocSizeOf,
-                          ContentClassifierServiceMallocEnclosingSizeOf)});
-    }
-  }
-
-  // The paths are per-feature, so MOZ_COLLECT_REPORT is not usable here: it
-  // needs a literal.
-#define REPORT(_path, _amount, _desc)                                    \
-  aHandleReport->Callback(""_ns, _path, KIND_HEAP, UNITS_BYTES, _amount, \
-                          nsLiteralCString(_desc), aData)
-
-  for (const auto& engine : engines) {
-    REPORT(nsPrintfCString("explicit/content-classifier/engines/%s/objects",
-                           engine.mFeatureName.get()),
-           engine.mSizes.objects,
-           "Memory used by the content classifier engine objects.");
-
-    REPORT(
-        nsPrintfCString("explicit/content-classifier/engines/%s/filter-rules",
-                        engine.mFeatureName.get()),
-        engine.mSizes.filter_rules,
-        "Memory used by the parsed filter rules for this feature, held as one "
-        "flatbuffer that the matching engine reads directly.");
-
-    REPORT(
-        nsPrintfCString("explicit/content-classifier/engines/%s/domain-hashes",
-                        engine.mFeatureName.get()),
-        engine.mSizes.domain_hashes,
-        "Memory used by the index from domain hash to filter list position, "
-        "rebuilt in memory each time this feature's rules are loaded.");
-
-    REPORT(
-        nsPrintfCString("explicit/content-classifier/engines/%s/regex-table",
-                        engine.mFeatureName.get()),
-        engine.mSizes.regex_table,
-        "Memory used by the lookup table for the regexes compiled on demand "
-        "while matching. Excludes the compiled regexes themselves, which the "
-        "regex engine gives no way to measure.");
-
-    REPORT(
-        nsPrintfCString("explicit/content-classifier/engines/%s/enabled-tags",
-                        engine.mFeatureName.get()),
-        engine.mSizes.enabled_tags,
-        "Memory used by the tag names enabled on this engine, which gate "
-        "tagged filters.");
-
-    REPORT(
-        nsPrintfCString("explicit/content-classifier/engines/%s/cosmetic-cache",
-                        engine.mFeatureName.get()),
-        engine.mSizes.cosmetic_cache,
-        "Memory owned by the cosmetic filter cache beyond the filter data it "
-        "shares with the matcher. The rules it serves are reported under "
-        "filter-rules, not here.");
-
-    REPORT(nsPrintfCString("explicit/content-classifier/engines/%s/resources",
-                           engine.mFeatureName.get()),
-           engine.mSizes.resources,
-           "Memory used by this engine's redirect and scriptlet resource "
-           "backend. Excludes whatever the backend stores, which Firefox never "
-           "populates.");
-  }
-
-#undef REPORT
-
-  return NS_OK;
-}
 
 // static
 bool ContentClassifierService::IsEnabled() {
@@ -589,11 +497,6 @@ void ContentClassifierService::Init() {
     mInitPhase = InitPhase::InitSucceeded;
   }
 
-  // Weak: a strong registration would have the manager hold a reference,
-  // keeping the service and the engines it owns alive past ClearOnShutdown.
-  // The price is a bare pointer, which BlockShutdown removes.
-  RegisterWeakMemoryReporter(this);
-
   // Lock released; safe to call into JS.
   // Only initialize the RS client if list_names prefs are set,
   // to avoid interfering with the test-only HTTP loading path.
@@ -706,8 +609,6 @@ NS_IMETHODIMP ContentClassifierService::BlockShutdown(
     mInitPhase = InitPhase::ShutdownStarted;
     mBuildThread = nullptr;
   }
-
-  UnregisterWeakMemoryReporter(this);
 
   // ShutdownRSClient clears the filter list data and engines. It also
   // tears down the RS client if one was created (the HTTP-only test
@@ -1213,15 +1114,10 @@ NS_IMETHODIMP ContentClassifierService::ProbeFeature(
     rv = backgroundThread->Dispatch(
         NS_NewRunnableFunction(
             "ContentClassifierService::ProbeFeature",
-            [self = RefPtr{this}, engine = std::move(engine),
-             request = std::move(request), promiseHolder]() {
-              // Matching is done under mLock, as every other engine consumer
-              // does, so that an engine is never in use without it held.
-              ContentClassifierEngineResult er = [&] {
-                MutexAutoLock lock(self->mLock);
-                return engine->CheckNetworkRequest(
-                    request, /* aPreviouslyMatched */ false);
-              }();
+            [engine = std::move(engine), request = std::move(request),
+             promiseHolder]() {
+              ContentClassifierEngineResult er = engine->CheckNetworkRequest(
+                  request, /* aPreviouslyMatched */ false);
               nsCOMPtr<nsIContentClassifierProbeResult> probe =
                   MakeProbeResult(er);
               NS_DispatchToMainThread(NS_NewRunnableFunction(
