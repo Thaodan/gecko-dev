@@ -154,7 +154,6 @@
 #include "mozilla/dom/ClientState.h"
 #include "mozilla/dom/CloseWatcherManager.h"
 #include "mozilla/dom/Comment.h"
-#include "mozilla/dom/ConnectionAllowlists.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentList.h"
 #include "mozilla/dom/CustomElementRegistry.h"
@@ -3760,8 +3759,6 @@ nsresult Document::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
 
   MOZ_TRY(InitIntegrityPolicyWAICT(aChannel));
 
-  MOZ_TRY(InitConnectionAllowlists(aChannel));
-
   MOZ_TRY(InitDocPolicy(aChannel));
 
   // Initialize PermissionsPolicy
@@ -4168,52 +4165,6 @@ nsresult Document::InitIntegrityPolicyWAICT(nsIChannel* aChannel) {
   mPolicyContainer->SetIntegrityPolicyWAICT(policy);
 #endif
 
-  return NS_OK;
-}
-
-nsresult Document::InitConnectionAllowlists(nsIChannel* aChannel) {
-  MOZ_ASSERT(!mScriptGlobalObject,
-             "Connection allowlists must be initialized before "
-             "mScriptGlobalObject is set, otherwise they can not restrict "
-             "connections that have already been started!");
-  MOZ_ASSERT(mPolicyContainer,
-             "Policy container must be initialized before connection "
-             "allowlists!");
-
-  if (mPolicyContainer->GetConnectionAllowlists()) {
-    // A local scheme document (about:blank, blob:, ...) inherited the policy
-    // container of its embedder, and with it the connection allowlists. This
-    // is not the inheritance of a required allowlist from the spec.
-    return NS_OK;
-  }
-
-  nsCOMPtr<nsIHttpChannel> httpChannel;
-  nsresult rv = GetHttpChannelHelper(aChannel, getter_AddRefs(httpChannel));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  nsAutoCString headerValue, headerROValue;
-  nsCOMPtr<nsIURI> responseURI;
-  if (httpChannel) {
-    (void)httpChannel->GetResponseHeader("connection-allowlist"_ns,
-                                         headerValue);
-
-    (void)httpChannel->GetResponseHeader("connection-allowlist-report-only"_ns,
-                                         headerROValue);
-    NS_GetFinalChannelURI(aChannel, getter_AddRefs(responseURI));
-  }
-
-  RefPtr<ConnectionAllowlists> allowlists;
-  rv = ConnectionAllowlists::ParseHeaders(headerValue, headerROValue,
-                                          getter_AddRefs(allowlists));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  if (allowlists) {
-    allowlists->SetResponseURI(responseURI);
-  }
-
-  mPolicyContainer->SetConnectionAllowlists(allowlists);
   return NS_OK;
 }
 

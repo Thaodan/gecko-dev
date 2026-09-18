@@ -16,7 +16,6 @@ class PolicyContainerArgs;
 }
 
 namespace mozilla::dom {
-class ConnectionAllowlists;
 class Document;
 class IntegrityPolicyWAICT;
 }  // namespace mozilla::dom
@@ -79,13 +78,6 @@ class PolicyContainer : public nsIPolicyContainer {
   static mozilla::dom::IntegrityPolicyWAICT* GetIntegrityPolicyWAICT(
       const nsIPolicyContainer* aPolicyContainer);
 
-  // == Connection Allowlists ==
-  // https://wicg.github.io/connection-allowlists/
-  mozilla::dom::ConnectionAllowlists* GetConnectionAllowlists() const;
-  void SetConnectionAllowlists(mozilla::dom::ConnectionAllowlists* aAllowlists);
-  static mozilla::dom::ConnectionAllowlists* GetConnectionAllowlists(
-      const nsIPolicyContainer* aPolicyContainer);
-
   // == IP Address Space ==
   // Stored per
   // https://wicg.github.io/local-network-access/#integration-with-html to allow
@@ -98,7 +90,6 @@ class PolicyContainer : public nsIPolicyContainer {
   nsCOMPtr<nsIContentSecurityPolicy> mCSP;
   nsCOMPtr<nsIIntegrityPolicy> mIntegrityPolicy;
   RefPtr<mozilla::dom::IntegrityPolicyWAICT> mIntegrityPolicyWAICT;
-  RefPtr<mozilla::dom::ConnectionAllowlists> mConnectionAllowlists;
   nsILoadInfo::IPAddressSpace mIPAddressSpace = nsILoadInfo::Unknown;
 
  protected:
