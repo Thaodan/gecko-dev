@@ -18077,16 +18077,11 @@
   value: ""
   mirror: never
 
-# How the classic tracking-protection prefs drive the ContentClassifier
-# engine prefs. See ContentClassifierPrefMirror.h.
-#   0 (off)      - do not mirror, and release any prefs it mirrored.
-#   1 (on)       - mirror the ETP prefs onto the content prefs.
-#   2 (handover) - stop mirroring, but leave the mirrored values in place as
-#                  ordinary user prefs.
-# Unrecognized values behave as 0.
-- name: privacy.trackingprotection.content.mirror.mode
-  type: uint32_t
-  value: 0
+# When true, mirror the classic tracking-protection prefs onto the
+# ContentClassifier engine prefs. See ContentClassifierPrefMirror.h.
+- name: privacy.trackingprotection.content.mirror.enabled
+  type: bool
+  value: false
   mirror: never
 
 # When true, fire an observer notification when filter lists finish loading.

@@ -20,30 +20,8 @@ StaticAutoPtr<ContentClassifierPrefMirror>
 
 namespace {
 
-constexpr char kMirrorModePref[] =
-    "privacy.trackingprotection.content.mirror.mode";
-
-enum class MirrorMode : uint32_t {
-  Off = 0,
-  On = 1,
-  Handover = 2,
-};
-
-MirrorMode CurrentMode() {
-  switch (Preferences::GetUint(kMirrorModePref, uint32_t(MirrorMode::Off))) {
-    case 1:
-      return MirrorMode::On;
-    case 2:
-      return MirrorMode::Handover;
-    default:
-      return MirrorMode::Off;
-  }
-}
-
-// A hidden pref that marks the mirror as owning the mirrored content prefs,
-// so that it can release them again once the mirror is disabled.
-constexpr char kOwnsPrefsPref[] =
-    "privacy.trackingprotection.content.mirror.owns_prefs";
+constexpr char kMirrorEnabledPref[] =
+    "privacy.trackingprotection.content.mirror.enabled";
 
 // Content classifier prefs the mirror owns while enabled.
 constexpr char kProtectionEnabledPref[] =
@@ -59,24 +37,19 @@ constexpr char kAnnotationEnginesPref[] =
 constexpr char kAnnotationEnginesPBMPref[] =
     "privacy.trackingprotection.content.annotation.engines.pbmode";
 
-constexpr const char* kMirroredPrefs[] = {
-    kProtectionEnabledPref, kProtectionEnginesPref, kProtectionEnginesPBMPref,
-    kAnnotationEnabledPref, kAnnotationEnginesPref, kAnnotationEnginesPBMPref,
-};
-
 constexpr char kMajorExceptionsEngine[] = "major-exceptions";
 constexpr char kMinorExceptionsEngine[] = "minor-exceptions";
 
 // Maps a content classifier engine name (see ContentClassifierService.cpp,
 // kFeatures) onto the ETP prefs that gate it in normal and private-browsing
-// contexts. An engine joins the mirrored list when its gating pref is true.
+// contexts. An engine joins the derived list when its gating pref is true.
 struct EngineMapping {
   const char* mEngine;
   const char* mNormalPref;
   const char* mPBMPref;
 };
 
-// The order here is the order the engines land in the mirrored pref, which is
+// The order here is the order the engines land in the derived pref, which is
 // the order ContentClassifierService evaluates them in, and MaybeCancelChannel
 // blocks on the first matched engine. So it must mirror the blocking-feature
 // order of UrlClassifierFeatureFactory::GetCancelingFeaturesFromChannel, or a
@@ -118,7 +91,7 @@ constexpr EngineMapping kAnnotationMappings[] = {
 };
 
 // ETP source prefs the mirror observes; a change to any of these recomputes
-// the mirrored content prefs. Must cover every gating pref referenced above.
+// the derived content prefs. Must cover every gating pref referenced above.
 constexpr const char* kWatchedPrefs[] = {
     "privacy.trackingprotection.enabled",
     "privacy.trackingprotection.pbmode.enabled",
@@ -186,12 +159,13 @@ void ContentClassifierPrefMirror::Init() {
   }
   sRegistered = true;
 
-  // Tear the singleton down at shutdown
+  // Tear the singleton down at shutdown through the same path as a
+  // pref-disable.
   RunOnShutdown([] { Shutdown(); });
 
   Preferences::RegisterCallbackAndCall(
       &ContentClassifierPrefMirror::OnMirrorPrefChange,
-      nsDependentCString(kMirrorModePref));
+      nsDependentCString(kMirrorEnabledPref));
 }
 
 ContentClassifierPrefMirror::ContentClassifierPrefMirror() {
@@ -213,61 +187,25 @@ void ContentClassifierPrefMirror::OnMirrorPrefChange(const char* aPref,
                                                      void* aData) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  switch (CurrentMode()) {
-    case MirrorMode::On:
-      if (!sInstance) {
-        sInstance = new ContentClassifierPrefMirror();
-      }
-      sInstance->ScheduleSync();
-      return;
-
-    case MirrorMode::Handover: {
-      // Stop mirroring, but leave the content pref values.
-      Shutdown();
-      nsresult rv = Preferences::ClearUser(kOwnsPrefsPref);
-      NS_WARNING_ASSERTION(
-          NS_SUCCEEDED(rv),
-          "Failed to clear the ContentClassifierMirror owning pref");
-      return;
-    }
-
-    case MirrorMode::Off:
-      // Stop mirroring, and clear the content pref values if they were mirrored
-      // before.
-      Shutdown();
-      ReleaseMirroredPrefs();
-      return;
+  bool enabled = Preferences::GetBool(kMirrorEnabledPref, false);
+  if (enabled == !!sInstance) {
+    // The master pref changed but the up/down state didn't flip.
+    return;
   }
+
+  if (!enabled) {
+    Shutdown();
+    return;
+  }
+
+  sInstance = new ContentClassifierPrefMirror();
+  sInstance->ScheduleSync();
 }
 
 // static
 void ContentClassifierPrefMirror::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
   sInstance = nullptr;
-}
-
-// static
-void ContentClassifierPrefMirror::ReleaseMirroredPrefs() {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  // No-op if the mirror doesn't own the mirrored prefs.
-  if (!Preferences::GetBool(kOwnsPrefsPref, false)) {
-    return;
-  }
-
-  nsresult rv;
-
-  for (const char* pref : kMirroredPrefs) {
-    rv = Preferences::ClearUser(pref);
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rv),
-        "Failed to clear a ContentClassifierMirror mirrored pref");
-  }
-
-  rv = Preferences::ClearUser(kOwnsPrefsPref);
-  NS_WARNING_ASSERTION(
-      NS_SUCCEEDED(rv),
-      "Failed to clear the ContentClassifierMirror owning pref");
 }
 
 // static
@@ -296,8 +234,9 @@ void ContentClassifierPrefMirror::ScheduleSync() {
 void ContentClassifierPrefMirror::Sync() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (CurrentMode() != MirrorMode::On) {
-    // OnMirrorPrefChange owns the release and handover paths.
+  if (!Preferences::GetBool(kMirrorEnabledPref, false)) {
+    // Disabled: leave the content prefs as they are. Any values previously
+    // derived by the mirror remain in place.
     return;
   }
 
@@ -326,10 +265,6 @@ void ContentClassifierPrefMirror::Sync() {
   Preferences::SetBool(
       kAnnotationEnabledPref,
       !annotationEngines.IsEmpty() || !annotationEnginesPBM.IsEmpty());
-
-  // Claim the prefs above so that a later disable knows to give them back,
-  // including after a restart.
-  Preferences::SetBool(kOwnsPrefsPref, true);
 }
 
 }  // namespace mozilla

@@ -5692,17 +5692,15 @@ contentClassifier:
       setPref:
         branch: default
         pref: "privacy.trackingprotection.content.annotation.engines.pbmode"
-    mirrorMode:
+    mirrorEnabled:
       description: >-
-        How the tracking-protection prefs drive the content classifier engine
-        prefs. 0 (off) does not mirror and releases any prefs it mirrored;
-        1 (on) mirrors the ETP settings onto the content classifier prefs
-        and owns them; 2 (handover) stops mirroring but leaves the mirrored
-        values in place as ordinary user prefs.
-      type: int
+        Whether the tracking-protection prefs are mirrored onto the content
+        classifier engine prefs. While enabled the mirror derives (and
+        owns) the content classifier prefs from the ETP settings.
+      type: boolean
       setPref:
         branch: default
-        pref: "privacy.trackingprotection.content.mirror.mode"
+        pref: "privacy.trackingprotection.content.mirror.enabled"
     skipURLClassifier:
       description: >-
         Whether to skip the URLClassifier while the ContentClassifier engine is
