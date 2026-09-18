@@ -1157,7 +1157,12 @@ export class BaseContent extends React.PureComponent {
         // Unlike side-by-side, an assigned-but-inactive spaces variant renders
         // the ordinary band, so there is no Spaces container for these classes
         // to describe.
-        ...(isSpacesActive(prefs) ? spacesBandClasses(prefs) : []),
+        // The feed state too, or the thematic variant can class the band for
+        // spaces while DiscoveryStreamBase, which drops a space with no
+        // sections, has fallen back to the flat layout.
+        ...(isSpacesActive(prefs, props.DiscoveryStream)
+          ? spacesBandClasses(prefs)
+          : []),
         noFeedOrContentWidgets && "highlights-only",
       ]
         .filter(Boolean)

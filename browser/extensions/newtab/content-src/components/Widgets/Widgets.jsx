@@ -3,6 +3,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import React, {
+  useId,
   useContext,
   useEffect,
   useLayoutEffect,
@@ -137,7 +138,7 @@ function renderWeather({
 }
 
 // eslint-disable-next-line complexity, max-statements
-function Widgets() {
+function Widgets({ widgetIds }) {
   const prefs = useSelector(state => state.Prefs.values);
   const weatherData = useSelector(state => state.Weather);
   const { messageData } = useSelector(state => state.Messages);
@@ -147,6 +148,15 @@ function Widgets() {
     state => state.SportsWidget?.widgetState
   );
   const dispatch = useDispatch();
+  // Unique per instance, because a thematic space mounts one Widgets each and
+  // moz-button resolves menuId with querySelector -- a shared id would hand
+  // every space the first panel in the document, which for an inactive space is
+  // inert. Non-word characters are stripped: React's ids contain colons, which
+  // a CSS id selector cannot parse.
+  const widgetsMenuId = `widgets-header-context-panel-${useId().replace(
+    /\W/g,
+    ""
+  )}`;
   const { openWidgetsPanel } = useContext(BaseContext);
   // @experiment(remove) { bug 2069496 }
   // Selects the ad rather than the spocs slice: outside the variant this is
@@ -293,6 +303,16 @@ function Widgets() {
       widgetsEnabled
     ),
   };
+
+  // Given an explicit list, keep only those. Callers wanting every enabled
+  // widget pass none, which is everything but a thematic space. This map is the
+  // one gate the row, the DnD order, the overflow maths and the add button all
+  // read, so narrowing it here covers all of them.
+  if (widgetIds) {
+    for (const id of Object.keys(widgetEnabledMap)) {
+      widgetEnabledMap[id] &&= widgetIds.includes(id);
+    }
+  }
 
   const widgetOrder = resolveWidgetOrder(prefs);
 
@@ -726,14 +746,11 @@ function Widgets() {
             className="widgets-header-context-menu-button"
             data-l10n-id="newtab-widget-section-menu-button"
             iconSrc="chrome://global/skin/icons/more.svg"
-            menuId="widgets-header-context-panel"
+            menuId={widgetsMenuId}
             type="ghost"
             size="default"
           />
-          <panel-list
-            className="panel-list-no-icons"
-            id="widgets-header-context-panel"
-          >
+          <panel-list className="panel-list-no-icons" id={widgetsMenuId}>
             <panel-item
               data-l10n-id="newtab-widget-section-menu-hide-all"
               onClick={handleHideAllWidgetsClick}
@@ -1007,21 +1024,27 @@ function Widgets() {
               </WidgetWrapper>
             )
           )}
-          {/* Side-by-side has its own add button in the section header, and
-              this tile's at-content-cols() reveal rules resolve against the
-              band rather than the one-card-wide widgets column. */}
-          {novaEnabled && !sideBySideActive && !allWidgetsAdded && (
-            <button
-              type="button"
-              className={`widgets-add-button col-4 ${addButtonSize}-widget`}
-              style={{ order: WIDGET_REGISTRY.length + 1 }}
-              data-l10n-id="newtab-widget-add-widgets-button"
-              onClick={handleManageWidgetsClick}
-              tabIndex={-1}
-            >
-              <span className="widgets-add-button-icon" />
-            </button>
-          )}
+          {/* Suppressed wherever the widgets sit in a one-card-wide column --
+              side-by-side, and any caller passing an explicit list. This tile's
+              at-content-cols() reveal rules resolve against the band, so there
+              it takes a row of its own and reads as blank space under the last
+              widget. Those layouts put an add button in the section header
+              instead. */}
+          {novaEnabled &&
+            !sideBySideActive &&
+            !widgetIds &&
+            !allWidgetsAdded && (
+              <button
+                type="button"
+                className={`widgets-add-button col-4 ${addButtonSize}-widget`}
+                style={{ order: WIDGET_REGISTRY.length + 1 }}
+                data-l10n-id="newtab-widget-add-widgets-button"
+                onClick={handleManageWidgetsClick}
+                tabIndex={-1}
+              >
+                <span className="widgets-add-button-icon" />
+              </button>
+            )}
         </div>
         {novaEnabled && !spacesActive && (
           <moz-button

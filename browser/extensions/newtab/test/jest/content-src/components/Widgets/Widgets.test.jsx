@@ -697,7 +697,9 @@ describe("<Widgets> handleToggleMaximize", () => {
       const { container } = renderWidgets(novaState());
 
       expect(
-        container.querySelectorAll("#widgets-header-context-panel panel-item")
+        container.querySelectorAll(
+          '[id^="widgets-header-context-panel"] panel-item'
+        )
       ).toHaveLength(3);
     });
 
