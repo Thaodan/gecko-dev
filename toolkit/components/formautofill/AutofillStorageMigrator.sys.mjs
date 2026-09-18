@@ -7,9 +7,9 @@
  * field by field that they came out the same.
  *
  * The copy itself does not depend on which collection is being copied, so it
- * lives once here; a per-collection class at the bottom of this file supplies
- * what does -- the prefs that budget the run, the Glean category it reports to,
- * and how two records are compared.
+ * lives once here; `AddressStorageMigrator` and `CreditCardStorageMigrator` at
+ * the bottom of this file supply what does -- the prefs that budget the run,
+ * the Glean category it reports to, and how two records are compared.
  */
 
 const lazy = {};
@@ -17,10 +17,16 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AutofillApiError:
     "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustAutofill.sys.mjs",
+  creditCardFieldDiffers:
+    "resource://autofill/RustAutofillCreditCardStorage.sys.mjs",
   isStoredAddressField:
     "resource://autofill/RustAutofillAddressStorage.sys.mjs",
+  isStoredCreditCardField:
+    "resource://autofill/RustAutofillCreditCardStorage.sys.mjs",
   RustAutofillAddressesAdapter:
     "resource://autofill/RustAutofillAddressStorage.sys.mjs",
+  RustAutofillCreditCardsAdapter:
+    "resource://autofill/RustAutofillCreditCardStorage.sys.mjs",
 });
 
 // Each attempt re-imports the whole profile, so a store that can never be
@@ -110,9 +116,8 @@ export class AutofillStorageMigrator {
    *
    * @param {object} [options]
    * @param {boolean} [options.dryRun=false] Copy only to measure it: reports
-   *   the run, returns false whatever the outcome, and records the config's
-   *   testVersion so the same generation never measures twice. Spends no
-   *   attempt budget.
+   *   the run, returns false whatever the outcome, and records _testVersion so
+   *   the same generation never measures twice. Spends no attempt budget.
    * @param {boolean} [options.wipe=true] Empty the target first. See #migrate.
    * @returns {Promise<boolean>} Whether the copy completed. Always false for a
    *   dry run.
@@ -306,6 +311,30 @@ export class AutofillStorageMigrator {
         }));
       sourceTotal = records.length;
 
+      // Ask the source to hand each record over in the form the target can take
+      // it. A store that holds a value only it can read -- an encrypted card
+      // number -- returns it in the clear here, so the target can store it under
+      // its own scheme rather than inheriting one it cannot read. A store with
+      // nothing to convert has no _recordForMigrationExport, or the trivial one
+      // that returns the record, and this is a copy either way.
+      //
+      // A record that cannot be exported is counted as failed and left out: it
+      // is better to fail the run than to copy the record without the value.
+      const exportable = [];
+      for (const record of records) {
+        try {
+          exportable.push(
+            (await source._recordForMigrationExport?.(record)) ?? record
+          );
+        } catch (e) {
+          failed++;
+          firstCause ??= errorTextOf(e);
+          this.logger.error(
+            `Could not export a record for migration: ${errorTextOf(e)}`
+          );
+        }
+      }
+
       if (wipe) {
         // Silent, like the bulk writes below: announcing this as a removeAll
         // would report the profile's records as cleared mid-startup.
@@ -318,7 +347,7 @@ export class AutofillStorageMigrator {
         wipe ? [] : (await target.getAll()).map(record => [record.guid, record])
       );
       const held = new Set(heldRecords.keys());
-      const fresh = records.filter(record => !held.has(record.guid));
+      const fresh = exportable.filter(record => !held.has(record.guid));
 
       // A record the target holds under the same timestamp is the same record,
       // so it is left alone rather than written again. That keeps a switch off
@@ -328,7 +357,7 @@ export class AutofillStorageMigrator {
       //
       // A missing timestamp on either side counts as changed: two records that
       // cannot say when they were written are not known to be the same one.
-      const overwrite = records.filter(record => {
+      const overwrite = exportable.filter(record => {
         if (!held.has(record.guid)) {
           return false;
         }
@@ -344,6 +373,15 @@ export class AutofillStorageMigrator {
         ...(fresh.length ? await target.addManyWithMeta(fresh) : []),
         ...(overwrite.length ? await target.updateManyWithMeta(overwrite) : []),
       ];
+
+      // An exported record carries in the clear what the source holds
+      // encrypted, so let go of them here rather than at the end of the copy:
+      // the verify and the deletions below run for as long again, and none of
+      // it needs them. `records` holds the originals, still encrypted.
+      exportable.length = 0;
+      fresh.length = 0;
+      overwrite.length = 0;
+
       for (const result of results) {
         if (result.error) {
           failed++;
@@ -521,6 +559,11 @@ const addressLogger = console.createInstance({
   maxLogLevelPref: "extensions.formautofill.loglevel",
 });
 
+const creditCardLogger = console.createInstance({
+  prefix: "CreditCardStorageMigrator",
+  maxLogLevelPref: "extensions.formautofill.loglevel",
+});
+
 export class AddressStorageMigrator extends AutofillStorageMigrator {
   get logger() {
     return addressLogger;
@@ -550,4 +593,32 @@ export class AddressStorageMigrator extends AutofillStorageMigrator {
 
   // Every address field a store keeps compares as a string, so fieldDiffers is
   // left as the base has it.
+}
+
+export class CreditCardStorageMigrator extends AutofillStorageMigrator {
+  get logger() {
+    return creditCardLogger;
+  }
+
+  static get config() {
+    return {
+      metrics: Glean.formautofillCreditcards,
+      rustAdapter: lazy.RustAutofillCreditCardsAdapter,
+      testVersionPref:
+        "extensions.formautofill.creditCards.storage.rust.migrationTestVersion",
+      testVersion: 1,
+      attemptsPref:
+        "extensions.formautofill.creditCards.storage.rust.migrationAttempts",
+    };
+  }
+
+  isStoredField(field) {
+    return lazy.isStoredCreditCardField(field);
+  }
+
+  // The number is masked on one side and encrypted on both, so neither of its
+  // two fields compares as a string.
+  fieldDiffers(field, a, b) {
+    return lazy.creditCardFieldDiffers(field, a, b);
+  }
 }
