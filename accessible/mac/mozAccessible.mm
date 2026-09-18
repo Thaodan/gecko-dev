@@ -1052,9 +1052,7 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
 
 - (void)moxPerformScrollToVisible {
   MOZ_ASSERT(mGeckoAccessible);
-  if (RefPtr<Accessible> acc = mGeckoAccessible) {
-    acc->ScrollTo(nsIAccessibleScrollType::SCROLL_TYPE_ANYWHERE);
-  }
+  mGeckoAccessible->ScrollTo(nsIAccessibleScrollType::SCROLL_TYPE_ANYWHERE);
 }
 
 - (void)moxPerformShowMenu {

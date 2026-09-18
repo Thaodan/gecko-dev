@@ -181,11 +181,13 @@ ia2Accessible::role(long* aRole) {
 // XXX Use MOZ_CAN_RUN_SCRIPT_BOUNDARY for now due to bug 1543294.
 MOZ_CAN_RUN_SCRIPT_BOUNDARY STDMETHODIMP
 ia2Accessible::scrollTo(enum IA2ScrollType aScrollType) {
-  if (RefPtr<Accessible> acc = Acc()) {
-    acc->ScrollTo(aScrollType);
-    return S_OK;
+  Accessible* acc = Acc();
+  if (!acc) {
+    return CO_E_OBJNOTCONNECTED;
   }
-  return CO_E_OBJNOTCONNECTED;
+
+  acc->ScrollTo(aScrollType);
+  return S_OK;
 }
 
 STDMETHODIMP

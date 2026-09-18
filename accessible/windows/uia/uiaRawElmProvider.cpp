@@ -1097,11 +1097,12 @@ uiaRawElmProvider::get_ExpandCollapseState(
 // IScrollItemProvider methods
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY STDMETHODIMP uiaRawElmProvider::ScrollIntoView() {
-  if (RefPtr<Accessible> acc = Acc()) {
-    acc->ScrollTo(nsIAccessibleScrollType::SCROLL_TYPE_ANYWHERE);
-    return S_OK;
+  Accessible* acc = Acc();
+  if (!acc) {
+    return CO_E_OBJNOTCONNECTED;
   }
-  return CO_E_OBJNOTCONNECTED;
+  acc->ScrollTo(nsIAccessibleScrollType::SCROLL_TYPE_ANYWHERE);
+  return S_OK;
 }
 
 // IValueProvider methods

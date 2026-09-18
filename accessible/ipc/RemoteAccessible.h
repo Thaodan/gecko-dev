@@ -39,7 +39,7 @@ class RemoteAccessible : public Accessible, public HyperTextAccessibleBase {
   // another node's mChildren/mParent would be tracked by two independent,
   // disconnected refcounts.
   NS_INLINE_DECL_VIRTUAL_REFCOUNTING_WITH_DESTROY(RemoteAccessible,
-                                                  delete (this), override)
+                                                  delete (this))
 
   virtual bool IsRemote() const override { return true; }
 
