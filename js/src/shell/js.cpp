@@ -13517,7 +13517,9 @@ bool InitOptionParser(OptionParser& op) {
       !op.addBoolOption('\0', "enable-regexp-buffer-boundaries",
                         "Enable RegExp Buffer Boundaries") ||
       !op.addBoolOption('\0', "enable-wasm-esm-integration",
-                        "Enable wasm/esm integration")) {
+                        "Enable wasm/esm integration") ||
+      !op.addBoolOption('\0', "enable-defer-import-eval",
+                        "Enable Deferred Import Evaluation")) {
     return false;
   }
 
@@ -13629,6 +13631,9 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
   }
   if (op.getBoolOption("enable-regexp-buffer-boundaries")) {
     JS::Prefs::setAtStartup_experimental_regexp_buffer_boundaries(true);
+  }
+  if (op.getBoolOption("enable-defer-import-eval")) {
+    JS::Prefs::setAtStartup_experimental_defer_import_eval(true);
   }
 #endif
   if (op.getBoolOption("enable-source-phase-imports")) {
