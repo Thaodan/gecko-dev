@@ -852,6 +852,7 @@ BEGIN_TEST(testBufferAllocator_stress) {
 #endif
 
   BufferHolderObject::BufferVector& liveAllocs = holder->buffers();
+  StoreBuffer& storeBuffer = cx->runtime()->gc.storeBuffer();
 
   for (size_t i = 0; i < Iterations; i++) {
     size_t index = std::rand() % MaxLiveAllocs;
@@ -863,10 +864,15 @@ BEGIN_TEST(testBufferAllocator_stress) {
         bytes = mozilla::RoundUpPow2(bytes);
         liveAllocs[index] = TestAllocAligned(zone, bytes);
       } else {
-        liveAllocs[index] = AllocBuffer(zone, bytes, false);
+        bool nurseryOwned = (std::rand() % 2) == 0;
+        liveAllocs[index] = AllocBuffer(zone, bytes, nurseryOwned);
+        if (nurseryOwned && holder->isTenured()) {
+          storeBuffer.putWholeCell(holder);  // Post barrier.
+        }
       }
     } else {
-      void* ptr = ReallocBuffer(zone, liveAllocs[index], bytes, false);
+      bool nurseryOwned = IsNurseryOwned(zone, liveAllocs[index]);
+      void* ptr = ReallocBuffer(zone, liveAllocs[index], bytes, nurseryOwned);
       if (ptr) {
         liveAllocs[index] = ptr;
       }
