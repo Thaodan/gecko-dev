@@ -2,6 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/**
+ * Copies a profile's autofill records from one store to the other, and checks
+ * field by field that they came out the same.
+ *
+ * The copy itself does not depend on which collection is being copied, so it
+ * lives once here; a per-collection class at the bottom of this file supplies
+ * what does -- the prefs that budget the run, the Glean category it reports to,
+ * and how two records are compared.
+ */
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -12,19 +22,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   RustAutofillAddressesAdapter:
     "resource://autofill/RustAutofillAddressStorage.sys.mjs",
 });
-
-// Which generation of the dry run this profile has done, so a build that fixes
-// a migration bug can bump TEST_VERSION and measure the same profiles again.
-// Kept apart from rust.active: a dry run wipes the store when it is done, so
-// counting it as a migration would let a later rust.enabled=true skip the copy
-// and serve an empty store.
-const TEST_VERSION_PREF =
-  "extensions.formautofill.addresses.storage.rust.migrationTestVersion";
-const TEST_VERSION = 1;
-
-// How many launches have already tried and failed.
-const ATTEMPTS_PREF =
-  "extensions.formautofill.addresses.storage.rust.migrationAttempts";
 
 // Each attempt re-imports the whole profile, so a store that can never be
 // written must not pay that on every startup.
@@ -46,16 +43,25 @@ const errorTextOf = e =>
     .slice(0, 200);
 
 /**
- * Copy a profile's addresses from one store to the other, and check field by
+ * Copy a profile's records from one store to the other, and check field by
  * field that they came out the same. A dry run does the copy only to measure it,
  * and leaves the caller to empty the target again.
  *
  * Runs at startup for a profile that has not migrated, and again each time the
  * pref that chooses the store is flipped -- in whichever direction that pref
  * has just gone, since the copy is written against a source and a target.
+ *
+ * A subclass supplies what differs by collection, as getters rather than
+ * instance fields so they are readable from here:
+ *
+ *  - `config` (static), holding metrics, rustAdapter, testVersionPref, testVersion and
+ *    attemptsPref. Rebuilt on each read, so the Glean category and the lazy
+ *    module getters inside it resolve at call time rather than at load.
+ *  - `logger`.
+ *  - the `isStoredField()` method, and `fieldDiffers()` if the collection has a
+ *    field that does not compare as a string.
  */
-export class AddressStorageMigrator {
-  #logger = null;
+export class AutofillStorageMigrator {
   #source = null;
   #target = null;
   #attempt = 0;
@@ -70,12 +76,15 @@ export class AddressStorageMigrator {
    *   refreshCount().
    */
   constructor(source, target) {
-    this.#logger = console.createInstance({
-      prefix: "AddressStorageMigrator",
-      maxLogLevelPref: "extensions.formautofill.loglevel",
-    });
     this.#source = source;
     this.#target = target;
+  }
+
+  /**
+   * The subclass's config, for the instance methods that read it.
+   */
+  get config() {
+    return this.constructor.config;
   }
 
   /**
@@ -89,7 +98,8 @@ export class AddressStorageMigrator {
    * @returns {boolean}
    */
   static get dryRunPending() {
-    return Services.prefs.getIntPref(TEST_VERSION_PREF, 0) < TEST_VERSION;
+    const { testVersionPref, testVersion } = this.config;
+    return Services.prefs.getIntPref(testVersionPref, 0) < testVersion;
   }
 
   /**
@@ -100,8 +110,9 @@ export class AddressStorageMigrator {
    *
    * @param {object} [options]
    * @param {boolean} [options.dryRun=false] Copy only to measure it: reports
-   *   the run, returns false whatever the outcome, and records TEST_VERSION so
-   *   the same generation never measures twice. Spends no attempt budget.
+   *   the run, returns false whatever the outcome, and records the config's
+   *   testVersion so the same generation never measures twice. Spends no
+   *   attempt budget.
    * @param {boolean} [options.wipe=true] Empty the target first. See #migrate.
    * @returns {Promise<boolean>} Whether the copy completed. Always false for a
    *   dry run.
@@ -109,31 +120,33 @@ export class AddressStorageMigrator {
   async maybeRun({ dryRun = false, wipe = true } = {}) {
     try {
       if (dryRun) {
-        if (!AddressStorageMigrator.dryRunPending) {
+        if (!this.constructor.dryRunPending) {
           return false;
         }
         await this.#migrateAndReport({ wipe });
-        Services.prefs.setIntPref(TEST_VERSION_PREF, TEST_VERSION);
+        const { testVersionPref, testVersion } = this.config;
+        Services.prefs.setIntPref(testVersionPref, testVersion);
         return false;
       }
 
-      this.#attempt = Services.prefs.getIntPref(ATTEMPTS_PREF, 0);
+      const { attemptsPref } = this.config;
+      this.#attempt = Services.prefs.getIntPref(attemptsPref, 0);
       if (this.#attempt >= MAX_ATTEMPTS) {
-        this.#logger.warn(
-          `Not migrating addresses: ${this.#attempt} attempts already failed.`
+        this.logger.warn(
+          `Not migrating: ${this.#attempt} attempts already failed.`
         );
         return false;
       }
 
       const { ok } = await this.#migrateAndReport({ wipe });
       if (ok) {
-        Services.prefs.clearUserPref(ATTEMPTS_PREF);
+        Services.prefs.clearUserPref(attemptsPref);
       } else {
-        Services.prefs.setIntPref(ATTEMPTS_PREF, this.#attempt + 1);
+        Services.prefs.setIntPref(attemptsPref, this.#attempt + 1);
       }
       return ok;
     } catch (e) {
-      this.#logger.error("Could not run the address migration", e);
+      this.logger.error("Could not run the migration", e);
       return false;
     }
   }
@@ -146,7 +159,7 @@ export class AddressStorageMigrator {
       await this.#target.wipe();
       await this.#target.refreshCount?.();
     } catch (e) {
-      this.#logger.error("Could not wipe the address store", e);
+      this.logger.error("Could not wipe the store", e);
     }
   }
 
@@ -170,7 +183,7 @@ export class AddressStorageMigrator {
     try {
       this._report(result, startedAt);
     } catch (e) {
-      this.#logger.error("Could not report the migration", e);
+      this.logger.error("Could not report the migration", e);
     }
 
     return result;
@@ -190,12 +203,13 @@ export class AddressStorageMigrator {
    *   began, for duration_ms.
    */
   _report(result, startedAt) {
+    // Read at call time, not held: a Glean category is read-only and each
+    // metric lookup returns a fresh object.
+    const { metrics, rustAdapter } = this.config;
     // Read off the target rather than passed in, so the label cannot disagree
     // with the copy it describes.
     const direction =
-      this.#target instanceof lazy.RustAutofillAddressesAdapter
-        ? "to_rust"
-        : "to_json";
+      this.#target instanceof rustAdapter ? "to_rust" : "to_json";
     // Joins the run to the divergences it found.
     const runId = Services.uuid.generateUUID().toString();
 
@@ -209,7 +223,7 @@ export class AddressStorageMigrator {
         }
       }
 
-      Glean.formautofillAddresses.migrateRecordDivergence.record({
+      metrics.migrateRecordDivergence.record({
         run_id: runId,
         ...fields,
       });
@@ -219,7 +233,7 @@ export class AddressStorageMigrator {
     // to add.
     const errorMessage = result.threw ?? result.firstCause;
 
-    Glean.formautofillAddresses.migrateToRust.record({
+    metrics.migrateToRust.record({
       run_id: runId,
       direction,
       attempt: this.#attempt,
@@ -294,7 +308,7 @@ export class AddressStorageMigrator {
 
       if (wipe) {
         // Silent, like the bulk writes below: announcing this as a removeAll
-        // would report the profile's addresses as cleared mid-startup.
+        // would report the profile's records as cleared mid-startup.
         await target.wipe();
       }
 
@@ -334,7 +348,7 @@ export class AddressStorageMigrator {
         if (result.error) {
           failed++;
           firstCause ??= errorTextOf(result.error);
-          this.#logger.error(`Migration failed for a record: ${result.error}`);
+          this.logger.error(`Migration failed for a record: ${result.error}`);
         } else {
           migrated++;
         }
@@ -367,7 +381,7 @@ export class AddressStorageMigrator {
         if (result.error) {
           failedDeletions++;
           firstCause ??= errorTextOf(result.error);
-          this.#logger.error(`Could not apply a deletion: ${result.error}`);
+          this.logger.error(`Could not apply a deletion: ${result.error}`);
         }
       }
 
@@ -391,8 +405,8 @@ export class AddressStorageMigrator {
       ).length;
       ok = failed === 0 && missing === 0 && extra === 0;
 
-      this.#logger.log(
-        `Migrated ${migrated}/${sourceTotal} addresses ` +
+      this.logger.log(
+        `Migrated ${migrated}/${sourceTotal} records ` +
           `(${failed} failed, ${failedDeletions} deletions failed, ` +
           `${missing} missing, ${extra} extra, count=${targetTotal}, ` +
           `diverged=${divergences.length}, verified=${ok}).`
@@ -401,7 +415,7 @@ export class AddressStorageMigrator {
       ok = false;
       errorCode = errorCodeOf(e);
       threw = errorTextOf(e);
-      this.#logger.error("Address migration failed", e);
+      this.logger.error("Migration failed", e);
     }
 
     return {
@@ -417,6 +431,20 @@ export class AddressStorageMigrator {
       errorCode,
       threw,
     };
+  }
+
+  /**
+   * Whether a field disagrees between a record and its copy. A string
+   * comparison unless a collection holds a field that cannot answer that --
+   * see CreditCardStorageMigrator.
+   *
+   * @param {string} _field
+   * @param {*} a The value on the record.
+   * @param {*} b The value on its copy.
+   * @returns {boolean}
+   */
+  fieldDiffers(_field, a, b) {
+    return a !== b;
   }
 
   /**
@@ -458,7 +486,8 @@ export class AddressStorageMigrator {
         ...new Set([...Object.keys(record), ...Object.keys(copy)]),
       ].filter(
         field =>
-          lazy.isStoredAddressField(field) && record[field] !== copy[field]
+          this.isStoredField(field) &&
+          this.fieldDiffers(field, record[field], copy[field])
       );
       if (!differing.length) {
         continue;
@@ -478,11 +507,47 @@ export class AddressStorageMigrator {
       }
       divergences.push(divergence);
 
-      this.#logger.warn(
-        `Migrated address differs from the source record on: ` +
+      this.logger.warn(
+        `Migrated record differs from its source on: ` +
           `${differing.join(", ")}`
       );
     }
     return divergences;
   }
+}
+
+const addressLogger = console.createInstance({
+  prefix: "AddressStorageMigrator",
+  maxLogLevelPref: "extensions.formautofill.loglevel",
+});
+
+export class AddressStorageMigrator extends AutofillStorageMigrator {
+  get logger() {
+    return addressLogger;
+  }
+
+  static get config() {
+    return {
+      metrics: Glean.formautofillAddresses,
+      rustAdapter: lazy.RustAutofillAddressesAdapter,
+      // Which generation of the dry run a profile has done, so a build that
+      // fixes a migration bug can bump testVersion and measure the same
+      // profiles again. Kept apart from rust.active: a dry run wipes the store
+      // when it is done, so counting it as a migration would let a later
+      // rust.enabled=true skip the copy and serve an empty store.
+      testVersionPref:
+        "extensions.formautofill.addresses.storage.rust.migrationTestVersion",
+      testVersion: 1,
+      // How many launches have already tried and failed.
+      attemptsPref:
+        "extensions.formautofill.addresses.storage.rust.migrationAttempts",
+    };
+  }
+
+  isStoredField(field) {
+    return lazy.isStoredAddressField(field);
+  }
+
+  // Every address field a store keeps compares as a string, so fieldDiffers is
+  // left as the base has it.
 }
