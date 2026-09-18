@@ -1289,6 +1289,14 @@ toolbar[inactive="true"] .urlbar,
     display: flex;
     align-items: center;
     gap: var(--space-small);
+
+    @media -moz-pref("browser.urlbar.unifiedSearchButton.always") {
+      gap: var(--space-xsmall);
+    }
+
+    .urlbar:is([sap-name="searchbar"], [sap-name="newtab_searchbar"]) & {
+      gap: var(--space-xsmall);
+    }
   }
 
   &[offscreen] {
@@ -1327,8 +1335,6 @@ toolbar[inactive="true"] .urlbar,
     }
 
     > .searchmode-switcher-content {
-      gap: var(--space-xsmall);
-
       /* Put the engine name before the dropmarker. */
       > .searchmode-switcher-title {
         order: -1;
@@ -1402,7 +1408,7 @@ toolbar[inactive="true"] .urlbar,
   max-width: var(--search-engine-name-max-width);
 
   @media not -moz-pref("browser.urlbar.unifiedSearchButton.always") {
-    .urlbar:not(#searchbar-new)[searchmode] & {
+    .urlbar:not([sap-name="searchbar"], [sap-name="newtab_searchbar"])[searchmode] & {
       display: block;
     }
   }
@@ -1421,7 +1427,7 @@ toolbar[inactive="true"] .urlbar,
   align-self: center;
 
   @media not -moz-pref("browser.urlbar.unifiedSearchButton.always") {
-    .urlbar[searchmode] & {
+    .urlbar:not([sap-name="searchbar"], [sap-name="newtab_searchbar"])[searchmode] & {
       display: revert;
     }
   }
@@ -1436,11 +1442,7 @@ toolbar[inactive="true"] .urlbar,
     transition: 300ms transform ease-in-out;
   }
 
-  @media -moz-pref("browser.urlbar.unifiedSearchButton.always") {
-    margin-inline-start: calc(var(--space-xsmall) * -1);
-  }
-
-  .urlbar[searchmode] & {
+  .urlbar:not([sap-name="searchbar"], [sap-name="newtab_searchbar"])[searchmode] & {
     @media not -moz-pref("browser.urlbar.unifiedSearchButton.always") {
       display: none;
     }

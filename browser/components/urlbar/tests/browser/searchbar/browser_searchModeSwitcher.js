@@ -83,8 +83,7 @@ add_task(async function test_scotchbonnet_disabled() {
   });
   Assert.ok(true, "Entered search mode");
 
-  document.querySelector("#searchbar-new .searchmode-switcher-close").click();
-  await SearchbarTestUtils.assertSearchMode(window, null);
+  await SearchbarTestUtils.exitSearchMode(window, { waitForSearch: false });
   Assert.ok(true, "Exited search mode");
 
   await SpecialPowers.popPrefEnv();
