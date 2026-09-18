@@ -65,7 +65,8 @@ class ImportAttribute {
 using ImportAttributeVector = GCVector<ImportAttribute, 0, SystemAllocPolicy>;
 
 // https://tc39.es/proposal-source-phase-imports/#sec-modulerequest-record
-enum class ImportPhase : uint8_t { Source, Evaluation, Limit };
+// https://tc39.es/proposal-defer-import-eval/#modulerequest-record
+enum class ImportPhase : uint8_t { Source, Evaluation, Deferred, Limit };
 
 // Possible value types of [[ImportName]] field in ImportEntry Records and
 // ExportEntry Records.

@@ -118,11 +118,24 @@ class JS_PUBLIC_API PrefableCompileOptions {
  public:
   PrefableCompileOptions()
       : sourcePragmas_(true),
-        sourcePhaseImports_(JS::Prefs::experimental_source_phase_imports()) {}
+        sourcePhaseImports_(JS::Prefs::experimental_source_phase_imports()),
+        deferImportEval_(
+#ifdef NIGHTLY_BUILD
+            JS::Prefs::experimental_defer_import_eval()
+#else
+            false
+#endif
+        ) {}
 
   bool sourcePhaseImports() const { return sourcePhaseImports_; }
   PrefableCompileOptions& setSourcePhaseImports(bool enabled) {
     sourcePhaseImports_ = enabled;
+    return *this;
+  }
+
+  bool deferImportEval() const { return deferImportEval_; }
+  PrefableCompileOptions& setDeferImportEval(bool enabled) {
+    deferImportEval_ = enabled;
     return *this;
   }
 
@@ -139,6 +152,7 @@ class JS_PUBLIC_API PrefableCompileOptions {
 #  define PrintFields_(Name) print(#Name, Name)
     PrintFields_(sourcePragmas_);
     PrintFields_(sourcePhaseImports_);
+    PrintFields_(deferImportEval_);
 #  undef PrintFields_
   }
 #endif  // defined(DEBUG) || defined(JS_JITSPEW)
@@ -150,6 +164,9 @@ class JS_PUBLIC_API PrefableCompileOptions {
   bool sourcePragmas_ : 1;
 
   bool sourcePhaseImports_ : 1;
+
+  // defer import evaluation
+  bool deferImportEval_ : 1;
 };
 
 /**
@@ -330,6 +347,8 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   bool sourcePhaseImports() const {
     return prefableOptions_.sourcePhaseImports();
   }
+
+  bool deferImportEval() const { return prefableOptions_.deferImportEval(); }
 
   JS::ConstUTF8CharsZ filename() const { return filename_; }
   JS::ConstUTF8CharsZ introducerFilename() const { return introducerFilename_; }
