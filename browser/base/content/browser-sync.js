@@ -3930,6 +3930,10 @@ var gSync = {
 
   onFxaDisabled() {
     document.documentElement.setAttribute("fxadisabled", true);
+    // init() returns here before updateAllUI() can run, so correct any startup
+    // guess (see updateFxaToolbarMenu) that assumed a signed-in state from a
+    // persisted device name.
+    document.documentElement.setAttribute("fxastatus", "not_configured");
 
     const toHide = [...document.querySelectorAll(".sync-ui-item")];
     for (const item of toHide) {
