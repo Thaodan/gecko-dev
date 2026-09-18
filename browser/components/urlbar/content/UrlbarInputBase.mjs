@@ -196,12 +196,8 @@ ${
            role="group"
            tooltip="aHTMLTooltip">
         <div class="urlbarView-background"/>
-        <div class="urlbarView-body-outer">
-          <div class="urlbarView-body-inner">
-            <div class="urlbarView-results"
-                 role="listbox"/>
-          </div>
-        </div>
+        <div class="urlbarView-results"
+             role="listbox"/>
         <panel-list class="urlbarView-result-menu"></panel-list>
         <moz-urlbar-slot name="search-one-offs" />
    </div>`;
