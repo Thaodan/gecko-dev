@@ -258,7 +258,8 @@ toolbar[inactive="true"] .urlbar,
   --urlbar-container-padding-block: 0px;
   --urlbar-input-container-padding: 10px;
   --urlbar-basic-component-size: calc(var(--urlbar-height) - 2 * var(--urlbar-input-container-padding));
-  --urlbarview-border-radius: calc(var(--urlbar-height) / 2);
+  --urlbar-border-radius: calc(var(--urlbar-height) / 2);
+  --urlbarview-border-radius: var(--urlbar-border-radius);
 
   /* When the input isn't in a toolbar, it can't use a background that may have
      significant transparency since it counts on the toolbar background behind
