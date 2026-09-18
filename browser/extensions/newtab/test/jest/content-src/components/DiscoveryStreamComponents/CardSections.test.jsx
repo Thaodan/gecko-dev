@@ -207,6 +207,58 @@ describe("<CardSections />", () => {
     });
   });
 
+  describe("breakpoints with different card counts", () => {
+    // The render is sized to the breakpoint with the most tiles, so the two
+    // cards past col-1's tile list exist only for col-4.
+    const UNEVEN_LAYOUT = {
+      title: "layout_name",
+      responsiveLayouts: [
+        {
+          columnCount: 1,
+          tiles: [
+            { size: "medium", position: 0, hasExcerpt: false },
+            { size: "medium", position: 1, hasExcerpt: false },
+          ],
+        },
+        {
+          columnCount: 4,
+          tiles: [
+            { size: "medium", position: 0, hasExcerpt: false },
+            { size: "medium", position: 1, hasExcerpt: false },
+            { size: "medium", position: 2, hasExcerpt: false },
+            { size: "medium", position: 3, hasExcerpt: false },
+          ],
+        },
+      ],
+    };
+
+    const renderUnevenSection = () =>
+      renderCardSections({
+        data: {
+          sections: [
+            { ...DEFAULT_PROPS.data.sections[0], layout: UNEVEN_LAYOUT },
+          ],
+        },
+      });
+
+    it("hides the extra cards at the breakpoint with no tile for them", () => {
+      const cards =
+        renderUnevenSection().container.querySelectorAll("article.ds-card");
+
+      expect(cards[2]).toHaveClass("col-1-hidden");
+      expect(cards[3]).toHaveClass("col-1-hidden");
+    });
+
+    it("leaves the cards a breakpoint does have tiles for visible", () => {
+      const cards =
+        renderUnevenSection().container.querySelectorAll("article.ds-card");
+
+      expect(cards[0]).not.toHaveClass("col-1-hidden");
+      expect(cards[1]).not.toHaveClass("col-1-hidden");
+      cards.forEach(card => expect(card).not.toHaveClass("col-4-hidden"));
+    });
+  });
+
   it("should dispatch SECTION_PERSONALIZATION_UPDATE updates with follow and unfollow", () => {
     const fakeDate = "2020-01-01T00:00:00.000Z";
     jest.useFakeTimers().setSystemTime(new Date(fakeDate));

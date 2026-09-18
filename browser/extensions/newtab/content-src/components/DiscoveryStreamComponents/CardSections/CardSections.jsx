@@ -104,18 +104,21 @@ function getLayoutData(responsiveLayouts, index) {
     imageSizes: {},
     cardPositions: {},
     isCarousel: false,
+    hiddenColumnCounts: new Set(),
   };
 
   responsiveLayouts.forEach(layout => {
     const orphanTiles = getOrphanTileIndexes(layout.tiles, layout.columnCount);
+    let hasTile = false;
     layout.tiles.forEach((tile, tileIndex) => {
       if (tile.position === index) {
+        hasTile = true;
         if (tile.carousel) {
           layoutData.isCarousel = true;
         }
 
         if (orphanTiles.has(tileIndex)) {
-          layoutData.classNames.push(`col-${layout.columnCount}-hidden`);
+          layoutData.hiddenColumnCounts.add(layout.columnCount);
         }
         layoutData.classNames.push(`col-${layout.columnCount}-${tile.size}`);
         layoutData.classNames.push(
@@ -141,6 +144,17 @@ function getLayoutData(responsiveLayouts, index) {
         }
       }
     });
+
+    // Bug 2069430: Different breakpoints can contain a different number of
+    // cards. The render is sized to the breakpoint with the most tiles, so
+    // a breakpoint with no tile at this position hides the extra card.
+    if (!hasTile) {
+      layoutData.hiddenColumnCounts.add(layout.columnCount);
+    }
+  });
+
+  layoutData.hiddenColumnCounts.forEach(columnCount => {
+    layoutData.classNames.push(`col-${columnCount}-hidden`);
   });
 
   return layoutData;
