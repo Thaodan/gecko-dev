@@ -1095,9 +1095,20 @@ static bool CyclicModuleResolveExport(JSContext* cx,
       if (e.importNameValueType() == ImportNameValueType::Namespace) {
         // Step 6.a.iii.1. Assert: module does not provide the direct binding
         //                 for this export.
-        // Step 6.a.iii.2. Return ResolvedBinding Record { [[Module]]:
-        //                 importedModule, [[BindingName]]: NAMESPACE }.
-        name = cx->names().star_namespace_star_;
+        // Step 6.a.iii.2. If e.[[ModuleRequest]].[[Phase]] is defer, then
+        //                 Return ResolvedBinding Record { [[Module]]:
+        //                 importedModule, [[BindingName]]: DEFERRED-NAMESPACE
+        //                 }.
+        if (moduleRequest->phase() == ImportPhase::Deferred) {
+          name = cx->names().star_deferred_namespace_star_;
+        } else {
+          // Step 6.a.iii.3. Else,
+          //   Assert: e.[[Phase]] is evaluation.
+          MOZ_ASSERT(moduleRequest->phase() == ImportPhase::Evaluation);
+          //   Return ResolvedBinding Record {
+          //     [[Module]]: importedModule, [[BindingName]]: NAMESPACE }.
+          name = cx->names().star_namespace_star_;
+        }
         return CreateResolvedBindingObject(cx, importedModule, name, result);
       } else {
         name = e.importName();
@@ -1532,9 +1543,13 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
 
     // https://tc39.es/ecma262/#sec-module-namespace-exotic-objects-get-p-receiver
     // ES2023 10.4.6.8 Module Namespace Exotic Object [[Get]]
-    if (bindingName == cx->names().star_namespace_star_) {
+    if (bindingName == cx->names().star_namespace_star_ ||
+        bindingName == cx->names().star_deferred_namespace_star_) {
       bindingModule = binding->module();
-      bindingNs = GetOrCreateModuleNamespace(cx, bindingModule);
+      ImportPhase phase = bindingName == cx->names().star_namespace_star_
+                              ? ImportPhase::Evaluation
+                              : ImportPhase::Deferred;
+      bindingNs = GetOrCreateModuleNamespace(cx, bindingModule, phase);
       if (!bindingNs) {
         return false;
       }
@@ -1577,8 +1592,8 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
     // Step 7.b. If in.[[ImportName]] is ~namespace~, then:
     if (in.importNameValueType() == ImportNameValueType::Namespace) {
       // Step 7.b.i. Let namespace be ? GetModuleNamespace(importedModule).
-      ModuleNamespaceObject* ns =
-          GetOrCreateModuleNamespace(cx, importedModule);
+      ModuleNamespaceObject* ns = GetOrCreateModuleNamespace(
+          cx, importedModule, moduleRequest->phase());
       if (!ns) {
         return false;
       }
@@ -1635,12 +1650,19 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
       sourceModule = binding->module();
       bindingName = binding->bindingName();
 
-      // Step 7.d.iv. If resolution.[[BindingName]] is ~namespace~, then:
-      if (bindingName == cx->names().star_namespace_star_) {
-        // Step 7.d.iv.1. Let namespace be ?
-        //                GetModuleNamespace(resolution.[[Module]]).
+      // Step 7.d.iv. If resolution.[[BindingName]] is namespace or
+      // deferred-namespace, then:
+      if (bindingName == cx->names().star_namespace_star_ ||
+          bindingName == cx->names().star_deferred_namespace_star_) {
+        // Step.7.d.iv.1. If resolution.[[BindingName]] is namespace let phase
+        // be evaluation, else let phase be defer.
+        ImportPhase phase = bindingName == cx->names().star_namespace_star_
+                                ? ImportPhase::Evaluation
+                                : ImportPhase::Deferred;
+        // Step 7.d.iv.2. Let namespace be ?
+        //                 GetModuleNamespace(resolution.[[Module]]).
         Rooted<ModuleNamespaceObject*> ns(
-            cx, GetOrCreateModuleNamespace(cx, sourceModule));
+            cx, GetOrCreateModuleNamespace(cx, sourceModule, phase));
         if (!ns) {
           return false;
         }
@@ -2066,13 +2088,12 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
   Rooted<ModuleObject*> requiredModule(cx);
   for (const RequestedModule& request : module->requestedModules()) {
     required = request.moduleRequest();
-    // Step 9.a. If required.[[Phase]] is evaluation, then
-    if (required->phase() != ImportPhase::Evaluation) {
+    // Source-phase modules don't participate in recursive linking.
+    if (required->phase() == ImportPhase::Source) {
       continue;
     }
     // Step 9.a.i. Let requiredModule be ? GetImportedModule(module,
     //             required).
-    MOZ_ASSERT(required->phase() == ImportPhase::Evaluation);
     requiredModule = GetImportedModule(cx, module, required);
     if (!requiredModule) {
       return false;
