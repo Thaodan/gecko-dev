@@ -2,10 +2,9 @@
 # These tests can be prone to intermittent failures on slower systems.
 # Since the specific flavor doesn't matter from a correctness standpoint,
 # just skip the tests on sanitizer, debug and OS X verify builds.
-skip-if = [
-  "asan",
-  "debug",
-  "tsan",
+run-if = [
+  "ccov",
+  "opt",
 ]
 support-files = ["head.js"]
 
