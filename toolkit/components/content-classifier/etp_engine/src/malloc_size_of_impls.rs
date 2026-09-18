@@ -17,6 +17,7 @@ use crate::blocker::Blocker;
 use crate::cosmetic_filter_cache::CosmeticFilterCache;
 use crate::filters::filter_data_context::FilterDataContextRef;
 use crate::flatbuffers::unsafe_tools::VerifiedFlatbufferMemory;
+use crate::resources::ResourceStorage;
 
 /// Heap usage of an [`crate::engine::Engine`], split by what holds it.
 ///
@@ -46,6 +47,9 @@ pub struct EngineMemoryBreakdown {
     /// Whatever the cosmetic filter cache owns beyond the filter data it shares
     /// with the matcher. Nothing today; see [`Self::add_cosmetic_cache`].
     pub cosmetic_cache: usize,
+
+    /// The boxed resource backend, excluding whatever it stores.
+    pub resources: usize,
 }
 
 impl EngineMemoryBreakdown {
@@ -86,6 +90,10 @@ impl EngineMemoryBreakdown {
         _cosmetic_cache: &CosmeticFilterCache,
         _ops: &mut MallocSizeOfOps,
     ) {
+    }
+
+    pub(crate) fn add_resources(&mut self, resources: &ResourceStorage, ops: &mut MallocSizeOfOps) {
+        self.resources += resources.backend_size_of(ops);
     }
 }
 

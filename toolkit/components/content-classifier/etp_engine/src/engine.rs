@@ -93,8 +93,9 @@ impl Engine {
     /// * `blocker` owns the enabled tags and the regex table.
     /// * `cosmetic_cache` owns nothing beyond its clone of the reference above,
     ///   so it contributes nothing, but it is still visited.
-    /// * `resources` is left out: the Gecko path never populates it, and its
-    ///   backend is a trait object with no way to size it.
+    /// * `resources` contributes its boxed backend. What that backend stores
+    ///   is not included, because it is a trait object; the Gecko path never
+    ///   populates it.
     pub fn memory_breakdown(
         &self,
         ops: &mut malloc_size_of::MallocSizeOfOps,
@@ -103,6 +104,7 @@ impl Engine {
         breakdown.add_filter_data(&self.filter_data_context, ops);
         breakdown.add_blocker(&self.blocker, ops);
         breakdown.add_cosmetic_cache(&self.cosmetic_cache, ops);
+        breakdown.add_resources(&self.resources, ops);
         breakdown
     }
 }
