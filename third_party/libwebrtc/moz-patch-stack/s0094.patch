@@ -456,7 +456,7 @@ index 353b8adef2..1141183cb8 100644
  
  config("audio_device_warnings_config") {
 diff --git a/modules/audio_processing/aec3/BUILD.gn b/modules/audio_processing/aec3/BUILD.gn
-index 6366fb6460..bd9db78fe8 100644
+index 918bed6772..83b8bd99df 100644
 --- a/modules/audio_processing/aec3/BUILD.gn
 +++ b/modules/audio_processing/aec3/BUILD.gn
 @@ -126,7 +126,7 @@ rtc_library("aec3") {
@@ -495,7 +495,7 @@ index a6e1353d6d..6a67bfdbf5 100644
    }
  
 diff --git a/modules/audio_processing/agc2/rnn_vad/BUILD.gn b/modules/audio_processing/agc2/rnn_vad/BUILD.gn
-index a5ff021945..029e4a70e3 100644
+index e0bbffd648..1fcc93de7f 100644
 --- a/modules/audio_processing/agc2/rnn_vad/BUILD.gn
 +++ b/modules/audio_processing/agc2/rnn_vad/BUILD.gn
 @@ -19,7 +19,7 @@ rtc_library("rnn_vad") {

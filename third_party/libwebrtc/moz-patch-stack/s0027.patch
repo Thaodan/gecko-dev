@@ -791,7 +791,7 @@ index 98f0ee5fe7..353b8adef2 100644
  if (rtc_include_tests && !build_with_chromium) {
    rtc_library("fine_audio_buffer_unittest") {
 diff --git a/modules/audio_processing/aec3/BUILD.gn b/modules/audio_processing/aec3/BUILD.gn
-index 34cf02f2e2..68aed7b4db 100644
+index 98d122f0be..ea2c759576 100644
 --- a/modules/audio_processing/aec3/BUILD.gn
 +++ b/modules/audio_processing/aec3/BUILD.gn
 @@ -260,14 +260,11 @@ if (current_cpu == "x86" || current_cpu == "x64") {
@@ -828,7 +828,7 @@ index 327f0fb16d..22000b5946 100644
  #include <algorithm>
  #include <array>
 diff --git a/modules/audio_processing/agc2/rnn_vad/BUILD.gn b/modules/audio_processing/agc2/rnn_vad/BUILD.gn
-index 92a69480b4..6d16f05299 100644
+index 9af656832d..294daa4692 100644
 --- a/modules/audio_processing/agc2/rnn_vad/BUILD.gn
 +++ b/modules/audio_processing/agc2/rnn_vad/BUILD.gn
 @@ -114,7 +114,7 @@ rtc_source_set("vector_math") {
