@@ -31,7 +31,7 @@ async function getButtonState(browser, engineName, expectedWordmark = null) {
           content.document
             .querySelector("moz-urlbar")
             .hasAttribute("variant-a"),
-        "waiting for the bar to be in variant A"
+        "waiting for the search bar to be in variant A"
       );
 
       let button = content.document.querySelector(".searchmode-switcher");
@@ -68,7 +68,7 @@ add_setup(async function () {
   NewTabPagePreloading.removePreloadedBrowser(window);
 });
 
-// The engines whose wordmark the bar has an image for.
+// The engines whose wordmark the search bar has an image for.
 add_task(async function knownEngines() {
   for (let [identifier, wordmark] of [
     ["bing", "bing"],

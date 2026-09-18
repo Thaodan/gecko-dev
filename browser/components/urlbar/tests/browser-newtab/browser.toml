@@ -63,6 +63,8 @@ support-files = ["../../../search/test/browser/trendingSuggestionEngine.sjs"]
 
 ["browser_undo_history.js"]
 
+["browser_variantB.js"]
+
 ["browser_viewBounds.js"]
 
 ["browser_zeroPrefixTelemetry.js"]

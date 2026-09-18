@@ -780,13 +780,24 @@ ${
   }
 
   /**
-   * Whether this bar shows layout variant A. New Tab's registrant sets the
+   * Whether this input shows layout variant A. New Tab's registrant sets the
    * attribute from the urlbar's `newtabVariantA` Nimbus variable.
    *
    * @type {boolean}
    */
   get variantA() {
     return this.hasAttribute("variant-a");
+  }
+
+  /**
+   * Whether this input shows layout variant B, with the search engine button on
+   * its own row above the input. New Tab's registrant sets the attribute from
+   * the urlbar's `newtabVariantB` Nimbus variable.
+   *
+   * @type {boolean}
+   */
+  get variantB() {
+    return this.hasAttribute("variant-b");
   }
 
   /**
@@ -5414,7 +5425,8 @@ ${
         this._mousedownOnUrlbarDescendant = true;
         if (
           event.target != this.inputField &&
-          event.target != this._inputContainer
+          event.target != this._inputContainer &&
+          event.target != this.inputField.parentNode
         ) {
           break;
         }

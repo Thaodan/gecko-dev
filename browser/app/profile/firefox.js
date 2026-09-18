@@ -464,6 +464,7 @@ pref("browser.urlbar.newtab.featureGate", true);
 pref("browser.urlbar.newtab.featureGate", false);
 #endif
 pref("browser.urlbar.newtab.variantA", false);
+pref("browser.urlbar.newtab.variantB", false);
 
 // Enable a certain level of urlbar logging to the Browser Console. See
 // ConsoleInstance.webidl.

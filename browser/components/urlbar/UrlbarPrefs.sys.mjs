@@ -306,6 +306,10 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // `newtab.featureGate` is enabled.
   ["newtab.variantA", false],
 
+  // Layout variant B of the New Tab search bar, with the search engine button
+  // above the input. Only takes effect while `newtab.featureGate` is enabled.
+  ["newtab.variantB", false],
+
   // Whether addresses and search results typed into the address bar
   // should be opened in new tabs by default.
   ["openintab", false],
@@ -1416,6 +1420,7 @@ class Preferences {
       case "browser.nova.enabled":
         this._map.delete("newtabFeatureGate");
         this._map.delete("newtabVariantA");
+        this._map.delete("newtabVariantB");
         return;
       case "autoFill.adaptiveHistory.useCountThreshold":
         this._map.delete("autoFillAdaptiveHistoryUseCountThreshold");
@@ -1520,7 +1525,8 @@ class Preferences {
         // The New Tab search bar is only themed for Nova.
         return this.get("browser.nova.enabled") && this._readPref(pref);
       }
-      case "newtabVariantA": {
+      case "newtabVariantA":
+      case "newtabVariantB": {
         return this.get("newtabFeatureGate") && this._readPref(pref);
       }
       case "defaultBehavior": {

@@ -423,6 +423,13 @@ urlbar:
       description: >-
         Layout variant A for the about:newtab and about:home search bar; depends
         on newtabFeatureGate.
+    newtabVariantB:
+      type: boolean
+      fallbackPref: browser.urlbar.newtab.variantB
+      description: >-
+        Layout variant B for the about:newtab and about:home search bar, with
+        the search engine button above the input; depends on newtabFeatureGate
+        and takes precedence over newtabVariantA.
     exposureResults:
       type: string
       setPref:

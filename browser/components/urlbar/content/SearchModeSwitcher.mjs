@@ -38,7 +38,7 @@ const DEFAULT_ENGINE_ICON =
 
 const SKIP_TAB_STOP_PREF = "searchModeSwitcher.skipTabStop";
 
-// The config engines whose wordmark variant A of the New Tab search bar shows in
+// The config engines whose wordmark the New Tab search bar's variants show in
 // place of their icon and name. Keyed by the first segment of the engine's
 // identifier, so that a regional or per-language engine shares its family's
 // wordmark, as ebay-uk and wikipedia-fr do. The images live in
@@ -99,6 +99,11 @@ export class SearchModeSwitcher {
     this.#panelList = input.querySelector(".searchmode-switcher-panel-list");
     this.#button = input.querySelector(".searchmode-switcher");
     this.#closebutton = input.querySelector(".searchmode-switcher-close");
+    if (input.variantB) {
+      // On its own row above the input, the button only shows a surface while
+      // hovered or pressed.
+      this.#button.setAttribute("type", "ghost");
+    }
     // documentGlobal is chrome-only, and this also runs in about:newtab.
     // eslint-disable-next-line mozilla/use-documentGlobal
     this.#noWordmarkQuery = input.ownerDocument.defaultView.matchMedia(
@@ -225,7 +230,7 @@ export class SearchModeSwitcher {
       return;
     }
     if (event.currentTarget == this.#noWordmarkQuery) {
-      if (this.#input.variantA) {
+      if (this.#input.variantA || this.#input.variantB) {
         this.updateSearchIcon();
       }
       return;
@@ -555,10 +560,13 @@ export class SearchModeSwitcher {
       );
     }
 
-    // Variant A names the engine next to its icon unless a wordmark, which
-    // already spells the name out, is taking the icon's place.
+    // The New Tab variants name the engine next to its icon unless a wordmark,
+    // which already spells the name out, is taking the icon's place.
     let showLabel =
-      !wordmark && (!!this.#input.searchMode || this.#input.variantA);
+      !wordmark &&
+      (!!this.#input.searchMode ||
+        this.#input.variantA ||
+        this.#input.variantB);
     let labelEl = this.#input.querySelector(".searchmode-switcher-title");
     if (showLabel) {
       labelEl.textContent = label;
@@ -630,7 +638,7 @@ export class SearchModeSwitcher {
    */
   #getEngineWordmark(engine) {
     if (
-      !this.#input.variantA ||
+      !(this.#input.variantA || this.#input.variantB) ||
       !engine.isConfigEngine ||
       this.#noWordmarkQuery.matches
     ) {

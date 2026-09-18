@@ -10,6 +10,7 @@ import { UrlbarPrefs } from "moz-src:///browser/components/urlbar/UrlbarPrefs.sy
 
 const FEATURE_GATE = "newtabFeatureGate";
 const VARIANT_A = "newtabVariantA";
+const VARIANT_B = "newtabVariantB";
 const NOVA_PREF = "browser.nova.enabled";
 
 /**
@@ -30,7 +31,11 @@ export class UrlbarNewTabComponentRegistrant extends BaseAboutNewTabComponentReg
   }
 
   onNimbusChanged(variable) {
-    if (variable == FEATURE_GATE || variable == VARIANT_A) {
+    if (
+      variable == FEATURE_GATE ||
+      variable == VARIANT_A ||
+      variable == VARIANT_B
+    ) {
       this.updated();
     }
   }
@@ -44,6 +49,14 @@ export class UrlbarNewTabComponentRegistrant extends BaseAboutNewTabComponentReg
   getComponents() {
     if (!UrlbarPrefs.get(FEATURE_GATE)) {
       return [];
+    }
+
+    // The variants are branches of one experiment, so at most one applies.
+    let variant = null;
+    if (UrlbarPrefs.get(VARIANT_B)) {
+      variant = "variant-b";
+    } else if (UrlbarPrefs.get(VARIANT_A)) {
+      variant = "variant-a";
     }
 
     return [
@@ -64,7 +77,7 @@ export class UrlbarNewTabComponentRegistrant extends BaseAboutNewTabComponentReg
           "in-page": "",
           "sap-name": "newtab_searchbar",
           "unifiedsearchbutton-available": "",
-          ...(UrlbarPrefs.get(VARIANT_A) ? { "variant-a": "" } : {}),
+          ...(variant ? { [variant]: "" } : {}),
         },
       },
     ];
