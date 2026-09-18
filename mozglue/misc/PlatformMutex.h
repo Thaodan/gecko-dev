@@ -32,6 +32,12 @@ class MutexImpl {
 #endif
   MFBT_API ~MutexImpl();
 
+  MutexImpl(const MutexImpl&) = delete;
+  void operator=(const MutexImpl&) = delete;
+  MutexImpl(MutexImpl&&) = delete;
+  void operator=(MutexImpl&&) = delete;
+  bool operator==(const MutexImpl& rhs) = delete;
+
  protected:
   MFBT_API void lock();
   MFBT_API void unlock();
@@ -44,12 +50,6 @@ class MutexImpl {
 #endif
 
  private:
-  MutexImpl(const MutexImpl&) = delete;
-  void operator=(const MutexImpl&) = delete;
-  MutexImpl(MutexImpl&&) = delete;
-  void operator=(MutexImpl&&) = delete;
-  bool operator==(const MutexImpl& rhs) = delete;
-
   void mutexLock();
   bool mutexTryLock();
 
