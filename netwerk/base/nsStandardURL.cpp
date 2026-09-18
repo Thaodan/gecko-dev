@@ -1397,24 +1397,31 @@ nsStandardURL::GetAsciiHost(nsACString& result) {
 }
 
 static bool IsSpecialProtocol(const nsACString& input) {
-  nsACString::const_iterator start, end;
-  input.BeginReading(start);
-  nsACString::const_iterator iterator(start);
-  input.EndReading(end);
-
-  while (iterator != end && *iterator != ':') {
-    iterator++;
+  const char* start = input.BeginReading();
+  const char* end = input.EndReading();
+  const char* colon = start;
+  while (colon != end && *colon != ':') {
+    ++colon;
   }
-
-  nsAutoCString protocol(nsDependentCSubstring(start.get(), iterator.get()));
-
-  return protocol.LowerCaseEqualsLiteral("http") ||
-         protocol.LowerCaseEqualsLiteral("https") ||
-         protocol.LowerCaseEqualsLiteral("ftp") ||
-         protocol.LowerCaseEqualsLiteral("ws") ||
-         protocol.LowerCaseEqualsLiteral("wss") ||
-         protocol.LowerCaseEqualsLiteral("file") ||
-         protocol.LowerCaseEqualsLiteral("gopher");
+  // Dispatch on scheme length so each input only compares against schemes of
+  // its own length. Uses a dependent substring -- no copy.
+  const nsDependentCSubstring scheme(start, colon - start);
+  switch (colon - start) {
+    case 2:
+      return scheme.LowerCaseEqualsLiteral("ws");
+    case 3:
+      return scheme.LowerCaseEqualsLiteral("ftp") ||
+             scheme.LowerCaseEqualsLiteral("wss");
+    case 4:
+      return scheme.LowerCaseEqualsLiteral("http") ||
+             scheme.LowerCaseEqualsLiteral("file");
+    case 5:
+      return scheme.LowerCaseEqualsLiteral("https");
+    case 6:
+      return scheme.LowerCaseEqualsLiteral("gopher");
+    default:
+      return false;
+  }
 }
 
 nsresult nsStandardURL::SetSpecInternal(const nsACString& input) {
@@ -1443,16 +1450,33 @@ nsresult nsStandardURL::SetSpecWithEncoding(const nsACString& input,
   if (IsSpecialProtocol(filteredURI)) {
     // Bug 652186: Replace all backslashes with slashes when parsing paths
     // Stop when we reach the query or the hash.
-    auto* start = filteredURI.BeginWriting();
-    auto* end = filteredURI.EndWriting();
-    while (start != end) {
-      if (*start == '?' || *start == '#') {
+    // Pre-scan read-only first so we don't force a BeginWriting() copy of a
+    // shared string when there is nothing to rewrite (the common case).
+    const char* readStart = filteredURI.BeginReading();
+    const char* readEnd = filteredURI.EndReading();
+    const char* firstBackslash = nullptr;
+    for (const char* p = readStart; p != readEnd; ++p) {
+      if (*p == '?' || *p == '#') {
         break;
       }
-      if (*start == '\\') {
-        *start = '/';
+      if (*p == '\\') {
+        firstBackslash = p;
+        break;
       }
-      start++;
+    }
+    if (firstBackslash) {
+      size_t offset = firstBackslash - readStart;
+      char* start = filteredURI.BeginWriting() + offset;
+      char* end = filteredURI.EndWriting();
+      while (start != end) {
+        if (*start == '?' || *start == '#') {
+          break;
+        }
+        if (*start == '\\') {
+          *start = '/';
+        }
+        start++;
+      }
     }
   }
 
