@@ -1,10 +1,6 @@
 
 # cargo-vet imports lock
 
-[[unpublished.cssparser]]
-version = "0.38.0"
-audited_as = "0.37.0"
-
 [[publisher.aho-corasick]]
 version = "1.1.0"
 when = "2023-09-18"
@@ -272,15 +268,15 @@ user-login = "jrmuizel"
 user-name = "Jeff Muizelaar"
 
 [[publisher.glean]]
-version = "70.0.0"
-when = "2026-08-20"
+version = "70.1.0"
+when = "2026-09-18"
 user-id = 48
 user-login = "badboy"
 user-name = "Jan-Erik Rediger"
 
 [[publisher.glean-core]]
-version = "70.0.0"
-when = "2026-08-20"
+version = "70.1.0"
+when = "2026-09-18"
 user-id = 48
 user-login = "badboy"
 user-name = "Jan-Erik Rediger"
@@ -1222,12 +1218,6 @@ delta = "0.9.0 -> 0.10.2"
 who = "Pat Hickey <phickey@fastly.com>"
 criteria = "safe-to-deploy"
 version = "1.1.4"
-
-[[audits.bytecode-alliance.audits.cargo-platform]]
-who = "Pat Hickey <phickey@fastly.com>"
-criteria = "safe-to-deploy"
-version = "0.1.2"
-notes = "no build, no ambient capabilities, no unsafe"
 
 [[audits.bytecode-alliance.audits.cargo_metadata]]
 who = "Pat Hickey <phickey@fastly.com>"

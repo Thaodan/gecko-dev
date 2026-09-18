@@ -86,7 +86,7 @@ ktfmt = "0.64"
 spotless = "8.10.2"
 
 # Mozilla
-glean = "70.0.0"
+glean = "70.1.0"
 
 # Testing libraries
 androidx-test = "1.7.0"
