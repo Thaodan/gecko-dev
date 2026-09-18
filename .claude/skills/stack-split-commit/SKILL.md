@@ -1,5 +1,5 @@
 ---
-name: stack-split-jj
+name: stack-split-commit
 description: Steps to reliably split a commit/change using the jj (jujutsu) VCS
 allowed-tools:
   - Bash(jj log:*),
