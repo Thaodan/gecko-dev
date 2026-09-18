@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+use std::os::raw::c_void;
 use std::sync::Mutex;
 
 use cstr::cstr;
@@ -68,6 +69,36 @@ pub unsafe extern "C" fn content_classifier_engine_destroy(
 ) {
     if !engine.is_null() {
         drop(Box::from_raw(engine));
+    }
+}
+
+/// Mirrors `mozilla::MallocSizeOf`. Supplied by the caller so the measurement
+/// uses the same function as the reporter driving it, rather than a second one
+/// linked against here.
+pub type ContentClassifierMallocSizeOf = unsafe extern "C" fn(ptr: *const c_void) -> usize;
+
+/// Heap usage of one engine, split by what holds it, so that about:memory can
+/// show a breakdown instead of a single number. Every field is bytes.
+#[repr(C)]
+#[derive(Default)]
+pub struct ContentClassifierEngineSizes {
+    /// The Rust wrapper and the `Engine` stored inline in it. Excludes every
+    /// heap allocation the engine points to for now, we will address the heap
+    /// allocation in a later patch.
+    pub objects: usize,
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn content_classifier_engine_size_of(
+    engine: *const ContentClassifierFFIEngine,
+    malloc_size_of: ContentClassifierMallocSizeOf,
+) -> ContentClassifierEngineSizes {
+    if engine.is_null() {
+        return ContentClassifierEngineSizes::default();
+    }
+
+    ContentClassifierEngineSizes {
+        objects: malloc_size_of(engine.cast::<c_void>()),
     }
 }
 

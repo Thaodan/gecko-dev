@@ -32,6 +32,7 @@
 #include "nsIURI.h"
 #include "nsIWritablePropertyBag2.h"
 #include "nsNetUtil.h"
+#include "nsPrintfCString.h"
 #include "nsProxyRelease.h"
 #include "nsContentUtils.h"
 #include "nsIWebProgressListener.h"
@@ -243,7 +244,9 @@ NS_IMETHODIMP ContentClassifierProbeReport::GetResults(
 }
 
 NS_IMPL_ISUPPORTS(ContentClassifierService, nsIAsyncShutdownBlocker,
-                  nsIContentClassifierService)
+                  nsIContentClassifierService, nsIMemoryReporter)
+
+MOZ_DEFINE_MALLOC_SIZE_OF(ContentClassifierServiceMallocSizeOf)
 
 ContentClassifierService::ContentClassifierService()
     : mLock("ContentClassifierService::mLock"),
@@ -256,6 +259,44 @@ ContentClassifierService::ContentClassifierService()
 }
 
 ContentClassifierService::~ContentClassifierService() = default;
+
+NS_IMETHODIMP ContentClassifierService::CollectReports(
+    nsIHandleReportCallback* aHandleReport, nsISupports* aData,
+    bool aAnonymize) {
+  // aAnonymize is ignored because the only variable path segment, the feature
+  // name, is a compile-time literal from kFeatures rather than content data.
+  struct EngineSizes {
+    nsCString mFeatureName;
+    ContentClassifierEngineSizes mSizes;
+  };
+
+  // Measure under the lock but report without it: the callback runs consumer
+  // code, which must not run with the service lock held.
+  nsTArray<EngineSizes> engines;
+  {
+    MutexAutoLock lock(mLock);
+    engines.SetCapacity(mEngines.Count());
+    for (const auto& entry : mEngines) {
+      engines.AppendElement(
+          EngineSizes{nsCString(entry.GetKey()),
+                      entry.GetData()->SizeOfIncludingThis(
+                          ContentClassifierServiceMallocSizeOf)});
+    }
+  }
+
+  for (const auto& engine : engines) {
+    // The path is per-feature, so MOZ_COLLECT_REPORT is not usable here: it
+    // needs a literal.
+    nsPrintfCString path("explicit/content-classifier/engines/%s/objects",
+                         engine.mFeatureName.get());
+
+    aHandleReport->Callback(
+        ""_ns, path, KIND_HEAP, UNITS_BYTES, engine.mSizes.objects,
+        "Memory used by the content classifier engine objects."_ns, aData);
+  }
+
+  return NS_OK;
+}
 
 // static
 bool ContentClassifierService::IsEnabled() {
@@ -497,6 +538,11 @@ void ContentClassifierService::Init() {
     mInitPhase = InitPhase::InitSucceeded;
   }
 
+  // Weak: a strong registration would have the manager hold a reference,
+  // keeping the service and the engines it owns alive past ClearOnShutdown.
+  // The price is a bare pointer, which BlockShutdown removes.
+  RegisterWeakMemoryReporter(this);
+
   // Lock released; safe to call into JS.
   // Only initialize the RS client if list_names prefs are set,
   // to avoid interfering with the test-only HTTP loading path.
@@ -609,6 +655,8 @@ NS_IMETHODIMP ContentClassifierService::BlockShutdown(
     mInitPhase = InitPhase::ShutdownStarted;
     mBuildThread = nullptr;
   }
+
+  UnregisterWeakMemoryReporter(this);
 
   // ShutdownRSClient clears the filter list data and engines. It also
   // tears down the RS client if one was created (the HTTP-only test

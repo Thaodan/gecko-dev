@@ -20,6 +20,7 @@
 #include "nsIClassifiedChannel.h"
 #include "nsIContentClassifierService.h"
 #include "nsIContentClassifierRemoteSettingsClient.h"
+#include "nsIMemoryReporter.h"
 #include "nsISupportsImpl.h"
 #include "nsLiteralString.h"
 #include "nsTArray.h"
@@ -236,11 +237,13 @@ class ContentClassifierProbeReport final
 };
 
 class ContentClassifierService final : public nsIAsyncShutdownBlocker,
-                                       public nsIContentClassifierService {
+                                       public nsIContentClassifierService,
+                                       public nsIMemoryReporter {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIASYNCSHUTDOWNBLOCKER
   NS_DECL_NSICONTENTCLASSIFIERSERVICE
+  NS_DECL_NSIMEMORYREPORTER
 
   static already_AddRefed<ContentClassifierService> GetInstance();
 
