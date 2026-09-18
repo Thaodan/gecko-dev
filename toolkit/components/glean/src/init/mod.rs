@@ -187,6 +187,7 @@ fn build_configuration(
         .with_use_core_mps(true)
         .with_trim_data_to_registered_pings(true)
         .with_ping_schedule(pings::ping_schedule())
+        .with_events_ping_acceleration_factor(5)
         .with_rate_limit(rate_limit);
 
     Ok((builder.build(), client_info))
