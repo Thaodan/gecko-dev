@@ -312,12 +312,26 @@ void SpeculationRules::HoverContentChanged(nsIContent* aContent) {
     return;
   }
 
+  // Enacting at the moderate level also covers eager candidates, so a
+  // separate eager stage is only worthwhile when it would fire sooner.
+  uint32_t eagerDelay =
+      StaticPrefs::dom_speculation_rules_eager_hover_delay_ms();
+  uint32_t moderateDelay =
+      StaticPrefs::dom_speculation_rules_moderate_hover_delay_ms();
+  if (eagerDelay < moderateDelay) {
+    ArmHoverTimer(eagerDelay, Eagerness::Eager);
+  } else {
+    ArmHoverTimer(moderateDelay, Eagerness::Moderate);
+  }
+}
+
+void SpeculationRules::ArmHoverTimer(uint32_t aDelayMs, Eagerness aLevel) {
+  mHoverTimerLevel = aLevel;
   // The timer holds no reference to us, so it must not outlive us; both the
   // destructor and the cycle collector cancel it.
-  NS_NewTimerWithFuncCallback(
-      getter_AddRefs(mHoverTimer), HoverTimerFired, this,
-      StaticPrefs::dom_speculation_rules_moderate_hover_delay_ms(),
-      nsITimer::TYPE_ONE_SHOT, "SpeculationRules::HoverTimerFired"_ns);
+  NS_NewTimerWithFuncCallback(getter_AddRefs(mHoverTimer), HoverTimerFired,
+                              this, aDelayMs, nsITimer::TYPE_ONE_SHOT,
+                              "SpeculationRules::HoverTimerFired"_ns);
 }
 
 void SpeculationRules::CancelHoverTimer() {
@@ -341,11 +355,24 @@ void SpeculationRules::HoverTimerFired(nsITimer* aTimer, void* aClosure) {
   if (!link || !link->IsInComposedDoc()) {
     return;
   }
-  nsCOMPtr<nsIURI> uri = link->GetHrefURI();
-  if (uri) {
-    // TODO(avandolder): Currently, this is also how Eager eagerness rules will
-    // be fired. We will eventually move them to a shorter timer.
-    speculationRules->EnactCandidates(uri, Eagerness::Moderate);
+  Eagerness level = speculationRules->mHoverTimerLevel;
+  if (nsCOMPtr<nsIURI> uri = link->GetHrefURI()) {
+    speculationRules->EnactCandidates(uri, level);
+
+    if (level == Eagerness::Eager) {
+      uint32_t eagerDelay =
+          StaticPrefs::dom_speculation_rules_eager_hover_delay_ms();
+      uint32_t moderateDelay =
+          StaticPrefs::dom_speculation_rules_moderate_hover_delay_ms();
+      if (moderateDelay > eagerDelay) {
+        speculationRules->ArmHoverTimer(moderateDelay - eagerDelay,
+                                        Eagerness::Moderate);
+      } else {
+        // The moderate delay is the same as or shorter than the eager delay,
+        // so just enact the moderate candidates now as well.
+        speculationRules->EnactCandidates(uri, Eagerness::Moderate);
+      }
+    }
   }
 }
 

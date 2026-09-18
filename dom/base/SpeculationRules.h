@@ -62,6 +62,9 @@ class SpeculationRules final {
   // collected from every candidate the user's behaviour justifies.
   void EnactCandidates(nsIURI* aURL, Eagerness aTriggerLevel);
 
+  // Arms the hover timer to enact candidates at least as eager as aLevel for
+  // mHoverLink once aDelayMs has passed.
+  void ArmHoverTimer(uint32_t aDelayMs, Eagerness aLevel);
   void CancelHoverTimer();
   static void HoverTimerFired(nsITimer* aTimer, void* aClosure);
 
@@ -91,6 +94,10 @@ class SpeculationRules final {
   // element alive for the duration of the timer.
   RefPtr<Element> mHoverLink;
   nsCOMPtr<nsITimer> mHoverTimer;
+  // The eagerness level the pending hover timer will enact. When the eager
+  // delay is the shorter one, the timer first fires for "eager" candidates and
+  // then re-arms for "moderate" ones.
+  Eagerness mHoverTimerLevel{Eagerness::Eager};
 };
 
 }  // namespace mozilla::dom
