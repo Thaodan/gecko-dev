@@ -1109,7 +1109,9 @@ nsresult nsStandardURL::WriteSegment(nsIBinaryOutputStream* stream,
                                      const URLSegment& seg) {
   nsresult rv;
 
-  rv = stream->Write32(seg.mPos);
+  // The position of an absent segment is never read back, so normalize it to
+  // keep the serialization canonical.
+  rv = stream->Write32(seg.mLen < 0 ? 0 : uint32_t(seg.mPos));
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -3499,6 +3501,15 @@ nsresult nsStandardURL::ReadPrivate(nsIObjectInputStream* stream) {
 
   NS_ENSURE_TRUE(CheckSegmentInvariants(), NS_ERROR_MALFORMED_URI);
 
+  if (StaticPrefs::network_ipc_reparse_deserialized_uri() &&
+      XRE_IsParentProcess()) {
+    nsAutoCString spec(mSpec);
+    rv = SetSpecInternal(spec);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+  }
+
   rv = CheckIfHostIsAscii();
   if (NS_FAILED(rv)) {
     return rv;
@@ -3629,6 +3640,11 @@ nsStandardURL::Write(nsIObjectOutputStream* stream) {
 
 inline ipc::StandardURLSegment ToIPCSegment(
     const nsStandardURL::URLSegment& aSegment) {
+  // FromIPCSegment discards the position of an absent segment, so normalize it
+  // here to keep the serialization canonical.
+  if (aSegment.mLen < 0) {
+    return ipc::StandardURLSegment(0, aSegment.mLen);
+  }
   return ipc::StandardURLSegment(aSegment.mPos, aSegment.mLen);
 }
 
@@ -3800,6 +3816,13 @@ bool nsStandardURL::Deserialize(const URIParams& aParams) {
 
   if (!IsValid()) {
     return false;
+  }
+
+  if (StaticPrefs::network_ipc_reparse_deserialized_uri() &&
+      XRE_IsParentProcess()) {
+    if (NS_FAILED(SetSpecInternal(params.spec()))) {
+      return false;
+    }
   }
 
   nsresult rv = CheckIfHostIsAscii();
