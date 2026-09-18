@@ -1,7 +1,6 @@
 ---
 name: stack-reorganize
-description: Analyze a range of local commits, and reorganize them to minimize latency and friction in the review and landing process. To achieve this, commits can be split, reordered, squashed / grouped, or even rewritten. In the final commit series / "patch stack", the codebase should build, lint, and test cleanly after every commit, and each individual commit should stand on its own.
-when_to_use: Before a patch (or a patch series) is submitted for first review, if the user agrees to reorganization.
+description: Reorganize a range of local commits so each one stands on its own for review, by splitting, reordering, squashing or dropping them. Use when a stack or its commits are hard to review, carry churn, or have an awkward shape - "my stack is hard to review", "clean up these commits", "organize my patches for review".
 allowed-tools:
   - Bash(jj log:*)
   - Bash(jj show:*)
@@ -23,9 +22,10 @@ allowed-tools:
 
 - Smoothe out the landing process by avoiding known sources of review and landing friction.
 - Reduce cognitive load during review, so that it's easy for the reviewer to spot bugs, and to understand the impact of a change.
-- Every "prefix" of the patch series should leave the world in a meaningful valid state.
+- Every "prefix" of the patch series should leave the world in a meaningful valid state: the tree builds, lints, and passes tests after every commit, not just at the tip.
 - Every patch should be an incremental improvement that makes sense to a reviewer in isolation.
 - Every patch should look "natural" and not depend on later work to justify its existence.
+- No forward references: an earlier patch's code and comments can't mention a concept that only a later patch introduces.
 
 # Strategies to minimize friction
 
@@ -54,6 +54,8 @@ For this skill, the goal is to have a patch series whose overall diff exactly ma
 
 For cosmetic differences, you can have a "residue" patch at the end of the series which makes the diffs match, but which the user is free to abandon.
 
+A change that is *not* in the original diff at all - a cleanup that only became obvious once the pieces were separate - also goes in its own patch at the end of the series, so the series below it still matches the original and the user can drop the addition on its own.
+
 # Mechanics
 
 This skill has two phases: 1. Envision, and 2. Execute.
@@ -71,7 +73,7 @@ Then follow these steps:
 3. Make a list of the original commits. For each commit:
   - List which files are touched by the commit
   - List which "logical units" the patch consists of. E.g. individual cleanups, orthogonal behavior changes, plumbing, refactors.
-4. The hard part: Brainstorm various orderings of the logical units, regardless of what original commit the unit of change was originally part of. Here you create a fresh "origin story" for the final state, and this new origin story should satisfy all the goals above. This process can sometimes some time. One challenge is that you need to keep many different states of the code base in your head at the same time. For example, comments in earlier patches can't refer to concepts that only get introduced in later patches, because that would create a non-sensical intermediate state.
+4. The hard part: Brainstorm various orderings of the logical units, regardless of what original commit the unit of change was originally part of. Here you create a fresh "origin story" for the final state, and this new origin story should satisfy all the goals above. One challenge is that you need to keep many different states of the code base in your head at the same time. For example, comments in earlier patches can't refer to concepts that only get introduced in later patches, because that would create a non-sensical intermediate state.
 5. Settle on an ideal organization, think of commit messages.
 
 Example:
