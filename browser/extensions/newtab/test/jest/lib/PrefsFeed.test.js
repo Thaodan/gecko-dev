@@ -572,6 +572,38 @@ describe("PrefsFeed", () => {
       );
     });
 
+    // Bug 2068165: the control reads an override, so it shows the space as on
+    // while the pref is already off. Switching it off writes the value the pref
+    // already holds, the branch observer never fires, and without mirroring
+    // from the write itself the override survives and the control goes inert.
+    it("should opt out when SET_PREF writes the value the pref already holds", () => {
+      FAKE_PREFS.set("feeds.section.topstories", false);
+
+      feed.onAction({
+        type: at.SET_PREF,
+        data: { name: "feeds.section.topstories", value: false },
+      });
+
+      expect(feed._prefs.set).toHaveBeenCalledWith(
+        "spaces.storiesOptOut",
+        true
+      );
+    });
+
+    it("should opt out when SET_MULTIPLE_PREFS writes an unchanged value", () => {
+      FAKE_PREFS.set("widgets.enabled", false);
+
+      feed.onAction({
+        type: at.SET_MULTIPLE_PREFS,
+        data: { values: { "widgets.enabled": false } },
+      });
+
+      expect(feed._prefs.set).toHaveBeenCalledWith(
+        "spaces.widgetsOptOut",
+        true
+      );
+    });
+
     it("should not mirror a pref that is not a space", () => {
       feed.onPrefChanged("feeds.topsites", false);
 

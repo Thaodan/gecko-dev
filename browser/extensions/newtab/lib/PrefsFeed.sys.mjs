@@ -468,7 +468,8 @@ export class PrefsFeed {
    * Mirrors a space's pref into its opt-out pref, so the experiment stops
    * overriding a space the user has just turned off. Driven by the branch
    * observer, so it sees the newtab customize menu, about:preferences and
-   * about:config alike.
+   * about:config alike, and by the pref-writing actions, which the observer
+   * misses when the value written matches the one already stored.
    *
    * A mirror, not a judgement: whoever wrote the pref, its new value is the
    * answer. Enrollment fires no change, so the value a profile arrived with is
@@ -1143,6 +1144,11 @@ export class PrefsFeed {
         Services.prefs.clearUserPref(this._prefs._branchStr + action.data.name);
         break;
       case at.SET_PREF:
+        // From the intent, not from an observed change: a control that reads an
+        // override shows a space as on while its pref is already off, so
+        // switching it off writes the value the pref already holds, no observer
+        // fires and the opt-out never gets recorded. See bug 2068165.
+        this._mirrorSpaceOptOut(action.data.name, action.data.value);
         this._prefs.set(action.data.name, action.data.value);
         break;
       case at.SET_MULTIPLE_PREFS: {
@@ -1152,6 +1158,7 @@ export class PrefsFeed {
           for (const [name, value] of Object.entries(
             action.data.values ?? {}
           )) {
+            this._mirrorSpaceOptOut(name, value);
             this._prefs.set(name, value);
           }
         } finally {
