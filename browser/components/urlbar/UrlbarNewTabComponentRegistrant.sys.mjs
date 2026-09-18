@@ -54,6 +54,7 @@ export class UrlbarNewTabComponentRegistrant extends BaseAboutNewTabComponentReg
           "preview/enUS-searchFeatures.ftl",
           "toolkit/global/contextual-identity.ftl",
         ],
+        stylesURLs: ["chrome://browser/skin/urlbar.css"],
         componentURL: "chrome://browser/content/urlbar/UrlbarInput.mjs",
         tagName: "moz-urlbar",
         attributes: {
