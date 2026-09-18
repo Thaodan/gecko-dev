@@ -71,6 +71,11 @@ function mockAlertsService() {
   return {
     alerts,
     observers,
+    // Drops the creation notification so tests can count run notifications
+    reset: () => {
+      alerts.length = 0;
+      observers.length = 0;
+    },
     cleanup: () => MockRegistrar.unregister(cid),
   };
 }
@@ -1182,6 +1187,7 @@ add_task(async function test_notification_shown_when_condition_met() {
       source: "test",
     });
     const { id } = (await MonitorAgent.listMonitors()).at(-1);
+    alertsMock.reset();
 
     await notifyMonitor(id, {
       conditionMet: true,
@@ -1236,6 +1242,7 @@ add_task(async function test_no_notification_when_condition_not_met() {
       source: "test",
     });
     const { id } = (await MonitorAgent.listMonitors()).at(-1);
+    alertsMock.reset();
 
     await notifyMonitor(id, { conditionMet: false });
 
@@ -1263,6 +1270,7 @@ add_task(async function test_notification_shown_every_matching_run() {
       source: "test",
     });
     const { id } = (await MonitorAgent.listMonitors()).at(-1);
+    alertsMock.reset();
 
     await notifyMonitor(id, { conditionMet: true });
     Assert.equal(alertsMock.alerts.length, 1, "First matching run notifies");
@@ -1306,6 +1314,7 @@ add_task(async function test_notification_has_snooze_and_dismiss_actions() {
       source: "test",
     });
     const { id } = (await MonitorAgent.listMonitors()).at(-1);
+    alertsMock.reset();
 
     await notifyMonitor(id, { conditionMet: true });
 
@@ -1337,6 +1346,7 @@ add_task(async function test_notification_uses_localized_fallbacks() {
       source: "test",
     });
     const { id } = (await MonitorAgent.listMonitors()).at(-1);
+    alertsMock.reset();
 
     await notifyMonitor(id, { conditionMet: true, resultExplanation: "" });
 
@@ -1374,6 +1384,7 @@ add_task(async function test_notification_body_click_opens_watched_url() {
       source: "test",
     });
     const { id } = (await MonitorAgent.listMonitors()).at(-1);
+    alertsMock.reset();
 
     await notifyMonitor(id, { conditionMet: true });
 
@@ -1418,6 +1429,7 @@ add_task(async function test_notification_snooze_action_defers_next_run() {
       source: "test",
     });
     const { id } = (await MonitorAgent.listMonitors()).at(-1);
+    alertsMock.reset();
 
     await notifyMonitor(id, { conditionMet: true });
 
@@ -1469,6 +1481,7 @@ add_task(async function test_notification_snooze_resumes_on_schedule() {
       source: "test",
     });
     const { id } = (await MonitorAgent.listMonitors()).at(-1);
+    alertsMock.reset();
 
     await notifyMonitor(id, { conditionMet: true });
 
@@ -1516,6 +1529,7 @@ add_task(async function test_notification_dismiss_action_mutes_notifications() {
       source: "test",
     });
     const { id } = (await MonitorAgent.listMonitors()).at(-1);
+    alertsMock.reset();
 
     await notifyMonitor(id, { conditionMet: true });
     Assert.equal(alertsMock.alerts.length, 1, "First matching run notifies");
@@ -1849,5 +1863,117 @@ add_task(async function test_run_backfills_missing_snapshot_into_prompt() {
     await new Promise(resolve => server.stop(resolve));
     mockEngineManager.cleanupMocks();
     await resetMonitorAgentForTesting();
+  }
+});
+
+add_task(async function test_notification_shown_once_on_create() {
+  const alertsMock = mockAlertsService();
+
+  try {
+    await resetMonitorAgentForTesting();
+    Services.fog.testResetFOG();
+
+    await MonitorAgent.createMonitor({
+      prompt: "Check if the product price is below $300.",
+      watchUrls: ["https://example.com/product", "https://example.org/other"],
+      pageTitle: "Sneaker deal",
+      schedule: { type: "interval", hours: 1 },
+      source: "test",
+    });
+    const { id } = (await MonitorAgent.listMonitors()).at(-1);
+
+    Assert.equal(
+      alertsMock.alerts.length,
+      1,
+      "Creating a monitor shows exactly one desktop notification"
+    );
+    const alert = alertsMock.alerts[0];
+    Assert.equal(alert.title, "Sneaker deal", "Title is the monitor name");
+    Assert.ok(
+      alert.text.includes("example.com"),
+      "Body names the first watched site"
+    );
+    Assert.ok(
+      alert.text.includes("1 other page"),
+      "Body counts the other watched pages"
+    );
+    Assert.ok(alert.textClickable, "Body is clickable");
+    Assert.equal(
+      alert.actions.length,
+      0,
+      "Creation notification has no snooze or dismiss actions"
+    );
+    Assert.equal(
+      Glean.smartWindow.monitorNotificationSend.testGetValue(),
+      undefined,
+      "Creation does not record the condition-met notification event"
+    );
+
+    await MonitorAgent.updateMonitor(id, {
+      title: "Sneaker deal (edited)",
+      monitorPrompt: "Check if the product price is below $250.",
+      watchUrls: ["https://example.net/product"],
+      schedule: { type: "interval", hours: 2 },
+    });
+    Assert.equal(
+      alertsMock.alerts.length,
+      1,
+      "Editing the monitor does not notify again"
+    );
+
+    await MonitorAgent.pauseMonitor(id, true);
+    await MonitorAgent.pauseMonitor(id, false);
+    Assert.equal(
+      alertsMock.alerts.length,
+      1,
+      "Pausing and resuming does not notify again"
+    );
+
+    MonitorAgent._unloadForTesting();
+    await MonitorAgent.init();
+    Assert.equal(
+      alertsMock.alerts.length,
+      1,
+      "Restoring monitors on startup does not notify again"
+    );
+  } finally {
+    alertsMock.cleanup();
+    await MonitorAgent._resetForTesting();
+  }
+});
+
+add_task(async function test_creation_notification_click_opens_tasks_page() {
+  const alertsMock = mockAlertsService();
+
+  const openedUrls = [];
+  const originalOpen = MonitorAgent._openWatchedUrl;
+  MonitorAgent._openWatchedUrl = u => openedUrls.push(u);
+
+  try {
+    await resetMonitorAgentForTesting();
+    await MonitorAgent.createMonitor({
+      prompt: "Check if the product price is below $300.",
+      watchUrls: ["https://example.com/product"],
+      pageTitle: "Sneaker deal",
+      schedule: { type: "interval", hours: 1 },
+      source: "test",
+    });
+
+    Assert.equal(alertsMock.alerts.length, 1, "Creation notifies once");
+    Assert.ok(
+      !alertsMock.alerts[0].text.includes("other page"),
+      "A single watched page is not described as having other pages"
+    );
+
+    alertsMock.observers[0].observe(null, "alertclickcallback", "");
+    Assert.deepEqual(
+      openedUrls,
+      ["about:smartwindowtasks"],
+      "Clicking the creation notification opens the tasks page"
+    );
+  } finally {
+    MonitorAgent._openWatchedUrl = originalOpen;
+    alertsMock.cleanup();
+    await MonitorAgent._resetForTesting();
   }
 });

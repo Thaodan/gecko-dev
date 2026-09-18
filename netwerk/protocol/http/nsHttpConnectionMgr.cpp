@@ -1487,6 +1487,12 @@ nsresult nsHttpConnectionMgr::MakeNewConnection(
     auto iter = mCT.ConstIter();
     while (mNumIdleConns + mNumActiveConns + 1 >= mMaxConns && !iter.Done()) {
       RefPtr<ConnectionEntry> entry = iter.Data();
+      // Losing the TRR connection stalls every pending DNS lookup until it is
+      // rebuilt, so it is not worth the connection slot it frees.
+      if (entry->mConnInfo->GetIsTrrServiceChannel()) {
+        iter.Next();
+        continue;
+      }
       entry->CloseIdleConnections((mNumIdleConns + mNumActiveConns + 1) -
                                   mMaxConns);
       iter.Next();
@@ -1499,6 +1505,9 @@ nsresult nsHttpConnectionMgr::MakeNewConnection(
     // connections to a host without idle connections, then close any spdy
     // ASAP.
     for (const RefPtr<ConnectionEntry>& entry : mCT.Values()) {
+      if (entry->mConnInfo->GetIsTrrServiceChannel()) {
+        continue;
+      }
       while (entry->MakeFirstActiveSpdyConnDontReuse()) {
         // Stop on <= (particularly =) because this dontreuse
         // causes async close.
