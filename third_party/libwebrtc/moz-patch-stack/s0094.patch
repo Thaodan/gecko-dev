@@ -127,7 +127,7 @@ index 6c121ede53..f3b3c1ca23 100644
              "Generated during 'gn gen' by //BUILD.gn.",
              "",
 diff --git a/api/BUILD.gn b/api/BUILD.gn
-index e09098c6f2..7d39b4e574 100644
+index f9a527b4dd..f181266cae 100644
 --- a/api/BUILD.gn
 +++ b/api/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -277,7 +277,7 @@ index 05ce8a8dc6..e040663131 100644
  
  rtc_library("scalability_mode") {
 diff --git a/audio/BUILD.gn b/audio/BUILD.gn
-index cd43e0f1ea..53562ea278 100644
+index e80bf03db8..343c976db1 100644
 --- a/audio/BUILD.gn
 +++ b/audio/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -588,7 +588,7 @@ index bc97abaeb0..b6e22833cc 100644
  import("../../webrtc.gni")
  
 diff --git a/pc/BUILD.gn b/pc/BUILD.gn
-index 6b48e85c19..5372de4f8e 100644
+index dfda82ae88..37979b6a8e 100644
 --- a/pc/BUILD.gn
 +++ b/pc/BUILD.gn
 @@ -29,8 +29,8 @@
