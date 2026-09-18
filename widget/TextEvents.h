@@ -1447,6 +1447,21 @@ class WidgetSelectionEvent final : public WidgetGUIEvent {
     return mExpandToClusterBoundary == ExpandToClusterBoundary::Yes;
   }
 
+  /**
+   * Return true if this event is dispatched by valid dispatcher. eSetSelection
+   * event is important for TextEventDispatcher. Therefore, this event must be
+   * dispatched by TextEventDispatcher.
+   */
+  [[nodiscard]] bool DispatchedByValidDispatcher() const {
+    // If this event is dispatched in another process, TextEventDispatcher in
+    // this process does not need to get involved.
+    if (mFlags.CameFromAnotherProcess()) {
+      return true;
+    }
+    // SetSelection event must be dispatched by TextEventDispatcher.
+    return mDispatchedByTextEventDispatcher;
+  }
+
   // Start offset of selection
   uint32_t mOffset = 0;
   // Length of selection
@@ -1458,6 +1473,8 @@ class WidgetSelectionEvent final : public WidgetGUIEvent {
       ExpandToClusterBoundary::Yes;
   // true if setting selection succeeded.
   bool mSucceeded = false;
+  // true if TextEventDispatcher dispatches this event.
+  bool mDispatchedByTextEventDispatcher = false;
   // Fennec provides eSetSelection reason codes for downstream
   // use in AccessibleCaret visibility logic.
   int16_t mReason = nsISelectionListener::NO_REASON;

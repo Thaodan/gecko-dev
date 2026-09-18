@@ -280,6 +280,7 @@ Maybe<WritingMode> TextEventDispatcher::MaybeQueryWritingModeAtSelection()
 void TextEventDispatcher::DispatchSetSelectionEvent(
     WidgetSelectionEvent& aEvent) {
   MOZ_ASSERT(mWidget == aEvent.mWidget);
+  aEvent.mDispatchedByTextEventDispatcher = true;
   DispatchEvent(mWidget, aEvent);
 }
 
@@ -302,6 +303,7 @@ bool TextEventDispatcher::DispatchSetSelectionEvent(
 void TextEventDispatcher::DispatchContentCommandEvent(
     WidgetContentCommandEvent& aEvent) {
   MOZ_ASSERT(mWidget == aEvent.mWidget);
+  aEvent.mDispatchedByTextEventDispatcher = true;
   DispatchEvent(mWidget, aEvent);
 }
 

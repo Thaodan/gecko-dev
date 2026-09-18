@@ -55,6 +55,37 @@ class WidgetContentCommandEvent final : public WidgetGUIEvent {
     return mOnlyEnabledCheck == OnlyEnabledCheck::Yes;
   }
 
+  /**
+   * Return true if this event is dispatched by valid dispatcher. Some events
+   * which are related to text editing must be dispatched by
+   * TextEventDispatcher. So, if such events are dispatched by nsIWidget
+   * directly, this returns false.
+   */
+  [[nodiscard]] bool DispatchedByValidDispatcher() const {
+    // If this event is dispatched in another process, TextEventDispatcher in
+    // this process does not need to get involved.
+    if (mFlags.CameFromAnotherProcess()) {
+      return true;
+    }
+    switch (mMessage) {
+      case eContentCommandCut:
+      case eContentCommandCopy:
+      case eContentCommandPaste:
+      case eContentCommandDelete:
+      case eContentCommandUndo:
+      case eContentCommandRedo:
+      case eContentCommandInsertText:
+      case eContentCommandReplaceText:
+      case eContentCommandPasteTransferable:
+        // The commands which related to text editing must be dispatched by
+        // TextEventDispatcher.
+        return mDispatchedByTextEventDispatcher;
+      default:
+        // The other events can be dispatched by widget directly.
+        return true;
+    }
+  }
+
   // eContentCommandInsertText and eContentCommandReplaceText
   mozilla::Maybe<nsString> mString;  // [in]
 
@@ -103,6 +134,9 @@ class WidgetContentCommandEvent final : public WidgetGUIEvent {
   // XXX When mOnlyEnabledCheck is set to Yes, this may be always set to true
   // even when the command is disabled in the parent process.
   bool mIsEnabled;  // [out]
+
+  // true if TextEventDispatcher dispatches this event.
+  bool mDispatchedByTextEventDispatcher = false;
 
   void AssignContentCommandEventData(const WidgetContentCommandEvent& aEvent,
                                      bool aCopyTargets) {

@@ -1450,8 +1450,8 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
                                                            wheelEvent);
     } break;
     case eSetSelection: {
-      RefPtr<Element> focuedElement = GetFocusedElement();
-      IMEStateManager::HandleSelectionEvent(aPresContext, focuedElement,
+      const RefPtr<Element> focusedElement = GetFocusedElement();
+      IMEStateManager::HandleSelectionEvent(aPresContext, focusedElement,
                                             aEvent->AsSelectionEvent());
       break;
     }
@@ -7214,6 +7214,8 @@ bool EventStateManager::IsShellVisible(nsIDocShell* aShell) {
 
 nsresult EventStateManager::DoContentCommandEvent(
     WidgetContentCommandEvent* aEvent) {
+  MOZ_DIAGNOSTIC_ASSERT(aEvent->DispatchedByValidDispatcher());
+
   EnsureDocument(mPresContext);
   NS_ENSURE_TRUE(mDocument, NS_ERROR_FAILURE);
   nsCOMPtr<nsPIDOMWindowOuter> window(mDocument->GetWindow());
@@ -7349,6 +7351,7 @@ nsresult EventStateManager::DoContentCommandInsertTextEvent(
     WidgetContentCommandEvent* aEvent) {
   MOZ_ASSERT(aEvent);
   MOZ_ASSERT(aEvent->mMessage == eContentCommandInsertText);
+  MOZ_DIAGNOSTIC_ASSERT(aEvent->DispatchedByValidDispatcher());
   MOZ_DIAGNOSTIC_ASSERT(aEvent->mString.isSome());
   MOZ_DIAGNOSTIC_ASSERT(!aEvent->mString.ref().IsEmpty());
 
@@ -7390,6 +7393,7 @@ nsresult EventStateManager::DoContentCommandReplaceTextEvent(
     WidgetContentCommandEvent* aEvent) {
   MOZ_ASSERT(aEvent);
   MOZ_ASSERT(aEvent->mMessage == eContentCommandReplaceText);
+  MOZ_DIAGNOSTIC_ASSERT(aEvent->DispatchedByValidDispatcher());
   MOZ_DIAGNOSTIC_ASSERT(aEvent->mString.isSome());
   MOZ_DIAGNOSTIC_ASSERT(!aEvent->mString.ref().IsEmpty());
 
