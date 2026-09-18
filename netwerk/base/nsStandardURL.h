@@ -5,7 +5,6 @@
 #ifndef nsStandardURL_h_
 #define nsStandardURL_h_
 
-#include <bitset>
 #include <cstring>
 
 #include "URIHasher.h"
@@ -101,8 +100,17 @@ class URLSegmentNumber {
     return value;
   }
   bool CalculateParity() const {
-    std::bitset<32> bits((uint32_t)mData);
-    return bits.count() % 2 == 0 ? false : true;
+#if defined(__GNUC__) || defined(__clang__)
+    return __builtin_parity(static_cast<uint32_t>(mData));
+#else
+    // https://graphics.stanford.edu/~seander/bithacks.html#ParityParallel
+    // Branchless XOR-fold parity for callers without __builtin_parity.
+    uint32_t x = static_cast<uint32_t>(mData);
+    x ^= x >> 16;
+    x ^= x >> 8;
+    x ^= x >> 4;
+    return (0x6996u >> (x & 0xf)) & 1;
+#endif
   }
   bool Parity() const { return mParity; }
 };
