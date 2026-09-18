@@ -4194,18 +4194,24 @@ nsresult Document::InitConnectionAllowlists(nsIChannel* aChannel) {
   }
 
   nsAutoCString headerValue, headerROValue;
+  nsCOMPtr<nsIURI> responseURI;
   if (httpChannel) {
     (void)httpChannel->GetResponseHeader("connection-allowlist"_ns,
                                          headerValue);
 
     (void)httpChannel->GetResponseHeader("connection-allowlist-report-only"_ns,
                                          headerROValue);
+    NS_GetFinalChannelURI(aChannel, getter_AddRefs(responseURI));
   }
 
   RefPtr<ConnectionAllowlists> allowlists;
   rv = ConnectionAllowlists::ParseHeaders(headerValue, headerROValue,
                                           getter_AddRefs(allowlists));
   NS_ENSURE_SUCCESS(rv, rv);
+
+  if (allowlists) {
+    allowlists->SetResponseURI(responseURI);
+  }
 
   mPolicyContainer->SetConnectionAllowlists(allowlists);
   return NS_OK;

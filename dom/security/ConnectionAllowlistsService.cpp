@@ -4,6 +4,12 @@
 
 #include "ConnectionAllowlistsService.h"
 
+#include "ConnectionAllowlists.h"
+#include "PolicyContainer.h"
+#include "mozilla/RefPtr.h"
+#include "nsCOMPtr.h"
+#include "nsILoadInfo.h"
+
 namespace mozilla::dom {
 
 NS_IMPL_ISUPPORTS(ConnectionAllowlistsService, nsIContentPolicy)
@@ -13,6 +19,19 @@ ConnectionAllowlistsService::ShouldLoad(nsIURI* aContentLocation,
                                         nsILoadInfo* aLoadInfo,
                                         int16_t* aDecision) {
   *aDecision = nsIContentPolicy::ACCEPT;
+
+  nsCOMPtr<nsIPolicyContainer> policyContainer =
+      aLoadInfo->GetPolicyContainer();
+  RefPtr<ConnectionAllowlists> allowlists =
+      PolicyContainer::GetConnectionAllowlists(policyContainer);
+  if (!allowlists) {
+    return NS_OK;
+  }
+
+  if (!allowlists->ShouldLoad(aContentLocation, aLoadInfo)) {
+    *aDecision = nsIContentPolicy::REJECT_REQUEST;
+  }
+
   return NS_OK;
 }
 
