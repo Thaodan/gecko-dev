@@ -16,8 +16,11 @@ page-extractor:
     site_strategy) or grouped by the ping's own per-call `flow_id`, so
     nothing needs to know that two calls came from the same profile.
   include_client_id: false
+  metadata:
+    include_info_sections: false
   bugs:
     - https://bugzilla.mozilla.org/show_bug.cgi?id=2058247
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=2073656
   data_reviews:
     - https://bugzilla.mozilla.org/show_bug.cgi?id=2058247
   notification_emails:
