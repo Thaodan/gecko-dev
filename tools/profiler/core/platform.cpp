@@ -4684,18 +4684,22 @@ class SamplerThread {
 };
 
 namespace geckoprofiler::markers {
-struct CPUSpeedMarker : public BaseMarkerType<CPUSpeedMarker> {
-  static constexpr const char* Name = "CPUSpeed";
-
-  using MS = MarkerSchema;
-  static constexpr MS::PayloadField PayloadFields[] = {
-      {"speed", MS::InputType::Double, "CPU Speed (GHz)", MS::Format::String}};
-  static constexpr MS::GraphField GraphFields[] = {
-      {"speed", MS::GraphType::Bar, Some(MS::GraphColor::Ink)}};
-  static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
-                                               MS::Location::MarkerTable};
-  static constexpr const char* TableLabel =
-      "{marker.name} Speed = {marker.data.speed}GHz";
+struct CPUSpeedMarker {
+  static constexpr Span<const char> MarkerTypeName() {
+    return MakeStringSpan("CPUSpeed");
+  }
+  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
+                                   uint32_t aCPUSpeedMHz) {
+    aWriter.DoubleProperty("speed", double(aCPUSpeedMHz) / 1000);
+  }
+  static MarkerSchema MarkerTypeDisplay() {
+    using MS = MarkerSchema;
+    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
+    schema.SetTableLabel("{marker.name} Speed = {marker.data.speed}GHz");
+    schema.AddKeyLabelFormat("speed", "CPU Speed (GHz)", MS::Format::String);
+    schema.AddChartColor("speed", MS::GraphType::Bar, MS::GraphColor::Ink);
+    return schema;
+  }
 };
 }  // namespace geckoprofiler::markers
 
@@ -4847,8 +4851,7 @@ void SamplerThread::Run() {
       PROFILER_MARKER(name, OTHER,
                       MarkerOptions(MarkerThreadId::MainThread(),
                                     MarkerTiming::IntervalStart(now)),
-                      CPUSpeedMarker,
-                      double(CPUSpeeds[i]) / 1000 /* MHz to GHz */);
+                      CPUSpeedMarker, CPUSpeeds[i]);
     }
   }
 #endif
@@ -4941,8 +4944,7 @@ void SamplerThread::Run() {
             PROFILER_MARKER(name, OTHER,
                             MarkerOptions(MarkerThreadId::MainThread(),
                                           MarkerTiming::IntervalStart(now)),
-                            CPUSpeedMarker,
-                            double(newSpeed[i]) / 1000 /* MHz to GHz */);
+                            CPUSpeedMarker, newSpeed[i]);
 
             CPUSpeeds[i] = newSpeed[i];
           }
