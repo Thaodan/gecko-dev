@@ -127,7 +127,7 @@ index 6c121ede53..f3b3c1ca23 100644
              "Generated during 'gn gen' by //BUILD.gn.",
              "",
 diff --git a/api/BUILD.gn b/api/BUILD.gn
-index 9eeb368f6c..c81f48fa85 100644
+index 4b56279c30..0cc2e77186 100644
 --- a/api/BUILD.gn
 +++ b/api/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -588,7 +588,7 @@ index bc97abaeb0..b6e22833cc 100644
  import("../../webrtc.gni")
  
 diff --git a/pc/BUILD.gn b/pc/BUILD.gn
-index 34e164f4a2..d3ee4f55b1 100644
+index 7bb8c537f0..8caeb58eb3 100644
 --- a/pc/BUILD.gn
 +++ b/pc/BUILD.gn
 @@ -29,8 +29,8 @@
