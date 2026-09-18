@@ -17,7 +17,7 @@ ChromeUtils.defineESModuleGetters(this, {
 
 const TRACKING_PAGE =
   // eslint-disable-next-line sdl/no-insecure-url
-  "http://tracking.example.org/browser/browser/base/content/test/protectionsUI/trackingPage.html";
+  "http://tracking.example.org/browser/browser/base/content/test/browser-protectionsUI/trackingPage.html";
 
 const TEST_BREACH = {
   // Make sure the breach is a recent one, since breaches older than a year are not taken into account:
