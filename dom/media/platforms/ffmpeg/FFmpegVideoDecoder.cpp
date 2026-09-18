@@ -249,18 +249,6 @@ static AVPixelFormat ChooseV4L2PixelFormat(AVCodecContext* aCodecContext,
 }
 
 #  ifdef MOZ_USE_HWDECODE_VULKAN
-static bool VulkanDirectDecodeExportEnabled() {
-  // Keep direct export disabled on bundled ffvpx until lavc is greater than
-  // MOZ_FFMPEG_MIN_LAVC_FOR_VULKAN_DMABUF (62.29.101); then remove this #if.
-#    if defined(FFVPX_VERSION) && \
-        LIBAVCODEC_VERSION_INT <= MOZ_FFMPEG_MIN_LAVC_FOR_VULKAN_DMABUF
-  return false;
-#    else
-  return StaticPrefs::
-      media_hardware_video_decoding_vulkan_direct_export_enabled_AtStartup();
-#    endif
-}
-
 static AVPixelFormat ChooseVulkanPixelFormat(AVCodecContext* aCodecContext,
                                              const AVPixelFormat* aFormats) {
   auto* decoder =
@@ -370,6 +358,24 @@ static void VulkanCopyQueues(const AVVulkanDeviceContext* aVkCtx,
   *aFamily = (uint32_t)std::max<int>(aVkCtx->queue_family_tx_index, 0);
   *aCount = (uint32_t)std::max(aVkCtx->nb_tx_queues, 1);
 #    endif
+}
+
+bool FFmpegVideoDecoder<LIBAV_VER>::VulkanDirectDecodeExportEnabled() {
+  static bool exportEnabled = [&]() {
+    if (!mLib->av_hwframe_map) {
+      return false;
+    }
+    // Keep direct export disabled on bundled ffvpx until lavc is greater than
+    // MOZ_FFMPEG_MIN_LAVC_FOR_VULKAN_DMABUF (62.29.101); then remove this #if.
+#    if defined(FFVPX_VERSION) && \
+        LIBAVCODEC_VERSION_INT <= MOZ_FFMPEG_MIN_LAVC_FOR_VULKAN_DMABUF
+    return false;
+#    else
+    return StaticPrefs::
+        media_hardware_video_decoding_vulkan_direct_export_enabled_AtStartup();
+#    endif
+  }();
+  return exportEnabled;
 }
 
 bool FFmpegVideoDecoder<LIBAV_VER>::CreateVulkanDeviceContext(
