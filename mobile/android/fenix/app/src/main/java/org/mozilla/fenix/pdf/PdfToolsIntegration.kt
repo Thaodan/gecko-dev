@@ -14,8 +14,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.coordinatorlayout.widget.CoordinatorLayout
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import mozilla.components.browser.state.action.EngineAction
 import mozilla.components.browser.state.selector.selectedTab
+import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.theme.layout.AcornWindowSize
 import mozilla.components.support.base.feature.LifecycleAwareFeature
@@ -34,14 +42,18 @@ import org.mozilla.fenix.theme.FirefoxTheme
  * @param container The containing browser [CoordinatorLayout] to add the PDF tools onto.
  * @param browserStore The [BrowserStore] to observe the PDF status of the selected tab.
  * @param isAddressBarAtBottom Whether the address bar is at the bottom of the browser.
+ * @param mainDispatcher The [CoroutineDispatcher] the PDF status of the selected tab is observed on.
  */
 class PdfToolsIntegration(
     private val container: CoordinatorLayout,
     private val browserStore: BrowserStore,
     private val isAddressBarAtBottom: Boolean,
+    private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : LifecycleAwareFeature {
 
     private var overlays = emptyList<ComposeView>()
+    private var scope: CoroutineScope? = null
+    private var pdfTabId by mutableStateOf(browserStore.state.selectedPdfTabId)
     private var isSigning by mutableStateOf(false)
     private val signature = TextFieldState()
 
@@ -61,7 +73,6 @@ class PdfToolsIntegration(
             onClearClick = ::handleSignClearClick,
             onAddClick = ::handleSignAddClick,
             onCloseClick = ::handleSignCloseClick,
-            onPdfGone = ::handlePdfGone,
         )
 
     override fun start() {
@@ -69,21 +80,36 @@ class PdfToolsIntegration(
             return
         }
 
+        // Keep track of the PDF's tab ID.
+        handlePdfTabChanged(browserStore.state.selectedPdfTabId)
+        scope = CoroutineScope(mainDispatcher)
+        scope?.launch {
+            browserStore.stateFlow
+                .map { it.selectedPdfTabId }
+                .distinctUntilChanged()
+                .collect {
+                    handlePdfTabChanged(it)
+                }
+        }
+
         val tools =
             createOverlay(pdfToolsBehavior(isAddressBarAtBottom)) {
                 val isLargeWindow = AcornWindowSize.isLargeWindow()
 
                 PdfToolsContent(
-                    browserStore = browserStore,
+                    isPdfShowing = pdfTabId != null,
                     isLargeWindow = isLargeWindow,
                     isCoveredBySignatureDialog = isSigning && !isLargeWindow,
-                    onPdfGone = signatureActions.onPdfGone,
                     toolActions = toolActions,
                 )
             }
         val dialog =
             createOverlay(signatureDialogBehavior(isAddressBarAtBottom)) {
-                SignatureDialogContent(signatureState = signatureState, signatureActions = signatureActions)
+                SignatureDialogContent(
+                    isPdfShowing = pdfTabId != null,
+                    signatureState = signatureState,
+                    signatureActions = signatureActions,
+                )
             }
 
         val created = listOf(tools, dialog)
@@ -98,6 +124,9 @@ class PdfToolsIntegration(
     }
 
     override fun stop() {
+        scope?.cancel()
+        scope = null
+
         overlays.forEach(container::removeView)
         overlays = emptyList()
     }
@@ -177,8 +206,11 @@ class PdfToolsIntegration(
     }
 
     /** Clears out the state if the user navigates away. */
-    internal fun handlePdfGone() {
-        dismissSignatureDialog()
+    internal fun handlePdfTabChanged(tabId: String?) {
+        if (pdfTabId != null && tabId != pdfTabId) {
+            dismissSignatureDialog()
+        }
+        pdfTabId = tabId
     }
 
     private fun dismissSignatureDialog() {
@@ -211,3 +243,6 @@ class PdfToolsIntegration(
         }
     }
 }
+
+private val BrowserState.selectedPdfTabId: String?
+    get() = selectedTab?.takeIf { it.content.isPdf }?.id

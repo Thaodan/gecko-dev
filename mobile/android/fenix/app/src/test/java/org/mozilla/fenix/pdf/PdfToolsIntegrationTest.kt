@@ -18,6 +18,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import kotlin.test.assertIs
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.TestScope
 import mozilla.components.browser.state.action.BrowserAction
 import mozilla.components.browser.state.action.ContentAction
@@ -83,6 +84,7 @@ class PdfToolsIntegrationTest {
             container = container,
             browserStore = store,
             isAddressBarAtBottom = isAddressBarAtBottom,
+            mainDispatcher = Dispatchers.Unconfined,
         )
 
     @Before
@@ -223,6 +225,50 @@ class PdfToolsIntegrationTest {
         integration().handleShareClick()
 
         captureActionsMiddleware.assertNotDispatched(ShareResourceAction.AddShareAction::class)
+    }
+
+    @Test
+    fun `GIVEN a signature is in progress WHEN another PDF becomes the selected tab THEN the signature is abandoned`() {
+        val integration = integration()
+        integration.handleSignClick()
+        integration.signatureState.signature.setTextAndPlaceCursorAtEnd("Mark Johnson")
+
+        integration.handlePdfTabChanged("2")
+
+        assertFalse(integration.signatureState.isSigning)
+        assertEquals("", integration.signatureState.signature.text.toString())
+    }
+
+    @Test
+    fun `GIVEN a signature is in progress WHEN the selected tab stops showing a PDF THEN the signature is abandoned`() {
+        val integration = integration()
+        integration.handleSignClick()
+
+        integration.handlePdfTabChanged(null)
+
+        assertFalse(integration.signatureState.isSigning)
+    }
+
+    @Test
+    fun `GIVEN a signature is in progress WHEN the same PDF stays selected THEN the signature is kept`() {
+        val integration = integration()
+        integration.handleSignClick()
+
+        integration.handlePdfTabChanged(tabId)
+
+        assertTrue(integration.signatureState.isSigning)
+    }
+
+    @Test
+    fun `GIVEN the feature is started WHEN the selected tab leaves the PDF viewer THEN the signature is abandoned`() {
+        val integration = integration()
+        integration.start()
+        shadowOf(Looper.getMainLooper()).idle()
+        integration.handleSignClick()
+
+        browserStore.dispatch(ContentAction.ExitedPdfViewer(tabId))
+
+        assertFalse(integration.signatureState.isSigning)
     }
 
     /** Stands in for the browser toolbar, which removes the navigation bar as its composition is created. */
