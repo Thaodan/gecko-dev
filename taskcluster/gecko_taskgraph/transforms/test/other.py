@@ -1133,6 +1133,11 @@ def add_gecko_profile_symbolication_deps(config, tasks):
             if "profiler-node-tools" not in fetch_toolchains:
                 fetch_toolchains.append("profiler-node-tools")
 
+            symbols_zip = "target.crashreporter-symbols.zip"
+            fetch_builds = fetches.setdefault("build", [])
+            if not any(f.get("artifact") == symbols_zip for f in fetch_builds):
+                fetch_builds.append({"artifact": symbols_zip, "extract": False})
+
             test_platform = task["test-platform"]
 
             if "macosx" in test_platform and "aarch64" in test_platform:
