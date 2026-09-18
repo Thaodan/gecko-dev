@@ -523,13 +523,11 @@ abstract class BaseBrowserFragment :
                 putExtra(HomeActivity.OPEN_TO_BROWSER, true)
             }
 
-        val isListenToPageEnabled = settings.listenToPageFeatureFlagEnabled
         val readerMenuController =
             DefaultReaderModeController(
                 readerViewFeature,
                 binding.readerViewControlsBar,
                 isPrivate = appStore.state.mode.isPrivate,
-                isListenToPageEnabled = isListenToPageEnabled,
                 onReaderModeChanged = { activity.finishActionMode() },
             )
         _findInPageLauncher = {

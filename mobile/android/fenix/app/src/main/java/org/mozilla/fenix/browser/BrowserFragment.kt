@@ -292,13 +292,6 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
                         onReaderViewStatusChange = { available, active ->
                             browserScreenStore.dispatch(ReaderModeStatusUpdated(ReaderModeStatus(available, active)))
                         },
-                        onListenClicked = {
-                            context.components.core.store.state.selectedTab?.let { tab ->
-                                context.components.listenToPage.store.dispatch(
-                                    ListenAction.Session.ListenRequested(tabId = tab.id, url = tab.content.url)
-                                )
-                            }
-                        },
                     )
                 },
             owner = this,
@@ -371,6 +364,16 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
                     browserStore = context.components.core.store,
                     listenStore = context.components.listenToPage.store,
                     isAddressBarAtBottom = settings.toolbarPosition == ToolbarPosition.BOTTOM,
+                    onListenClicked = {
+                        context.components.core.store.state.selectedTab?.let { tab ->
+                            context.components.listenToPage.store.dispatch(
+                                ListenAction.Session.ListenRequested(tabId = tab.id, url = tab.content.url)
+                            )
+                        }
+                    },
+                    onCustomizeReaderViewClicked = {
+                        context.components.appStore.dispatch(AppAction.ReaderViewAction.ReaderViewControlsShown)
+                    },
                 ),
             owner = this,
             view = rootView,
