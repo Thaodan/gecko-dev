@@ -67,16 +67,13 @@ nsresult BlobImpl::GetSendInfo(nsIInputStream** aBody, uint64_t* aContentLength,
 
   ErrorResult rv;
 
-  // Query the size before creating the stream: blobs with a lazy size (e.g.
-  // FileBlobImpl) snapshot it on first use, and the stream handed out below
-  // must be capped at the very same size we declare as the Content-Length.
-  *aContentLength = GetSize(rv);
+  nsCOMPtr<nsIInputStream> stream;
+  CreateInputStream(getter_AddRefs(stream), rv);
   if (NS_WARN_IF(rv.Failed())) {
     return rv.StealNSResult();
   }
 
-  nsCOMPtr<nsIInputStream> stream;
-  CreateInputStream(getter_AddRefs(stream), rv);
+  *aContentLength = GetSize(rv);
   if (NS_WARN_IF(rv.Failed())) {
     return rv.StealNSResult();
   }

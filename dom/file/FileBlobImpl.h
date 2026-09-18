@@ -61,7 +61,7 @@ class FileBlobImpl : public BlobImpl {
 
   void GetMozFullPathInternal(nsAString& aFilename, ErrorResult& aRv) override;
 
-  uint64_t GetSize(ErrorResult& aRv) const override;
+  uint64_t GetSize(ErrorResult& aRv) override;
 
   void GetType(nsAString& aType) override;
 
@@ -127,7 +127,7 @@ class FileBlobImpl : public BlobImpl {
 
   // FileBlobImpl has getter methods with lazy initialization. Because any
   // BlobImpl must work thread-safe, we use a mutex.
-  mutable Mutex mMutex MOZ_UNANNOTATED;
+  Mutex mMutex MOZ_UNANNOTATED;
 
   nsCOMPtr<nsIFile> mFile;
 
@@ -141,7 +141,7 @@ class FileBlobImpl : public BlobImpl {
 
   int64_t mFileId;
 
-  mutable Maybe<uint64_t> mLength;
+  Maybe<uint64_t> mLength;
 
   Maybe<int64_t> mLastModified;
 
