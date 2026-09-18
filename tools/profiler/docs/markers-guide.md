@@ -643,6 +643,21 @@ following in the Firefox Profiler's Marker Chart:
 For implementation details on this processing, see [src/profiler-logic/marker-schema.js](https://github.com/firefox-devtools/profiler/blob/main/src/profile-logic/marker-schema.ts)
 in the profiler's front-end.
 
+### Marker Type Track Graphs
+
+A numeric payload field can additionally be plotted as a timeline track, by
+listing it in an optional `GraphFields` array. Each entry names the payload
+field to plot, the shape to plot it with, and optionally a color; when the
+color is left as `Nothing`, the front-end uses its default track color.
+
+```cpp
+// …
+  static constexpr MS::GraphField GraphFields[] = {
+      {"speed", MS::GraphType::Bar, Some(MS::GraphColor::Ink)}};
+```
+
+### Special Front-End Marker Types
+
 A handful of marker types are displayed by dedicated code in
 profiler.firefox.com rather than by the generic schema-driven UI: for instance
 `CompositorScreenshot` (drawn as a filmstrip in the timeline), `Network` (the
@@ -658,10 +673,10 @@ markers backing the allocation tracks. Those declare
 
 Such a type must not set any of the display properties described above:
 `Locations`, `ChartLabel`, `TooltipLabel`, `TableLabel`, `AllLabels`,
-`ColorField`, `IsStackBased` and `Description` are all ignored, since the
-front-end renders the marker with its own dedicated code. A static assertion
-enforces this. `PayloadFields` may still be declared, as it drives payload
-serialization and the ETW payload rather than the display; only the
+`ColorField`, `IsStackBased`, `Description` and `GraphFields` are all ignored,
+since the front-end renders the marker with its own dedicated code. A static
+assertion enforces this. `PayloadFields` may still be declared, as it drives
+payload serialization and the ETW payload rather than the display; only the
 key/format list it contributes to the schema is ignored.
 
 This is not something new marker types should need: it only works for the types
