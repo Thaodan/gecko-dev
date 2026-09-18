@@ -30,6 +30,9 @@ namespace jit {
 using vixl::MemOperand;
 using vixl::Operand;
 
+using js::wasm::FaultingCodeRange;
+using js::wasm::FaultingCodeRangePair;
+
 struct ImmShiftedTag : public ImmWord {
   explicit ImmShiftedTag(JSValueType type)
       : ImmWord(uintptr_t(JSValueShiftedTag(JSVAL_TYPE_TO_SHIFTED_TAG(type)))) {
@@ -2024,14 +2027,18 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   void profilerEnterFrame(Register framePtr, Register scratch);
   void profilerExitFrame();
 
-  void wasmLoadImpl(const wasm::MemoryAccessDesc& access, Register memoryBase,
-                    Register ptr, AnyRegister outany, Register64 out64);
-  void wasmLoadImpl(const wasm::MemoryAccessDesc& access, MemOperand srcAddr,
-                    AnyRegister outany, Register64 out64);
-  void wasmStoreImpl(const wasm::MemoryAccessDesc& access, AnyRegister valany,
-                     Register64 val64, Register memoryBase, Register ptr);
-  void wasmStoreImpl(const wasm::MemoryAccessDesc& access, MemOperand destAddr,
-                     AnyRegister valany, Register64 val64);
+  FaultingCodeRange wasmLoadImpl(const wasm::MemoryAccessDesc& access,
+                                 Register memoryBase, Register ptr,
+                                 AnyRegister outany, Register64 out64);
+  FaultingCodeRange wasmLoadImpl(const wasm::MemoryAccessDesc& access,
+                                 MemOperand srcAddr, AnyRegister outany,
+                                 Register64 out64);
+  FaultingCodeRange wasmStoreImpl(const wasm::MemoryAccessDesc& access,
+                                  AnyRegister valany, Register64 val64,
+                                  Register memoryBase, Register ptr);
+  FaultingCodeRange wasmStoreImpl(const wasm::MemoryAccessDesc& access,
+                                  MemOperand destAddr, AnyRegister valany,
+                                  Register64 val64);
   // The complete address is in `address`, and `access` is used for its type
   // attributes only; its `offset` is ignored.
   void wasmLoadAbsolute(const wasm::MemoryAccessDesc& access,

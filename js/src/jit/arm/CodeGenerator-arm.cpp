@@ -1723,7 +1723,8 @@ void CodeGeneratorARM::emitWasmLoad(T* lir) {
   }
 
   if (resultType == MIRType::Int64) {
-    masm.wasmLoadI64(mir->access(), memoryBase, ptr, ptr, ToOutRegister64(lir));
+    masm.wasmLoadI32x2(mir->access(), memoryBase, ptr, ptr,
+                       ToOutRegister64(lir));
   } else {
     masm.wasmLoad(mir->access(), memoryBase, ptr, ptr,
                   ToAnyRegister(lir->output()));
@@ -1772,7 +1773,7 @@ void CodeGeneratorARM::emitWasmStore(T* lir) {
   if constexpr (std::is_same_v<T, LWasmStoreI64>) {
     Register64 value = ToRegister64(lir->value());
     Register ptr = ToRegister(lir->temp0());
-    masm.wasmStoreI64(mir->access(), value, memoryBase, ptr, ptr);
+    masm.wasmStoreI32x2(mir->access(), value, memoryBase, ptr, ptr);
   } else {
     // Maybe add the offset.
     Register ptr;
