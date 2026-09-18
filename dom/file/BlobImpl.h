@@ -53,7 +53,7 @@ class BlobImpl : public SupportsThreadSafeWeakPtr<BlobImpl>,
   virtual void GetMozFullPathInternal(nsAString& aFileName,
                                       ErrorResult& aRv) = 0;
 
-  virtual uint64_t GetSize(ErrorResult& aRv) = 0;
+  virtual uint64_t GetSize(ErrorResult& aRv) const = 0;
 
   virtual void GetType(nsAString& aType) = 0;
 

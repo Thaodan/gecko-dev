@@ -5490,7 +5490,7 @@ class EncryptedFileBlobImpl final : public FileBlobImpl {
   // only accesses it. And the reason why 0 is returned, even when the size is
   // not set in a child process, is is because the spec doesn't allow Blob.size
   // to throw.
-  uint64_t GetSize(ErrorResult& aRv) override {
+  uint64_t GetSize(ErrorResult& aRv) const override {
     MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess() || mLength.isSome());
     return mLength.valueOr(0);
   }

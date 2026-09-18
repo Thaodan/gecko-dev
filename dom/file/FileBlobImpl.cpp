@@ -134,7 +134,7 @@ void FileBlobImpl::GetMozFullPathInternal(nsAString& aFilename,
   mMozFullPath = aFilename;
 }
 
-uint64_t FileBlobImpl::GetSize(ErrorResult& aRv) {
+uint64_t FileBlobImpl::GetSize(ErrorResult& aRv) const {
   MutexAutoLock lock(mMutex);
 
   if (mLength.isNothing()) {
@@ -272,6 +272,11 @@ const uint32_t sFileStreamFlags =
 
 void FileBlobImpl::CreateInputStream(nsIInputStream** aStream,
                                      ErrorResult& aRv) const {
+  const uint64_t length = GetSize(aRv);
+  if (NS_WARN_IF(aRv.Failed())) {
+    return;
+  }
+
   nsCOMPtr<nsIInputStream> stream;
   aRv = NS_NewLocalFileInputStream(getter_AddRefs(stream), mFile, -1, -1,
                                    sFileStreamFlags);
@@ -280,14 +285,14 @@ void FileBlobImpl::CreateInputStream(nsIInputStream** aStream,
   }
 
   if (mWholeFile) {
-    stream.forget(aStream);
+    RefPtr<SlicedInputStream> slicedInputStream =
+        new SlicedInputStream(stream.forget(), 0, length);
+    slicedInputStream.forget(aStream);
     return;
   }
 
-  MOZ_ASSERT(mLength.isSome());
-
   RefPtr<SlicedInputStream> slicedInputStream =
-      new SlicedInputStream(stream.forget(), mStart, mLength.value());
+      new SlicedInputStream(stream.forget(), mStart, length);
   slicedInputStream.forget(aStream);
 }
 
