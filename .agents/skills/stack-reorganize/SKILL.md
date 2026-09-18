@@ -3,19 +3,19 @@ name: stack-reorganize
 description: Analyze a range of local commits, and reorganize them to minimize latency and friction in the review and landing process. To achieve this, commits can be split, reordered, squashed / grouped, or even rewritten. In the final commit series / "patch stack", the codebase should build, lint, and test cleanly after every commit, and each individual commit should stand on its own.
 when_to_use: Before a patch (or a patch series) is submitted for first review, if the user agrees to reorganization.
 allowed-tools:
-  - Bash(jj log:*),
-  - Bash(jj show:*),
-  - Bash(jj squash:*),
-  - Bash(jj commit:*),
-  - Bash(jj new:*),
-  - Bash(jj describe:*),
-  - Bash(jj rebase:*),
-  - Bash(jj edit:*),
-  - Bash(jj absorb:*),
-  - Bash(jj restore:*),
-  - Bash(jj file show:*),
-  - Read,
-  - Grep,
+  - Bash(jj log:*)
+  - Bash(jj show:*)
+  - Bash(jj squash:*)
+  - Bash(jj commit:*)
+  - Bash(jj new:*)
+  - Bash(jj describe:*)
+  - Bash(jj rebase:*)
+  - Bash(jj edit:*)
+  - Bash(jj absorb:*)
+  - Bash(jj restore:*)
+  - Bash(jj file show:*)
+  - Read
+  - Grep
   - Glob
 ---
 

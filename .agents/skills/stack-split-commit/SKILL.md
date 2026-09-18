@@ -2,18 +2,18 @@
 name: stack-split-commit
 description: Steps to reliably split a commit/change using the jj (jujutsu) VCS
 allowed-tools:
-  - Bash(jj log:*),
-  - Bash(jj show:*),
-  - Bash(jj split:*),
-  - Bash(jj commit:*),
-  - Bash(jj new:*),
-  - Bash(jj describe:*),
-  - Bash(jj rebase:*),
-  - Bash(jj edit:*),
-  - Bash(jj restore:*),
-  - Bash(jj file show:*),
-  - Read,
-  - Grep,
+  - Bash(jj log:*)
+  - Bash(jj show:*)
+  - Bash(jj split:*)
+  - Bash(jj commit:*)
+  - Bash(jj new:*)
+  - Bash(jj describe:*)
+  - Bash(jj rebase:*)
+  - Bash(jj edit:*)
+  - Bash(jj restore:*)
+  - Bash(jj file show:*)
+  - Read
+  - Grep
   - Glob
 ---
 
