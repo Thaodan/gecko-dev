@@ -247,6 +247,8 @@ NS_IMPL_ISUPPORTS(ContentClassifierService, nsIAsyncShutdownBlocker,
                   nsIContentClassifierService, nsIMemoryReporter)
 
 MOZ_DEFINE_MALLOC_SIZE_OF(ContentClassifierServiceMallocSizeOf)
+MOZ_DEFINE_MALLOC_ENCLOSING_SIZE_OF(
+    ContentClassifierServiceMallocEnclosingSizeOf)
 
 ContentClassifierService::ContentClassifierService()
     : mLock("ContentClassifierService::mLock"),
@@ -280,20 +282,39 @@ NS_IMETHODIMP ContentClassifierService::CollectReports(
       engines.AppendElement(
           EngineSizes{nsCString(entry.GetKey()),
                       entry.GetData()->SizeOfIncludingThis(
-                          ContentClassifierServiceMallocSizeOf)});
+                          ContentClassifierServiceMallocSizeOf,
+                          ContentClassifierServiceMallocEnclosingSizeOf)});
     }
   }
 
-  for (const auto& engine : engines) {
-    // The path is per-feature, so MOZ_COLLECT_REPORT is not usable here: it
-    // needs a literal.
-    nsPrintfCString path("explicit/content-classifier/engines/%s/objects",
-                         engine.mFeatureName.get());
+  // The paths are per-feature, so MOZ_COLLECT_REPORT is not usable here: it
+  // needs a literal.
+#define REPORT(_path, _amount, _desc)                                    \
+  aHandleReport->Callback(""_ns, _path, KIND_HEAP, UNITS_BYTES, _amount, \
+                          nsLiteralCString(_desc), aData)
 
-    aHandleReport->Callback(
-        ""_ns, path, KIND_HEAP, UNITS_BYTES, engine.mSizes.objects,
-        "Memory used by the content classifier engine objects."_ns, aData);
+  for (const auto& engine : engines) {
+    REPORT(nsPrintfCString("explicit/content-classifier/engines/%s/objects",
+                           engine.mFeatureName.get()),
+           engine.mSizes.objects,
+           "Memory used by the content classifier engine objects.");
+
+    REPORT(
+        nsPrintfCString("explicit/content-classifier/engines/%s/filter-rules",
+                        engine.mFeatureName.get()),
+        engine.mSizes.filter_rules,
+        "Memory used by the parsed filter rules for this feature, held as one "
+        "flatbuffer that the matching engine reads directly.");
+
+    REPORT(
+        nsPrintfCString("explicit/content-classifier/engines/%s/domain-hashes",
+                        engine.mFeatureName.get()),
+        engine.mSizes.domain_hashes,
+        "Memory used by the index from domain hash to filter list position, "
+        "rebuilt in memory each time this feature's rules are loaded.");
   }
+
+#undef REPORT
 
   return NS_OK;
 }
