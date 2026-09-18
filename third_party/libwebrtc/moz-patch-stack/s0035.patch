@@ -272,7 +272,7 @@ index d2a3c72603..39172386e2 100644
  
      RtcpRttStats* rtt_stats = nullptr;
 diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index e77c0af974..63e0f09d0f 100644
+index 76025ab859..7228360e8f 100644
 --- a/video/rtp_video_stream_receiver2.cc
 +++ b/video/rtp_video_stream_receiver2.cc
 @@ -131,6 +131,7 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(
@@ -291,7 +291,7 @@ index e77c0af974..63e0f09d0f 100644
    configuration.non_sender_rtt_measurement = non_sender_rtt_measurement;
    configuration.rtcp_mode = RtcpMode::kCompound;
    configuration.remote_ssrc = remote_ssrc;
-@@ -326,6 +328,7 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
+@@ -327,6 +329,7 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
            rtcp_cname_callback,
            packet_router,
            config_.rtp.rtcp_xr.receiver_reference_time_report,
