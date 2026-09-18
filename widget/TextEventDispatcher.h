@@ -10,6 +10,7 @@
 #include "mozilla/EventForwards.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/Result.h"
 #include "mozilla/TextEventDispatcherListener.h"
 #include "mozilla/TextRange.h"
 #include "mozilla/widget/IMEData.h"
@@ -210,6 +211,55 @@ class TextEventDispatcher final {
       ExpandToClusterBoundary aExpandToClusterBoundary,
       RangeDirection aRangeDirection = RangeDirection::Normal,
       int16_t aReason = 0 /* nsISelectionListener::NO_REASON */);
+
+  /**
+   * Dispatch the WidgetContentCommandEvent.
+   */
+  void DispatchContentCommandEvent(WidgetContentCommandEvent& aEvent);
+
+  /**
+   * Dispatch a content command event of aMessage.
+   *
+   * @return Return error if it's not succeeded. Otherwise, return true if the
+   *         command is enabled.
+   */
+  Result<bool, nsresult> DispatchContentCommandEvent(
+      EventMessage aMessage,
+      OnlyEnabledCheck aOnlyEnabledCheck = OnlyEnabledCheck::No);
+
+  /**
+   * Dispatch a content command event whose message is
+   * eContentCommandInsertText.
+   *
+   * @return Return error if it's not succeeded. Otherwise, return true if the
+   *         command is enabled.
+   */
+  Result<bool, nsresult> DispatchInsertTextCommandEvent(
+      const nsAString& aString,
+      OnlyEnabledCheck aOnlyEnabledCheck = OnlyEnabledCheck::No);
+
+  /**
+   * Dispatch a content command event whose message is
+   * eContentCommandReplaceText.
+   *
+   * @return Return error if it's not succeeded. Otherwise, return true if the
+   *         command is enabled.
+   */
+  Result<bool, nsresult> DispatchReplaceTextCommandEvent(
+      const nsAString& aString, const nsAString& aOriginalSelectedString,
+      uint32_t aOffset, PreventSetSelection aPreventSetSelection,
+      OnlyEnabledCheck aOnlyEnabledCheck = OnlyEnabledCheck::No);
+
+  /**
+   * Dispatch a content command event whose message is
+   * eContentCommandPasteTransferable.
+   *
+   * @return Return error if it's not succeeded. Otherwise, return true if the
+   *         command is enabled.
+   */
+  Result<bool, nsresult> DispatchPasteTransferableCommandEvent(
+      nsITransferable* aTransferable, const TimeStamp& aTimeStamp = TimeStamp(),
+      OnlyEnabledCheck aOnlyEnabledCheck = OnlyEnabledCheck::No);
 
   /**
    * StartComposition() starts composition explicitly.

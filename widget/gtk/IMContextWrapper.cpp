@@ -2747,12 +2747,11 @@ bool IMContextWrapper::DispatchCompositionCommitEvent(
   if (!dispatcher) {
     MOZ_ASSERT(aCommitString);
     MOZ_ASSERT(!aCommitString->IsEmpty());
-    WidgetContentCommandEvent insertTextEvent(true, eContentCommandInsertText,
-                                              lastFocusedWindow);
-    insertTextEvent.mString.emplace(*aCommitString);
-    lastFocusedWindow->DispatchEvent(&insertTextEvent);
-
-    if (!insertTextEvent.mSucceeded) {
+    dispatcher = GetTextEventDispatcher();
+    MOZ_ASSERT(dispatcher);
+    const Result<bool, nsresult> insertTextResult =
+        dispatcher->DispatchInsertTextCommandEvent(*aCommitString);
+    if (insertTextResult.isErr()) [[unlikely]] {
       MOZ_LOG(gIMELog, LogLevel::Error,
               ("0x%p   DispatchCompositionChangeEvent(), FAILED, inserting "
                "text failed",
@@ -3453,12 +3452,10 @@ nsresult IMContextWrapper::DeleteText(GtkIMContext* aContext, int32_t aOffset,
   }
 
   // Delete the selection
-  WidgetContentCommandEvent contentCommandEvent(true, eContentCommandDelete,
-                                                mLastFocusedWindow);
-  mLastFocusedWindow->DispatchEvent(&contentCommandEvent);
+  const Result<bool, nsresult> deleteCommandResult =
+      dispatcher->DispatchContentCommandEvent(eContentCommandDelete);
 
-  if (!contentCommandEvent.mSucceeded ||
-      lastFocusedWindow != mLastFocusedWindow ||
+  if (deleteCommandResult.isErr() || lastFocusedWindow != mLastFocusedWindow ||
       lastFocusedWindow->Destroyed()) {
     MOZ_LOG(gIMELog, LogLevel::Error,
             ("0x%p   DeleteText(), FAILED, deleting the selection caused "

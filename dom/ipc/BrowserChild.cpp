@@ -2649,6 +2649,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvNormalPrioritySelectionEvent(
 mozilla::ipc::IPCResult BrowserChild::RecvSimpleContentCommandEvent(
     const EventMessage& aMessage) {
   WidgetContentCommandEvent localEvent(true, aMessage, mPuppetWidget);
+  localEvent.MarkAsComingFromAnotherProcess();
   DispatchWidgetEventViaAPZ(localEvent);
   (void)SendOnEventNeedingAckHandled(aMessage, 0u);
   return IPC_OK();
@@ -2666,6 +2667,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvInsertText(
   WidgetContentCommandEvent localEvent(true, eContentCommandInsertText,
                                        mPuppetWidget);
   localEvent.mString = Some(nsString(aStringToInsert));
+  localEvent.MarkAsComingFromAnotherProcess();
   DispatchWidgetEventViaAPZ(localEvent);
   (void)SendOnEventNeedingAckHandled(eContentCommandInsertText, 0u);
   return IPC_OK();
@@ -2686,6 +2688,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvReplaceText(
   localEvent.mSelection.mReplaceSrcString = aReplaceSrcString;
   localEvent.mSelection.mOffset = aOffset;
   localEvent.mSelection.mPreventSetSelection = aPreventSetSelection;
+  localEvent.MarkAsComingFromAnotherProcess();
   DispatchWidgetEventViaAPZ(localEvent);
   (void)SendOnEventNeedingAckHandled(eContentCommandReplaceText, 0u);
   return IPC_OK();

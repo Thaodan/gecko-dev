@@ -2406,8 +2406,15 @@ nsDOMWindowUtils::SendContentCommandEvent(const nsAString& aType,
                                           const nsAString& aReplaceSrcString,
                                           uint32_t aAdditionalFlags) {
   // get the widget to send the event to
-  nsCOMPtr<nsIWidget> widget = GetWidget();
-  if (!widget) return NS_ERROR_FAILURE;
+  const nsCOMPtr<nsIWidget> widget = GetWidget();
+  if (!widget) [[unlikely]] {
+    return NS_ERROR_FAILURE;
+  }
+  const RefPtr<TextEventDispatcher> dispatcher =
+      widget->GetTextEventDispatcher();
+  if (!dispatcher) [[unlikely]] {
+    return NS_ERROR_FAILURE;
+  }
 
   EventMessage msg;
   if (aType.EqualsLiteral("cut")) {
@@ -2447,7 +2454,7 @@ nsDOMWindowUtils::SendContentCommandEvent(const nsAString& aType,
     event.mTransferable = aTransferable;
   }
 
-  widget->DispatchEvent(&event);
+  dispatcher->DispatchContentCommandEvent(event);
   return NS_OK;
 }
 

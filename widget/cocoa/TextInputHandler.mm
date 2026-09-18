@@ -2498,10 +2498,11 @@ void TextInputHandler::InsertText(NSString* aString,
     }
 
     // Delete the selected range.
-    WidgetContentCommandEvent deleteCommandEvent(true, eContentCommandDelete,
-                                                 mWidget);
-    DispatchEvent(deleteCommandEvent);
-    NS_ENSURE_TRUE_VOID(deleteCommandEvent.mSucceeded);
+    const RefPtr<TextEventDispatcher> dispatcher(mDispatcher);
+    MOZ_ASSERT(dispatcher);
+    const Result<bool, nsresult> deleteCommandResult =
+        dispatcher->DispatchContentCommandEvent(eContentCommandDelete);
+    NS_ENSURE_TRUE_VOID(deleteCommandResult.isOk());
     // Be aware! The widget might be destroyed here.
     return;
   }
@@ -4129,10 +4130,10 @@ void IMEInputHandler::InsertTextAsCommittingComposition(
       // inserting text without key press nor IME composition because the
       // other browsers do so.   This will cause only a cancelable `beforeinput`
       // event whose `inputType` is `insertText`.
-      WidgetContentCommandEvent insertTextEvent(true, eContentCommandInsertText,
-                                                mWidget);
-      insertTextEvent.mString = Some(str);
-      DispatchEvent(insertTextEvent);
+
+      const RefPtr<TextEventDispatcher> dispatcher(mDispatcher);
+      MOZ_ASSERT(dispatcher);
+      (void)dispatcher->DispatchInsertTextCommandEvent(str);
       return;
     }
 
@@ -5360,14 +5361,12 @@ void IMEInputHandler::ReplaceTextForTextSubstitution(
            this, NS_ConvertUTF16toUTF8(aOriginalString).get(),
            NS_ConvertUTF16toUTF8(insertStr).get(), ToString(aRange).c_str()));
 
-  WidgetContentCommandEvent replaceTextEvent(true, eContentCommandReplaceText,
-                                             mWidget);
-  replaceTextEvent.mString = Some(insertStr);
-  replaceTextEvent.mSelection.mReplaceSrcString = aOriginalString;
-  replaceTextEvent.mSelection.mOffset = aRange.location;
-  replaceTextEvent.mSelection.mPreventSetSelection = aPreventSetSelection;
-  DispatchEvent(replaceTextEvent);
-  if (!replaceTextEvent.mSucceeded || Destroyed()) {
+  const RefPtr<TextEventDispatcher> dispatcher(mDispatcher);
+  MOZ_ASSERT(dispatcher);
+  const Result<bool, nsresult> replaceTextResult =
+      dispatcher->DispatchReplaceTextCommandEvent(
+          insertStr, aOriginalString, aRange.location, aPreventSetSelection);
+  if (replaceTextResult.isErr() || Destroyed()) [[unlikely]] {
     MOZ_LOG(
         gIMELog, LogLevel::Error,
         ("%p   IMEInputHandler::ReplaceTextForTextsubstitution, FAILED", this));
