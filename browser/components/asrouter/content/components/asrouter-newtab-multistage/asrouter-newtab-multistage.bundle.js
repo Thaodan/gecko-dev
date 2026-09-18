@@ -2629,15 +2629,17 @@ const TileList = props => {
   if (!content) {
     return null;
   }
-  const CONFIGURABLE_STYLES = ["background", "borderRadius", "height", "marginBlock", "marginBlockStart", "marginBlockEnd", "marginInline", "paddingBlock", "paddingBlockStart", "paddingBlockEnd", "paddingInline", "paddingInlineStart", "paddingInlineEnd", "width"];
+  const CONFIGURABLE_STYLES = ["background", "borderRadius", "color", "display", "height", "listStyle", "marginBlock", "marginBlockStart", "marginBlockEnd", "marginInline", "marginInlineStart", "paddingBlock", "paddingBlockStart", "paddingBlockEnd", "paddingInline", "paddingInlineStart", "paddingInlineEnd", "width"];
   return /*#__PURE__*/external_React_default().createElement("div", {
     className: "tile-list-container"
   }, content.items.map(({
     icon,
-    text
+    text,
+    style
   }, index) => /*#__PURE__*/external_React_default().createElement("div", {
     key: index,
-    className: "tile-list-item"
+    className: "tile-list-item",
+    style: MultiStageUtils.getValidStyle(style, CONFIGURABLE_STYLES)
   }, /*#__PURE__*/external_React_default().createElement("div", {
     className: "tile-list-icon-wrapper"
   }, /*#__PURE__*/external_React_default().createElement("div", {
@@ -4802,8 +4804,9 @@ class ProtonScreen extends (external_React_default()).PureComponent {
   }
   getEffectiveBackground(content) {
     if (content.position !== "split") {
-      const combinedBackground = content.background && content.zap_border ? `linear-gradient(96deg, #B89CFF 20.68%, #FF9565 79.34%) border-box border-area, image(${content.background}) padding-box` : content.background;
-      const combinedBackgroundStatic = content.background_static && content.zap_border ? `linear-gradient(96deg, #B89CFF 20.68%, #FF9565 79.34%) border-box border-area, image(${content.background_static}) padding-box` : content.background_static;
+      const gradient = content.zap_border_gradient || "linear-gradient(96deg, #B89CFF 20.68%, #FF9565 79.34%)";
+      const combinedBackground = content.background && content.zap_border ? `${gradient} border-box border-area, image(${content.background}) padding-box` : content.background;
+      const combinedBackgroundStatic = content.background_static && content.zap_border ? `${gradient} border-box border-area, image(${content.background_static}) padding-box` : content.background_static;
       return this.props.animationsPaused && content.background_static ? combinedBackgroundStatic : combinedBackground;
     }
     return this.props.animationsPaused && content.background_static ? content.background_static : content.background;
@@ -5253,6 +5256,10 @@ const screenContentShape = {
   // 'absolute_position' or 'arrow_position'. There is no effect if HCM or a
   // custom theme add-on is enabled.
   zap_shadow: (prop_types_default()).bool,
+  // If present, a custom gradient to use in conjuction with the
+  // 'background' and 'zap_border' properties. Only applied if
+  // both other properties are present.
+  zap_border_gradient: (prop_types_default()).string,
   // An optional object representing a large illustration to show above other
   // content.
   logo: prop_types_default().shape({
