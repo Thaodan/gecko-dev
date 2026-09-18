@@ -117,7 +117,7 @@ index f4076f467a..d14f761f49 100644
    # TODO(https://bugs.webrtc.org/14437):  Remove this section if general
    # Chromium fix resolves the problem.
 diff --git a/BUILD.gn b/BUILD.gn
-index 561e749bac..8fcb779def 100644
+index 2fa0bfcb21..3ffefce9b9 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -39,7 +39,7 @@ if (is_android) {
@@ -129,7 +129,7 @@ index 561e749bac..8fcb779def 100644
    # This target should (transitively) cause everything to be built; if you run
    # 'ninja default' and then 'ninja all', the second build should do no work.
    group("default") {
-@@ -199,6 +199,10 @@ config("common_inherited_config") {
+@@ -200,6 +200,10 @@ config("common_inherited_config") {
      defines += [ "WEBRTC_ENABLE_OBJC_SYMBOL_EXPORT" ]
    }
  
@@ -140,7 +140,7 @@ index 561e749bac..8fcb779def 100644
    if (!rtc_builtin_ssl_root_certificates) {
      defines += [ "WEBRTC_EXCLUDE_BUILT_IN_SSL_ROOT_CERTS" ]
    }
-@@ -514,9 +518,11 @@ config("common_config") {
+@@ -515,9 +519,11 @@ config("common_config") {
    }
  }
  
@@ -152,7 +152,7 @@ index 561e749bac..8fcb779def 100644
  
  if (!rtc_build_ssl) {
    config("external_ssl_library") {
-@@ -579,6 +585,33 @@ if (!build_with_chromium) {
+@@ -580,6 +586,33 @@ if (!build_with_chromium) {
        "pc:webrtc_sdp",
        "video",
      ]
@@ -186,7 +186,7 @@ index 561e749bac..8fcb779def 100644
  
      if (rtc_include_builtin_audio_codecs) {
        deps += [
-@@ -589,8 +622,23 @@ if (!build_with_chromium) {
+@@ -590,8 +623,23 @@ if (!build_with_chromium) {
  
      if (build_with_mozilla) {
        deps += [
@@ -791,7 +791,7 @@ index 98f0ee5fe7..353b8adef2 100644
  if (rtc_include_tests && !build_with_chromium) {
    rtc_library("fine_audio_buffer_unittest") {
 diff --git a/modules/audio_processing/aec3/BUILD.gn b/modules/audio_processing/aec3/BUILD.gn
-index bec2c9b4c8..f6849a8504 100644
+index 34cf02f2e2..68aed7b4db 100644
 --- a/modules/audio_processing/aec3/BUILD.gn
 +++ b/modules/audio_processing/aec3/BUILD.gn
 @@ -260,14 +260,11 @@ if (current_cpu == "x86" || current_cpu == "x64") {
@@ -828,7 +828,7 @@ index 327f0fb16d..22000b5946 100644
  #include <algorithm>
  #include <array>
 diff --git a/modules/audio_processing/agc2/rnn_vad/BUILD.gn b/modules/audio_processing/agc2/rnn_vad/BUILD.gn
-index ce937d583f..2eaafdeb6a 100644
+index 92a69480b4..6d16f05299 100644
 --- a/modules/audio_processing/agc2/rnn_vad/BUILD.gn
 +++ b/modules/audio_processing/agc2/rnn_vad/BUILD.gn
 @@ -114,7 +114,7 @@ rtc_source_set("vector_math") {
@@ -1270,7 +1270,7 @@ index 4c5c7dec65..4f4c6d1515 100644
      "../api:sequence_checker",
      "../api/adaptation:resource_adaptation_api",
 diff --git a/webrtc.gni b/webrtc.gni
-index 71df7a7206..130a25742c 100644
+index 35271ab079..5f4aaa7c46 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -39,6 +39,11 @@ if (is_mac) {
@@ -1370,7 +1370,7 @@ index 71df7a7206..130a25742c 100644
  # Make it possible to provide custom locations for some libraries (move these
  # up into declare_args should we need to actually use them for the GN build).
  rtc_libvpx_dir = "//third_party/libvpx"
-@@ -1262,7 +1272,7 @@ if (is_mac || is_ios) {
+@@ -1263,7 +1273,7 @@ if (is_mac || is_ios) {
    }
  }
  

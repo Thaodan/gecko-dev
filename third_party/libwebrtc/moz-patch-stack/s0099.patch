@@ -16,10 +16,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/4527c41ef71d7683c
  4 files changed, 21 insertions(+), 9 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index 6565ee4f25..6a818227fb 100644
+index ac19bd19aa..a88ffd86c8 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -536,6 +536,9 @@ if (!rtc_build_ssl) {
+@@ -537,6 +537,9 @@ if (!rtc_build_ssl) {
        "crypto",
        "ssl",
      ]
@@ -29,7 +29,7 @@ index 6565ee4f25..6a818227fb 100644
    }
  }
  
-@@ -633,6 +636,7 @@ if (!build_with_chromium) {
+@@ -634,6 +637,7 @@ if (!build_with_chromium) {
          "api/environment:environment_factory",
          "api/video:video_frame",
          "api/video:video_rtp_headers",
@@ -142,7 +142,7 @@ index 963eb70be3..efdbc3d23f 100644
  rtc_library("ssl") {
  if (!build_with_mozilla) {
 diff --git a/webrtc.gni b/webrtc.gni
-index 0bf6f6ec1a..950eda1204 100644
+index 182ac4f471..399e4666d8 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -116,7 +116,7 @@ declare_args() {

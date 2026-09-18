@@ -74,7 +74,7 @@ index 9962d2845d..485df8f5e1 100644
  # The python interpreter to use by default. On Windows, this will look
  # for python3.exe and python3.bat.
 diff --git a/BUILD.gn b/BUILD.gn
-index 2a3c6792c5..ba92f630eb 100644
+index fa99ab6d9f..25ec0dfa4d 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -21,8 +21,8 @@
@@ -99,7 +99,7 @@ index 2a3c6792c5..ba92f630eb 100644
    import("//third_party/jni_zero/jni_zero.gni")
  }
  
-@@ -551,7 +551,7 @@ if (!build_with_chromium) {
+@@ -552,7 +552,7 @@ if (!build_with_chromium) {
      sources = []
  
      complete_static_lib = true
@@ -108,7 +108,7 @@ index 2a3c6792c5..ba92f630eb 100644
      defines = []
  
      deps = [
-@@ -856,7 +856,7 @@ rtc_static_library("dcsctp") {
+@@ -857,7 +857,7 @@ rtc_static_library("dcsctp") {
    visibility = [ "//:default" ]
    sources = []
    complete_static_lib = true
@@ -117,7 +117,7 @@ index 2a3c6792c5..ba92f630eb 100644
    defines = []
    deps = [
      "net/dcsctp/public:factory",
-@@ -894,7 +894,7 @@ group("poison_default_neural_residual_echo_estimator") {
+@@ -895,7 +895,7 @@ group("poison_default_neural_residual_echo_estimator") {
  if (!build_with_chromium) {
    # Write debug logs to gn_logs.txt.
    # This is also required for Siso builds.
@@ -456,7 +456,7 @@ index 353b8adef2..1141183cb8 100644
  
  config("audio_device_warnings_config") {
 diff --git a/modules/audio_processing/aec3/BUILD.gn b/modules/audio_processing/aec3/BUILD.gn
-index 709dcbdd24..d725d75449 100644
+index 6366fb6460..bd9db78fe8 100644
 --- a/modules/audio_processing/aec3/BUILD.gn
 +++ b/modules/audio_processing/aec3/BUILD.gn
 @@ -126,7 +126,7 @@ rtc_library("aec3") {
@@ -469,7 +469,7 @@ index 709dcbdd24..d725d75449 100644
    }
  
 diff --git a/modules/audio_processing/agc/BUILD.gn b/modules/audio_processing/agc/BUILD.gn
-index 59b933ff6c..8d146daab1 100644
+index 943e843d53..90496efd4e 100644
 --- a/modules/audio_processing/agc/BUILD.gn
 +++ b/modules/audio_processing/agc/BUILD.gn
 @@ -79,7 +79,7 @@ rtc_library("legacy_agc") {
@@ -482,7 +482,7 @@ index 59b933ff6c..8d146daab1 100644
      }
    }
 diff --git a/modules/audio_processing/agc2/BUILD.gn b/modules/audio_processing/agc2/BUILD.gn
-index 532c4ec8c7..7040ce3128 100644
+index a6e1353d6d..6a67bfdbf5 100644
 --- a/modules/audio_processing/agc2/BUILD.gn
 +++ b/modules/audio_processing/agc2/BUILD.gn
 @@ -251,7 +251,7 @@ rtc_library("vad_wrapper") {
@@ -495,7 +495,7 @@ index 532c4ec8c7..7040ce3128 100644
    }
  
 diff --git a/modules/audio_processing/agc2/rnn_vad/BUILD.gn b/modules/audio_processing/agc2/rnn_vad/BUILD.gn
-index ff042a17f4..e364bb0f5a 100644
+index a5ff021945..029e4a70e3 100644
 --- a/modules/audio_processing/agc2/rnn_vad/BUILD.gn
 +++ b/modules/audio_processing/agc2/rnn_vad/BUILD.gn
 @@ -19,7 +19,7 @@ rtc_library("rnn_vad") {
@@ -534,7 +534,7 @@ index ff042a17f4..e364bb0f5a 100644
        ":rnn_vad",
        ":rnn_vad_common",
 diff --git a/modules/audio_processing/ns/BUILD.gn b/modules/audio_processing/ns/BUILD.gn
-index d0b66cd592..838d961ce6 100644
+index 5fbe21ec30..7d41b6d67d 100644
 --- a/modules/audio_processing/ns/BUILD.gn
 +++ b/modules/audio_processing/ns/BUILD.gn
 @@ -44,7 +44,7 @@ rtc_static_library("ns") {
@@ -780,7 +780,7 @@ index a90fb214c9..9129bb0a77 100644
    }
  }
 diff --git a/webrtc.gni b/webrtc.gni
-index e78b0c355f..e0dee59d8f 100644
+index 9fd86861fd..7e617bdd19 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -5,12 +5,12 @@
