@@ -90,6 +90,9 @@ mermaid_init_config = {
     "er": {"useMaxWidth": False},
 }
 
+# ZenUML sequence diagrams. The plugin is fetched only on a page that has one.
+mermaid_include_zenuml = True
+
 # The paths are loaded from config.yml so they can be shared with a CI
 # optimization strategy that ensures the doc task runs when these files change.
 with open(OUR_DIR / "config.yml") as fh:
