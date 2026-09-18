@@ -472,73 +472,59 @@ export class AgentMonitorItem extends MozLitElement {
     this.#persistDraft();
   }
 
-  // TODO: Bug 2054529 - share this URL validation with about:tools' create form
-  // Returns an { id } Fluent descriptor for the error, or null when valid.
-  #validateUrl(url) {
+  // Normalize a user-entered address to a watchable http(s) URL. A value with
+  // no scheme (e.g. "cnn.com") is watched over https so the user doesn't have
+  // to type it. Returns the normalized URL as entered.
+  #normalizeUrl(url) {
     const value = url.trim();
-
     if (!value) {
-      return { valid: true, error: null };
+      return "";
     }
-
-    const invalidUrl = {
-      valid: false,
-      error: { id: "ai-tasks-alert-error-invalid-url" },
-    };
-
-    const missingScheme = {
-      valid: false,
-      error: { id: "ai-tasks-alert-error-url-scheme" },
-    };
-
-    // If the user supplied an HTTP(S) scheme, validate the URL as-is.
-    if (/^https?:\/\//i.test(value)) {
-      try {
-        const parsed = new URL(value);
-
-        if (parsed.protocol === "http:" || parsed.protocol === "https:") {
-          return { valid: true, error: null };
-        }
-      } catch {}
-
-      return invalidUrl;
-    }
-
-    // Reject explicit non-HTTP schemes such as ftp:, file:, mailto:, etc.
-    // Host and port values like "localhost:3000" or "example.com:8080" are
-    // excluded because they are likely web addresses missing their scheme.
-    const hasExplicitScheme = /^[a-z][a-z\d+.-]*:/i.test(value);
-    const looksLikeHostWithPort =
-      /^(?:\[[^\]]+\]|[^/?#:]+):\d+(?:[/?#]|$)/.test(value);
-
-    if (hasExplicitScheme && !looksLikeHostWithPort) {
-      return invalidUrl;
-    }
-
-    // If adding HTTPS produces a valid web URL, the only thing missing from
-    // the user's input was the scheme.
+    const candidate = value.includes("://") ? value : `https://${value}`;
     try {
-      const parsed = new URL(`https://${value}`);
-
-      if (parsed.hostname) {
-        return missingScheme;
+      const { protocol, hostname } = new URL(candidate);
+      if ((protocol === "http:" || protocol === "https:") && hostname) {
+        return new URL(candidate).href;
       }
     } catch {}
+    return "";
+  }
 
-    return invalidUrl;
+  // Whether two watch URLs point at the same page, comparing canonical forms so
+  // "cnn.com", "CNN.com" and "https://cnn.com/" count as one.
+  #isSameUrl(a, b) {
+    try {
+      return new URL(a).href === new URL(b).href;
+    } catch {
+      return a === b;
+    }
+  }
+
+  // Returns the { id } Fluent error descriptor and the url to store.
+  #validateAndNormalizeURL(url) {
+    const normalized = this.#normalizeUrl(url);
+    if (!normalized) {
+      return {
+        valid: false,
+        error: { id: "ai-tasks-alert-error-invalid-url" },
+        normalized: "",
+      };
+    }
+    return { valid: true, error: null, normalized };
   }
 
   #addUrl() {
-    const url = this.pendingUrl.trim();
-    if (!url) {
+    if (!this.pendingUrl.trim()) {
       return;
     }
-    const { valid, error } = this.#validateUrl(url);
+    const { valid, error, normalized } = this.#validateAndNormalizeURL(
+      this.pendingUrl
+    );
     if (!valid) {
       this.pendingUrlError = error;
       return;
     }
-    if (this.pageUrls.includes(url)) {
+    if (this.pageUrls.some(existing => this.#isSameUrl(existing, normalized))) {
       this.pendingUrlError = { id: "ai-tasks-alert-error-duplicate-url" };
       return;
     }
@@ -549,7 +535,7 @@ export class AgentMonitorItem extends MozLitElement {
       };
       return;
     }
-    this.pageUrls = [...this.pageUrls, url];
+    this.pageUrls = [...this.pageUrls, normalized];
     this.pendingUrl = "";
     this.pendingUrlError = null;
     this.#clearFieldError("pages");

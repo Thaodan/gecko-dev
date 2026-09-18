@@ -9874,6 +9874,13 @@
   mirror: always
   set_spidermonkey_pref: startup
 
+  # Experimental support for deferred import evaluation in JavaScript.
+- name: javascript.options.experimental.defer_import_eval
+  type: bool
+  value: false
+  mirror: always
+  set_spidermonkey_pref: startup
+  fuzzing_safe: false
 #endif  // NIGHTLY_BUILD
 
   # Capture stack traces for OOM
@@ -20328,6 +20335,8 @@
 - name: webgl.disable-angle
   type: RelaxedAtomicBool
 #if defined(XP_WIN)
+  value: false
+#elif defined(XP_MACOSX) && defined(NIGHTLY_BUILD)
   value: false
 #else
   value: true

@@ -1206,7 +1206,7 @@ add_task(async function test_invalid_url_shows_error() {
   });
 });
 
-add_task(async function test_url_missing_scheme_shows_error() {
+add_task(async function test_bare_host_defaults_to_https() {
   await withTestPage(async browser => {
     await setProps(browser, {
       agent: { conditionPresets: [] },
@@ -1218,20 +1218,39 @@ add_task(async function test_url_missing_scheme_shows_error() {
       const shadow = el.shadowRoot;
 
       const urlInput = shadow.querySelector("moz-input-url.page-url-input");
+      const addButton = shadow.querySelector("moz-button.add-page-btn");
+
+      // A scheme-less host is watched over https rather than rejected.
       urlInput.value = "example.com";
       urlInput.dispatchEvent(new content.Event("input", { bubbles: true }));
-      shadow.querySelector("moz-button.add-page-btn").click();
-
+      addButton.click();
       await el.updateComplete;
+
+      Assert.ok(
+        !shadow.querySelector(".error-message"),
+        "A scheme-less host is accepted without an error"
+      );
+      Assert.deepEqual(
+        el.pageUrls,
+        ["https://example.com/"],
+        "A host with no scheme is watched over https"
+      );
+
+      // The same page typed differently canonicalizes to the same URL
+      urlInput.value = "HTTPS://EXAMPLE.COM";
+      urlInput.dispatchEvent(new content.Event("input", { bubbles: true }));
+      addButton.click();
+      await el.updateComplete;
+
       Assert.equal(
         shadow.querySelector(".error-message")?.getAttribute("data-l10n-id"),
-        "ai-tasks-alert-error-url-scheme",
-        "An address missing its scheme prompts to add https:// or http://"
+        "ai-tasks-alert-error-duplicate-url",
+        "The same host in a different case is rejected as a duplicate"
       );
-      Assert.equal(
-        shadow.querySelectorAll(".page-pill").length,
-        0,
-        "An address missing its scheme is not added as a pill"
+      Assert.deepEqual(
+        el.pageUrls,
+        ["https://example.com/"],
+        "The duplicate is not added again"
       );
     });
   });

@@ -579,6 +579,8 @@ void TextComposition::DispatchCompositionEvent(
 void TextComposition::HandleSelectionEvent(
     nsPresContext* aPresContext, BrowserParent* aBrowserParent,
     WidgetSelectionEvent* aSelectionEvent) {
+  MOZ_DIAGNOSTIC_ASSERT(aSelectionEvent->DispatchedByValidDispatcher());
+
   // If the content is a container of BrowserParent, composition should be in
   // the remote process.
   if (aBrowserParent) {

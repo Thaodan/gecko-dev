@@ -121,13 +121,6 @@
   }
 }
 
-.urlbarView-body-outer,
-.urlbarView-body-inner {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
 .urlbarView-results {
   white-space: nowrap;
   container-type: inline-size;

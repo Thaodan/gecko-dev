@@ -23,19 +23,20 @@ import org.mozilla.fenix.home.topsites.utils.fetchDefaultTopSites
 import org.mozilla.fenix.utils.Settings
 
 /**
- * A binding for observing [RegionState] and adding default top sites that are included in the application.
+ * A binding for observing [RegionState] and adding the default pinned sites that are included in the application on the
+ * first run of the application.
  *
  * @param browserStore The [BrowserStore] to observe state changes.
- * @param topSitesStorage An instance of the [DefaultTopSitesStorage] used add to default top sites.
+ * @param topSitesStorage An instance of the [DefaultTopSitesStorage] used to add the default pinned sites.
  * @param settings [Settings] used for accessing the application preferences.
  * @param resources [Resources] used for accessing application resources.
  * @param crashReporter [CrashReporter] used for recording caught exceptions.
  * @param isReleased Whether or not the build is in a release channel.
  * @param mainDispatcher The dispatcher on which to observe state changes.
- * @param ioDispatcher The dispatcher used for I/O operations, specifically reading and parsing the initial shortcuts
- *   JSON.
+ * @param ioDispatcher The dispatcher used for I/O operations, specifically reading and parsing the default pinned
+ *   shortcuts JSON.
  */
-class DefaultTopSitesBinding(
+class DefaultPinnedSitesBinding(
     browserStore: BrowserStore,
     private val topSitesStorage: DefaultTopSitesStorage,
     private val settings: Settings,
@@ -57,11 +58,11 @@ class DefaultTopSitesBinding(
                     return@collect
                 }
 
-                val defaultTopSites = getTopSites(region = regionState.current)
+                val defaultPinnedSites = getPinnedSites(region = regionState.current)
 
-                if (defaultTopSites.isNotEmpty()) {
+                if (defaultPinnedSites.isNotEmpty()) {
                     topSitesStorage.addTopSites(
-                        topSites = defaultTopSites.map { it.title to it.url },
+                        topSites = defaultPinnedSites.map { it.title to it.url },
                         isDefault = true,
                     )
                     settings.defaultTopSitesAdded = true
@@ -69,11 +70,11 @@ class DefaultTopSitesBinding(
             }
     }
 
-    internal suspend fun getTopSites(region: String): List<DefaultTopSite> =
+    internal suspend fun getPinnedSites(region: String): List<DefaultTopSite> =
         withContext(ioDispatcher) {
             fetchDefaultTopSites(
                     resources = resources,
-                    rawResId = R.raw.initial_shortcuts,
+                    rawResId = R.raw.default_pinned_shortcuts,
                     crashReporter = crashReporter,
                     region = region,
                 )

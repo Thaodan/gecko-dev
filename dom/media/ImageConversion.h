@@ -40,7 +40,8 @@ already_AddRefed<gfx::SourceSurface> GetSourceSurface(layers::Image* aImage);
  *
  * aDestStrideY must be at least aDestSize.width, and aDestStrideU and
  * aDestStrideV must be at least ceil(aDestSize.width / 2). Returns
- * NS_ERROR_INVALID_ARG if any stride is too small.
+ * NS_ERROR_INVALID_ARG if any stride is too small. A source already in I420
+ * is copied, and scaled when aDestSize differs from its size.
  *
  * An RGB source is converted with the matrix for aDestYUVColorSpace and
  * aDestColorRange; a YUV source ignores both and is repacked as it is.
@@ -58,10 +59,10 @@ nsresult ConvertToI420(
 /**
  * Converts aImage to an NV12 image and writes it to the given buffers.
  *
- * aDestStrideUV must be at least 2 * ceil(aDestSize.width / 2), since U and V
- * are interleaved. Returns NS_ERROR_INVALID_ARG if either stride is too small.
- * aDestYUVColorSpace and aDestColorRange select the RGB-to-YUV matrix as in
- * ConvertToI420.
+ * Sources, matrix selection, scaling and stride checks are as for
+ * ConvertToI420, except that RGB565 sources are refused, since libyuv converts
+ * those to I420 only, and that aDestStrideUV must hold both chroma planes: at
+ * least 2 * ceil(aDestSize.width / 2). A source already in NV12 is copied.
  */
 nsresult ConvertToNV12(
     layers::Image* aImage, uint8_t* aDestY, int aDestStrideY, uint8_t* aDestUV,

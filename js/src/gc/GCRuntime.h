@@ -177,12 +177,12 @@ class ZoneList {
   Zone* removeFront();
   void clear();
 
+  ZoneList(const ZoneList& other) = delete;
+  ZoneList& operator=(const ZoneList& other) = delete;
+
  private:
   explicit ZoneList(Zone* singleZone);
   void check() const;
-
-  ZoneList(const ZoneList& other) = delete;
-  ZoneList& operator=(const ZoneList& other) = delete;
 };
 
 struct WeakCacheToSweep {

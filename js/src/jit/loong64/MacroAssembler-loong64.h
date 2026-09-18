@@ -11,6 +11,9 @@
 #include "jit/MoveResolver.h"
 #include "wasm/WasmBuiltins.h"
 
+using js::wasm::FaultingCodeRange;
+using js::wasm::FaultingCodeRangePair;
+
 namespace js {
 namespace jit {
 
@@ -432,20 +435,24 @@ class MacroAssemblerLOONG64 : public Assembler {
                              AnyRegister value, Register memoryBase,
                              uint64_t address);
 
-  void wasmLoadImpl(const wasm::MemoryAccessDesc& access, Register memoryBase,
-                    Register ptr, AnyRegister output);
-  void wasmLoadImpl(const wasm::MemoryAccessDesc& access, Address address,
-                    AnyRegister output);
-  void wasmLoadImpl(const wasm::MemoryAccessDesc& access, Register memoryBase,
-                    Register ptr, Register ptrScratch, AnyRegister output,
-                    Register tmp);
-  void wasmStoreImpl(const wasm::MemoryAccessDesc& access, AnyRegister value,
-                     Register memoryBase, Register ptr);
-  void wasmStoreImpl(const wasm::MemoryAccessDesc& access, AnyRegister value,
-                     Address address);
-  void wasmStoreImpl(const wasm::MemoryAccessDesc& access, AnyRegister value,
-                     Register memoryBase, Register ptr, Register ptrScratch,
-                     Register tmp);
+  FaultingCodeRange wasmLoadImpl(const wasm::MemoryAccessDesc& access,
+                                 Register memoryBase, Register ptr,
+                                 AnyRegister output);
+  FaultingCodeRange wasmLoadImpl(const wasm::MemoryAccessDesc& access,
+                                 Address address, AnyRegister output);
+  FaultingCodeRange wasmLoadImpl(const wasm::MemoryAccessDesc& access,
+                                 Register memoryBase, Register ptr,
+                                 Register ptrScratch, AnyRegister output,
+                                 Register tmp);
+  FaultingCodeRange wasmStoreImpl(const wasm::MemoryAccessDesc& access,
+                                  AnyRegister value, Register memoryBase,
+                                  Register ptr);
+  FaultingCodeRange wasmStoreImpl(const wasm::MemoryAccessDesc& access,
+                                  AnyRegister value, Address address);
+  FaultingCodeRange wasmStoreImpl(const wasm::MemoryAccessDesc& access,
+                                  AnyRegister value, Register memoryBase,
+                                  Register ptr, Register ptrScratch,
+                                  Register tmp);
 };
 
 class MacroAssembler;
@@ -1090,12 +1097,14 @@ class MacroAssemblerLOONG64Compat : public MacroAssemblerLOONG64 {
  protected:
   bool buildOOLFakeExitFrame(void* fakeReturnAddr);
 
-  void wasmLoadI64Impl(const wasm::MemoryAccessDesc& access,
-                       Register memoryBase, Register ptr, Register ptrScratch,
-                       Register64 output, Register tmp);
-  void wasmStoreI64Impl(const wasm::MemoryAccessDesc& access, Register64 value,
-                        Register memoryBase, Register ptr, Register ptrScratch,
-                        Register tmp);
+  FaultingCodeRange wasmLoadI64Impl(const wasm::MemoryAccessDesc& access,
+                                    Register memoryBase, Register ptr,
+                                    Register ptrScratch, Register64 output,
+                                    Register tmp);
+  FaultingCodeRange wasmStoreI64Impl(const wasm::MemoryAccessDesc& access,
+                                     Register64 value, Register memoryBase,
+                                     Register ptr, Register ptrScratch,
+                                     Register tmp);
 
  public:
   void lea(Operand addr, Register dest) {

@@ -7278,7 +7278,7 @@ void MacroAssembler::wasmReturnCallRef(
   append(wasm::CodeRangeUnwindInfo::Normal, currentOffset());
 }
 
-void MacroAssembler::wasmBoundsCheckRange32(
+FaultingCodeRange MacroAssembler::wasmBoundsCheckRange32(
     Register index, Register length, Register limit, Register tmp,
     const wasm::TrapSiteDesc& trapSiteDesc) {
   Label ok;
@@ -7290,9 +7290,10 @@ void MacroAssembler::wasmBoundsCheckRange32(
   jump(&ok);
 
   bind(&fail);
-  wasmTrap(wasm::Trap::OutOfBounds, trapSiteDesc);
+  FaultingCodeRange fcr = wasmTrap(wasm::Trap::OutOfBounds, trapSiteDesc);
 
   bind(&ok);
+  return fcr;
 }
 
 void MacroAssembler::wasmClampTable64Address(Register64 address, Register out) {

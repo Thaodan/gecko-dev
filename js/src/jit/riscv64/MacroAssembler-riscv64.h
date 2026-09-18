@@ -16,6 +16,9 @@
 #include "jit/riscv64/Assembler-riscv64.h"
 #include "wasm/WasmTypeDecls.h"
 
+using js::wasm::FaultingCodeRange;
+using js::wasm::FaultingCodeRangePair;
+
 namespace js {
 namespace jit {
 
@@ -557,19 +560,21 @@ class MacroAssemblerRiscv64 : public Assembler {
                              AnyRegister value, Register memoryBase,
                              uint64_t offset);
 
-  void wasmLoadImpl(const wasm::MemoryAccessDesc& access, Register memoryBase,
-                    Register ptr, AnyRegister output,
-                    wasm::ZeroExtendIndex zeroExtend);
-  void wasmStoreImpl(const wasm::MemoryAccessDesc& access, AnyRegister value,
-                     Register memoryBase, Register ptr,
-                     wasm::ZeroExtendIndex zeroExtend);
+  FaultingCodeRange wasmLoadImpl(const wasm::MemoryAccessDesc& access,
+                                 Register memoryBase, Register ptr,
+                                 AnyRegister output,
+                                 wasm::ZeroExtendIndex zeroExtend);
+  FaultingCodeRange wasmStoreImpl(const wasm::MemoryAccessDesc& access,
+                                  AnyRegister value, Register memoryBase,
+                                  Register ptr,
+                                  wasm::ZeroExtendIndex zeroExtend);
 
-  void wasmLoadImpl(const wasm::MemoryAccessDesc& access,
-                    const BaseIndex& address, AnyRegister output,
-                    wasm::ZeroExtendIndex zeroExtend);
-  void wasmStoreImpl(const wasm::MemoryAccessDesc& access, AnyRegister value,
-                     const BaseIndex& address,
-                     wasm::ZeroExtendIndex zeroExtend);
+  FaultingCodeRange wasmLoadImpl(const wasm::MemoryAccessDesc& access,
+                                 const BaseIndex& address, AnyRegister output,
+                                 wasm::ZeroExtendIndex zeroExtend);
+  FaultingCodeRange wasmStoreImpl(const wasm::MemoryAccessDesc& access,
+                                  AnyRegister value, const BaseIndex& address,
+                                  wasm::ZeroExtendIndex zeroExtend);
 };
 
 class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
