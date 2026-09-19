@@ -5,11 +5,9 @@
 package org.mozilla.fenix.home.ui
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -30,47 +28,24 @@ import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_WORDMARK_TEXT
 internal val ResourceId = SemanticsPropertyKey<Int>("ResourceId")
 internal var SemanticsPropertyReceiver.resourceId by ResourceId
 
-private val LOGO_HEIGHT = 40.dp
-private val LOGO_PADDING = 10.dp
-
-/**
- * The Firefox logo followed by the Firefox wordmark.
- *
- * @param wordmarkTextColor Tint applied to the wordmark text, or null to leave it untinted.
- * @param modifier [Modifier] to be applied to the layout.
- */
 @Composable
-internal fun WordmarkAndLogo(
-    wordmarkTextColor: Color?,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Logo()
-        Wordmark(wordmarkTextColor)
-    }
-}
-
-@Composable
-internal fun Logo() {
+internal fun WordmarkLogo() {
     Image(
         modifier =
-            Modifier.height(LOGO_HEIGHT)
+            Modifier.height(40.dp)
                 .semantics {
                     testTagsAsResourceId = true
                     testTag = HOMEPAGE_WORDMARK_LOGO
                     resourceId = R.attr.fenixWordmarkLogo
                 }
-                .padding(end = LOGO_PADDING),
+                .padding(end = 10.dp),
         painter = painterResource(getAttr(R.attr.fenixWordmarkLogo)),
         contentDescription = null,
     )
 }
 
 @Composable
-internal fun Wordmark(color: Color?) {
+internal fun WordmarkText(color: Color?) {
     Image(
         modifier =
             Modifier.semantics {
