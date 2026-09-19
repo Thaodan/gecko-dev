@@ -20,8 +20,8 @@
  */
 
 /**
- * pdfjsVersion = 6.4.168
- * pdfjsBuild = 51fc21d1f
+ * pdfjsVersion = 6.4.180
+ * pdfjsBuild = 356109b29
  */
 
 ;// ./web/ui_utils.js
@@ -895,7 +895,7 @@ const {
 } = globalThis.pdfjsLib;
 
 ;// ./web/internal_evt.js
-const INTERNAL_EVT = "2ca07d41-1e0b-4841-b7c0-1c41f6f2ac81";
+const INTERNAL_EVT = "b78df2f2-ca37-4512-aed1-fe630c02c752";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -2268,7 +2268,11 @@ class ExternalServices extends BaseExternalServices {
     FirefoxCom.request("updateEditorStates", data);
   }
   async createL10n() {
-    await document.l10n.ready;
+    try {
+      await document.l10n.ready;
+    } catch (ex) {
+      console.error(`createL10n: "${ex}".`);
+    }
     return new L10n(AppOptions.get("localeProperties"), document.l10n);
   }
   createScripting() {
@@ -8830,7 +8834,7 @@ class PDFViewer {
   #savedPageViews = null;
   #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "6.4.168";
+    const viewerVersion = "6.4.180";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }

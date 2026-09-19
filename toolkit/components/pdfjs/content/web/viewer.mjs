@@ -20,8 +20,8 @@
  */
 
 /**
- * pdfjsVersion = 6.4.168
- * pdfjsBuild = 51fc21d1f
+ * pdfjsVersion = 6.4.180
+ * pdfjsBuild = 356109b29
  */
 
 ;// ./web/ui_utils.js
@@ -898,7 +898,7 @@ const {
 } = globalThis.pdfjsLib;
 
 ;// ./web/internal_evt.js
-const INTERNAL_EVT = "2ca07d41-1e0b-4841-b7c0-1c41f6f2ac81";
+const INTERNAL_EVT = "b78df2f2-ca37-4512-aed1-fe630c02c752";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -2222,7 +2222,11 @@ class ExternalServices extends BaseExternalServices {
     FirefoxCom.request("updateEditorStates", data);
   }
   async createL10n() {
-    await document.l10n.ready;
+    try {
+      await document.l10n.ready;
+    } catch (ex) {
+      console.error(`createL10n: "${ex}".`);
+    }
     return new L10n(AppOptions.get("localeProperties"), document.l10n);
   }
   createScripting() {
@@ -13361,7 +13365,7 @@ class PDFViewer {
   #savedPageViews = null;
   #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "6.4.168";
+    const viewerVersion = "6.4.180";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
@@ -17794,8 +17798,39 @@ const PDFViewerApplication = {
       const {
         featuresNotification
       } = appConfig;
-      customElements.whenDefined("moz-message-bar").then(() => {
+      let barResizeObserver = null,
+        dismissed = false;
+      const hideBar = () => {
+        dismissed = true;
+        barResizeObserver?.disconnect();
+        barResizeObserver = null;
+        docStyle.setProperty("--pfn-bar-height", "0px");
+        featuresNotification.hidden = true;
+      };
+      eventBus.on("featuresnotificationdismissed", ({
+        value
+      }) => {
+        if (value) {
+          hideBar();
+        }
+      }, {
+        signal: abortSignal,
+        ...internalOpt
+      });
+      const showFeaturesNotification = async () => {
         if (AppOptions.get("featuresNotificationDismissed")) {
+          return;
+        }
+        document.l10n.addResourceIds(["branding/brand.ftl", "toolkit/global/mozMessageBar.ftl", "toolkit/about/pdfFeaturesNotification.ftl"]);
+        await import(
+        /*webpackIgnore: true*/
+        /*@vite-ignore*/
+        "chrome://global/content/elements/moz-message-bar.mjs");
+        const message = featuresNotification.querySelector("[slot='message']");
+        featuresNotification.setAttribute("data-l10n-id", "pdf-features-notification");
+        message.setAttribute("data-l10n-id", "pdf-features-notification-message");
+        await document.l10n.translateElements([featuresNotification, message]);
+        if (dismissed || AppOptions.get("featuresNotificationDismissed")) {
           return;
         }
         const openFeatures = event => {
@@ -17813,17 +17848,12 @@ const PDFViewerApplication = {
         }, {
           signal: abortSignal
         });
-        const barResizeObserver = new ResizeObserver(entries => {
+        barResizeObserver = new ResizeObserver(entries => {
           const box = entries[0]?.borderBoxSize?.[0];
           const height = box ? box.blockSize : entries[0]?.contentRect.height ?? 0;
           docStyle.setProperty("--pfn-bar-height", `${Math.ceil(height)}px`);
         });
         barResizeObserver.observe(featuresNotification);
-        const hideBar = () => {
-          barResizeObserver.disconnect();
-          docStyle.setProperty("--pfn-bar-height", "0px");
-          featuresNotification.hidden = true;
-        };
         featuresNotification.addEventListener("message-bar:user-dismissed", () => {
           if (featuresNotification.matches(":focus-within")) {
             container.focus();
@@ -17833,17 +17863,16 @@ const PDFViewerApplication = {
         }, {
           once: true
         });
-        eventBus.on("featuresnotificationdismissed", ({
-          value
-        }) => {
-          if (value) {
-            hideBar();
-          }
-        }, {
-          signal: abortSignal,
-          ...internalOpt
-        });
         featuresNotification.hidden = false;
+      };
+      eventBus.on("pagerendered", () => {
+        showFeaturesNotification().catch(ex => {
+          console.error(`Cannot show the features notification: "${ex}".`);
+        });
+      }, {
+        once: true,
+        signal: abortSignal,
+        ...internalOpt
       });
     }
     let signatureManager = null;
