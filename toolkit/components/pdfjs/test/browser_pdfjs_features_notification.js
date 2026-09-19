@@ -45,14 +45,14 @@ add_task(async function test_shown_styled_layout_and_dismiss() {
         );
         Assert.ok(bar.shadowRoot, "the chrome:// widget loaded in the viewer");
 
-        const cta = bar.querySelector("a");
         // Inspect the rendered DOM without waiving Xrays.
         const closeButton = bar.shadowRoot.querySelector("moz-button.close");
+        // Fluent may replace the CTA while translating its parent.
         await ContentTaskUtils.waitForCondition(
           () =>
             bar.getAttribute("heading") &&
             bar.getAttribute("aria-label") &&
-            cta.textContent.trim() &&
+            bar.querySelector("a")?.textContent.trim() &&
             closeButton.shadowRoot?.querySelector("button")?.title,
           "notification content and accessible names are localized"
         );
@@ -81,18 +81,18 @@ add_task(async function test_shown_styled_layout_and_dismiss() {
           .querySelector(".toolbar")
           .getBoundingClientRect();
         const barRect = bar.getBoundingClientRect();
-        const viewerRect = doc
-          .getElementById("viewerContainer")
-          .getBoundingClientRect();
         Assert.greater(barRect.height, 0, "notification bar has height");
         Assert.greaterOrEqual(
           barRect.top,
           toolbarRect.bottom - 1,
           "notification bar is below the toolbar"
         );
-        Assert.greaterOrEqual(
-          viewerRect.top,
-          barRect.bottom - 1,
+        // ResizeObserver updates the viewer offset asynchronously.
+        const viewerContainer = doc.getElementById("viewerContainer");
+        await ContentTaskUtils.waitForCondition(
+          () =>
+            viewerContainer.getBoundingClientRect().top >=
+            bar.getBoundingClientRect().bottom - 1,
           "viewer content is below the bar (top space reserved)"
         );
 
@@ -138,11 +138,12 @@ add_task(async function test_cta_navigates_to_features() {
 
       await SpecialPowers.spawn(browser, [], async () => {
         const bar = content.document.getElementById("pdfFeaturesNotification");
-        const cta = bar.querySelector("a");
-        await ContentTaskUtils.waitForCondition(
-          () => !bar.hidden && cta.textContent.trim(),
-          "notification CTA is ready"
-        );
+        // Fluent may replace the CTA while translating its parent.
+        let cta;
+        await ContentTaskUtils.waitForCondition(() => {
+          cta = bar.querySelector("a");
+          return !bar.hidden && cta?.textContent.trim();
+        }, "notification CTA is ready");
         Assert.ok(
           !cta.hasAttribute("href"),
           "the CTA exposes no about:pdf URL for content-triggered loads"
@@ -307,13 +308,23 @@ add_task(async function test_hidden_in_embedded_viewer() {
           "embedded PDF viewer is initialized"
         );
         await getApp().initializedPromise;
-        await content.customElements.whenDefined("moz-message-bar");
+        // Wait past the point when a top-level viewer would load the widget.
+        await ContentTaskUtils.waitForCondition(
+          () => !!getApp().pdfViewer.onePageRendered,
+          "PDF viewer has a document"
+        );
+        await getApp().pdfViewer.onePageRendered;
         await new Promise(resolve => content.requestAnimationFrame(resolve));
 
         const bar = content.document.getElementById("pdfFeaturesNotification");
         Assert.ok(getApp().isViewerEmbedded, "viewer detects embedded mode");
         Assert.ok(bar, "notification element is present");
         Assert.ok(bar.hidden, "notification stays hidden in embedded viewers");
+        Assert.equal(
+          content.customElements.get("moz-message-bar"),
+          undefined,
+          "the moz-message-bar module is not loaded in embedded viewers"
+        );
       });
 
       await waitForPdfJSClose(iframe);
