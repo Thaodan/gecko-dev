@@ -329,7 +329,7 @@ bool AbsoluteContainingBlock::PrepareAbsoluteFrames(
   // fragmentainer. Reparent those abspos children under us (the first
   // continuation in the fragmentainer) so that the rest of the
   // same-fragmentainer continuations don't have any abspos children. We enforce
-  // this invariant in SanityCheckChildListsBeforeReflow().
+  // this invariant in SanityCheckChildLists().
   if (StaticPrefs::layout_abspos_fragment_aware_inline_cb_enabled() &&
       aDelegatingFrame->IsInlineFrameOrSubclass() &&
       IsFirstInlineContinuationInFragmentainer(aDelegatingFrame)) {
@@ -392,16 +392,19 @@ void AbsoluteContainingBlock::StealFrame(nsIFrame* aFrame) {
 }
 
 #ifdef DEBUG
-void AbsoluteContainingBlock::SanityCheckChildListsBeforeReflow(
+void AbsoluteContainingBlock::SanityCheckChildLists(
     const nsIFrame* aDelegatingFrame) const {
   if (StaticPrefs::layout_abspos_fragment_aware_inline_cb_enabled() &&
       aDelegatingFrame->IsInlineFrameOrSubclass() &&
       !IsFirstInlineContinuationInFragmentainer(aDelegatingFrame)) {
     // Only the first inline continuation in a fragmentainer serves as the
     // abspos containing block.
-    MOZ_ASSERT(GetChildList().IsEmpty() && GetPushedChildList().IsEmpty(),
+    MOZ_ASSERT(GetChildList().IsEmpty(),
                "A non-first inline continuation in a fragmentainer should not "
-               "have any abspos children!");
+               "have any abspos children in the child list!");
+    MOZ_ASSERT(GetPushedChildList().IsEmpty(),
+               "A non-first inline continuation in a fragmentainer should not "
+               "have any abspos children in the pushed child list!");
   }
 
   // TODO(TYLin): This is potentially O(N^2), where N is the number of
@@ -801,7 +804,7 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
           : nullptr;
 
 #ifdef DEBUG
-  SanityCheckChildListsBeforeReflow(aDelegatingFrame);
+  SanityCheckChildLists(aDelegatingFrame);
 #endif
 
   if (const nsIFrame* prev =
@@ -1010,6 +1013,10 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
     aReflowStatus.SetOverflowIncomplete();
     aReflowStatus.SetNextInFlowNeedsReflow();
   }
+
+#ifdef DEBUG
+  SanityCheckChildLists(aDelegatingFrame);
+#endif
 }
 
 static inline bool IsFixedPaddingSize(const LengthPercentage& aCoord) {
