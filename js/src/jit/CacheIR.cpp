@@ -12393,8 +12393,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectConstructor() {
     gc::AllocKind allocKind = templateObj->allocKindForTenure();
     Shape* shape = templateObj->shape();
 
-    writer.guardNoAllocationMetadataBuilder(
+#ifdef DEBUG
+    writer.assertNoAllocationMetadataBuilder(
         cx_->realm()->addressOfMetadataBuilder());
+#endif
     writer.newPlainObjectResult(numFixedSlots, numDynamicSlots, allocKind,
                                 shape, site);
   } else {
@@ -16887,8 +16889,10 @@ AttachDecision NewArrayIRGenerator::tryAttachArrayObject() {
     return AttachDecision::NoAction;
   }
 
-  writer.guardNoAllocationMetadataBuilder(
+#ifdef DEBUG
+  writer.assertNoAllocationMetadataBuilder(
       cx_->realm()->addressOfMetadataBuilder());
+#endif
 
   gc::AllocSite* site = maybeCreateAllocSite();
   if (!site) {
@@ -16964,8 +16968,10 @@ AttachDecision NewObjectIRGenerator::tryAttachPlainObject() {
   gc::AllocKind allocKind = nativeObj->allocKindForTenure();
   Shape* shape = nativeObj->shape();
 
-  writer.guardNoAllocationMetadataBuilder(
+#ifdef DEBUG
+  writer.assertNoAllocationMetadataBuilder(
       cx_->realm()->addressOfMetadataBuilder());
+#endif
   writer.newPlainObjectResult(numFixedSlots, numDynamicSlots, allocKind, shape,
                               site);
 
@@ -17014,8 +17020,10 @@ AttachDecision LambdaIRGenerator::tryAttachFunctionClone() {
     return AttachDecision::NoAction;
   }
 
-  writer.guardNoAllocationMetadataBuilder(
+#ifdef DEBUG
+  writer.assertNoAllocationMetadataBuilder(
       cx_->realm()->addressOfMetadataBuilder());
+#endif
 
   gc::AllocKind allocKind = canonicalFunction_->getAllocKind();
   MOZ_ASSERT(allocKind == gc::AllocKind::FUNCTION ||

@@ -5494,20 +5494,17 @@ bool CacheIRCompiler::emitGuardXrayNoExpando(ObjOperandId objId) {
   return true;
 }
 
-bool CacheIRCompiler::emitGuardNoAllocationMetadataBuilder(
+bool CacheIRCompiler::emitAssertNoAllocationMetadataBuilder(
     uint32_t builderAddrOffset) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
   AutoScratchRegister scratch(allocator, masm);
 
-  FailurePath* failure;
-  if (!addFailurePath(&failure)) {
-    return false;
-  }
-
+  Label ok;
   StubFieldOffset builderField(builderAddrOffset, StubField::Type::RawPointer);
   emitLoadStubField(builderField, scratch);
-  masm.branchPtr(Assembler::NotEqual, Address(scratch, 0), ImmWord(0),
-                 failure->label());
+  masm.branchPtr(Assembler::Equal, Address(scratch, 0), ImmWord(0), &ok);
+  masm.assumeUnreachable("Unexpected allocation metadata builder");
+  masm.bind(&ok);
 
   return true;
 }
