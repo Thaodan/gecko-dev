@@ -951,8 +951,9 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
                           ->CreateContinuingFrame(kidFrame, aDelegatingFrame);
           nextFrame->AddStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW);
           newPushedAbsoluteFrames.AppendFrame(nullptr, nextFrame);
-        } else if (nextFrame->GetParent() !=
-                   aDelegatingFrame->GetNextInFlow()) {
+        } else if (nextFrame->GetParent() != aDelegatingFrame &&
+                   nextFrame->GetParent() !=
+                       aDelegatingFrame->GetNextInFlow()) {
           nextFrame->GetParent()->GetAbsoluteContainingBlock()->StealFrame(
               nextFrame);
           // nextFrame is in a later absCB continuation. To keep the
