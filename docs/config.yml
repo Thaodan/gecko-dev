@@ -158,7 +158,6 @@ allowed_warnings:
     - "devtools-user/page_inspector/how_to/work_with_animations/index\\.md:.*: WARNING: undefined label"
     # Bug 1915274 - Clean up documentation warnings in NSS
     - "security/nss/.* WARNING: undefined label"
-    - "WARNING: duplicate label header-files, other instance in"
     - "security/nss/.* WARNING: duplicate label"
     - "security/nss/.* WARNING: more than one target found for 'myst' cross-reference"
     # Various python issues
