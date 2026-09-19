@@ -46,6 +46,7 @@
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/ipc/SharedMemoryHandle.h"
 #include "nsAppDirectoryServiceDefs.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsComponentManagerUtils.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsIFile.h"
