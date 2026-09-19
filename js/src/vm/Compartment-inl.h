@@ -33,9 +33,9 @@ inline bool JS::Compartment::wrap(JSContext* cx, JS::MutableHandleValue vp) {
   }
 
   /*
-   * Symbols are GC things, but never need to be wrapped or copied because they
-   * are always allocated in the atoms zone. References to them must still be
-   * recorded in the new compartment's zone, however.
+   * Symbols are GC things, but never need to be wrapped or copied because
+   * they are always allocated in the atoms zone. They still need to be
+   * marked in the new compartment's zone, however.
    */
   if (vp.isSymbol()) {
     cx->recordRefToValue(vp);

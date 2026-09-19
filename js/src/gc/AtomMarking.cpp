@@ -362,24 +362,11 @@ void AtomRefRuntime::unmarkAllGrayReferences(GCRuntime* gc) {
 
 template <typename T>
 void AtomRefRuntime::recordRef(JSContext* cx, T* thing) {
-  // Trigger a read barrier on the atom, in case there is an incremental GC in
-  // progress. This is necessary if the reference to the atom was obtained from
-  // an uncollected zone and is being added here.
+  // Trigger a read barrier on the atom, in case there is an incremental
+  // GC in progress. This is necessary if the atom is being marked
+  // because a reference to it was obtained from another zone which is
+  // not being collected by the incremental GC.
   ReadBarrier(thing);
-
-  if constexpr (std::is_same_v<T, JS::Symbol>) {
-    // Barrier the description as well. A symbol allocated black during marking
-    // is never traced, so a pre-existing description only reachable from
-    // uncollected zones will stay white until after refinement. But refinement
-    // would drop the reference (recorded below) if the description is unmarked.
-    // The barrier marks it if the atoms zone is marking.
-    //
-    // The invariant: recordRef, to avoid being refined away, needs to mark
-    // anything that is being recorded. (If something can read a symbol, it can
-    // read the symbol's description with no further barriers.) The call below
-    // records a symbol's description, so read barrier it too.
-    ReadBarrier(thing->description());
-  }
 
   inlinedRecordRefInfallible(cx->zone(), thing);
 }
