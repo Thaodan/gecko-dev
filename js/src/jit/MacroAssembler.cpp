@@ -6300,7 +6300,10 @@ void MacroAssembler::appendAndVerify(wasm::Trap trap,
   }
 #endif
 
-  appendNoVerify(trap, insn, fcr, desc);
+  // See block comment at the definition of FaultingCodeRange.
+  if (fcr.isValid()) {
+    appendNoVerify(trap, insn, fcr, desc);
+  }
 }
 
 void MacroAssembler::appendAndVerify(const wasm::MemoryAccessDesc& access,
@@ -6426,7 +6429,7 @@ static ReturnCallTrampolineData MakeReturnCallTrampoline(MacroAssembler& masm) {
   masm.loadPtr(
       Address(masm.getStackPointer(), WasmCallerInstanceOffsetBeforeCall),
       InstanceReg);
-  masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+  masm.loadWasmPinnedRegsFromInstance();
   masm.switchToWasmInstanceRealm(ABINonArgReturnReg0, ABINonArgReturnReg1);
   masm.moveToStackPtr(FramePointer);
 #ifdef JS_CODEGEN_ARM64
@@ -6786,7 +6789,7 @@ CodeOffset MacroAssembler::wasmCallImport(const wasm::CallSiteDesc& desc,
 
   storePtr(InstanceReg,
            Address(getStackPointer(), WasmCalleeInstanceOffsetBeforeCall));
-  loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+  loadWasmPinnedRegsFromInstance();
 
   return wasmMarkedSlowCall(desc, ABINonArgReg0);
 }
@@ -6827,7 +6830,7 @@ CodeOffset MacroAssembler::wasmReturnCallImport(
 
   storePtr(InstanceReg,
            Address(getStackPointer(), WasmCalleeInstanceOffsetBeforeCall));
-  loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+  loadWasmPinnedRegsFromInstance();
 
   wasm::CallSiteDesc stubDesc(desc.bytecodeOffset(),
                               wasm::CallSiteKind::ReturnStub);
@@ -6937,11 +6940,11 @@ CodeOffset MacroAssembler::wasmTrapOnFailedInstanceCall(
 // call without the context switch (which additionally avoids a null check) and
 // one for the slow call with the context switch.
 
-void MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc,
-                                      const wasm::CalleeDesc& callee,
-                                      Label* nullCheckFailedLabel,
-                                      CodeOffset* fastCallOffset,
-                                      CodeOffset* slowCallOffset) {
+[[nodiscard]]
+FaultingCodeRange MacroAssembler::wasmCallIndirect(
+    const wasm::CallSiteDesc& desc, const wasm::CalleeDesc& callee,
+    Label* nullCheckFailedLabel, CodeOffset* fastCallOffset,
+    CodeOffset* slowCallOffset) {
   static_assert(sizeof(wasm::FunctionTableElem) == 2 * sizeof(void*),
                 "Exactly two pointers or index scaling won't work correctly");
   MOZ_ASSERT(callee.which() == wasm::CalleeDesc::WasmTable);
@@ -7001,17 +7004,18 @@ void MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc,
   storePtr(InstanceReg,
            Address(getStackPointer(), WasmCalleeInstanceOffsetBeforeCall));
 
+  FaultingCodeRange fcr;
 #ifdef WASM_HAS_HEAPREG
   // Use the null pointer exception resulting from loading HeapReg from a null
   // instance to handle a call to a null slot.
   MOZ_ASSERT(nullCheckFailedLabel == nullptr);
-  loadWasmPinnedRegsFromInstance(mozilla::Some(desc.toTrapSiteDesc()));
+  fcr = loadWasmPinnedRegsFromInstance(desc.toTrapSiteDesc());
 #else
   MOZ_ASSERT(nullCheckFailedLabel != nullptr);
   branchTestPtr(Assembler::Zero, InstanceReg, InstanceReg,
                 nullCheckFailedLabel);
 
-  loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+  loadWasmPinnedRegsFromInstance();
 #endif
   switchToWasmInstanceRealm(index, WasmTableCallScratchReg1);
 
@@ -7024,7 +7028,7 @@ void MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc,
 
   loadPtr(Address(getStackPointer(), WasmCallerInstanceOffsetBeforeCall),
           InstanceReg);
-  loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+  loadWasmPinnedRegsFromInstance();
   switchToWasmInstanceRealm(ABINonArgReturnReg0, ABINonArgReturnReg1);
   jump(&done);
 
@@ -7048,9 +7052,12 @@ void MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc,
   *fastCallOffset = call(newDesc, calleeScratch);
 
   bind(&done);
+
+  return fcr;
 }
 
-void MacroAssembler::wasmReturnCallIndirect(
+[[nodiscard]]
+FaultingCodeRange MacroAssembler::wasmReturnCallIndirect(
     const wasm::CallSiteDesc& desc, const wasm::CalleeDesc& callee,
     Label* nullCheckFailedLabel, const ReturnCallAdjustmentInfo& retCallInfo) {
   static_assert(sizeof(wasm::FunctionTableElem) == 2 * sizeof(void*),
@@ -7104,17 +7111,18 @@ void MacroAssembler::wasmReturnCallIndirect(
            Address(getStackPointer(), WasmCallerInstanceOffsetBeforeCall));
   movePtr(newInstanceTemp, InstanceReg);
 
+  FaultingCodeRange fcr;
 #ifdef WASM_HAS_HEAPREG
   // Use the null pointer exception resulting from loading HeapReg from a null
   // instance to handle a call to a null slot.
   MOZ_ASSERT(nullCheckFailedLabel == nullptr);
-  loadWasmPinnedRegsFromInstance(mozilla::Some(desc.toTrapSiteDesc()));
+  fcr = loadWasmPinnedRegsFromInstance(desc.toTrapSiteDesc());
 #else
   MOZ_ASSERT(nullCheckFailedLabel != nullptr);
   branchTestPtr(Assembler::Zero, InstanceReg, InstanceReg,
                 nullCheckFailedLabel);
 
-  loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+  loadWasmPinnedRegsFromInstance();
 #endif
   switchToWasmInstanceRealm(index, WasmTableCallScratchReg1);
 
@@ -7137,6 +7145,8 @@ void MacroAssembler::wasmReturnCallIndirect(
   wasmCollapseFrameFast(retCallInfo);
   jump(calleeScratch);
   append(wasm::CodeRangeUnwindInfo::Normal, currentOffset());
+
+  return fcr;
 }
 
 void MacroAssembler::wasmCallRef(const wasm::CallSiteDesc& desc,
@@ -7177,7 +7187,7 @@ void MacroAssembler::wasmCallRef(const wasm::CallSiteDesc& desc,
   storePtr(InstanceReg,
            Address(getStackPointer(), WasmCalleeInstanceOffsetBeforeCall));
 
-  loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+  loadWasmPinnedRegsFromInstance();
   switchToWasmInstanceRealm(WasmCallRefCallScratchReg0,
                             WasmCallRefCallScratchReg1);
 
@@ -7192,7 +7202,7 @@ void MacroAssembler::wasmCallRef(const wasm::CallSiteDesc& desc,
   // Restore registers and realm and back to this caller's.
   loadPtr(Address(getStackPointer(), WasmCallerInstanceOffsetBeforeCall),
           InstanceReg);
-  loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+  loadWasmPinnedRegsFromInstance();
   switchToWasmInstanceRealm(ABINonArgReturnReg0, ABINonArgReturnReg1);
   jump(&done);
 
@@ -7250,7 +7260,7 @@ void MacroAssembler::wasmReturnCallRef(
   storePtr(InstanceReg,
            Address(getStackPointer(), WasmCalleeInstanceOffsetBeforeCall));
 
-  loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+  loadWasmPinnedRegsFromInstance();
   switchToWasmInstanceRealm(WasmCallRefCallScratchReg0,
                             WasmCallRefCallScratchReg1);
 
@@ -8720,21 +8730,37 @@ void MacroAssembler::boundsCheck32PowerOfTwo(Register index, uint32_t length,
   }
 }
 
-void MacroAssembler::loadWasmPinnedRegsFromInstance(
-    const wasm::MaybeTrapSiteDesc& trapSiteDesc) {
 #ifdef WASM_HAS_HEAPREG
+// The target has a dedicated HeapReg, so load it from the Instance, and note
+// the load as possibly trapping.
+[[nodiscard]]
+FaultingCodeRange MacroAssembler::loadWasmPinnedRegsFromInstance(
+    const wasm::TrapSiteDesc& trapSiteDesc) {
   static_assert(wasm::Instance::offsetOfMemory0Base() < 4096,
                 "We count only on the low page being inaccessible");
   FaultingCodeRange fcr = loadPtr(
       Address(InstanceReg, wasm::Instance::offsetOfMemory0Base()), HeapReg);
-  if (trapSiteDesc) {
+  if (fcr.isValid()) {
     appendAndVerify(wasm::Trap::IndirectCallToNull,
-                    wasm::TrapMachineInsnForLoadWord(), fcr, *trapSiteDesc);
+                    wasm::TrapMachineInsnForLoadWord(), fcr, trapSiteDesc);
   }
-#else
-  MOZ_ASSERT(!trapSiteDesc);
-#endif
+  return fcr;
 }
+
+// The same, but don't bother with the trapping aspect.
+void MacroAssembler::loadWasmPinnedRegsFromInstance() {
+  static_assert(wasm::Instance::offsetOfMemory0Base() < 4096);
+  FaultingCodeRange fcr = loadPtr(
+      Address(InstanceReg, wasm::Instance::offsetOfMemory0Base()), HeapReg);
+  (void)fcr;
+}
+
+#else
+
+// There's no dedicated HeapReg, so nothing to do.
+void MacroAssembler::loadWasmPinnedRegsFromInstance() {}
+
+#endif
 
 //}}} check_macroassembler_style
 

@@ -10568,13 +10568,17 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
       if (isReturnCall) {
         ReturnCallAdjustmentInfo retCallInfo(
             callBase->stackArgAreaSizeUnaligned(), inboundStackArgBytes_);
-        masm.wasmReturnCallIndirect(desc, callee, nullCheckFailed, retCallInfo);
+        // Discard the FaultingCodeRange returned by the following; we won't
+        // want to generate a stackmap here.
+        (void)masm.wasmReturnCallIndirect(desc, callee, nullCheckFailed,
+                                          retCallInfo);
         // The rest of the method is unnecessary for a return call.
         return;
       }
       MOZ_ASSERT(!isReturnCall);
-      masm.wasmCallIndirect(desc, callee, nullCheckFailed, &retOffset,
-                            &secondRetOffset);
+      // As above, discard the returned FaultingCodeRange.
+      (void)masm.wasmCallIndirect(desc, callee, nullCheckFailed, &retOffset,
+                                  &secondRetOffset);
       // Register reloading and realm switching are handled dynamically inside
       // wasmCallIndirect.  There are two return offsets, one for each call
       // instruction (fast path and slow path).
@@ -10661,7 +10665,7 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
     MOZ_ASSERT(!switchRealm);
   }
   if (reloadPinnedRegs) {
-    masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+    masm.loadWasmPinnedRegsFromInstance();
   }
 
   switch (callee.which()) {

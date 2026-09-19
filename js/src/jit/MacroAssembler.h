@@ -3791,7 +3791,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   FaultingCodeRange wasmTrapInstruction() PER_SHARED_ARCH;
 
-  // Call here to register a trapping instruction in the metadata.
+  // Call here to register a trapping instruction in the metadata.  Calls
+  // supplying an invalid `fcr` are ignored.
   void appendAndVerify(wasm::Trap trap, wasm::TrapMachineInsn insn,
                        FaultingCodeRange fcr, const wasm::TrapSiteDesc& desc);
 
@@ -3802,11 +3803,17 @@ class MacroAssembler : public MacroAssemblerSpecific {
   FaultingCodeRange wasmTrap(wasm::Trap trap,
                              const wasm::TrapSiteDesc& trapSiteDesc);
 
-  // Load all pinned regs via InstanceReg.  If the trapOffset is something,
-  // give the first load a trap descriptor with type IndirectCallToNull, so that
-  // a null instance will cause a trap.
-  void loadWasmPinnedRegsFromInstance(
-      const wasm::MaybeTrapSiteDesc& trapSiteDesc);
+  // Load all pinned regs via InstanceReg.  Two variants: one that takes a
+  // TrapSiteDesc, attaches it to the first load, with type IndirectCallToNull,
+  // and returns the resulting FaultingCodeRange.  And one that does neither of
+  // those things.
+
+#ifdef WASM_HAS_HEAPREG
+  [[nodiscard]]
+  FaultingCodeRange loadWasmPinnedRegsFromInstance(
+      const wasm::TrapSiteDesc& trapSiteDesc);
+#endif
+  void loadWasmPinnedRegsFromInstance();
 
   // Branches to the fail label if the stack would overflow the current stack
   // limit. Returns the number of extra bytes of stack allocated prior to
@@ -4069,22 +4076,28 @@ class MacroAssembler : public MacroAssemblerSpecific {
   //
   // `boundsCheckFailedLabel` is non-null iff a bounds check is required.
   // `nullCheckFailedLabel` is non-null only on platforms that can't fold the
-  // null check into the rest of the call instructions.
-  void wasmCallIndirect(const wasm::CallSiteDesc& desc,
-                        const wasm::CalleeDesc& callee,
-                        Label* nullCheckFailedLabel, CodeOffset* fastCallOffset,
-                        CodeOffset* slowCallOffset);
+  // null check into the rest of the call instructions.  If a trap-based null
+  // check is generated, then its FaultingCodeRange is returned; otherwise
+  // `FaultingCodeRange()` is returned.
+  [[nodiscard]]
+  FaultingCodeRange wasmCallIndirect(const wasm::CallSiteDesc& desc,
+                                     const wasm::CalleeDesc& callee,
+                                     Label* nullCheckFailedLabel,
+                                     CodeOffset* fastCallOffset,
+                                     CodeOffset* slowCallOffset);
 
   // WasmTableCallIndexReg must contain the index of the indirect call.  This is
   // for wasm calls only.
   //
   // `boundsCheckFailedLabel` is non-null iff a bounds check is required.
   // `nullCheckFailedLabel` is non-null only on platforms that can't fold the
-  // null check into the rest of the call instructions.
-  void wasmReturnCallIndirect(const wasm::CallSiteDesc& desc,
-                              const wasm::CalleeDesc& callee,
-                              Label* nullCheckFailedLabel,
-                              const ReturnCallAdjustmentInfo& retCallInfo);
+  // null check into the rest of the call instructions.  If a trap-based null
+  // check is generated, then its FaultingCodeRange is returned; otherwise
+  // `FaultingCodeRange()` is returned.
+  [[nodiscard]]
+  FaultingCodeRange wasmReturnCallIndirect(
+      const wasm::CallSiteDesc& desc, const wasm::CalleeDesc& callee,
+      Label* nullCheckFailedLabel, const ReturnCallAdjustmentInfo& retCallInfo);
 
   // This function takes care of loading the callee's instance and address from
   // pinned reg.
