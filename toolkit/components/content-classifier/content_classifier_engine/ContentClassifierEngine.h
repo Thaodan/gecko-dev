@@ -96,6 +96,9 @@ class ContentClassifierEngine final {
     }
   }
 
+  ContentClassifierEngine(const ContentClassifierEngine&) = delete;
+  ContentClassifierEngine& operator=(const ContentClassifierEngine&) = delete;
+
   nsresult InitFromRules(const nsTArray<nsCString>& aRules) {
     return content_classifier_engine_from_rules(&aRules, &mEngine);
   }
@@ -117,9 +120,6 @@ class ContentClassifierEngine final {
 
   const ContentClassifierFeature& mFeature;
   ContentClassifierFFIEngine* mEngine;
-
-  ContentClassifierEngine(const ContentClassifierEngine&) = delete;
-  ContentClassifierEngine& operator=(const ContentClassifierEngine&) = delete;
 };
 
 }  // namespace mozilla

@@ -24,6 +24,7 @@
 #include "nsLiteralString.h"
 #include "nsTArray.h"
 #include "nsTHashMap.h"
+#include "nsCharSeparatedTokenizer.h"
 
 #include "mozilla/ContentClassifierEngine.h"
 
