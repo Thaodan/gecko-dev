@@ -547,6 +547,19 @@ export class SearchModeSwitcher {
       this.#button.removeAttribute("wordmark");
     }
 
+    if (label) {
+      this.#input.document.l10n.setAttributes(
+        this.#button,
+        "urlbar-searchmode-button3",
+        { engine: label }
+      );
+    } else {
+      this.#input.document.l10n.setAttributes(
+        this.#button,
+        "urlbar-searchmode-button-no-engine2"
+      );
+    }
+
     // The New Tab variants name the engine next to its icon unless a wordmark,
     // which already spells the name out, is taking the icon's place.
     let showLabel =
@@ -562,40 +575,11 @@ export class SearchModeSwitcher {
     }
 
     if (!UrlbarShared.keywordEnabled(this.#input.sapName)) {
-      await this.#setButtonTitle("urlbar-searchmode-no-keyword2");
-    } else if (label) {
-      await this.#setButtonTitle("urlbar-searchmode-button3", {
-        engine: label,
-      });
-    } else {
-      await this.#setButtonTitle("urlbar-searchmode-button-no-engine2");
+      this.#input.document.l10n.setAttributes(
+        this.#button,
+        "urlbar-searchmode-no-keyword2"
+      );
     }
-  }
-
-  #buttonTitleRequest = 0;
-
-  /**
-   * Sets the button's tooltip from a Fluent message's title, and mirrors it as
-   * the accessible name, which would otherwise be computed from the button's
-   * content: the engine's name and the close button's label in search mode.
-   *
-   * @param {string} id
-   *   The Fluent message id.
-   * @param {object} [args]
-   *   The message's arguments.
-   */
-  async #setButtonTitle(id, args) {
-    let request = ++this.#buttonTitleRequest;
-    let [message] = await this.#input.document.l10n.formatMessages([
-      { id, args },
-    ]);
-    if (request != this.#buttonTitleRequest) {
-      return;
-    }
-    let title = message.attributes.find(a => a.name == "title").value;
-    this.#button.removeAttribute("data-l10n-id");
-    this.#button.title = title;
-    this.#button.ariaLabel = title;
   }
 
   async #getSearchIcon({ searchModeChanged = false }) {
