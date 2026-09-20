@@ -1908,7 +1908,7 @@ static WebIDLProcType ProcTypeToWebIDL(mozilla::ProcType aType) {
 #ifndef MOZ_ENABLE_FORKSERVER
 #  define SKIP_PROCESS_TYPE_FORKSERVER
 #endif  // MOZ_ENABLE_FORKSERVER
-#include "mozilla/GeckoProcessTypes.h"
+#include "mozilla/GeckoProcessTypes.inc"
 #undef SKIP_PROCESS_TYPE_CONTENT
 #ifndef MOZ_ENABLE_FORKSERVER
 #  undef SKIP_PROCESS_TYPE_FORKSERVER
@@ -1997,7 +1997,7 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
 #ifndef MOZ_ENABLE_FORKSERVER
 #  define SKIP_PROCESS_TYPE_FORKSERVER
 #endif  // MOZ_ENABLE_FORKSERVER
-#include "mozilla/GeckoProcessTypes.h"
+#include "mozilla/GeckoProcessTypes.inc"
 #ifndef MOZ_ENABLE_FORKSERVER
 #  undef SKIP_PROCESS_TYPE_FORKSERVER
 #endif  // MOZ_ENABLE_FORKSERVER

@@ -503,7 +503,7 @@ crash:
     data_sensitivity:
     - technical
     description: Type of the process that crashed, the possible values are defined
-      in GeckoProcessTypes.h.
+      in GeckoProcessTypes.inc.
     expires: never
     notification_emails:
     - crash-reporting-wg@mozilla.org

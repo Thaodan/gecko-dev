@@ -1228,7 +1228,7 @@ nsXULAppInfo::GetWidgetToolkit(nsACString& aResult) {
                     static_cast<int>(GeckoProcessType_##enum_name),           \
                 "GeckoProcessType in nsXULAppAPI.h not synchronized with "    \
                 "nsIXULRuntime.idl");
-#include "mozilla/GeckoProcessTypes.h"
+#include "mozilla/GeckoProcessTypes.inc"
 #undef GECKO_PROCESS_TYPE
 
 // .. and ensure that that is all of them:
@@ -6909,7 +6909,7 @@ bool XRE_IsE10sParentProcess() {
   bool XRE_Is##proc_typename##Process() {                                     \
     return XRE_GetProcessType() == GeckoProcessType_##enum_name;              \
   }
-#include "mozilla/GeckoProcessTypes.h"
+#include "mozilla/GeckoProcessTypes.inc"
 #undef GECKO_PROCESS_TYPE
 
 bool XRE_UseNativeEventProcessing() {
@@ -7038,7 +7038,7 @@ mozilla::BinPathType XRE_GetChildProcBinPathType(
                              procinfo_typename, webidl_typename, allcaps_name) \
     case GeckoProcessType_##enum_name:                                         \
       return BinPathType::process_bin_type;
-#  include "mozilla/GeckoProcessTypes.h"
+#  include "mozilla/GeckoProcessTypes.inc"
 #  undef GECKO_PROCESS_TYPE
     default:
       return BinPathType::PluginContainer;
