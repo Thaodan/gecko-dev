@@ -5238,6 +5238,24 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect,
         mWindow.collectionBehavior | NSWindowCollectionBehaviorCanJoinAllSpaces;
   }
 
+  // Let the Picture-in-Picture player float above other applications'
+  // native-fullscreen Spaces (bug 1688932). Two things are load-bearing: the
+  // window must carry NSWindowStyleMaskNonactivatingPanel, which BaseWindow
+  // keeps by overriding +_validateStyleMask:, and it must not carry
+  // FullScreenPrimary (handled below). The window level is irrelevant; the
+  // NSFloatingWindowLevel set above is sufficient.
+  if (mPiPType == PiPType::MediaPiP) {
+    mWindow.styleMask |= NSWindowStyleMaskNonactivatingPanel;
+    // A window is assigned to a Space when it is first ordered in, and only a
+    // FullScreenAuxiliary window may be placed on another application's
+    // fullscreen Space. The titled-window block below sets this too, but the
+    // player is recreated without a titlebar for emulated fullscreen
+    // (HideWindowChrome) and would otherwise land on a regular Space.
+    mWindow.collectionBehavior |=
+        NSWindowCollectionBehaviorFullScreenAuxiliary |
+        NSWindowCollectionBehaviorFullScreenDisallowsTiling;
+  }
+
   // Set an explicit fullscreen collection behavior before any display so
   // that AppKit never needs to consult `_implicitlyAllowsFullScreenPrimary`
   // while rendering. That internal heuristic has been observed to flip its
@@ -5258,8 +5276,11 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect,
   if ((mWindowType == WindowType::TopLevel ||
        mWindowType == WindowType::Dialog) &&
       (features & NSWindowStyleMaskTitled)) {
+    // A non-activating player must stay Auxiliary: FullScreenPrimary would
+    // stop it from being shown on another application's fullscreen Space.
+    const bool pipOverFullScreen = mPiPType == PiPType::MediaPiP;
     NSWindowCollectionBehavior fsBehavior =
-        (features & NSWindowStyleMaskResizable)
+        ((features & NSWindowStyleMaskResizable) && !pipOverFullScreen)
             ? (NSWindowCollectionBehaviorFullScreenPrimary |
                NSWindowCollectionBehaviorFullScreenAllowsTiling)
             : (NSWindowCollectionBehaviorFullScreenAuxiliary |
@@ -6119,6 +6140,7 @@ void nsCocoaWindow::HideWindowChrome(bool aShouldHide) {
   }
 
   const BOOL isVisible = mWindow.isVisible;
+  const BOOL wasKey = mWindow.isKeyWindow;
 
   // Remove child windows.
   NSArray* childWindows = [mWindow childWindows];
@@ -6167,6 +6189,15 @@ void nsCocoaWindow::HideWindowChrome(bool aShouldHide) {
     mIsAnimationSuppressed = true;
     Show(true);
     mIsAnimationSuppressed = wasAnimationSuppressed;
+    // Show() orders an always-on-top window front without making it key. If
+    // the window we replaced was key, hand key status on so keyboard input
+    // keeps reaching it -- e.g. Escape to leave the fullscreen we are
+    // entering. Only the player needs this: Show() makes an ordinary window
+    // key by itself, so restricting it here keeps every other window on the
+    // path it took before.
+    if (wasKey && !mWindow.isKeyWindow && mPiPType == PiPType::MediaPiP) {
+      [mWindow makeKeyAndOrderFront:nil];
+    }
   }
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
@@ -6247,6 +6278,12 @@ static bool AlwaysUsesNativeFullScreen() {
   [win setAlphaValue:0];
   [win setIgnoresMouseEvents:YES];
   [win setLevel:NSScreenSaverWindowLevel];
+  // Cover the Space the window is actually on: the Picture-in-Picture player
+  // may float over another application's fullscreen Space, which only windows
+  // with these behaviors can join.
+  win.collectionBehavior = mWindow.collectionBehavior &
+                           (NSWindowCollectionBehaviorCanJoinAllSpaces |
+                            NSWindowCollectionBehaviorFullScreenAuxiliary);
   [win makeKeyAndOrderFront:nil];
 
   auto data = new FullscreenTransitionData(win);
@@ -6311,6 +6348,18 @@ void nsCocoaWindow::CocoaWindowDidEnterFullscreen(bool aFullscreen) {
   mHasStartedNativeFullscreen = false;
   DispatchOcclusionEvent();
 
+  bool restoreKeyToPlayer = false;
+  // The player only borrows FullScreenPrimary while it is in its own
+  // fullscreen (see DoMakeFullScreen). Now that it is windowed again, give
+  // Auxiliary back, so it is composited onto another application's fullscreen
+  // Space rather than being hidden behind it. This is also the path taken when
+  // AppKit refused the transition, so the borrow cannot outlive a failure.
+  if (!aFullscreen && mPiPType == PiPType::MediaPiP &&
+      GetSupportsNativeFullscreen()) {
+    SetSupportsNativeFullscreen(false);
+    restoreKeyToPlayer = true;
+  }
+
   // Check if aFullscreen matches our expected fullscreen state. It might not if
   // there was a failure somewhere along the way, in which case we'll recover
   // from that.
@@ -6341,6 +6390,20 @@ void nsCocoaWindow::CocoaWindowDidEnterFullscreen(bool aFullscreen) {
 
   // Whether we expected this transition or not, we're ready to finish it.
   FinishCurrentTransitionIfMatching(transition);
+
+  // Leaving its own fullscreen returns the player to the Space it came from.
+  // AppKit hands key to another window on the way out and does not give it back
+  // to a non-activating window by itself, so Gecko would stop counting the
+  // player as active (see nsWindowMap.mm) and the keyboard would reach a
+  // browser window the user may not even be able to see. This has to wait until
+  // the transition above has been finished, because taking key runs Gecko code
+  // that must not see a half-updated transition. Only do it while we are the
+  // active application, so that leaving fullscreen by switching away cannot
+  // pull focus out of another application.
+  if (restoreKeyToPlayer && NSApp.isActive && mWindow.isVisible &&
+      !mWindow.isKeyWindow) {
+    [mWindow makeKeyAndOrderFront:nil];
+  }
 }
 
 void nsCocoaWindow::UpdateFullscreenState(bool aFullScreen, bool aNativeMode) {
@@ -6375,6 +6438,22 @@ nsresult nsCocoaWindow::DoMakeFullScreen(bool aFullScreen,
                                          bool aUseSystemTransition) {
   if (!mWindow) {
     return NS_OK;
+  }
+
+  // The player is FullScreenAuxiliary so that the window server will composite
+  // it onto another application's fullscreen Space, but an Auxiliary window is
+  // not eligible for AppKit's own fullscreen, so its own fullscreen would fall
+  // to EmulatedFullscreen below. That path calls HideOSChromeOnScreen(), which
+  // is [NSApp setPresentationOptions:], and so hides the menu bar and the Dock
+  // for the whole application; they also draw over the player, which sits at
+  // NSFloatingWindowLevel, as soon as another application is activated. Lend
+  // the player FullScreenPrimary for the duration of its own fullscreen so it
+  // keeps taking the native path and getting a Space of its own.
+  // CocoaWindowDidEnterFullscreen() gives Auxiliary back when it returns to
+  // windowed, including when AppKit refuses the transition.
+  if (aFullScreen && aUseSystemTransition && mPiPType == PiPType::MediaPiP &&
+      !GetSupportsNativeFullscreen()) {
+    SetSupportsNativeFullscreen(true);
   }
 
   // Figure out what type of transition is being requested.
@@ -8064,6 +8143,23 @@ static NSMutableSet* gSwizzledFrameViewClasses = nil;
 @end
 
 @implementation BaseWindow
+
+// AppKit clears NSWindowStyleMaskNonactivatingPanel from any window whose class
+// is not an NSPanel, in +[NSWindow _validateStyleMask:]. The Picture-in-Picture
+// player needs that bit on a plain window so it can float over another
+// application's fullscreen Space without activating Firefox: the window server
+// gates that on the bit and on FullScreenAuxiliary, never on the class
+// (bug 1688932). Keep the bit and let AppKit validate the rest of the mask.
+// Only the player ever asks for it, so this is safe for every BaseWindow.
++ (NSUInteger)_validateStyleMask:(NSUInteger)aStyleMask {
+  if (![NSWindow respondsToSelector:@selector(_validateStyleMask:)]) {
+    // A future macOS without this method: AppKit strips the bit again and the
+    // player stops floating over other applications' fullscreen Spaces.
+    return aStyleMask;
+  }
+  NSUInteger keep = aStyleMask & NSWindowStyleMaskNonactivatingPanel;
+  return [super _validateStyleMask:(aStyleMask & ~keep)] | keep;
+}
 
 // The frame of a window is implemented using undocumented NSView subclasses.
 // We offset the window buttons by overriding the method _closeButtonOrigin on

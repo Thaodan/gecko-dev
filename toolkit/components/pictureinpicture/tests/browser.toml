@@ -156,6 +156,8 @@ support-files = ["test-page-with-nan-video-duration.html"]
 
 ["browser_playerControls.js"]
 
+["browser_playerFullscreenFocus.js"]
+
 ["browser_preserveTabPipIconOverlay.js"]
 
 ["browser_privateWindow.js"]
