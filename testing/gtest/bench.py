@@ -17,13 +17,20 @@ for line in proc.stdout:
         data = json.loads(match.group(1).decode("utf8"))
         for suite in data["suites"]:
             for subtest in suite["subtests"]:
+                replicates = subtest["replicates"]
+                # A single replicate has no deviation to report.
+                deviation = (
+                    "± %6.3f" % (statistics.stdev(replicates) / 1000)
+                    if len(replicates) > 1
+                    else " " * 8
+                )
                 # pylint --py3k W1619
                 print(
-                    "%4d.%03d ± %6s ms    %s.%s"
+                    "%4d.%03d %s ms    %s.%s"
                     % (
                         subtest["value"] / 1000.0,
                         subtest["value"] % 1000,
-                        "%.3f" % (statistics.stdev(subtest["replicates"]) / 1000),
+                        deviation,
                         suite["name"],
                         subtest["name"],
                     )
