@@ -20,8 +20,8 @@
  */
 
 /**
- * pdfjsVersion = 6.4.180
- * pdfjsBuild = 356109b29
+ * pdfjsVersion = 6.4.191
+ * pdfjsBuild = ccd820e12
  */
 
 ;// ./src/shared/util.js
@@ -652,10 +652,7 @@ class Util {
     }
     const yLow = Math.max(Math.min(rect1[1], rect1[3]), Math.min(rect2[1], rect2[3]));
     const yHigh = Math.min(Math.max(rect1[1], rect1[3]), Math.max(rect2[1], rect2[3]));
-    if (yLow > yHigh) {
-      return null;
-    }
-    return [xLow, yLow, xHigh, yHigh];
+    return yLow > yHigh ? null : [xLow, yLow, xHigh, yHigh];
   }
   static pointBoundingBox(x, y, minMax) {
     minMax[0] = Math.min(minMax[0], x);
@@ -2067,7 +2064,7 @@ class FloatingToolbar {
 }
 
 ;// ./src/shared/internal_evt.js
-const INTERNAL_EVT = "b78df2f2-ca37-4512-aed1-fe630c02c752";
+const INTERNAL_EVT = "4eba7ddc-e476-46d8-af27-d30960a4af59";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -2272,10 +2269,7 @@ class ImageManager {
   }
   getSvgUrl(id) {
     const data = this.#cache.get(id);
-    if (!data?.isSvg) {
-      return null;
-    }
-    return data.svgUrl;
+    return !data?.isSvg ? null : data.svgUrl;
   }
   deleteId(id) {
     this.#cache ||= new Map();
@@ -2471,10 +2465,7 @@ class KeyboardManager {
   }
   static #codeToKey(code) {
     const match = /^(?:Key([A-Z])|(?:Digit|Numpad)(\d))$/.exec(code);
-    if (!match) {
-      return null;
-    }
-    return match[1]?.toLowerCase() ?? match[2];
+    return !match ? null : match[1]?.toLowerCase() ?? match[2];
   }
   exec(self, event) {
     let shortcuts = this.callbacks.get(event.key);
@@ -2534,10 +2525,7 @@ class ColorManager {
   }
   getHexCode(name) {
     const rgb = this._colors.get(name);
-    if (!rgb) {
-      return name;
-    }
-    return Util.makeHexColor(...rgb);
+    return !rgb ? name : Util.makeHexColor(...rgb);
   }
 }
 class AnnotationEditorUIManager {
@@ -6867,10 +6855,7 @@ class AnnotationStorage {
   onAnnotationEditor = null;
   getValue(key, defaultValue) {
     const value = this.#storage.get(key);
-    if (value === undefined) {
-      return defaultValue;
-    }
-    return Object.assign(defaultValue, value);
+    return value === undefined ? defaultValue : Object.assign(defaultValue, value);
   }
   getRawValue(key) {
     return this.#storage.get(key);
@@ -13435,10 +13420,7 @@ class OptionalContentConfig {
     if (!this.#groups.size) {
       return null;
     }
-    if (this.#order) {
-      return this.#order.slice();
-    }
-    return [...this.#groups.keys()];
+    return this.#order ? this.#order.slice() : [...this.#groups.keys()];
   }
   getGroup(id) {
     return this.#groups.get(id) || null;
@@ -14550,7 +14532,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "6.4.180",
+    apiVersion: "6.4.191",
     data,
     password,
     disableAutoFetch,
@@ -15331,9 +15313,9 @@ class PDFWorker {
       }, {
         signal: ac.signal
       });
-      messageHandler.on("test", data => {
+      messageHandler.on("ready", data => {
         ac.abort();
-        if (this.destroyed || !data) {
+        if (this.destroyed || !(data instanceof Uint8Array)) {
           terminateEarly();
           return;
         }
@@ -15342,28 +15324,10 @@ class PDFWorker {
         this.#webWorker = worker;
         this.#resolve();
       });
-      messageHandler.on("ready", data => {
-        ac.abort();
-        if (this.destroyed) {
-          terminateEarly();
-          return;
-        }
-        try {
-          sendTest();
-        } catch {
-          this.#setupFakeWorker();
-        }
-      });
-      const sendTest = () => {
-        const testObj = new Uint8Array();
-        messageHandler.send("test", testObj, [testObj.buffer]);
-      };
-      sendTest();
-      return;
     } catch {
       info("The worker has been disabled.");
+      this.#setupFakeWorker();
     }
-    this.#setupFakeWorker();
   }
   #setupFakeWorker() {
     if (!PDFWorker.#isWorkerDisabled) {
@@ -15925,10 +15889,7 @@ class WorkerTransport {
     return this.messageHandler.sendWithPromise("GetDestinations", null);
   }
   getDestination(id) {
-    if (typeof id !== "string") {
-      return Promise.reject(new Error("Invalid destination request."));
-    }
-    return this.messageHandler.sendWithPromise("GetDestination", {
+    return typeof id !== "string" ? Promise.reject(new Error("Invalid destination request.")) : this.messageHandler.sendWithPromise("GetDestination", {
       id
     });
   }
@@ -16212,8 +16173,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "6.4.180";
-const build = "356109b29";
+const version = "6.4.191";
+const build = "ccd820e12";
 
 ;// ./src/display/editor/color_picker.js
 
@@ -16755,10 +16716,7 @@ class AnnotationElement {
       data
     } = this;
     const editor = this.annotationStorage?.getEditor(data.id);
-    if (editor) {
-      return editor.getData();
-    }
-    return data;
+    return editor ? editor.getData() : data;
   }
   get hasCommentButton() {
     return this.enableComment && this.hasPopupElement;
@@ -16801,10 +16759,7 @@ class AnnotationElement {
         return [maxX, maxY];
       }
     }
-    if (rect) {
-      return [rect[2], rect[3]];
-    }
-    return null;
+    return rect ? [rect[2], rect[3]] : null;
   }
   _normalizePoint(point) {
     const {
@@ -18829,10 +18784,7 @@ class PopupElement {
       color,
       opacity
     } = this.#firstElement.commentData;
-    if (!color) {
-      return null;
-    }
-    return this.#parent._commentManager.makeCommentColor(color, opacity);
+    return !color ? null : this.#parent._commentManager.makeCommentColor(color, opacity);
   }
   focusCommentButton() {
     setTimeout(() => {
@@ -24104,10 +24056,7 @@ class SignatureExtractor {
     if (i === 0) {
       return j > 0 ? 0 : 4;
     }
-    if (i === 1) {
-      return j + 6;
-    }
-    return 2 - j;
+    return i === 1 ? j + 6 : 2 - j;
   }
   static #neighborIdToIndex = new Int32Array([0, 1, -1, 1, -1, 0, -1, -1, 0, -1, 1, -1, 1, 0, 1, 1]);
   static #clockwiseNonZero(buf, width, i0, j0, i, j, offset) {
@@ -26512,10 +26461,7 @@ function getTextLayer(node) {
   if (!node) {
     return null;
   }
-  if (node.nodeType === Node.ELEMENT_NODE) {
-    return node.closest(".textLayer");
-  }
-  return node.parentElement?.closest(".textLayer") || null;
+  return node.nodeType === Node.ELEMENT_NODE ? node.closest(".textLayer") : node.parentElement?.closest(".textLayer") || null;
 }
 function isPointBefore(nodeA, offsetA, nodeB, offsetB) {
   if (nodeA === nodeB) {
@@ -26544,13 +26490,10 @@ function normalizeEdgeBoundary(container, offset, textLayer) {
   if (!lastNode || !textLayer.contains(lastNode)) {
     return null;
   }
-  if (lastNode.nodeType === Node.TEXT_NODE) {
-    return {
-      container: lastNode,
-      offset: lastNode.textContent.length
-    };
-  }
-  return {
+  return lastNode.nodeType === Node.TEXT_NODE ? {
+    container: lastNode,
+    offset: lastNode.textContent.length
+  } : {
     container: lastNode,
     offset: lastNode.childNodes.length
   };
