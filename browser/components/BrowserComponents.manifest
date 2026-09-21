@@ -206,7 +206,6 @@ category browser-idle-startup moz-src:///browser/components/urlbar/QuickSuggest.
 category browser-idle-startup moz-src:///browser/components/urlbar/UrlbarSearchTermsPersistence.sys.mjs UrlbarSearchTermsPersistence.init
 category browser-idle-startup moz-src:///browser/components/search/SERPCategorization.sys.mjs SERPCategorization.init
 category browser-idle-startup resource://gre/modules/ContentRelevancyManager.sys.mjs ContentRelevancyManager.init
-category browser-idle-startup resource://gre/modules/ColorwayThemeMigration.sys.mjs ColorwayThemeMigration.maybeWarn
 category browser-idle-startup resource://gre/modules/AppServicesTracing.sys.mjs RustLogForwarder.init
 category browser-idle-startup moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs ContextualIdentityService.load
 #ifdef MOZ_UPDATER

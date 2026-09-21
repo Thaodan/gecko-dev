@@ -916,9 +916,6 @@
       "chrome://mozapps/content/extensions/components/categories-box.mjs": [
         "../../../toolkit/mozapps/extensions/content/components/categories-box.mjs"
       ],
-      "chrome://mozapps/content/extensions/components/colorway-removal-notice.mjs": [
-        "../../../toolkit/mozapps/extensions/content/components/colorway-removal-notice.mjs"
-      ],
       "chrome://mozapps/content/extensions/components/discovery-pane.mjs": [
         "../../../toolkit/mozapps/extensions/content/components/discovery-pane.mjs"
       ],
@@ -5778,9 +5775,6 @@
       ],
       "resource://gre/modules/Color.sys.mjs": [
         "../../../toolkit/modules/Color.sys.mjs"
-      ],
-      "resource://gre/modules/ColorwayThemeMigration.sys.mjs": [
-        "../../../toolkit/mozapps/extensions/ColorwayThemeMigration.sys.mjs"
       ],
       "resource://gre/modules/CommonDialog.sys.mjs": [
         "../../../toolkit/components/prompts/src/CommonDialog.sys.mjs"
