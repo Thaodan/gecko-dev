@@ -2617,7 +2617,6 @@ RefPtr<GenericPromise> MediaTrack::RemoveListener(
     MediaTrackListener* aListener) {
   MozPromiseHolder<GenericPromise> promiseHolder;
   RefPtr<GenericPromise> p = promiseHolder.Ensure(__func__);
-  promiseHolder.RequireTailDispatch(__func__);
   if (mMainThreadDestroyed) {
     promiseHolder.Reject(NS_ERROR_FAILURE, __func__);
     return p;
@@ -3872,7 +3871,6 @@ auto MediaTrackGraphImpl::NotifyWhenDeviceStarted(AudioDeviceID aDeviceID)
 
   MozPromiseHolder<GraphStartedPromise> h;
   RefPtr<GraphStartedPromise> p = h.Ensure(__func__);
-  h.RequireTailDispatch(__func__);
 
   if (CrossGraphReceiver* receiver = mOutputDeviceRefCnts[index].mReceiver) {
     receiver->GraphImpl()->NotifyWhenPrimaryDeviceStarted(std::move(h));
@@ -3911,7 +3909,12 @@ void MediaTrackGraphImpl::NotifyWhenPrimaryDeviceStarted(
         if (CurrentDriver()->AsAudioCallbackDriver() &&
             CurrentDriver()->ThreadRunning() &&
             !CurrentDriver()->AsAudioCallbackDriver()->OnFallback()) {
-          holder.Resolve(true, __func__);
+          // Avoid Resolve's locking on the graph thread by doing it on main.
+          DispatchToMainThread(NS_NewRunnableFunction(
+              "MediaTrackGraphImpl::NotifyWhenPrimaryDeviceStarted::Resolver",
+              [holder = std::move(holder)]() mutable {
+                holder.Resolve(true, __func__);
+              }));
         } else {
           DispatchToMainThreadStableState(
               NewRunnableMethod<
@@ -4001,7 +4004,12 @@ void MediaTrackGraphImpl::ApplyAudioContextOperationImpl(
   for (MediaTrack* track : aMessage->mTracks) {
     track->IncrementSuspendCount();
   }
-  aMessage->mHolder.Resolve(state, __func__);
+  // Resolve after main thread state is up to date with completed processing.
+  DispatchToMainThreadStableState(NS_NewRunnableFunction(
+      "MediaTrackGraphImpl::ApplyAudioContextOperationImpl",
+      [holder = std::move(aMessage->mHolder), state]() mutable {
+        holder.Resolve(state, __func__);
+      }));
 }
 
 MediaTrackGraphImpl::PendingResumeOperation::PendingResumeOperation(
@@ -4014,13 +4022,16 @@ MediaTrackGraphImpl::PendingResumeOperation::PendingResumeOperation(
 
 void MediaTrackGraphImpl::PendingResumeOperation::Apply(
     MediaTrackGraphImpl* aGraph) {
-  // The graph is provided through the parameter so that it is available even
-  // when mDestinationTrack is destroyed.
   MOZ_ASSERT(aGraph->OnGraphThread());
   for (MediaTrack* track : mTracks) {
     track->DecrementSuspendCount();
   }
-  mHolder.Resolve(AudioContextState::Running, __func__);
+  // The graph is provided through the parameter so that it is available even
+  // when the track is destroyed.
+  aGraph->DispatchToMainThreadStableState(NS_NewRunnableFunction(
+      "PendingResumeOperation::Apply", [holder = std::move(mHolder)]() mutable {
+        holder.Resolve(AudioContextState::Running, __func__);
+      }));
 }
 
 void MediaTrackGraphImpl::PendingResumeOperation::Abort() {
@@ -4036,7 +4047,6 @@ auto MediaTrackGraph::ApplyAudioContextOperation(
     AudioContextOperation aOperation) -> RefPtr<AudioContextOperationPromise> {
   MozPromiseHolder<AudioContextOperationPromise> holder;
   RefPtr<AudioContextOperationPromise> p = holder.Ensure(__func__);
-  holder.RequireTailDispatch(__func__);
   MediaTrackGraphImpl* graphImpl = static_cast<MediaTrackGraphImpl*>(this);
   graphImpl->AppendMessage(MakeUnique<AudioContextOperationControlMessage>(
       aDestinationTrack, std::move(aTracks), aOperation, std::move(holder)));
@@ -4517,8 +4527,7 @@ NS_IMETHODIMP MediaTrackGraphImpl::UnregisterShutdownTask(
 }
 
 nsIEventTarget::FeatureFlags MediaTrackGraphImpl::GetFeatures() {
-  MOZ_ASSERT(SupportsTailDispatch());
-  return SUPPORTS_SHUTDOWN_TASKS | SUPPORTS_TAIL_DISPATCH;
+  return SUPPORTS_SHUTDOWN_TASKS;
 }
 
 nsresult MediaTrackGraphImpl::TailDispatchMessage(
