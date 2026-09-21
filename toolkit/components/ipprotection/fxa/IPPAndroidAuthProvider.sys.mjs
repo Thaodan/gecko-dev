@@ -51,9 +51,7 @@ class IPPAndroidFxAAuthProviderSingleton extends IPPFxaActivateAuthProviderSingl
     if (!token) {
       throw AUTH_ERRORS.LOGIN_NEEDED;
     }
-    // The Android layer owns the token's lifetime, so there is nothing for
-    // Gecko to invalidate if Guardian rejects it.
-    return { token };
+    return { token, [Symbol.dispose]: () => {} };
   }
 }
 
