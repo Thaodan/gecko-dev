@@ -3551,7 +3551,10 @@ pref("first-startup.category-tasks-enabled", true);
   pref("app.backgroundNotifications.receivePushMessages.perMessageTimeoutMs", 5000);
   pref("app.backgroundNotifications.receivePushMessages.totalTimeoutMs", 60000);
 
-  // Whether the push notification helper process should run.
+  // The helper runs only while both of these are true; available is Nimbus's
+  // and enabled is the user's. See pushNotificationHelper in
+  // FeatureManifest.yaml.
+  pref("app.backgroundNotifications.helper.available", false);
   pref("app.backgroundNotifications.helper.enabled", false);
   pref("app.backgroundNotifications.helper.loglevel", "Error");
 #endif

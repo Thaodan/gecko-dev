@@ -1115,19 +1115,29 @@ windowsLaunchOnLogin:
       description: Should users see the Windows launch on login checkbox.
 
 pushNotificationHelper:
-  description: "Controls the Windows push notification helper process"
+  description: >-
+    Controls the Windows helper process that delivers web notifications while
+    Firefox is closed
   owner: desktop-integrations@mozilla.com
   applications:
     - firefox-desktop
   hasExposure: false
   variables:
-    enabled:
+    available:
       type: boolean
       setPref:
-        branch: default
-        pref: app.backgroundNotifications.helper.enabled
+        branch: user
+        pref: app.backgroundNotifications.helper.available
       description: >-
-        Whether the push notification helper process should be enabled and running.
+        Whether closed-browser web notifications are available to this client.
+        Clearing it on unenrollment is the feature's kill switch, which is why
+        it is set on the user branch: Nimbus cannot reset a default branch pref
+        in the running session, and the helper outlives a Firefox session, so
+        on that branch a killed experiment would keep delivering notifications
+        until the next restart. The helper also needs
+        app.backgroundNotifications.helper.enabled, which a message turns on
+        and the user can turn back off. Nimbus never writes that one, so
+        turning the feature off does not unenroll the client.
 
 firefoxBridge:
   description: "Controls for Firefox Bridge extension and extension registration"
