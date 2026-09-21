@@ -19,6 +19,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlinx.coroutines.CoroutineScope
@@ -61,6 +62,7 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.GleanMetrics.Vpn
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
+import org.mozilla.fenix.collections.SaveCollectionStep
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.UseCases
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
@@ -696,6 +698,58 @@ class MenuMiddlewareTest {
             assertEquals(R.id.browserFragment, navOptions.captured.popUpToId)
             coVerify(exactly = 0) { addToHomescreenUseCase() }
         }
+
+    @Test
+    fun `GIVEN collections already exist WHEN handling adding to collection THEN select to which collection to add`() {
+        val directions = slot<NavDirections>()
+        val navOptions = slot<NavOptions>()
+        val store = createStore()
+
+        store.dispatch(Navigate.SaveToCollection(true))
+
+        verify {
+            navController.navigate(capture(directions), capture(navOptions))
+        }
+        assertEquals(
+            R.id.action_global_collectionCreationFragment,
+            directions.captured.actionId,
+        )
+
+        val arguments = directions.captured.arguments
+        assertContentEquals(arrayOf(TAB_ID), arguments.getStringArray("tabIds"))
+        assertContentEquals(arrayOf(TAB_ID), arguments.getStringArray("selectedTabIds"))
+        assertEquals(
+            SaveCollectionStep.SelectCollection,
+            arguments.getSerializable("saveCollectionStep", SaveCollectionStep::class.java),
+        )
+        assertEquals(R.id.browserFragment, navOptions.captured.popUpToId)
+    }
+
+    @Test
+    fun `GIVEN collections don't already exist WHEN handling adding to collection THEN create a new collection to add to`() {
+        val directions = slot<NavDirections>()
+        val navOptions = slot<NavOptions>()
+        val store = createStore()
+
+        store.dispatch(Navigate.SaveToCollection(false))
+
+        verify {
+            navController.navigate(capture(directions), capture(navOptions))
+        }
+        assertEquals(
+            R.id.action_global_collectionCreationFragment,
+            directions.captured.actionId,
+        )
+
+        val arguments = directions.captured.arguments
+        assertContentEquals(arrayOf(TAB_ID), arguments.getStringArray("tabIds"))
+        assertContentEquals(arrayOf(TAB_ID), arguments.getStringArray("selectedTabIds"))
+        assertEquals(
+            SaveCollectionStep.NameCollection,
+            arguments.getSerializable("saveCollectionStep", SaveCollectionStep::class.java),
+        )
+        assertEquals(R.id.browserFragment, navOptions.captured.popUpToId)
+    }
 
     @Test
     fun `WHEN handling back navigation THEN dismiss the menu and navigate back in the current tab`() {

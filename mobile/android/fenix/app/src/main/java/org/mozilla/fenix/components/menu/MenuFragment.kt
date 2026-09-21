@@ -53,6 +53,7 @@ import org.mozilla.fenix.browser.ShareMenuItemProvider
 import org.mozilla.fenix.browser.menu.MoreMenuItemsProvider
 import org.mozilla.fenix.browser.menu.MoveToNormalTabsMenuItemProvider
 import org.mozilla.fenix.browser.readermode.ReaderViewMenuItemProvider
+import org.mozilla.fenix.collections.SaveToCollectionMenuItemProvider
 import org.mozilla.fenix.components.FindInPageMenuItemProvider
 import org.mozilla.fenix.components.menu.compose.MenuDialogBottomSheet
 import org.mozilla.fenix.components.menu.compose.MenuHandleState
@@ -211,7 +212,7 @@ class MenuFragment : BottomSheetDialogFragment() {
     }
 
     /** Pure function to get the [MenuItemProvider] for any [FenixMenuItem]. */
-    @Suppress("LongMethod")
+    @Suppress("LongMethod", "CyclomaticComplexMethod")
     private fun buildMenuItemsProvidersResolver(): (FenixMenuItem) -> MenuItemProvider = { item ->
         when (item) {
             FenixMenuItem.CustomizeReaderView ->
@@ -304,6 +305,11 @@ class MenuFragment : BottomSheetDialogFragment() {
                     browserStore = requireComponents.core.store,
                     webAppUseCases = requireComponents.useCases.webAppUseCases,
                     scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                )
+            FenixMenuItem.SaveToCollection ->
+                SaveToCollectionMenuItemProvider(
+                    settings = requireComponents.settings,
+                    tabCollectionStorage = requireComponents.core.tabCollectionStorage,
                 )
         }
     }

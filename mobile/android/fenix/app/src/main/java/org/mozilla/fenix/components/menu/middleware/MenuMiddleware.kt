@@ -33,6 +33,7 @@ import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Vpn
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
+import org.mozilla.fenix.collections.SaveCollectionStep
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.UseCases
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
@@ -186,6 +187,8 @@ class MenuMiddleware(
             is RemoveShortcut -> removeShortcut()
 
             is Navigate.AddToHomeScreen -> addToHomeScreen()
+
+            is Navigate.SaveToCollection -> saveCurrentPageToCollection(action.hasCollection)
 
             is Navigate.Back -> handleBackNavigation(action)
 
@@ -407,6 +410,25 @@ class MenuMiddleware(
             if (isSummarizationEnabled) {
                 summarizationSettings.cacheDiscoveryEvent(SummarizeDiscoveryEvent.MenuItemExposure)
             }
+        }
+    }
+
+    private fun saveCurrentPageToCollection(collectionsAlreadyExist: Boolean) {
+        browserStore.state.selectedTab?.let { currentSession ->
+            navController.nav(
+                R.id.menuFragment,
+                MenuFragmentDirections.actionGlobalCollectionCreationFragment(
+                    tabIds = arrayOf(currentSession.id),
+                    selectedTabIds = arrayOf(currentSession.id),
+                    saveCollectionStep =
+                        if (collectionsAlreadyExist) {
+                            SaveCollectionStep.SelectCollection
+                        } else {
+                            SaveCollectionStep.NameCollection
+                        },
+                ),
+                navOptions = NavOptions.Builder().setPopUpTo(R.id.browserFragment, false).build(),
+            )
         }
     }
 
