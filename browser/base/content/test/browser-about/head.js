@@ -237,32 +237,6 @@ async function openErrorPage(src, useFrame, sandboxed) {
   return tab;
 }
 
-function waitForCondition(condition, nextTest, errorMsg, retryTimes) {
-  retryTimes = typeof retryTimes !== "undefined" ? retryTimes : 30;
-  var tries = 0;
-  var interval = setInterval(function () {
-    if (tries >= retryTimes) {
-      ok(false, errorMsg);
-      moveOn();
-    }
-    var conditionPassed;
-    try {
-      conditionPassed = condition();
-    } catch (e) {
-      ok(false, e + "\n" + e.stack);
-      conditionPassed = false;
-    }
-    if (conditionPassed) {
-      moveOn();
-    }
-    tries++;
-  }, 100);
-  var moveOn = function () {
-    clearInterval(interval);
-    nextTest();
-  };
-}
-
 async function waitForBookmarksToolbarVisibility({
   win = window,
   visible,
