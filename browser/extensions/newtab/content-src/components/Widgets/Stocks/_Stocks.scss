@@ -290,16 +290,8 @@
   font-size: var(--font-size-root);
 }
 
-.stocks-grid--loading .stock-indicator,
-.stocks-grid--loading .stock-ticker-symbol,
-.stocks-grid--loading .stock-ticker-price,
-.stocks-grid--loading .stock-ticker-change,
-.stocks-list--loading .stock-indicator,
-.stocks-list--loading .stock-ticker-name,
-.stocks-list--loading .stock-ticker-symbol,
-.stocks-list--loading .stock-ticker-price,
-.stocks-list--loading .stock-ticker-change {
-  opacity: 0.4;
+.stock-ticker--loading {
+  opacity: var(--opacity-deemphasized-strong);
 }
 
 .stocks-list {
@@ -407,13 +399,9 @@
   --button-icon-fill: var(--button-text-color);
 }
 
-// A disabled add button (watchlist full) needs a clear disabled look. newtab
-// pins --button-background-color-disabled to the enabled colour and only dims to
-// 0.7, which is imperceptible, so fade it further and show a not-allowed cursor.
-// In High Contrast Mode opacity is ignored, so also switch the border and icon to
-// the disabled tokens, which resolve to the system disabled colour there.
+// The enabled rule above overrides moz-button's own disabled border and icon,
+// so switch them back to the disabled tokens here.
 .stock-ticker--large .stock-ticker-action[disabled]::part(button) {
-  opacity: 0.4;
   cursor: not-allowed;
   border-color: var(--button-border-color-disabled);
   --button-icon-fill: var(--button-text-color-disabled);

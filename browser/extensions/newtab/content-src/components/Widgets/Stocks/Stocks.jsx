@@ -167,25 +167,23 @@ function Stocks({
     const reconciled = new Set(watchlistReconciledSymbols);
     return savedSymbols.every(s => reconciled.has(s));
   }, [savedSymbols, watchlistReconciledSymbols]);
-  // While the watchlist is loading, show a loading row for each saved symbol
-  // that hasn't resolved yet, or a few loading rows if none have resolved.
+  // A saved symbol the feed already looked up and found nothing for gets no
+  // placeholder, since nothing would ever fill it in.
   const watchlistPendingCount = useMemo(() => {
-    if (watchlistReady) {
-      return 0;
-    }
+    const reconciled = new Set(watchlistReconciledSymbols);
+    const pending = savedSymbols.filter(
+      s => !reconciled.has(s) && !bySymbol.has(s)
+    ).length;
     return matchedRows.length
-      ? Math.max(savedSymbols.length - matchedRows.length, 0)
-      : Math.min(savedSymbols.length, STOCKS_PLACEHOLDER_COUNT);
-  }, [watchlistReady, matchedRows.length, savedSymbols.length]);
+      ? pending
+      : Math.min(pending, STOCKS_PLACEHOLDER_COUNT);
+  }, [savedSymbols, watchlistReconciledSymbols, bySymbol, matchedRows.length]);
 
   const mediumWatchlistRows = matchedRows.slice(0, STOCKS_PLACEHOLDER_COUNT);
-  const mediumWatchlistPendingCount = watchlistReady
-    ? 0
-    : Math.max(
-        Math.min(STOCKS_PLACEHOLDER_COUNT, savedSymbols.length) -
-          mediumWatchlistRows.length,
-        0
-      );
+  const mediumWatchlistPendingCount = Math.min(
+    watchlistPendingCount,
+    STOCKS_PLACEHOLDER_COUNT - mediumWatchlistRows.length
+  );
 
   const handleToggleWatchlist = useCallback(
     (symbol, tickerName) => {

@@ -84,23 +84,6 @@ add_task(async function test_fetch_parses_and_dispatches() {
   sandbox.restore();
 });
 
-add_task(async function test_fetch_supports_individual_query() {
-  let sandbox = sinon.createSandbox();
-  const fetchStub = stubFeed(sandbox, { fetchResult: [] });
-  let feed = new StocksFeed();
-  feed.store = {
-    dispatch: sinon.spy(),
-    getState: () => ({ Prefs: { values: {} } }),
-  };
-  await feed.fetch("$AAPL");
-  Assert.equal(
-    fetchStub.firstCall.args[0].query,
-    "$AAPL",
-    "passes a non-empty query through the same path"
-  );
-  sandbox.restore();
-});
-
 add_task(async function test_stopFetching_clears_timer_without_merino() {
   let sandbox = sinon.createSandbox();
   stubFeed(sandbox);
@@ -574,6 +557,38 @@ add_task(async function test_fetch_retry_succeeds_recovers() {
   sandbox.restore();
 });
 
+add_task(async function test_fetch_retries_once_on_persistent_failure() {
+  const sandbox = sinon.createSandbox();
+  const feed = new StocksFeed();
+  feed.store = {
+    dispatch: sinon.spy(),
+    getState: () => ({ Prefs: { values: {} } }),
+  };
+  feed.merino = { fetch: sandbox.stub().rejects(new Error("network")) };
+  sandbox.stub(feed, "restartFetchTimer");
+  const retries = [];
+  sandbox.stub(feed, "setTimeout").callsFake(fn => {
+    retries.push(fn);
+    return 1;
+  });
+
+  await feed.fetch();
+  await retries[0]();
+
+  Assert.equal(
+    feed.merino.fetch.callCount,
+    2,
+    "the initial attempt plus one retry"
+  );
+  Assert.equal(retries.length, 1, "a failed retry does not schedule another");
+  Assert.strictEqual(
+    feed.retryTimer,
+    null,
+    "the retry timer is cleared once the retry has run"
+  );
+  sandbox.restore();
+});
+
 add_task(async function test_stopFetching_cancels_pending_retry() {
   const sandbox = sinon.createSandbox();
   const feed = new StocksFeed();
@@ -768,33 +783,70 @@ add_task(async function test_ensureMerinoClient_reuses_client() {
   sandbox.restore();
 });
 
-add_task(async function test_fetchWatchlistSymbol_dollar_then_bare() {
+add_task(async function test_fetchWatchlistSymbol_single_request() {
   const sandbox = sinon.createSandbox();
   const feed = new StocksFeed();
   feed.merino = { name: "TEST" };
-  const helper = sandbox.stub(feed, "_fetchHelper");
-  helper.withArgs("$AAPL").resolves([{ ticker: "AAPL", name: "Apple" }]);
+  const helper = sandbox.stub(feed, "_fetchHelper").resolves([]);
+  helper.withArgs("AAPL").resolves([{ ticker: "AAPL", name: "Apple" }]);
   Assert.deepEqual(
     await feed._fetchWatchlistSymbol("AAPL"),
     { ticker: "AAPL", name: "Apple" },
-    "resolves via the dollar form"
+    "resolves the bare symbol"
   );
-  helper.withArgs("$BRK.B").resolves([]);
   helper.withArgs("BRK.B").resolves([{ ticker: "BRK.B", name: "Berkshire" }]);
   Assert.deepEqual(
     await feed._fetchWatchlistSymbol("BRK.B"),
     { ticker: "BRK.B", name: "Berkshire" },
-    "falls back to the bare form for dotted symbols"
+    "a dotted symbol resolves the same way"
   );
-  helper.withArgs("$ZZZZ").resolves([]);
-  helper.withArgs("ZZZZ").resolves([]);
   Assert.strictEqual(
     await feed._fetchWatchlistSymbol("ZZZZ"),
     null,
     "returns null when nothing resolves"
   );
+  Assert.equal(helper.callCount, 3, "one request per symbol");
+  Assert.ok(
+    helper.getCalls().every(call => !call.args[0].startsWith("$")),
+    "never sends the dollar form"
+  );
   sandbox.restore();
 });
+
+add_task(
+  async function test_fetchWatchlistSymbol_sends_bare_symbol_to_merino() {
+    const sandbox = sinon.createSandbox();
+    const feed = new StocksFeed();
+    feed.merino = {
+      fetch: sandbox.stub().resolves([
+        {
+          custom_details: {
+            polygon: {
+              values: [
+                {
+                  ticker: "AAPL",
+                  name: "Apple Inc.",
+                  last_price: "$1 USD",
+                  todays_change_perc: "+0.1",
+                },
+              ],
+            },
+          },
+        },
+      ]),
+    };
+
+    const row = await feed._fetchWatchlistSymbol("AAPL");
+
+    Assert.equal(
+      feed.merino.fetch.firstCall.args[0].query,
+      "AAPL",
+      "the bare symbol is the Merino query"
+    );
+    Assert.equal(row.ticker, "AAPL", "the matching row comes back");
+    sandbox.restore();
+  }
+);
 
 function makeWatchlistFeed(sandbox, { saved = [], tickers = [] } = {}) {
   const feed = new StocksFeed();
@@ -1103,6 +1155,31 @@ add_task(async function test_fetchWatchlistSymbols_stops_when_superseded() {
   sandbox.restore();
 });
 
+add_task(
+  async function test_fetchWatchlistSymbols_stops_after_generation_change() {
+    const sandbox = sinon.createSandbox();
+    const feed = new StocksFeed();
+    feed.watchlistGeneration = 0;
+    feed.watchlistRequestedVersion = 1;
+    const calls = [];
+    sandbox.stub(feed, "_fetchWatchlistSymbol").callsFake(async sym => {
+      calls.push(sym);
+      if (calls.length === 2) {
+        // The widget is turned off while a symbol is resolving.
+        feed.watchlistGeneration = 1;
+      }
+      return { ticker: sym, name: sym };
+    });
+    await feed._fetchWatchlistSymbols(["A", "B", "C", "D"], 0, 1);
+    Assert.equal(
+      calls.length,
+      2,
+      "stops fetching once the widget is turned off"
+    );
+    sandbox.restore();
+  }
+);
+
 add_task(async function test_fetchWatchlistSymbols_serializes_requests() {
   const sandbox = sinon.createSandbox();
   const feed = new StocksFeed();
@@ -1128,28 +1205,6 @@ add_task(async function test_fetchWatchlistSymbols_serializes_requests() {
   Assert.equal(results.size, symbols.length, "every symbol resolved");
   sandbox.restore();
 });
-
-add_task(
-  async function test_fetchWatchlistSymbol_aborts_on_generation_change() {
-    const sandbox = sinon.createSandbox();
-    const feed = new StocksFeed();
-    feed.watchlistGeneration = 0;
-    const helper = sandbox.stub(feed, "_fetchHelper");
-    helper.withArgs("$AAPL").callsFake(async () => {
-      feed.watchlistGeneration = 1; // widget turned off between the two lookups
-      return [];
-    });
-    helper.withArgs("AAPL").resolves([{ ticker: "AAPL", name: "Apple" }]);
-    const result = await feed._fetchWatchlistSymbol("AAPL", 0);
-    Assert.strictEqual(
-      result,
-      null,
-      "stops before the bare lookup after a generation change"
-    );
-    Assert.ok(!helper.calledWith("AAPL"), "the bare fallback never runs");
-    sandbox.restore();
-  }
-);
 
 add_task(async function test_worker_does_not_restart_without_pending_request() {
   const sandbox = sinon.createSandbox();

@@ -134,7 +134,7 @@ function StockTicker({
     <li
       className={`stock-ticker stock-ticker--${size}${
         isMatch ? " stock-ticker--result" : ""
-      }`}
+      }${loading ? " stock-ticker--loading" : ""}`}
       aria-hidden={loading ? "true" : undefined}
     >
       {!loading && !isMatch && (

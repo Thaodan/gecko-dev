@@ -1946,6 +1946,19 @@ describe("Stocks watchlist data rendering", () => {
     const list = container.querySelector("ul.stocks-list--watchlist");
     expect(list.className).toContain("stocks-list--loading");
     expect(list.querySelectorAll(".stock-ticker--large").length).toBe(1);
+    expect(list.querySelectorAll(".stock-ticker--loading").length).toBe(1);
+  });
+
+  it("caps the placeholders at four while no saved symbol has resolved", () => {
+    const { container } = renderStocksState({
+      size: "large",
+      tickers: [],
+      watchlist: "AAPL,MSFT,AMZN,NVDA,SPYX,TSLA",
+      watchlistTickers: [],
+      watchlistReconciledSymbols: [],
+    });
+    const ul = container.querySelector("ul.stocks-list--watchlist");
+    expect(ul.querySelectorAll(".stock-ticker--loading").length).toBe(4);
   });
 
   it("shows a resolved row plus a placeholder while another saved symbol is pending", () => {
@@ -1960,7 +1973,23 @@ describe("Stocks watchlist data rendering", () => {
     expect(ul.getAttribute("aria-busy")).toBe("true");
     // One resolved AAPL row plus one placeholder for the pending MSFT.
     expect(ul.querySelectorAll(".stock-ticker--large").length).toBe(2);
+    expect(ul.querySelectorAll(".stock-ticker--loading").length).toBe(1);
     expect(ul.textContent).toContain("AAPL");
+  });
+
+  it("shows no placeholder for a reconciled symbol that has no data, even while the saved list changes", () => {
+    // MSFT was just removed: the pref no longer lists it, but the feed's last
+    // broadcast still does. PARADE never resolves and must not read as pending.
+    const { container } = renderStocksState({
+      size: "large",
+      tickers: [],
+      watchlist: "AAPL,PARADE",
+      watchlistTickers: [AAPL],
+      watchlistReconciledSymbols: ["AAPL", "MSFT", "PARADE"],
+    });
+    const ul = container.querySelector("ul.stocks-list");
+    expect(ul.querySelectorAll(".stock-ticker--large").length).toBe(1);
+    expect(ul.querySelectorAll(".stock-ticker--loading").length).toBe(0);
   });
 
   it("small size shows a placeholder (not an error) while a saved symbol loads", () => {

@@ -186,6 +186,9 @@ describe("StockTicker", () => {
     expect(
       container.querySelector("li.stock-ticker").getAttribute("aria-hidden")
     ).toBe("true");
+    expect(container.querySelector("li.stock-ticker").className).toContain(
+      "stock-ticker--loading"
+    );
   });
 
   it("falls back to the ticker symbol as the screen-reader subject when name is missing, and is not aria-hidden", () => {
