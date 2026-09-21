@@ -4110,9 +4110,6 @@ def repackage_single_locales(command_context, verbose=False, locales=[], dest=No
         # Simple as possible, please!
         "MOZ_SIMPLE_PACKAGE_NAME": "target",
     }
-    if not command_context.substs.get("MOZ_AUTOMATION") and sys.platform == "darwin":
-        # On macOS DMG packaging is slow to work with.
-        append_env["MOZ_PKG_FORMAT"] = "TAR"
 
     ensure_l10n_central(command_context)
 
