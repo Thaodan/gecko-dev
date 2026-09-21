@@ -338,6 +338,7 @@ class AudioContext final : public DOMEventTargetHelper,
   void RegisterNode(AudioNode* aNode);
   void UnregisterNode(AudioNode* aNode);
 
+  void QueueOnStateChanged(void* aPromise, AudioContextState aNewState);
   void OnStateChanged(void* aPromise, AudioContextState aNewState);
 
   BasicWaveFormCache* GetBasicWaveFormCache();
