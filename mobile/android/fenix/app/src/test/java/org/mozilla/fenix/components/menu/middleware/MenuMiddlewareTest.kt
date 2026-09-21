@@ -76,9 +76,7 @@ import org.mozilla.fenix.helpers.FenixGleanTestRule
 class MenuMiddlewareTest {
     @get:Rule val gleanRule = FenixGleanTestRule(testContext)
 
-    private val appStore: AppStore = mockk {
-        every { dispatch(any()) } just Runs
-    }
+    private val appStore: AppStore = mockk { every { dispatch(any()) } just Runs }
     private val browserStore =
         BrowserStore(
             BrowserState(
@@ -88,20 +86,16 @@ class MenuMiddlewareTest {
         )
     private val addBookmarkUseCase: BookmarksUseCase.AddBookmarksUseCase = mockk()
     private val requestDesktopSiteUseCase: SessionUseCases.RequestDesktopSiteUseCase = mockk(relaxed = true)
-    private val goBackUseCase: SessionUseCases.GoBackUseCase = mockk(relaxed = true)
     private val goForwardUseCase: SessionUseCases.GoForwardUseCase = mockk(relaxed = true)
+    private val goBackUseCase: SessionUseCases.GoBackUseCase = mockk(relaxed = true)
     private val shareUrlUseCase: ShareUseCases = mockk(relaxed = true)
-    private val reloadUseCase: SessionUseCases.ReloadUrlUseCase = mockk(relaxed = true)
-    private val stopLoadingUseCase: SessionUseCases.StopLoadingUseCase = mockk(relaxed = true)
     private val useCases: UseCases = mockk {
         every { bookmarksUseCases } returns mockk { every { addBookmark } returns addBookmarkUseCase }
         every { sessionUseCases } returns
             mockk {
                 every { requestDesktopSite } returns requestDesktopSiteUseCase
-                every { goBack } returns goBackUseCase
                 every { goForward } returns goForwardUseCase
-                every { reload } returns reloadUseCase
-                every { stopLoading } returns stopLoadingUseCase
+                every { goBack } returns goBackUseCase
             }
         every { shareUseCases } returns shareUrlUseCase
     }
@@ -397,42 +391,6 @@ class MenuMiddlewareTest {
                 any<NavDirections>(),
                 optionsEq(NavOptions.Builder().setPopUpTo(R.id.browserFragment, false).build()),
             )
-        }
-    }
-
-    @Test
-    fun `WHEN handling reload navigation without bypassing cache THEN dismiss the menu and reload the current tab`() {
-        val store = createStore()
-
-        store.dispatch(Navigate.Reload(bypassCache = false))
-
-        verify {
-            navController.popBackStack(R.id.menuFragment, true)
-            reloadUseCase(tabId = TAB_ID, flags = any())
-        }
-    }
-
-    @Test
-    fun `WHEN handling reload navigation with bypassing cache THEN dismiss the menu and reload the current tab bypassing cache`() {
-        val store = createStore()
-
-        store.dispatch(Navigate.Reload(bypassCache = true))
-
-        verify {
-            navController.popBackStack(R.id.menuFragment, true)
-            reloadUseCase(tabId = TAB_ID, flags = any())
-        }
-    }
-
-    @Test
-    fun `WHEN handling stop navigation THEN dismiss the menu and stop loading the current tab`() {
-        val store = createStore()
-
-        store.dispatch(Navigate.Stop)
-
-        verify {
-            navController.popBackStack(R.id.menuFragment, true)
-            stopLoadingUseCase(tabId = TAB_ID)
         }
     }
 

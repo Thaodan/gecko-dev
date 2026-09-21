@@ -17,7 +17,6 @@ import mozilla.components.compose.menu.store.MenuAction.Init
 import mozilla.components.compose.menu.store.MenuAction.Update
 import mozilla.components.compose.menu.store.MenuState
 import mozilla.components.compose.menu.store.MenuStore
-import mozilla.components.concept.engine.EngineSession.LoadUrlFlags
 import mozilla.components.concept.engine.prompt.ShareData
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
@@ -113,10 +112,6 @@ class MenuMiddleware(
             is Navigate.Forward -> handleForwardNavigation(action)
 
             is Navigate.Share -> handleShare()
-
-            is Navigate.Reload -> handleReload(action)
-
-            is Navigate.Stop -> handleStop()
 
             else -> {
                 // no-op
@@ -250,26 +245,6 @@ class MenuMiddleware(
                 )
             },
         )
-    }
-
-    private fun handleReload(action: Navigate.Reload) {
-        val tabId = browserStore.state.selectedTab?.id ?: return
-        dismissMenu()
-        useCases.sessionUseCases.reload(
-            tabId = tabId,
-            flags =
-                if (action.bypassCache) {
-                    LoadUrlFlags.select(LoadUrlFlags.BYPASS_CACHE)
-                } else {
-                    LoadUrlFlags.none()
-                },
-        )
-    }
-
-    private fun handleStop() {
-        val tabId = browserStore.state.selectedTab?.id ?: return
-        dismissMenu()
-        useCases.sessionUseCases.stopLoading(tabId = tabId)
     }
 
     private fun observeMenuStructureUpdates(store: Store<MenuState, MenuAction>) = scope.launch {
