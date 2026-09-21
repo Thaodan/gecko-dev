@@ -652,9 +652,9 @@ add_task(async function test_delete_reauthenticates_then_confirms() {
           callback: async win => {
             dialogWin = win;
             const [title, message, confirmButton] = AC_L10N.formatValuesSync([
-              { id: "autocomplete-remove-password-title" },
+              { id: "autocomplete-delete-password-title" },
               { id: "autocomplete-remove-record-message" },
-              { id: "autocomplete-remove-record-button" },
+              { id: "autocomplete-delete-record-button" },
             ]);
             Assert.equal(
               win.document.getElementById("infoTitle").textContent,
