@@ -64,6 +64,7 @@ class MOZ_RAII AutoProfilerStyleMarker {
         {"stylesReused", MS::InputType::Uint32, "Styles reused",
          MS::Format::Integer},
     };
+    static constexpr bool IsStackBased = true;
   };
 
   bool mActive;
