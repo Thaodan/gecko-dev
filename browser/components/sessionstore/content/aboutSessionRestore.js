@@ -295,9 +295,7 @@ function toggleRowChecked(aIx) {
 
 function restoreSingleTab(aIx, aShifted) {
   var tabbrowser = getBrowserWindow().gBrowser;
-  // Use skipLoad so that the initial about:blank load doesn't race with (and
-  // clobber) the session state restored below.
-  var newTab = tabbrowser.addWebTab("about:blank", { skipLoad: true });
+  var newTab = tabbrowser.addWebTab();
   var item = gTreeData[aIx];
 
   var tabState =
