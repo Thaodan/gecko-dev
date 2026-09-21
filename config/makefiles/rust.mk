@@ -51,10 +51,6 @@ endif
 cargo_build_flags += $(filter -j1,$(MAKEFLAGS))
 cargo_build_flags += $(MOZ_CARGO_BUILD_STD_ARGS)
 
-ifdef MOZ_TSAN
-RUSTFLAGS += -Zsanitizer=thread
-endif
-
 # These flags are passed via `cargo rustc` and only apply to the final rustc
 # invocation (i.e., only the top-level crate, not its dependencies).
 cargo_rustc_flags = $(CARGO_RUSTCFLAGS)
@@ -64,25 +60,13 @@ ifdef RUST_LTO_ELIGIBLE
 ifeq (,$(findstring gkrust_gtest,$(RUST_LIBRARY_FILE)))
 cargo_rustc_flags += -Clto
 endif
-# We need -Cembed-bitcode=yes for all crates when using -Clto.
-RUSTFLAGS += -Cembed-bitcode=yes
 endif
 
 ifdef CARGO_INCREMENTAL
 export CARGO_INCREMENTAL
 endif
 
-rustflags_neon =
-ifeq (neon,$(MOZ_FPU))
-ifneq (,$(filter thumbv7neon-,$(RUST_TARGET)))
-# Enable neon and disable restriction to 16 FPU registers when neon is enabled
-# but we're not using a thumbv7neon target, where it's already the default.
-# (CPUs with neon have 32 FPU registers available)
-rustflags_neon += -C target_feature=+neon,-d16
-endif
-endif
-
-rustflags_override = $(MOZ_RUST_DEFAULT_FLAGS) $(rustflags_neon)
+rustflags_override = $(MOZ_RUST_DEFAULT_FLAGS)
 
 # Allow tools such as clippy to inject extra driver flags (e.g. -W/-D) via an
 # environment variable. These are folded into RUSTFLAGS here (rather than
@@ -92,12 +76,7 @@ ifdef extra_rustflags
 rustflags_override += $(extra_rustflags)
 endif
 
-ifdef DEVELOPER_OPTIONS
-# By default the Rust compiler will perform a limited kind of ThinLTO on each
-# crate. For local builds this additional optimization is not worth the
-# increase in compile time so we opt out of it.
-rustflags_override += -Clto=off
-endif
+rustflags_override += $(MOZ_RUSTFLAGS_AFTER_EXTRA)
 
 ifneq (,$(or $(MOZ_USING_SCCACHE),$(MOZ_USING_BUILDCACHE)))
 export RUSTC_WRAPPER=$(CCACHE)
@@ -197,18 +176,10 @@ export CFLAGS_$(rust_cc_env_name)=$(CC_BASE_FLAGS)
 export CXXFLAGS_$(rust_cc_env_name)=$(CXX_BASE_FLAGS) $(filter -fno-aligned-new -fno-sized-deallocation,$(COMPUTED_CXXFLAGS))
 endif
 
-# When host == target, cargo will compile build scripts with sanitizers enabled
-# if sanitizers are enabled, which may randomly fail when they execute
-# because of https://github.com/google/sanitizers/issues/1322.
-# Work around by disabling __tls_get_addr interception (bug 1635327).
-ifeq ($(RUST_TARGET),$(RUST_HOST_TARGET))
 define sanitizer_options
-ifdef MOZ_$1
-export $1_OPTIONS:=$$($1_OPTIONS:%=%:)intercept_tls_get_addr=0
-endif
+export $1:=$$($1:%=%:)intercept_tls_get_addr=0
 endef
-$(foreach san,ASAN TSAN UBSAN,$(eval $(call sanitizer_options,$(san))))
-endif
+$(foreach var,$(MOZ_RUST_SANITIZER_OPTION_VARS),$(eval $(call sanitizer_options,$(var))))
 
 export BINDGEN_EXTRA_CLANG_ARGS
 export CARGO_TARGET_DIR
@@ -254,10 +225,7 @@ endif
 export LIBZ_RS_SYS_PREFIX=MOZ_Z_
 
 ifndef RUSTC_BOOTSTRAP
-RUSTC_BOOTSTRAP := mozglue_static,qcms
-ifdef MOZ_RUST_SIMD
-RUSTC_BOOTSTRAP := $(RUSTC_BOOTSTRAP),encoding_rs,any_all_workaround
-endif
+RUSTC_BOOTSTRAP := $(MOZ_RUSTC_BOOTSTRAP_DEFAULT)
 export RUSTC_BOOTSTRAP
 endif
 
@@ -268,23 +236,14 @@ other_cargo_subcommands := check clippy fix udeps
 target_rust_ltoable := force-cargo-library-build $(addprefix force-cargo-library-,$(other_cargo_subcommands))
 target_rust_nonltoable := force-cargo-test-run force-cargo-program-build $(addprefix force-cargo-program-,$(other_cargo_subcommands))
 
-# Work around https://github.com/rust-lang/rust/issues/112480
-ifdef MOZ_DEBUG_RUST
-ifneq (,$(filter i686-pc-windows-%,$(RUST_TARGET)))
-RUSTFLAGS += -Zmir-enable-passes=-CheckAlignment
-RUSTC_BOOTSTRAP := 1
-endif
+ifdef MOZ_RUSTC_BOOTSTRAP_FORCE
+RUSTC_BOOTSTRAP := $(MOZ_RUSTC_BOOTSTRAP_FORCE)
 endif
 
-ifeq (WINNT_clang,$(OS_ARCH)_$(CC_TYPE))
-RUSTFLAGS += -C dlltool=$(LLVM_DLLTOOL)
-endif
+target_rustflags := $(rustflags_override) $(RUST_SANCOV_FLAGS) $(RUSTFLAGS) $(MOZ_RUSTFLAGS_TARGET_COMMON)
 
-$(target_rust_ltoable): RUSTFLAGS:=$(rustflags_override) $(RUST_SANCOV_FLAGS) $(RUSTFLAGS) $(RUST_PGO_FLAGS) \
-								$(if $(MOZ_LTO_RUST_CROSS),\
-								    -Clinker-plugin-lto \
-									,)
-$(target_rust_nonltoable): RUSTFLAGS:=$(rustflags_override) $(RUST_SANCOV_FLAGS) $(RUSTFLAGS)
+$(target_rust_ltoable): RUSTFLAGS:=$(target_rustflags) $(MOZ_RUSTFLAGS_TARGET_LTOABLE)
+$(target_rust_nonltoable): RUSTFLAGS:=$(target_rustflags)
 
 TARGET_RECIPES := $(target_rust_ltoable) $(target_rust_nonltoable)
 
@@ -293,12 +252,7 @@ HOST_RECIPES := \
 
 $(HOST_RECIPES): RUSTFLAGS:=$(rustflags_override)
 
-# If this is a release build we want rustc to generate one codegen unit per
-# crate. This results in better optimization and less code duplication at the
-# cost of longer compile times.
-ifndef DEVELOPER_OPTIONS
-$(TARGET_RECIPES) $(HOST_RECIPES): RUSTFLAGS += -C codegen-units=1
-endif
+$(TARGET_RECIPES) $(HOST_RECIPES): RUSTFLAGS += $(MOZ_RUSTFLAGS_CODEGEN)
 
 # We use the + prefix to pass down the jobserver fds to cargo, but we
 # don't use the prefix when make -n is used, so that cargo doesn't run
@@ -357,51 +311,22 @@ export $(cargo_linker_env_var):=$(topsrcdir)/build/cargo-linker
 WRAP_HOST_LINKER_LIBPATHS:=$(HOST_LINKER_LIBPATHS)
 endif
 
-# Cargo needs the same linker flags as the C/C++ compiler,
-# but not the final libraries. Filter those out because they
-# cause problems on macOS 10.7; see bug 1365993 for details.
-# Also, we don't want to pass PGO flags until cargo supports them.
-# Finally, we also remove the -Wl,--build-id=uuid flag when it's in
-# the LDFLAGS. The flag was chosen over the default (build-id=sha1)
-# in developer builds, because for libxul, it's faster. But it's also
-# non-deterministic. So when the rust compiler produces procedural
-# macros as libraries, they're not reproducible. Those procedural
-# macros then end up as dependencies of other crates, and their
-# non-reproducibility leads to sccache transitively having cache
-# misses.
-$(TARGET_RECIPES): MOZ_CARGO_WRAP_LDFLAGS:=$(filter-out -fsanitize=cfi% -framework Cocoa -lobjc AudioToolbox ExceptionHandling -fprofile-% -Wl$(COMMA)--build-id=uuid,$(LDFLAGS))
-
-# When building with sanitizer, rustc links its own runtime, which conflicts
-# with the one that passing -fsanitize=* to the linker would add.
-# Ideally, we'd always do this filtering, but because the flags may also apply
-# to build scripts because cargo doesn't allow the distinction, we only filter
-# when building programs, except when using thread sanitizer where we filter
-# everywhere.
-ifneq (,$(filter -Zsanitizer=%,$(RUSTFLAGS)))
-$(if $(filter -Zsanitizer=thread,$(RUSTFLAGS)),$(TARGET_RECIPES),force-cargo-program-build): MOZ_CARGO_WRAP_LDFLAGS:=$(filter-out -fsanitize=%,$(MOZ_CARGO_WRAP_LDFLAGS))
-endif
+$(TARGET_RECIPES): MOZ_CARGO_WRAP_LDFLAGS:=$(filter-out $(MOZ_CARGO_LDFLAGS_FILTER_OUT),$(LDFLAGS))
+force-cargo-program-build: MOZ_CARGO_WRAP_LDFLAGS:=$(filter-out $(MOZ_CARGO_PROGRAM_LDFLAGS_FILTER_OUT),$(MOZ_CARGO_WRAP_LDFLAGS))
 
 # Rustc assumes that *-windows-gnu targets build with mingw-gcc and manually
 # add runtime libraries that don't exist with mingw-clang. We created dummy
 # libraries in $(topobjdir)/build/win32, but that's not enough, because some
 # of the wanted symbols that come from these libraries are available in a
-# different library, that we add manually. We also need to avoid rustc
-# passing -nodefaultlibs to clang so that it adds clang_rt.
+# different library, that we add manually.
 ifeq (WINNT_clang,$(OS_ARCH)_$(CC_TYPE))
 force-cargo-program-build: MOZ_CARGO_WRAP_LDFLAGS+=-L$(topobjdir)/build/win32 -lunwind
-force-cargo-program-build: CARGO_RUSTCFLAGS += -C default-linker-libraries=yes
+endif
+ifdef MOZ_RUST_PROGRAM_RUSTCFLAGS
+force-cargo-program-build: CARGO_RUSTCFLAGS += $(MOZ_RUST_PROGRAM_RUSTCFLAGS)
 endif
 
-# Rustc passes -nodefaultlibs to the linker (clang) on mac, which prevents
-# clang from adding the necessary sanitizer runtimes when building with
-# C/C++ sanitizer but without rust sanitizer.
-ifeq (Darwin,$(OS_ARCH))
-ifeq (,$(filter -Zsanitizer=%,$(RUSTFLAGS)))
-ifneq (,$(filter -fsanitize=%,$(LDFLAGS)))
-$(TARGET_RECIPES): RUSTFLAGS += -C default-linker-libraries=yes
-endif
-endif
-endif
+$(TARGET_RECIPES): RUSTFLAGS += $(MOZ_RUSTFLAGS_DEFAULT_LINKER_LIBRARIES)
 
 $(HOST_RECIPES): MOZ_CARGO_WRAP_LDFLAGS:=$(HOST_LDFLAGS) $(WRAP_HOST_LINKER_LIBPATHS)
 $(TARGET_RECIPES) $(HOST_RECIPES): MOZ_CARGO_WRAP_HOST_LDFLAGS:=$(HOST_LDFLAGS) $(WRAP_HOST_LINKER_LIBPATHS)
@@ -466,11 +391,8 @@ ifdef RUST_LIBRARY_FILE
 
 rust_features_flag := --features '$(addsuffix $(COMMA),$(RUST_LIBRARY_FEATURES))mozilla-central-workspace-hack'
 
-ifeq (WASI,$(OS_ARCH))
-# The rust wasi target defaults to statically link the wasi crt, but when we
-# build static libraries from rust and link them with C/C++ code, we also link
-# a wasi crt, which may conflict with rust's.
-force-cargo-library-build: CARGO_RUSTCFLAGS += -C target-feature=-crt-static
+ifdef MOZ_RUST_LIBRARY_RUSTCFLAGS
+force-cargo-library-build: CARGO_RUSTCFLAGS += $(MOZ_RUST_LIBRARY_RUSTCFLAGS)
 endif
 
 # Assume any system libraries rustc links against are already in the target's LIBS.
