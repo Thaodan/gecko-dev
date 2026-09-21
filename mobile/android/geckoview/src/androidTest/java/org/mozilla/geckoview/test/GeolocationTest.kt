@@ -28,7 +28,6 @@ import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.MockLocationProvider
-import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.TimeoutMillis
 
 @RunWith(AndroidJUnit4::class)
 @LargeTest
@@ -352,7 +351,6 @@ class GeolocationTest : BaseSessionTest() {
     }
 
     @GeckoSessionTestRule.NullDelegate(Autofill.Delegate::class)
-    @TimeoutMillis(6000) // increment timeout since a location is posted per 2 seconds
     @Test
     fun startGeolocationOnBackground() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
