@@ -728,28 +728,16 @@ void* BufferAllocator::allocInGC(size_t bytes, bool nurseryOwned) {
   MOZ_ASSERT_IF(zone->isGCMarkingOrSweeping(), majorState == State::Marking);
   checkAccess();
 
-  void* result;
   if (IsLargeAllocSize(bytes)) {
-    result = allocLarge(bytes, nurseryOwned, true);
-  } else if (IsSmallAllocSize(bytes)) {
-    result = allocSmall(bytes, nurseryOwned, true);
-  } else {
-    result = allocMedium(bytes, nurseryOwned, true);
+    void* result = allocLarge(bytes, nurseryOwned, true);
+    return result;
   }
 
-  if (!result) {
-    return nullptr;
+  if (IsSmallAllocSize(bytes)) {
+    return allocSmall(bytes, nurseryOwned, true);
   }
 
-  // Barrier to mark nursery-owned allocations that happen during collection. We
-  // don't need to do this for tenured-owned allocations because we don't sweep
-  // tenured-owned allocations that happened after the start of a major
-  // collection.
-  if (nurseryOwned) {
-    markNurseryOwnedAlloc(result, true);
-  }
-
-  return result;
+  return allocMedium(bytes, nurseryOwned, true);
 }
 
 inline Zone* LargeBuffer::zone() {
@@ -2140,8 +2128,16 @@ void* BufferAllocator::allocSmall(size_t bytes, bool nurseryOwned, bool inGC) {
   // Heap size updates are done for the small buffer region as a whole, not
   // individual allocations within it.
 
-  MOZ_ASSERT(!region->isMarked(alloc));
   MOZ_ASSERT(IsSmallAlloc(alloc));
+  MOZ_ASSERT(!region->isMarked(alloc));
+
+  // Barrier to mark nursery-owned allocations that happen during collection. We
+  // don't need to do this for tenured-owned allocations because we don't sweep
+  // tenured-owned allocations that happened after the start of a major
+  // collection.
+  if (inGC && nurseryOwned) {
+    region->setMarked(alloc);
+  }
 
   return alloc;
 }
@@ -2222,6 +2218,14 @@ void* BufferAllocator::allocMedium(size_t bytes, bool nurseryOwned, bool inGC) {
   }
 
   setAllocated(alloc, bytes, nurseryOwned, inGC);
+
+  // Barrier to mark nursery-owned allocations that happen during collection.
+  // See the comment in allocSmall.
+  if (inGC && nurseryOwned) {
+    BufferChunk* chunk = BufferChunk::from(alloc);
+    chunk->setMarked(alloc);
+  }
+
   return alloc;
 }
 
@@ -3583,6 +3587,13 @@ void* BufferAllocator::allocLarge(size_t requestedBytes, bool nurseryOwned,
   increaseHeapSize(bytes, nurseryOwned, checkThresholds, false);
 
   MOZ_ASSERT(IsLargeAlloc(alloc));
+
+  // Barrier to mark nursery-owned allocations that happen during collection.
+  // See the comment in allocSmall.
+  if (inGC && nurseryOwned) {
+    buffer->isMarked = true;
+  }
+
   return alloc;
 }
 
