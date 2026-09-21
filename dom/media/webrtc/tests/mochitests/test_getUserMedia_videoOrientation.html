@@ -67,12 +67,13 @@ const tests = [
         is(video.videoWidth, 480, "videoWidth is 480 after 90 degree rotation");
         is(video.videoHeight, 640,
            "videoHeight is 640 after 90 degree rotation");
-        // Rotation must not change which frame size was negotiated, so a
-        // request for 640x480 stays 640x480 and only has its dimensions
-        // swapped.
+        // Rotation does not change which frame size the constraints selected -
+        // that is resolved in the primary orientation - but the parent
+        // straightens the frame before delivering it, and mediacapture-main
+        // requires getSettings() to report the dimensions actually delivered.
         const settings = stream.getVideoTracks()[0].getSettings();
-        is(settings.width, 640, "settings width is unchanged by rotation");
-        is(settings.height, 480, "settings height is unchanged by rotation");
+        is(settings.width, 480, "settings width follows the delivered frame");
+        is(settings.height, 640, "settings height follows the delivered frame");
         stream.getTracks().forEach(t => t.stop());
       });
     });

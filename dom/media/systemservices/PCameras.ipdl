@@ -44,7 +44,14 @@ struct VideoFrameProperties
   uint32_t rtpTimeStamp;
   int64_t ntpTimeMs;
   int64_t renderTimeMs;
-  VideoRotation rotation;
+  // The rotation the capture backend reported as required to straighten the
+  // frame. The negotiated capability describes the frame as the backend
+  // produced it, so size calculations need this even after the rotation has
+  // been applied.
+  VideoRotation originalRotationRequired;
+  // Whether the parent already applied originalRotationRequired to the buffer.
+  // If false the rotation is still pending and the consumer has to apply it.
+  bool rotationApplied;
   int yAllocatedSize;
   int uAllocatedSize;
   int vAllocatedSize;
