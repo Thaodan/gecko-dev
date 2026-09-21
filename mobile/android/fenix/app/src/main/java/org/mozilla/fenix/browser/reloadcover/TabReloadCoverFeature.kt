@@ -69,6 +69,13 @@ private const val COVER_POST_FCP_HOLD_MS = 400L
  * only on the natural timer-driven finalize (when a cover that actually reached the user gives way to the live page),
  * never on user-driven dismissal or on covers whose bitmap load never completed.
  *
+ * ## Telemetry
+ *
+ * All Glean recording is routed through [telemetry] rather than accessed directly here. Three events cover the cover's
+ * lifecycle: `onShown` at the moment the presenter is asked to display the bitmap, `onFcp` on a fresh post-cover paint,
+ * and `onExit(reason)` on every teardown path (natural finalize, user dismissal, feature stop, offline). Keeping the
+ * recording behind a facade lets tests inject a Recorder fake without perturbing Glean's global state.
+ *
  * ## Threading
  *
  * All mutation runs on [dispatcher] (Main in production, injected for tests). The store observation and both
@@ -80,6 +87,7 @@ class TabReloadCoverFeature(
     private val thumbnailStorage: ThumbnailStorage,
     coverView: ImageView,
     private val tabId: String? = null,
+    private val telemetry: TabReloadCoverTelemetry = TabReloadCoverTelemetry(),
     private val dispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : LifecycleAwareFeature {
 
@@ -128,6 +136,9 @@ class TabReloadCoverFeature(
     }
 
     override fun stop() {
+        // Feature is being torn down (fragment destroyed / app backgrounded past its lifecycle). Record the exit
+        // regardless of `covering`; the recorder itself gates on whether a cover was actually shown.
+        telemetry.onExit(HideReason.STOPPED)
         thumbnailJob?.cancel()
         timerJob?.cancel()
         scope?.cancel()
@@ -160,6 +171,8 @@ class TabReloadCoverFeature(
 
         if (tab.content.firstContentfulPaint && !initialFcpStale && covering) {
             // Fresh FCP fired while covering: hold briefly to smooth late reflows behind the cover before revealing.
+            // Record onFcp here rather than on exit — this is the FCP-during-cover signal, not the exit reason.
+            telemetry.onFcp()
             startTimer(COVER_POST_FCP_HOLD_MS)
             return
         }
@@ -209,6 +222,9 @@ class TabReloadCoverFeature(
             // over a different tab's content.
             if (trackedTabId != coverTabId || !covering) return@launch
             presenter.show(bitmap)
+            // Record onShown here — after the stale-check guard, so a stale load that never reaches the user isn't
+            // counted as a shown cover.
+            telemetry.onShown()
             // Announce cover-up to the browser screen store. Consumers: the toolbar reads this to swap the URL for
             // a "Cached" chip, and the timer-driven finalize below gates its toast on the same flag.
             browserScreenStore.dispatch(TabReloadCoverVisibilityUpdated(isVisible = true))
@@ -234,6 +250,7 @@ class TabReloadCoverFeature(
         // rather than `covering`: `covering=true` includes the window where the bitmap load hasn't landed yet,
         // and a toast for a cover the user never saw would be a spurious surprise.
         val wasVisible = browserScreenStore.state.isShowingTabReloadCover
+        telemetry.onExit(HideReason.FINALIZED)
         hideAndReset(withToast = wasVisible)
     }
 
@@ -242,6 +259,7 @@ class TabReloadCoverFeature(
         // [ImageViewCoverPresenter.show] for why); our job here is to reset the tracking flags and mirror the
         // hide into the store. Never surface the "Live page" toast on a user-dismiss — the user just told us
         // they've seen enough.
+        telemetry.onExit(HideReason.DISMISSED)
         hideAndReset(withToast = false)
     }
 

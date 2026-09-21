@@ -11,6 +11,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -46,6 +47,7 @@ class TabReloadCoverFeatureTest {
 
     private lateinit var store: BrowserStore
     private lateinit var thumbnailStorage: ThumbnailStorage
+    private lateinit var telemetry: TabReloadCoverTelemetry
     private lateinit var coverView: ImageView
     private lateinit var feature: TabReloadCoverFeature
 
@@ -60,6 +62,7 @@ class TabReloadCoverFeatureTest {
             every { loadThumbnail(any()) } returns
                 CompletableDeferred(Bitmap.createBitmap(10, 10, Bitmap.Config.ARGB_8888))
         }
+        telemetry = mockk(relaxed = true)
 
         // Mirrors fragment_browser.xml: the cover is a sibling of swipeRefresh (whose translationY the
         // presenter mirrors) and starts hidden — the layout sets `android:visibility="gone"` on the
@@ -78,6 +81,7 @@ class TabReloadCoverFeatureTest {
                 thumbnailStorage = thumbnailStorage,
                 coverView = coverView,
                 tabId = null,
+                telemetry = telemetry,
                 dispatcher = testDispatcher,
             )
     }
@@ -104,6 +108,7 @@ class TabReloadCoverFeatureTest {
 
                 assertEquals(View.GONE, coverView.visibility)
                 assertFalse(consumed)
+                verify(exactly = 1) { telemetry.onExit(HideReason.DISMISSED) }
             } finally {
                 down.recycle()
             }
@@ -123,6 +128,7 @@ class TabReloadCoverFeatureTest {
                     thumbnailStorage = thumbnailStorage,
                     coverView = coverView,
                     tabId = null,
+                    telemetry = telemetry,
                     dispatcher = testDispatcher,
                 )
 
@@ -149,6 +155,7 @@ class TabReloadCoverFeatureTest {
                     thumbnailStorage = thumbnailStorage,
                     coverView = coverView,
                     tabId = null,
+                    telemetry = telemetry,
                     dispatcher = testDispatcher,
                 )
 
