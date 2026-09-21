@@ -6398,8 +6398,7 @@ nsresult XREMain::XRE_mainRun() {
       // Check if we're running from a DMG or an app translocated location and
       // allow the user to install to the Applications directory.
       if (MacRunFromDmgUtils::MaybeInstallAndRelaunch()) {
-        bool userAllowedQuit = true;
-        appStartup->Quit(nsIAppStartup::eForceQuit, 0, &userAllowedQuit);
+        appStartup->Quit(nsIAppStartup::eForceQuit, 0);
       }
 #  endif
 #endif
