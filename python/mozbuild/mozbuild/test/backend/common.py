@@ -153,14 +153,6 @@ CONFIGS = defaultdict(
                 "HOST_BIN_SUFFIX": ".exe",
             },
         },
-        "rust-program-output-category": {
-            "defines": {},
-            "substs": {
-                "COMPILE_ENVIRONMENT": "1",
-                "RUST_TARGET": "i686-pc-windows-msvc",
-                "BIN_SUFFIX": ".exe",
-            },
-        },
         "generated-file-rust-archive-dep": {
             "defines": {},
             "substs": {

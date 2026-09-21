@@ -543,7 +543,7 @@ class Dumper:
 
     # This is a no-op except on Win32
     def SourceServerIndexing(
-        self, file, debug_file, guid, sourceFileStream, vcs_root, s3_bucket
+        self, debug_file, guid, sourceFileStream, vcs_root, s3_bucket
     ):
         return ""
 
@@ -750,12 +750,7 @@ class Dumper:
                 if self.srcsrv and vcs_root:
                     # add source server indexing to the pdb file
                     self.SourceServerIndexing(
-                        file,
-                        debug_file,
-                        guid,
-                        sourceFileStream,
-                        vcs_root,
-                        self.s3_bucket,
+                        debug_file, guid, sourceFileStream, vcs_root, self.s3_bucket
                     )
                 # only copy debug the first time if we have multiple architectures
                 if self.copy_debug and arch_num == 0:
@@ -881,11 +876,11 @@ class Dumper_Win32(Dumper):
                 print(rel_path)
 
     def SourceServerIndexing(
-        self, file, debug_file, guid, sourceFileStream, vcs_root, s3_bucket
+        self, debug_file, guid, sourceFileStream, vcs_root, s3_bucket
     ):
-        pdb_file = os.path.abspath(locate_pdb(file))
         # Creates a .pdb.stream file in the mozilla\objdir to be used for source indexing
-        stream_output_path = pdb_file + ".stream"
+        streamFilename = debug_file + ".stream"
+        stream_output_path = os.path.abspath(streamFilename)
         # Call SourceIndex to create the .stream file
         result = SourceIndex(sourceFileStream, stream_output_path, vcs_root, s3_bucket)
         if self.copy_debug:
@@ -899,8 +894,8 @@ class Dumper_Win32(Dumper):
                 cmd
                 + [
                     "-w",
-                    "-p:" + os.path.basename(pdb_file),
-                    "-i:" + os.path.basename(stream_output_path),
+                    "-p:" + os.path.basename(debug_file),
+                    "-i:" + os.path.basename(streamFilename),
                     "-s:srcsrv",
                 ],
                 cwd=os.path.dirname(stream_output_path),

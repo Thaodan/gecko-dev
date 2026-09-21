@@ -1308,14 +1308,6 @@ class TestRecursiveMakeBackend(BackendTester):
             any(l == "recurse_compile: code/host code/target" for l in lines)
         )
 
-        root_path = mozpath.join(env.topobjdir, "root.mk")
-        with open(root_path) as fh:
-            syms_line = next(
-                (l for l in fh.read().splitlines() if l.startswith("syms_targets :=")),
-                "",
-            )
-        self.assertIn("code/syms", syms_line)
-
     def test_host_rust_program_output_category(self):
         """Test that a host Rust program with output_category is written correctly."""
         env = self._consume("host-rust-program-output-category", RecursiveMakeBackend)
@@ -1338,30 +1330,6 @@ class TestRecursiveMakeBackend(BackendTester):
         ]
 
         self.assertEqual(lines, expected)
-
-    def test_rust_program_output_category(self):
-        """A Rust program with output_category is excluded from syms_targets."""
-        env = self._consume("rust-program-output-category", RecursiveMakeBackend)
-
-        root_path = mozpath.join(env.topobjdir, "root.mk")
-        with open(root_path) as fh:
-            content = fh.read()
-
-        syms_line = next(
-            (l for l in content.splitlines() if l.startswith("syms_targets :=")),
-            "",
-        )
-
-        self.assertIn("without-output-category/syms", syms_line)
-        self.assertNotIn("with-output-category/syms", syms_line)
-
-        self.assertIn("mixed/syms", syms_line)
-        backend_path = mozpath.join(env.topobjdir, "mixed/backend.mk")
-        with open(backend_path) as fh:
-            lines = [l.strip() for l in fh.readlines()]
-        rust_program = "$(DEPTH)/i686-pc-windows-msvc/release/mixed-rust.exe"
-        self.assertIn(f"RUST_PROGRAMS += {rust_program}", lines)
-        self.assertIn(f"MOZBUILD_NON_DEFAULT_TARGETS += {rust_program}", lines)
 
     def test_final_target(self):
         """Test that FINAL_TARGET is written to backend.mk correctly."""

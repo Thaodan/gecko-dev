@@ -731,9 +731,6 @@ def rust_compile_flags(
         opts.append("debug-assertions=%s" % ("yes" if debug_assertions else "no"))
     if debug_info is not None:
         opts.append("debuginfo=%s" % debug_info)
-        opts.append("strip=none")
-        if target.kernel == "Darwin":
-            opts.append("split-debuginfo=unpacked")
     if frame_pointers:
         opts.append("force-frame-pointers=yes")
     # CFG for arm64 is crashy, see `def security_hardening_cflags`.
