@@ -47,6 +47,7 @@ import org.mozilla.fenix.bookmarks.BookmarkMenuItemProvider
 import org.mozilla.fenix.browser.BackMenuItemProvider
 import org.mozilla.fenix.browser.DesktopSiteMenuItemProvider
 import org.mozilla.fenix.browser.ForwardMenuItemProvider
+import org.mozilla.fenix.browser.ShareMenuItemProvider
 import org.mozilla.fenix.browser.readermode.ReaderViewMenuItemProvider
 import org.mozilla.fenix.components.FindInPageMenuItemProvider
 import org.mozilla.fenix.components.menu.compose.MenuDialogBottomSheet
@@ -219,8 +220,9 @@ class MenuFragment : BottomSheetDialogFragment() {
                     bookmarksStorage = requireComponents.core.bookmarksStorage,
                     applicationScope = requireComponents.applicationScope,
                 ),
-            FenixMenuItem.Forward to
-                ForwardMenuItemProvider(
+            FenixMenuItem.FindInPage to FindInPageMenuItemProvider(),
+            FenixMenuItem.DesktopSite to
+                DesktopSiteMenuItemProvider(
                     browserStore = requireComponents.core.store,
                     scope = viewLifecycleOwner.lifecycle.coroutineScope,
                 ),
@@ -229,12 +231,12 @@ class MenuFragment : BottomSheetDialogFragment() {
                     browserStore = requireComponents.core.store,
                     scope = viewLifecycleOwner.lifecycle.coroutineScope,
                 ),
-            FenixMenuItem.FindInPage to FindInPageMenuItemProvider(),
-            FenixMenuItem.DesktopSite to
-                DesktopSiteMenuItemProvider(
+            FenixMenuItem.Forward to
+                ForwardMenuItemProvider(
                     browserStore = requireComponents.core.store,
                     scope = viewLifecycleOwner.lifecycle.coroutineScope,
                 ),
+            FenixMenuItem.Share to ShareMenuItemProvider(),
         )
 
     private fun buildMenuStore(initialState: MenuState) =

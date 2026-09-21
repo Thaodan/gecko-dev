@@ -17,6 +17,7 @@ import mozilla.components.compose.menu.store.MenuAction.Init
 import mozilla.components.compose.menu.store.MenuAction.Update
 import mozilla.components.compose.menu.store.MenuState
 import mozilla.components.compose.menu.store.MenuStore
+import mozilla.components.concept.engine.prompt.ShareData
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
 import mozilla.components.lib.state.Middleware
@@ -42,6 +43,7 @@ import org.mozilla.fenix.components.menu.store.MenuAction.RequestDesktopSite
 import org.mozilla.fenix.components.menu.store.MenuAction.RequestMobileSite
 import org.mozilla.fenix.components.menu.toMenuState
 import org.mozilla.fenix.components.metrics.MetricsUtils
+import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.ext.nav
 
 /**
@@ -104,9 +106,12 @@ class MenuMiddleware(
             is RequestDesktopSite -> requestSiteMode(enableDesktopMode = true)
 
             is RequestMobileSite -> requestSiteMode(enableDesktopMode = false)
-            is Navigate.Forward -> handleForwardNavigation(action)
 
             is Navigate.Back -> handleBackNavigation(action)
+
+            is Navigate.Forward -> handleForwardNavigation(action)
+
+            is Navigate.Share -> handleShare()
 
             else -> {
                 // no-op
@@ -114,34 +119,6 @@ class MenuMiddleware(
         }
 
         next(action)
-    }
-
-    private fun handleForwardNavigation(action: Navigate.Forward) {
-        val tabId = browserStore.state.selectedTab?.id ?: return
-        if (action.viewHistory) {
-            val navOptions = NavOptions.Builder().setPopUpTo(R.id.browserFragment, false).build()
-            navigate(
-                NavGraphDirections.actionGlobalTabHistoryDialogFragment(activeSessionId = null),
-                navOptions,
-            )
-        } else {
-            dismissMenu()
-            useCases.sessionUseCases.goForward(tabId = tabId)
-        }
-    }
-
-    private fun handleBackNavigation(action: Navigate.Back) {
-        val tabId = browserStore.state.selectedTab?.id ?: return
-        if (action.viewHistory) {
-            val navOptions = NavOptions.Builder().setPopUpTo(R.id.browserFragment, false).build()
-            navigate(
-                NavGraphDirections.actionGlobalTabHistoryDialogFragment(activeSessionId = null),
-                navOptions,
-            )
-        } else {
-            dismissMenu()
-            useCases.sessionUseCases.goBack(tabId = tabId)
-        }
     }
 
     /** The menu is deliberately left open while connecting, so that the user can see the status change. */
@@ -211,6 +188,62 @@ class MenuMiddleware(
     private fun navigateToIPProtectionSettings() {
         navigate(
             NavGraphDirections.actionGlobalIpProtectionFragment(entrypoint = FenixFxAEntryPoint.IPProtectionMainMenu)
+        )
+    }
+
+    private fun handleBackNavigation(action: Navigate.Back) {
+        val tabId = browserStore.state.selectedTab?.id ?: return
+        if (action.viewHistory) {
+            val navOptions = NavOptions.Builder().setPopUpTo(R.id.browserFragment, false).build()
+            navigate(
+                NavGraphDirections.actionGlobalTabHistoryDialogFragment(activeSessionId = null),
+                navOptions,
+            )
+        } else {
+            dismissMenu()
+            useCases.sessionUseCases.goBack(tabId = tabId)
+        }
+    }
+
+    private fun handleForwardNavigation(action: Navigate.Forward) {
+        val tabId = browserStore.state.selectedTab?.id ?: return
+        if (action.viewHistory) {
+            val navOptions = NavOptions.Builder().setPopUpTo(R.id.browserFragment, false).build()
+            navigate(
+                NavGraphDirections.actionGlobalTabHistoryDialogFragment(activeSessionId = null),
+                navOptions,
+            )
+        } else {
+            dismissMenu()
+            useCases.sessionUseCases.goForward(tabId = tabId)
+        }
+    }
+
+    private fun handleShare() {
+        val selectedTab = browserStore.state.selectedTab ?: return
+        dismissMenu()
+        val shareData =
+            ShareData(
+                title = selectedTab.content.title,
+                url = selectedTab.getTabUrl(),
+                private = selectedTab.content.private,
+            )
+        useCases.shareUseCases.shareUrl(
+            id = selectedTab.id,
+            url = selectedTab.getTabUrl(),
+            title = selectedTab.content.title,
+            source = ShareSource.BROWSER_MENU,
+            isPrivate = selectedTab.content.private,
+            navigateToShareFragment = {
+                navigate(
+                    NavGraphDirections.actionGlobalShareFragment(
+                        data = arrayOf(shareData),
+                        showPage = true,
+                        sessionId = selectedTab.id,
+                    ),
+                    navOptions = NavOptions.Builder().setPopUpTo(R.id.browserFragment, false).build(),
+                )
+            },
         )
     }
 
