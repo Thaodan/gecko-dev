@@ -1877,7 +1877,6 @@ bool CanvasRenderingContext2D::EnsureTarget(ErrorResult& aError,
 void CanvasRenderingContext2D::SetInitialState() {
   // Set up the initial canvas defaults
   mPathBuilder = nullptr;
-  mRecycledPathBuilder = nullptr;
   mPath = nullptr;
   mPathPruned = false;
   mPathTransform = Matrix();
@@ -3551,16 +3550,8 @@ void CanvasRenderingContext2D::StrokeRect(double aX, double aY, double aW,
 //
 
 void CanvasRenderingContext2D::BeginPath() {
-  if (mPathBuilder) {
-    mRecycledPathBuilder = std::move(mPathBuilder);
-  } else {
-    mPathBuilder = nullptr;
-  }
-  if (mPath && mPath->hasOneRef() && mRecycledPathBuilder) {
-    mRecycledPathBuilder->RecyclePath(mPath.forget());
-  } else {
-    mPath = nullptr;
-  }
+  mPath = nullptr;
+  mPathBuilder = nullptr;
   mPathPruned = false;
 }
 
@@ -3655,6 +3646,34 @@ void CanvasRenderingContext2D::StrokeImpl(const gfx::Path& aPath) {
 
 void CanvasRenderingContext2D::Stroke() {
   mFeatureUsage |= CanvasFeatureUsage::Stroke;
+
+  if (mPathBuilder && !mPath && !mPathPruned && !mPathTransformDirty &&
+      IsTargetValid()) {
+    Maybe<Path::Circle> circle = mPathBuilder->AsCircle();
+    Maybe<Path::Line> line = circle ? Nothing() : mPathBuilder->AsLine();
+    if ((circle && circle->closed) || line) {
+      if (!NeedToCalculateBounds()) {
+        const ContextState& state = CurrentState();
+        StrokeOptions strokeOptions(
+            state.lineWidth, CanvasToGfx(state.lineJoin),
+            CanvasToGfx(state.lineCap), state.miterLimit, state.dash.Length(),
+            state.dash.Elements(), state.dashOffset);
+        if (circle) {
+          mTarget->StrokeCircle(
+              circle->origin, circle->radius,
+              CanvasGeneralPattern().ForStyle(this, Style::STROKE, mTarget),
+              strokeOptions, DrawOptions(state.globalAlpha, state.op));
+        } else {
+          mTarget->StrokeLine(
+              line->origin, line->destination,
+              CanvasGeneralPattern().ForStyle(this, Style::STROKE, mTarget),
+              strokeOptions, DrawOptions(state.globalAlpha, state.op));
+        }
+        Redraw();
+        return;
+      }
+    }
+  }
 
   EnsureTargetAndUserSpacePath();
   if (!IsTargetValid()) {
@@ -4145,8 +4164,7 @@ bool CanvasRenderingContext2D::EnsureWritablePath() {
       mPathBuilder = mTarget->CreatePathBuilder(fillRule);
     }
   } else {
-    mPathBuilder = Path::ToBuilder(mPath.forget(), fillRule,
-                                   mRecycledPathBuilder.forget());
+    mPathBuilder = Path::ToBuilder(mPath.forget(), fillRule);
   }
   return true;
 }
@@ -4154,8 +4172,10 @@ bool CanvasRenderingContext2D::EnsureWritablePath() {
 already_AddRefed<PathBuilder>
 CanvasRenderingContext2D::CreateOrRecyclePathBuilder(FillRule aFillRule) {
   if (mRecycledPathBuilder) {
-    mRecycledPathBuilder->Reset(aFillRule);
-    return mRecycledPathBuilder.forget();
+    if (mRecycledPathBuilder->Reset(aFillRule)) {
+      return mRecycledPathBuilder.forget();
+    }
+    mRecycledPathBuilder = nullptr;
   }
   return Factory::CreatePathBuilder(mPathType, aFillRule);
 }
@@ -4195,10 +4215,7 @@ void CanvasRenderingContext2D::EnsureUserSpacePath(
   }
 
   if (mPath && mPath->GetFillRule() != fillRule) {
-    RefPtr<PathBuilder> builder =
-        Path::ToBuilder(mPath.forget(), mRecycledPathBuilder.forget());
-    mPath = builder->Finish();
-    mRecycledPathBuilder = std::move(builder);
+    Path::SetFillRule(mPath, fillRule);
   }
 
   NS_ASSERTION(mPath, "mPath should exist");
@@ -4206,10 +4223,9 @@ void CanvasRenderingContext2D::EnsureUserSpacePath(
 
 void CanvasRenderingContext2D::TransformCurrentPath(const Matrix& aTransform) {
   if (mPathBuilder) {
-    mPathBuilder->Transform(aTransform);
+    mPathBuilder = Path::ToBuilder(mPathBuilder->Finish(), aTransform);
   } else if (mPath) {
-    mPathBuilder = Path::ToBuilder(mPath.forget(), aTransform,
-                                   mRecycledPathBuilder.forget());
+    mPathBuilder = Path::ToBuilder(mPath.forget(), aTransform);
   }
 }
 
@@ -6839,6 +6855,12 @@ void CanvasRenderingContext2D::EnsureErrorTarget() {
   MOZ_ASSERT(errorTarget, "Failed to allocate the error target!");
 
   sErrorTarget.set(errorTarget.forget().take());
+}
+
+void CanvasRenderingContext2D::FillRuleChanged() {
+  if (mPath) {
+    mPathBuilder = Path::ToBuilder(mPath.forget(), CurrentState().fillRule);
+  }
 }
 
 void CanvasRenderingContext2D::PutImageData(ImageData& aImageData, int32_t aDx,
