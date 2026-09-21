@@ -17194,6 +17194,7 @@ browser_thumbnails:
       - load_completed
       - tab_counter_click
       - swipe_to_switch_tabs
+      - tab_backgrounded
       - external_request
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2067066

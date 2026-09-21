@@ -294,6 +294,7 @@ abstract class BaseBrowserFragment :
 
     protected val readerViewFeature = ViewBoundFeatureWrapper<ReaderViewFeature>()
     protected val thumbnailsFeature = ViewBoundFeatureWrapper<BrowserThumbnails>()
+    private val scrollAwareThumbnailFeature = ViewBoundFeatureWrapper<ScrollAwareThumbnailFeature>()
     private val tabReloadCoverFeature = ViewBoundFeatureWrapper<TabReloadCoverFeature>()
 
     @VisibleForTesting internal val messagingFeatureMicrosurvey = ViewBoundFeatureWrapper<MessagingFeature>()
@@ -1217,6 +1218,17 @@ abstract class BaseBrowserFragment :
                     thumbnailStorage = requireComponents.core.thumbnailStorage,
                     coverView = binding.tabReloadCover,
                     tabId = customTabSessionId,
+                ),
+            owner = this,
+            view = view,
+        )
+
+        scrollAwareThumbnailFeature.set(
+            feature =
+                ScrollAwareThumbnailFeature(
+                    store = requireComponents.core.store,
+                    lifecycleOwner = viewLifecycleOwner,
+                    thumbnailsFeature = { thumbnailsFeature.get() },
                 ),
             owner = this,
             view = view,
