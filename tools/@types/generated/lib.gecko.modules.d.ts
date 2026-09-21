@@ -888,7 +888,6 @@ export interface Modules {
   "resource://gre/modules/ClientID.sys.mjs": typeof import("resource://gre/modules/ClientID.sys.mjs"),
   "resource://gre/modules/ClipboardContextMenu.sys.mjs": typeof import("resource://gre/modules/ClipboardContextMenu.sys.mjs"),
   "resource://gre/modules/Color.sys.mjs": typeof import("resource://gre/modules/Color.sys.mjs"),
-  "resource://gre/modules/ColorwayThemeMigration.sys.mjs": typeof import("resource://gre/modules/ColorwayThemeMigration.sys.mjs"),
   "resource://gre/modules/CommonDialog.sys.mjs": typeof import("resource://gre/modules/CommonDialog.sys.mjs"),
   "resource://gre/modules/ComponentUtils.sys.mjs": typeof import("resource://gre/modules/ComponentUtils.sys.mjs"),
   "resource://gre/modules/ConduitsParent.sys.mjs": typeof import("resource://gre/modules/ConduitsParent.sys.mjs"),

@@ -58,6 +58,56 @@ async function setTestTopSites() {
   await toggleTopsitesPref();
 }
 
+// `.top-sites-list` is the grid itself: the `.top-sites` section also holds
+// the edit form's preview, which TopSiteForm renders with the same
+// TopSiteLink. A search shortcut renders no href, so matching one excludes it.
+function topSiteLinkSelector(url) {
+  return `.top-sites-list a.top-site-button[href="${url}"]`;
+}
+
+/**
+ * Wait for the link of a top site to render.
+ *
+ * @param tabbrowser {MozTabbrowser} The tabbrowser whose selected tab shows
+ *                                   the newtab page. Not the browser element:
+ *                                   a preloaded newtab is swapped in, which
+ *                                   detaches the element the caller started
+ *                                   with.
+ * @param url {String} The top site's URL, as configured.
+ */
+async function waitForTopSiteLink(tabbrowser, url) {
+  await SpecialPowers.spawn(
+    tabbrowser.selectedBrowser,
+    [topSiteLinkSelector(url)],
+    async selector => {
+      await ContentTaskUtils.waitForCondition(
+        () => content.document.querySelector(selector),
+        `Wait for the top site link ${selector}`
+      );
+    }
+  );
+}
+
+/**
+ * Accel-click a top site's link, which opens the site in a background tab.
+ *
+ * @param tabbrowser {MozTabbrowser} The tabbrowser whose selected tab shows
+ *                                   the newtab page.
+ * @param url {String} The top site's URL, as configured.
+ * @return {Promise<MozTabbrowserTab>} The tab the click opens, once loaded.
+ */
+async function openTopSiteInNewTab(tabbrowser, url) {
+  const tabPromise = BrowserTestUtils.waitForNewTab(tabbrowser, url, true);
+  await BrowserTestUtils.synthesizeMouse(
+    topSiteLinkSelector(url),
+    2,
+    2,
+    { accelKey: true },
+    tabbrowser.selectedBrowser
+  );
+  return tabPromise;
+}
+
 async function clearHistoryAndBookmarks() {
   await PlacesUtils.bookmarks.eraseEverything();
   await PlacesUtils.history.clear();
@@ -130,13 +180,34 @@ function addContentHelpers() {
   const { document } = content;
   Object.assign(content, {
     /**
+     * Wait for the first tile of a real top site. The row also holds search
+     * shortcuts, placeholders and the "Add shortcut" tile, which carry either a
+     * different context menu or none at all.
+     *
+     * @return {Promise<Element>} The site's `.top-site-outer` tile.
+     */
+    async waitForAnyTopSite() {
+      const selector =
+        ".top-site-outer:not(.search-shortcut, .placeholder, .add-button-tile)";
+      await ContentTaskUtils.waitForCondition(
+        () => document.querySelector(selector),
+        "Wait for a top site tile"
+      );
+      return document.querySelector(selector);
+    },
+
+    /**
      * Click the context menu button for an item and get its options list.
      *
-     * @param selector {String} Selector to get an item (e.g., top site, card)
+     * @param itemOrSelector {Element|String} An item (e.g., top site, card),
+     *   or a selector to get one.
      * @return {Array} The nodes for the options.
      */
-    async openContextMenuAndGetOptions(selector) {
-      const item = document.querySelector(selector);
+    async openContextMenuAndGetOptions(itemOrSelector) {
+      const item =
+        typeof itemOrSelector === "string"
+          ? document.querySelector(itemOrSelector)
+          : itemOrSelector;
       const contextButton = item.querySelector(".context-menu-button");
       contextButton.click();
       // Gives fluent-dom the time to render strings
@@ -214,7 +285,7 @@ function test_newtab(testInfo, browserURL = "about:newtab") {
           SpecialPowers.spawn(
             browser,
             [],
-            () => content.document.getElementById("root")?.children.length
+            () => content.document.getElementById("root").children.length
           ),
         "Should render activity stream content"
       );

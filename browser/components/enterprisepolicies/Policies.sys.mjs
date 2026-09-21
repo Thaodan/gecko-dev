@@ -40,6 +40,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
   PoliciesUtils: "resource://gre/modules/PoliciesHelpers.sys.mjs",
   addAllowDenyPermissions: "resource://gre/modules/PoliciesHelpers.sys.mjs",
+  addPolicyPermission: "resource://gre/modules/PoliciesHelpers.sys.mjs",
   applyExtensionGuards: "resource://gre/modules/PoliciesHelpers.sys.mjs",
   blockAboutPage: "resource://gre/modules/PoliciesHelpers.sys.mjs",
   clearBlockedAboutPages: "resource://gre/modules/PoliciesHelpers.sys.mjs",
@@ -947,13 +948,10 @@ export var Policies = {
       if (param.AllowSession) {
         for (const origin of param.AllowSession) {
           try {
-            Services.perms.addFromPrincipal(
-              Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-                origin
-              ),
+            lazy.addPolicyPermission(
+              origin,
               "cookie",
-              Ci.nsICookiePermission.ACCESS_SESSION,
-              Ci.nsIPermissionManager.EXPIRE_POLICY
+              Ci.nsICookiePermission.ACCESS_SESSION
             );
           } catch (ex) {
             lazy.reportFailure(

@@ -2,10 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+use std::os::raw::c_void;
 use std::sync::Mutex;
 
 use cstr::cstr;
 use etp_engine::Engine;
+use malloc_size_of::MallocSizeOfOps;
 use nserror::{nsresult, NS_ERROR_INVALID_ARG, NS_ERROR_SERVICE_NOT_AVAILABLE, NS_OK};
 use nsstring::{nsACString, nsCString};
 use thin_vec::ThinVec;
@@ -68,6 +70,67 @@ pub unsafe extern "C" fn content_classifier_engine_destroy(
 ) {
     if !engine.is_null() {
         drop(Box::from_raw(engine));
+    }
+}
+
+/// Mirrors `mozilla::MallocSizeOf`. Supplied by the caller so the measurement
+/// uses the same function as the reporter driving it, rather than a second one
+/// linked against here.
+pub type ContentClassifierMallocSizeOf = unsafe extern "C" fn(ptr: *const c_void) -> usize;
+
+/// Heap usage of one engine, split by what holds it, so that about:memory can
+/// show a breakdown instead of a single number. Every field is bytes.
+#[repr(C)]
+#[derive(Default)]
+pub struct ContentClassifierEngineSizes {
+    /// The Rust wrapper, the `Engine` stored inline in it, and, when an
+    /// enclosing-size function is available, the refcount box holding the
+    /// filter data. Excludes the heap those point to, which the fields below
+    /// account for.
+    pub objects: usize,
+    /// The flatbuffer holding every parsed rule.
+    pub filter_rules: usize,
+    /// The domain-hash index rebuilt in memory when the rules are loaded.
+    pub domain_hashes: usize,
+    /// The regex lookup table, excluding the compiled regexes it holds.
+    pub regex_table: usize,
+    /// The set of enabled tag names.
+    pub enabled_tags: usize,
+    /// Whatever the cosmetic filter cache owns beyond the filter data it
+    /// shares with the matcher.
+    pub cosmetic_cache: usize,
+    /// The boxed resource backend, excluding whatever it stores.
+    pub resources: usize,
+}
+
+/// `malloc_enclosing_size_of` sizes an allocation from an interior pointer.
+/// Builds without jemalloc have no such function and pass null; the hash
+/// tables are then estimated from their capacity, and the refcount box behind
+/// the filter data is left out of `objects`.
+///
+/// The nullable parameter spells the function type out because cbindgen only
+/// collapses `Option` of a function pointer, not of an alias to one.
+#[no_mangle]
+pub unsafe extern "C" fn content_classifier_engine_size_of(
+    engine: *const ContentClassifierFFIEngine,
+    malloc_size_of: ContentClassifierMallocSizeOf,
+    malloc_enclosing_size_of: Option<unsafe extern "C" fn(ptr: *const c_void) -> usize>,
+) -> ContentClassifierEngineSizes {
+    if engine.is_null() {
+        return ContentClassifierEngineSizes::default();
+    }
+
+    let mut ops = MallocSizeOfOps::new(malloc_size_of, malloc_enclosing_size_of);
+    let breakdown = (*engine).engine.memory_breakdown(&mut ops);
+
+    ContentClassifierEngineSizes {
+        objects: malloc_size_of(engine.cast::<c_void>()) + breakdown.objects,
+        filter_rules: breakdown.filter_rules,
+        domain_hashes: breakdown.domain_hashes,
+        regex_table: breakdown.regex_table,
+        enabled_tags: breakdown.enabled_tags,
+        cosmetic_cache: breakdown.cosmetic_cache,
+        resources: breakdown.resources,
     }
 }
 

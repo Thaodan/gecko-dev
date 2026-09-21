@@ -23,33 +23,14 @@ if (Services.appinfo.processType !== Services.appinfo.PROCESS_TYPE_DEFAULT) {
   throw new Error("LoginManager.sys.mjs should only run in the parent process");
 }
 
-let gPrimaryPasswordUnlocked = false;
-Services.obs.addObserver(() => {
-  gPrimaryPasswordUnlocked = true;
-}, "passwordmgr-crypto-login");
-
-// Deliberately avoids reading the NSS token: a synchronous token read on the
-// main thread races with the Rust store's NSS access on its worker thread.
-function primaryPasswordLocked() {
-  return (
-    Services.ppmm.sharedData.get("isPrimaryPasswordSet") &&
-    !gPrimaryPasswordUnlocked
-  );
-}
-
-// A locked-store operation is skipped because entering the primary password
-// mid-operation would put the user's wait time into the duration.
 async function recordStorageOperation(operation, storage, fn) {
-  const skip = primaryPasswordLocked();
   const startedAt = ChromeUtils.now();
   const result = await fn();
-  if (!skip) {
-    Glean.pwmgr.storageOperationTime.record({
-      backend: storage.backendName,
-      operation,
-      duration_ms: Math.round(ChromeUtils.now() - startedAt),
-    });
-  }
+  Glean.pwmgr.storageOperationTime.record({
+    backend: storage.backendName,
+    operation,
+    duration_ms: Math.round(ChromeUtils.now() - startedAt),
+  });
   return result;
 }
 

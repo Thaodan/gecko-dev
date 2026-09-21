@@ -398,12 +398,15 @@ class DMABufSurfaceYUV final : public DMABufSurface {
   int GetTextureCount() override;
   bool HoldsTexture() override;
 
-  void SetWPChromaLocation(uint32_t aWPChromaLocation) {
+  void SetWPChromaLocation(uint32_t aWPChromaLocation) override {
     mWPChromaLocation = aWPChromaLocation;
   }
-  uint32_t GetWPChromaLocation() { return mWPChromaLocation; }
+  uint32_t GetWPChromaLocation() override { return mWPChromaLocation; }
 
   DMABufSurfaceYUV();
+
+  already_AddRefed<DMABufSurfaceRGBA> ConvertHLGToPQ(
+      mozilla::gl::GLContext* gl);
 
   bool UpdateYUVData(const VADRMPRIMESurfaceDescriptor& aDesc, int aWidth,
                      int aHeight, bool aCopy);

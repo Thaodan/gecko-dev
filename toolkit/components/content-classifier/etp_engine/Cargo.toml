@@ -26,6 +26,7 @@ arrayvec = "0.7"
 precomputed-hash = "0.1"
 thiserror = "1.0"
 flatbuffers = { version = "25.9.23" }
+malloc_size_of = { path = "../../../../gfx/wr/wr_malloc_size_of", package = "wr_malloc_size_of", default-features = false, optional = true }
 
 [lib]
 bench = false
@@ -35,6 +36,9 @@ default = ["full-regex-handling", "single-thread"]
 full-regex-handling = []
 single-thread = [] # disables `Send` and `Sync` on `Engine`.
 debug-info = []
+# Reports the engine's heap usage to about:memory. Optional so that the crate
+# still builds without the Gecko support crates in scope.
+malloc-size-of = ["dep:malloc_size_of"]
 css-validation = []
 content-blocking = []
 embedded-domain-resolver = []

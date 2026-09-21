@@ -107,7 +107,6 @@ import mozilla.components.service.sync.autofill.AutofillCreditCardsAddressesStor
 import mozilla.components.service.sync.logins.SyncableLoginsStorage
 import mozilla.components.support.base.worker.Frequency
 import mozilla.components.support.ktx.android.content.appVersionName
-import mozilla.components.support.ktx.android.content.res.readJSONObject
 import mozilla.components.support.locale.LocaleManager
 import mozilla.components.support.utils.DateTimeProvider
 import mozilla.components.support.utils.DefaultDateTimeProvider
@@ -421,11 +420,9 @@ class Core(
                 icons.install(engine, this)
 
                 CoroutineScope(Dispatchers.Main).launch {
-                    val readJson = { context.assets.readJSONObject("search/search_telemetry_v2.json") }
                     val providerList =
                         withContext(Dispatchers.IO) {
                             SerpTelemetryRepository(
-                                    readJson = readJson,
                                     collectionName = COLLECTION_NAME,
                                     remoteSettingsService = context.components.remoteSettingsService.value,
                                 )

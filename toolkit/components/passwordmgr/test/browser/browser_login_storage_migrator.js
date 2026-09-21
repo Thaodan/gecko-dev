@@ -4,9 +4,9 @@
  * Integration tests for LoginStorageMigrator against the real JSON and Rust
  * storage backends. The migrator's branching/error handling is covered by the
  * deterministic unit tests in unit/test_LoginStorageMigrator.js; here we drive
- * it through the real prefs and assert that data actually moves into the Rust
- * store. Migration is invoked via `await run()`, so there is no observer or
- * polling and therefore no timing race.
+ * it through the real prefs and assert that data actually moves between the
+ * two stores. Migration is invoked via `await run()`, so there is no observer
+ * or polling and therefore no timing race.
  */
 
 "use strict";
@@ -25,6 +25,10 @@ const PREF_ENABLED = "signon.storage.rust.enabled";
 const PREF_ACTIVE = "signon.storage.rust.active";
 const PREF_ATTEMPTS = "signon.storage.rust.migrationAttempts";
 const PREF_VULN = "signon.management.page.vulnerable-passwords.enabled";
+const PREF_RESTORE_VERSION = "signon.storage.rust.restoreVersion";
+const PREF_RESTORE_ATTEMPTS = "signon.storage.rust.restoreAttempts";
+const PREF_RESTORE_ATTEMPTS_VERSION =
+  "signon.storage.rust.restoreAttemptsVersion";
 
 // This test drives JSON->Rust migration itself and requires the JSON store to be
 // the active store at startup. When the Rust backend is forced on at startup the
@@ -43,7 +47,15 @@ async function cleanup() {
   await jsonStore.clearAllPotentiallyVulnerablePasswords();
   await rustStore.removeAllLoginsAsync();
   await rustStore.clearAllPotentiallyVulnerablePasswords();
-  for (const pref of [PREF_ENABLED, PREF_ACTIVE, PREF_ATTEMPTS, PREF_VULN]) {
+  for (const pref of [
+    PREF_ENABLED,
+    PREF_ACTIVE,
+    PREF_ATTEMPTS,
+    PREF_VULN,
+    PREF_RESTORE_VERSION,
+    PREF_RESTORE_ATTEMPTS,
+    PREF_RESTORE_ATTEMPTS_VERSION,
+  ]) {
     Services.prefs.clearUserPref(pref);
   }
   Services.fog.testResetFOG();
@@ -192,6 +204,50 @@ add_task(async function test_migration_moves_vulnerable_passwords() {
   );
 }).skip(isRustBackend);
 
+// The other direction, and the number bug 2072278 is out to collect: a login
+// deleted while Rust was primary is gone from the Rust store but still sitting
+// in the JSON store, where the revert brings it back to life.
+add_task(async function test_restore_counts_a_login_deleted_in_rust() {
+  await cleanup();
+  await LoginTestUtils.addLogin({
+    username: "alice",
+    password: "pw-alice",
+    origin: "https://alice.example.com",
+  });
+  await LoginTestUtils.addLogin({
+    username: "bob",
+    password: "pw-bob",
+    origin: "https://bob.example.com",
+  });
+
+  Services.prefs.setBoolPref(PREF_ENABLED, true);
+  Services.prefs.setBoolPref(PREF_ACTIVE, false);
+  await migrate();
+
+  const rustLogins = await rustStore.getAllLogins();
+  await rustStore.removeLoginAsync(rustLogins.find(l => l.username == "bob"));
+
+  // RevertPending: rust is still active but no longer wanted.
+  Services.prefs.setBoolPref(PREF_ENABLED, false);
+  await migrate();
+
+  await TestUtils.waitForCondition(
+    () => Glean.pwmgr.rustRestoreStatus.testGetValue(),
+    "the restore reported its result"
+  );
+  const { extra } = Glean.pwmgr.rustRestoreStatus.testGetValue()[0];
+  Assert.equal(
+    extra.number_of_logins_to_delete,
+    "1",
+    "the login deleted in Rust is counted"
+  );
+  Assert.equal(
+    (await jsonStore.getAllLogins(false)).length,
+    2,
+    "and left alone in the JSON store, which is what the count is about"
+  );
+}).skip(isRustBackend);
+
 // Works under either backend: storage_operation_time is recorded at the
 // LoginManager funnel, with the active backend's name.
 add_task(async function test_storage_operation_time_telemetry() {
@@ -220,64 +276,4 @@ add_task(async function test_storage_operation_time_telemetry() {
   Assert.greaterOrEqual(Number(extra.duration_ms), 0, "duration_ms recorded");
 
   await LoginTestUtils.clearData();
-});
-
-// A storage operation that starts while the primary password is locked is not
-// recorded, so the user's time in the prompt cannot inflate the duration.
-add_task(async function test_storage_operation_time_skips_locked_store() {
-  const { PromptTestUtils } = ChromeUtils.importESModule(
-    "resource://testing-common/PromptTestUtils.sys.mjs"
-  );
-  // The window-modal prompt suspends the parent window's timers, so use the
-  // nsITimer-backed module setTimeout for the hold.
-  const { setTimeout: setTimeoutMod } = ChromeUtils.importESModule(
-    "resource://gre/modules/Timer.sys.mjs"
-  );
-
-  const login = LoginTestUtils.testData.formLogin({
-    origin: "https://locked-timer.example.com",
-    formActionOrigin: "https://locked-timer.example.com",
-    username: "locked-user",
-    password: "locked-password",
-  });
-  await Services.logins.addLoginAsync(login);
-
-  await LoginTestUtils.primaryPassword.enable();
-  registerCleanupFunction(async () => {
-    await LoginTestUtils.primaryPassword.disable();
-    await LoginTestUtils.clearData();
-  });
-  // Refresh the cached isPrimaryPasswordSet state, which the guard reads. In
-  // the field this happens at storage init; here the PP is enabled mid-session.
-  await LoginTestUtils.reloadData();
-
-  Services.fog.testResetFOG();
-
-  // The search finds one login; decrypting it needs the key, which is locked,
-  // so the primary password prompt appears mid-operation.
-  const searchPromise = Services.logins.searchLoginsAsync({
-    origin: "https://locked-timer.example.com",
-  });
-
-  const prompt = await PromptTestUtils.waitForPrompt(window, {
-    modalType: Services.prompt.MODAL_TYPE_WINDOW,
-    promptType: "promptPassword",
-  });
-  await new Promise(resolve => setTimeoutMod(resolve, 500));
-  PromptTestUtils.handlePrompt(prompt, {
-    buttonNumClick: 0,
-    passwordInput: LoginTestUtils.primaryPassword.primaryPassword,
-  }).catch(() => {});
-
-  const found = await searchPromise;
-  Assert.equal(found.length, 1, "search succeeded after entering the PP");
-
-  const events = (Glean.pwmgr.storageOperationTime.testGetValue() ?? []).filter(
-    e => e.extra.operation == "search"
-  );
-  Assert.equal(
-    events.length,
-    0,
-    "the search that started locked recorded no event"
-  );
 });

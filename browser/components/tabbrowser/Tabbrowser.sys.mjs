@@ -3472,6 +3472,8 @@ export class Tabbrowser {
 
     this.#createLazyBrowser(aTab);
 
+    this._switcher?.onTabDiscarded(aTab);
+
     let evt = new this.documentGlobal.CustomEvent("TabBrowserDiscarded", {
       bubbles: true,
     });

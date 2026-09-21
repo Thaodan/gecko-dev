@@ -108,28 +108,23 @@ test_newtab({
     await setDefaultTopSites(args);
   },
   test: async function topsites_menu_no_stuck_hover_after_mouse() {
-    const siteSelector = ".top-site-outer:not(.search-shortcut, .placeholder)";
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(siteSelector),
-      "Wait for a topsite tile"
-    );
-    const tile = content.document.querySelector(siteSelector);
+    const tile = await content.waitForAnyTopSite();
     const menuButton = tile.querySelector(".context-menu-button");
     const panelList = tile.querySelector("panel-list");
 
+    // panel-list's events are untrusted, so the listener has to opt into them.
+    const panelEvent = (target, name) =>
+      ContentTaskUtils.waitForEvent(target, name, false, null, true);
+
+    let shown = panelEvent(panelList, "shown");
     await EventUtils.synthesizeMouseAtCenter(menuButton, {}, content.window);
-    await ContentTaskUtils.waitForCondition(
-      () => panelList.hasAttribute("open"),
-      "Menu opens on mouse click"
-    );
+    await shown;
 
     // Close with another mouse click on the button. The menu opens on mousedown
     // precisely so this closes it rather than reopening it.
+    let hidden = panelEvent(panelList, "hidden");
     await EventUtils.synthesizeMouseAtCenter(menuButton, {}, content.window);
-    await ContentTaskUtils.waitForCondition(
-      () => !panelList.hasAttribute("open"),
-      "Menu closes on second click"
-    );
+    await hidden;
 
     // Move the pointer off the tile without clicking.
     const logo = content.document.querySelector(".logo-and-wordmark");
@@ -167,34 +162,29 @@ test_newtab({
     await setDefaultTopSites(args);
   },
   test: async function topsites_menu_no_stuck_hover_after_pin_via_menu() {
-    const siteSelector = ".top-site-outer:not(.search-shortcut, .placeholder)";
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(siteSelector),
-      "Wait for a topsite tile"
-    );
-    const tile = content.document.querySelector(siteSelector);
+    const tile = await content.waitForAnyTopSite();
     const menuButton = () => tile.querySelector(".context-menu-button");
     const panelList = () => tile.querySelector("panel-list");
 
+    // panel-list's events are untrusted, so the listener has to opt into them.
+    const panelEvent = (target, name) =>
+      ContentTaskUtils.waitForEvent(target, name, false, null, true);
+
+    let shown = panelEvent(panelList(), "shown");
     await EventUtils.synthesizeMouseAtCenter(menuButton(), {}, content.window);
-    await ContentTaskUtils.waitForCondition(
-      () => panelList().hasAttribute("open"),
-      "Menu opens on mouse click"
-    );
+    await shown;
 
     // Pin/Unpin is the first item in the menu.
+    let hidden = panelEvent(panelList(), "hidden");
     await EventUtils.synthesizeMouseAtCenter(
       panelList().querySelector("panel-item"),
       {},
       content.window
     );
+    await hidden;
     await ContentTaskUtils.waitForCondition(
       () => tile.querySelector(".icon-pin-small"),
       "The topsite is pinned"
-    );
-    await ContentTaskUtils.waitForCondition(
-      () => !panelList().hasAttribute("open"),
-      "Choosing a menu item closes the menu"
     );
 
     // Move the pointer off the tile.
@@ -219,11 +209,9 @@ test_newtab({
     );
 
     // Unpin again so later tests start from the default state.
+    shown = panelEvent(panelList(), "shown");
     await EventUtils.synthesizeMouseAtCenter(menuButton(), {}, content.window);
-    await ContentTaskUtils.waitForCondition(
-      () => panelList().hasAttribute("open"),
-      "Menu reopens for unpin"
-    );
+    await shown;
     await EventUtils.synthesizeMouseAtCenter(
       panelList().querySelector("panel-item"),
       {},
@@ -246,12 +234,7 @@ test_newtab({
     await setDefaultTopSites(args);
   },
   test: async function topsites_menu_visible_on_keyboard_focus() {
-    const siteSelector = ".top-site-outer:not(.search-shortcut, .placeholder)";
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(siteSelector),
-      "Wait for a topsite tile"
-    );
-    const tile = content.document.querySelector(siteSelector);
+    const tile = await content.waitForAnyTopSite();
     const link = tile.querySelector("a.top-site-button");
     const menuButton = tile.querySelector(".context-menu-button");
 
@@ -295,14 +278,13 @@ test_newtab({
     await setDefaultTopSites(args);
   },
   test: async function topsites_menu_opens_from_keyboard() {
-    const siteSelector = ".top-site-outer:not(.search-shortcut, .placeholder)";
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(siteSelector),
-      "Wait for a topsite tile"
-    );
-    const tile = content.document.querySelector(siteSelector);
+    const tile = await content.waitForAnyTopSite();
     const menuButton = tile.querySelector(".context-menu-button");
     const panelList = tile.querySelector("panel-list");
+
+    // panel-list's events are untrusted, so the listener has to opt into them.
+    const panelEvent = (target, name) =>
+      ContentTaskUtils.waitForEvent(target, name, false, null, true);
 
     menuButton.focus();
     await ContentTaskUtils.waitForCondition(
@@ -310,11 +292,9 @@ test_newtab({
       "The menu button is focused"
     );
 
+    let shown = panelEvent(panelList, "shown");
     EventUtils.synthesizeKey("KEY_Enter", {}, content.window);
-    await ContentTaskUtils.waitForCondition(
-      () => panelList.hasAttribute("open"),
-      "Wait for the menu to open"
-    );
+    await shown;
     ok(panelList.hasAttribute("open"), "Enter opens the menu");
     is(
       menuButton.getAttribute("aria-expanded"),
@@ -328,11 +308,9 @@ test_newtab({
       "Opening with the keyboard moves focus into the menu"
     );
 
+    let hidden = panelEvent(panelList, "hidden");
     EventUtils.synthesizeKey("KEY_Escape", {}, content.window);
-    await ContentTaskUtils.waitForCondition(
-      () => !panelList.hasAttribute("open"),
-      "Wait for the menu to close"
-    );
+    await hidden;
     ok(!panelList.hasAttribute("open"), "Escape closes the menu");
     await ContentTaskUtils.waitForCondition(
       () => content.document.activeElement === menuButton,

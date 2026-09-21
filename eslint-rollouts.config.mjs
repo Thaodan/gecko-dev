@@ -1799,7 +1799,6 @@ export default [
       "toolkit/content/widgets/menu.js",
       "toolkit/modules/LightweightThemeConsumer.sys.mjs",
       "toolkit/modules/NewTabUtils.sys.mjs",
-      "toolkit/mozapps/extensions/ColorwayThemeMigration.sys.mjs",
       "toolkit/mozapps/extensions/content/aboutaddons.js",
       "toolkit/mozapps/extensions/internal/AddonTestUtils.sys.mjs",
       "toolkit/mozapps/extensions/internal/XPIDatabase.sys.mjs",

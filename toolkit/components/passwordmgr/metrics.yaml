@@ -999,8 +999,10 @@ pwmgr:
       any fatal error.
     bugs:
       - https://bugzil.la/2065593
+      - https://bugzil.la/2072278
     data_reviews:
       - https://bugzil.la/2065593
+      - https://bugzil.la/2072278
     data_sensitivity:
       - technical
     notification_emails:
@@ -1061,6 +1063,15 @@ pwmgr:
           Number of logins that could not be restored. The Rust store is kept
           instead of wiped when this is non-zero, so the next startup retries.
         type: quantity
+      number_of_logins_to_delete:
+        description: >
+          Number of logins the JSON store holds that the Rust store no longer
+          has, which is what carrying the deletions made under the Rust
+          backend over to the JSON store would delete. The restore deletes
+          nothing, and the number still includes any login the migration
+          failed to copy; telling those two apart is what it is collected for.
+          Absent from records written before bug 2072278.
+        type: quantity
       end_state:
         description: >
           Outcome of the run: "Restored" when every login made it into the JSON
@@ -1112,10 +1123,10 @@ pwmgr:
     description: >
       One record per login storage operation performed through LoginManager,
       with the backend that served it and how long the caller waited. Not
-      recorded when the operation fails, or when it starts while the primary
-      password is locked, since entering it mid-operation would put the user's
-      wait time into the duration. Event counts are therefore neither operation
-      counts nor success rates.
+      recorded when the operation fails, so event counts are not success rates.
+      The duration includes a primary password prompt when the operation
+      triggered one; those samples can be excluded in analysis using
+      pwmgr.primary_password_prompt events that overlap the operation window.
     bugs:
       - https://bugzil.la/2070146
     data_reviews:

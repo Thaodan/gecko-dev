@@ -13,6 +13,7 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -65,6 +66,9 @@ import org.mozilla.fenix.components.menu.store.MenuAction.Navigate
 import org.mozilla.fenix.components.menu.store.MenuAction.RequestDesktopSite
 import org.mozilla.fenix.components.menu.store.MenuAction.RequestMobileSite
 import org.mozilla.fenix.components.metrics.MetricsUtils
+import org.mozilla.fenix.components.share.ShareSource
+import org.mozilla.fenix.components.usecases.ShareUseCases
+import org.mozilla.fenix.ext.optionsEq
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 
 @OptIn(ExperimentalAndroidComponentsApi::class)
@@ -72,7 +76,9 @@ import org.mozilla.fenix.helpers.FenixGleanTestRule
 class MenuMiddlewareTest {
     @get:Rule val gleanRule = FenixGleanTestRule(testContext)
 
-    private val appStore: AppStore = mockk { every { dispatch(any()) } just Runs }
+    private val appStore: AppStore = mockk {
+        every { dispatch(any()) } just Runs
+    }
     private val browserStore =
         BrowserStore(
             BrowserState(
@@ -82,16 +88,22 @@ class MenuMiddlewareTest {
         )
     private val addBookmarkUseCase: BookmarksUseCase.AddBookmarksUseCase = mockk()
     private val requestDesktopSiteUseCase: SessionUseCases.RequestDesktopSiteUseCase = mockk(relaxed = true)
-    private val goForwardUseCase: SessionUseCases.GoForwardUseCase = mockk(relaxed = true)
     private val goBackUseCase: SessionUseCases.GoBackUseCase = mockk(relaxed = true)
+    private val goForwardUseCase: SessionUseCases.GoForwardUseCase = mockk(relaxed = true)
+    private val shareUrlUseCase: ShareUseCases = mockk(relaxed = true)
+    private val reloadUseCase: SessionUseCases.ReloadUrlUseCase = mockk(relaxed = true)
+    private val stopLoadingUseCase: SessionUseCases.StopLoadingUseCase = mockk(relaxed = true)
     private val useCases: UseCases = mockk {
         every { bookmarksUseCases } returns mockk { every { addBookmark } returns addBookmarkUseCase }
         every { sessionUseCases } returns
             mockk {
                 every { requestDesktopSite } returns requestDesktopSiteUseCase
-                every { goForward } returns goForwardUseCase
                 every { goBack } returns goBackUseCase
+                every { goForward } returns goForwardUseCase
+                every { reload } returns reloadUseCase
+                every { stopLoading } returns stopLoadingUseCase
             }
+        every { shareUseCases } returns shareUrlUseCase
     }
     // Navigating away is guarded on still being on the menu, so the mock has to report that as the current
     // destination. A relaxed mock would otherwise report an id of 0 and every navigation would be skipped.
@@ -357,6 +369,70 @@ class MenuMiddlewareTest {
         verify(exactly = 0) {
             navController.popBackStack(R.id.menuFragment, true)
             goForwardUseCase(any())
+        }
+    }
+
+    @Test
+    fun `WHEN handling share navigation THEN dismiss the menu and share the current page url`() {
+        val store = createStore()
+        val navigateToShareFragmentSlot = slot<() -> Unit>()
+
+        store.dispatch(Navigate.Share)
+
+        verify {
+            shareUrlUseCase.shareUrl(
+                id = TAB_ID,
+                url = TEST_URL,
+                title = TEST_TITLE,
+                source = ShareSource.BROWSER_MENU,
+                isPrivate = false,
+                navigateToShareFragment = capture(navigateToShareFragmentSlot),
+            )
+        }
+
+        navigateToShareFragmentSlot.captured.invoke()
+
+        verify {
+            navController.navigate(
+                any<NavDirections>(),
+                optionsEq(NavOptions.Builder().setPopUpTo(R.id.browserFragment, false).build()),
+            )
+        }
+    }
+
+    @Test
+    fun `WHEN handling reload navigation without bypassing cache THEN dismiss the menu and reload the current tab`() {
+        val store = createStore()
+
+        store.dispatch(Navigate.Reload(bypassCache = false))
+
+        verify {
+            navController.popBackStack(R.id.menuFragment, true)
+            reloadUseCase(tabId = TAB_ID, flags = any())
+        }
+    }
+
+    @Test
+    fun `WHEN handling reload navigation with bypassing cache THEN dismiss the menu and reload the current tab bypassing cache`() {
+        val store = createStore()
+
+        store.dispatch(Navigate.Reload(bypassCache = true))
+
+        verify {
+            navController.popBackStack(R.id.menuFragment, true)
+            reloadUseCase(tabId = TAB_ID, flags = any())
+        }
+    }
+
+    @Test
+    fun `WHEN handling stop navigation THEN dismiss the menu and stop loading the current tab`() {
+        val store = createStore()
+
+        store.dispatch(Navigate.Stop)
+
+        verify {
+            navController.popBackStack(R.id.menuFragment, true)
+            stopLoadingUseCase(tabId = TAB_ID)
         }
     }
 

@@ -292,8 +292,10 @@ toolbar[inactive="true"] .urlbar,
      page. */
   isolation: isolate;
 
+  /* A page that draws the card itself sets --urlbar-card-display: none. */
   &::before {
     content: "";
+    display: var(--urlbar-card-display, block);
     position: absolute;
     z-index: -1;
     inset-block-start: calc(-1 * (var(--urlbar-card-padding-block-start) + var(--urlbar-card-row-height) + var(--urlbar-card-row-gap)));
@@ -1387,8 +1389,10 @@ toolbar[inactive="true"] .urlbar,
   }
 
   /* The button's own row above the input, centered over the input container
-     and clearing it by the card's row gap. */
+     and clearing it by the card's row gap. A page that can't show the row sets
+     --urlbar-button-row-visibility: hidden. */
   .urlbar[variant-b] & {
+    visibility: var(--urlbar-button-row-visibility, visible);
     position: absolute;
     inset-block-end: calc(100% + var(--urlbar-card-row-gap));
     inset-inline: 0;

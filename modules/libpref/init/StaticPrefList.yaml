@@ -2632,6 +2632,12 @@
   value: ""
   mirror: never
 
+# Bug 2037346
+- name: docshell.shistory.restoreSubframesOnReload
+  type: bool
+  value: @IS_NOT_NIGHTLY_BUILD@
+  mirror: always
+
 #---------------------------------------------------------------------------
 # Prefs starting with "dom."
 #---------------------------------------------------------------------------
@@ -14043,6 +14049,15 @@
 #else
   value: 0
 #endif
+  mirror: always
+
+# Whether to rotate captured video frames to compensate for the rotation
+# reported by the capture backend, so that consumers receive an upright frame.
+# When false the buffer is delivered as captured and the rotation is passed
+# along for the consumer to apply.
+- name: media.webrtc.capture.apply-rotation
+  type: RelaxedAtomicBool
+  value: true
   mirror: always
 
 #if defined(XP_MACOSX)

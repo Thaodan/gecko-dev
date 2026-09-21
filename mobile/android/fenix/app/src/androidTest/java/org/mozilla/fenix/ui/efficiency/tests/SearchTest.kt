@@ -21,7 +21,9 @@ import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.MockBrowserDataHelper
 import org.mozilla.fenix.helpers.SearchMockServerRule
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestHelper.appContext
+import org.mozilla.fenix.ui.efficiency.core.WaitPolicy
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 import org.mozilla.fenix.ui.efficiency.helpers.RequiresDeniedRuntimePermission
 import org.mozilla.fenix.ui.efficiency.navigation.LaunchConfig
@@ -465,9 +467,15 @@ class SearchTest : BaseTest(LaunchConfig(isPocketEnabled = false)) {
             .mozClick(SearchBarSelectors.SEARCH_ENGINE_SELECTOR)
             .mozClick(SearchBarSelectors.SEARCH_SHORTCUT("DuckDuckGo"))
             .mozClick(SearchBarSelectors.SCAN_BUTTON)
-            .mozClick(SystemSettingsSelectors.PERMISSION_DENY_BUTTON)
+            // Poll rather than mozClick's default single look: the deny buttons belong to
+            // GrantPermissionsActivity in another process, and SCAN_BUTTON returns as soon as the request
+            // intent is sent, roughly half a second before that activity is displayed.
+            .mozClick(SystemSettingsSelectors.PERMISSION_DENY_BUTTON, WaitPolicy.Poll(waitingTime))
             .mozClick(SearchBarSelectors.SCAN_BUTTON)
-            .mozClick(SystemSettingsSelectors.PERMISSION_DENY_AND_DONT_ASK_AGAIN_BUTTON)
+            .mozClick(
+                SystemSettingsSelectors.PERMISSION_DENY_AND_DONT_ASK_AGAIN_BUTTON,
+                WaitPolicy.Poll(waitingTime),
+            )
             // Back out until the homepage TOOLBAR is showing, not just HOMEPAGE_VIEW: the homepage view
             // resolves behind the search overlay, so anchoring on it returns immediately while the toolbar is
             // still covered — and HomePage's arrival check needs the menu button, so the following

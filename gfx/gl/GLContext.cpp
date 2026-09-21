@@ -41,6 +41,7 @@
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/layers/BuildConstants.h"
 #include "mozilla/layers/TextureForwarder.h"  // for LayersIPCChannel
+#include "nsCharSeparatedTokenizer.h"
 #include "nsPrintfCString.h"
 #include "nsThreadUtils.h"
 #include "prenv.h"
