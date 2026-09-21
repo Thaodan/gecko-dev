@@ -303,6 +303,9 @@ fuzzy(0-1,0-10000) == mask-basic-02.svg mask-basic-02-ref.svg
 == mask-css-transform.html mask-css-transform-ref.html
 == mask-empty-size.svg about:blank
 == mask-extref-dataURI-01.svg pass.svg
+== mask-large-child-01.svg mask-large-child-01-ref.svg
+== mask-large-image-01.html mask-large-image-01-ref.html
+== mask-large-image-no-paint-01.html mask-large-image-no-paint-01-ref.html
 fuzzy(0-128,0-142) == mask-img.html mask-img-ref.html
 fuzzy(0-4,0-800) == mask-on-outflowElement-01a.html clipPath-on-outflowElement-01-ref.html
 fuzzy(0-4,0-800) == mask-on-outflowElement-01b.html clipPath-on-outflowElement-01-ref.html
