@@ -62,10 +62,15 @@ test_newtab({
       content.document.querySelectorAll(siteSelector).length;
     Assert.equal(defaultTopSitesNumber, 5, "5 top sites are loaded by default");
 
+    // The href is on the `.top-site-button` anchor, not on the `.top-site-outer`
+    // list item the selector matches.
+    const siteHref = site =>
+      site.querySelector(".top-site-button").getAttribute("href");
+
     // Skip the search topsites select the second default topsite
-    const secondTopSite = content.document
-      .querySelectorAll(siteSelector)[1]
-      .getAttribute("href");
+    const secondTopSite = siteHref(
+      content.document.querySelectorAll(siteSelector)[1]
+    );
 
     const contextMenuItems =
       await content.openContextMenuAndGetOptions(siteSelector);
@@ -79,7 +84,7 @@ test_newtab({
     // Wait for the topsite to be dismissed and the second one to replace it
     await ContentTaskUtils.waitForCondition(
       () =>
-        content.document.querySelector(siteSelector).getAttribute("href") ===
+        siteHref(content.document.querySelector(siteSelector)) ===
         secondTopSite,
       "First default topsite was dismissed"
     );
