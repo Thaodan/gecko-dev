@@ -2155,8 +2155,13 @@ html {
   --card-stack-color-1: light-dark(var(--color-violet-0), var(--color-violet-90));
   --card-stack-color-2: light-dark(var(--color-violet-10), var(--color-violet-70));
   --card-stack-color-3: light-dark(var(--color-violet-20), var(--color-violet-80));
+  --card-stack-flare: light-dark(var(--color-violet-20), var(--color-violet-70));
+  --card-stack-secondary-width: 318px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+  --card-stack-flare-x: calc(var(--card-stack-secondary-width) / 2);
   --card-stack-border: 1px solid var(--card-border-color); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: color-mix(in srgb, var(--background-color-box) 40%, var(--card-stack-color-1));
+  background-image: radial-gradient(circle 100px at var(--card-stack-flare-x) center, var(--card-stack-flare) 0%, transparent 100%); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+  background-repeat: no-repeat;
   border: var(--card-stack-border);
   border-radius: var(--border-radius-medium);
   box-sizing: border-box;
@@ -2164,6 +2169,9 @@ html {
   min-height: 204px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
   position: relative;
   overflow: visible;
+}
+.onboardingContainer .screen[pos=card-stack]:dir(rtl) {
+  background-image: radial-gradient(circle 100px at calc(100% - var(--card-stack-flare-x)) center, var(--card-stack-flare) 0%, transparent 100%); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
 }
 .onboardingContainer .screen[pos=card-stack]::before, .onboardingContainer .screen[pos=card-stack]::after {
   content: "";
@@ -2203,7 +2211,7 @@ html {
 }
 .onboardingContainer .screen[pos=card-stack] .section-secondary {
   flex: 0 0 auto;
-  width: 318px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+  width: var(--card-stack-secondary-width);
   display: flex;
   align-items: center;
   justify-content: center;
