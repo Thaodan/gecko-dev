@@ -456,6 +456,12 @@ void FetchStreamReader::ChunkSteps(JSContext* aCx, JS::Handle<JS::Value> aChunk,
 
   mHasOutstandingReadRequest = false;
 
+  // When we release without a JSContext we can't cancel
+  // the reader, so it can still hand us a chunk after the pipe is gone.
+  if (mStreamClosed) {
+    return;
+  }
+
   // Step 2. If chunk is not a Uint8Array object, then set continueAlgorithm to
   // this step: run processBodyError given a TypeError.
   RootedSpiderMonkeyInterface<Uint8Array> chunk(aCx);
