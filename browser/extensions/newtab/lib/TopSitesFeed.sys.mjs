@@ -987,6 +987,7 @@ export class TopSitesFeed {
     this._contile = new ContileIntegration(this);
     this._tippyTopProvider = new TippyTopProvider();
     this._refreshGeneration = 0;
+    this._broadcastPending = false;
     this._latestRefreshPromise = Promise.resolve();
     ChromeUtils.defineLazyGetter(
       this,
@@ -2101,6 +2102,9 @@ export class TopSitesFeed {
     this._startedUp = true;
 
     const refreshId = ++this._refreshGeneration;
+    // Only the newest refresh dispatches, so a refresh started while a
+    // broadcasting one is in flight has to broadcast on its behalf.
+    this._broadcastPending ||= !!options.broadcast;
     const refreshPromise = (async () => {
       if (!this._tippyTopProvider.initialized) {
         await this._tippyTopProvider.init();
@@ -2124,7 +2128,8 @@ export class TopSitesFeed {
         };
       }
 
-      if (options.broadcast) {
+      if (this._broadcastPending) {
+        this._broadcastPending = false;
         // Broadcast an update to all open content pages
         this.store.dispatch(ac.BroadcastToContent(newAction));
       } else {
