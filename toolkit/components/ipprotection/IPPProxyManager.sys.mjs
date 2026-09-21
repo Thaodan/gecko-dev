@@ -971,7 +971,10 @@ class IPPProxyManagerSingleton extends EventTarget {
     const stack = isString
       ? ""
       : stackSource(error?.stack ?? new Error().stack);
-    Glean.ipprotection.error.record({ source: stack || "ProxyManager" });
+    Glean.ipprotection.error.record({
+      source: stack || "ProxyManager",
+      reason: this.#errorType ?? "",
+    });
   }
 
   /**

@@ -807,6 +807,7 @@ export class IPProtectionPanel {
     const result = await enrolling;
     Glean.ipprotection.enrollment.record({
       enrolled: result?.isEnrolledAndEntitled,
+      reason: result?.isEnrolledAndEntitled ? "" : (result?.error ?? ""),
     });
   }
 
