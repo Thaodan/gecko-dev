@@ -911,7 +911,8 @@ A beetmover task for android APKs and AABs.
 
 ## push-apks
 
-Push Focus and Fenix APKs to the Samsung Galaxy Store.
+Push Focus and Fenix APKs to the Samsung Galaxy Store, and Fenix APKs to the
+Huawei AppGallery.
 
 ## push-bundle
 
