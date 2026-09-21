@@ -1252,6 +1252,11 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
       return GetBrowsingContext()->Release();
     }
 
+    // Deleted catch-all overload: every field must provide a `CanSet` whose
+    // value parameter exactly matches the field's type.
+    template <size_t I, typename T>
+    bool CanSet(FieldIndex<I>, const T&, ContentParent*) = delete;
+
    protected:
     friend class RemoteLocationProxy;
     BrowsingContext* GetBrowsingContext() override {
@@ -1272,11 +1277,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   void ActivenessChanged(bool aIsActive);
 
   using CanSetResult = syncedcontext::CanSetResult;
-
-  // Deleted catch-all overload: every field must provide a `CanSet` whose value
-  // parameter exactly matches the field's type.
-  template <size_t I, typename T>
-  bool CanSet(FieldIndex<I>, const T&, ContentParent*) = delete;
 
   // Overload `DidSet` to get notifications for a particular field being set.
   //
