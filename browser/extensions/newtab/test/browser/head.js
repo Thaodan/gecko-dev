@@ -122,9 +122,17 @@ async function clearHistoryAndBookmarks() {
 async function waitForPreloaded(browser) {
   if (
     browser.webProgress.isLoadingDocument ||
-    browser.currentURI?.spec === "about:blank"
+    !browser.currentURI?.spec ||
+    browser.currentURI.spec === "about:blank"
   ) {
-    await BrowserTestUtils.browserLoaded(browser);
+    // Not browserLoaded: isLoadingDocument clears on the stop browserStopped
+    // waits for, while the load event rides an earlier one. An aborted stop
+    // clears the flag too, hence checkAborts.
+    await BrowserTestUtils.browserStopped(
+      browser,
+      null,
+      true /* checkAborts */
+    );
   }
 }
 
