@@ -91,7 +91,7 @@ class GeolocationTest : BaseSessionTest() {
 
     private fun getCurrentPositionJS(
         maximumAge: Number = 0,
-        timeout: Number = 3000,
+        timeout: Number = sessionRule.env.defaultTimeoutMillis,
         enableHighAccuracy: Boolean = false,
     ): JSONObject =
         mainSession
@@ -172,7 +172,7 @@ class GeolocationTest : BaseSessionTest() {
         mockNetworkProvider.setDoContinuallyPost(false)
         mockNetworkProvider.postLocation()
 
-        val position = getCurrentPositionJS(0, 3000, false)
+        val position = getCurrentPositionJS()
         assertThat("Higher accuracy latitude is expected.", position["latitude"] as Number, equalTo(highMockLat))
         assertThat("Higher accuracy longitude is expected.", position["longitude"] as Number, equalTo(highMockLon))
 
@@ -180,7 +180,7 @@ class GeolocationTest : BaseSessionTest() {
         mockGpsProvider.postLocation()
         Thread.sleep(6001)
         mockNetworkProvider.postLocation()
-        val inaccuratePosition = getCurrentPositionJS(0, 3000, false)
+        val inaccuratePosition = getCurrentPositionJS()
         assertThat(
             "Lower accuracy latitude is expected.",
             inaccuratePosition["latitude"] as Number,
@@ -218,7 +218,7 @@ class GeolocationTest : BaseSessionTest() {
         mockGpsProvider.setDoContinuallyPost(true)
         mockGpsProvider.postLocation()
 
-        val highAccuracyPosition = getCurrentPositionJS(0, 6001, true)
+        val highAccuracyPosition = getCurrentPositionJS(enableHighAccuracy = true)
         mockGpsProvider.stopPostingLocation()
         mockNetworkProvider.stopPostingLocation()
 
