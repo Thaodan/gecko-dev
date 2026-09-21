@@ -1112,10 +1112,10 @@ pwmgr:
     description: >
       One record per login storage operation performed through LoginManager,
       with the backend that served it and how long the caller waited. Not
-      recorded when the operation fails, or when it starts while the primary
-      password is locked, since entering it mid-operation would put the user's
-      wait time into the duration. Event counts are therefore neither operation
-      counts nor success rates.
+      recorded when the operation fails, so event counts are not success rates.
+      The duration includes a primary password prompt when the operation
+      triggered one; those samples can be excluded in analysis using
+      pwmgr.primary_password_prompt events that overlap the operation window.
     bugs:
       - https://bugzil.la/2070146
     data_reviews:
