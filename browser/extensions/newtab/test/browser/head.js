@@ -214,7 +214,7 @@ function test_newtab(testInfo, browserURL = "about:newtab") {
           SpecialPowers.spawn(
             browser,
             [],
-            () => content.document.getElementById("root")?.children.length
+            () => content.document.getElementById("root").children.length
           ),
         "Should render activity stream content"
       );
