@@ -4410,10 +4410,6 @@ nsresult QuotaManager::InitializeRepository(PersistenceType aPersistenceType,
              aPersistenceType == PERSISTENCE_TYPE_TEMPORARY ||
              aPersistenceType == PERSISTENCE_TYPE_DEFAULT);
 
-  // If we are shutting down, it's too late to initialize the repository.
-  // Stop now: any rescan needed will be done on next startup.
-  QM_TRY(OkIf(!IsShuttingDown()), NS_ERROR_ABORT);
-
   // Pre-load the L1 cache rows for this repository so the disk walk
   // can decide per-origin whether the cached row already matches the
   // metadata we'd otherwise rewrite. Keys claimed during the walk are
@@ -4454,10 +4450,9 @@ nsresult QuotaManager::InitializeRepository(PersistenceType aPersistenceType,
         CollectEachFile(
             *directory,
             [&](nsCOMPtr<nsIFile>&& aChildDirectory) -> Result<Ok, nsresult> {
-              QM_TRY(OkIf(!IsShuttingDown()),
-                     ([&statusKeeper](const auto&) -> Result<Ok, nsresult> {
-                       RETURN_STATUS_OR_RESULT(statusKeeper, NS_ERROR_ABORT);
-                     }));
+              if (NS_WARN_IF(IsShuttingDown())) {
+                RETURN_STATUS_OR_RESULT(statusKeeper, NS_ERROR_ABORT);
+              }
 
               nsCOMPtr<nsIFile> childDirectory = std::move(aChildDirectory);
 
@@ -4483,10 +4478,6 @@ nsresult QuotaManager::InitializeRepository(PersistenceType aPersistenceType,
 
   for (auto& info : renameAndInitInfos) {
     QM_TRY(([&]() -> Result<Ok, nsresult> {
-      if (NS_WARN_IF(IsShuttingDown())) {
-        RETURN_STATUS_OR_RESULT(statusKeeper, NS_ERROR_ABORT);
-      }
-
       QM_TRY(
           ([&directory, &info, this, aPersistenceType, &aOriginFunc,
             &cacheMap]() -> Result<Ok, nsresult> {
