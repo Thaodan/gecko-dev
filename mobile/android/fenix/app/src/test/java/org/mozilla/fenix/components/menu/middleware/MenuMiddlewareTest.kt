@@ -55,6 +55,7 @@ import org.mozilla.fenix.components.appstate.AppAction.ReaderViewAction
 import org.mozilla.fenix.components.bookmarks.BookmarksUseCase
 import org.mozilla.fenix.components.menu.BrowserMenuBuilder
 import org.mozilla.fenix.components.menu.FenixMenuItem.CustomizeReaderView
+import org.mozilla.fenix.components.menu.MenuFragmentDirections
 import org.mozilla.fenix.components.menu.MenuItemProvider
 import org.mozilla.fenix.components.menu.MenuPresentationMode.Row
 import org.mozilla.fenix.components.menu.MenuSectionConfiguration
@@ -295,6 +296,22 @@ class MenuMiddlewareTest {
     }
 
     @Test
+    fun `WHEN handling a request to translate the page THEN open the translations dialog for the current tab`() {
+        val navOptions = slot<NavOptions>()
+        val store = createStore()
+
+        store.dispatch(Navigate.Translate)
+
+        verify {
+            navController.navigate(
+                MenuFragmentDirections.actionMenuFragmentToTranslationsDialogFragment(sessionId = TAB_ID),
+                capture(navOptions),
+            )
+        }
+        assertEquals(R.id.browserFragment, navOptions.captured.popUpToId)
+    }
+
+    @Test
     fun `WHEN handling back navigation THEN dismiss the menu and navigate back in the current tab`() {
         val store = createStore()
 
@@ -457,7 +474,7 @@ class MenuMiddlewareTest {
                         useCases = useCases,
                         browserMenuBuilder =
                             BrowserMenuBuilder(
-                                providers = mapOf(CustomizeReaderView to FakeMenuItemProvider(provided)),
+                                providerResolver = { FakeMenuItemProvider(provided) },
                                 configuration =
                                     listOf(
                                         MenuSectionConfiguration(

@@ -61,6 +61,8 @@ import org.mozilla.fenix.ext.isToolbarAtBottom
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ipprotection.VpnMenuItemProvider
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.translations.TranslationsEnabledSettings
+import org.mozilla.fenix.translations.TranslationsMenuItemProvider
 
 private const val EXPANDED_OFFSET = 56
 private const val HIDING_FRICTION = 0.9f
@@ -200,52 +202,68 @@ class MenuFragment : BottomSheetDialogFragment() {
         return orientationMaxHeight - topBarHeight
     }
 
-    /**
-     * Builds the [MenuItemProvider] of every item that can be shown in this menu. They live as long as the store they
-     * are built for, so as long as this menu is open.
-     */
-    private fun buildMenuItemProviders(): Map<FenixMenuItem, MenuItemProvider> =
-        mapOf(
-            FenixMenuItem.CustomizeReaderView to
-                ReaderViewMenuItemProvider(
-                    browserStore = requireComponents.core.store,
-                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
-                ),
-            FenixMenuItem.IPProtection to
-                VpnMenuItemProvider(
-                    ipProtectionStore = requireComponents.ipProtection.store,
-                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
-                ),
-            FenixMenuItem.Bookmark to
-                BookmarkMenuItemProvider(
-                    browserStore = requireComponents.core.store,
-                    bookmarksStorage = requireComponents.core.bookmarksStorage,
-                    applicationScope = requireComponents.applicationScope,
-                ),
-            FenixMenuItem.FindInPage to FindInPageMenuItemProvider(),
-            FenixMenuItem.DesktopSite to
-                DesktopSiteMenuItemProvider(
-                    browserStore = requireComponents.core.store,
-                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
-                ),
-            FenixMenuItem.More to MoreMenuItemsProvider(),
-            FenixMenuItem.Back to
-                BackMenuItemProvider(
-                    browserStore = requireComponents.core.store,
-                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
-                ),
-            FenixMenuItem.Forward to
-                ForwardMenuItemProvider(
-                    browserStore = requireComponents.core.store,
-                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
-                ),
-            FenixMenuItem.Share to ShareMenuItemProvider(),
-            FenixMenuItem.Refresh to
-                RefreshMenuItemProvider(
-                    browserStore = requireComponents.core.store,
-                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
-                ),
-        )
+    /** Pure function to get the [MenuItemProvider] for any [FenixMenuItem]. */
+    private fun buildMenuItemsProvidersResolver(): (FenixMenuItem) -> MenuItemProvider {
+        return { item ->
+            when (item) {
+                FenixMenuItem.CustomizeReaderView ->
+                    ReaderViewMenuItemProvider(
+                        browserStore = requireComponents.core.store,
+                        scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                    )
+
+                FenixMenuItem.IPProtection ->
+                    VpnMenuItemProvider(
+                        ipProtectionStore = requireComponents.ipProtection.store,
+                        scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                    )
+
+                FenixMenuItem.Bookmark ->
+                    BookmarkMenuItemProvider(
+                        browserStore = requireComponents.core.store,
+                        bookmarksStorage = requireComponents.core.bookmarksStorage,
+                        applicationScope = requireComponents.applicationScope,
+                    )
+
+                FenixMenuItem.FindInPage -> FindInPageMenuItemProvider()
+
+                FenixMenuItem.DesktopSite ->
+                    DesktopSiteMenuItemProvider(
+                        browserStore = requireComponents.core.store,
+                        scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                    )
+
+                is FenixMenuItem.More -> MoreMenuItemsProvider()
+
+                FenixMenuItem.Translate ->
+                    TranslationsMenuItemProvider(
+                        browserStore = requireComponents.core.store,
+                        translationsSettings = TranslationsEnabledSettings.dataStore(requireContext()),
+                        scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                    )
+
+                FenixMenuItem.Back ->
+                    BackMenuItemProvider(
+                        browserStore = requireComponents.core.store,
+                        scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                    )
+
+                FenixMenuItem.Forward ->
+                    ForwardMenuItemProvider(
+                        browserStore = requireComponents.core.store,
+                        scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                    )
+
+                FenixMenuItem.Share -> ShareMenuItemProvider()
+
+                FenixMenuItem.Refresh ->
+                    RefreshMenuItemProvider(
+                        browserStore = requireComponents.core.store,
+                        scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                    )
+            }
+        }
+    }
 
     private fun buildMenuStore(initialState: MenuState) =
         MenuStore(
@@ -259,7 +277,7 @@ class MenuFragment : BottomSheetDialogFragment() {
                         useCases = requireComponents.useCases,
                         browserMenuBuilder =
                             BrowserMenuBuilder(
-                                providers = buildMenuItemProviders(),
+                                providerResolver = buildMenuItemsProvidersResolver(),
                                 isToolbarAtBottom = requireContext().isToolbarAtBottom(),
                                 isExpandedToolbarEnabled =
                                     requireContext().components.settings.shouldUseExpandedToolbar,

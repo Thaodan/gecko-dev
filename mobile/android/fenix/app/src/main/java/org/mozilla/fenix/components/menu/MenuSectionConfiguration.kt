@@ -4,6 +4,13 @@
 
 package org.mozilla.fenix.components.menu
 
+/** Type of items that can be expanded to show other (even unrelated) menu items. */
+sealed interface ExpandableMenuItem {
+
+    /** The other menu items to show when this is expanded. */
+    val subMenuItems: List<FenixMenuItem>
+}
+
 /** All items that can be shown in the menu. */
 sealed interface FenixMenuItem {
     /** A menu item allowing to customize the reader view. */
@@ -21,8 +28,15 @@ sealed interface FenixMenuItem {
     /** A menu item allowing to switch the current page between the desktop and the mobile version. */
     data object DesktopSite : FenixMenuItem
 
-    /** A menu item expanding to show more general menu items related to the current webpage. */
-    data object More : FenixMenuItem
+    /**
+     * A menu item expanding to show more general menu items related to the current webpage. *
+     *
+     * @property subMenuItems The other menu items to show when this is expanded.
+     */
+    data class More(override val subMenuItems: List<FenixMenuItem>) : FenixMenuItem, ExpandableMenuItem
+
+    /** A menu item allowing to translate the current page. */
+    data object Translate : FenixMenuItem
 
     /** A menu item allowing to navigate back. */
     data object Back : FenixMenuItem

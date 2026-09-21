@@ -34,6 +34,7 @@ import org.mozilla.fenix.components.appstate.AppAction.BookmarkAction
 import org.mozilla.fenix.components.appstate.AppAction.FindInPageAction
 import org.mozilla.fenix.components.appstate.AppAction.ReaderViewAction
 import org.mozilla.fenix.components.menu.BrowserMenuBuilder
+import org.mozilla.fenix.components.menu.MenuFragmentDirections
 import org.mozilla.fenix.components.menu.store.IPProtectionMenuStatus
 import org.mozilla.fenix.components.menu.store.MenuAction.AddBookmark
 import org.mozilla.fenix.components.menu.store.MenuAction.CustomizeReaderView
@@ -107,6 +108,16 @@ class MenuMiddleware(
             is RequestDesktopSite -> requestSiteMode(enableDesktopMode = true)
 
             is RequestMobileSite -> requestSiteMode(enableDesktopMode = false)
+
+            is Navigate.Translate -> {
+                navController.nav(
+                    R.id.menuFragment,
+                    MenuFragmentDirections.actionMenuFragmentToTranslationsDialogFragment(
+                        sessionId = browserStore.state.selectedTabId
+                    ),
+                    navOptions = NavOptions.Builder().setPopUpTo(R.id.browserFragment, false).build(),
+                )
+            }
 
             is Navigate.Back -> handleBackNavigation(action)
 

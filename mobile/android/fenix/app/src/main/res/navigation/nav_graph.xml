@@ -1849,6 +1849,10 @@
     <dialog
       android:id="@+id/menuFragment"
       android:name="org.mozilla.fenix.components.menu.MenuFragment">
+
+      <action
+        android:id="@+id/action_menuFragment_to_translationsDialogFragment"
+        app:destination="@id/translationsDialogFragment" />
     </dialog>
   </navigation>
 
