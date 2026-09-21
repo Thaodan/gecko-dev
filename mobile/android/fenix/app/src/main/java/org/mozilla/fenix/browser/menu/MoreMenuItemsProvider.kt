@@ -60,17 +60,24 @@ class MoreMenuItemsProvider(
      * Update the "More" menu item with a new list of submenu items to show when expanded. This supports the scenario in
      * which the list of submenu items is known only later from a separate source.
      *
+     * @param item The "More" item header captured alongside the children in the menu builder's snapshot.
      * @param subMenuItems The new list of submenu items that this menu item should show when expanded.
      */
-    override fun updateWithSubMenuItems(subMenuItems: List<StandardMenuItem>): ExpandableMenuItem {
-        val currentItem = itemFlow.value
-        return currentItem.copy(
+    override fun updateWithSubMenuItems(
+        item: ExpandableMenuItem,
+        subMenuItems: List<StandardMenuItem>,
+    ): ExpandableMenuItem {
+        // "Summarize page" has different rules for highlighting itself vs the "More" header.
+        val shouldHighlightForSummarize =
+            item.icon?.isHighlighted == true && subMenuItems.any { it.isSummarizePageMenuItem() }
+        // Highlight "More" when a child other than Summarize is highlighted.
+        val shouldHighlightForOtherItems = subMenuItems.any {
+            !it.isSummarizePageMenuItem() && it.icon?.isHighlighted == true
+        }
+
+        return item.copy(
             subMenuItems = subMenuItems,
-            icon =
-                icon(
-                    isHighlighted =
-                        currentItem.icon?.isHighlighted == true && subMenuItems.any { it.isSummarizePageMenuItem() }
-                ),
+            icon = icon(isHighlighted = shouldHighlightForSummarize || shouldHighlightForOtherItems),
         )
     }
 

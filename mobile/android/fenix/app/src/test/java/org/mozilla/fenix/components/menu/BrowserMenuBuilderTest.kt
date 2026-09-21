@@ -212,16 +212,20 @@ class BrowserMenuBuilderTest {
         )
 
     @Test
-    fun `WHEN assembling More THEN pass visible children to its provider`() = runTest {
+    fun `WHEN assembling More THEN use the captured header even if the provider advances`() = runTest {
         var receivedChildren: List<StandardMenuItem>? = null
         val provider =
             object : ExpandableMenuItemProvider {
                 override val itemFlow = MutableStateFlow<MenuItem?>(moreItem)
 
-                override fun updateWithSubMenuItems(subMenuItems: List<StandardMenuItem>): ExpandableMenuItem {
+                override fun updateWithSubMenuItems(
+                    item: ExpandableMenuItem,
+                    subMenuItems: List<StandardMenuItem>,
+                ): ExpandableMenuItem? {
                     receivedChildren = subMenuItems
 
-                    return moreItem.copy(subMenuItems = subMenuItems)
+                    itemFlow.value = moreItem.copy(title = Text.String("Newer header"))
+                    return super.updateWithSubMenuItems(item, subMenuItems)
                 }
             }
         val builder =
@@ -258,6 +262,41 @@ class BrowserMenuBuilderTest {
         header.value = moreItem.copy(title = Text.String("Updated More"))
 
         assertEquals(Text.String("Updated More"), builder.menuStructure.first().single().items.single().title)
+    }
+
+    @Test
+    fun `GIVEN the expanding item itself is not offered WHEN building the menu THEN don't show it`() = runTest {
+        val builder =
+            createExpandingMenuBuilder(
+                expandingTo = MutableStateFlow(findInPageItem),
+                header = MutableStateFlow(null),
+            )
+
+        assertTrue(builder.menuStructure.first().isEmpty())
+    }
+
+    @Test
+    fun `GIVEN its provider cannot configure what it expands to WHEN building the menu THEN don't show it`() = runTest {
+        val builder =
+            BrowserMenuBuilder(
+                // A plain provider knows nothing about the items this one expands to, so it cannot be shown.
+                providerResolver = { item ->
+                    when (item) {
+                        is More -> FakeMenuItemProvider(MutableStateFlow(moreItem))
+                        else -> FakeMenuItemProvider(MutableStateFlow(findInPageItem))
+                    }
+                },
+                configuration =
+                    listOf(
+                        MenuSectionConfiguration(
+                            id = MENU_GROUP_ID,
+                            presentationMode = Row,
+                            items = listOf(More(subMenuItems = listOf(FindInPage))),
+                        )
+                    ),
+            )
+
+        assertTrue(builder.menuStructure.first().isEmpty())
     }
 
     private class FakeMenuItemProvider(override val itemFlow: StateFlow<MenuItem?>) : MenuItemProvider

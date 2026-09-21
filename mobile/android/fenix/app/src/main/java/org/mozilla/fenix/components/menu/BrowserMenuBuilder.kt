@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import mozilla.components.compose.menu.data.ExpandableMenuItem
 import mozilla.components.compose.menu.data.MenuItem as ShownMenuItem
 import mozilla.components.compose.menu.data.MenuItemsGroup
 import mozilla.components.compose.menu.data.StandardMenuItem
@@ -94,11 +95,12 @@ class BrowserMenuBuilder(
     private fun FenixMenuItem.getMenuItemToShow(items: Map<FenixMenuItem, ShownMenuItem?>): ShownMenuItem? {
         if (this !is FenixExpandableMenuItem) return items[this]
 
+        val header = items[this] as? ExpandableMenuItem ?: return null
         val children = subMenuItems.mapNotNull { items[it] as? StandardMenuItem }
         if (children.isEmpty()) return null
 
         val provider = providerResolver(this) as? ExpandableMenuItemProvider
-        return provider?.updateWithSubMenuItems(children)
+        return provider?.updateWithSubMenuItems(header, children)
     }
 
     private fun MenuSectionConfiguration.toGroup(shownItems: List<ShownMenuItem>) =

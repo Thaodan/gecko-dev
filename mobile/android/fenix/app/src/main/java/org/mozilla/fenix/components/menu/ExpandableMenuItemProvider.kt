@@ -20,8 +20,11 @@ interface ExpandableMenuItemProvider : MenuItemProvider {
      * Only worth overriding to configure the item based on what it ended up expanding to, like drawing attention to it
      * on behalf of one of those items.
      *
+     * @param item The header captured alongside the children in the menu builder's snapshot.
      * @param subMenuItems The items to show when this one is expanded, as their own providers currently offer them.
      */
-    fun updateWithSubMenuItems(subMenuItems: List<StandardMenuItem>): ExpandableMenuItem? =
-        (itemFlow.value as? ExpandableMenuItem)?.copy(subMenuItems = subMenuItems)
+    fun updateWithSubMenuItems(
+        item: ExpandableMenuItem,
+        subMenuItems: List<StandardMenuItem>,
+    ): ExpandableMenuItem? = item.copy(subMenuItems = subMenuItems)
 }

@@ -15,6 +15,7 @@ import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.menu.data.StandardMenuItem
+import mozilla.components.compose.menu.ui.MenuItemIconRes
 import mozilla.components.compose.menu.ui.MenuItemState
 import org.junit.Test
 import org.mozilla.fenix.components.menu.store.MenuAction
@@ -55,7 +56,31 @@ class MoreMenuItemsProviderTest {
         assertNotEquals(provider(isPrivate = true).resolve(listOf(summarizeItem)).icon?.isHighlighted, true)
     }
 
-    private fun MoreMenuItemsProvider.resolve(children: List<StandardMenuItem>) = updateWithSubMenuItems(children)
+    @Test
+    fun `GIVEN More is collapsed WHEN a submenu item is highlighted THEN highlight More`() = runTest {
+        val highlighted = translateItem.copy(icon = MenuItemIconRes(0, isHighlighted = true))
+
+        assertEquals(provider(highlight = false).resolve(listOf(highlighted)).icon?.isHighlighted, true)
+    }
+
+    @Test
+    fun `GIVEN More is collapsed WHEN no submenu items are highlighted THEN don't highlight More`() = runTest {
+        assertNotEquals(provider(highlight = false).resolve(listOf(translateItem)).icon?.isHighlighted, true)
+    }
+
+    @Test
+    fun `WHEN adding submenu items to More THEN use the highlight status from the passed More item`() = runTest {
+        val provider = provider(highlight = false)
+        val captured = provider.itemFlow.value.copy(icon = MenuItemIconRes(123, isHighlighted = true))
+
+        val shown = provider.updateWithSubMenuItems(captured, listOf(summarizeItem))
+
+        assertEquals(true, shown.icon?.isHighlighted)
+        assertEquals(listOf(summarizeItem), shown.subMenuItems)
+    }
+
+    private fun MoreMenuItemsProvider.resolve(children: List<StandardMenuItem>) =
+        updateWithSubMenuItems(itemFlow.value, children)
 
     private fun TestScope.provider(
         highlight: Boolean = true,
