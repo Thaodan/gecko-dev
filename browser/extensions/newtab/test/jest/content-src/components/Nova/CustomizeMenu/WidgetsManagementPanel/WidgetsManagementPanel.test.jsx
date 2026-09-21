@@ -2,15 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { render, fireEvent } from "@testing-library/react";
+import { act, render, fireEvent } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { createStore, combineReducers } from "redux";
 import { INITIAL_STATE, reducers } from "common/Reducers.sys.mjs";
 import { WIDGET_REGISTRY } from "common/WidgetsRegistry.mjs";
 import { WidgetsManagementPanel } from "content-src/components/Nova/CustomizeMenu/WidgetsManagementPanel/WidgetsManagementPanel";
 
-// The nine active widgets in registry order, kept as literals so a
-// renamed string, id or telemetry source fails here.
+// The nine active widgets in registry order, kept as literals so a renamed
+// string, id or telemetry source fails here. The rendered order is pinned by
+// EN_US_ORDER and the other order constants below.
 const WIDGETS = [
   {
     id: "pictureOfTheDay",
@@ -99,8 +100,143 @@ const FIXTURE_WIDGET = {
   systemEnabledPref: "widgets.system.fixtureWidget.enabled",
 };
 
+// Literal en-US labels; a missing key stands for a missing message.
+const PANEL_LABELS = {
+  "newtab-custom-widget-clock-toggle": "Clock",
+  "newtab-custom-widget-crossword-toggle": "Crossword",
+  "newtab-custom-widget-lists-toggle": "Lists",
+  "newtab-custom-widget-picture-toggle": "Picture of the day",
+  "newtab-custom-widget-privacy-toggle": "Privacy",
+  "newtab-custom-widget-search-toggle": "Search",
+  "newtab-custom-widget-stocks-toggle": "Stocks",
+  "newtab-custom-widget-timer-toggle": "Timer",
+  "newtab-custom-widget-weather-toggle": "Weather",
+  "newtab-custom-widget-fixture-toggle": "Fixture widget",
+};
+
+// The German, Greek and Japanese labels are Firefox's own translations,
+// apart from the fixture widget's and the Japanese Search label.
+// Übersicht sorts before Uhr only under locale-aware collation; a code point
+// comparison would put it after Wetter.
+const GERMAN_PANEL_LABELS = {
+  "newtab-custom-widget-stocks-toggle": "Aktien",
+  "newtab-custom-widget-picture-toggle": "Bild des Tages",
+  "newtab-custom-widget-privacy-toggle": "Datenschutz",
+  "newtab-custom-widget-crossword-toggle": "Kreuzworträtsel",
+  "newtab-custom-widget-lists-toggle": "Listen",
+  "newtab-custom-widget-search-toggle": "Suche",
+  "newtab-custom-widget-timer-toggle": "Timer",
+  "newtab-custom-widget-fixture-toggle": "Übersicht",
+  "newtab-custom-widget-clock-toggle": "Uhr",
+  "newtab-custom-widget-weather-toggle": "Wetter",
+};
+
+const GREEK_PANEL_LABELS = {
+  "newtab-custom-widget-search-toggle": "Αναζήτηση",
+  "newtab-custom-widget-timer-toggle": "Αντίστροφη μέτρηση",
+  "newtab-custom-widget-privacy-toggle": "Απόρρητο",
+  "newtab-custom-widget-picture-toggle": "Εικόνα της ημέρας",
+  "newtab-custom-widget-weather-toggle": "Καιρός",
+  "newtab-custom-widget-lists-toggle": "Λίστες",
+  "newtab-custom-widget-stocks-toggle": "Μετοχές",
+  "newtab-custom-widget-clock-toggle": "Ρολόι",
+  "newtab-custom-widget-crossword-toggle": "Σταυρόλεξο",
+};
+
+// Latin letters sort before kana and kana before kanji under the default
+// collation; the kanji follow radical and stroke order.
+const JAPANESE_PANEL_LABELS = {
+  "newtab-custom-widget-lists-toggle": "ToDo リスト",
+  "newtab-custom-widget-crossword-toggle": "クロスワードパズル",
+  "newtab-custom-widget-timer-toggle": "タイマー",
+  "newtab-custom-widget-privacy-toggle": "プライバシー",
+  "newtab-custom-widget-picture-toggle": "今日の一枚",
+  "newtab-custom-widget-search-toggle": "最近の検索",
+  "newtab-custom-widget-weather-toggle": "天気予報",
+  "newtab-custom-widget-clock-toggle": "時計",
+  "newtab-custom-widget-stocks-toggle": "株価情報",
+};
+
+// Expected orders are written by hand so the tests do not mirror the sort.
+const EN_US_ORDER = [
+  "clocks",
+  "crossword",
+  "lists",
+  "pictureOfTheDay",
+  "privacy",
+  "recentSearches",
+  "stocks",
+  "focusTimer",
+  "weather",
+];
+
+const EN_US_ORDER_WITH_FIXTURE = [
+  "clocks",
+  "crossword",
+  "fixtureWidget",
+  "lists",
+  "pictureOfTheDay",
+  "privacy",
+  "recentSearches",
+  "stocks",
+  "focusTimer",
+  "weather",
+];
+
+const GERMAN_ORDER = [
+  "stocks",
+  "pictureOfTheDay",
+  "privacy",
+  "crossword",
+  "lists",
+  "recentSearches",
+  "focusTimer",
+  "fixtureWidget",
+  "clocks",
+  "weather",
+];
+
+const GREEK_ORDER = [
+  "recentSearches",
+  "focusTimer",
+  "privacy",
+  "pictureOfTheDay",
+  "weather",
+  "lists",
+  "stocks",
+  "clocks",
+  "crossword",
+];
+
+const JAPANESE_ORDER = [
+  "lists",
+  "crossword",
+  "focusTimer",
+  "privacy",
+  "pictureOfTheDay",
+  "recentSearches",
+  "weather",
+  "clocks",
+  "stocks",
+];
+
+// The order when every widget sorts under its own id.
+const ID_ORDER = [
+  "clocks",
+  "crossword",
+  "focusTimer",
+  "lists",
+  "pictureOfTheDay",
+  "privacy",
+  "recentSearches",
+  "stocks",
+  "weather",
+];
+
 describe("<WidgetsManagementPanel>", () => {
   let props;
+  // Fluent id to label for this test; a missing key means no such message.
+  let labels;
 
   // Pushed onto the real registry so tests can prove a new entry needs no
   // panel change.
@@ -122,7 +258,7 @@ describe("<WidgetsManagementPanel>", () => {
     return { ...prefs, ...extra };
   }
 
-  function renderPanel(overrides = {}, prefValues = {}) {
+  async function renderPanel(overrides = {}, prefValues = {}) {
     const store = createStore(combineReducers(reducers), {
       ...INITIAL_STATE,
       Prefs: {
@@ -136,6 +272,9 @@ describe("<WidgetsManagementPanel>", () => {
         <WidgetsManagementPanel {...props} {...overrides} />
       </Provider>
     );
+    // Flush the label effect so the toggles are rendered before the test
+    // queries the DOM.
+    await act(async () => {});
     return { ...utils, store };
   }
 
@@ -158,9 +297,25 @@ describe("<WidgetsManagementPanel>", () => {
 
   beforeEach(() => {
     props = { togglePanel: jest.fn(), showPanel: true, setPref: jest.fn() };
+    labels = { ...PANEL_LABELS };
+    // jsdom has no document.l10n; the labels are attribute-only messages, so
+    // the mock answers formatMessages.
+    document.l10n = {
+      formatMessages: jest.fn(async keys =>
+        keys.map(({ id }) =>
+          id in labels
+            ? {
+                value: null,
+                attributes: [{ name: "label", value: labels[id] }],
+              }
+            : null
+        )
+      ),
+    };
   });
 
   afterEach(() => {
+    delete document.l10n;
     for (const widget of pushedFixtures.splice(0)) {
       const index = WIDGET_REGISTRY.indexOf(widget);
       if (index !== -1) {
@@ -170,29 +325,29 @@ describe("<WidgetsManagementPanel>", () => {
     jest.restoreAllMocks();
   });
 
-  it("renders the manage widgets button", () => {
-    const { container } = renderPanel({ showPanel: false });
+  it("renders the manage widgets button", async () => {
+    const { container } = await renderPanel({ showPanel: false });
     expect(
       container.querySelector(".widgets-mgmt-panel-container")
     ).toBeInTheDocument();
     expect(container.querySelector("moz-box-button")).toBeInTheDocument();
   });
 
-  it("calls togglePanel when the manage widgets button is clicked", () => {
-    const { container } = renderPanel({ showPanel: false });
+  it("calls togglePanel when the manage widgets button is clicked", async () => {
+    const { container } = await renderPanel({ showPanel: false });
     fireEvent.click(container.querySelector("moz-box-button"));
     expect(props.togglePanel).toHaveBeenCalledTimes(1);
   });
 
-  it("does not render the panel until showPanel is true", () => {
-    const { container } = renderPanel({ showPanel: false });
+  it("does not render the panel until showPanel is true", async () => {
+    const { container } = await renderPanel({ showPanel: false });
     expect(
       container.querySelector(".widgets-mgmt-panel")
     ).not.toBeInTheDocument();
   });
 
-  it("renders the panel with a title and a back button when showPanel is true", () => {
-    const { container } = renderPanel();
+  it("renders the panel with a title and a back button when showPanel is true", async () => {
+    const { container } = await renderPanel();
     const panel = container.querySelector(".widgets-mgmt-panel");
     expect(panel).toBeInTheDocument();
     expect(panel.querySelectorAll("h2")).toHaveLength(1);
@@ -202,27 +357,29 @@ describe("<WidgetsManagementPanel>", () => {
     );
   });
 
-  it("calls togglePanel when the back button is clicked", () => {
-    const { container } = renderPanel();
+  it("calls togglePanel when the back button is clicked", async () => {
+    const { container } = await renderPanel();
     fireEvent.click(container.querySelector(".arrow-button"));
     expect(props.togglePanel).toHaveBeenCalledTimes(1);
   });
 
   describe("widget toggles", () => {
-    it("renders no toggles when no widget is available", () => {
-      const { container } = renderPanel();
+    it("renders no toggles when no widget is available", async () => {
+      const { container } = await renderPanel();
       expect(toggleIds(container)).toEqual([]);
     });
 
-    it("renders one toggle per available widget, in registry order", () => {
-      const { container } = renderPanel({}, allWidgetsVisible());
-      expect(toggleIds(container)).toEqual(WIDGETS.map(w => `${w.id}-toggle`));
+    it("renders one toggle per available widget, A-Z by label", async () => {
+      const { container } = await renderPanel({}, allWidgetsVisible());
+      expect(toggleIds(container)).toEqual(
+        EN_US_ORDER.map(id => `${id}-toggle`)
+      );
     });
 
     it.each(WIDGETS)(
       "labels the $id toggle with $l10nId and points it at $preference",
-      ({ id, l10nId, preference }) => {
-        const { container } = renderPanel({}, allWidgetsVisible());
+      async ({ id, l10nId, preference }) => {
+        const { container } = await renderPanel({}, allWidgetsVisible());
         const toggle = container.querySelector(`#${id}-toggle`);
         expect(toggle).toHaveAttribute("data-l10n-id", l10nId);
         expect(toggle).toHaveAttribute("data-preference", preference);
@@ -231,12 +388,12 @@ describe("<WidgetsManagementPanel>", () => {
 
     it.each(WIDGETS)(
       "drops the $id toggle when its system pref is off",
-      ({ id }) => {
+      async ({ id }) => {
         const widget = WIDGET_REGISTRY.find(w => w.id === id);
         const prefs = allWidgetsVisible();
         prefs[widget.systemEnabledPref] = false;
 
-        const { container } = renderPanel({}, prefs);
+        const { container } = await renderPanel({}, prefs);
 
         expect(
           container.querySelector(`#${id}-toggle`)
@@ -247,8 +404,8 @@ describe("<WidgetsManagementPanel>", () => {
 
     it.each(WIDGETS)(
       "presses the $id toggle when $preference is set",
-      ({ id, preference }) => {
-        const { container } = renderPanel(
+      async ({ id, preference }) => {
+        const { container } = await renderPanel(
           {},
           allWidgetsVisible({ [preference]: true })
         );
@@ -258,15 +415,15 @@ describe("<WidgetsManagementPanel>", () => {
       }
     );
 
-    it("leaves a toggle unpressed when its pref is off", () => {
-      const { container } = renderPanel({}, allWidgetsVisible());
+    it("leaves a toggle unpressed when its pref is off", async () => {
+      const { container } = await renderPanel({}, allWidgetsVisible());
       expect(container.querySelector("#lists-toggle")).not.toHaveAttribute(
         "pressed"
       );
     });
 
-    it("renders no toggle for the retired sports widget", () => {
-      const { container } = renderPanel(
+    it("renders no toggle for the retired sports widget", async () => {
+      const { container } = await renderPanel(
         {},
         allWidgetsVisible({ "widgets.system.sportsWidget.enabled": true })
       );
@@ -275,25 +432,24 @@ describe("<WidgetsManagementPanel>", () => {
       ).not.toBeInTheDocument();
     });
 
-    it("renders a widget added to the registry, with no panel change", () => {
+    it("renders a widget added to the registry, with no panel change", async () => {
       const fixture = withFixtureWidget();
 
-      const { container } = renderPanel({}, allWidgetsVisible());
+      const { container } = await renderPanel({}, allWidgetsVisible());
 
       expect(container.querySelector("#fixtureWidget-toggle")).toHaveAttribute(
         "data-l10n-id",
         fixture.customizeL10nId
       );
-      expect(toggleIds(container)).toEqual([
-        ...WIDGETS.map(w => `${w.id}-toggle`),
-        "fixtureWidget-toggle",
-      ]);
+      expect(toggleIds(container)).toEqual(
+        EN_US_ORDER_WITH_FIXTURE.map(id => `${id}-toggle`)
+      );
     });
 
-    it("skips a retired registry entry", () => {
+    it("skips a retired registry entry", async () => {
       withFixtureWidget({ retired: true });
 
-      const { container } = renderPanel(
+      const { container } = await renderPanel(
         {},
         allWidgetsVisible({ "widgets.system.fixtureWidget.enabled": true })
       );
@@ -304,16 +460,16 @@ describe("<WidgetsManagementPanel>", () => {
     });
 
     describe("weather", () => {
-      it("shows the weather toggle via its system pref and system.showWeather", () => {
-        const { container } = renderPanel(
+      it("shows the weather toggle via its system pref and system.showWeather", async () => {
+        const { container } = await renderPanel(
           {},
           { "widgets.system.weather.enabled": true, "system.showWeather": true }
         );
         expect(toggleIds(container)).toEqual(["weather-toggle"]);
       });
 
-      it("shows the weather toggle via trainhopConfig.weather.enabled", () => {
-        const { container } = renderPanel(
+      it("shows the weather toggle via trainhopConfig.weather.enabled", async () => {
+        const { container } = await renderPanel(
           {},
           {
             "widgets.system.weather.enabled": true,
@@ -323,8 +479,8 @@ describe("<WidgetsManagementPanel>", () => {
         expect(toggleIds(container)).toEqual(["weather-toggle"]);
       });
 
-      it("shows the weather toggle via widgetsSettings.weatherVisible", () => {
-        const { container } = renderPanel(
+      it("shows the weather toggle via widgetsSettings.weatherVisible", async () => {
+        const { container } = await renderPanel(
           {},
           {
             "widgets.system.weather.enabled": true,
@@ -334,8 +490,8 @@ describe("<WidgetsManagementPanel>", () => {
         expect(toggleIds(container)).toEqual(["weather-toggle"]);
       });
 
-      it("hides the weather toggle when only its own system pref is set", () => {
-        const { container } = renderPanel(
+      it("hides the weather toggle when only its own system pref is set", async () => {
+        const { container } = await renderPanel(
           {},
           { "widgets.system.weather.enabled": true }
         );
@@ -344,8 +500,8 @@ describe("<WidgetsManagementPanel>", () => {
         ).not.toBeInTheDocument();
       });
 
-      it("hides the weather toggle when only the legacy prefs are set", () => {
-        const { container } = renderPanel(
+      it("hides the weather toggle when only the legacy prefs are set", async () => {
+        const { container } = await renderPanel(
           {},
           { "system.showWeather": true, showWeather: true }
         );
@@ -354,13 +510,116 @@ describe("<WidgetsManagementPanel>", () => {
         ).not.toBeInTheDocument();
       });
     });
+
+    it("orders the toggles A-Z by German label, umlaut included", async () => {
+      labels = { ...GERMAN_PANEL_LABELS };
+      withFixtureWidget();
+
+      const { container } = await renderPanel({}, allWidgetsVisible());
+
+      expect(toggleIds(container)).toEqual(
+        GERMAN_ORDER.map(id => `${id}-toggle`)
+      );
+    });
+
+    it("orders the toggles A-Z by Greek label, Weather among its peers", async () => {
+      labels = { ...GREEK_PANEL_LABELS };
+
+      const { container } = await renderPanel({}, allWidgetsVisible());
+
+      expect(toggleIds(container)).toEqual(
+        GREEK_ORDER.map(id => `${id}-toggle`)
+      );
+      expect(toggleIds(container).indexOf("weather-toggle")).toBe(4);
+    });
+
+    it("orders the toggles by Japanese label, Latin before kana before kanji", async () => {
+      labels = { ...JAPANESE_PANEL_LABELS };
+
+      const { container } = await renderPanel({}, allWidgetsVisible());
+
+      expect(toggleIds(container)).toEqual(
+        JAPANESE_ORDER.map(id => `${id}-toggle`)
+      );
+    });
+
+    it("keeps a reduced set sorted when only some widgets are available", async () => {
+      const prefs = allWidgetsVisible();
+      for (const id of ["clocks", "crossword", "lists", "privacy", "stocks"]) {
+        prefs[WIDGET_REGISTRY.find(w => w.id === id).systemEnabledPref] = false;
+      }
+
+      const { container } = await renderPanel({}, prefs);
+
+      expect(toggleIds(container)).toEqual([
+        "pictureOfTheDay-toggle",
+        "recentSearches-toggle",
+        "focusTimer-toggle",
+        "weather-toggle",
+      ]);
+    });
+
+    it("keeps the same order whatever the user has switched on", async () => {
+      const { container } = await renderPanel(
+        {},
+        allWidgetsVisible({
+          "widgets.focusTimer.enabled": true,
+          "widgets.weather.enabled": true,
+        })
+      );
+
+      expect(toggleIds(container)).toEqual(
+        EN_US_ORDER.map(id => `${id}-toggle`)
+      );
+    });
+
+    it("gives two renders the same order", async () => {
+      const first = await renderPanel({}, allWidgetsVisible());
+      const second = await renderPanel({}, allWidgetsVisible());
+
+      expect(toggleIds(first.container)).toEqual(
+        EN_US_ORDER.map(id => `${id}-toggle`)
+      );
+      expect(toggleIds(second.container)).toEqual(toggleIds(first.container));
+    });
+
+    it("renders no toggles until the labels resolve", async () => {
+      document.l10n.formatMessages = jest.fn(() => new Promise(() => {}));
+
+      const { container } = await renderPanel({}, allWidgetsVisible());
+
+      expect(toggleIds(container)).toEqual([]);
+    });
+
+    it("falls back to widget ids when document.l10n is absent", async () => {
+      delete document.l10n;
+
+      const { container } = await renderPanel({}, allWidgetsVisible());
+
+      expect(toggleIds(container)).toEqual(ID_ORDER.map(id => `${id}-toggle`));
+    });
+
+    it("sorts a widget whose label has no message under its id", async () => {
+      delete labels["newtab-custom-widget-timer-toggle"];
+
+      const { container } = await renderPanel({}, allWidgetsVisible());
+
+      // "focusTimer" as a sort key lands third, which happens to be ID_ORDER.
+      expect(toggleIds(container)).toEqual(ID_ORDER.map(id => `${id}-toggle`));
+    });
   });
 
   describe("toggling a widget", () => {
     it.each(WIDGETS)(
       "records $source and $widget_name and writes $preference for $id",
-      ({ id, source, widget_name: widgetName, preference, widgetSize }) => {
-        const { container, store } = renderPanel({}, allWidgetsVisible());
+      async ({
+        id,
+        source,
+        widget_name: widgetName,
+        preference,
+        widgetSize,
+      }) => {
+        const { container, store } = await renderPanel({}, allWidgetsVisible());
 
         fireToggle(container.querySelector(`#${id}-toggle`), true);
 
@@ -382,8 +641,8 @@ describe("<WidgetsManagementPanel>", () => {
       }
     );
 
-    it("reports enabled: false when a widget is switched off", () => {
-      const { container, store } = renderPanel({}, allWidgetsVisible());
+    it("reports enabled: false when a widget is switched off", async () => {
+      const { container, store } = await renderPanel({}, allWidgetsVisible());
 
       fireToggle(container.querySelector("#weather-toggle"), false);
 
@@ -397,8 +656,8 @@ describe("<WidgetsManagementPanel>", () => {
       );
     });
 
-    it("sends the registry default size when no size pref is set", () => {
-      const { container, store } = renderPanel({}, allWidgetsVisible());
+    it("sends the registry default size when no size pref is set", async () => {
+      const { container, store } = await renderPanel({}, allWidgetsVisible());
 
       fireToggle(container.querySelector("#weather-toggle"), true);
 
@@ -407,8 +666,8 @@ describe("<WidgetsManagementPanel>", () => {
       );
     });
 
-    it("sends a user-set size pref", () => {
-      const { container, store } = renderPanel(
+    it("sends a user-set size pref", async () => {
+      const { container, store } = await renderPanel(
         {},
         allWidgetsVisible({ "widgets.weather.size": "large" })
       );
@@ -420,8 +679,8 @@ describe("<WidgetsManagementPanel>", () => {
       );
     });
 
-    it("sends a trainhop size suggestion when no size pref is set", () => {
-      const { container, store } = renderPanel(
+    it("sends a trainhop size suggestion when no size pref is set", async () => {
+      const { container, store } = await renderPanel(
         {},
         allWidgetsVisible({
           trainhopConfig: { widgets: { weatherSize: "large" } },
@@ -435,9 +694,9 @@ describe("<WidgetsManagementPanel>", () => {
       );
     });
 
-    it("records a widget added to the registry with its own source", () => {
+    it("records a widget added to the registry with its own source", async () => {
       const fixture = withFixtureWidget();
-      const { container, store } = renderPanel({}, allWidgetsVisible());
+      const { container, store } = await renderPanel({}, allWidgetsVisible());
 
       fireToggle(container.querySelector("#fixtureWidget-toggle"), true);
 
@@ -452,8 +711,8 @@ describe("<WidgetsManagementPanel>", () => {
       expect(props.setPref).toHaveBeenCalledWith(fixture.enabledPref, true);
     });
 
-    it("stops the toggle event before it reaches the outer Widgets toggle", () => {
-      const { container } = renderPanel({}, allWidgetsVisible());
+    it("stops the toggle event before it reaches the outer Widgets toggle", async () => {
+      const { container } = await renderPanel({}, allWidgetsVisible());
       const outerHandler = jest.fn();
       container.addEventListener("toggle", outerHandler);
 

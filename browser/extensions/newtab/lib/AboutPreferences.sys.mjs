@@ -14,6 +14,33 @@ const ACTIVITY_STREAM_PREF_BRANCH = "browser.newtabpage.activity-stream.";
 export const PREFERENCES_LOADED_EVENT = "home-pane-loaded";
 export const PREFERENCES_LOADED_EVENT_SUBPANE = "customHomepage-pane-loaded";
 
+/**
+ * Returns the about:preferences toggle label of each widget by widget id, so
+ * the Widgets group can be ordered by what the user reads. A label that does
+ * not resolve maps to its widget id.
+ *
+ * @param {{ id: string, prefsL10nId: string }[]} widgets
+ * @returns {Map<string, string>}
+ */
+function widgetLabels(widgets) {
+  let messages = [];
+  try {
+    const strings = new Localization(["browser/newtab/newtab.ftl"], true);
+    messages = strings.formatMessagesSync(
+      widgets.map(w => ({ id: w.prefsL10nId }))
+    );
+  } catch (e) {
+    // formatMessagesSync can throw; the pane still builds, sorted by id.
+  }
+  return new Map(
+    widgets.map((w, i) => [
+      w.id,
+      messages[i]?.attributes?.find(attr => attr.name === "label")?.value ||
+        w.id,
+    ])
+  );
+}
+
 export class AboutPreferences {
   init() {
     Services.obs.addObserver(this, PREFERENCES_LOADED_EVENT);
@@ -460,6 +487,13 @@ export class AboutPreferences {
     // When not nested, Weather keeps its own row so it stays reachable.
     const weatherNested = novaEnabled && widgetsSystemEnabled;
 
+    // Only the rendered group is sorted; the settings stay registered in
+    // registry order.
+    const labels = widgetLabels(prefsWidgets);
+    const sortedWidgets = [...prefsWidgets].sort((a, b) =>
+      (labels.get(a.id) ?? a.id).localeCompare(labels.get(b.id) ?? b.id)
+    );
+
     return {
       inProgress: true,
       headingLevel: 2,
@@ -495,7 +529,7 @@ export class AboutPreferences {
           id: "widgets",
           l10nId: "home-prefs-widgets-header",
           control: "moz-toggle",
-          items: prefsWidgets
+          items: sortedWidgets
             .filter(w => weatherNested || w.id !== "weather")
             .map(({ id, prefsL10nId }) => ({
               id,

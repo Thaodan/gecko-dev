@@ -15,6 +15,7 @@ import {
 } from "common/WidgetsRegistry.mjs";
 // eslint-disable-next-line no-shadow
 import { CSSTransition } from "react-transition-group";
+import { useWidgetLabels } from "./useWidgetLabels.jsx";
 
 function WidgetsManagementPanel({ togglePanel, showPanel, setPref }) {
   const prefs = useSelector(state => state.Prefs.values);
@@ -29,6 +30,17 @@ function WidgetsManagementPanel({ togglePanel, showPanel, setPref }) {
       isWidgetToggleVisible(widget, prefs) &&
       (widget.id !== "weather" || isWeatherAvailable(prefs))
   );
+
+  // No toggle renders until the labels resolve; an unsorted list would reorder
+  // under the user once they did.
+  const widgetLabels = useWidgetLabels(activeWidgets);
+  const sortedWidgets = widgetLabels
+    ? [...visibleWidgets].sort((a, b) =>
+        (widgetLabels.get(a.id) ?? a.id).localeCompare(
+          widgetLabels.get(b.id) ?? b.id
+        )
+      )
+    : [];
 
   const handlePanelEntered = () => {
     arrowButtonRef.current?.focus();
@@ -96,7 +108,7 @@ function WidgetsManagementPanel({ togglePanel, showPanel, setPref }) {
               <h2 data-l10n-id="newtab-widget-manage-title"></h2>
             </div>
             <div className="settings-widgets">
-              {visibleWidgets.map(widget => (
+              {sortedWidgets.map(widget => (
                 <moz-toggle
                   key={widget.id}
                   id={`${widget.id}-toggle`}
