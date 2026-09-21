@@ -34,6 +34,7 @@ import {
 import {
   WIDGET_REGISTRY,
   hasContentAreaWidgets,
+  isWeatherAvailable,
   isWidgetEnabled,
   isWidgetToggleVisible,
   isWidgetsContainerVisible,
@@ -979,13 +980,7 @@ export class BaseContent extends React.PureComponent {
     const pocketRegion = prefs["feeds.system.topstories"];
     const mayHaveInferredPersonalization =
       prefs[PREF_INFERRED_PERSONALIZATION_SYSTEM];
-    // Weather's visibility gate differs from the other widgets (it keys off
-    // system.showWeather / trainhopConfig.weather), so it keeps its own check
-    // plus the additive widgetsSettings.weatherVisible override.
-    const mayHaveWeather =
-      prefs["system.showWeather"] ||
-      prefs.trainhopConfig?.weather?.enabled ||
-      prefs.trainhopConfig?.widgetsSettings?.weatherVisible;
+    const mayHaveWeather = isWeatherAvailable(prefs);
     const mayHaveWebNotifications =
       prefs["system.showWebNotifications"] ||
       prefs.trainhopConfig?.webNotifications?.enabled;
@@ -994,6 +989,11 @@ export class BaseContent extends React.PureComponent {
     // Widget toggle visibility is resolved by the shared registry helpers, which
     // are additive across the system pref, the legacy widgetsConfig variable,
     // trainhopConfig.widgets (addable), and trainhopConfig.widgetsSettings.
+    // @nova-cleanup(remove-conditional): Delete widgetVisibleById, the eight
+    // mayHave*Widget constants below and the now-unused isWidgetToggleVisible
+    // import once the classic widget toggle block in ContentSection.jsx is
+    // deleted. Keep mayHaveWidgets: the Nova widgets section and the standalone
+    // Weather row both read it.
     const widgetVisibleById = id =>
       isWidgetToggleVisible(
         WIDGET_REGISTRY.find(w => w.id === id),
@@ -1003,7 +1003,6 @@ export class BaseContent extends React.PureComponent {
     const mayHaveListsWidget = widgetVisibleById("lists");
     const mayHaveTimerWidget = widgetVisibleById("focusTimer");
     const mayHaveClocksWidget = widgetVisibleById("clocks");
-    const mayHaveSportsWidget = widgetVisibleById("sportsWidget");
     const mayHavePrivacyWidget = widgetVisibleById("privacy");
     const mayHaveCrosswordWidget = widgetVisibleById("crossword");
     const mayHaveStocksWidget = widgetVisibleById("stocks");
@@ -1011,6 +1010,10 @@ export class BaseContent extends React.PureComponent {
     const mayHaveRecentSearchesWidget = widgetVisibleById("recentSearches");
 
     // These prefs set the initial values on the Customize panel toggle switches
+    // @nova-cleanup(remove-conditional): Delete every *Enabled member of
+    // enabledWidgets once the classic widget toggle block in ContentSection.jsx
+    // is deleted; keep widgetsMaximized and widgetsMayBeMaximized, which the
+    // widget size telemetry in ContentSection.jsx reads.
     const enabledWidgets = {
       listsEnabled: prefs["widgets.lists.enabled"],
       timerEnabled: prefs["widgets.focusTimer.enabled"],
@@ -1018,7 +1021,6 @@ export class BaseContent extends React.PureComponent {
       weatherEnabled: novaEnabled
         ? prefs["widgets.weather.enabled"]
         : prefs.showWeather,
-      sportsWidgetEnabled: prefs["widgets.sportsWidget.enabled"],
       privacyEnabled: prefs["widgets.privacy.enabled"],
       crosswordEnabled: prefs["widgets.crossword.enabled"],
       stocksEnabled: prefs["widgets.stocks.enabled"],
@@ -1372,9 +1374,14 @@ export class BaseContent extends React.PureComponent {
                 mayHaveWeather={mayHaveWeather}
                 mayHaveWebNotifications={mayHaveWebNotifications}
                 mayHaveWidgets={mayHaveWidgets}
+                // @nova-cleanup(remove-conditional): Delete the eight
+                // mayHave*Widget props from this render site once the classic
+                // widget toggle block in ContentSection.jsx is deleted. Keep
+                // enabledWidgets: its widgetsMaximized and widgetsMayBeMaximized
+                // members are read by the widget size telemetry in
+                // ContentSection.jsx.
                 mayHaveTimerWidget={mayHaveTimerWidget}
                 mayHaveListsWidget={mayHaveListsWidget}
-                mayHaveSportsWidget={mayHaveSportsWidget}
                 mayHaveClocksWidget={mayHaveClocksWidget}
                 mayHavePrivacyWidget={mayHavePrivacyWidget}
                 mayHaveCrosswordWidget={mayHaveCrosswordWidget}
@@ -1554,7 +1561,6 @@ export class BaseContent extends React.PureComponent {
               mayHaveWidgets={mayHaveWidgets}
               mayHaveTimerWidget={mayHaveTimerWidget}
               mayHaveListsWidget={mayHaveListsWidget}
-              mayHaveSportsWidget={mayHaveSportsWidget}
               mayHaveClocksWidget={mayHaveClocksWidget}
               mayHavePrivacyWidget={mayHavePrivacyWidget}
               mayHaveCrosswordWidget={mayHaveCrosswordWidget}

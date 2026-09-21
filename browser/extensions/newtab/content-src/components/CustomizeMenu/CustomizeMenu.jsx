@@ -245,9 +245,14 @@ export class _CustomizeMenu extends React.PureComponent {
                 mayHaveWidgets={this.props.mayHaveWidgets}
                 mayHaveWeatherForecast={this.props.mayHaveWeatherForecast}
                 weatherDisplay={this.props.weatherDisplay}
+                // @nova-cleanup(remove-conditional): Delete the eight
+                // mayHave*Widget props forwarded below once the classic widget
+                // toggle block in ContentSection.jsx is deleted. Keep
+                // enabledWidgets: its widgetsMaximized and widgetsMayBeMaximized
+                // members are read by the widget size telemetry in
+                // ContentSection.jsx.
                 mayHaveTimerWidget={this.props.mayHaveTimerWidget}
                 mayHaveListsWidget={this.props.mayHaveListsWidget}
-                mayHaveSportsWidget={this.props.mayHaveSportsWidget}
                 mayHaveClocksWidget={this.props.mayHaveClocksWidget}
                 mayHavePrivacyWidget={this.props.mayHavePrivacyWidget}
                 mayHaveCrosswordWidget={this.props.mayHaveCrosswordWidget}

@@ -1,59 +1,135 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 import { render, fireEvent } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { createStore, combineReducers } from "redux";
 import { INITIAL_STATE, reducers } from "common/Reducers.sys.mjs";
 import { WIDGET_REGISTRY } from "common/WidgetsRegistry.mjs";
-import { WrapWithProvider } from "test/jest/test-utils";
 import { WidgetsManagementPanel } from "content-src/components/Nova/CustomizeMenu/WidgetsManagementPanel/WidgetsManagementPanel";
 
-const DEFAULT_PROPS = {
-  togglePanel: jest.fn(),
-  showPanel: false,
-  enabledSections: {
-    weatherEnabled: false,
+// The nine active widgets in registry order, kept as literals so a
+// renamed string, id or telemetry source fails here.
+const WIDGETS = [
+  {
+    id: "pictureOfTheDay",
+    l10nId: "newtab-custom-widget-picture-toggle",
+    source: "WIDGET_PICTURE_OF_THE_DAY",
+    widget_name: "picture_of_the_day",
+    preference: "widgets.pictureOfTheDay.enabled",
+    widgetSize: "medium",
   },
-  enabledWidgets: {
-    timerEnabled: false,
-    listsEnabled: false,
-    widgetsMaximized: false,
-    widgetsMayBeMaximized: false,
+  {
+    id: "clocks",
+    l10nId: "newtab-custom-widget-clock-toggle",
+    source: "WIDGET_CLOCKS",
+    widget_name: "clocks",
+    preference: "widgets.clocks.enabled",
+    widgetSize: "medium",
   },
-  mayHaveWeather: false,
-  mayHaveTimerWidget: false,
-  mayHaveListsWidget: false,
-  mayHaveWeatherForecast: false,
-  weatherDisplay: "simple",
-  setPref: jest.fn(),
+  {
+    id: "lists",
+    l10nId: "newtab-custom-widget-lists-toggle",
+    source: "WIDGET_LISTS",
+    widget_name: "lists",
+    preference: "widgets.lists.enabled",
+    widgetSize: "medium",
+  },
+  {
+    id: "focusTimer",
+    l10nId: "newtab-custom-widget-timer-toggle",
+    source: "WIDGET_TIMER",
+    widget_name: "focus_timer",
+    preference: "widgets.focusTimer.enabled",
+    widgetSize: "medium",
+  },
+  {
+    id: "weather",
+    l10nId: "newtab-custom-widget-weather-toggle",
+    source: "WEATHER",
+    widget_name: "weather",
+    preference: "widgets.weather.enabled",
+    widgetSize: "small",
+  },
+  {
+    id: "privacy",
+    l10nId: "newtab-custom-widget-privacy-toggle",
+    source: "WIDGET_PRIVACY",
+    widget_name: "privacy",
+    preference: "widgets.privacy.enabled",
+    widgetSize: "medium",
+  },
+  {
+    id: "crossword",
+    l10nId: "newtab-custom-widget-crossword-toggle",
+    source: "WIDGET_CROSSWORD",
+    widget_name: "crossword",
+    preference: "widgets.crossword.enabled",
+    widgetSize: "medium",
+  },
+  {
+    id: "stocks",
+    l10nId: "newtab-custom-widget-stocks-toggle",
+    source: "WIDGET_STOCKS",
+    widget_name: "stocks",
+    preference: "widgets.stocks.enabled",
+    widgetSize: "medium",
+  },
+  {
+    id: "recentSearches",
+    l10nId: "newtab-custom-widget-search-toggle",
+    source: "WIDGET_RECENT_SEARCHES",
+    widget_name: "recent_searches",
+    preference: "widgets.recentSearches.enabled",
+    widgetSize: "medium",
+  },
+];
+
+// The minimum entry the panel renders from; the registry helpers tolerate the
+// missing fields.
+const FIXTURE_WIDGET = {
+  id: "fixtureWidget",
+  telemetryName: "fixture_widget",
+  customizeL10nId: "newtab-custom-widget-fixture-toggle",
+  customizeEventSource: "WIDGET_FIXTURE",
+  enabledPref: "widgets.fixtureWidget.enabled",
+  sizePref: "widgets.fixtureWidget.size",
+  defaultSize: "medium",
+  systemEnabledPref: "widgets.system.fixtureWidget.enabled",
 };
-
-const defaultSizeFor = telemetryName =>
-  WIDGET_REGISTRY.find(w => w.telemetryName === telemetryName).defaultSize;
-
-function stateWithPrefs(values) {
-  return {
-    ...INITIAL_STATE,
-    Prefs: {
-      ...INITIAL_STATE.Prefs,
-      values: { ...INITIAL_STATE.Prefs.values, ...values },
-    },
-  };
-}
-
-// The toggles are moz-toggle custom elements: jsdom has no upgraded definition,
-// so the test plays the part of the element and fires the toggle event with the
-// dataset and pressed state the real widget would carry.
-function fireToggle(toggle, { preference, eventSource, pressed }) {
-  toggle.dataset.preference = preference;
-  toggle.dataset.eventSource = eventSource;
-  toggle.pressed = pressed;
-  fireEvent(toggle, new Event("toggle"));
-}
 
 describe("<WidgetsManagementPanel>", () => {
   let props;
 
-  function renderPanel(overrides = {}, state = INITIAL_STATE) {
-    const store = createStore(combineReducers(reducers), state);
+  // Pushed onto the real registry so tests can prove a new entry needs no
+  // panel change.
+  const pushedFixtures = [];
+  const withFixtureWidget = (overrides = {}) => {
+    const widget = { ...FIXTURE_WIDGET, ...overrides };
+    WIDGET_REGISTRY.push(widget);
+    pushedFixtures.push(widget);
+    return widget;
+  };
+
+  // Turns on every registry widget's system pref plus Weather's. Call it after
+  // pushing a fixture so the fixture is included.
+  function allWidgetsVisible(extra = {}) {
+    const prefs = { "system.showWeather": true };
+    for (const widget of WIDGET_REGISTRY.filter(w => !w.retired)) {
+      prefs[widget.systemEnabledPref] = true;
+    }
+    return { ...prefs, ...extra };
+  }
+
+  function renderPanel(overrides = {}, prefValues = {}) {
+    const store = createStore(combineReducers(reducers), {
+      ...INITIAL_STATE,
+      Prefs: {
+        ...INITIAL_STATE.Prefs,
+        values: { ...INITIAL_STATE.Prefs.values, ...prefValues },
+      },
+    });
     jest.spyOn(store, "dispatch");
     const utils = render(
       <Provider store={store}>
@@ -63,353 +139,327 @@ describe("<WidgetsManagementPanel>", () => {
     return { ...utils, store };
   }
 
-  function dispatchedActions(store) {
-    return store.dispatch.mock.calls.map(([action]) => action);
+  function toggleIds(container) {
+    return [...container.querySelectorAll("moz-toggle")].map(el => el.id);
+  }
+
+  // jsdom does not upgrade moz-toggle, so the test sets the pressed state the
+  // real element would carry before firing its toggle event.
+  function fireToggle(toggle, pressed) {
+    toggle.pressed = pressed;
+    fireEvent(toggle, new Event("toggle", { bubbles: true }));
+  }
+
+  function dispatchedAction(store, type) {
+    return store.dispatch.mock.calls
+      .map(([action]) => action)
+      .find(action => action.type === type);
   }
 
   beforeEach(() => {
-    props = {
-      togglePanel: jest.fn(),
-      showPanel: false,
-      enabledSections: { weatherEnabled: false },
-      enabledWidgets: {
-        timerEnabled: false,
-        listsEnabled: false,
-        widgetsMaximized: false,
-        widgetsMayBeMaximized: false,
-      },
-      mayHaveWeather: true,
-      mayHaveTimerWidget: true,
-      mayHaveListsWidget: true,
-      mayHaveWeatherForecast: false,
-      weatherDisplay: "simple",
-      setPref: jest.fn(),
-    };
+    props = { togglePanel: jest.fn(), showPanel: true, setPref: jest.fn() };
   });
 
-  it("should render", () => {
-    const { container } = render(
-      <WrapWithProvider>
-        <WidgetsManagementPanel {...DEFAULT_PROPS} />
-      </WrapWithProvider>
-    );
+  afterEach(() => {
+    for (const widget of pushedFixtures.splice(0)) {
+      const index = WIDGET_REGISTRY.indexOf(widget);
+      if (index !== -1) {
+        WIDGET_REGISTRY.splice(index, 1);
+      }
+    }
+    jest.restoreAllMocks();
+  });
+
+  it("renders the manage widgets button", () => {
+    const { container } = renderPanel({ showPanel: false });
     expect(
       container.querySelector(".widgets-mgmt-panel-container")
     ).toBeInTheDocument();
-  });
-
-  it("should render the component", () => {
-    const { container } = renderPanel();
-    expect(
-      container.querySelector(".widgets-mgmt-panel-container")
-    ).toBeInTheDocument();
-  });
-
-  it("should render the manage widgets button", () => {
-    const { container } = renderPanel();
     expect(container.querySelector("moz-box-button")).toBeInTheDocument();
   });
 
-  it("should call togglePanel when button is clicked", () => {
-    const { container } = renderPanel();
+  it("calls togglePanel when the manage widgets button is clicked", () => {
+    const { container } = renderPanel({ showPanel: false });
     fireEvent.click(container.querySelector("moz-box-button"));
     expect(props.togglePanel).toHaveBeenCalledTimes(1);
   });
 
-  it("should render the panel when showPanel is true", () => {
-    const { container } = renderPanel({ showPanel: true });
-    expect(container.querySelector(".widgets-mgmt-panel")).toBeInTheDocument();
-  });
-
-  it("should not render the panel when showPanel is false", () => {
+  it("does not render the panel until showPanel is true", () => {
     const { container } = renderPanel({ showPanel: false });
     expect(
       container.querySelector(".widgets-mgmt-panel")
     ).not.toBeInTheDocument();
   });
 
-  it("should call togglePanel when arrow button is clicked", () => {
-    const { container } = renderPanel({ showPanel: true });
-    fireEvent.click(container.querySelector(".arrow-button"));
-    expect(props.togglePanel).toHaveBeenCalledTimes(1);
-  });
-
-  it("gives the back button an accessible name and tooltip", () => {
-    const { container } = renderPanel({ showPanel: true });
+  it("renders the panel with a title and a back button when showPanel is true", () => {
+    const { container } = renderPanel();
+    const panel = container.querySelector(".widgets-mgmt-panel");
+    expect(panel).toBeInTheDocument();
+    expect(panel.querySelectorAll("h2")).toHaveLength(1);
     expect(container.querySelector("moz-button.arrow-button")).toHaveAttribute(
       "data-l10n-id",
       "newtab-customize-panel-back-button"
     );
   });
 
-  it("should render panel title", () => {
-    const { container } = renderPanel({ showPanel: true });
-    const panel = container.querySelector(".widgets-mgmt-panel");
-    expect(panel).toBeInTheDocument();
-    expect(panel.querySelectorAll("h2")).toHaveLength(1);
+  it("calls togglePanel when the back button is clicked", () => {
+    const { container } = renderPanel();
+    fireEvent.click(container.querySelector(".arrow-button"));
+    expect(props.togglePanel).toHaveBeenCalledTimes(1);
   });
 
   describe("widget toggles", () => {
-    it("should render weather toggle when mayHaveWeather is true", () => {
-      const { container } = renderPanel({ showPanel: true });
-      expect(container.querySelector("#weather-toggle")).toBeInTheDocument();
+    it("renders no toggles when no widget is available", () => {
+      const { container } = renderPanel();
+      expect(toggleIds(container)).toEqual([]);
     });
 
-    it("should not render weather toggle when mayHaveWeather is false", () => {
-      const { container } = renderPanel({
-        showPanel: true,
-        mayHaveWeather: false,
-      });
+    it("renders one toggle per available widget, in registry order", () => {
+      const { container } = renderPanel({}, allWidgetsVisible());
+      expect(toggleIds(container)).toEqual(WIDGETS.map(w => `${w.id}-toggle`));
+    });
+
+    it.each(WIDGETS)(
+      "labels the $id toggle with $l10nId and points it at $preference",
+      ({ id, l10nId, preference }) => {
+        const { container } = renderPanel({}, allWidgetsVisible());
+        const toggle = container.querySelector(`#${id}-toggle`);
+        expect(toggle).toHaveAttribute("data-l10n-id", l10nId);
+        expect(toggle).toHaveAttribute("data-preference", preference);
+      }
+    );
+
+    it.each(WIDGETS)(
+      "drops the $id toggle when its system pref is off",
+      ({ id }) => {
+        const widget = WIDGET_REGISTRY.find(w => w.id === id);
+        const prefs = allWidgetsVisible();
+        prefs[widget.systemEnabledPref] = false;
+
+        const { container } = renderPanel({}, prefs);
+
+        expect(
+          container.querySelector(`#${id}-toggle`)
+        ).not.toBeInTheDocument();
+        expect(toggleIds(container)).toHaveLength(WIDGETS.length - 1);
+      }
+    );
+
+    it.each(WIDGETS)(
+      "presses the $id toggle when $preference is set",
+      ({ id, preference }) => {
+        const { container } = renderPanel(
+          {},
+          allWidgetsVisible({ [preference]: true })
+        );
+        expect(container.querySelector(`#${id}-toggle`)).toHaveAttribute(
+          "pressed"
+        );
+      }
+    );
+
+    it("leaves a toggle unpressed when its pref is off", () => {
+      const { container } = renderPanel({}, allWidgetsVisible());
+      expect(container.querySelector("#lists-toggle")).not.toHaveAttribute(
+        "pressed"
+      );
+    });
+
+    it("renders no toggle for the retired sports widget", () => {
+      const { container } = renderPanel(
+        {},
+        allWidgetsVisible({ "widgets.system.sportsWidget.enabled": true })
+      );
       expect(
-        container.querySelector("#weather-toggle")
+        container.querySelector("#sportsWidget-toggle")
       ).not.toBeInTheDocument();
     });
 
-    it("should render timer toggle when mayHaveTimerWidget is true", () => {
-      const { container } = renderPanel({ showPanel: true });
-      expect(container.querySelector("#timer-toggle")).toBeInTheDocument();
-    });
+    it("renders a widget added to the registry, with no panel change", () => {
+      const fixture = withFixtureWidget();
 
-    it("should not render timer toggle when mayHaveTimerWidget is false", () => {
-      const { container } = renderPanel({
-        showPanel: true,
-        mayHaveTimerWidget: false,
-      });
-      expect(container.querySelector("#timer-toggle")).not.toBeInTheDocument();
-    });
+      const { container } = renderPanel({}, allWidgetsVisible());
 
-    it("should render lists toggle when mayHaveListsWidget is true", () => {
-      const { container } = renderPanel({ showPanel: true });
-      expect(container.querySelector("#lists-toggle")).toBeInTheDocument();
-    });
-
-    it("should not render lists toggle when mayHaveListsWidget is false", () => {
-      const { container } = renderPanel({
-        showPanel: true,
-        mayHaveListsWidget: false,
-      });
-      expect(container.querySelector("#lists-toggle")).not.toBeInTheDocument();
-    });
-
-    it("should reflect weatherEnabled in weather toggle pressed state", () => {
-      const { container } = renderPanel({
-        showPanel: true,
-        enabledSections: { weatherEnabled: true },
-      });
-      expect(container.querySelector("#weather-toggle")).toHaveAttribute(
-        "pressed"
+      expect(container.querySelector("#fixtureWidget-toggle")).toHaveAttribute(
+        "data-l10n-id",
+        fixture.customizeL10nId
       );
+      expect(toggleIds(container)).toEqual([
+        ...WIDGETS.map(w => `${w.id}-toggle`),
+        "fixtureWidget-toggle",
+      ]);
     });
 
-    it("should reflect timerEnabled in timer toggle pressed state", () => {
-      const { container } = renderPanel({
-        showPanel: true,
-        enabledWidgets: { ...props.enabledWidgets, timerEnabled: true },
-      });
-      expect(container.querySelector("#timer-toggle")).toHaveAttribute(
-        "pressed"
+    it("skips a retired registry entry", () => {
+      withFixtureWidget({ retired: true });
+
+      const { container } = renderPanel(
+        {},
+        allWidgetsVisible({ "widgets.system.fixtureWidget.enabled": true })
       );
+
+      expect(
+        container.querySelector("#fixtureWidget-toggle")
+      ).not.toBeInTheDocument();
     });
 
-    it("should reflect listsEnabled in lists toggle pressed state", () => {
-      const { container } = renderPanel({
-        showPanel: true,
-        enabledWidgets: { ...props.enabledWidgets, listsEnabled: true },
+    describe("weather", () => {
+      it("shows the weather toggle via its system pref and system.showWeather", () => {
+        const { container } = renderPanel(
+          {},
+          { "widgets.system.weather.enabled": true, "system.showWeather": true }
+        );
+        expect(toggleIds(container)).toEqual(["weather-toggle"]);
       });
-      expect(container.querySelector("#lists-toggle")).toHaveAttribute(
-        "pressed"
-      );
+
+      it("shows the weather toggle via trainhopConfig.weather.enabled", () => {
+        const { container } = renderPanel(
+          {},
+          {
+            "widgets.system.weather.enabled": true,
+            trainhopConfig: { weather: { enabled: true } },
+          }
+        );
+        expect(toggleIds(container)).toEqual(["weather-toggle"]);
+      });
+
+      it("shows the weather toggle via widgetsSettings.weatherVisible", () => {
+        const { container } = renderPanel(
+          {},
+          {
+            "widgets.system.weather.enabled": true,
+            trainhopConfig: { widgetsSettings: { weatherVisible: true } },
+          }
+        );
+        expect(toggleIds(container)).toEqual(["weather-toggle"]);
+      });
+
+      it("hides the weather toggle when only its own system pref is set", () => {
+        const { container } = renderPanel(
+          {},
+          { "widgets.system.weather.enabled": true }
+        );
+        expect(
+          container.querySelector("#weather-toggle")
+        ).not.toBeInTheDocument();
+      });
+
+      it("hides the weather toggle when only the legacy prefs are set", () => {
+        const { container } = renderPanel(
+          {},
+          { "system.showWeather": true, showWeather: true }
+        );
+        expect(
+          container.querySelector("#weather-toggle")
+        ).not.toBeInTheDocument();
+      });
     });
   });
 
-  describe("dispatch on toggle", () => {
-    it("should dispatch PREF_CHANGED and WIDGETS_ENABLED when weather toggle is fired", () => {
-      const { container, store } = renderPanel({ showPanel: true });
+  describe("toggling a widget", () => {
+    it.each(WIDGETS)(
+      "records $source and $widget_name and writes $preference for $id",
+      ({ id, source, widget_name: widgetName, preference, widgetSize }) => {
+        const { container, store } = renderPanel({}, allWidgetsVisible());
 
-      fireToggle(container.querySelector("#weather-toggle"), {
-        preference: "showWeather",
-        eventSource: "WEATHER",
-        pressed: true,
+        fireToggle(container.querySelector(`#${id}-toggle`), true);
+
+        expect(
+          dispatchedAction(store, "TELEMETRY_USER_EVENT").data
+        ).toMatchObject({
+          event: "PREF_CHANGED",
+          source,
+          value: { status: true, menu_source: "CUSTOMIZE_MENU" },
+        });
+        expect(dispatchedAction(store, "WIDGETS_ENABLED").data).toMatchObject({
+          widget_name: widgetName,
+          widget_source: "customize_panel",
+          enabled: true,
+          widget_size: widgetSize,
+        });
+        expect(props.setPref).toHaveBeenCalledTimes(1);
+        expect(props.setPref).toHaveBeenCalledWith(preference, true);
+      }
+    );
+
+    it("reports enabled: false when a widget is switched off", () => {
+      const { container, store } = renderPanel({}, allWidgetsVisible());
+
+      fireToggle(container.querySelector("#weather-toggle"), false);
+
+      expect(dispatchedAction(store, "WIDGETS_ENABLED").data).toMatchObject({
+        widget_name: "weather",
+        enabled: false,
       });
-
-      expect(store.dispatch).toHaveBeenCalledWith(
-        expect.objectContaining({ type: "TELEMETRY_USER_EVENT" })
-      );
-      expect(store.dispatch).toHaveBeenCalledWith(
-        expect.objectContaining({ type: "WIDGETS_ENABLED" })
-      );
-    });
-
-    it("should call setPref when a toggle is fired", () => {
-      const { container } = renderPanel({ showPanel: true });
-
-      fireToggle(container.querySelector("#weather-toggle"), {
-        preference: "showWeather",
-        eventSource: "WEATHER",
-        pressed: true,
-      });
-
-      expect(props.setPref).toHaveBeenCalledTimes(1);
-      expect(props.setPref).toHaveBeenCalledWith("showWeather", true);
-    });
-
-    it("should dispatch PREF_CHANGED and WIDGETS_ENABLED when lists toggle is fired", () => {
-      const { container, store } = renderPanel({ showPanel: true });
-
-      fireToggle(container.querySelector("#lists-toggle"), {
-        preference: "widgets.lists.enabled",
-        eventSource: "WIDGET_LISTS",
-        pressed: true,
-      });
-
-      expect(store.dispatch).toHaveBeenCalledWith(
-        expect.objectContaining({ type: "TELEMETRY_USER_EVENT" })
-      );
-      expect(store.dispatch).toHaveBeenCalledWith(
-        expect.objectContaining({ type: "WIDGETS_ENABLED" })
-      );
-    });
-
-    it("should call setPref when lists toggle is fired", () => {
-      const { container } = renderPanel({ showPanel: true });
-
-      fireToggle(container.querySelector("#lists-toggle"), {
-        preference: "widgets.lists.enabled",
-        eventSource: "WIDGET_LISTS",
-        pressed: true,
-      });
-
-      expect(props.setPref).toHaveBeenCalledTimes(1);
-      expect(props.setPref).toHaveBeenCalledWith("widgets.lists.enabled", true);
-    });
-
-    it("should dispatch PREF_CHANGED and WIDGETS_ENABLED when timer toggle is fired", () => {
-      const { container, store } = renderPanel({ showPanel: true });
-
-      fireToggle(container.querySelector("#timer-toggle"), {
-        preference: "widgets.focusTimer.enabled",
-        eventSource: "WIDGET_TIMER",
-        pressed: true,
-      });
-
-      expect(store.dispatch).toHaveBeenCalledWith(
-        expect.objectContaining({ type: "TELEMETRY_USER_EVENT" })
-      );
-      expect(store.dispatch).toHaveBeenCalledWith(
-        expect.objectContaining({ type: "WIDGETS_ENABLED" })
-      );
-    });
-
-    it("should call setPref when timer toggle is fired", () => {
-      const { container } = renderPanel({ showPanel: true });
-
-      fireToggle(container.querySelector("#timer-toggle"), {
-        preference: "widgets.focusTimer.enabled",
-        eventSource: "WIDGET_TIMER",
-        pressed: true,
-      });
-
-      expect(props.setPref).toHaveBeenCalledTimes(1);
       expect(props.setPref).toHaveBeenCalledWith(
-        "widgets.focusTimer.enabled",
-        true
+        "widgets.weather.enabled",
+        false
       );
     });
 
-    it("should dispatch WIDGETS_ENABLED with enabled: false when toggled off", () => {
-      const { container, store } = renderPanel({ showPanel: true });
+    it("sends the registry default size when no size pref is set", () => {
+      const { container, store } = renderPanel({}, allWidgetsVisible());
 
-      fireToggle(container.querySelector("#weather-toggle"), {
-        preference: "showWeather",
-        eventSource: "WEATHER",
-        pressed: false,
-      });
+      fireToggle(container.querySelector("#weather-toggle"), true);
 
-      expect(store.dispatch).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "WIDGETS_ENABLED",
-          data: expect.objectContaining({ enabled: false }),
-        })
+      expect(dispatchedAction(store, "WIDGETS_ENABLED").data.widget_size).toBe(
+        "small"
       );
     });
 
-    it("should dispatch WIDGETS_ENABLED with the weather widget's registry default size when no pref is set", () => {
-      const { container, store } = renderPanel({ showPanel: true });
-
-      fireToggle(container.querySelector("#weather-toggle"), {
-        preference: "showWeather",
-        eventSource: "WEATHER",
-        pressed: true,
-      });
-
-      expect(store.dispatch).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "WIDGETS_ENABLED",
-          data: expect.objectContaining({
-            widget_size: defaultSizeFor("weather"),
-          }),
-        })
-      );
-    });
-
-    it("should reflect a user-set weather size pref in widget_size", () => {
+    it("sends a user-set size pref", () => {
       const { container, store } = renderPanel(
-        { showPanel: true },
-        stateWithPrefs({ "widgets.weather.size": "large" })
+        {},
+        allWidgetsVisible({ "widgets.weather.size": "large" })
       );
 
-      fireToggle(container.querySelector("#weather-toggle"), {
-        preference: "showWeather",
-        eventSource: "WEATHER",
-        pressed: true,
-      });
+      fireToggle(container.querySelector("#weather-toggle"), true);
 
-      expect(store.dispatch).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "WIDGETS_ENABLED",
-          data: expect.objectContaining({ widget_size: "large" }),
-        })
+      expect(dispatchedAction(store, "WIDGETS_ENABLED").data.widget_size).toBe(
+        "large"
       );
     });
 
-    it("should reflect a trainhopConfig size override when no size pref is set", () => {
+    it("sends a trainhop size suggestion when no size pref is set", () => {
       const { container, store } = renderPanel(
-        { showPanel: true },
-        stateWithPrefs({
+        {},
+        allWidgetsVisible({
           trainhopConfig: { widgets: { weatherSize: "large" } },
         })
       );
 
-      fireToggle(container.querySelector("#weather-toggle"), {
-        preference: "showWeather",
-        eventSource: "WEATHER",
-        pressed: true,
-      });
+      fireToggle(container.querySelector("#weather-toggle"), true);
 
-      expect(store.dispatch).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "WIDGETS_ENABLED",
-          data: expect.objectContaining({ widget_size: "large" }),
-        })
+      expect(dispatchedAction(store, "WIDGETS_ENABLED").data.widget_size).toBe(
+        "large"
       );
     });
 
-    it("should dispatch WIDGETS_ENABLED with the focus timer widget's registry default size when no pref is set", () => {
-      const { container, store } = renderPanel({ showPanel: true });
+    it("records a widget added to the registry with its own source", () => {
+      const fixture = withFixtureWidget();
+      const { container, store } = renderPanel({}, allWidgetsVisible());
 
-      fireToggle(container.querySelector("#timer-toggle"), {
-        preference: "widgets.focusTimer.enabled",
-        eventSource: "WIDGET_TIMER",
-        pressed: true,
+      fireToggle(container.querySelector("#fixtureWidget-toggle"), true);
+
+      expect(dispatchedAction(store, "TELEMETRY_USER_EVENT").data.source).toBe(
+        "WIDGET_FIXTURE"
+      );
+      expect(dispatchedAction(store, "WIDGETS_ENABLED").data).toMatchObject({
+        widget_name: "fixture_widget",
+        widget_size: "medium",
+        enabled: true,
       });
+      expect(props.setPref).toHaveBeenCalledWith(fixture.enabledPref, true);
+    });
 
-      const widgetsEnabled = dispatchedActions(store).find(
-        action => action.type === "WIDGETS_ENABLED"
-      );
-      expect(widgetsEnabled).toBeDefined();
-      expect(widgetsEnabled.data.widget_size).toBe(
-        defaultSizeFor("focus_timer")
-      );
+    it("stops the toggle event before it reaches the outer Widgets toggle", () => {
+      const { container } = renderPanel({}, allWidgetsVisible());
+      const outerHandler = jest.fn();
+      container.addEventListener("toggle", outerHandler);
+
+      fireToggle(container.querySelector("#clocks-toggle"), false);
+
+      expect(outerHandler).not.toHaveBeenCalled();
     });
   });
 });
