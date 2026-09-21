@@ -182,6 +182,7 @@ import org.mozilla.fenix.browser.permissions.FenixSitePermissionLearnMoreUrlProv
 import org.mozilla.fenix.browser.readermode.DefaultReaderModeController
 import org.mozilla.fenix.browser.readermode.ReaderModeController
 import org.mozilla.fenix.browser.reloadcover.TabReloadCoverFeature
+import org.mozilla.fenix.browser.reloadcover.TabReloadCoverGating
 import org.mozilla.fenix.browser.store.BrowserScreenMiddleware
 import org.mozilla.fenix.browser.store.BrowserScreenState
 import org.mozilla.fenix.browser.store.BrowserScreenStore
@@ -1210,29 +1211,36 @@ abstract class BaseBrowserFragment :
             view = view,
         )
 
-        tabReloadCoverFeature.set(
-            feature =
-                TabReloadCoverFeature(
-                    store = requireComponents.core.store,
-                    browserScreenStore = browserScreenStore,
-                    thumbnailStorage = requireComponents.core.thumbnailStorage,
-                    coverView = binding.tabReloadCover,
-                    tabId = customTabSessionId,
-                ),
-            owner = this,
-            view = view,
-        )
+        val isCoverEnabled = TabReloadCoverGating.isCoverEnabled(settings)
+        val isScrollAwareEnabled = TabReloadCoverGating.isScrollAwareEnabled(settings)
 
-        scrollAwareThumbnailFeature.set(
-            feature =
-                ScrollAwareThumbnailFeature(
-                    store = requireComponents.core.store,
-                    lifecycleOwner = viewLifecycleOwner,
-                    thumbnailsFeature = { thumbnailsFeature.get() },
-                ),
-            owner = this,
-            view = view,
-        )
+        if (isCoverEnabled) {
+            tabReloadCoverFeature.set(
+                feature =
+                    TabReloadCoverFeature(
+                        store = requireComponents.core.store,
+                        browserScreenStore = browserScreenStore,
+                        thumbnailStorage = requireComponents.core.thumbnailStorage,
+                        coverView = binding.tabReloadCover,
+                        tabId = customTabSessionId,
+                    ),
+                owner = this,
+                view = view,
+            )
+        }
+
+        if (isScrollAwareEnabled) {
+            scrollAwareThumbnailFeature.set(
+                feature =
+                    ScrollAwareThumbnailFeature(
+                        store = requireComponents.core.store,
+                        lifecycleOwner = viewLifecycleOwner,
+                        thumbnailsFeature = { thumbnailsFeature.get() },
+                    ),
+                owner = this,
+                view = view,
+            )
+        }
 
         lastTabFeature.set(
             feature =

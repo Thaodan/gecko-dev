@@ -613,6 +613,10 @@
     <!-- Tab Manager-->
     <string name="pref_key_tab_manager_opening_animation" translatable="false">pref_key_tab_manager_opening_animation</string>
 
+    <!-- Tab reload cover -->
+    <string name="pref_key_tab_reload_cover_enabled" translatable="false">pref_key_tab_reload_cover_enabled</string>
+    <string name="pref_key_tab_reload_cover_scroll_aware_enabled" translatable="false">pref_key_tab_reload_cover_scroll_aware_enabled</string>
+
     <!-- Private Mode and Stories Entry Point -->
     <string name="pref_key_private_mode_and_stories_entry_point" translatable="false">pref_key_private_mode_and_stories_entry_point</string>
     <string name="pref_key_news_button_foreground_count" translatable="false">pref_key_news_button_foreground_count</string>
