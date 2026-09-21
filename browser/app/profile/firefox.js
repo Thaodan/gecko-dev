@@ -3135,6 +3135,11 @@ pref("identity.fxaccounts.toolbar.pxiToolbarEnabled.vpnEnabled", true);
 // for users who don't have sync enabled
 pref("identity.fxaccounts.toolbar.syncSetup.panelAccessed", false);
 
+// Whether the user dismissed the app menu's sign-in promo. Once dismissed, the
+// promo is never shown again and the compact sign-in row takes its place. Only
+// the app menu's promo is dismissible; the account menu's is not (bug 2070687).
+pref("identity.fxaccounts.toolbar.appMenuSignInPromo.dismissed", false);
+
 // Toolbox preferences
 pref("devtools.toolbox.footer.height", 250);
 pref("devtools.toolbox.sidebar.width", 500);
