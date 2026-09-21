@@ -97,6 +97,8 @@ security.ui.protectionspopup:
     type: event
     description: >
       User interaction by click events in the protections panel.
+      Also recorded when Enhanced Tracking Protection is switched back on
+      from the Trust Panel's ETP toggle.
       This event was generated to correspond to the Legacy Telemetry event
       security.ui.protectionspopup.click#etp_toggle_on.
     bugs: &security_ui_protectionspopup_click_bugs
@@ -108,6 +110,7 @@ security.ui.protectionspopup:
       - https://bugzil.la/1739287
       - https://bugzil.la/1787249
       - https://bugzil.la/1798669
+      - https://bugzil.la/2066763
     data_reviews: &security_ui_protectionspopup_click_data_reviews
       - https://bugzil.la/1560327
       - https://bugzil.la/1602015
@@ -117,6 +120,7 @@ security.ui.protectionspopup:
       - https://bugzil.la/1739287
       - https://bugzil.la/1787249
       - https://bugzil.la/1798669
+      - https://bugzil.la/2066763
     notification_emails: &security_ui_protectionspopup_click_emails
       - emz@mozilla.com
       - tihuang@mozilla.com
@@ -128,6 +132,8 @@ security.ui.protectionspopup:
     type: event
     description: >
       User interaction by click events in the protections panel.
+      Also recorded when Enhanced Tracking Protection is deliberately
+      disabled from the Trust Panel's ETP toggle.
       This event was generated to correspond to the Legacy Telemetry event
       security.ui.protectionspopup.click#etp_toggle_off.
     bugs: *security_ui_protectionspopup_click_bugs
