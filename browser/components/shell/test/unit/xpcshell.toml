@@ -39,6 +39,9 @@ run-if = [
 run-if = [
   "os == 'linux'",
 ]
+prefs = [
+  "browser.shell.desktop-entry-api=filesystem",
+]
 
 ["test_macOS_showSecurityPreferences.js"]
 run-if = [
