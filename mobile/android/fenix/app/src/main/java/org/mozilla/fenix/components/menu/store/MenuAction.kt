@@ -158,6 +158,9 @@ sealed class MenuAction : MenuEvent {
     /** [MenuAction] dispatched when the user clicks the IP protection menu item. */
     data object IPProtectionToggle : MenuAction()
 
+    /** [MenuAction] dispatched when the user asks to save the current webpage content as a PDF. */
+    data object SaveAsPdfRequested : MenuAction()
+
     /** [MenuAction] dispatched when a navigation event occurs for a specific destination. */
     sealed class Navigate : MenuAction() {
 

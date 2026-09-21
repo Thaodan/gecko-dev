@@ -65,6 +65,7 @@ import org.mozilla.fenix.ext.isToolbarAtBottom
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.home.topsites.ShortcutMenuItemProvider
 import org.mozilla.fenix.ipprotection.VpnMenuItemProvider
+import org.mozilla.fenix.pdf.SaveAsPdfMenuItemProvider
 import org.mozilla.fenix.shortcut.AddToHomeScreenMenuItemProvider
 import org.mozilla.fenix.summarization.SummarizePageMenuItemProvider
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -319,6 +320,7 @@ class MenuFragment : BottomSheetDialogFragment() {
                     appLinksUseCases = requireComponents.useCases.appLinksUseCases,
                     scope = viewLifecycleOwner.lifecycle.coroutineScope,
                 )
+            FenixMenuItem.SaveAsPdf -> SaveAsPdfMenuItemProvider()
         }
     }
 

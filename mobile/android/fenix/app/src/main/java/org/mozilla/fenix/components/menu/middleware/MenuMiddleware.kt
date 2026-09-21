@@ -57,6 +57,7 @@ import org.mozilla.fenix.components.menu.store.MenuAction.OpenInApp
 import org.mozilla.fenix.components.menu.store.MenuAction.RemoveShortcut
 import org.mozilla.fenix.components.menu.store.MenuAction.RequestDesktopSite
 import org.mozilla.fenix.components.menu.store.MenuAction.RequestMobileSite
+import org.mozilla.fenix.components.menu.store.MenuAction.SaveAsPdfRequested
 import org.mozilla.fenix.components.menu.toMenuState
 import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.components.share.ShareSource
@@ -192,6 +193,11 @@ class MenuMiddleware(
             is Navigate.SaveToCollection -> saveCurrentPageToCollection(action.hasCollection)
 
             is OpenInApp -> openCurrentPageInApp()
+
+            is SaveAsPdfRequested -> {
+                dismissMenu()
+                useCases.sessionUseCases.saveToPdf(browserStore.state.selectedTabId)
+            }
 
             is Navigate.Back -> handleBackNavigation(action)
 

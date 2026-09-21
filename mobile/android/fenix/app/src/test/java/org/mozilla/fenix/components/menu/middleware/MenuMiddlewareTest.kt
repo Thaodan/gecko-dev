@@ -125,6 +125,7 @@ class MenuMiddlewareTest {
         )
     private val addBookmarkUseCase: BookmarksUseCase.AddBookmarksUseCase = mockk()
     private val requestDesktopSiteUseCase: SessionUseCases.RequestDesktopSiteUseCase = mockk(relaxed = true)
+    private val saveToPdfUSeCase: SessionUseCases.SaveToPdfUseCase = mockk(relaxed = true)
     private val migratePrivateTabUseCase: TabsUseCases.MigratePrivateTabUseCase = mockk(relaxed = true)
     private val addPinnedSiteUseCase: TopSitesUseCases.AddPinnedSiteUseCase = mockk(relaxed = true)
     private val addToHomescreenUseCase: WebAppUseCases.AddToHomescreenUseCase = mockk(relaxed = true)
@@ -158,6 +159,7 @@ class MenuMiddlewareTest {
         every { sessionUseCases } returns
             mockk {
                 every { requestDesktopSite } returns requestDesktopSiteUseCase
+                every { saveToPdf } returns saveToPdfUSeCase
                 every { goBack } returns goBackUseCase
                 every { goForward } returns goForwardUseCase
                 every { reload } returns reloadUseCase
@@ -806,6 +808,18 @@ class MenuMiddlewareTest {
         verify(exactly = 0) {
             openAppLinkUseCase(any<Intent>())
             navController.popBackStack(R.id.menuFragment, true)
+        }
+    }
+
+    @Test
+    fun `WHEN handling the request to save the webpage as a PDF THEN dismiss the menu and save the page as a PDF`() {
+        val store = createStore()
+
+        store.dispatch(MenuAction.SaveAsPdfRequested)
+
+        verify {
+            navController.popBackStack(R.id.menuFragment, true)
+            saveToPdfUSeCase(tabId = TAB_ID)
         }
     }
 

@@ -50,7 +50,9 @@ private fun reducer(state: MenuState, action: MenuAction): MenuState {
         is MenuAction.CustomizeReaderView,
         is MenuAction.Navigate,
         is MenuAction.OnSummarizationMenuExposed,
-        is MenuAction.MoveToNonPrivateTab -> state
+        is MenuAction.MoveToNonPrivateTab,
+        is MenuAction.IPProtectionToggle,
+        is MenuAction.SaveAsPdfRequested -> state
 
         is MenuAction.OnMoreMenuClicked -> state.copy(isMoreMenuExpanded = !state.isMoreMenuExpanded)
         is MenuAction.RequestDesktopSite -> state.copy(isDesktopMode = true)
@@ -107,7 +109,6 @@ private fun reducer(state: MenuState, action: MenuAction): MenuState {
             }
 
         is MenuAction.UpdateIPProtectionMenuState -> state.copy(ipProtectionMenuState = action.state)
-        is MenuAction.IPProtectionToggle -> state
     }
 }
 
