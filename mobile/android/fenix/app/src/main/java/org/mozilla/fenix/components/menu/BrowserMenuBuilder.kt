@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.map
 import mozilla.components.compose.menu.data.MenuItem as ShownMenuItem
 import mozilla.components.compose.menu.data.MenuItemsGroup
 import mozilla.components.compose.menu.data.StandardMenuItem
+import org.mozilla.fenix.components.menu.FenixMenuItem.AddToHomeScreen
 import org.mozilla.fenix.components.menu.FenixMenuItem.Back
 import org.mozilla.fenix.components.menu.FenixMenuItem.Bookmark
 import org.mozilla.fenix.components.menu.FenixMenuItem.CustomizeReaderView
@@ -142,7 +143,16 @@ class BrowserMenuBuilder(
                                 Bookmark,
                                 FindInPage,
                                 DesktopSite,
-                                More(listOf(Translate, SummarizePage, MoveToNormalTabs, ReportBrokenSite, Shortcut)),
+                                More(
+                                    listOf(
+                                        Translate,
+                                        SummarizePage,
+                                        MoveToNormalTabs,
+                                        ReportBrokenSite,
+                                        Shortcut,
+                                        AddToHomeScreen,
+                                    )
+                                ),
                             ),
                     ),
                 )

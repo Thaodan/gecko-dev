@@ -1861,6 +1861,10 @@
       <action
         android:id="@+id/action_menuFragment_to_webCompatReporterFragment"
         app:destination="@id/webCompatReporterFragment" />
+
+      <action
+        android:id="@+id/action_menuFragment_to_createShortcutFragment"
+        app:destination="@id/createShortcutFragment" />
     </dialog>
   </navigation>
 

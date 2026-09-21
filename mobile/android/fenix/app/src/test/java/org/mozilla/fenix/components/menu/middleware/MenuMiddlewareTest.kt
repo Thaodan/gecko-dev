@@ -48,6 +48,7 @@ import mozilla.components.feature.ipprotection.store.IPProtectionStore
 import mozilla.components.feature.ipprotection.store.state.Authorized
 import mozilla.components.feature.ipprotection.store.state.IPProtectionState
 import mozilla.components.feature.ipprotection.store.state.ProxyStatus
+import mozilla.components.feature.pwa.WebAppUseCases
 import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.feature.top.sites.PinnedSiteStorage
@@ -121,6 +122,11 @@ class MenuMiddlewareTest {
     private val requestDesktopSiteUseCase: SessionUseCases.RequestDesktopSiteUseCase = mockk(relaxed = true)
     private val migratePrivateTabUseCase: TabsUseCases.MigratePrivateTabUseCase = mockk(relaxed = true)
     private val addPinnedSiteUseCase: TopSitesUseCases.AddPinnedSiteUseCase = mockk(relaxed = true)
+    private val addToHomescreenUseCase: WebAppUseCases.AddToHomescreenUseCase = mockk(relaxed = true)
+    private val webAppUseCases: WebAppUseCases = mockk {
+        every { isInstallable() } returns false
+        every { addToHomescreen } returns addToHomescreenUseCase
+    }
     private val removeTopSitesUseCase: TopSitesUseCases.RemoveTopSiteUseCase = mockk(relaxed = true)
     private val fenixBrowserUseCase: FenixBrowserUseCases = mockk(relaxed = true)
     private val goBackUseCase: SessionUseCases.GoBackUseCase = mockk(relaxed = true)
@@ -147,6 +153,7 @@ class MenuMiddlewareTest {
             }
         every { fenixBrowserUseCases } returns fenixBrowserUseCase
         every { shareUseCases } returns shareUrlUseCase
+        every { webAppUseCases } returns this@MenuMiddlewareTest.webAppUseCases
     }
     // Navigating away is guarded on still being on the menu, so the mock has to report that as the current
     // destination. A relaxed mock would otherwise report an id of 0 and every navigation would be skipped.
@@ -652,6 +659,42 @@ class MenuMiddlewareTest {
 
             coVerify { removeTopSitesUseCase(topSite = shortcut) }
             verify { navController.popBackStack(R.id.menuFragment, true) }
+        }
+
+    @Test
+    fun `GIVEN the page can be added as a PWA WHEN adding it to the home screen THEN add it and dismiss the menu`() =
+        runTest(testDispatcher) {
+            every { webAppUseCases.isInstallable() } returns true
+            val store = createStore()
+
+            store.dispatch(Navigate.AddToHomeScreen)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            coVerify { addToHomescreenUseCase() }
+            verify {
+                settings.installPwaOpened = true
+                navController.popBackStack(R.id.menuFragment, true)
+            }
+        }
+
+    @Test
+    fun `GIVEN the page can be added as a shortcut WHEN adding it to the home screen THEN ask how to name the shortcut`() =
+        runTest(testDispatcher) {
+            every { webAppUseCases.isInstallable() } returns false
+            val navOptions = slot<NavOptions>()
+            val store = createStore()
+
+            store.dispatch(Navigate.AddToHomeScreen)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify {
+                navController.navigate(
+                    MenuFragmentDirections.actionMenuFragmentToCreateShortcutFragment(),
+                    capture(navOptions),
+                )
+            }
+            assertEquals(R.id.browserFragment, navOptions.captured.popUpToId)
+            coVerify(exactly = 0) { addToHomescreenUseCase() }
         }
 
     @Test

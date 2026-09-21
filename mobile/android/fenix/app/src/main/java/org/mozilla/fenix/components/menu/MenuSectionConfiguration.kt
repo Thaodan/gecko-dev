@@ -50,6 +50,9 @@ sealed interface FenixMenuItem {
     /** A menu item allowing to add or remove the current webpage from home shortcuts. */
     data object Shortcut : FenixMenuItem
 
+    /** A menu item allowing to add the current webpage as a shortcut on the device's home screen. */
+    data object AddToHomeScreen : FenixMenuItem
+
     /** A menu item allowing to navigate back. */
     data object Back : FenixMenuItem
 

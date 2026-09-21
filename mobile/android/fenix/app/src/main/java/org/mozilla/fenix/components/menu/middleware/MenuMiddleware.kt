@@ -185,6 +185,8 @@ class MenuMiddleware(
 
             is RemoveShortcut -> removeShortcut()
 
+            is Navigate.AddToHomeScreen -> addToHomeScreen()
+
             is Navigate.Back -> handleBackNavigation(action)
 
             is Navigate.Forward -> handleForwardNavigation(action)
@@ -340,6 +342,26 @@ class MenuMiddleware(
                 create().withCenterAlignedButtons()
             }
             .show()
+    }
+
+    private fun addToHomeScreen() {
+        settings.installPwaOpened = true
+
+        // A page offering a web app manifest is installed as a PWA right away. Any other is added as a simple shortcut,
+        // for which the user is first asked to confirm the name it will have on the home screen.
+        when (useCases.webAppUseCases.isInstallable()) {
+            true ->
+                scope.launch {
+                    useCases.webAppUseCases.addToHomescreen()
+                    dismissMenu()
+                }
+            else ->
+                navController.nav(
+                    R.id.menuFragment,
+                    MenuFragmentDirections.actionMenuFragmentToCreateShortcutFragment(),
+                    navOptions = NavOptions.Builder().setPopUpTo(R.id.browserFragment, false).build(),
+                )
+        }
     }
 
     private fun navigateToEditBookmark(guidToEdit: String?) {

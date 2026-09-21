@@ -63,6 +63,7 @@ import org.mozilla.fenix.ext.isToolbarAtBottom
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.home.topsites.ShortcutMenuItemProvider
 import org.mozilla.fenix.ipprotection.VpnMenuItemProvider
+import org.mozilla.fenix.shortcut.AddToHomeScreenMenuItemProvider
 import org.mozilla.fenix.summarization.SummarizePageMenuItemProvider
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.translations.TranslationsEnabledSettings
@@ -210,6 +211,7 @@ class MenuFragment : BottomSheetDialogFragment() {
     }
 
     /** Pure function to get the [MenuItemProvider] for any [FenixMenuItem]. */
+    @Suppress("LongMethod")
     private fun buildMenuItemsProvidersResolver(): (FenixMenuItem) -> MenuItemProvider = { item ->
         when (item) {
             FenixMenuItem.CustomizeReaderView ->
@@ -295,6 +297,12 @@ class MenuFragment : BottomSheetDialogFragment() {
                     browserStore = requireComponents.core.store,
                     pinnedSiteStorage = requireComponents.core.pinnedSiteStorage,
                     areShortcutsEnabled = requireComponents.settings.showTopSitesFeature,
+                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                )
+            FenixMenuItem.AddToHomeScreen ->
+                AddToHomeScreenMenuItemProvider(
+                    browserStore = requireComponents.core.store,
+                    webAppUseCases = requireComponents.useCases.webAppUseCases,
                     scope = viewLifecycleOwner.lifecycle.coroutineScope,
                 )
         }
