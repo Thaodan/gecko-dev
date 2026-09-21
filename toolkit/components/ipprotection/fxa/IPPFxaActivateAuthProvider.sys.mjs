@@ -219,7 +219,11 @@ class IPPFxaActivateAuthProviderSingleton extends IPPAuthProvider {
       abortSignal.throwIfAborted();
       tasks.push(
         new Promise((_, rej) => {
-          abortSignal?.addEventListener("abort", rej, { once: true });
+          abortSignal?.addEventListener(
+            "abort",
+            () => rej(abortSignal.reason),
+            { once: true }
+          );
         })
       );
     }
