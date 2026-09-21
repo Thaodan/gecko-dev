@@ -43,31 +43,20 @@ test_newtab({
 
 // Test pin/unpin context menu options.
 test_newtab({
-  before: setDefaultTopSites,
+  before: async args => {
+    clearPinnedTopSites();
+    return setDefaultTopSites(args);
+  },
   // it should pin the website when we click the first option of the topsite context menu.
-  test: async function topsites_pin_unpin() {
-    const siteSelector = ".top-site-outer:not(.search-shortcut, .placeholder)";
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(siteSelector),
-      "Topsite tippytop icon not found"
+  test: async function topsites_pin_unpin(defaultTopSites) {
+    let topsiteEl = await content.waitForTopSite(defaultTopSites[0]);
+    topsiteEl.querySelector(".context-menu-button").click();
+
+    const pinTopsiteBtn = await content.waitForPanelItem(
+      topsiteEl,
+      "newtab-menu-pin"
     );
-    // There are only topsites on the page, the selector with find the first topsite menu button.
-    let topsiteEl = content.document.querySelector(siteSelector);
-    let topsiteContextBtn = topsiteEl.querySelector(".context-menu-button");
-    topsiteContextBtn.click();
-
-    await ContentTaskUtils.waitForCondition(
-      () => topsiteEl.querySelector("panel-list"),
-      "No context menu found"
-    );
-
-    let contextMenu = topsiteEl.querySelector("panel-list");
-    ok(contextMenu, "Should find a topsite context menu");
-
-    // Pin/Unpin is the first item in the context menu.
-    const pinUnpinTopsiteBtn = contextMenu.querySelector("panel-item");
-    // Pin the topsite.
-    pinUnpinTopsiteBtn.click();
+    pinTopsiteBtn.click();
 
     // Need to wait for pin action.
     await ContentTaskUtils.waitForCondition(
@@ -79,15 +68,14 @@ test_newtab({
     is(pinnedIcon, 1, "should find 1 pinned topsite");
 
     // Unpin the topsite.
-    topsiteContextBtn = topsiteEl.querySelector(".context-menu-button");
-    ok(topsiteContextBtn, "Should find a context menu button");
-    topsiteContextBtn.click();
+    topsiteEl = await content.waitForTopSite(defaultTopSites[0]);
+    topsiteEl.querySelector(".context-menu-button").click();
 
-    await ContentTaskUtils.waitForCondition(
-      () => topsiteEl.querySelector("panel-item"),
-      "Should find context menu item button for unpin"
+    const unpinTopsiteBtn = await content.waitForPanelItem(
+      topsiteEl,
+      "newtab-menu-unpin"
     );
-    topsiteEl.querySelector("panel-item").click();
+    unpinTopsiteBtn.click();
 
     // Need to wait for unpin action.
     await ContentTaskUtils.waitForCondition(
@@ -158,6 +146,7 @@ test_newtab({
 // which a synthetic .click() does not reproduce.
 test_newtab({
   before: async args => {
+    clearPinnedTopSites();
     gBrowser.selectedBrowser.focus();
     await setDefaultTopSites(args);
   },

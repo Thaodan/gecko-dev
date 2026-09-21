@@ -13,15 +13,14 @@ test_newtab({
     // Some reason test-linux1804-64-qr/debug can end up with example.com, so
     // clear history so we only have the expected default top sites.
     await clearHistoryAndBookmarks();
-    await setDefaultTopSites();
+    clearPinnedTopSites();
+    return setDefaultTopSites();
   },
   // Test verifies the menu options for a default top site.
-  test: async function defaultTopSites_menuOptions() {
-    const siteSelector = ".top-site-outer:not(.search-shortcut, .placeholder)";
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(siteSelector),
-      "Topsite tippytop icon not found"
-    );
+  test: async function defaultTopSites_menuOptions(defaultTopSites) {
+    // The menu asserted below is the one a default, unpinned site gets.
+    await content.waitForTopSite(defaultTopSites[0]);
+    const siteSelector = `.top-site-outer:has(a.top-site-button[href="${defaultTopSites[0]}"])`;
 
     const contextMenuItems =
       await content.openContextMenuAndGetOptions(siteSelector);
