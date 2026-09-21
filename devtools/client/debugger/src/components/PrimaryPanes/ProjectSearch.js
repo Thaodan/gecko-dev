@@ -222,7 +222,12 @@ export class ProjectSearch extends Component {
 
   renderFile = (file, focused, expanded) => {
     const matchesLength = file.matches.length;
-    const matches = ` (${matchesLength} match${matchesLength > 1 ? "es" : ""})`;
+    const localizedMatchCount = PluralForm.get(
+      matchesLength,
+      L10N.getStr("projectTextSearch.results.matchCount")
+    ).replace("#1", matchesLength);
+    const matches = ` (${localizedMatchCount})`;
+
     return div(
       {
         className: classnames("file-result", {
