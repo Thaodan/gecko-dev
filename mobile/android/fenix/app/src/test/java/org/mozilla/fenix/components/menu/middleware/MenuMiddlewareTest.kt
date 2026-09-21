@@ -125,6 +125,7 @@ class MenuMiddlewareTest {
         )
     private val addBookmarkUseCase: BookmarksUseCase.AddBookmarksUseCase = mockk()
     private val requestDesktopSiteUseCase: SessionUseCases.RequestDesktopSiteUseCase = mockk(relaxed = true)
+    private val printContentUseCase: SessionUseCases.PrintContentUseCase = mockk(relaxed = true)
     private val saveToPdfUSeCase: SessionUseCases.SaveToPdfUseCase = mockk(relaxed = true)
     private val migratePrivateTabUseCase: TabsUseCases.MigratePrivateTabUseCase = mockk(relaxed = true)
     private val addPinnedSiteUseCase: TopSitesUseCases.AddPinnedSiteUseCase = mockk(relaxed = true)
@@ -160,6 +161,7 @@ class MenuMiddlewareTest {
             mockk {
                 every { requestDesktopSite } returns requestDesktopSiteUseCase
                 every { saveToPdf } returns saveToPdfUSeCase
+                every { printContent } returns printContentUseCase
                 every { goBack } returns goBackUseCase
                 every { goForward } returns goForwardUseCase
                 every { reload } returns reloadUseCase
@@ -820,6 +822,18 @@ class MenuMiddlewareTest {
         verify {
             navController.popBackStack(R.id.menuFragment, true)
             saveToPdfUSeCase(tabId = TAB_ID)
+        }
+    }
+
+    @Test
+    fun `WHEN handling the request to print THEN print the selected tab and dismiss the menu`() {
+        val store = createStore()
+
+        store.dispatch(MenuAction.PrintRequested)
+
+        verify {
+            navController.popBackStack(R.id.menuFragment, true)
+            printContentUseCase(tabId = TAB_ID)
         }
     }
 

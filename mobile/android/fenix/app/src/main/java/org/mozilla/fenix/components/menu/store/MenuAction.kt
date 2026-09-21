@@ -161,6 +161,9 @@ sealed class MenuAction : MenuEvent {
     /** [MenuAction] dispatched when the user asks to save the current webpage content as a PDF. */
     data object SaveAsPdfRequested : MenuAction()
 
+    /** [MenuAction] dispatched when the user asks to print the current webpage. */
+    data object PrintRequested : MenuAction()
+
     /** [MenuAction] dispatched when a navigation event occurs for a specific destination. */
     sealed class Navigate : MenuAction() {
 

@@ -35,6 +35,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import mozilla.components.compose.menu.Menu
 import mozilla.components.compose.menu.store.MenuState
 import mozilla.components.compose.menu.store.MenuStore
+import mozilla.components.feature.automotive.isAndroidAutomotiveAvailable
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.composableStore
 import mozilla.components.support.ktx.android.util.dpToPx
 import mozilla.components.support.utils.ext.getWindowInsets
@@ -66,6 +67,7 @@ import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.home.topsites.ShortcutMenuItemProvider
 import org.mozilla.fenix.ipprotection.VpnMenuItemProvider
 import org.mozilla.fenix.pdf.SaveAsPdfMenuItemProvider
+import org.mozilla.fenix.print.PrintMenuItemProvider
 import org.mozilla.fenix.shortcut.AddToHomeScreenMenuItemProvider
 import org.mozilla.fenix.summarization.SummarizePageMenuItemProvider
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -321,6 +323,8 @@ class MenuFragment : BottomSheetDialogFragment() {
                     scope = viewLifecycleOwner.lifecycle.coroutineScope,
                 )
             FenixMenuItem.SaveAsPdf -> SaveAsPdfMenuItemProvider()
+            FenixMenuItem.Print ->
+                PrintMenuItemProvider(isAndroidAutomotiveAvailable = requireContext().isAndroidAutomotiveAvailable())
         }
     }
 

@@ -54,6 +54,7 @@ import org.mozilla.fenix.components.menu.store.MenuAction.Navigate
 import org.mozilla.fenix.components.menu.store.MenuAction.OnMoreMenuClicked
 import org.mozilla.fenix.components.menu.store.MenuAction.OnSummarizationMenuExposed
 import org.mozilla.fenix.components.menu.store.MenuAction.OpenInApp
+import org.mozilla.fenix.components.menu.store.MenuAction.PrintRequested
 import org.mozilla.fenix.components.menu.store.MenuAction.RemoveShortcut
 import org.mozilla.fenix.components.menu.store.MenuAction.RequestDesktopSite
 import org.mozilla.fenix.components.menu.store.MenuAction.RequestMobileSite
@@ -197,6 +198,11 @@ class MenuMiddleware(
             is SaveAsPdfRequested -> {
                 dismissMenu()
                 useCases.sessionUseCases.saveToPdf(browserStore.state.selectedTabId)
+            }
+
+            is PrintRequested -> {
+                dismissMenu()
+                useCases.sessionUseCases.printContent(browserStore.state.selectedTabId)
             }
 
             is Navigate.Back -> handleBackNavigation(action)

@@ -62,6 +62,9 @@ sealed interface FenixMenuItem {
     /** A menu item allowing to save the current webpage as a PDF. */
     data object SaveAsPdf : FenixMenuItem
 
+    /** A menu item allowing to print the current webpage. */
+    data object Print : FenixMenuItem
+
     /** A menu item allowing to navigate back. */
     data object Back : FenixMenuItem
 
