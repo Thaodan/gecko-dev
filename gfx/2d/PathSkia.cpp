@@ -90,12 +90,19 @@ already_AddRefed<Path> PathBuilderSkia::Finish() {
   return path.forget();
 }
 
-bool PathBuilderSkia::Reset(FillRule aFillRule) {
+void PathBuilderSkia::Reset(FillRule aFillRule) {
   mPathBuilder.reset();
   SetFillRule(aFillRule);
   mCurrentPoint = Point();
   mBeginPoint = Point();
-  return true;
+}
+
+void PathBuilderSkia::Transform(const Matrix& aTransform) {
+  SkMatrix matrix;
+  GfxMatrixToSkiaMatrix(aTransform, matrix);
+  mPathBuilder.transform(matrix);
+  mCurrentPoint = aTransform.TransformPoint(mCurrentPoint);
+  mBeginPoint = aTransform.TransformPoint(mBeginPoint);
 }
 
 void PathBuilderSkia::AppendPath(const SkPath& aPath) {
@@ -103,21 +110,17 @@ void PathBuilderSkia::AppendPath(const SkPath& aPath) {
 }
 
 already_AddRefed<PathBuilder> PathSkia::CopyToBuilder(
-    FillRule aFillRule) const {
+    FillRule aFillRule, already_AddRefed<PathBuilder> aBuilder) const {
+  RefPtr builder(aBuilder.downcast<PathBuilderSkia>());
+  if (builder) {
+    builder->mPathBuilder = mPath;
+    builder->SetFillRule(aFillRule);
+    builder->mCurrentPoint = mCurrentPoint;
+    builder->mBeginPoint = mBeginPoint;
+    return builder.forget();
+  }
   return MakeAndAddRef<PathBuilderSkia>(SkPathBuilder(mPath), aFillRule,
                                         mCurrentPoint, mBeginPoint);
-}
-
-already_AddRefed<PathBuilder> PathSkia::TransformedCopyToBuilder(
-    const Matrix& aTransform, FillRule aFillRule) const {
-  SkMatrix matrix;
-  GfxMatrixToSkiaMatrix(aTransform, matrix);
-  SkPathBuilder pathBuilder(mPath);
-  pathBuilder.transform(matrix);
-  return MakeAndAddRef<PathBuilderSkia>(
-      std::move(pathBuilder), aFillRule,
-      aTransform.TransformPoint(mCurrentPoint),
-      aTransform.TransformPoint(mBeginPoint));
 }
 
 static bool SkPathContainsPoint(const SkPath& aPath, const Point& aPoint,

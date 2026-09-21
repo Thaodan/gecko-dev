@@ -31,7 +31,9 @@ class PathBuilderSkia : public PathBuilder {
            float aEndAngle, bool aAntiClockwise = false) override;
   already_AddRefed<Path> Finish() override;
 
-  bool Reset(FillRule aFillRule) override;
+  void Reset(FillRule aFillRule) override;
+
+  void Transform(const Matrix& aTransform) override;
 
   void AppendPath(const SkPath& aPath);
 
@@ -64,9 +66,8 @@ class PathSkia : public Path {
   BackendType GetBackendType() const override { return BackendType::SKIA; }
 
   already_AddRefed<PathBuilder> CopyToBuilder(
-      FillRule aFillRule) const override;
-  already_AddRefed<PathBuilder> TransformedCopyToBuilder(
-      const Matrix& aTransform, FillRule aFillRule) const override;
+      FillRule aFillRule,
+      already_AddRefed<PathBuilder> aBuilder) const override;
 
   bool ContainsPoint(const Point& aPoint,
                      const Matrix& aTransform) const override;
