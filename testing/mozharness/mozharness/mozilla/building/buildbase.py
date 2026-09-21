@@ -15,7 +15,6 @@ import pathlib
 import re
 import sys
 import time
-import uuid
 from datetime import datetime
 
 import yaml
@@ -496,14 +495,6 @@ BUILD_BASE_CONFIG_OPTIONS = [
 ]
 
 
-def generate_build_ID():
-    return time.strftime("%Y%m%d%H%M%S", time.localtime(time.time()))
-
-
-def generate_build_UID():
-    return uuid.uuid4().hex
-
-
 class BuildScript(
     AutomationMixin,
     VirtualenvMixin,
@@ -592,11 +583,6 @@ items from that key's value."
         self.objdir = self.config["objdir"]
         return self.objdir
 
-    def query_is_nightly_promotion(self):
-        platform_enabled = self.config.get("enable_nightly_promotion")
-        branch_enabled = self.branch in self.config.get("nightly_promotion_branches")
-        return platform_enabled and branch_enabled
-
     def query_build_env(self, **kwargs):
         c = self.config
 
@@ -604,7 +590,7 @@ items from that key's value."
         # as we don't always want every key below added to the same dict
         env = copy.deepcopy(super().query_env(**kwargs))
 
-        if self.query_is_nightly() or self.query_is_nightly_promotion():
+        if self.query_is_nightly():
             # taskcluster sets the update channel for shipping builds
             # explicitly
             if c.get("update_channel"):
