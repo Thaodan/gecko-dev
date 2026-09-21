@@ -119,6 +119,16 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "chatSidebar",
   "browser.ml.chat.sidebar"
 );
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "highlightToSearchFeatureGate",
+  "browser.highlightToSearch.featureGate"
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "highlightToSearchEnabled",
+  "browser.highlightToSearch.enabled"
+);
 XPCOMUtils.defineLazyPreferenceGetter(lazy, "sidebarRevamp", "sidebar.revamp");
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
@@ -263,16 +273,46 @@ export const GenAI = {
   },
 
   /**
-   * Determine if chat entrypoints can be shown
+   * Determine if the chatbot can be offered, whether or not the user has
+   * chosen a provider yet. Clicking an entrypoint with no provider starts
+   * onboarding, so surfaces that want to onboard use this instead of
+   * canShowChatEntrypoint.
    *
+   * @returns {bool} can offer
+   */
+  get canOfferChatbot() {
+    return (
+      lazy.chatEnabled &&
+      // Chatbot needs to be a tool if new sidebar
+      (!lazy.sidebarRevamp || lazy.sidebarTools.includes("aichat"))
+    );
+  },
+
+  /**
    * @returns {bool} can show
    */
   get canShowChatEntrypoint() {
+    return this.canOfferChatbot && lazy.chatProvider != "";
+  },
+
+  /**
+   * @returns {bool} can show
+   */
+  get canShowAIAction() {
+    return this.canOfferChatbot && lazy.chatShortcuts;
+  },
+
+  /**
+   * @returns {bool} can show
+   */
+  get canShowSelectionMenu() {
+    if (lazy.chatShortcuts && this.canShowChatEntrypoint) {
+      return true;
+    }
     return (
-      lazy.chatEnabled &&
-      lazy.chatProvider != "" &&
-      // Chatbot needs to be a tool if new sidebar
-      (!lazy.sidebarRevamp || lazy.sidebarTools.includes("aichat"))
+      lazy.highlightToSearchFeatureGate &&
+      lazy.highlightToSearchEnabled &&
+      this.canShowAIAction
     );
   },
 
@@ -711,11 +751,12 @@ export const GenAI = {
     if (
       !isInBrowserStack ||
       !browser ||
+      !this.isSupportedContext(browser) ||
       this.ignoredInputs.has(data.inputType) ||
       this.ignoredInputs.has(data.host) ||
       (isSmartWindow
         ? !lazy.chatShortcutsSmartWindow
-        : !lazy.chatShortcuts || !this.canShowChatEntrypoint)
+        : !this.canShowSelectionMenu)
     ) {
       return;
     }
@@ -831,17 +872,14 @@ export const GenAI = {
   },
 
   /**
-   * Whether the ask-chat entrypoint may be shown for the given context. Shared
-   * by the full submenu (buildAskChatMenu) and the single page-summarize item
-   * (buildTabSummarizeItem) so the gating stays in one place.
+   * Whether the browser's context supports gen-AI surfaces at all. Shared by
+   * the ask-chat entrypoints and the selection menu so that both refuse the
+   * same contexts.
    *
    * @param {MozBrowser} browser browser for the context's page
-   * @param {string} source one of "page", "tab", "tool"
-   * @param {MozTabbrowserTab[] | null} contextTabs tabs for a "tab" source
-   * @param {object | null} selectionInfo selection details, if any
    * @returns {boolean}
    */
-  canShowAskChat(browser, source, contextTabs, selectionInfo) {
+  isSupportedContext(browser) {
     // DO NOT show when inside an extension panel
     const uri = browser.browsingContext?.currentURI.spec;
     if (uri?.startsWith("moz-extension:")) {
@@ -851,7 +889,18 @@ export const GenAI = {
     // Popups don't have a sidebar, so don't show the menu.
     // Also, it's not useful for most Document Picture-in-Picture API use-cases.
     const isPopup = browser.documentGlobal.toolbar?.visible === false;
-    if (browser.browsingContext?.isDocumentPiP || isPopup) {
+    return !browser.browsingContext?.isDocumentPiP && !isPopup;
+  },
+
+  /**
+   * @param {MozBrowser} browser browser for the context's page
+   * @param {string} source one of "page", "tab", "tool"
+   * @param {MozTabbrowserTab[] | null} contextTabs tabs for a "tab" source
+   * @param {object | null} selectionInfo selection details, if any
+   * @returns {boolean}
+   */
+  canShowAskChat(browser, source, contextTabs, selectionInfo) {
+    if (!this.isSupportedContext(browser)) {
       return false;
     }
 
