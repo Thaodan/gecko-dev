@@ -4697,6 +4697,8 @@ class HTMLEditor final : public EditorBase,
   bool mDisabledLinkHandling = false;
   bool mOldLinkHandlingEnabled = false;
 
+  bool mHasBeforeInputBeenCanceled = false;
+
   bool mHasFocus = false;
   bool mIsInDesignMode = false;
 
@@ -4721,7 +4723,7 @@ class HTMLEditor final : public EditorBase,
                               // PrepareToInsertBRElement,
                               // ReflectPaddingBRElementForEmptyEditor,
                               // RefreshEditingUI,
-                              // mComposerUpdater
+                              // mComposerUpdater, mHasBeforeInputBeenCanceled
   friend class JoinNodesTransaction;  // DidJoinNodesTransaction, DoJoinNodes,
                                       // DoSplitNode, // RangeUpdaterRef
   friend class ListElementSelectionState;      // CollectEditTargetNodes,

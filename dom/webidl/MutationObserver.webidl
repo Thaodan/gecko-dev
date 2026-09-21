@@ -42,7 +42,7 @@ interface MutationObserver {
   [Throws]
   constructor(MutationCallback mutationCallback);
 
-  [Throws]
+  [Throws, NeedsSubjectPrincipal]
   undefined observe(Node target, optional MutationObserverInit options = {});
   undefined disconnect();
   sequence<MutationRecord> takeRecords();

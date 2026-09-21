@@ -42,6 +42,7 @@
 #include "mozilla/StaticPrefs_editor.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInlines.h"
+#include "mozilla/glean/EditorLibeditorMetrics.h"
 #include "mozilla/TextControlElement.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/TextEvents.h"
@@ -259,6 +260,25 @@ HTMLEditor::HTMLEditor(const Document& aDocument)
       mDefaultParagraphSeparator(ParagraphSeparator::div) {}
 
 HTMLEditor::~HTMLEditor() {
+  glean::htmleditors::with_beforeinput_listeners
+      .EnumGet(static_cast<glean::htmleditors::WithBeforeinputListenersLabel>(
+          MayHaveBeforeInputEventListenersForTelemetry() ? 1 : 0))
+      .Add();
+  glean::htmleditors::overridden_by_beforeinput_listeners
+      .EnumGet(static_cast<
+               glean::htmleditors::OverriddenByBeforeinputListenersLabel>(
+          mHasBeforeInputBeenCanceled ? 1 : 0))
+      .Add();
+  glean::htmleditors::with_mutation_observers_without_beforeinput_listeners
+      .EnumGet(static_cast<
+               glean::htmleditors::
+                   WithMutationObserversWithoutBeforeinputListenersLabel>(
+          !MayHaveBeforeInputEventListenersForTelemetry() &&
+                  MutationObserverHasObservedNodeForTelemetry()
+              ? 1
+              : 0))
+      .Add();
+
   mPendingStylesToApplyToNewContent = nullptr;
 
   if (mDisabledLinkHandling) {

@@ -434,6 +434,11 @@ void EventListenerManager::AddEventListenerInternal(
           window->SetHasMouseEnterLeaveEventListeners();
         }
         break;
+      case eEditorBeforeInput:
+        if (nsPIDOMWindowInner* window = GetInnerWindowForTarget()) {
+          window->SetHasBeforeInputEventListenersForTelemetry();
+        }
+        break;
       case eSelectionChange:
         mMayHaveSelectionChangeEventListener = true;
         if (nsPIDOMWindowInner* window = GetInnerWindowForTarget()) {
