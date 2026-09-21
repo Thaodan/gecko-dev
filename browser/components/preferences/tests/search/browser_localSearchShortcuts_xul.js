@@ -8,6 +8,7 @@
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
+  SearchTestUtils: "resource://testing-common/SearchTestUtils.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
@@ -20,6 +21,9 @@ const isRestrictKeywordsFeatureOn = () =>
   UrlbarPrefs.getScotchBonnetPref("searchRestrictKeywords.featureGate");
 
 add_setup(async function () {
+  // Use a single application provided engine, so that the xul table does not
+  // overflow with too many search engines.
+  await SearchTestUtils.updateRemoteSettingsConfig([{ identifier: "engine1" }]);
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.scotchBonnet.enableOverride", true]],
   });
