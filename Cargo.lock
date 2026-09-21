@@ -1121,6 +1121,7 @@ dependencies = [
  "nserror",
  "nsstring",
  "thin-vec",
+ "wr_malloc_size_of",
  "xpcom",
 ]
 
@@ -2217,6 +2218,7 @@ dependencies = [
  "serde_json",
  "thiserror 1.999.999",
  "url",
+ "wr_malloc_size_of",
 ]
 
 [[package]]

@@ -14,6 +14,8 @@ pub mod engine;
 pub mod filters;
 mod flatbuffers;
 pub mod lists;
+#[cfg(feature = "malloc-size-of")]
+pub mod malloc_size_of_impls;
 mod network_filter_list;
 mod optimizer;
 pub mod regex_manager;

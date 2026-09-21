@@ -110,11 +110,15 @@ class ContentClassifierEngine final {
       const ContentClassifierRequest& aRequest, bool aPreviouslyMatched);
 
   // Heap usage of this engine, split by what holds it. See
-  // ContentClassifierEngineSizes for what is left out.
+  // ContentClassifierEngineSizes for what is left out. |aMallocEnclosingSizeOf|
+  // comes from MOZ_DEFINE_MALLOC_ENCLOSING_SIZE_OF, or is null on builds
+  // without jemalloc, where nothing can be sized from an interior pointer and
+  // the engine estimates those parts instead.
   ContentClassifierEngineSizes SizeOfIncludingThis(
-      MallocSizeOf aMallocSizeOf) const {
+      MallocSizeOf aMallocSizeOf, MallocSizeOf aMallocEnclosingSizeOf) const {
     ContentClassifierEngineSizes sizes =
-        mEngine ? content_classifier_engine_size_of(mEngine, aMallocSizeOf)
+        mEngine ? content_classifier_engine_size_of(mEngine, aMallocSizeOf,
+                                                    aMallocEnclosingSizeOf)
                 : ContentClassifierEngineSizes{};
     sizes.objects += aMallocSizeOf(this);
     return sizes;
