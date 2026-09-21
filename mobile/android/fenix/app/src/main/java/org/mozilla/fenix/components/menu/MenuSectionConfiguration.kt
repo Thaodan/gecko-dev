@@ -38,6 +38,9 @@ sealed interface FenixMenuItem {
     /** A menu item allowing to translate the current page. */
     data object Translate : FenixMenuItem
 
+    /** A menu item allowing to summarize the current page. */
+    data object SummarizePage : FenixMenuItem
+
     /** A menu item allowing to navigate back. */
     data object Back : FenixMenuItem
 

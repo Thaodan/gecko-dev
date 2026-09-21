@@ -60,6 +60,7 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.isToolbarAtBottom
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ipprotection.VpnMenuItemProvider
+import org.mozilla.fenix.summarization.SummarizePageMenuItemProvider
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.translations.TranslationsEnabledSettings
 import org.mozilla.fenix.translations.TranslationsMenuItemProvider
@@ -203,65 +204,70 @@ class MenuFragment : BottomSheetDialogFragment() {
     }
 
     /** Pure function to get the [MenuItemProvider] for any [FenixMenuItem]. */
-    private fun buildMenuItemsProvidersResolver(): (FenixMenuItem) -> MenuItemProvider {
-        return { item ->
-            when (item) {
-                FenixMenuItem.CustomizeReaderView ->
-                    ReaderViewMenuItemProvider(
-                        browserStore = requireComponents.core.store,
-                        scope = viewLifecycleOwner.lifecycle.coroutineScope,
-                    )
+    private fun buildMenuItemsProvidersResolver(): (FenixMenuItem) -> MenuItemProvider = { item ->
+        when (item) {
+            FenixMenuItem.CustomizeReaderView ->
+                ReaderViewMenuItemProvider(
+                    browserStore = requireComponents.core.store,
+                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                )
 
-                FenixMenuItem.IPProtection ->
-                    VpnMenuItemProvider(
-                        ipProtectionStore = requireComponents.ipProtection.store,
-                        scope = viewLifecycleOwner.lifecycle.coroutineScope,
-                    )
+            FenixMenuItem.IPProtection ->
+                VpnMenuItemProvider(
+                    ipProtectionStore = requireComponents.ipProtection.store,
+                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                )
 
-                FenixMenuItem.Bookmark ->
-                    BookmarkMenuItemProvider(
-                        browserStore = requireComponents.core.store,
-                        bookmarksStorage = requireComponents.core.bookmarksStorage,
-                        applicationScope = requireComponents.applicationScope,
-                    )
+            FenixMenuItem.Bookmark ->
+                BookmarkMenuItemProvider(
+                    browserStore = requireComponents.core.store,
+                    bookmarksStorage = requireComponents.core.bookmarksStorage,
+                    applicationScope = requireComponents.applicationScope,
+                )
 
-                FenixMenuItem.FindInPage -> FindInPageMenuItemProvider()
+            FenixMenuItem.FindInPage -> FindInPageMenuItemProvider()
 
-                FenixMenuItem.DesktopSite ->
-                    DesktopSiteMenuItemProvider(
-                        browserStore = requireComponents.core.store,
-                        scope = viewLifecycleOwner.lifecycle.coroutineScope,
-                    )
+            FenixMenuItem.DesktopSite ->
+                DesktopSiteMenuItemProvider(
+                    browserStore = requireComponents.core.store,
+                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                )
 
-                is FenixMenuItem.More -> MoreMenuItemsProvider()
+            is FenixMenuItem.More -> MoreMenuItemsProvider()
 
-                FenixMenuItem.Translate ->
-                    TranslationsMenuItemProvider(
-                        browserStore = requireComponents.core.store,
-                        translationsSettings = TranslationsEnabledSettings.dataStore(requireContext()),
-                        scope = viewLifecycleOwner.lifecycle.coroutineScope,
-                    )
+            FenixMenuItem.Translate ->
+                TranslationsMenuItemProvider(
+                    browserStore = requireComponents.core.store,
+                    translationsSettings = TranslationsEnabledSettings.dataStore(requireContext()),
+                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                )
 
-                FenixMenuItem.Back ->
-                    BackMenuItemProvider(
-                        browserStore = requireComponents.core.store,
-                        scope = viewLifecycleOwner.lifecycle.coroutineScope,
-                    )
+            FenixMenuItem.SummarizePage ->
+                SummarizePageMenuItemProvider(
+                    browserStore = requireComponents.core.store,
+                    summarizationSettings = requireComponents.core.summarizeFeatureSettings,
+                    eligibilityChecker = requireComponents.core.summarizationEligibilityChecker,
+                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                )
+            FenixMenuItem.Back ->
+                BackMenuItemProvider(
+                    browserStore = requireComponents.core.store,
+                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                )
 
-                FenixMenuItem.Forward ->
-                    ForwardMenuItemProvider(
-                        browserStore = requireComponents.core.store,
-                        scope = viewLifecycleOwner.lifecycle.coroutineScope,
-                    )
+            FenixMenuItem.Forward ->
+                ForwardMenuItemProvider(
+                    browserStore = requireComponents.core.store,
+                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                )
 
-                FenixMenuItem.Share -> ShareMenuItemProvider()
+            FenixMenuItem.Share -> ShareMenuItemProvider()
 
-                FenixMenuItem.Refresh ->
-                    RefreshMenuItemProvider(
-                        browserStore = requireComponents.core.store,
-                        scope = viewLifecycleOwner.lifecycle.coroutineScope,
-                    )
-            }
+            FenixMenuItem.Refresh ->
+                RefreshMenuItemProvider(
+                    browserStore = requireComponents.core.store,
+                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                )
         }
     }
 
@@ -283,6 +289,8 @@ class MenuFragment : BottomSheetDialogFragment() {
                                     requireContext().components.settings.shouldUseExpandedToolbar,
                             ),
                         navController = findNavController(),
+                        summarizationSettings = requireComponents.core.summarizeFeatureSettings,
+                        summarizationEligibilityChecker = requireComponents.core.summarizationEligibilityChecker,
                         scope = viewLifecycleOwner.lifecycle.coroutineScope,
                         applicationScope = requireComponents.applicationScope,
                     ),

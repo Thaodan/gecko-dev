@@ -24,6 +24,9 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.state.ContentState
+import mozilla.components.browser.state.state.EngineState
+import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.text.Text
@@ -32,6 +35,7 @@ import mozilla.components.compose.menu.data.MenuItemsGroup
 import mozilla.components.compose.menu.data.StandardMenuItem
 import mozilla.components.compose.menu.store.MenuState
 import mozilla.components.compose.menu.store.MenuStore
+import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
@@ -64,6 +68,7 @@ import org.mozilla.fenix.components.menu.store.MenuAction.CustomizeReaderView as
 import org.mozilla.fenix.components.menu.store.MenuAction.FindInPage
 import org.mozilla.fenix.components.menu.store.MenuAction.IPProtectionToggle
 import org.mozilla.fenix.components.menu.store.MenuAction.Navigate
+import org.mozilla.fenix.components.menu.store.MenuAction.OnSummarizationMenuExposed
 import org.mozilla.fenix.components.menu.store.MenuAction.RequestDesktopSite
 import org.mozilla.fenix.components.menu.store.MenuAction.RequestMobileSite
 import org.mozilla.fenix.components.metrics.MetricsUtils
@@ -71,6 +76,9 @@ import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.optionsEq
 import org.mozilla.fenix.helpers.FenixGleanTestRule
+import org.mozilla.fenix.summarization.eligibility.SummarizationEligibilityChecker
+import org.mozilla.fenix.summarization.onboarding.SummarizationFeatureDiscoveryConfiguration
+import org.mozilla.fenix.summarization.onboarding.SummarizeDiscoveryEvent
 
 @OptIn(ExperimentalAndroidComponentsApi::class)
 @RunWith(AndroidJUnit4::class)
@@ -112,6 +120,10 @@ class MenuMiddlewareTest {
         mockk(relaxed = true) {
             every { currentDestination } returns mockk { every { id } returns R.id.menuFragment }
         }
+    private val summarizationSettings = mockk<SummarizationFeatureDiscoveryConfiguration>(relaxed = true)
+    private val summarizationEligibilityChecker: SummarizationEligibilityChecker = mockk {
+        coEvery { checkLanguage(any()) } returns Result.success(true)
+    }
     private val testDispatcher = StandardTestDispatcher()
 
     @Test
@@ -312,6 +324,83 @@ class MenuMiddlewareTest {
     }
 
     @Test
+    fun `WHEN handling a request to summarize the page THEN open the summarizer for the current tab`() {
+        val navOptions = slot<NavOptions>()
+        val store = createStore()
+
+        store.dispatch(Navigate.Summarizer)
+
+        verify {
+            navController.navigate(
+                MenuFragmentDirections.actionMenuFragmentToSummarizationFragment(sessionId = TAB_ID),
+                capture(navOptions),
+            )
+        }
+        assertEquals(R.id.browserFragment, navOptions.captured.popUpToId)
+    }
+
+    @Test
+    fun `GIVEN the current page can be summarized WHEN the item is shown THEN record it being discovered`() =
+        runTest(testDispatcher) {
+            every { summarizationSettings.showMenuItem } returns true
+            val store = createStore(browserStore = browserStoreWithEngineSession())
+
+            store.dispatch(OnSummarizationMenuExposed)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify { summarizationSettings.cacheDiscoveryEvent(SummarizeDiscoveryEvent.MenuItemExposure) }
+        }
+
+    @Test
+    fun `GIVEN summarizing is not offered WHEN the item is shown THEN don't record it being discovered`() =
+        runTest(testDispatcher) {
+            every { summarizationSettings.showMenuItem } returns false
+            val store = createStore(browserStore = browserStoreWithEngineSession())
+
+            store.dispatch(OnSummarizationMenuExposed)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(exactly = 0) { summarizationSettings.cacheDiscoveryEvent(any()) }
+        }
+
+    @Test
+    fun `GIVEN a private page WHEN the item is shown THEN don't record it being discovered`() =
+        runTest(testDispatcher) {
+            every { summarizationSettings.showMenuItem } returns true
+            val store = createStore(browserStore = browserStoreWithEngineSession(isPrivate = true))
+
+            store.dispatch(OnSummarizationMenuExposed)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(exactly = 0) { summarizationSettings.cacheDiscoveryEvent(any()) }
+        }
+
+    @Test
+    fun `GIVEN the current page cannot be summarized WHEN the item is shown THEN don't record it being discovered`() =
+        runTest(testDispatcher) {
+            every { summarizationSettings.showMenuItem } returns true
+            coEvery { summarizationEligibilityChecker.checkLanguage(any()) } returns Result.success(false)
+            val store = createStore(browserStore = browserStoreWithEngineSession())
+
+            store.dispatch(OnSummarizationMenuExposed)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(exactly = 0) { summarizationSettings.cacheDiscoveryEvent(any()) }
+        }
+
+    @Test
+    fun `GIVEN there is no page shown WHEN the item is shown THEN don't record it being discovered`() =
+        runTest(testDispatcher) {
+            every { summarizationSettings.showMenuItem } returns true
+            val store = createStore(browserStore = BrowserStore())
+
+            store.dispatch(OnSummarizationMenuExposed)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(exactly = 0) { summarizationSettings.cacheDiscoveryEvent(any()) }
+        }
+
+    @Test
     fun `WHEN handling back navigation THEN dismiss the menu and navigate back in the current tab`() {
         val store = createStore()
 
@@ -453,6 +542,22 @@ class MenuMiddlewareTest {
         }
     }
 
+    // Whether the page can be summarized is asked from the engine, so the tab needs a session to ask it from.
+    private fun browserStoreWithEngineSession(isPrivate: Boolean = false) =
+        BrowserStore(
+            BrowserState(
+                tabs =
+                    listOf(
+                        TabSessionState(
+                            id = TAB_ID,
+                            content = ContentState(url = TEST_URL, title = TEST_TITLE, private = isPrivate),
+                            engineState = EngineState(engineSession = mockk<EngineSession>(relaxed = true)),
+                        )
+                    ),
+                selectedTabId = TAB_ID,
+            )
+        )
+
     private fun ipProtectionStore(proxyStatus: ProxyStatus): IPProtectionStore = mockk {
         every { state } returns IPProtectionState(proxyStatus = proxyStatus)
         every { dispatch(any()) } just Runs
@@ -485,6 +590,8 @@ class MenuMiddlewareTest {
                                     ),
                             ),
                         navController = navController,
+                        summarizationSettings = summarizationSettings,
+                        summarizationEligibilityChecker = summarizationEligibilityChecker,
                         scope = CoroutineScope(testDispatcher),
                         applicationScope = CoroutineScope(testDispatcher),
                     )

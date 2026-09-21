@@ -23,6 +23,7 @@ import org.mozilla.fenix.components.menu.FenixMenuItem.IPProtection
 import org.mozilla.fenix.components.menu.FenixMenuItem.More
 import org.mozilla.fenix.components.menu.FenixMenuItem.Refresh
 import org.mozilla.fenix.components.menu.FenixMenuItem.Share
+import org.mozilla.fenix.components.menu.FenixMenuItem.SummarizePage
 import org.mozilla.fenix.components.menu.FenixMenuItem.Translate
 import org.mozilla.fenix.components.menu.MenuPresentationMode.Grid
 import org.mozilla.fenix.components.menu.MenuPresentationMode.Row
@@ -143,7 +144,7 @@ class BrowserMenuBuilder(
                                 Bookmark,
                                 FindInPage,
                                 DesktopSite,
-                                More(listOf(Translate)),
+                                More(listOf(Translate, SummarizePage)),
                             ),
                     ),
                 )

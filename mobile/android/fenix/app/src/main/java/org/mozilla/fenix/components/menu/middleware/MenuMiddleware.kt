@@ -11,6 +11,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.selector.selectedTab
+import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.menu.store.MenuAction
 import mozilla.components.compose.menu.store.MenuAction.Init
@@ -41,12 +42,18 @@ import org.mozilla.fenix.components.menu.store.MenuAction.CustomizeReaderView
 import org.mozilla.fenix.components.menu.store.MenuAction.FindInPage
 import org.mozilla.fenix.components.menu.store.MenuAction.IPProtectionToggle
 import org.mozilla.fenix.components.menu.store.MenuAction.Navigate
+import org.mozilla.fenix.components.menu.store.MenuAction.OnSummarizationMenuExposed
 import org.mozilla.fenix.components.menu.store.MenuAction.RequestDesktopSite
 import org.mozilla.fenix.components.menu.store.MenuAction.RequestMobileSite
 import org.mozilla.fenix.components.menu.toMenuState
 import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.ext.nav
+import org.mozilla.fenix.summarization.eligibility.SummarizationEligibilityChecker
+import org.mozilla.fenix.summarization.onboarding.FenixSummarizationFeatureConfiguration
+import org.mozilla.fenix.summarization.onboarding.SummarizationFeatureDiscoveryConfiguration
+import org.mozilla.fenix.summarization.onboarding.SummarizeDiscoveryEvent
+import org.mozilla.fenix.tabstray.ext.isNormalTab
 
 /**
  * [MenuStore] middleware handling all user interactions.
@@ -57,6 +64,9 @@ import org.mozilla.fenix.ext.nav
  * @param useCases [UseCases] helping this integrate with other features of the application.
  * @param browserMenuBuilder [BrowserMenuBuilder] providing the menu to show, kept up to date.
  * @param navController [NavController] for navigating to other screens.
+ * @param summarizationSettings [FenixSummarizationFeatureConfiguration] for managing the summarization feature.
+ * @param summarizationEligibilityChecker [SummarizationEligibilityChecker] for checking the eligibility of the
+ *   summarization feature.
  * @param scope [CoroutineScope] tied to the lifetime of the menu, used for all work that is only useful while the menu
  *   is shown.
  * @param applicationScope [CoroutineScope] tied to the lifetime of the application, used for the work that cannot be
@@ -70,10 +80,13 @@ class MenuMiddleware(
     private val useCases: UseCases,
     private val browserMenuBuilder: BrowserMenuBuilder,
     private val navController: NavController,
+    private val summarizationSettings: SummarizationFeatureDiscoveryConfiguration,
+    private val summarizationEligibilityChecker: SummarizationEligibilityChecker,
     private val scope: CoroutineScope,
     private val applicationScope: CoroutineScope,
 ) : Middleware<MenuState, MenuAction> {
 
+    @Suppress("LongMethod", "CyclomaticComplexMethod")
     override fun invoke(
         store: Store<MenuState, MenuAction>,
         next: (MenuAction) -> Unit,
@@ -118,6 +131,29 @@ class MenuMiddleware(
                     navOptions = NavOptions.Builder().setPopUpTo(R.id.browserFragment, false).build(),
                 )
             }
+
+            is Navigate.Summarizer -> {
+                navController.nav(
+                    R.id.menuFragment,
+                    MenuFragmentDirections.actionMenuFragmentToSummarizationFragment(
+                        sessionId = browserStore.state.selectedTabId
+                    ),
+                    navOptions = NavOptions.Builder().setPopUpTo(R.id.browserFragment, false).build(),
+                )
+            }
+
+            is OnSummarizationMenuExposed ->
+                scope.launch {
+                    val currentTab = browserStore.state.selectedTab
+                    val isSummarizationEnabled =
+                        summarizationSettings.showMenuItem &&
+                            currentTab?.isNormalTab() ?: false &&
+                            currentTab.checkSummarizationEligibility()
+
+                    if (isSummarizationEnabled) {
+                        summarizationSettings.cacheDiscoveryEvent(SummarizeDiscoveryEvent.MenuItemExposure)
+                    }
+                }
 
             is Navigate.Back -> handleBackNavigation(action)
 
@@ -294,4 +330,9 @@ class MenuMiddleware(
     private fun dismissMenu() {
         navController.popBackStack(R.id.menuFragment, true)
     }
+
+    private suspend fun SessionState?.checkSummarizationEligibility(): Boolean =
+        this@checkSummarizationEligibility?.engineState?.engineSession?.let { session ->
+            summarizationEligibilityChecker.checkLanguage(session).getOrDefault(false)
+        } ?: false
 }

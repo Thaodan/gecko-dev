@@ -1853,6 +1853,10 @@
       <action
         android:id="@+id/action_menuFragment_to_translationsDialogFragment"
         app:destination="@id/translationsDialogFragment" />
+
+      <action
+        android:id="@+id/action_menuFragment_to_summarizationFragment"
+        app:destination="@id/summarizationFragment" />
     </dialog>
   </navigation>
 
