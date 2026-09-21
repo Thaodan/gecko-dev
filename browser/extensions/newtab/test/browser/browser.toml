@@ -75,10 +75,6 @@ https_first_disabled = true
 ["browser_ohttpImages.js"]
 
 ["browser_open_tab_focus.js"]
-run-if = [
-  "os == 'mac'", # Test setup only implemented for OSX and Windows
-  "os == 'win'", # Test setup only implemented for OSX and Windows
-]
 
 ["browser_topsites_contextMenu_options.js"]
 
