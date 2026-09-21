@@ -427,6 +427,8 @@ function Stocks({
       <ul
         ref={watchlistRef}
         aria-busy={!watchlistReady}
+        aria-labelledby="stocks-widget-label"
+        tabIndex={0}
         className={`stocks-list stocks-list--watchlist${
           !matchedRows.length && !watchlistReady ? " stocks-list--loading" : ""
         }`}

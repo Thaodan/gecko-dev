@@ -398,10 +398,59 @@ describe("StockTicker watchlist control (large only)", () => {
         .getAttribute("disabled")
     ).not.toBeNull();
   });
+});
 
-  it("marks a search-variant row with the result class", () => {
-    const { container } = renderRow({ variant: "search" });
+describe("StockTicker search variant", () => {
+  const base = {
+    size: "large",
+    variant: "search",
+    name: "Vanguard S&P 500 ETF",
+    ticker: "VOO",
+    exchange: "NYSE",
+  };
+  const renderRow = props =>
+    render(
+      <ul>
+        <StockTicker {...base} {...props} />
+      </ul>
+    );
+
+  it("marks the row with the result class", () => {
+    const { container } = renderRow();
     expect(container.querySelector("li.stock-ticker--result")).toBeTruthy();
+  });
+
+  it("shows name, symbol and exchange with no quote parts", () => {
+    const { container } = renderRow({
+      watchlistState: "add",
+      onWatchlistToggle: jest.fn(),
+    });
+    expect(container.querySelector(".stock-ticker-name").textContent).toBe(
+      "Vanguard S&P 500 ETF"
+    );
+    expect(container.querySelector(".stock-ticker-symbol").textContent).toBe(
+      "VOO"
+    );
+    expect(container.querySelector(".stock-ticker-exchange").textContent).toBe(
+      "NYSE"
+    );
+    expect(container.querySelector(".stock-indicator")).toBeNull();
+    expect(container.querySelector(".stock-ticker-price")).toBeNull();
+    expect(container.querySelector(".stock-ticker-change")).toBeNull();
+    // Only saved rows carry a second .stock-ticker-sr (the in-watchlist span).
+    expect(container.querySelector(".stock-ticker-sr")).toBeNull();
+    expect(
+      container.querySelector(".stock-ticker-label").getAttribute("aria-hidden")
+    ).toBeNull();
+    expect(
+      container.querySelector("moz-button.stock-ticker-action")
+    ).toBeTruthy();
+  });
+
+  it("omits the second line when the exchange is empty", () => {
+    const { container } = renderRow({ exchange: "" });
+    expect(container.querySelectorAll(".stock-ticker-line")).toHaveLength(1);
+    expect(container.querySelector(".stock-ticker-exchange")).toBeNull();
   });
 });
 

@@ -1852,7 +1852,7 @@ describe("Stocks reducer - search", () => {
       data: {
         requestId: "r1",
         status: "success",
-        values: [{ ticker: "AAPL" }],
+        matches: [{ ticker: "AAPL" }],
       },
     });
     expect(next.searchStatus).toBe("success");
@@ -1869,7 +1869,7 @@ describe("Stocks reducer - search", () => {
       data: {
         requestId: "r1",
         status: "success",
-        values: [{ ticker: "AAPL" }],
+        matches: [{ ticker: "AAPL" }],
       },
     });
     expect(next).toBe(prev);
@@ -2021,7 +2021,7 @@ describe("Stocks watchlist limit and scroll", () => {
     expect(addBtn.getAttribute("disabled")).not.toBeNull();
   });
 
-  it("adds the scroll modifier to the Watchlist list", () => {
+  it("adds the scroll modifier to the Watchlist list and makes it focusable", () => {
     const { container } = renderStocksState({
       size: "large",
       watchlist: "AAPL",
@@ -2034,7 +2034,10 @@ describe("Stocks watchlist limit and scroll", () => {
         },
       ],
     });
-    expect(container.querySelector("ul.stocks-list--watchlist")).toBeTruthy();
+    const list = container.querySelector("ul.stocks-list--watchlist");
+    expect(list).toBeTruthy();
+    expect(list.getAttribute("tabindex")).toBe("0");
+    expect(list.getAttribute("aria-labelledby")).toBe("stocks-widget-label");
   });
 });
 
@@ -2042,8 +2045,8 @@ describe("Stocks ticker search", () => {
   const AAPL = {
     ticker: "AAPL",
     name: "Apple Inc",
-    last_price: "$1 USD",
-    todays_change_perc: "+0.1",
+    exchange: "NASDAQ",
+    is_etf: false,
   };
 
   function openSearch(container) {

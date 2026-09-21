@@ -151,27 +151,6 @@ export class StocksFeed {
     return this.merino;
   }
 
-  // Read lastFetchStatus because fetch() returns [] for both errors and no
-  // matches, so the values alone cannot tell the two apart.
-  async _searchFetch(client, query) {
-    const result = await client.fetch({
-      query,
-      providers: MERINO_PROVIDER,
-      timeoutMs: MERINO_TIMEOUT_MS,
-      otherParams: { source: "newtab" },
-    });
-    const status = client.lastFetchStatus;
-    if (
-      status === "timeout" ||
-      status === "network_error" ||
-      status === "http_error"
-    ) {
-      return null;
-    }
-    const values = result?.[0]?.custom_details?.polygon?.values;
-    return Array.isArray(values) && values.length ? values : [];
-  }
-
   // Look up a search query and reply only to the tab that asked. Each search gets
   // its own Merino client so overlapping searches don't cancel each other (one
   // client serves one request at a time).
@@ -179,12 +158,12 @@ export class StocksFeed {
     if (!target) {
       return; // no port to reply to
     }
-    const reply = (status, values = []) =>
+    const reply = (status, matches = []) =>
       this.store.dispatch(
         ac.OnlyToOneContent(
           {
             type: at.WIDGETS_STOCKS_SEARCH_RESPONSE,
-            data: { query, requestId, status, values },
+            data: { query, requestId, status, matches },
           },
           target
         )
@@ -201,26 +180,26 @@ export class StocksFeed {
       }
       const client = this.MerinoClient(MERINO_SEARCH_CLIENT_KEY);
       try {
-        const bare = await this._searchFetch(client, normalized);
-        if (bare === null) {
+        const result = await client.fetch({
+          query: normalized,
+          providers: MERINO_PROVIDER,
+          timeoutMs: MERINO_TIMEOUT_MS,
+          otherParams: { source: "newtab", request_type: "ticker_search" },
+        });
+        // Read lastFetchStatus because fetch() returns [] for both errors and
+        // no matches, so the result alone cannot tell the two apart.
+        const status = client.lastFetchStatus;
+        const matches = result?.[0]?.custom_details?.polygon?.matches;
+        if (
+          status === "timeout" ||
+          status === "network_error" ||
+          status === "http_error"
+        ) {
           reply("error");
-        } else if (bare.length) {
-          reply("success", bare);
+        } else if (Array.isArray(matches) && matches.length) {
+          reply("success", matches);
         } else {
-          // A company name (e.g. amazon) or a symbol Merino rejects bare (e.g.
-          // SPY) resolves through the "<query> stock" phrase Merino maps to a
-          // ticker. Lower-cased because Merino matches those phrases in lower case.
-          const named = await this._searchFetch(
-            client,
-            `${normalized.toLowerCase()} stock`
-          );
-          if (named === null) {
-            reply("error");
-          } else if (named.length) {
-            reply("success", named);
-          } else {
-            reply("empty");
-          }
+          reply("empty");
         }
       } finally {
         // End the client's session so this per-search client is released
