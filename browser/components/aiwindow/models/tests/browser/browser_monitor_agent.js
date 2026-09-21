@@ -178,7 +178,7 @@ add_task(async function test_uninit_prevents_pending_init_from_loading() {
     );
 
     Assert.equal(
-      MonitorAgent._monitorCountForTelemetry(),
+      MonitorAgent._telemetryExtra(monitor).monitors,
       0,
       "A pending initialization does not restore monitors after shutdown starts."
     );
@@ -202,8 +202,13 @@ add_task(async function test_uninit_ignores_pending_init_failure() {
     MonitorAgent.uninit();
     await initPromise;
 
+    const monitor = new Monitor({
+      monitorPrompt: "Check for a change.",
+      watchUrls: ["https://example.com/"],
+      schedule: new IntervalSchedule(1),
+    });
     Assert.equal(
-      MonitorAgent._monitorCountForTelemetry(),
+      MonitorAgent._telemetryExtra(monitor).monitors,
       0,
       "A failed pending initialization remains unloaded during shutdown."
     );
@@ -958,6 +963,11 @@ add_task(async function test_createMonitor_returns_id() {
       "1",
       "monitor_create event has correct url count"
     );
+    Assert.equal(
+      events[0].extra.action_id,
+      id,
+      "monitor_create event carries the monitor id"
+    );
   } finally {
     await resetMonitorAgentForTesting();
   }
@@ -1175,6 +1185,53 @@ add_task(async function test_pauseMonitor() {
   }
 });
 
+add_task(async function test_active_and_paused_action_gauges() {
+  const assertGauges = (active, paused, message) => {
+    Assert.equal(
+      Glean.smartWindow.monitorActiveCount.testGetValue(),
+      active,
+      `${message}: monitor_active_count`
+    );
+    Assert.equal(
+      Glean.smartWindow.monitorPausedCount.testGetValue(),
+      paused,
+      `${message}: monitor_paused_count`
+    );
+  };
+
+  try {
+    await resetMonitorAgentForTesting();
+    Services.fog.testResetFOG();
+
+    const id1 = await MonitorAgent.createMonitor({
+      prompt: "Check if the product price is below $300.",
+      watchUrls: ["https://example.com/product"],
+      schedule: { type: "interval", hours: 1 },
+      source: "test",
+    });
+    await MonitorAgent.createMonitor({
+      prompt: "Check if the item is back in stock.",
+      watchUrls: ["https://example.org/other"],
+      schedule: { type: "interval", hours: 1 },
+      source: "test",
+    });
+    assertGauges(2, 0, "Two enabled monitors after creation");
+
+    await MonitorAgent.pauseMonitor(id1, true);
+    assertGauges(1, 1, "Pausing moves a monitor from active to paused");
+
+    await MonitorAgent.deleteMonitor(id1);
+    assertGauges(1, 0, "Deleting the paused monitor drops it from the gauges");
+
+    MonitorAgent._unloadForTesting();
+    Services.fog.testResetFOG();
+    await MonitorAgent.listMonitors();
+    assertGauges(1, 0, "Loading monitors from the store re-sets the gauges");
+  } finally {
+    await resetMonitorAgentForTesting();
+  }
+});
+
 /**
  * @param {string} id - The monitor id
  * @param {object} [options]
@@ -1240,6 +1297,11 @@ add_task(async function test_notification_shown_when_condition_met() {
       notificationEvents.length,
       1,
       "One notification send event was recorded"
+    );
+    Assert.equal(
+      notificationEvents[0].extra.action_id,
+      id,
+      "Notification send event carries the monitor id"
     );
     const alert = alertsMock.alerts[0];
     Assert.equal(
@@ -1436,6 +1498,11 @@ add_task(async function test_notification_body_click_opens_watched_url() {
       clickEvents[0].extra.click_type,
       "open_url",
       "Click type is open_url"
+    );
+    Assert.equal(
+      clickEvents[0].extra.action_id,
+      id,
+      "Notification click event carries the monitor id"
     );
   } finally {
     MonitorAgent._openWatchedUrl = originalOpen;

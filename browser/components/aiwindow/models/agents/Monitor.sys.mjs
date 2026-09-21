@@ -294,6 +294,12 @@ export class Monitor {
       }
     }
 
+    const delayMs = scheduledRunDelayMs({
+      manual,
+      nextRunTime: this.nextRunTime,
+      checkedAt,
+    });
+
     // make sure that a run is not already in progress, otherwise we would have overlapping runs
     // may happen with manual runs or if the previous run took longer than the schedule interval
     if (this.#running) {
@@ -311,6 +317,7 @@ export class Monitor {
     }
 
     this.#running = true;
+    const runStarted = ChromeUtils.now();
     const historyEntry = {
       id: crypto.randomUUID(),
       checkedAt: checkedAt.toISOString(),
@@ -324,6 +331,7 @@ export class Monitor {
     let result = null;
     let checkPromise = null;
     let timedOut = false;
+    const runStats = { model: null, modelLatencyMs: null };
     const abortController = new AbortController();
     this.#abortController = abortController;
     try {
@@ -335,6 +343,7 @@ export class Monitor {
         flowId: this.id,
         now: checkedAt,
         signal: abortController.signal,
+        runStats,
       });
 
       // if the checkPromise times out, abort the monitor check and mark it as timed out
@@ -370,13 +379,19 @@ export class Monitor {
           checkPromise.catch(() => {});
         }
         this.#finishRun(abortController);
-        recordMonitorRunTelemetry(
-          this,
+        recordMonitorRunTelemetry(this, {
           manual,
-          MONITOR_PROMPT_VERSION,
-          historyEntry.status === "error",
-          historyEntry.errorCode ?? null
-        );
+          failed: historyEntry.status === "error",
+          errorCode: historyEntry.errorCode ?? null,
+          outcome:
+            historyEntry.status === "success"
+              ? historyEntry.conditionMet
+              : null,
+          durationMs: Math.round(ChromeUtils.now() - runStarted),
+          delayMs,
+          model: runStats.model,
+          modelLatencyMs: runStats.modelLatencyMs,
+        });
       }
     }
   }
@@ -388,18 +403,24 @@ export class Monitor {
    * @param {string} [options.flowId] - Monitor conversation flow ID.
    * @param {Date} [options.now] - Monitor check time.
    * @param {AbortSignal} [options.signal] - Signal for monitor-layer aborts.
+   * @param {{ model: string|null, modelLatencyMs: number|null }} [options.runStats] -
+   *   Filled in with the model used and the model call time, for telemetry.
    * @returns {Promise<{ explanation: string, conditionMet: boolean }>}
    */
   async runMonitorCheck({
     flowId = null,
     now = new Date(),
     signal = null,
+    runStats = null,
   } = {}) {
     throwIfAborted(signal);
     const conversation = await lazy.buildConversation(
       MODEL_FEATURES.AGENT_MONITOR,
       { flowId }
     );
+    if (runStats) {
+      runStats.model = conversation.engine?.model ?? null;
+    }
 
     // Backfill the baseline for monitors without one (created before
     // snapshots existed, or the creation-time capture failed). The first
@@ -468,14 +489,17 @@ export class Monitor {
     conversation.addUserMessage(userPrompt);
 
     // run the conversation
+    const fxAccountToken = await withAbortSignal(
+      openAIEngine.getFxAccountToken(),
+      signal
+    );
+    throwIfAborted(signal);
+    const modelCallStarted = ChromeUtils.now();
     let response;
     try {
       response = await withAbortSignal(
         conversation.run({
-          fxAccountToken: await withAbortSignal(
-            openAIEngine.getFxAccountToken(),
-            signal
-          ),
+          fxAccountToken,
           inferenceParams: {
             response_format: makeJSONSchemaBlob(
               "MonitorResult",
@@ -495,6 +519,11 @@ export class Monitor {
         code === MONITOR_ERROR_CODES.UNKNOWN ? MONITOR_ERROR_CODES.MODEL : code,
         error.message || String(error),
         { cause: error }
+      );
+    }
+    if (runStats) {
+      runStats.modelLatencyMs = Math.round(
+        ChromeUtils.now() - modelCallStarted
       );
     }
 
@@ -953,38 +982,55 @@ export function isAllowedWatchUrl(urlString) {
   return !!url && ["http:", "https:"].includes(url.protocol);
 }
 
+function scheduledRunDelayMs({ manual, nextRunTime, checkedAt }) {
+  if (manual) {
+    return null;
+  }
+  const dueTime = Date.parse(nextRunTime);
+  if (!Number.isFinite(dueTime)) {
+    return null;
+  }
+  return Math.max(0, checkedAt.getTime() - dueTime);
+}
+
 function recordMonitorRunTelemetry(
   monitor,
-  manual,
-  promptVersion,
-  failed,
-  errorCode = null
+  {
+    manual,
+    failed,
+    errorCode,
+    outcome,
+    durationMs,
+    delayMs,
+    model,
+    modelLatencyMs,
+  }
 ) {
-  const extra = {
-    monitors: lazy.MonitorAgent._monitorCountForTelemetry(),
-    urls: monitor.watchUrls.length,
-    length: monitor.monitorPrompt.length,
-    age: monitorAgeMs(monitor),
-    active_age: monitorAgeMs(monitor, monitor.activeSince),
-    schedule_type: monitor.schedule.type,
-    prompt_version: promptVersion,
-    enabled: monitor.enabled,
-  };
+  const extra = lazy.MonitorAgent._telemetryExtra(monitor);
 
-  // Record run type (manual vs scheduled)
   if (manual) {
     Glean.smartWindow.monitorRunManual.record(extra);
   } else {
-    Glean.smartWindow.monitorRunScheduled.record(extra);
+    Glean.smartWindow.monitorRunScheduled.record(
+      delayMs == null ? extra : { ...extra, delay: delayMs }
+    );
   }
 
-  // Record completion with success/failure status
-  const completeExtra = {
-    ...extra,
-    success: !failed,
-  };
+  const completeExtra = { ...extra, success: !failed, duration: durationMs };
   if (failed && errorCode) {
     completeExtra.error_code = errorCode;
+  }
+  if (!failed && typeof outcome === "boolean") {
+    completeExtra.outcome = outcome;
+  }
+  if (modelLatencyMs != null) {
+    completeExtra.latency = modelLatencyMs;
+  }
+  if (model) {
+    completeExtra.model = model;
+  }
+  if (delayMs != null) {
+    completeExtra.delay = delayMs;
   }
   Glean.smartWindow.monitorComplete.record(completeExtra);
 }

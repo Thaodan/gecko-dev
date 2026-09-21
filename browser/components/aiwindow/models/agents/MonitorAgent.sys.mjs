@@ -80,6 +80,13 @@ export const NOTIFICATION_ACTIONS = {
   RESUME: "monitor-resume",
 };
 
+const CREATE_SOURCES = new Set([
+  "in_line_chat",
+  "toolbar_panel",
+  "about_page",
+  "test",
+]);
+
 function isShuttingDown() {
   return (
     gShuttingDown ||
@@ -120,6 +127,7 @@ function monitorTelemetryExtra(monitor) {
     schedule_type: monitor.schedule.type,
     prompt_version: MONITOR_PROMPT_VERSION,
     enabled: monitor.enabled,
+    action_id: monitor.id,
   };
 }
 
@@ -196,6 +204,7 @@ export const MonitorAgent = {
     schedule,
     source = "unknown",
   }) {
+    source = CREATE_SOURCES.has(source) ? source : "unknown";
     await this._ensureLoaded();
     if (activeMonitorCount() >= TOTAL_NUM_MONITORS) {
       throw new MonitorLimitError(TOTAL_NUM_MONITORS);
@@ -389,6 +398,7 @@ export const MonitorAgent = {
     } finally {
       Services.obs.notifyObservers(null, MONITOR_AGENTS_CHANGED_TOPIC);
     }
+    this._updateActionGauges();
     Glean.smartWindow.monitorDelete.record(monitorTelemetryExtra(monitor));
     return true;
   },
@@ -453,6 +463,7 @@ export const MonitorAgent = {
         }
       }
     }
+    this._updateActionGauges();
   },
 
   /**
@@ -490,11 +501,25 @@ export const MonitorAgent = {
     } else {
       await lazy.MonitorStore.saveMonitors(Array.from(gMonitors.values()));
     }
+    this._updateActionGauges();
     Services.obs.notifyObservers(null, MONITOR_AGENTS_CHANGED_TOPIC);
 
     if (monitor) {
       this._notifyIfConditionMet(monitor);
     }
+  },
+
+  _updateActionGauges() {
+    if (!gMonitors) {
+      return;
+    }
+    const active = activeMonitorCount();
+    Glean.smartWindow.monitorActiveCount.set(active);
+    Glean.smartWindow.monitorPausedCount.set(gMonitors.size - active);
+  },
+
+  _telemetryExtra(monitor) {
+    return monitorTelemetryExtra(monitor);
   },
 
   /**
@@ -808,9 +833,5 @@ export const MonitorAgent = {
   async _resetForTesting() {
     this._unloadForTesting();
     await lazy.MonitorStore.destroyDatabase();
-  },
-
-  _monitorCountForTelemetry() {
-    return gMonitors?.size ?? 0;
   },
 };
