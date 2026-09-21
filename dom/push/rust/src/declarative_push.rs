@@ -4,6 +4,7 @@
 
 use nsstring::nsString;
 use serde::{Deserialize, Deserializer};
+use thin_vec::ThinVec;
 
 #[derive(Clone, Copy, Deserialize, Default)]
 #[repr(u8)]
@@ -17,6 +18,16 @@ pub enum DeclarativePushDir {
     Auto,
 }
 
+// Deserializes as Ok(T) for valid values, and WrongType(json_value) if
+// the deserialization as T failed.
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum Forgiving<T> {
+    Ok(T),
+    #[allow(dead_code)]
+    WrongType(serde_json::Value),
+}
+
 // serde_json deserialization for Option fails if the value is present
 // but with the wrong type. However, the spec instead ignores such values,
 // so we need our own deserializer. This uses T::default() if the value has
@@ -24,18 +35,18 @@ pub enum DeclarativePushDir {
 fn forgiving_deserialize<'a, T: Deserialize<'a> + Default, D: Deserializer<'a>>(
     deserializer: D,
 ) -> Result<T, D::Error> {
-    #[derive(Deserialize)]
-    #[serde(untagged)]
-    enum Forgiving<T> {
-        Ok(T),
-        #[allow(dead_code)]
-        WrongType(serde_json::Value),
-    }
     let result: Forgiving<T> = Deserialize::deserialize(deserializer)?;
     Ok(match result {
         Forgiving::Ok(value) => value,
         _ => T::default(),
     })
+}
+
+#[repr(C)]
+pub struct DeclarativePushAction {
+    action: nsString,
+    title: nsString,
+    navigate: nsString,
 }
 
 #[repr(C)]
@@ -46,9 +57,27 @@ pub struct DeclarativePushData {
     body: nsString,
     icon: nsString,
     tag: nsString,
+    actions: ThinVec<DeclarativePushAction>,
     dir: DeclarativePushDir,
     silent: bool,
     require_interaction: bool,
+}
+
+#[derive(Deserialize)]
+struct ActionJSON {
+    action: String,
+    title: String,
+    navigate: String,
+}
+
+impl ActionJSON {
+    fn to_ffi(self) -> DeclarativePushAction {
+        DeclarativePushAction {
+            action: nsString::from(&self.action),
+            title: nsString::from(&self.title),
+            navigate: nsString::from(&self.navigate),
+        }
+    }
 }
 
 /// notification member of https://w3c.github.io/push-api/#members
@@ -71,6 +100,8 @@ struct NotificationJSON {
     silent: bool,
     #[serde(default, deserialize_with = "forgiving_deserialize")]
     requireInteraction: bool,
+    #[serde(default, deserialize_with = "forgiving_deserialize")]
+    actions: Vec<Forgiving<ActionJSON>>,
 }
 
 /// Declarative push message data. https://w3c.github.io/push-api/#members
@@ -101,6 +132,21 @@ fn parse_declarative_push_option(data: &[u8]) -> Option<DeclarativePushData> {
         tag: nsString::from(&notification.tag),
         silent: notification.silent,
         require_interaction: notification.requireInteraction,
+        // We skip actions which don't have required members:
+        // Step 25.2.1: If actionInput["action"] does not exist or is not a string,
+        //              then continue.
+        //           2: If actionInput["title"] does not exist or is not a string,
+        //              then continue.
+        //           3: If actionInput["navigate"] does not exist or is not a string,
+        //              then continue.
+        actions: notification
+            .actions
+            .into_iter()
+            .filter_map(|action| match action {
+                Forgiving::Ok(value) => Some(value.to_ffi()),
+                Forgiving::WrongType(_) => None,
+            })
+            .collect(),
     })
 }
 

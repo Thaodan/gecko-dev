@@ -1949,6 +1949,7 @@ dependencies = [
  "nsstring",
  "serde",
  "serde_json",
+ "thin-vec",
 ]
 
 [[package]]

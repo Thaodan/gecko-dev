@@ -29,8 +29,24 @@ function mockServicesChromeScript() {
     showAlertWithCallbacks(alert, callbacks) {
       // Remove properties of object that can't be sent across process boundary.
       function sanitizeObject(object) {
-        return Object.fromEntries(Object.entries(object)
-            .filter(([key, value]) => !["function", "object"].includes(typeof value)));
+        if (object === null) {
+          return null;
+        }
+        const sanitized = {};
+        for (let [key, value] of Object.entries(object)) {
+          // Send spec of nsIURI.
+          if (value?.spec) {
+            value = value.spec;
+          }
+          if (typeof value === "function") {
+            continue;
+          }
+          if (typeof value === "object") {
+            value = sanitizeObject(value);
+          }
+          sanitized[key] = value;
+        }
+        return sanitized;
       }
       // data about this alert that can be queried by the content process
       // with getNotificationData().
