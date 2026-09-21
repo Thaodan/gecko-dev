@@ -56,6 +56,9 @@ sealed interface FenixMenuItem {
     /** A menu item allowing to add the current webpage to a collection. */
     data object SaveToCollection : FenixMenuItem
 
+    /** A menu item allowing to open the current webpage in the app that handles it. */
+    data object OpenInApp : FenixMenuItem
+
     /** A menu item allowing to navigate back. */
     data object Back : FenixMenuItem
 

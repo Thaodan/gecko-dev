@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.components.menu.middleware
 
+import android.content.Intent
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.navigation.NavController
@@ -44,6 +45,8 @@ import mozilla.components.compose.menu.store.MenuStore
 import mozilla.components.compose.menu.ui.MenuItemIconRes
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.ipprotection.ServiceState
+import mozilla.components.feature.app.links.AppLinkRedirect
+import mozilla.components.feature.app.links.AppLinksUseCases
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
 import mozilla.components.feature.ipprotection.store.state.Authorized
@@ -125,6 +128,20 @@ class MenuMiddlewareTest {
     private val migratePrivateTabUseCase: TabsUseCases.MigratePrivateTabUseCase = mockk(relaxed = true)
     private val addPinnedSiteUseCase: TopSitesUseCases.AddPinnedSiteUseCase = mockk(relaxed = true)
     private val addToHomescreenUseCase: WebAppUseCases.AddToHomescreenUseCase = mockk(relaxed = true)
+    private val appLinkRedirectUseCase: AppLinksUseCases.GetAppLinkRedirect = mockk {
+        every { this@mockk.invoke(any()) } returns
+            AppLinkRedirect(
+                appIntent = mockk<Intent>(),
+                appName = "Mozilla app",
+                fallbackUrl = null,
+                marketplaceIntent = null,
+            )
+    }
+    private val openAppLinkUseCase: AppLinksUseCases.OpenAppLinkRedirect = mockk(relaxed = true)
+    private val appLinksUseCases: AppLinksUseCases = mockk {
+        every { appLinkRedirect } returns appLinkRedirectUseCase
+        every { openAppLink } returns openAppLinkUseCase
+    }
     private val webAppUseCases: WebAppUseCases = mockk {
         every { isInstallable() } returns false
         every { addToHomescreen } returns addToHomescreenUseCase
@@ -156,6 +173,7 @@ class MenuMiddlewareTest {
         every { fenixBrowserUseCases } returns fenixBrowserUseCase
         every { shareUseCases } returns shareUrlUseCase
         every { webAppUseCases } returns this@MenuMiddlewareTest.webAppUseCases
+        every { appLinksUseCases } returns this@MenuMiddlewareTest.appLinksUseCases
     }
     // Navigating away is guarded on still being on the menu, so the mock has to report that as the current
     // destination. A relaxed mock would otherwise report an id of 0 and every navigation would be skipped.
@@ -749,6 +767,46 @@ class MenuMiddlewareTest {
             arguments.getSerializable("saveCollectionStep", SaveCollectionStep::class.java),
         )
         assertEquals(R.id.browserFragment, navOptions.captured.popUpToId)
+    }
+
+    @Test
+    fun `GIVEN an app can open the current page WHEN handling opening it there THEN do so and dismiss the menu`() {
+        val store = createStore()
+
+        store.dispatch(MenuAction.OpenInApp)
+
+        verify {
+            settings.openInAppOpened = true
+            openAppLinkUseCase(any<Intent>())
+            navController.popBackStack(R.id.menuFragment, true)
+        }
+    }
+
+    @Test
+    fun `GIVEN no app can open the current page WHEN handling opening it there THEN keep the menu open`() {
+        every { appLinkRedirectUseCase(any()) } returns
+            AppLinkRedirect(appIntent = null, appName = "", fallbackUrl = null, marketplaceIntent = null)
+        val store = createStore()
+
+        store.dispatch(MenuAction.OpenInApp)
+
+        verify(exactly = 0) {
+            settings.openInAppOpened = true
+            openAppLinkUseCase(any<Intent>())
+            navController.popBackStack(R.id.menuFragment, true)
+        }
+    }
+
+    @Test
+    fun `GIVEN there is no page shown WHEN handling opening it in an app THEN keep the menu open`() {
+        val store = createStore(browserStore = BrowserStore())
+
+        store.dispatch(MenuAction.OpenInApp)
+
+        verify(exactly = 0) {
+            openAppLinkUseCase(any<Intent>())
+            navController.popBackStack(R.id.menuFragment, true)
+        }
     }
 
     @Test

@@ -50,6 +50,7 @@ import org.mozilla.fenix.browser.DesktopSiteMenuItemProvider
 import org.mozilla.fenix.browser.ForwardMenuItemProvider
 import org.mozilla.fenix.browser.RefreshMenuItemProvider
 import org.mozilla.fenix.browser.ShareMenuItemProvider
+import org.mozilla.fenix.browser.applinks.OpenInAppMenuItemProvider
 import org.mozilla.fenix.browser.menu.MoreMenuItemsProvider
 import org.mozilla.fenix.browser.menu.MoveToNormalTabsMenuItemProvider
 import org.mozilla.fenix.browser.readermode.ReaderViewMenuItemProvider
@@ -310,6 +311,13 @@ class MenuFragment : BottomSheetDialogFragment() {
                 SaveToCollectionMenuItemProvider(
                     settings = requireComponents.settings,
                     tabCollectionStorage = requireComponents.core.tabCollectionStorage,
+                )
+            FenixMenuItem.OpenInApp ->
+                OpenInAppMenuItemProvider(
+                    browserStore = requireComponents.core.store,
+                    appStore = requireComponents.appStore,
+                    appLinksUseCases = requireComponents.useCases.appLinksUseCases,
+                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
                 )
         }
     }

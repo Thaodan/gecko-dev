@@ -53,6 +53,7 @@ import org.mozilla.fenix.components.menu.store.MenuAction.MoveToNonPrivateTab
 import org.mozilla.fenix.components.menu.store.MenuAction.Navigate
 import org.mozilla.fenix.components.menu.store.MenuAction.OnMoreMenuClicked
 import org.mozilla.fenix.components.menu.store.MenuAction.OnSummarizationMenuExposed
+import org.mozilla.fenix.components.menu.store.MenuAction.OpenInApp
 import org.mozilla.fenix.components.menu.store.MenuAction.RemoveShortcut
 import org.mozilla.fenix.components.menu.store.MenuAction.RequestDesktopSite
 import org.mozilla.fenix.components.menu.store.MenuAction.RequestMobileSite
@@ -189,6 +190,8 @@ class MenuMiddleware(
             is Navigate.AddToHomeScreen -> addToHomeScreen()
 
             is Navigate.SaveToCollection -> saveCurrentPageToCollection(action.hasCollection)
+
+            is OpenInApp -> openCurrentPageInApp()
 
             is Navigate.Back -> handleBackNavigation(action)
 
@@ -411,6 +414,23 @@ class MenuMiddleware(
                 summarizationSettings.cacheDiscoveryEvent(SummarizeDiscoveryEvent.MenuItemExposure)
             }
         }
+    }
+
+    /**
+     * The current page is opened in the app handling it, which the user is not told about again afterwards.
+     *
+     * Whether there is such an app is resolved as late as possible, since the user may have navigated away from the
+     * page the item was built for.
+     */
+    private fun openCurrentPageInApp() {
+        val url = browserStore.state.selectedTab?.content?.url ?: return
+        val redirect = useCases.appLinksUseCases.appLinkRedirect(url)
+        if (!redirect.hasExternalApp()) return
+
+        settings.openInAppOpened = true
+
+        useCases.appLinksUseCases.openAppLink(redirect.appIntent)
+        dismissMenu()
     }
 
     private fun saveCurrentPageToCollection(collectionsAlreadyExist: Boolean) {
