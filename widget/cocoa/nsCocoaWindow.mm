@@ -2327,6 +2327,14 @@ NSEvent* gLastDragMouseDownEvent = nil;  // [strong]
 
   nsAutoRetainCocoaObject kungFuDeathGrip(self);
 
+  // The system does not send us mouse button presses while it tracks a drag, so
+  // any drag session that is still around at this point is stale. Ending it
+  // runs script, which can tear down this widget.
+  nsDragService::EndStaleDragSession();
+  if (!mGeckoChild) {
+    return;
+  }
+
   if ([self maybeRollup:theEvent] ||
       !ChildViewMouseTracker::WindowAcceptsEvent([self window], theEvent, self,
                                                  isClickThrough)) {
@@ -2468,6 +2476,15 @@ NSEvent* gLastDragMouseDownEvent = nil;  // [strong]
   }
 
   nsAutoRetainCocoaObject kungFuDeathGrip(self);
+
+  // A drag needs a pressed mouse button, so any drag session that is still
+  // around while the mouse moves with all buttons released is stale.
+  if (![NSEvent pressedMouseButtons]) {
+    nsDragService::EndStaleDragSession();
+  }
+  if (!mGeckoChild) {
+    return;
+  }
 
   WidgetMouseEvent geckoEvent(true, eMouseMove, mGeckoChild,
                               WidgetMouseEvent::eReal);
