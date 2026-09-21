@@ -1043,7 +1043,9 @@ export const PREFS_CONFIG = new Map([
     "newtabWallpapers.customWallpaper.library.enabled",
     {
       title:
-        'Keeps more than one custom wallpaper, shown as "Your images" in the wallpaper picker. Off by default; can also be turned on via trainhopConfig.customWallpaperLibrary.enabled.',
+        'Keeps more than one custom wallpaper, shown as "Your images" in the wallpaper picker.',
+      // Off on purpose. firefox.js turns it on from 158, so it can never reach
+      // an older host, where a backup keeps only the applied wallpaper.
       value: false,
     },
   ],

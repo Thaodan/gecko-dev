@@ -2016,6 +2016,8 @@ pref("browser.newtabpage.activity-stream.discoverystream.promoCard.visible", tru
 pref("browser.newtabpage.activity-stream.newtabWallpapers.enabled", true);
 pref("browser.newtabpage.activity-stream.newtabWallpapers.customColor.enabled", true);
 pref("browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.enabled", true);
+// Keeps more than one custom wallpaper, shown as "Your images" in the picker
+pref("browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.library.enabled", true);
 
 // Utility preferences for custom wallpaper upload
 pref("browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.uuid", "");

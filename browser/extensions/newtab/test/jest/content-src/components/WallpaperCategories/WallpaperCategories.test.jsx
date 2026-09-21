@@ -1220,20 +1220,6 @@ describe("<WallpaperCategories>", () => {
       );
     });
 
-    it("shows the whole library when a trainhop rollout enables it", () => {
-      const props = withSavedWallpapers(SAVED, {
-        "newtabWallpapers.customWallpaper.library.enabled": false,
-        trainhopConfig: { customWallpaperLibrary: { enabled: true } },
-      });
-
-      const { container } = render(<Harness {...props} />);
-      fireEvent.click(container.querySelector("#custom-wallpaper"));
-
-      expect(
-        container.querySelectorAll('.your-images input[type="radio"]')
-      ).toHaveLength(SAVED.length);
-    });
-
     it("drops thumbnail object URLs when the panel closes", () => {
       const revoked = [];
       globalThis.URL.revokeObjectURL = url => revoked.push(url);
