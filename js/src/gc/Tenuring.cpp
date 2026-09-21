@@ -12,6 +12,7 @@
 
 #include <bit>
 
+#include "gc/BufferAllocator.h"
 #include "gc/Cell.h"
 #include "gc/GCInternals.h"
 #include "gc/GCProbes.h"
@@ -262,6 +263,10 @@ bool TenuringTracer::onJitCodeEdge(jit::JitCode** codep, const char* name) {
 }
 bool TenuringTracer::onScopeEdge(Scope** scopep, const char* name) {
   return true;
+}
+
+bool TenuringTracer::onBufferEdge(void** bufferp, const char* name) {
+  return BufferAllocator::TraceEdge(this, bufferp, name);
 }
 
 void TenuringTracer::traverse(JS::Value* thingp) {

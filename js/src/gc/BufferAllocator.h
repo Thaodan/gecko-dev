@@ -486,7 +486,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
 
   bool isEmpty() const;
 
-  static void* TraceEdge(JSTracer* trc, void** bufferp, const char* name);
+  static bool TraceEdge(JSTracer* trc, void** bufferp, const char* name);
 
   bool markTenuredAlloc(void* alloc);
   bool isMarkedBlack(void* alloc);

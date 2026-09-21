@@ -1062,8 +1062,8 @@ bool BufferAllocator::isMarkedBlack(void* alloc) {
 }
 
 /* static */
-void* BufferAllocator::TraceEdge(JSTracer* trc, void** bufferp,
-                                 const char* name) {
+bool BufferAllocator::TraceEdge(JSTracer* trc, void** bufferp,
+                                const char* name) {
   // Buffers are conceptually part of the owning cell and are not reported to
   // the tracer.
 
@@ -1071,7 +1071,7 @@ void* BufferAllocator::TraceEdge(JSTracer* trc, void** bufferp,
 
   MOZ_ASSERT(bufferp);
 
-  void* buffer = *bufferp;
+  void* buffer;
 #ifdef JS_GC_CONCURRENT_MARKING
   // Conservatively perform an atomic load even when marking is not concurrent.
   buffer = __atomic_load_n(bufferp, __ATOMIC_RELAXED);
@@ -1080,21 +1080,21 @@ void* BufferAllocator::TraceEdge(JSTracer* trc, void** bufferp,
 #endif
 
   if (!buffer) {
-    return nullptr;
+    return true;
   }
 
   if (!IsLargeAlloc(buffer) &&
       js::gc::detail::GetGCAddressChunkBase(buffer)->isNurseryChunk()) {
     // JSObject slots and elements can be allocated in the nursery and this is
     // handled separately.
-    return buffer;
+    return true;
   }
 
   MOZ_ASSERT(IsBufferAlloc(buffer));
 
   if (MOZ_UNLIKELY(IsLargeAlloc(buffer))) {
     TraceLargeAlloc(trc, bufferp, name);
-    return buffer;
+    return true;
   }
 
   BufferChunk* chunk = BufferChunk::from(buffer);
@@ -1102,11 +1102,11 @@ void* BufferAllocator::TraceEdge(JSTracer* trc, void** bufferp,
 
   if (IsSmallAlloc(buffer)) {
     allocator.traceSmallAlloc(trc, buffer, name);
-    return buffer;
+    return true;
   }
 
   allocator.traceMediumAlloc(trc, buffer, name);
-  return buffer;
+  return true;
 }
 
 void BufferAllocator::traceSmallAlloc(JSTracer* trc, void* alloc,
