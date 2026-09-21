@@ -1301,36 +1301,6 @@ void SessionHistoryEntry::GetChildAt(int32_t aIndex,
   child.forget(aChild);
 }
 
-SessionHistoryEntry*
-SessionHistoryEntry::GetChildSHEntryIfHasNoDynamicallyAddedChild(
-    int32_t aChildOffset) {
-  bool dynamicallyAddedChild = false;
-  HasDynamicallyAddedChild(&dynamicallyAddedChild);
-  if (dynamicallyAddedChild) {
-    return nullptr;
-  }
-
-  // If the user did a shift-reload on this frameset page,
-  // we don't want to load the subframes from history.
-  if (IsForceReloadType(mInfo->mLoadType) || mInfo->mLoadType == LOAD_REFRESH) {
-    return nullptr;
-  }
-
-  // Get the child subframe from session history.
-  auto* child = mChildren.SafeElementAt(aChildOffset);
-  if (child) {
-    // Set the parent's Load Type on the child
-    child->SetLoadType(mInfo->mLoadType);
-  }
-  return child;
-}
-
-NS_IMETHODIMP_(void)
-SessionHistoryEntry::GetChildSHEntryIfHasNoDynamicallyAddedChild(
-    int32_t aChildOffset, nsISHEntry** aChild) {
-  *aChild = GetChildSHEntryIfHasNoDynamicallyAddedChild(aChildOffset);
-}
-
 NS_IMETHODIMP
 SessionHistoryEntry::ReplaceChild(nsISHEntry* aNewChild) {
   NS_ENSURE_STATE(aNewChild);

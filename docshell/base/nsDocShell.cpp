@@ -1094,14 +1094,13 @@ bool nsDocShell::MaybeHandleSubframeHistory(
             loadGroup->RemoveRequest(stopDetector, nullptr, NS_OK);
             parentDoc->UnblockOnload(false);
           };
-          contentChild->SendGetLoadingSessionHistoryInfoFromParent(
+          contentChild->SendAdoptChildSHEntry(
               mBrowsingContext, std::move(resolve), std::move(reject));
           return true;
         }
       } else {
         Maybe<LoadingSessionHistoryInfo> info;
-        mBrowsingContext->Canonical()->GetLoadingSessionHistoryInfoFromParent(
-            info);
+        mBrowsingContext->Canonical()->AdoptChildSHEntry(info);
         if (info.isSome()) {
           aLoadState->SetLoadingSessionHistoryInfo(info.value());
           // This is an initial subframe load from the session
@@ -3999,7 +3998,6 @@ nsresult nsDocShell::ReloadNavigable(
   // reload
   RefPtr<ChildSHistory> rootSH = GetRootSessionHistory();
   MOZ_LOG(gSHLog, LogLevel::Debug, ("nsDocShell %p Reload", this));
-  bool forceReload = IsForceReloadType(loadType);
   if (!XRE_IsParentProcess()) {
     ++mPendingReloadCount;
     nsCOMPtr<nsIDocumentViewer> viewer(mDocumentViewer);
@@ -4029,7 +4027,7 @@ nsresult nsDocShell::ReloadNavigable(
     }
 
     ContentChild::GetSingleton()->SendNotifyOnHistoryReload(
-        mBrowsingContext, forceReload,
+        mBrowsingContext, aReloadFlags,
         [docShell, doc, loadType, browsingContext, currentURI, referrerInfo,
          loadGroup, stopDetector](
             std::tuple<bool, Maybe<NotNull<RefPtr<nsDocShellLoadState>>>,
@@ -4081,7 +4079,7 @@ nsresult nsDocShell::ReloadNavigable(
     Maybe<bool> reloadingActiveEntry;
     if (!mBrowsingContext->IsDiscarded()) {
       mBrowsingContext->Canonical()->NotifyOnHistoryReload(
-          forceReload, canReload, loadState, reloadingActiveEntry);
+          aReloadFlags, canReload, loadState, reloadingActiveEntry);
     }
     if (canReload) {
       if (loadState.isSome()) {
@@ -11437,8 +11435,8 @@ nsresult nsDocShell::LoadHistoryEntry(nsDocShellLoadState* aLoadState,
     return NS_ERROR_FAILURE;
   }
 
-  // We are setting load type afterwards so we don't have to
-  // send it in an IPC message
+  // XXX FillLoadInfo doesn't copy mLoadType, so the load state arrives here
+  // without a load type set.
   aLoadState->SetLoadType(aLoadType);
 
   SetOngoingNavigation(Some(OngoingNavigation::Traversal));

@@ -450,9 +450,6 @@ class SessionHistoryEntry : public nsISHEntry, public nsSupportsWeakReference {
   bool ReplaceChild(SessionHistoryEntry* aNewChild);
   void GetChildAt(int32_t aIndex, SessionHistoryEntry** aChild);
 
-  SessionHistoryEntry* GetChildSHEntryIfHasNoDynamicallyAddedChild(
-      int32_t aChildOffset);
-
   already_AddRefed<SessionHistoryEntry> GetParent();
 
   void SetInfo(SessionHistoryInfo* aInfo);

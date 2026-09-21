@@ -144,6 +144,8 @@ class SHEntrySharedParentState : public SHEntrySharedState {
   bool mDynamicallyCreated = false;
 
   // This flag is about necko cache, not bfcache.
+  // True when the HTTP response was already expired at the time this entry was
+  // committed.
   bool mExpired = false;
 };
 

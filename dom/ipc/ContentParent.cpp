@@ -7540,15 +7540,15 @@ mozilla::ipc::IPCResult ContentParent::RecvReportServiceWorkerShutdownProgress(
 }
 
 mozilla::ipc::IPCResult ContentParent::RecvNotifyOnHistoryReload(
-    const MaybeDiscarded<BrowsingContext>& aContext, const bool& aForceReload,
-    NotifyOnHistoryReloadResolver&& aResolver) {
+    const MaybeDiscarded<BrowsingContext>& aContext,
+    const uint32_t& aReloadFlags, NotifyOnHistoryReloadResolver&& aResolver) {
   bool canReload = false;
   Maybe<NotNull<RefPtr<nsDocShellLoadState>>> loadState;
   Maybe<bool> reloadActiveEntry;
   if (!aContext.IsNullOrDiscarded() &&
       aContext.get_canonical()->IsOwnedByProcess(ChildID())) {
     aContext.get_canonical()->NotifyOnHistoryReload(
-        aForceReload, canReload, loadState, reloadActiveEntry);
+        aReloadFlags, canReload, loadState, reloadActiveEntry);
   }
   aResolver(
       std::tuple<const bool&,
@@ -7753,10 +7753,9 @@ mozilla::ipc::IPCResult ContentParent::RecvSessionHistoryEntryWireframe(
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult
-ContentParent::RecvGetLoadingSessionHistoryInfoFromParent(
+mozilla::ipc::IPCResult ContentParent::RecvAdoptChildSHEntry(
     const MaybeDiscarded<BrowsingContext>& aContext,
-    GetLoadingSessionHistoryInfoFromParentResolver&& aResolver) {
+    AdoptChildSHEntryResolver&& aResolver) {
   if (aContext.IsNullOrDiscarded()) {
     return IPC_OK();
   }
@@ -7766,7 +7765,7 @@ ContentParent::RecvGetLoadingSessionHistoryInfoFromParent(
   }
 
   Maybe<LoadingSessionHistoryInfo> info;
-  aContext.get_canonical()->GetLoadingSessionHistoryInfoFromParent(info);
+  aContext.get_canonical()->AdoptChildSHEntry(info);
   aResolver(info);
 
   return IPC_OK();
