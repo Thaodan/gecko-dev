@@ -48,18 +48,28 @@ test_newtab({
 test_newtab({
   before: setDefaultTopSites,
   // Test verifies that the next top site in queue replaces a dismissed top site.
-  test: async function defaultTopSites_dismiss() {
+  test: async function defaultTopSites_dismiss(defaultTopSites) {
     const siteSelector =
       ".top-site-outer:not(.search-shortcut, .placeholder, .add-button-tile)";
+    // Every configured site renders a tile, but the ones the search shortcuts
+    // experiment matches render as search shortcuts, which siteSelector
+    // excludes. The row also renders a tile at a time, so the presence of one
+    // tile does not mean the whole set has arrived.
+    const shortcutSelector = ".top-site-outer.search-shortcut";
+    const count = selector =>
+      content.document.querySelectorAll(selector).length;
     await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(siteSelector),
-      "Topsite tippytop icon not found"
+      () =>
+        count(siteSelector) + count(shortcutSelector) >= defaultTopSites.length,
+      "Wait for the configured top sites to render"
     );
 
-    // Don't count search topsites
-    const defaultTopSitesNumber =
-      content.document.querySelectorAll(siteSelector).length;
-    Assert.equal(defaultTopSitesNumber, 5, "5 top sites are loaded by default");
+    const defaultTopSitesNumber = count(siteSelector);
+    Assert.equal(
+      defaultTopSitesNumber,
+      defaultTopSites.length - count(shortcutSelector),
+      "Every configured top site that is not a search shortcut is loaded"
+    );
 
     // The href is on the `.top-site-button` anchor, not on the `.top-site-outer`
     // list item the selector matches.
@@ -89,8 +99,8 @@ test_newtab({
     );
 
     await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelectorAll(siteSelector).length === 4,
-      "4 top sites are displayed after one of them is dismissed"
+      () => count(siteSelector) === defaultTopSitesNumber - 1,
+      "One fewer top site is displayed after one of them is dismissed"
     );
   },
   async after() {
