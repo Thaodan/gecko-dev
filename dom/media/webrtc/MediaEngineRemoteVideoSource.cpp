@@ -745,7 +745,8 @@ int MediaEngineRemoteVideoSource::DeliverFrame(
       aProps.renderTimeMs());
 #endif
 
-  if (mScaledImageSize != dstSize) {
+  if (mLastReportedSize != Some(dstSize)) {
+    mLastReportedSize = Some(dstSize);
     NS_DispatchToMainThread(NS_NewRunnableFunction(
         "MediaEngineRemoteVideoSource::FrameSizeChange",
         [settings = mSettings, updated = mSettingsUpdatedByFrame,
