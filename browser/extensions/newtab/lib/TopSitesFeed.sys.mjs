@@ -520,18 +520,32 @@ export class ContileIntegration {
   }
 
   /**
-   * Normalize new Unified Ads API response into
-   * previous Contile ads response
+   * Normalize new Unified Ads API response into previous Contile ads response shape.
+   *
+   * @param {object} data
+   *   Tiles keyed by placement ID, as returned by MARS or the ads client.
+   *   Each value should be an array of 0 or 1 items.
+   * @param {Array<string>} placementIds
+   *   Placement IDs in the order tiles should appear.
+   *   IDs absent from this list are emitted last, keeping their iteration order from `data`.
    */
-  _normalizeTileData(data) {
+  _normalizeTileData(data, placementIds) {
+    // Requested placement ids are in iteration order from placementIds
+    const requestedPlacementIds = placementIds.filter(id =>
+      Object.hasOwn(data, id)
+    );
+    // Extra placement ids are in iteration order from data
+    const extraPlacementIds = Object.keys(data).filter(
+      id => !placementIds.includes(id)
+    );
+
     const formattedTileData = [];
-    const responseTilesData = Object.values(data);
-
-    for (const tileData of responseTilesData) {
-      if (tileData?.length) {
-        // eslint-disable-next-line prefer-destructuring
-        const tile = tileData[0];
-
+    for (const placementId of [
+      ...requestedPlacementIds,
+      ...extraPlacementIds,
+    ]) {
+      const [tile] = data[placementId] ?? [];
+      if (tile) {
         const formattedData = {
           id: tile.block_key,
           block_key: tile.block_key,
@@ -641,6 +655,7 @@ export class ContileIntegration {
       // Search engines unavailable; the search-hostname filter is skipped.
     }
 
+    let placementsArray = [];
     let response;
     let body;
 
@@ -659,7 +674,7 @@ export class ContileIntegration {
         // Fetch tiles via UAPI service directly from TopSitesFeed.sys.mjs
         if (unifiedAdsTilesEnabled) {
           // Shared set up for manual MARS call and ads-client calls
-          const placementsArray = state.Prefs.values[
+          placementsArray = state.Prefs.values[
             PREF_UNIFIED_ADS_PLACEMENTS
           ]?.split(`,`)
             .map(s => s.trim())
@@ -845,7 +860,7 @@ export class ContileIntegration {
           body = { tiles };
         } else {
           // Converts UAPI response into normalized tiles[] array
-          body = this._normalizeTileData(body);
+          body = this._normalizeTileData(body, placementsArray);
         }
       }
 
