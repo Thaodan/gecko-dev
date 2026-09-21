@@ -52,12 +52,16 @@ import org.mozilla.fenix.components.menu.toMenuState
 import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.ext.nav
+import org.mozilla.fenix.ext.openToBrowser
 import org.mozilla.fenix.summarization.eligibility.SummarizationEligibilityChecker
 import org.mozilla.fenix.summarization.isSummarizePageMenuItem
 import org.mozilla.fenix.summarization.onboarding.FenixSummarizationFeatureConfiguration
 import org.mozilla.fenix.summarization.onboarding.SummarizationFeatureDiscoveryConfiguration
 import org.mozilla.fenix.summarization.onboarding.SummarizeDiscoveryEvent
 import org.mozilla.fenix.tabstray.ext.isNormalTab
+import org.mozilla.fenix.utils.Settings
+import org.mozilla.fenix.webcompat.WEB_COMPAT_REPORTER_URL
+import org.mozilla.fenix.webcompat.WebCompatReporterMoreInfoSender
 
 /**
  * [MenuStore] middleware handling all user interactions.
@@ -71,6 +75,9 @@ import org.mozilla.fenix.tabstray.ext.isNormalTab
  * @param summarizationSettings [FenixSummarizationFeatureConfiguration] for managing the summarization feature.
  * @param summarizationEligibilityChecker [SummarizationEligibilityChecker] for checking the eligibility of the
  *   summarization feature.
+ * @param settings [Settings] for checking the user's preferences, like whether they allow telemetry.
+ * @param webCompatReporterMoreInfoSender [WebCompatReporterMoreInfoSender] for sending the details of a broken site to
+ *   webcompat.com.
  * @param scope [CoroutineScope] tied to the lifetime of the menu, used for all work that is only useful while the menu
  *   is shown.
  * @param applicationScope [CoroutineScope] tied to the lifetime of the application, used for the work that cannot be
@@ -86,6 +93,8 @@ class MenuMiddleware(
     private val navController: NavController,
     private val summarizationSettings: SummarizationFeatureDiscoveryConfiguration,
     private val summarizationEligibilityChecker: SummarizationEligibilityChecker,
+    private val settings: Settings,
+    private val webCompatReporterMoreInfoSender: WebCompatReporterMoreInfoSender,
     private val scope: CoroutineScope,
     private val applicationScope: CoroutineScope,
 ) : Middleware<MenuState, MenuAction> {
@@ -156,6 +165,8 @@ class MenuMiddleware(
                     useCases.tabsUseCases.migratePrivateTabUseCase(tabId)
                 }
 
+            is Navigate.WebCompatReporter -> reportBrokenSite()
+
             is Navigate.Back -> handleBackNavigation(action)
 
             is Navigate.Forward -> handleForwardNavigation(action)
@@ -225,6 +236,39 @@ class MenuMiddleware(
         )
 
         dismissMenu()
+    }
+
+    /**
+     * A broken site is reported from inside the app if the user allows telemetry, since only then can the details of
+     * the issue be collected. If they don't, the report is filled in on webcompat.com, with the details of the issue
+     * sent separately before opening the website, so that the engine still has the page to collect them from.
+     */
+    private fun reportBrokenSite() {
+        val selectedTab = browserStore.state.selectedTab ?: return
+        val tabUrl = selectedTab.content.url
+
+        if (settings.isTelemetryEnabled) {
+            navigate(MenuFragmentDirections.actionMenuFragmentToWebCompatReporterFragment(tabUrl = tabUrl))
+            return
+        }
+
+        scope.launch {
+            webCompatReporterMoreInfoSender.sendMoreWebCompatInfo(
+                reason = null,
+                problemDescription = null,
+                enteredUrl = null,
+                tabUrl = selectedTab.getTabUrl(),
+                engineSession = selectedTab.engineState.engineSession,
+            )
+
+            dismissMenu()
+            navController.openToBrowser()
+            useCases.fenixBrowserUseCases.loadUrlOrSearch(
+                searchTermOrURL = "$WEB_COMPAT_REPORTER_URL$tabUrl",
+                newTab = true,
+                private = appStore.state.mode.isPrivate,
+            )
+        }
     }
 
     private fun navigateToEditBookmark(guidToEdit: String?) {

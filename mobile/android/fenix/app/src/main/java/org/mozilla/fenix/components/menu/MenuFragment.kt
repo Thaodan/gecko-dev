@@ -65,6 +65,9 @@ import org.mozilla.fenix.summarization.SummarizePageMenuItemProvider
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.translations.TranslationsEnabledSettings
 import org.mozilla.fenix.translations.TranslationsMenuItemProvider
+import org.mozilla.fenix.webcompat.DefaultWebCompatReporterMoreInfoSender
+import org.mozilla.fenix.webcompat.ReportBrokenSiteMenuItemProvider
+import org.mozilla.fenix.webcompat.middleware.DefaultWebCompatReporterRetrievalService
 
 private const val EXPANDED_OFFSET = 56
 private const val HIDING_FRICTION = 0.9f
@@ -278,6 +281,12 @@ class MenuFragment : BottomSheetDialogFragment() {
 
             FenixMenuItem.MoveToNormalTabs ->
                 MoveToNormalTabsMenuItemProvider(browserStore = requireComponents.core.store)
+
+            FenixMenuItem.ReportBrokenSite ->
+                ReportBrokenSiteMenuItemProvider(
+                    browserStore = requireComponents.core.store,
+                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                )
         }
     }
 
@@ -301,10 +310,18 @@ class MenuFragment : BottomSheetDialogFragment() {
                         navController = findNavController(),
                         summarizationSettings = requireComponents.core.summarizeFeatureSettings,
                         summarizationEligibilityChecker = requireComponents.core.summarizationEligibilityChecker,
+                        settings = requireComponents.settings,
+                        webCompatReporterMoreInfoSender = buildWebCompatReporterMoreInfoSender(),
                         scope = viewLifecycleOwner.lifecycle.coroutineScope,
                         applicationScope = requireComponents.applicationScope,
                     ),
                     MenuTelemetryMiddleware(accessPoint = MenuAccessPoint.Browser),
                 ),
+        )
+
+    private fun buildWebCompatReporterMoreInfoSender() =
+        DefaultWebCompatReporterMoreInfoSender(
+            webCompatReporterRetrievalService =
+                DefaultWebCompatReporterRetrievalService(browserStore = requireComponents.core.store)
         )
 }

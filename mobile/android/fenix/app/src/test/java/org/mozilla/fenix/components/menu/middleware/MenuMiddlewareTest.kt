@@ -10,6 +10,7 @@ import androidx.navigation.NavOptions
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.mockk.Runs
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -59,6 +60,7 @@ import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppAction.BookmarkAction
 import org.mozilla.fenix.components.appstate.AppAction.FindInPageAction
 import org.mozilla.fenix.components.appstate.AppAction.ReaderViewAction
+import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.bookmarks.BookmarksUseCase
 import org.mozilla.fenix.components.menu.BrowserMenuBuilder
 import org.mozilla.fenix.components.menu.FenixMenuItem.CustomizeReaderView
@@ -85,6 +87,9 @@ import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.summarization.eligibility.SummarizationEligibilityChecker
 import org.mozilla.fenix.summarization.onboarding.SummarizationFeatureDiscoveryConfiguration
 import org.mozilla.fenix.summarization.onboarding.SummarizeDiscoveryEvent
+import org.mozilla.fenix.utils.Settings
+import org.mozilla.fenix.webcompat.WEB_COMPAT_REPORTER_URL
+import org.mozilla.fenix.webcompat.WebCompatReporterMoreInfoSender
 
 @OptIn(ExperimentalAndroidComponentsApi::class)
 @RunWith(AndroidJUnit4::class)
@@ -93,6 +98,8 @@ class MenuMiddlewareTest {
 
     private val appStore: AppStore = mockk {
         every { dispatch(any()) } just Runs
+        // Opening a page from the menu is told whether to do so in a private tab, which is read from here.
+        every { state } returns AppState()
     }
     private val browserStore =
         BrowserStore(
@@ -135,6 +142,8 @@ class MenuMiddlewareTest {
     private val summarizationEligibilityChecker: SummarizationEligibilityChecker = mockk {
         coEvery { checkLanguage(any()) } returns Result.success(true)
     }
+    private val settings: Settings = mockk(relaxed = true)
+    private val webCompatReporterMoreInfoSender: WebCompatReporterMoreInfoSender = mockk(relaxed = true)
     private val testDispatcher = StandardTestDispatcher()
 
     @Test
@@ -442,7 +451,7 @@ class MenuMiddlewareTest {
         }
 
     @Test
-    fun `GIVEN summarize is not one of More's items WHEN More is clicked THEN don't count it as noticed`() =
+    fun `GIVEN More doesn't contain summarize WHEN being clicked THEN don't record an interaction specific to summarization`() =
         runTest(testDispatcher) {
             every { summarizationSettings.shouldHighlightOverflowMenuItem } returns true
             val item = moreItemForDiscovery(containsSummarize = false).copy(icon = MenuItemIconRes(0, true))
@@ -458,7 +467,7 @@ class MenuMiddlewareTest {
         }
 
     @Test
-    fun `GIVEN summarization no longer asks for attention WHEN More containing it is clicked THEN don't count it as noticed`() =
+    fun `GIVEN More contains summarize but is highlighted WHEN being clicked THEN don't record an interaction specific to summarization`() =
         runTest(testDispatcher) {
             every { summarizationSettings.shouldHighlightOverflowMenuItem } returns false
             val store = createStore(provided = MutableStateFlow(moreItemForDiscovery(containsSummarize = true)))
@@ -473,7 +482,7 @@ class MenuMiddlewareTest {
         }
 
     @Test
-    fun `GIVEN a private tab WHEN More containing summarize is clicked THEN don't count it as noticed`() =
+    fun `GIVEN a private tab and More contains summarize and it is highlighted WHEN being clicked THEN don't record an interaction specific to summarization`() =
         runTest(testDispatcher) {
             every { summarizationSettings.shouldHighlightOverflowMenuItem } returns true
             val tab = createTab(url = TEST_URL, private = true)
@@ -489,6 +498,49 @@ class MenuMiddlewareTest {
 
             verify(exactly = 0) {
                 summarizationSettings.cacheDiscoveryEvent(SummarizeDiscoveryEvent.MenuOverflowInteraction)
+            }
+        }
+
+    @Test
+    fun `GIVEN telemetry is enabled WHEN reporting a broken site THEN open the reporter for the current page`() {
+        every { settings.isTelemetryEnabled } returns true
+        val store = createStore()
+
+        store.dispatch(Navigate.WebCompatReporter)
+
+        verify {
+            navController.navigate(
+                MenuFragmentDirections.actionMenuFragmentToWebCompatReporterFragment(tabUrl = TEST_URL),
+                null,
+            )
+        }
+    }
+
+    @Test
+    fun `GIVEN telemetry is disabled WHEN reporting a broken site THEN send the details and open webcompat`() =
+        runTest(testDispatcher) {
+            every { settings.isTelemetryEnabled } returns false
+            val store = createStore()
+
+            store.dispatch(Navigate.WebCompatReporter)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            coVerify {
+                webCompatReporterMoreInfoSender.sendMoreWebCompatInfo(
+                    reason = null,
+                    problemDescription = null,
+                    enteredUrl = null,
+                    tabUrl = TEST_URL,
+                    engineSession = null,
+                )
+            }
+            verify {
+                navController.popBackStack(R.id.menuFragment, true)
+                fenixBrowserUseCase.loadUrlOrSearch(
+                    searchTermOrURL = "$WEB_COMPAT_REPORTER_URL$TEST_URL",
+                    newTab = true,
+                    private = false,
+                )
             }
         }
 
@@ -698,6 +750,8 @@ class MenuMiddlewareTest {
                         navController = navController,
                         summarizationSettings = summarizationSettings,
                         summarizationEligibilityChecker = summarizationEligibilityChecker,
+                        settings = settings,
+                        webCompatReporterMoreInfoSender = webCompatReporterMoreInfoSender,
                         scope = CoroutineScope(testDispatcher),
                         applicationScope = CoroutineScope(testDispatcher),
                     )

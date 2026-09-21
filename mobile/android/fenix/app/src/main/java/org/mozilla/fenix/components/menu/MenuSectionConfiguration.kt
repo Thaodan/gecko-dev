@@ -44,6 +44,9 @@ sealed interface FenixMenuItem {
     /** A menu item allowing to move the current private tab to a non-private tab. */
     data object MoveToNormalTabs : FenixMenuItem
 
+    /** A menu item allowing to report the current page as broken. */
+    data object ReportBrokenSite : FenixMenuItem
+
     /** A menu item allowing to navigate back. */
     data object Back : FenixMenuItem
 

@@ -22,6 +22,7 @@ import org.mozilla.fenix.components.menu.FenixMenuItem.IPProtection
 import org.mozilla.fenix.components.menu.FenixMenuItem.More
 import org.mozilla.fenix.components.menu.FenixMenuItem.MoveToNormalTabs
 import org.mozilla.fenix.components.menu.FenixMenuItem.Refresh
+import org.mozilla.fenix.components.menu.FenixMenuItem.ReportBrokenSite
 import org.mozilla.fenix.components.menu.FenixMenuItem.Share
 import org.mozilla.fenix.components.menu.FenixMenuItem.SummarizePage
 import org.mozilla.fenix.components.menu.FenixMenuItem.Translate
@@ -140,7 +141,7 @@ class BrowserMenuBuilder(
                                 Bookmark,
                                 FindInPage,
                                 DesktopSite,
-                                More(listOf(Translate, SummarizePage, MoveToNormalTabs)),
+                                More(listOf(Translate, SummarizePage, MoveToNormalTabs, ReportBrokenSite)),
                             ),
                     ),
                 )
