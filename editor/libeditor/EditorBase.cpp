@@ -7449,9 +7449,6 @@ nsresult EditorBase::AutoEditActionDataSetter::MaybeFlushPendingNotifications()
 
 void EditorBase::AutoEditActionDataSetter::MarkEditActionCanceled() {
   mBeforeInputEventCanceled = true;
-  if (mEditorBase.IsHTMLEditor()) {
-    mEditorBase.AsHTMLEditor()->mHasBeforeInputBeenCanceled = true;
-  }
 }
 
 nsresult EditorBase::AutoEditActionDataSetter::MaybeDispatchBeforeInputEvent(
