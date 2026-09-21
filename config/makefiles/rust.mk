@@ -431,6 +431,15 @@ force-cargo-program-build: $(call resfile,module)
 
 $(foreach RUST_PROGRAM,$(RUST_PROGRAMS), $(eval $(call make_cargo_rule,$(RUST_PROGRAM),force-cargo-program-build,$(call resfile,module))))
 
+ifdef MOZ_COPY_PDBS
+define rust_program_pdb_rule
+$(basename $(1)).pdb: $(1)
+	cp $(dir $(1))$(subst -,_,$(basename $(notdir $(1)))).pdb $$@
+endef
+
+$(foreach RUST_PROGRAM,$(RUST_PROGRAMS),$(if $(findstring -,$(notdir $(RUST_PROGRAM))),$(eval $(call rust_program_pdb_rule,$(RUST_PROGRAM)))))
+endif
+
 ifndef CARGO_NO_AUTO_ARG
 force-cargo-program-%:
 	$(call RUN_CARGO,$*) $(addprefix --bin ,$(RUST_CARGO_PROGRAMS)) $(MOZ_CARGO_TARGET_ARGS) $(program_features_flag)
