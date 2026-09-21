@@ -328,14 +328,14 @@ export class SmartFormFillChild extends JSWindowActorChild {
   }
 
   /**
-   * Reruns an open autocomplete search after Smart Form Fill changes state.
+   * Refreshes autocomplete state after Smart Form Fill changes; reruns
+   * the search if the popup is open, otherwise clears cached results
+   * for the next open.
    */
   #refreshAutocomplete() {
-    const autocompleteActor = this.manager.getActor("AutoComplete");
     const focusedElement = this.document.activeElement;
 
     if (
-      !autocompleteActor?.popupOpen ||
       !this.#smartFormFillDocument?.isSupportedField(focusedElement) ||
       lazy.formFillController.controlledElement !== focusedElement
     ) {
@@ -345,9 +345,15 @@ export class SmartFormFillChild extends JSWindowActorChild {
     const autocompleteInput = lazy.formFillController.QueryInterface(
       Ci.nsIAutoCompleteInput
     );
-    autocompleteInput.controller.startSearch(
-      autocompleteInput.controller.searchString
-    );
+    const autocompleteController = autocompleteInput.controller;
+    const autocompleteActor = this.manager.getActor("AutoComplete");
+
+    if (!autocompleteActor?.popupOpen) {
+      autocompleteController.resetInternalState();
+      return;
+    }
+
+    autocompleteController.startSearch(autocompleteController.searchString);
   }
 
   /*

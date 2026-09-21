@@ -253,6 +253,10 @@ describe("Smart Form Fill autocomplete row item menu", () => {
       await lazy.l10n.formatValue("ai-smart-form-fill-autocomplete-open-tabs"),
       "The row should initially report that no source tabs exist"
     );
+    Assert.ok(
+      !result.row.renderRoot.querySelector("moz-button.secondary-action"),
+      "The edit-sources action should be hidden without source tabs"
+    );
     await closeAutocomplete(result.browser);
 
     const tabUpdated = waitForTabChange("TabAttrModified");
@@ -273,6 +277,10 @@ describe("Smart Form Fill autocomplete row item menu", () => {
       ),
       "The row should report that source tabs are available"
     );
+    Assert.ok(
+      result.row.renderRoot.querySelector("moz-button.secondary-action"),
+      "The edit-sources action should be shown when source tabs are available"
+    );
     await closeAutocomplete(result.browser);
 
     const tabClosed = waitForTabChange("TabClose");
@@ -286,6 +294,10 @@ describe("Smart Form Fill autocomplete row item menu", () => {
       getSourcesValue(result.row),
       await lazy.l10n.formatValue("ai-smart-form-fill-autocomplete-open-tabs"),
       "The row should update after the last source tab closes"
+    );
+    Assert.ok(
+      !result.row.renderRoot.querySelector("moz-button.secondary-action"),
+      "The edit-sources action should be hidden after the last source tab closes"
     );
   });
 

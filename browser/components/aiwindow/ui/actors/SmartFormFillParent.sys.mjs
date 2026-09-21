@@ -1180,6 +1180,7 @@ export class SmartFormFillParent extends JSWindowActorParent {
     }
 
     this.#controller?.invalidateTabs();
+    this.sendAsyncMessage("SmartFormFill:RefreshAutocomplete");
   }
 
   /**
@@ -1311,10 +1312,12 @@ export class SmartFormFillParent extends JSWindowActorParent {
     this.#autocompleteFormId = focusedForm.id;
     this.#startFormMetadataRequests(metadata);
 
+    const availableTabs = this.#controller.getTabs().length;
     const entries = await lazy.SmartFormFillAutocomplete.createItemsAsync({
       sffActor: this,
       formId: focusedForm.id,
       focusElementId: options.focusElementId,
+      availableTabs,
     });
 
     return entries.length ? { entries } : null;
