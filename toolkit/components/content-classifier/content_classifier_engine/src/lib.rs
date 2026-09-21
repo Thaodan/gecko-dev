@@ -92,6 +92,10 @@ pub struct ContentClassifierEngineSizes {
     pub filter_rules: usize,
     /// The domain-hash index rebuilt in memory when the rules are loaded.
     pub domain_hashes: usize,
+    /// The regex lookup table, excluding the compiled regexes it holds.
+    pub regex_table: usize,
+    /// The set of enabled tag names.
+    pub enabled_tags: usize,
 }
 
 /// `malloc_enclosing_size_of` sizes an allocation from an interior pointer.
@@ -118,6 +122,8 @@ pub unsafe extern "C" fn content_classifier_engine_size_of(
         objects: malloc_size_of(engine.cast::<c_void>()) + breakdown.objects,
         filter_rules: breakdown.filter_rules,
         domain_hashes: breakdown.domain_hashes,
+        regex_table: breakdown.regex_table,
+        enabled_tags: breakdown.enabled_tags,
     }
 }
 

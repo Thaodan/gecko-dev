@@ -82,12 +82,26 @@ impl Engine {
     /// The `Engine` struct itself is excluded: it is stored inline in the
     /// caller's own allocation, so the caller measures it and adds it to the
     /// returned `objects`.
+    ///
+    /// Each field of `Engine` is accounted for here, so adding one means
+    /// deciding where it belongs:
+    ///
+    /// * `filter_data_context` holds the flatbuffer and the domain index, plus
+    ///   the refcount box the two sit in. It is visited here and only here,
+    ///   because `blocker` and `cosmetic_cache` hold clones of the same
+    ///   reference.
+    /// * `blocker` owns the enabled tags and the regex table.
+    /// * `cosmetic_cache` owns nothing beyond its clone of the reference above,
+    ///   so it is not visited.
+    /// * `resources` is left out: the Gecko path never populates it, and its
+    ///   backend is a trait object with no way to size it.
     pub fn memory_breakdown(
         &self,
         ops: &mut malloc_size_of::MallocSizeOfOps,
     ) -> crate::malloc_size_of_impls::EngineMemoryBreakdown {
         let mut breakdown = crate::malloc_size_of_impls::EngineMemoryBreakdown::default();
         breakdown.add_filter_data(&self.filter_data_context, ops);
+        breakdown.add_blocker(&self.blocker, ops);
         breakdown
     }
 }
