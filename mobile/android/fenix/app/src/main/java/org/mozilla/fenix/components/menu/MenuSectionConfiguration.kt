@@ -21,6 +21,9 @@ sealed interface FenixMenuItem {
     /** A menu item allowing to switch the current page between the desktop and the mobile version. */
     data object DesktopSite : FenixMenuItem
 
+    /** A menu item expanding to show more general menu items related to the current webpage. */
+    data object More : FenixMenuItem
+
     /** A menu item allowing to navigate back. */
     data object Back : FenixMenuItem
 

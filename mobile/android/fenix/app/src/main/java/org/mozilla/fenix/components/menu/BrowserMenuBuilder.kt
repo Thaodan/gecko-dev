@@ -18,6 +18,7 @@ import org.mozilla.fenix.components.menu.FenixMenuItem.DesktopSite
 import org.mozilla.fenix.components.menu.FenixMenuItem.FindInPage
 import org.mozilla.fenix.components.menu.FenixMenuItem.Forward
 import org.mozilla.fenix.components.menu.FenixMenuItem.IPProtection
+import org.mozilla.fenix.components.menu.FenixMenuItem.More
 import org.mozilla.fenix.components.menu.FenixMenuItem.Refresh
 import org.mozilla.fenix.components.menu.FenixMenuItem.Share
 import org.mozilla.fenix.components.menu.MenuPresentationMode.Grid
@@ -107,7 +108,7 @@ class BrowserMenuBuilder(
                     MenuSectionConfiguration(
                         id = BROWSER_MENU_GROUP_3_ID,
                         presentationMode = Row,
-                        items = listOf(Bookmark, FindInPage, DesktopSite),
+                        items = listOf(Bookmark, FindInPage, DesktopSite, More),
                     ),
                 )
             return if (isToolbarAtBottom || isExpandedToolbarEnabled) rest + navSection else listOf(navSection) + rest
