@@ -951,42 +951,49 @@ class Path : public external::AtomicRefCounted<Path> {
   /** This returns a PathBuilder object that contains a copy of the contents of
    * this path and is still writable.
    */
-  inline already_AddRefed<PathBuilder> CopyToBuilder() const {
-    return CopyToBuilder(GetFillRule());
+  inline already_AddRefed<PathBuilder> CopyToBuilder(
+      already_AddRefed<PathBuilder> aBuilder = nullptr) const {
+    return CopyToBuilder(GetFillRule(), std::move(aBuilder));
   }
   inline already_AddRefed<PathBuilder> TransformedCopyToBuilder(
-      const Matrix& aTransform) const {
-    return TransformedCopyToBuilder(aTransform, GetFillRule());
+      const Matrix& aTransform,
+      already_AddRefed<PathBuilder> aBuilder = nullptr) const {
+    return TransformedCopyToBuilder(aTransform, GetFillRule(),
+                                    std::move(aBuilder));
   }
   /** This returns a PathBuilder object that contains a copy of the contents of
    * this path, converted to use the specified FillRule, and still writable.
    */
   virtual already_AddRefed<PathBuilder> CopyToBuilder(
-      FillRule aFillRule) const = 0;
+      FillRule aFillRule,
+      already_AddRefed<PathBuilder> aBuilder = nullptr) const = 0;
   virtual already_AddRefed<PathBuilder> TransformedCopyToBuilder(
-      const Matrix& aTransform, FillRule aFillRule) const = 0;
+      const Matrix& aTransform, FillRule aFillRule,
+      already_AddRefed<PathBuilder> aBuilder = nullptr) const;
 
  protected:
   /** This returns a PathBuilder object that may consume the contents of this
    * path.
    */
   virtual inline already_AddRefed<PathBuilder> MoveToBuilder(
-      FillRule aFillRule) {
-    return CopyToBuilder(aFillRule);
+      FillRule aFillRule, already_AddRefed<PathBuilder> aBuilder = nullptr) {
+    return CopyToBuilder(aFillRule, std::move(aBuilder));
   }
-  inline already_AddRefed<PathBuilder> MoveToBuilder() {
-    return MoveToBuilder(GetFillRule());
+  inline already_AddRefed<PathBuilder> MoveToBuilder(
+      already_AddRefed<PathBuilder> aBuilder = nullptr) {
+    return MoveToBuilder(GetFillRule(), std::move(aBuilder));
   }
   /** Like TransformedCopyToBuilder, but is allowed to consume the contents of
    * the path when beneficial.
    */
   virtual inline already_AddRefed<PathBuilder> TransformedMoveToBuilder(
-      const Matrix& aTransform, FillRule aFillRule) {
-    return TransformedCopyToBuilder(aTransform, aFillRule);
-  }
+      const Matrix& aTransform, FillRule aFillRule,
+      already_AddRefed<PathBuilder> aBuilder = nullptr);
   inline already_AddRefed<PathBuilder> TransformedMoveToBuilder(
-      const Matrix& aTransform) {
-    return TransformedMoveToBuilder(aTransform, GetFillRule());
+      const Matrix& aTransform,
+      already_AddRefed<PathBuilder> aBuilder = nullptr) {
+    return TransformedMoveToBuilder(aTransform, GetFillRule(),
+                                    std::move(aBuilder));
   }
 
  public:
@@ -994,33 +1001,38 @@ class Path : public external::AtomicRefCounted<Path> {
    * otherwise copy.
    */
   static inline already_AddRefed<PathBuilder> ToBuilder(
-      already_AddRefed<Path> aPath, FillRule aFillRule) {
+      already_AddRefed<Path> aPath, FillRule aFillRule,
+      already_AddRefed<PathBuilder> aBuilder = nullptr) {
     RefPtr<Path> path = aPath;
-    return path->hasOneRef() ? path->MoveToBuilder(aFillRule)
-                             : path->CopyToBuilder(aFillRule);
+    return path->hasOneRef()
+               ? path->MoveToBuilder(aFillRule, std::move(aBuilder))
+               : path->CopyToBuilder(aFillRule, std::move(aBuilder));
   }
   static inline already_AddRefed<PathBuilder> ToBuilder(
-      already_AddRefed<Path> aPath) {
+      already_AddRefed<Path> aPath,
+      already_AddRefed<PathBuilder> aBuilder = nullptr) {
     RefPtr<Path> path = aPath;
     FillRule fillRule = path->GetFillRule();
-    return ToBuilder(path.forget(), fillRule);
+    return ToBuilder(path.forget(), fillRule, std::move(aBuilder));
   }
   /** Transformed move to a PathBuilder only if there are no other references to
    * the path, otherwise copy.
    */
   static inline already_AddRefed<PathBuilder> ToBuilder(
       already_AddRefed<Path> aPath, const Matrix& aTransform,
-      FillRule aFillRule) {
+      FillRule aFillRule, already_AddRefed<PathBuilder> aBuilder = nullptr) {
     RefPtr<Path> path = aPath;
-    return path->hasOneRef()
-               ? path->TransformedMoveToBuilder(aTransform, aFillRule)
-               : path->TransformedCopyToBuilder(aTransform, aFillRule);
+    return path->hasOneRef() ? path->TransformedMoveToBuilder(
+                                   aTransform, aFillRule, std::move(aBuilder))
+                             : path->TransformedCopyToBuilder(
+                                   aTransform, aFillRule, std::move(aBuilder));
   }
   static inline already_AddRefed<PathBuilder> ToBuilder(
-      already_AddRefed<Path> aPath, const Matrix& aTransform) {
+      already_AddRefed<Path> aPath, const Matrix& aTransform,
+      already_AddRefed<PathBuilder> aBuilder = nullptr) {
     RefPtr<Path> path = aPath;
     FillRule fillRule = path->GetFillRule();
-    return ToBuilder(path.forget(), aTransform, fillRule);
+    return ToBuilder(path.forget(), aTransform, fillRule, std::move(aBuilder));
   }
 
   /** Modifies an existing path in-place if it has no other references, or
@@ -1077,7 +1089,7 @@ class Path : public external::AtomicRefCounted<Path> {
   /** This gets the fillrule this path's builder was created with. This is not
    * mutable.
    */
-  virtual FillRule GetFillRule() const = 0;
+  FillRule GetFillRule() const { return mFillRule; }
 
   virtual Float ComputeLength();
 
@@ -1102,9 +1114,13 @@ class Path : public external::AtomicRefCounted<Path> {
   virtual Maybe<Line> AsLine() const { return Nothing(); }
 
  protected:
-  Path();
+  explicit Path(FillRule aFillRule, const Point& aCurrentPoint = Point(),
+                const Point& aBeginPoint = Point());
   void EnsureFlattenedPath();
 
+  FillRule mFillRule;
+  Point mCurrentPoint;
+  Point mBeginPoint;
   RefPtr<FlattenedPath> mFlattenedPath;
 };
 
@@ -1114,12 +1130,21 @@ class Path : public external::AtomicRefCounted<Path> {
 class PathBuilder : public PathSink {
  public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(PathBuilder, override)
+
+  explicit PathBuilder(FillRule aFillRule) : mFillRule(aFillRule) {}
+
   /** Finish writing to the path and return a Path object that can be used for
    * drawing. Future use of the builder results in a crash!
    */
   virtual already_AddRefed<Path> Finish() = 0;
 
-  virtual bool Reset(FillRule aFillRule) { return false; }
+  virtual void Reset(FillRule aFillRule) = 0;
+
+  virtual void RecyclePath(already_AddRefed<Path> aPath) {
+    RefPtr<Path> path(aPath);
+  }
+
+  virtual void Transform(const Matrix& aTransform) = 0;
 
   virtual BackendType GetBackendType() const = 0;
 
@@ -1127,7 +1152,29 @@ class PathBuilder : public PathSink {
 
   virtual Maybe<Path::Circle> AsCircle() const { return Nothing(); }
   virtual Maybe<Path::Line> AsLine() const { return Nothing(); }
+
+  virtual void SetFillRule(FillRule aFillRule) { mFillRule = aFillRule; }
+  FillRule GetFillRule() const { return mFillRule; }
+
+ protected:
+  FillRule mFillRule;
 };
+
+inline already_AddRefed<PathBuilder> Path::TransformedCopyToBuilder(
+    const Matrix& aTransform, FillRule aFillRule,
+    already_AddRefed<PathBuilder> aBuilder) const {
+  RefPtr builder = CopyToBuilder(aFillRule, std::move(aBuilder));
+  builder->Transform(aTransform);
+  return builder.forget();
+}
+
+inline already_AddRefed<PathBuilder> Path::TransformedMoveToBuilder(
+    const Matrix& aTransform, FillRule aFillRule,
+    already_AddRefed<PathBuilder> aBuilder) {
+  RefPtr builder = MoveToBuilder(aFillRule, std::move(aBuilder));
+  builder->Transform(aTransform);
+  return builder.forget();
+}
 
 inline void Path::Transform(RefPtr<Path>& aPath, const Matrix& aTransform) {
   RefPtr<PathBuilder> builder = Path::ToBuilder(aPath.forget(), aTransform);
