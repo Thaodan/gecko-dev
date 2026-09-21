@@ -464,8 +464,6 @@ skip-if = [
   "os == 'android'", # wheel event isn't supported
 ]
 
-["test_datatransfer_internal_types.html"]
-
 ["test_dblclick_explicit_original_target.html"]
 
 ["test_deltaMode_lines_always_enabled.html"]
