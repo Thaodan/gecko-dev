@@ -24,10 +24,6 @@ prefs = [
 tags = "newtab"
 
 ["browser_SmartShortcuts.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26100' && verify-standalone",
-  "os == 'win' && os_version == '11.26200' && verify-standalone",
-]
 
 ["browser_WallpaperThemeUtils.js"]
 
