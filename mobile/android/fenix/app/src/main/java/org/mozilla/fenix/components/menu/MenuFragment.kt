@@ -47,6 +47,7 @@ import org.mozilla.fenix.bookmarks.BookmarkMenuItemProvider
 import org.mozilla.fenix.browser.BackMenuItemProvider
 import org.mozilla.fenix.browser.DesktopSiteMenuItemProvider
 import org.mozilla.fenix.browser.ForwardMenuItemProvider
+import org.mozilla.fenix.browser.RefreshMenuItemProvider
 import org.mozilla.fenix.browser.ShareMenuItemProvider
 import org.mozilla.fenix.browser.readermode.ReaderViewMenuItemProvider
 import org.mozilla.fenix.components.FindInPageMenuItemProvider
@@ -237,6 +238,11 @@ class MenuFragment : BottomSheetDialogFragment() {
                     scope = viewLifecycleOwner.lifecycle.coroutineScope,
                 ),
             FenixMenuItem.Share to ShareMenuItemProvider(),
+            FenixMenuItem.Refresh to
+                RefreshMenuItemProvider(
+                    browserStore = requireComponents.core.store,
+                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                ),
         )
 
     private fun buildMenuStore(initialState: MenuState) =
