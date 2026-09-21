@@ -5586,13 +5586,36 @@ export class Tabbrowser {
     return tabsToEnd;
   }
 
+  /**
+   * A restoring or loading browser sits on about:blank until its page
+   * commits, so its URI says nothing about duplicates yet.
+   *
+   * @param {MozTabbrowserTab} tab
+   * @returns {nsIURI|null}
+   */
+  #uriForDuplicateCheck(tab) {
+    let browser = tab.linkedBrowser;
+    let uri = browser?.currentURI;
+    if (!uri) {
+      return null;
+    }
+    if (
+      uri.spec == "about:blank" &&
+      (lazy.SessionStore.isTabRestoring(tab) ||
+        browser.webProgress?.isLoadingDocument)
+    ) {
+      return null;
+    }
+    return uri;
+  }
+
   getDuplicateTabsToClose(aTab) {
     // One would think that a set is better, but it would need to copy all
     // the strings instead of just keeping references to the nsIURI objects,
     // and the array is presumed to be small anyways.
     let keys = [];
     let keyForTab = tab => {
-      let uri = tab.linkedBrowser?.currentURI;
+      let uri = this.#uriForDuplicateCheck(tab);
       if (!uri) {
         return null;
       }
@@ -5652,7 +5675,7 @@ export class Tabbrowser {
     /** @type {Map<string, Set<number>>} */
     let userContextIdsPerUri = new Map();
     for (let tab of lastSeenTabs) {
-      const uri = tab.linkedBrowser?.currentURI;
+      const uri = this.#uriForDuplicateCheck(tab);
       if (!uri) {
         // Can't tell if it's a duplicate without a URI.
         // Safest to leave it be.
