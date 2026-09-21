@@ -51,6 +51,7 @@
 #include "nsISupports.h"
 #include "nsIWebNavigation.h"
 #include "nsDocShell.h"
+#include "nsDocShellLoadTypes.h"
 #include "nsFrameLoader.h"
 #include "nsFrameLoaderOwner.h"
 #include "nsGlobalWindowOuter.h"
@@ -572,22 +573,39 @@ void CanonicalBrowsingContext::GetLoadingSessionHistoryInfoFromParent(
 
   SessionHistoryEntry* parentSHE =
       GetParent()->Canonical()->GetActiveSessionHistoryEntry();
-  if (parentSHE) {
-    int32_t index = -1;
-    for (BrowsingContext* sibling : GetParent()->Children()) {
-      ++index;
-      if (sibling == this) {
-        if (RefPtr entry =
-                parentSHE->GetChildSHEntryIfHasNoDynamicallyAddedChild(index)) {
-          aLoadingInfo.emplace(entry);
-          mLoadingEntries.AppendElement(LoadingSessionHistoryEntry{
-              aLoadingInfo.value().mLoadId, entry.get()});
-          (void)SetHistoryID(entry->DocshellID());
-        }
-        break;
-      }
+  if (!parentSHE) {
+    return;
+  }
+
+  int32_t index = -1;
+  for (BrowsingContext* sibling : GetParent()->Children()) {
+    ++index;
+    if (sibling == this) {
+      break;
     }
   }
+
+  RefPtr<SessionHistoryEntry> entry =
+      parentSHE->GetChildSHEntryIfHasNoDynamicallyAddedChild(index);
+  if (!entry) {
+    return;
+  }
+
+  // Adopt the entry's docshell ID so later navigations can still
+  // match this BC back to it.
+  (void)SetHistoryID(entry->DocshellID());
+
+  // If the user pressed reload and the parent frame has expired
+  // from cache, we do not want to load the child frame from history.
+  if (parentSHE->SharedInfo()->mExpired &&
+      parentSHE->Info().LoadType() == LOAD_RELOAD_NORMAL) {
+    parentSHE->RemoveChild(entry);
+    return;
+  }
+
+  aLoadingInfo.emplace(entry);
+  mLoadingEntries.AppendElement(
+      LoadingSessionHistoryEntry{aLoadingInfo.value().mLoadId, entry.get()});
 }
 
 UniquePtr<LoadingSessionHistoryInfo>
@@ -1392,17 +1410,24 @@ void CanonicalBrowsingContext::NotifyOnHistoryReload(
     return;
   }
 
+  // Match nsSHistory::Reload and set load type.
+  const uint32_t reloadType =
+      aForceReload ? LOAD_RELOAD_BYPASS_CACHE : LOAD_RELOAD_NORMAL;
+
   if (mActiveEntry) {
+    mActiveEntry->SetLoadType(reloadType);
     aLoadState.emplace(WrapMovingNotNull(
         RefPtr{CreateLoadInfo(mActiveEntry, NavigationType::Reload)}));
     aReloadActiveEntry.emplace(true);
     if (aForceReload) {
+      // Same happens in nsSHistory::Reload
       shistory->RemoveFrameEntries(mActiveEntry);
     }
   } else if (!mLoadingEntries.IsEmpty()) {
     const LoadingSessionHistoryEntry& loadingEntry =
         mLoadingEntries.LastElement();
     uint64_t loadId = loadingEntry.mLoadId;
+    loadingEntry.mEntry->SetLoadType(reloadType);
     aLoadState.emplace(WrapMovingNotNull(
         RefPtr{CreateLoadInfo(loadingEntry.mEntry, NavigationType::Reload)}));
     aReloadActiveEntry.emplace(false);

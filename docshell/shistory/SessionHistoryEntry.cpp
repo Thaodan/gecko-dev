@@ -1316,17 +1316,6 @@ SessionHistoryEntry::GetChildSHEntryIfHasNoDynamicallyAddedChild(
     return nullptr;
   }
 
-  /* Before looking for the subframe's url, check
-   * the expiration status of the parent. If the parent
-   * has expired from cache, then subframes will not be
-   * loaded from history in certain situations.
-   * If the user pressed reload and the parent frame has expired
-   *  from cache, we do not want to load the child frame from history.
-   */
-  if (SharedInfo()->mExpired && (mInfo->mLoadType == LOAD_RELOAD_NORMAL)) {
-    // The parent has expired. Return null.
-    return nullptr;
-  }
   // Get the child subframe from session history.
   auto* child = mChildren.SafeElementAt(aChildOffset);
   if (child) {

@@ -6,6 +6,11 @@
 const PAGE =
   "https://example.com/browser/docshell/test/navigation/file_reload_subframe_history.html";
 
+// Same as PAGE, except served with Cache-Control: no-cache, so the entry
+// created for it is marked expired once it commits.
+const PAGE_EXPIRED =
+  "https://example.com/browser/docshell/test/navigation/file_reload_subframe_history_expired.html";
+
 function frameURI(browser) {
   return SpecialPowers.spawn(
     browser,
@@ -14,8 +19,8 @@ function frameURI(browser) {
   );
 }
 
-async function withNavigatedSubframe(task) {
-  await BrowserTestUtils.withNewTab(PAGE, async browser => {
+async function withNavigatedSubframe(task, page = PAGE) {
+  await BrowserTestUtils.withNewTab(page, async browser => {
     const shistory = browser.browsingContext.sessionHistory;
     const srcURI = await frameURI(browser);
 
@@ -35,22 +40,21 @@ async function withNavigatedSubframe(task) {
     is(shistory.count, 2, "subframe navigation added an entry");
     is(shistory.index, 1, "index after the subframe navigation");
 
-    await task({ browser, shistory, srcURI, navigatedURI });
+    await task({ browser, shistory, srcURI, navigatedURI, page });
   });
 }
 
-async function reloadFromUI(browser, flags) {
-  const loaded = BrowserTestUtils.browserLoaded(browser, false, PAGE);
+async function reloadFromUI(
+  browser,
+  flags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE
+) {
   gBrowser.reloadWithFlags(flags);
-  await loaded;
 }
 
 async function reloadFromContent(browser, forceReload = false) {
-  const loaded = BrowserTestUtils.browserLoaded(browser, false, PAGE);
   await SpecialPowers.spawn(browser, [forceReload], force =>
     content.location.reload(force)
   );
-  await loaded;
 }
 
 // Reloading from browser UI goes through nsSHistory::Reload, which used to
@@ -59,7 +63,9 @@ async function reloadFromContent(browser, forceReload = false) {
 // Test force reload on a page with static subframe
 async function checkForceReload(reload, description) {
   await withNavigatedSubframe(async ({ browser, shistory, srcURI }) => {
+    const loaded = BrowserTestUtils.browserLoaded(browser, { wantLoad: PAGE });
     await reload(browser);
+    await loaded;
 
     is(
       await frameURI(browser),
@@ -96,5 +102,81 @@ add_task(async function forceReloadFromContent() {
   await checkForceReload(
     browser => reloadFromContent(browser, /* force */ true),
     "location.reload(true)"
+  );
+});
+
+// location.reload() goes through CBC::NotifyOnHistoryReload, which used to
+// leave stale entries behind if the cache expired. See bug 2037346.
+
+// Test non-force reload on a page with a static subframe
+async function checkNormalReload(
+  reload,
+  description,
+  expectRestored,
+  expired = false
+) {
+  await withNavigatedSubframe(
+    async ({ browser, shistory, srcURI, navigatedURI }) => {
+      const loaded = BrowserTestUtils.browserLoaded(browser, {
+        wantLoad: expired ? PAGE_EXPIRED : PAGE,
+      });
+      await reload(browser);
+      await loaded;
+
+      is(
+        await frameURI(browser),
+        expectRestored ? navigatedURI : srcURI,
+        `${description}: subframe ${
+          expectRestored
+            ? "was restored from history"
+            : "is loaded from its src again"
+        }`
+      );
+      is(
+        shistory.count,
+        2,
+        `${description}: no entry is dropped by the reload`
+      );
+      is(shistory.index, 1, `${description}: index is unchanged by the reload`);
+      ok(browser.canGoBack, `${description}: can still go back`);
+      if (!expectRestored) {
+        ok(!browser.canGoForward, `${description}: nothing to go forward to`);
+      }
+    },
+    expired ? PAGE_EXPIRED : PAGE
+  );
+}
+
+add_task(async function expiredReloadFromUI() {
+  await checkNormalReload(
+    browser => reloadFromUI(browser),
+    "expired reload from UI",
+    false,
+    true
+  );
+});
+
+add_task(async function expiredReloadFromContent() {
+  await checkNormalReload(
+    browser => reloadFromContent(browser),
+    "expired location.reload()",
+    false,
+    true
+  );
+});
+
+add_task(async function normalReloadFromUI() {
+  await checkNormalReload(
+    browser => reloadFromUI(browser, Ci.nsIWebNavigation.LOAD_FLAGS_NONE),
+    "normal reload",
+    true
+  );
+});
+
+add_task(async function normalReloadFromContent() {
+  await checkNormalReload(
+    browser => reloadFromContent(browser),
+    "location.reload()",
+    true
   );
 });
