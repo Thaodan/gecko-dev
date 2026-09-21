@@ -186,10 +186,6 @@
     gap: var(--space-xsmall);
     font-weight: var(--font-weight-semibold);
   }
-
-  &.error {
-    color: var(--text-color-error);
-  }
 }
 
 .monitor-row-match-dot {

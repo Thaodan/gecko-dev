@@ -7,10 +7,13 @@ const WIDGET_ID = "smartwindow-monitor-button";
 const PANEL_ID = "smartwindow-monitor-panel";
 const TEST_REGION = "US";
 
-const { TOTAL_NUM_MONITORS, MONITOR_CONDITION_MET_TOPIC } =
-  ChromeUtils.importESModule(
-    "moz-src:///browser/components/aiwindow/models/agents/Monitor.sys.mjs"
-  );
+const {
+  TOTAL_NUM_MONITORS,
+  MONITOR_CONDITION_MET_TOPIC,
+  MONITOR_RUN_FAILED_TOPIC,
+} = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/agents/Monitor.sys.mjs"
+);
 
 const { MonitorAgent } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/agents/MonitorAgent.sys.mjs"
@@ -22,6 +25,10 @@ const { SpecialMessageActions } = ChromeUtils.importESModule(
 
 function notifyMatch(monitorId) {
   Services.obs.notifyObservers(null, MONITOR_CONDITION_MET_TOPIC, monitorId);
+}
+
+function notifyRunFailed(monitorId) {
+  Services.obs.notifyObservers(null, MONITOR_RUN_FAILED_TOPIC, monitorId);
 }
 
 add_setup(async function setup() {
@@ -139,8 +146,8 @@ add_task(async function test_monitor_panel_toggles() {
 });
 
 /**
- * The list names each task the user is watching, newest first, and states when
- * it checks rather than when it last ran.
+ * The list names each task the user is watching, most recently checked first,
+ * and states when it checks rather than when it last ran.
  */
 add_task(async function test_monitor_panel_list_rows() {
   const sb = this.sinon.createSandbox();
@@ -152,6 +159,7 @@ add_task(async function test_monitor_panel_list_rows() {
       watchUrls: ["https://example.com/tickets"],
       enabled: false,
       createdAt: "2026-01-01T00:00:00.000Z",
+      lastRunTime: "2026-01-01T00:00:00.000Z",
       schedule: { type: "weekly", hour: 14, minute: 30, weekday: 3 },
       history: [],
     },
@@ -162,6 +170,7 @@ add_task(async function test_monitor_panel_list_rows() {
       watchUrls: ["https://example.com/price"],
       enabled: true,
       createdAt: "2026-02-01T00:00:00.000Z",
+      lastRunTime: "2026-02-01T00:00:00.000Z",
       schedule: { type: "daily", hour: 9, minute: 0 },
       history: [],
     },
@@ -505,6 +514,7 @@ add_task(async function test_monitor_panel_new_matches_section() {
       watchUrls: ["https://example.com/tickets"],
       enabled: true,
       createdAt: "2026-01-01T00:00:00.000Z",
+      lastRunTime: "2026-01-01T00:00:00.000Z",
       schedule: { type: "daily", hour: 9, minute: 0 },
       history: [],
     },
@@ -515,6 +525,7 @@ add_task(async function test_monitor_panel_new_matches_section() {
       watchUrls: ["https://example.com/price"],
       enabled: true,
       createdAt: "2026-02-01T00:00:00.000Z",
+      lastRunTime: "2026-02-01T00:00:00.000Z",
       schedule: { type: "daily", hour: 9, minute: 0 },
       history: [{ conditionMet: true }],
     },
@@ -610,6 +621,153 @@ add_task(async function test_monitor_panel_new_matches_section() {
     );
     panelAgain.hidePopup();
     await hiddenAgain;
+  } finally {
+    sb.restore();
+    AIWindow.clearMonitorAttention();
+    await BrowserTestUtils.closeWindow(win);
+  }
+});
+
+/**
+ * The list is ordered by when each task last checked rather than by when it
+ * was created, so the freshest result is nearest the top.
+ */
+add_task(async function test_monitor_panel_orders_by_last_run() {
+  const sb = this.sinon.createSandbox();
+  // Deliberately at odds with creation order: the oldest task ran most
+  // recently, and the newest has never run at all.
+  sb.stub(MonitorAgent, "listMonitors").resolves([
+    {
+      id: "monitor-1",
+      title: "Ran today",
+      monitorPrompt: "tickets go on sale",
+      watchUrls: ["https://example.com/tickets"],
+      enabled: true,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      lastRunTime: "2026-03-10T09:00:00.000Z",
+      schedule: { type: "daily", hour: 9, minute: 0 },
+      history: [],
+    },
+    {
+      id: "monitor-2",
+      title: "Ran last week",
+      monitorPrompt: "price drops",
+      watchUrls: ["https://example.com/price"],
+      enabled: true,
+      createdAt: "2026-02-01T00:00:00.000Z",
+      lastRunTime: "2026-03-03T09:00:00.000Z",
+      schedule: { type: "daily", hour: 9, minute: 0 },
+      history: [],
+    },
+    {
+      id: "monitor-3",
+      title: "Never ran",
+      monitorPrompt: "back in stock",
+      watchUrls: ["https://example.com/stock"],
+      enabled: true,
+      createdAt: "2026-02-15T00:00:00.000Z",
+      // Monitor defaults an unrun monitor's last run to its creation time.
+      lastRunTime: "2026-02-15T00:00:00.000Z",
+      schedule: { type: "daily", hour: 9, minute: 0 },
+      history: [],
+    },
+  ]);
+  const win = await openAIWindow();
+  try {
+    const shown = BrowserTestUtils.waitForEvent(
+      win.document.getElementById("mainPopupSet"),
+      "popupshown"
+    );
+    EventUtils.synthesizeMouseAtCenter(getMonitorButton(win), {}, win);
+    const panel = (await shown).target;
+    const contents = panel.querySelector("agent-monitor-panel");
+    await TestUtils.waitForCondition(() => contents.monitors.length === 3);
+    await contents.updateComplete;
+
+    Assert.deepEqual(
+      [...contents.shadowRoot.querySelectorAll(".monitor-row-title")].map(
+        title => title.textContent
+      ),
+      ["Ran today", "Ran last week", "Never ran"],
+      "Tasks are listed by last check, most recent first, whatever order they were created in"
+    );
+
+    const hidden = BrowserTestUtils.waitForEvent(panel, "popuphidden");
+    panel.hidePopup();
+    await hidden;
+  } finally {
+    sb.restore();
+    await BrowserTestUtils.closeWindow(win);
+  }
+});
+
+/**
+ * A monitor whose last check failed says so on its own row rather than
+ * claiming "No match", and it is not pulled into the "New matches" section
+ * even though it lit the same dot.
+ */
+add_task(async function test_monitor_panel_failed_check_row() {
+  const sb = this.sinon.createSandbox();
+  sb.stub(MonitorAgent, "listMonitors").resolves([
+    {
+      id: "monitor-1",
+      title: "Concert tickets",
+      monitorPrompt: "tickets go on sale",
+      watchUrls: ["https://example.com/tickets"],
+      enabled: true,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      lastRunTime: "2026-01-01T00:00:00.000Z",
+      schedule: { type: "daily", hour: 9, minute: 0 },
+      history: [{ status: "error", conditionMet: false }],
+    },
+  ]);
+  const win = await openAIWindow();
+  try {
+    notifyRunFailed("monitor-1");
+    await TestUtils.waitForCondition(() => AIWindow.hasMonitorAttention);
+
+    const shown = BrowserTestUtils.waitForEvent(
+      win.document.getElementById("mainPopupSet"),
+      "popupshown"
+    );
+    EventUtils.synthesizeMouseAtCenter(getMonitorButton(win), {}, win);
+    const panel = (await shown).target;
+    const contents = panel.querySelector("agent-monitor-panel");
+    await TestUtils.waitForCondition(() => contents.monitors.length === 1);
+    await contents.updateComplete;
+
+    Assert.deepEqual(
+      [...contents.shadowRoot.querySelectorAll(".monitor-section-label")].map(
+        label => label.getAttribute("data-l10n-id")
+      ),
+      ["smartwindow-monitor-panel-watching"],
+      "A failed check does not open a New matches section"
+    );
+    const result = contents.shadowRoot.querySelector(".monitor-row-result");
+    Assert.ok(
+      result.classList.contains("could-not-check"),
+      "The row's result is marked as a failed check"
+    );
+    Assert.equal(
+      result.getAttribute("data-l10n-id"),
+      "smartwindow-monitor-panel-result-could-not-check",
+      "The row says the check failed rather than that nothing matched"
+    );
+    // The row and the task card report the same run, so they have to say the
+    // same thing about it.
+    const [rowCopy, cardCopy] = await contents.ownerDocument.l10n.formatValues([
+      { id: "smartwindow-monitor-panel-result-could-not-check" },
+      { id: "ai-tasks-alert-last-result-could-not-check" },
+    ]);
+    Assert.equal(
+      rowCopy,
+      cardCopy,
+      "The panel row reads the same as the task card's last result"
+    );
+
+    const hidden = BrowserTestUtils.waitForEvent(panel, "popuphidden");
+    panel.hidePopup();
+    await hidden;
   } finally {
     sb.restore();
     AIWindow.clearMonitorAttention();

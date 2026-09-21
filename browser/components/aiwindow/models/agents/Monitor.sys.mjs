@@ -131,6 +131,11 @@ export class MonitorLimitError extends Error {
 // it drives the passive dot on the monitor toolbar button.
 export const MONITOR_CONDITION_MET_TOPIC = "smartwindow-monitor-condition-met";
 
+// Fired once per monitor run that failed, with the monitor id as the data.
+// Like the condition-met topic this is not suppressed by muting, it drives the
+// passive dot on the monitor toolbar button.
+export const MONITOR_RUN_FAILED_TOPIC = "smartwindow-monitor-run-failed";
+
 const MONITOR_RESULT_SCHEMA = {
   type: "object",
   additionalProperties: false,

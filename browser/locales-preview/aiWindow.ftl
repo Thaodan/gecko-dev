@@ -21,7 +21,8 @@ smartwindow-monitor-panel-empty-description = { -brand-short-name } can keep an 
 # Shown when the task's condition was met on its last check
 smartwindow-monitor-panel-result-match = Match
 smartwindow-monitor-panel-result-no-match = No match
-smartwindow-monitor-panel-result-error = Check failed
+# Shown when the most recent check failed, so there is no match to report.
+smartwindow-monitor-panel-result-could-not-check = Couldn’t check
 smartwindow-monitor-panel-create = Create new task
 # Panel title while the user is filling in the create form
 smartwindow-monitor-panel-create-title = Create new task
@@ -65,6 +66,10 @@ ai-tasks-monitor-expired-notification-body-no-match = This task was automaticall
 #   $days (Number) - Number of days the monitor has been running
 ai-tasks-monitor-expired-notification-body-max-age = This task was automatically paused after { $days } days. You can resume it anytime.
 ai-tasks-monitor-expired-notification-resume = Resume
+# Desktop notification shown when a task's check could not run at all, for
+# example because the page could not be loaded. The task's name is the
+# notification title, so the body does not repeat it.
+ai-tasks-monitor-error-notification-body = This task couldn’t run. Please check.
 
 # Smart Window Alerts
 # This file contains localized strings for the Smart Window alerts feature,

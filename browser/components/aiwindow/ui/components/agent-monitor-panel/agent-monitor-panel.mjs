@@ -35,8 +35,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
  *  - agent-monitor-item:*  (re-dispatched from the create form, see that
  *    component; the host handles :submit, :cancel and :draft-change)
  *
- * @property {object[]} monitors - Monitors newest first, each formatted by
- *   MonitorUIUtils.formatMonitorForDisplay().
+ * @property {object[]} monitors - Monitors in the order they should be listed,
+ *   each formatted by MonitorUIUtils.formatMonitorForDisplay().
  * @property {number} maxMonitors - How many monitors the user may have.
  * @property {?object} agent - What the create form starts from, e.g. the page
  *   the user is on. See agent-monitor-item's 'agent'.
@@ -131,6 +131,12 @@ export class AgentMonitorPanel extends MozLitElement {
     const lastRun = this.#lastRun(monitor);
     if (!lastRun || lastRun.status === "running") {
       return nothing;
+    }
+    if (lastRun.status === "error") {
+      return html`<span
+        class="monitor-row-result could-not-check"
+        data-l10n-id="smartwindow-monitor-panel-result-could-not-check"
+      ></span>`;
     }
     if (lastRun.conditionMet) {
       return html`<span class="monitor-row-result match">

@@ -375,8 +375,12 @@ export const MonitorPanel = {
     if (!panel.isConnected) {
       return;
     }
+    // Most recently checked first, so what the panel has to say about a
+    // monitor is what is nearest the top. A monitor that has never run carries
+    // its creation time as its last run, which sorts it as newly added putting it at the top
+    // like we intend.
     panel._contents.monitors = monitors
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .sort((a, b) => new Date(b.lastRunTime) - new Date(a.lastRunTime))
       .map(monitor => lazy.MonitorUIUtils.formatMonitorForDisplay(monitor));
   },
 

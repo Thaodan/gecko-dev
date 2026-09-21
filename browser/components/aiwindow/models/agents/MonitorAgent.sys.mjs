@@ -15,6 +15,7 @@ import {
   MONITOR_PROMPT_VERSION,
   MONITOR_AGENTS_CHANGED_TOPIC,
   MONITOR_CONDITION_MET_TOPIC,
+  MONITOR_RUN_FAILED_TOPIC,
 } from "moz-src:///browser/components/aiwindow/models/agents/Monitor.sys.mjs";
 import { Schedule } from "moz-src:///browser/components/aiwindow/models/agents/Schedule.sys.mjs";
 
@@ -27,6 +28,7 @@ export {
   MONITOR_AGENTS_CHANGED_TOPIC,
   MONITOR_CONDITION_MET_TOPIC,
   MONITOR_EXPIRY_REASONS,
+  MONITOR_RUN_FAILED_TOPIC,
 } from "moz-src:///browser/components/aiwindow/models/agents/Monitor.sys.mjs";
 
 // Notification body shown for each auto-expiry reason.
@@ -86,6 +88,36 @@ const CREATE_SOURCES = new Set([
   "about_page",
   "test",
 ]);
+
+// Why the monitor notification was shown, recorded as the telemetry `reason`.
+export const NOTIFICATION_REASONS = {
+  CONDITION_MET: "condition_met",
+  RUN_FAILED: "run_failed",
+  EXPIRED: "expired",
+};
+
+// Failures the user already knows about, or that only mean Firefox is going
+// away: telling them their monitor could not run would be noise.
+const UNREPORTED_ERROR_CODES = new Set([
+  MONITOR_ERROR_CODES.CANCELED,
+  MONITOR_ERROR_CODES.INTERRUPTED,
+]);
+
+/**
+ * Treats history that already exists at load time as seen, so restoring
+ * monitors on startup doesn't replay old alerts as fresh notifications.
+ *
+ * @param {Iterable<Monitor>} monitors
+ */
+function seedNotifiedRunIds(monitors) {
+  for (const monitor of monitors) {
+    for (const entry of monitor.history) {
+      if (entry.conditionMet || entry.status === "error") {
+        gNotifiedRunIds.add(entry.id);
+      }
+    }
+  }
+}
 
 function isShuttingDown() {
   return (
@@ -454,15 +486,7 @@ export const MonitorAgent = {
 
     gMonitors = monitors;
 
-    // Treat history that already exists at load time as "seen" so restoring
-    // monitors on startup doesn't replay old alerts as fresh notifications
-    for (const monitor of monitors.values()) {
-      for (const entry of monitor.history) {
-        if (entry.conditionMet) {
-          gNotifiedRunIds.add(entry.id);
-        }
-      }
-    }
+    seedNotifiedRunIds(monitors.values());
     this._updateActionGauges();
   },
 
@@ -506,6 +530,7 @@ export const MonitorAgent = {
 
     if (monitor) {
       this._notifyIfConditionMet(monitor);
+      this._notifyIfRunFailed(monitor);
     }
   },
 
@@ -576,6 +601,7 @@ export const MonitorAgent = {
       Glean.smartWindow.monitorNotificationClick.record({
         ...monitorTelemetryExtra(monitor),
         click_type: clickType,
+        reason: NOTIFICATION_REASONS.EXPIRED,
       });
 
     this._showMonitorAlert(monitor, {
@@ -632,17 +658,91 @@ export const MonitorAgent = {
       return;
     }
 
+    const shown = this._showMonitorAlert(monitor, {
+      text: entry.resultExplanation,
+      textId: "ai-tasks-monitor-notification-body",
+      ...this._runNotificationActions(
+        monitor,
+        NOTIFICATION_REASONS.CONDITION_MET
+      ),
+    });
+
+    if (shown) {
+      Glean.smartWindow.monitorNotificationSend.record({
+        ...monitorTelemetryExtra(monitor),
+        reason: NOTIFICATION_REASONS.CONDITION_MET,
+      });
+    }
+  },
+
+  /**
+   * Tells the user that a monitor could not check, so a monitor that keeps
+   * failing does not fail silently. Follows the condition-met path: the same
+   * topic-then-notification shape and the same actions, and it stays quiet
+   * about a run it has already reported.
+   *
+   * A run the user cancelled or that shutdown cut short is not news, so it is
+   * left alone entirely rather than reported through either channel.
+   *
+   * @param {Monitor} monitor - The monitor whose latest run just saved
+   */
+  _notifyIfRunFailed(monitor) {
+    const entry = monitor.history.at(-1);
+    if (
+      !entry ||
+      entry.status !== "error" ||
+      UNREPORTED_ERROR_CODES.has(entry.errorCode)
+    ) {
+      return;
+    }
+
+    if (gNotifiedRunIds.has(entry.id)) {
+      return;
+    }
+    gNotifiedRunIds.add(entry.id);
+
+    Services.obs.notifyObservers(null, MONITOR_RUN_FAILED_TOPIC, monitor.id);
+
+    if (monitor.notificationsMuted) {
+      return;
+    }
+
+    // resultExplanation holds the raw error message, so the body is the
+    // localized copy rather than anything the run produced.
+    const shown = this._showMonitorAlert(monitor, {
+      textId: "ai-tasks-monitor-error-notification-body",
+      ...this._runNotificationActions(monitor, NOTIFICATION_REASONS.RUN_FAILED),
+    });
+
+    if (shown) {
+      Glean.smartWindow.monitorNotificationSend.record({
+        ...monitorTelemetryExtra(monitor),
+        reason: NOTIFICATION_REASONS.RUN_FAILED,
+      });
+    }
+  },
+
+  /**
+   * The snooze and dismiss actions that every notification about a run
+   * carries, with the click handling for them and for the body, which opens
+   * the watched page. Spread into a _showMonitorAlert call.
+   *
+   * @param {Monitor} monitor - The monitor the notification is about
+   * @param {string} reason - A NOTIFICATION_REASONS entry, recorded with each
+   *   click so a match and a failed check can be told apart.
+   * @returns {{actions: object[], onClick: Function}}
+   */
+  _runNotificationActions(monitor, reason) {
     const url = monitor.watchUrls[0];
     const id = monitor.id;
     const recordClick = clickType =>
       Glean.smartWindow.monitorNotificationClick.record({
         ...monitorTelemetryExtra(monitor),
         click_type: clickType,
+        reason,
       });
 
-    const shown = this._showMonitorAlert(monitor, {
-      text: entry.resultExplanation,
-      textId: "ai-tasks-monitor-notification-body",
+    return {
       actions: [
         {
           action: NOTIFICATION_ACTIONS.SNOOZE,
@@ -675,13 +775,7 @@ export const MonitorAgent = {
           );
         }
       },
-    });
-
-    if (shown) {
-      Glean.smartWindow.monitorNotificationSend.record(
-        monitorTelemetryExtra(monitor)
-      );
-    }
+    };
   },
 
   /**

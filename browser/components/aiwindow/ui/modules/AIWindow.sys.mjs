@@ -79,6 +79,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesSchedulers.sys.mjs",
   MONITOR_CONDITION_MET_TOPIC:
     "moz-src:///browser/components/aiwindow/models/agents/Monitor.sys.mjs",
+  MONITOR_RUN_FAILED_TOPIC:
+    "moz-src:///browser/components/aiwindow/models/agents/Monitor.sys.mjs",
   MonitorAttention:
     "moz-src:///browser/components/aiwindow/ui/modules/MonitorAttention.sys.mjs",
   MonitorUIUtils:
@@ -283,6 +285,8 @@ export const AIWindow = {
       this._updateMonitorWidgetRegistration();
     } else if (topic === lazy.MONITOR_CONDITION_MET_TOPIC) {
       this.showMonitorAttention(data);
+    } else if (topic === lazy.MONITOR_RUN_FAILED_TOPIC) {
+      this.showMonitorErrorAttention(data);
     }
   },
 
@@ -510,6 +514,7 @@ export const AIWindow = {
       },
     });
     Services.obs.addObserver(this, lazy.MONITOR_CONDITION_MET_TOPIC);
+    Services.obs.addObserver(this, lazy.MONITOR_RUN_FAILED_TOPIC);
     this._monitorWidgetCreated = true;
   },
 
@@ -519,6 +524,7 @@ export const AIWindow = {
     }
 
     Services.obs.removeObserver(this, lazy.MONITOR_CONDITION_MET_TOPIC);
+    Services.obs.removeObserver(this, lazy.MONITOR_RUN_FAILED_TOPIC);
     lazy.CustomizableUI.destroyWidget(MONITOR_WIDGET_ID);
     this._monitorWidgetCreated = false;
   },
@@ -541,7 +547,8 @@ export const AIWindow = {
 
   /**
    * Monitors that matched their condition and that the user has not been shown
-   * the panel for since, newest match first.
+   * the panel for since, newest match first. A monitor that only failed to
+   * check is not here: it lights the dot but the panel leaves it where it is.
    *
    * @returns {string[]} Monitor ids.
    */
@@ -567,7 +574,7 @@ export const AIWindow = {
    * @returns {boolean} Whether the monitor button should carry the dot.
    */
   get hasMonitorAttention() {
-    return lazy.MonitorAttention.hasMatches || this.hasMonitorAnnouncement;
+    return lazy.MonitorAttention.hasAttention || this.hasMonitorAnnouncement;
   },
 
   /**
@@ -592,11 +599,22 @@ export const AIWindow = {
   },
 
   /**
+   * A monitor that could not check is worth the same dot as one that matched:
+   * either way there is something in the panel the user has not seen.
+   *
+   * @param {string} monitorId - The monitor whose run failed.
+   */
+  showMonitorErrorAttention(monitorId) {
+    lazy.MonitorAttention.recordError(monitorId);
+    this._forEachWindow(win => this._updateMonitorButtonForWindow(win));
+  },
+
+  /**
    * Retires every reason the dot is showing. Opening the panel answers the
    * announcement as much as it answers a match, so both go at once.
    */
   clearMonitorAttention() {
-    lazy.MonitorAttention.clearMatches();
+    lazy.MonitorAttention.clearAttention();
     // Only dismiss an announcement that is actually running so we do not mask
     // a rollout that starts later.
     if (lazy.monitorAnnouncement) {

@@ -2088,20 +2088,29 @@ smart_window:
   monitor_notification_send:
     type: event
     description: |
-      Recorded when a Smart Window monitor sends a notification to the user because its condition was met.
-    bugs: *monitor_bugs
+      Recorded when a Smart Window monitor sends a notification to the user, because its condition was met or because its check could not run.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046610
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072692
     data_reviews: *monitor_data_reviews
     data_sensitivity:
       - interaction
     notification_emails: *emails
     expires: never
-    extra_keys: *monitor_extra_keys
+    extra_keys:
+      <<: *monitor_extra_keys
+      reason:
+        type: string
+        description: >
+          Why the notification was shown: "condition_met" (the monitor found what it was watching for) or "run_failed" (the check could not run).
 
   monitor_notification_click:
     type: event
     description: |
       Recorded when a user interacts with a Smart Window monitor notification.
-    bugs: *monitor_bugs
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046610
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072692
     data_reviews: *monitor_data_reviews
     data_sensitivity:
       - interaction
@@ -2114,6 +2123,10 @@ smart_window:
         description: >
           Type of notification interaction: "open_url" (body clicked to open watched page), "snooze" (snooze button clicked), or "dismiss" (dismiss button clicked to mute notifications).
           For the notification sent when a monitor pauses itself: "open_tasks" (body clicked to open the tasks page) or "resume" (resume button clicked).
+      reason:
+        type: string
+        description: >
+          Why the notification the user clicked was shown: "condition_met" (the monitor found what it was watching for), "run_failed" (the check could not run), or "expired" (the monitor paused itself).
 
   # The "Organize Tabs" events below describe one user journey, so they share a
   # vocabulary of extra keys. None of them record a URL, a tab title, or a
