@@ -42,6 +42,7 @@ import org.mozilla.fenix.components.menu.store.MenuAction.AddBookmark
 import org.mozilla.fenix.components.menu.store.MenuAction.CustomizeReaderView
 import org.mozilla.fenix.components.menu.store.MenuAction.FindInPage
 import org.mozilla.fenix.components.menu.store.MenuAction.IPProtectionToggle
+import org.mozilla.fenix.components.menu.store.MenuAction.MoveToNonPrivateTab
 import org.mozilla.fenix.components.menu.store.MenuAction.Navigate
 import org.mozilla.fenix.components.menu.store.MenuAction.OnMoreMenuClicked
 import org.mozilla.fenix.components.menu.store.MenuAction.OnSummarizationMenuExposed
@@ -148,6 +149,12 @@ class MenuMiddleware(
             is OnMoreMenuClicked -> handleMoreBeingClicked(store)
 
             is OnSummarizationMenuExposed -> handleSummarizationOptionBeingShown()
+
+            is MoveToNonPrivateTab ->
+                browserStore.state.selectedTab?.id?.let { tabId ->
+                    dismissMenu()
+                    useCases.tabsUseCases.migratePrivateTabUseCase(tabId)
+                }
 
             is Navigate.Back -> handleBackNavigation(action)
 

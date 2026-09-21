@@ -41,6 +41,9 @@ sealed interface FenixMenuItem {
     /** A menu item allowing to summarize the current page. */
     data object SummarizePage : FenixMenuItem
 
+    /** A menu item allowing to move the current private tab to a non-private tab. */
+    data object MoveToNormalTabs : FenixMenuItem
+
     /** A menu item allowing to navigate back. */
     data object Back : FenixMenuItem
 

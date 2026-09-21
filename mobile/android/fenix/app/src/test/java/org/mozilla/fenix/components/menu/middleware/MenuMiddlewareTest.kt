@@ -45,6 +45,7 @@ import mozilla.components.feature.ipprotection.store.state.Authorized
 import mozilla.components.feature.ipprotection.store.state.IPProtectionState
 import mozilla.components.feature.ipprotection.store.state.ProxyStatus
 import mozilla.components.feature.session.SessionUseCases
+import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Rule
 import org.junit.Test
@@ -70,12 +71,14 @@ import org.mozilla.fenix.components.menu.store.MenuAction.AddBookmark
 import org.mozilla.fenix.components.menu.store.MenuAction.CustomizeReaderView as CustomizeReaderViewEvent
 import org.mozilla.fenix.components.menu.store.MenuAction.FindInPage
 import org.mozilla.fenix.components.menu.store.MenuAction.IPProtectionToggle
+import org.mozilla.fenix.components.menu.store.MenuAction.MoveToNonPrivateTab
 import org.mozilla.fenix.components.menu.store.MenuAction.Navigate
 import org.mozilla.fenix.components.menu.store.MenuAction.OnSummarizationMenuExposed
 import org.mozilla.fenix.components.menu.store.MenuAction.RequestDesktopSite
 import org.mozilla.fenix.components.menu.store.MenuAction.RequestMobileSite
 import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.components.share.ShareSource
+import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.optionsEq
 import org.mozilla.fenix.helpers.FenixGleanTestRule
@@ -100,6 +103,8 @@ class MenuMiddlewareTest {
         )
     private val addBookmarkUseCase: BookmarksUseCase.AddBookmarksUseCase = mockk()
     private val requestDesktopSiteUseCase: SessionUseCases.RequestDesktopSiteUseCase = mockk(relaxed = true)
+    private val migratePrivateTabUseCase: TabsUseCases.MigratePrivateTabUseCase = mockk(relaxed = true)
+    private val fenixBrowserUseCase: FenixBrowserUseCases = mockk(relaxed = true)
     private val goBackUseCase: SessionUseCases.GoBackUseCase = mockk(relaxed = true)
     private val goForwardUseCase: SessionUseCases.GoForwardUseCase = mockk(relaxed = true)
     private val shareUrlUseCase: ShareUseCases = mockk(relaxed = true)
@@ -115,6 +120,9 @@ class MenuMiddlewareTest {
                 every { reload } returns reloadUseCase
                 every { stopLoading } returns stopLoadingUseCase
             }
+        every { tabsUseCases } returns
+            mockk { every { migratePrivateTabUseCase } returns this@MenuMiddlewareTest.migratePrivateTabUseCase }
+        every { fenixBrowserUseCases } returns fenixBrowserUseCase
         every { shareUseCases } returns shareUrlUseCase
     }
     // Navigating away is guarded on still being on the menu, so the mock has to report that as the current
@@ -307,6 +315,20 @@ class MenuMiddlewareTest {
         verify {
             navController.popBackStack(R.id.menuFragment, true)
             requestDesktopSiteUseCase(enable = false, tabId = TAB_ID)
+        }
+    }
+
+    @Test
+    fun `WHEN handling moving the current tab to normal tabs THEN dismiss the menu and migrate the tab`() {
+        val privateTab = createTab(url = TEST_URL, id = TAB_ID, private = true)
+        val store =
+            createStore(browserStore = BrowserStore(BrowserState(tabs = listOf(privateTab), selectedTabId = TAB_ID)))
+
+        store.dispatch(MoveToNonPrivateTab)
+
+        verify {
+            navController.popBackStack(R.id.menuFragment, true)
+            migratePrivateTabUseCase(TAB_ID)
         }
     }
 

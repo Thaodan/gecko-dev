@@ -50,6 +50,7 @@ import org.mozilla.fenix.browser.ForwardMenuItemProvider
 import org.mozilla.fenix.browser.RefreshMenuItemProvider
 import org.mozilla.fenix.browser.ShareMenuItemProvider
 import org.mozilla.fenix.browser.menu.MoreMenuItemsProvider
+import org.mozilla.fenix.browser.menu.MoveToNormalTabsMenuItemProvider
 import org.mozilla.fenix.browser.readermode.ReaderViewMenuItemProvider
 import org.mozilla.fenix.components.FindInPageMenuItemProvider
 import org.mozilla.fenix.components.menu.compose.MenuDialogBottomSheet
@@ -254,6 +255,7 @@ class MenuFragment : BottomSheetDialogFragment() {
                     eligibilityChecker = requireComponents.core.summarizationEligibilityChecker,
                     scope = viewLifecycleOwner.lifecycle.coroutineScope,
                 )
+
             FenixMenuItem.Back ->
                 BackMenuItemProvider(
                     browserStore = requireComponents.core.store,
@@ -273,6 +275,9 @@ class MenuFragment : BottomSheetDialogFragment() {
                     browserStore = requireComponents.core.store,
                     scope = viewLifecycleOwner.lifecycle.coroutineScope,
                 )
+
+            FenixMenuItem.MoveToNormalTabs ->
+                MoveToNormalTabsMenuItemProvider(browserStore = requireComponents.core.store)
         }
     }
 
