@@ -18,7 +18,6 @@ config = {
     #########################################################################
     ###### 64 bit specific ######
     "platform": "linux64",
-    "stage_platform": "linux64-st-an-opt",
     "env": {
         "MOZBUILD_STATE_PATH": os.path.join(os.getcwd(), ".mozbuild"),
         "DISPLAY": ":2",

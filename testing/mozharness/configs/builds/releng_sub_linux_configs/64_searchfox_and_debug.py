@@ -31,7 +31,6 @@ config = {
     #########################################################################
     ###### 64 bit specific ######
     "platform": "linux64",
-    "stage_platform": "linux64-searchfox-opt",
     # This doesn't actually inherit from anything.
     "mozconfig_platform": "linux64",
 }

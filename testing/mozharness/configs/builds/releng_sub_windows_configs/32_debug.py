@@ -9,7 +9,6 @@ config = {
         "clobber",
         "build",
     ],
-    "stage_platform": "win32-debug",
     "debug_build": True,
     #### 32 bit build specific #####
     "env": {

@@ -9,7 +9,6 @@ config = {
         "clobber",
         "build",
     ],
-    "stage_platform": "macosx64-debug",
     "debug_build": True,
     #### 64 bit build specific #####
     "env": {

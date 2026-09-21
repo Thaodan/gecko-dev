@@ -490,12 +490,8 @@ class BuildScript(
         # separate each build
         self.epoch_timestamp = int(time.mktime(datetime.now().timetuple()))
         self.branch = self.config.get("branch")
-        self.stage_platform = self.config.get("stage_platform")
-        if not self.branch or not self.stage_platform:
-            if not self.branch:
-                self.error("'branch' not determined and is required")
-            if not self.stage_platform:
-                self.error("'stage_platform' not determined and is required")
+        if not self.branch:
+            self.error("'branch' not determined and is required")
             self.fatal("Please add missing items to your config")
         self.client_id = None
         self.access_token = None
