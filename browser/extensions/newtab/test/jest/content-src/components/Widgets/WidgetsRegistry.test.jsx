@@ -53,6 +53,14 @@ describe("isWidgetToggleVisible", () => {
     ).toBe(true);
   });
 
+  it("is true via the legacy widgetsConfig override", () => {
+    expect(
+      isWidgetToggleVisible(listsWidget, {
+        widgetsConfig: { listsEnabled: true },
+      })
+    ).toBe(true);
+  });
+
   it("is additive only — a false widgetsSettings value cannot hide a system-enabled toggle", () => {
     expect(
       isWidgetToggleVisible(listsWidget, {
@@ -966,5 +974,21 @@ describe("resolvePrivacyCelebrationThreshold", () => {
     ).toBe(20);
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
+  });
+});
+
+describe("WIDGET_REGISTRY about:preferences fields", () => {
+  const activeWidgets = WIDGET_REGISTRY.filter(w => !w.retired);
+
+  it("gives every non-retired entry a prefsL10nId", () => {
+    for (const widget of activeWidgets) {
+      expect(typeof widget.prefsL10nId).toBe("string");
+      expect(widget.prefsL10nId).toMatch(/^home-prefs-/);
+    }
+  });
+
+  it("keeps prefsL10nId unique across entries", () => {
+    const ids = activeWidgets.map(w => w.prefsL10nId);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });
