@@ -10,34 +10,20 @@
 # commands can be executed directly by make, without doing a round-trip
 # through a shell.
 
-cargo_host_flag := --target=$(RUST_HOST_TARGET)
-cargo_target_flag := --target=$(RUST_TARGET)
-
 # Permit users to pass flags to cargo from their mozconfigs (e.g. --color=always).
 cargo_build_flags = $(CARGOFLAGS)
 
-# Custom profiles and their artifact directories use a dev or release prefix.
-# Other libraries use --release (or default dev profile for debug builds).
 ifdef RUST_LIBRARY_CARGO_PROFILE_SUFFIX
-cargo_profile_dir := $(if $(MOZ_DEBUG_RUST),dev,release)-$(RUST_LIBRARY_CARGO_PROFILE_SUFFIX)
+cargo_profile_dir := $(MOZ_CARGO_PROFILE_PREFIX)-$(RUST_LIBRARY_CARGO_PROFILE_SUFFIX)
 cargo_build_flags += --profile $(cargo_profile_dir)
 else
-cargo_profile_dir := $(if $(MOZ_DEBUG_RUST),debug,release)
-ifndef MOZ_DEBUG_RUST
-cargo_build_flags += --release
-endif
+cargo_profile_dir := $(MOZ_CARGO_DEFAULT_PROFILE_DIR)
+cargo_build_flags += $(MOZ_CARGO_DEFAULT_PROFILE_ARGS)
 endif
 
 cargo_crate_type_flag := $(if $(RUST_LIBRARY_CARGO_CRATE_TYPE),--crate-type $(RUST_LIBRARY_CARGO_CRATE_TYPE),)
 
-# The Spidermonkey library can be built from a package tarball outside the
-# tree, so we want to let Cargo create lock files in this case. When built
-# within a tree, the Rust dependencies have been vendored in so Cargo won't
-# touch the lock file.
-ifndef JS_STANDALONE
-cargo_build_flags += --frozen
-endif
-
+cargo_build_flags += $(MOZ_CARGO_FROZEN_ARGS)
 cargo_build_flags += --manifest-path $(CARGO_FILE)
 ifdef BUILD_VERBOSE_LOG
 cargo_build_flags += -vv
@@ -63,12 +49,9 @@ endif
 # Without -j > 1, make will not pass jobserver info down to cargo. Force
 # one job when requested as a special case.
 cargo_build_flags += $(filter -j1,$(MAKEFLAGS))
+cargo_build_flags += $(MOZ_CARGO_BUILD_STD_ARGS)
 
-# We also need to rebuild the rust stdlib so that it's instrumented. Because
-# build-std is still pretty experimental, we need to explicitly request
-# the panic_abort crate for `panic = "abort"` support.
 ifdef MOZ_TSAN
-cargo_build_flags += -Zbuild-std=std,panic_abort
 RUSTFLAGS += -Zsanitizer=thread
 endif
 
@@ -497,7 +480,7 @@ endif
 # build.
 force-cargo-library-build:
 	$(call BUILDSTATUS,START_Rust $(notdir $(RUST_LIBRARY_FILE)))
-	$(call CARGO_BUILD) --lib $(cargo_crate_type_flag) $(cargo_target_flag) $(rust_features_flag) -- $(cargo_rustc_flags)
+	$(call CARGO_BUILD) --lib $(cargo_crate_type_flag) $(MOZ_CARGO_TARGET_ARGS) $(rust_features_flag) -- $(cargo_rustc_flags)
 	$(call BUILDSTATUS,END_Rust $(notdir $(RUST_LIBRARY_FILE)))
 # When we are building in --enable-release mode; we add an additional check to confirm
 # that we are not importing any networking-related functions in rust code. This reduces
@@ -522,7 +505,7 @@ SUGGEST_INSTALL_ON_FAILURE = (ret=$$?; if [ $$ret = 101 ]; then echo If $1 is no
 
 ifndef CARGO_NO_AUTO_ARG
 force-cargo-library-%:
-	$(call RUN_CARGO,$*) --lib $(cargo_target_flag) $(rust_features_flag) || $(call SUGGEST_INSTALL_ON_FAILURE,cargo-$*)
+	$(call RUN_CARGO,$*) --lib $(MOZ_CARGO_TARGET_ARGS) $(rust_features_flag) || $(call SUGGEST_INSTALL_ON_FAILURE,cargo-$*)
 else
 force-cargo-library-%:
 	$(call RUN_CARGO,$*) || $(call SUGGEST_INSTALL_ON_FAILURE,cargo-$*)
@@ -570,7 +553,7 @@ endif
 
 force-cargo-test-run:
 	$(stage_test_libs)
-	$(call RUN_CARGO,test $(cargo_target_flag) $(rust_test_flag) $(rust_test_options) $(rust_test_features_flag))
+	$(call RUN_CARGO,test $(MOZ_CARGO_TARGET_ARGS) $(rust_test_flag) $(rust_test_options) $(rust_test_features_flag))
 
 endif # RUST_TESTS
 
@@ -580,17 +563,17 @@ host_rust_features_flag := --features '$(addsuffix $(COMMA),$(HOST_RUST_LIBRARY_
 
 force-cargo-host-library-build:
 	$(call BUILDSTATUS,START_Rust $(notdir $(HOST_RUST_LIBRARY_FILE)))
-	$(call CARGO_BUILD) --lib $(cargo_host_flag) $(host_rust_features_flag)
+	$(call CARGO_BUILD) --lib $(MOZ_CARGO_HOST_TARGET_ARGS) $(host_rust_features_flag)
 	$(call BUILDSTATUS,END_Rust $(notdir $(HOST_RUST_LIBRARY_FILE)))
 
 $(eval $(call make_cargo_rule,$(HOST_RUST_LIBRARY_FILE),force-cargo-host-library-build))
 
 ifndef CARGO_NO_AUTO_ARG
 force-cargo-host-library-%:
-	$(call RUN_CARGO,$*) --lib $(cargo_host_flag) $(host_rust_features_flag)
+	$(call RUN_CARGO,$*) --lib $(MOZ_CARGO_HOST_TARGET_ARGS) $(host_rust_features_flag)
 else
 force-cargo-host-library-%:
-	$(call RUN_CARGO,$*) --lib $(filter-out --release $(cargo_host_flag)) $(host_rust_features_flag)
+	$(call RUN_CARGO,$*) --lib $(filter-out --release $(MOZ_CARGO_HOST_TARGET_ARGS)) $(host_rust_features_flag)
 endif
 
 else
@@ -604,14 +587,14 @@ program_features_flag := --features '$(addsuffix $(COMMA),$(RUST_PROGRAM_FEATURE
 
 force-cargo-program-build: $(call resfile,module)
 	$(call BUILDSTATUS,START_Rust $(RUST_CARGO_PROGRAMS))
-	$(call CARGO_BUILD) $(addprefix --bin ,$(RUST_CARGO_PROGRAMS)) $(cargo_target_flag) $(program_features_flag) -- $(addprefix -C link-arg=$(CURDIR)/,$(call resfile,module)) $(CARGO_RUSTCFLAGS)
+	$(call CARGO_BUILD) $(addprefix --bin ,$(RUST_CARGO_PROGRAMS)) $(MOZ_CARGO_TARGET_ARGS) $(program_features_flag) -- $(addprefix -C link-arg=$(CURDIR)/,$(call resfile,module)) $(CARGO_RUSTCFLAGS)
 	$(call BUILDSTATUS,END_Rust $(RUST_CARGO_PROGRAMS))
 
 $(foreach RUST_PROGRAM,$(RUST_PROGRAMS), $(eval $(call make_cargo_rule,$(RUST_PROGRAM),force-cargo-program-build,$(call resfile,module))))
 
 ifndef CARGO_NO_AUTO_ARG
 force-cargo-program-%:
-	$(call RUN_CARGO,$*) $(addprefix --bin ,$(RUST_CARGO_PROGRAMS)) $(cargo_target_flag) $(program_features_flag)
+	$(call RUN_CARGO,$*) $(addprefix --bin ,$(RUST_CARGO_PROGRAMS)) $(MOZ_CARGO_TARGET_ARGS) $(program_features_flag)
 else
 force-cargo-program-%:
 	$(call RUN_CARGO,$*)
@@ -627,7 +610,7 @@ host_program_features_flag := --features '$(addsuffix $(COMMA),$(HOST_RUST_PROGR
 
 force-cargo-host-program-build:
 	$(call BUILDSTATUS,START_Rust $(HOST_RUST_CARGO_PROGRAMS))
-	$(call CARGO_BUILD) $(addprefix --bin ,$(HOST_RUST_CARGO_PROGRAMS)) $(cargo_host_flag) $(host_program_features_flag)
+	$(call CARGO_BUILD) $(addprefix --bin ,$(HOST_RUST_CARGO_PROGRAMS)) $(MOZ_CARGO_HOST_TARGET_ARGS) $(host_program_features_flag)
 	$(call BUILDSTATUS,END_Rust $(HOST_RUST_CARGO_PROGRAMS))
 
 $(foreach HOST_RUST_PROGRAM,$(HOST_RUST_PROGRAMS), $(eval $(call make_cargo_rule,$(HOST_RUST_PROGRAM),force-cargo-host-program-build)))
@@ -635,11 +618,11 @@ $(foreach HOST_RUST_PROGRAM,$(HOST_RUST_PROGRAMS), $(eval $(call make_cargo_rule
 ifndef CARGO_NO_AUTO_ARG
 force-cargo-host-program-%:
 	$(call BUILDSTATUS,START_Rust $(HOST_RUST_CARGO_PROGRAMS))
-	$(call RUN_CARGO,$*) $(addprefix --bin ,$(HOST_RUST_CARGO_PROGRAMS)) $(cargo_host_flag) $(host_program_features_flag)
+	$(call RUN_CARGO,$*) $(addprefix --bin ,$(HOST_RUST_CARGO_PROGRAMS)) $(MOZ_CARGO_HOST_TARGET_ARGS) $(host_program_features_flag)
 	$(call BUILDSTATUS,END_Rust $(HOST_RUST_CARGO_PROGRAMS))
 else
 force-cargo-host-program-%:
-	$(call RUN_CARGO,$*) $(addprefix --bin ,$(HOST_RUST_CARGO_PROGRAMS)) $(filter-out --release $(cargo_target_flag))
+	$(call RUN_CARGO,$*) $(addprefix --bin ,$(HOST_RUST_CARGO_PROGRAMS)) $(filter-out --release $(MOZ_CARGO_TARGET_ARGS))
 endif
 
 else
