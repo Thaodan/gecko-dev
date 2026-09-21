@@ -92,7 +92,7 @@ impl Engine {
     ///   reference.
     /// * `blocker` owns the enabled tags and the regex table.
     /// * `cosmetic_cache` owns nothing beyond its clone of the reference above,
-    ///   so it is not visited.
+    ///   so it contributes nothing, but it is still visited.
     /// * `resources` is left out: the Gecko path never populates it, and its
     ///   backend is a trait object with no way to size it.
     pub fn memory_breakdown(
@@ -102,6 +102,7 @@ impl Engine {
         let mut breakdown = crate::malloc_size_of_impls::EngineMemoryBreakdown::default();
         breakdown.add_filter_data(&self.filter_data_context, ops);
         breakdown.add_blocker(&self.blocker, ops);
+        breakdown.add_cosmetic_cache(&self.cosmetic_cache, ops);
         breakdown
     }
 }

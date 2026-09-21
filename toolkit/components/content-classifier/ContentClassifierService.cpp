@@ -335,6 +335,14 @@ NS_IMETHODIMP ContentClassifierService::CollectReports(
         engine.mSizes.enabled_tags,
         "Memory used by the tag names enabled on this engine, which gate "
         "tagged filters.");
+
+    REPORT(
+        nsPrintfCString("explicit/content-classifier/engines/%s/cosmetic-cache",
+                        engine.mFeatureName.get()),
+        engine.mSizes.cosmetic_cache,
+        "Memory owned by the cosmetic filter cache beyond the filter data it "
+        "shares with the matcher. The rules it serves are reported under "
+        "filter-rules, not here.");
   }
 
 #undef REPORT

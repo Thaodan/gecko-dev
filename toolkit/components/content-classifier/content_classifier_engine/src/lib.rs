@@ -96,6 +96,9 @@ pub struct ContentClassifierEngineSizes {
     pub regex_table: usize,
     /// The set of enabled tag names.
     pub enabled_tags: usize,
+    /// Whatever the cosmetic filter cache owns beyond the filter data it
+    /// shares with the matcher.
+    pub cosmetic_cache: usize,
 }
 
 /// `malloc_enclosing_size_of` sizes an allocation from an interior pointer.
@@ -124,6 +127,7 @@ pub unsafe extern "C" fn content_classifier_engine_size_of(
         domain_hashes: breakdown.domain_hashes,
         regex_table: breakdown.regex_table,
         enabled_tags: breakdown.enabled_tags,
+        cosmetic_cache: breakdown.cosmetic_cache,
     }
 }
 
