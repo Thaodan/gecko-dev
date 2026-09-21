@@ -3301,11 +3301,25 @@ void QuotaManager::UnloadQuota() {
 
   auto autoRemoveQuota = MakeScopeExit([&] { RemoveQuota(); });
 
-  // Each per-origin CreateDirectoryMetadata2 auto-commits its own
-  // statement; a crash mid-loop leaves the cache `valid` bit unchanged
-  // (still 0 from InvalidateQuotaCache earlier), and the next startup's
-  // InitializeRepository reconciliation will patch up any divergent
-  // rows and delete orphans.
+  // Group cache-DB upserts (OriginUpserter::Refresh, also reached through
+  // SettleDirectoryMetadata2) into common transactions, to prevent each loop
+  // iteration from triggering a fsync.
+  // Avoid a single transaction though: if UnloadQuota still takes too long and
+  // gets killed at shutdown for this reason, we don't want all the UnloadQuota
+  // work to be lost, as this could result in a lot of work upon restart.
+  const auto createTransaction =
+      [this](Maybe<mozStorageTransaction>& transaction) {
+        transaction.reset();
+        transaction.emplace(mStorageConnection, /* aCommitOnComplete */ false,
+                            mozIStorageConnection::TRANSACTION_IMMEDIATE);
+        QM_WARNONLY_TRY(MOZ_TO_RESULT(transaction->Start()));
+      };
+  Maybe<mozStorageTransaction> transaction;
+  createTransaction(transaction);
+
+  static const int32_t kTransactionBatchSize = 50;
+  int32_t transactionCount = 0;
+
   {
     MutexAutoLock lock(mQuotaMutex);
 
@@ -3344,6 +3358,7 @@ void QuotaManager::UnloadQuota() {
               DebugOnly<nsresult> rv =
                   SettleDirectoryMetadata2(*originDirectory.ref(), metadata);
               MOZ_ASSERT(NS_FAILED(rv) == metadata.mDirty);
+              ++transactionCount;
             }
           } else if (mCacheRequiresFullScan) {
             // The cache DB was freshly created (or recreated after
@@ -3354,6 +3369,13 @@ void QuotaManager::UnloadQuota() {
             // could have been updated on disk after initialization).
             MOZ_ASSERT(mOriginUpserter, "We must have an origin upserter here");
             QM_WARNONLY_TRY(mOriginUpserter->Refresh(metadata));
+            ++transactionCount;
+          }
+
+          if (transactionCount >= kTransactionBatchSize) {
+            QM_WARNONLY_TRY(MOZ_TO_RESULT(transaction->Commit()));
+            createTransaction(transaction);
+            transactionCount = 0;
           }
         }
 
@@ -3374,6 +3396,8 @@ void QuotaManager::UnloadQuota() {
   QM_TRY(MOZ_TO_RESULT(stmt->BindUTF8StringByName("buildId"_ns, *gBuildId)),
          QM_VOID);
   QM_TRY(MOZ_TO_RESULT(stmt->Execute()), QM_VOID);
+
+  QM_TRY(MOZ_TO_RESULT(transaction->Commit()), QM_VOID);
 }
 
 void QuotaManager::RemoveOriginFromCacheForEviction(
