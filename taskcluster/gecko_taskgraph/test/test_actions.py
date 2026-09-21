@@ -206,10 +206,16 @@ def test_openh264(mocker, run_action, get_artifact):
 def test_googleplay(mocker, run_action, get_artifact):
     graph = make_graph(
         make_task(
-            label="push-fenix",
-            kind="push-bundle",
-            attributes={"build-type": "fenix-nightly"},
-            task_def={"name": "push-fenix"},
+            label="push-android-google-fenix-nightly",
+            kind="push-android",
+            attributes={"build-type": "fenix-nightly", "target-store": "google"},
+            task_def={"name": "push-android-google-fenix-nightly"},
+        ),
+        make_task(
+            label="push-android-samsung-fenix-release",
+            kind="push-android",
+            attributes={"build-type": "fenix-release", "target-store": "samsung"},
+            task_def={"name": "push-android-samsung-fenix-release"},
         ),
         make_task(label="build", kind="build", task_def={"name": "build"}),
     )
@@ -219,7 +225,8 @@ def test_googleplay(mocker, run_action, get_artifact):
     run_action("googleplay", params={"project": "mozilla-central"})
 
     to_run = get_artifact("to-run.json")
-    assert "push-fenix" in to_run
+    assert "push-android-google-fenix-nightly" in to_run
+    assert "push-android-samsung-fenix-release" not in to_run
     assert "build" not in to_run
 
 
