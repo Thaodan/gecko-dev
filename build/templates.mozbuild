@@ -102,7 +102,14 @@ def DisableWarningsForRust():
 
 
 @template
-def RustLibrary(name, features=None, output_category=None, is_gkrust=False):
+def RustLibrary(
+    name,
+    features=None,
+    output_category=None,
+    is_gkrust=False,
+    cargo_profile_suffix=None,
+    cargo_crate_type=None,
+):
     """Template for Rust libraries."""
     Library(name)
 
@@ -118,6 +125,12 @@ def RustLibrary(name, features=None, output_category=None, is_gkrust=False):
 
     if is_gkrust:
         IS_GKRUST = True
+
+    if cargo_profile_suffix:
+        RUST_LIBRARY_CARGO_PROFILE_SUFFIX = cargo_profile_suffix
+
+    if cargo_crate_type:
+        RUST_LIBRARY_CARGO_CRATE_TYPE = cargo_crate_type
 
 
 @template

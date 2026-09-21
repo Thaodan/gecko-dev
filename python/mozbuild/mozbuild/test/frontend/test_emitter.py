@@ -1762,6 +1762,14 @@ class TestEmitterBasic(unittest.TestCase):
         ):
             self.read_topsrcdir(reader)
 
+    def test_rust_library_invalid_cargo_crate_type(self):
+        """Test that a RustLibrary is restricted to a static library."""
+        reader = self.reader("rust-library-invalid-cargo-crate-type")
+        with self.assertRaisesRegex(
+            SandboxValidationError, "cargo_crate_type.* must be 'staticlib'"
+        ):
+            self.read_topsrcdir(reader)
+
     def test_rust_library_dash_folding(self):
         """Test that on-disk names of RustLibrary objects convert dashes to underscores."""
         reader = self.reader(

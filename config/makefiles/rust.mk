@@ -16,25 +16,19 @@ cargo_target_flag := --target=$(RUST_TARGET)
 # Permit users to pass flags to cargo from their mozconfigs (e.g. --color=always).
 cargo_build_flags = $(CARGOFLAGS)
 
-# Megazord libraries use a custom profile with panic=unwind for parity with
-# how app-services is currently built.
+# Custom profiles and their artifact directories use a dev or release prefix.
 # Other libraries use --release (or default dev profile for debug builds).
-ifneq (,$(findstring megazord,$(RUST_LIBRARY_FILE)))
-ifdef MOZ_DEBUG_RUST
-cargo_build_flags += --profile dev-megazord
+ifdef RUST_LIBRARY_CARGO_PROFILE_SUFFIX
+cargo_profile_dir := $(if $(MOZ_DEBUG_RUST),dev,release)-$(RUST_LIBRARY_CARGO_PROFILE_SUFFIX)
+cargo_build_flags += --profile $(cargo_profile_dir)
 else
-cargo_build_flags += --profile release-megazord
-endif
-else
+cargo_profile_dir := $(if $(MOZ_DEBUG_RUST),debug,release)
 ifndef MOZ_DEBUG_RUST
 cargo_build_flags += --release
 endif
 endif
 
-# Megazord Cargo.toml specifies both staticlib and cdylib crate-types for
-# compatibility with app-services builds. Override to staticlib-only here
-# to avoid trying to link a cdylib.
-cargo_crate_type_flag := $(if $(findstring megazord,$(RUST_LIBRARY_FILE)),--crate-type staticlib,)
+cargo_crate_type_flag := $(if $(RUST_LIBRARY_CARGO_CRATE_TYPE),--crate-type $(RUST_LIBRARY_CARGO_CRATE_TYPE),)
 
 # The Spidermonkey library can be built from a package tarball outside the
 # tree, so we want to let Cargo create lock files in this case. When built
@@ -551,19 +545,14 @@ rust_test_flag := --no-fail-fast
 
 # Cargo writes the test binaries under the profile directory selected in
 # cargo_build_flags above.
-ifneq (,$(findstring megazord,$(RUST_LIBRARY_FILE)))
-rust_test_profile_dir := $(if $(MOZ_DEBUG_RUST),dev-megazord,release-megazord)
-else
-rust_test_profile_dir := $(if $(MOZ_DEBUG_RUST),debug,release)
-endif
-rust_test_bindir := $(CARGO_TARGET_DIR)/$(RUST_TARGET)/$(rust_test_profile_dir)/deps
+rust_test_bindir := $(CARGO_TARGET_DIR)/$(RUST_TARGET)/$(cargo_profile_dir)/deps
 
 # Test executables need their shared library dependencies from dist/bin at
 # run time.
 #
 # Linux and macOS set an rpath (run-time search path). Windows doesn't have an
 # rpath, and searches the test binary's directory and the PATH by default.
-ifneq ($(OS_TARGET),WINNT) 
+ifneq ($(OS_TARGET),WINNT)
 force-cargo-test-run: RUSTFLAGS += -C link-arg=-Wl,-rpath,$(ABS_DIST)/bin
 endif
 

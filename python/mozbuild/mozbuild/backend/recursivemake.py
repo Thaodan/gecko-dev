@@ -1560,6 +1560,14 @@ class RecursiveMakeBackend(MakeBackend):
             backend_file.write(
                 f"{libdef.FEATURES_VAR} := {','.join(libdef.features)}\n"
             )
+        if libdef.cargo_profile_suffix:
+            backend_file.write(
+                f"RUST_LIBRARY_CARGO_PROFILE_SUFFIX := {libdef.cargo_profile_suffix}\n"
+            )
+        if libdef.cargo_crate_type:
+            backend_file.write(
+                f"RUST_LIBRARY_CARGO_CRATE_TYPE := {libdef.cargo_crate_type}\n"
+            )
         if libdef.output_category:
             self._process_non_default_target(libdef, rust_lib, backend_file)
 

@@ -551,13 +551,13 @@ class HostSimpleProgram(HostMixin, BaseProgram):
         return []
 
 
-def cargo_output_directory(context, target_var, libname=""):
+def cargo_output_directory(context, target_var, profile_suffix=""):
     # cargo creates several directories and places its build artifacts
     # in those directories.  The directory structure depends not only
     # on the target, but also what sort of build we are doing.
     return mozpath.join(
         context.config.substs[target_var],
-        get_rust_build_kind(context.config.substs, megazord="megazord" in libname),
+        get_rust_build_kind(context.config.substs, profile_suffix=profile_suffix),
     )
 
 
@@ -727,6 +727,8 @@ class BaseRustLibrary:
         "features",
         "output_category",
         "is_gkrust",
+        "cargo_profile_suffix",
+        "cargo_crate_type",
     )
 
     def init(
@@ -738,8 +740,12 @@ class BaseRustLibrary:
         dependencies,
         features,
         is_gkrust,
+        cargo_profile_suffix,
+        cargo_crate_type,
     ):
         self.is_gkrust = is_gkrust
+        self.cargo_profile_suffix = cargo_profile_suffix
+        self.cargo_crate_type = cargo_crate_type
         self.cargo_file = cargo_file
         self.crate_type = crate_type
         # We need to adjust our naming here because cargo replaces '-' in
@@ -771,7 +777,7 @@ class BaseRustLibrary:
             "!/"
             + mozpath.join(
                 cargo_output_directory(
-                    self._context, self.TARGET_SUBST_VAR, self.import_name
+                    self._context, self.TARGET_SUBST_VAR, self.cargo_profile_suffix
                 ),
                 self.import_name,
             ),
@@ -796,6 +802,8 @@ class RustLibrary(BaseRustLibrary, StaticLibrary):
         dependencies,
         features,
         is_gkrust=False,
+        cargo_profile_suffix="",
+        cargo_crate_type="",
         link_into=None,
     ):
         StaticLibrary.__init__(
@@ -816,6 +824,8 @@ class RustLibrary(BaseRustLibrary, StaticLibrary):
             dependencies,
             features,
             is_gkrust,
+            cargo_profile_suffix,
+            cargo_crate_type,
         )
 
 
@@ -982,6 +992,8 @@ class HostRustLibrary(BaseRustLibrary, HostLibrary):
         dependencies,
         features,
         is_gkrust,
+        cargo_profile_suffix="",
+        cargo_crate_type="",
     ):
         HostLibrary.__init__(self, context, basename)
         BaseRustLibrary.init(
@@ -993,6 +1005,8 @@ class HostRustLibrary(BaseRustLibrary, HostLibrary):
             dependencies,
             features,
             is_gkrust,
+            cargo_profile_suffix,
+            cargo_crate_type,
         )
 
 
