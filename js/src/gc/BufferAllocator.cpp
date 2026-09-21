@@ -926,7 +926,7 @@ bool BufferAllocator::isNurseryOwned(void* alloc) {
   return chunk->isNurseryOwned(alloc);
 }
 
-void BufferAllocator::markNurseryOwnedAlloc(void* alloc, bool nurseryOwned) {
+void BufferAllocator::promoteNurseryOwnedAlloc(void* alloc, bool nurseryOwned) {
   MOZ_ASSERT(alloc);
   MOZ_ASSERT(isNurseryOwned(alloc));
   MOZ_ASSERT(minorState == State::Marking);
@@ -934,21 +934,21 @@ void BufferAllocator::markNurseryOwnedAlloc(void* alloc, bool nurseryOwned) {
   if (IsLargeAlloc(alloc)) {
     LargeBuffer* buffer = lookupLargeBuffer(alloc);
     MOZ_ASSERT(buffer->zone() == zone);
-    markLargeNurseryOwnedBuffer(buffer, nurseryOwned);
+    promoteLargeNurseryOwnedBuffer(buffer, nurseryOwned);
     return;
   }
 
   if (IsSmallAlloc(alloc)) {
-    markSmallNurseryOwnedBuffer(alloc, nurseryOwned);
+    promoteSmallNurseryOwnedBuffer(alloc, nurseryOwned);
     return;
   }
 
   MOZ_ASSERT(IsMediumAlloc(alloc));
-  markMediumNurseryOwnedBuffer(alloc, nurseryOwned);
+  promoteMediumNurseryOwnedBuffer(alloc, nurseryOwned);
 }
 
-void BufferAllocator::markSmallNurseryOwnedBuffer(void* alloc,
-                                                  bool nurseryOwned) {
+void BufferAllocator::promoteSmallNurseryOwnedBuffer(void* alloc,
+                                                     bool nurseryOwned) {
 #ifdef DEBUG
   BufferChunk* chunk = BufferChunk::from(alloc);
   MOZ_ASSERT(chunk->zone == zone);
@@ -959,12 +959,9 @@ void BufferAllocator::markSmallNurseryOwnedBuffer(void* alloc,
   MOZ_ASSERT(region->hasNurseryOwnedAllocs());
   MOZ_ASSERT(region->isNurseryOwned(alloc));
 
-  if (region->isMarked(alloc)) {
-    MOZ_ASSERT(nurseryOwned);
-    return;
-  }
-
+  // Owner promoted to tenured heap.
   if (!nurseryOwned) {
+    MOZ_ASSERT(!region->isMarked(alloc));
     region->setNurseryOwned(alloc, false);
     // If all nursery owned allocations in the region were tenured then
     // chunk->isNurseryOwned(region) will now be stale. It will be updated when
@@ -972,37 +969,38 @@ void BufferAllocator::markSmallNurseryOwnedBuffer(void* alloc,
     return;
   }
 
+  // Owner remains within the nursery.
   region->setMarked(alloc);
 }
 
-void BufferAllocator::markMediumNurseryOwnedBuffer(void* alloc,
-                                                   bool nurseryOwned) {
+void BufferAllocator::promoteMediumNurseryOwnedBuffer(void* alloc,
+                                                      bool nurseryOwned) {
   BufferChunk* chunk = BufferChunk::from(alloc);
   MOZ_ASSERT(chunk->zone == zone);
   MOZ_ASSERT(chunk->hasNurseryOwnedAllocs);
   MOZ_ASSERT(chunk->isAllocated(alloc));
   MOZ_ASSERT(chunk->isNurseryOwned(alloc));
 
-  if (chunk->isMarked(alloc)) {
-    MOZ_ASSERT(nurseryOwned);
-    return;
-  }
-
   size_t size = chunk->allocBytes(alloc);
   increaseHeapSize(size, nurseryOwned, false, false);
 
+  // Owner promoted to tenured heap.
   if (!nurseryOwned) {
+    MOZ_ASSERT(!chunk->isMarked(alloc));
+
     // Change the allocation to a tenured owned one. This prevents sweeping in a
     // minor collection.
     chunk->setNurseryOwned(alloc, false);
+
     return;
   }
 
+  // Owner remains within the nursery.
   chunk->setMarked(alloc);
 }
 
-void BufferAllocator::markLargeNurseryOwnedBuffer(LargeBuffer* buffer,
-                                                  bool nurseryOwned) {
+void BufferAllocator::promoteLargeNurseryOwnedBuffer(LargeBuffer* buffer,
+                                                     bool nurseryOwned) {
   MOZ_ASSERT(buffer->isNurseryOwned);
 
   // The buffer metadata is held in a small buffer. Check whether it has already
@@ -1015,13 +1013,14 @@ void BufferAllocator::markLargeNurseryOwnedBuffer(LargeBuffer* buffer,
     return;
   }
 
-  markSmallNurseryOwnedBuffer(buffer, nurseryOwned);
+  promoteSmallNurseryOwnedBuffer(buffer, nurseryOwned);
 
   largeNurseryAllocsToSweep.ref().remove(buffer);
 
   size_t usableSize = buffer->allocBytes();
   increaseHeapSize(usableSize, nurseryOwned, false, false);
 
+  // Owner promoted to tenured heap.
   if (!nurseryOwned) {
     buffer->isNurseryOwned = false;
     buffer->allocatedDuringCollection = majorState != State::NotCollecting;
@@ -1029,6 +1028,7 @@ void BufferAllocator::markLargeNurseryOwnedBuffer(LargeBuffer* buffer,
     return;
   }
 
+  // Owner remains within the nursery.
   largeNurseryAllocs.ref().pushBack(buffer);
 }
 
@@ -1127,8 +1127,8 @@ bool BufferAllocator::PromoteBuffer(JSTracer* trc, void** bufferp,
     LargeBuffer* largeBuffer = LookupLargeBuffer(trc, buffer);
     if (largeBuffer->isNurseryOwned) {
       Zone* zone = largeBuffer->zoneFromAnyThread();
-      zone->bufferAllocator.markLargeNurseryOwnedBuffer(largeBuffer,
-                                                        nurseryOwned.value());
+      zone->bufferAllocator.promoteLargeNurseryOwnedBuffer(
+          largeBuffer, nurseryOwned.value());
     }
     return true;
   }
@@ -1139,15 +1139,15 @@ bool BufferAllocator::PromoteBuffer(JSTracer* trc, void** bufferp,
   if (IsSmallAlloc(buffer)) {
     auto* region = SmallBufferRegion::from(buffer);
     if (region->isNurseryOwned(buffer)) {
-      zone->bufferAllocator.markSmallNurseryOwnedBuffer(buffer,
-                                                        nurseryOwned.value());
+      zone->bufferAllocator.promoteSmallNurseryOwnedBuffer(
+          buffer, nurseryOwned.value());
     }
     return true;
   }
 
   if (chunk->isNurseryOwned(buffer)) {
-    zone->bufferAllocator.markMediumNurseryOwnedBuffer(buffer,
-                                                       nurseryOwned.value());
+    zone->bufferAllocator.promoteMediumNurseryOwnedBuffer(buffer,
+                                                          nurseryOwned.value());
   }
   return true;
 }

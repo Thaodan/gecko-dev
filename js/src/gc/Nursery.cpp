@@ -1868,7 +1868,7 @@ Nursery::WasBufferMoved js::Nursery::maybeMoveRawBufferOnPromotion(
     // This is an external buffer allocation owned by a nursery GC thing.
     Zone* zone = owner->zone();
     MOZ_ASSERT(IsNurseryOwned(zone, buffer));
-    zone->bufferAllocator.markNurseryOwnedAlloc(buffer, nurseryOwned);
+    zone->bufferAllocator.promoteNurseryOwnedAlloc(buffer, nurseryOwned);
     return BufferNotMoved;
   }
 

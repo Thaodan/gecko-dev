@@ -543,7 +543,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   BufferAllocatorRuntime* runtime() const;
   friend class AutoLockBufferAllocator;
 
-  void markNurseryOwnedAlloc(void* alloc, bool nurseryOwned);
+  void promoteNurseryOwnedAlloc(void* alloc, bool nurseryOwned);
   friend class js::Nursery;
 
   void maybeMergeSweptData();
@@ -563,7 +563,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   void* retrySmallAlloc(size_t requestedBytes, size_t sizeClass,
                         bool nurseryOwned, bool inGC);
   bool allocNewSmallRegion(bool nurseryOwned, bool inGC);
-  void markSmallNurseryOwnedBuffer(void* alloc, bool nurseryOwned);
+  void promoteSmallNurseryOwnedBuffer(void* alloc, bool nurseryOwned);
   bool markSmallTenuredAlloc(void* alloc);
 
   // Medium allocation methods:
@@ -621,7 +621,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   bool isConcurrentMarking() const;
   bool isSweepingChunk(BufferChunk* chunk);
   bool isMediumBufferNurseryOwned(void* alloc) const;
-  void markMediumNurseryOwnedBuffer(void* alloc, bool nurseryOwned);
+  void promoteMediumNurseryOwnedBuffer(void* alloc, bool nurseryOwned);
   bool markMediumTenuredAlloc(void* alloc);
 
   // Determine whether a size class is for a small or medium allocation.
@@ -657,7 +657,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   bool shrinkLarge(LargeBuffer* buffer, size_t newBytes);
   void unmapLarge(LargeBuffer* buffer, bool isSweeping, MaybeLock& lock);
   void unregisterLarge(LargeBuffer* buffer, bool isSweeping, MaybeLock& lock);
-  void markLargeNurseryOwnedBuffer(LargeBuffer* buffer, bool nurseryOwned);
+  void promoteLargeNurseryOwnedBuffer(LargeBuffer* buffer, bool nurseryOwned);
   bool markLargeTenuredBuffer(LargeBuffer* buffer);
 
   // Lookup a large buffer by pointer in the map.
