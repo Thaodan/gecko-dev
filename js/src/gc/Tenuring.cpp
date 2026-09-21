@@ -86,12 +86,6 @@ class js::gc::PromotionStats {
 };
 #endif  // JS_GC_ZEAL
 
-/* static */
-TenuringTracer* TenuringTracer::From(JSTracer* trc) {
-  MOZ_ASSERT(trc->isTenuringTracer());
-  return static_cast<TenuringTracer*>(trc);
-}
-
 TenuringTracer::TenuringTracer(JSRuntime* rt, Nursery* nursery,
                                bool tenureEverything)
     : JSTracer(rt, JS::TracerKind::Tenuring,
@@ -266,7 +260,7 @@ bool TenuringTracer::onScopeEdge(Scope** scopep, const char* name) {
 }
 
 bool TenuringTracer::onBufferEdge(void** bufferp, const char* name) {
-  return BufferAllocator::TraceEdge(this, bufferp, name);
+  return BufferAllocator::PromoteBuffer(this, bufferp, name, sourceIsInNursery);
 }
 
 void TenuringTracer::traverse(JS::Value* thingp) {

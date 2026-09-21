@@ -18,7 +18,6 @@
 #include "gc/GCInternals.h"
 #include "gc/GCLock.h"
 #include "gc/PublicIterators.h"
-#include "gc/Tenuring.h"
 #include "gc/Zone.h"
 #include "js/HeapAPI.h"
 #include "util/Poison.h"
@@ -1062,13 +1061,8 @@ bool BufferAllocator::isMarkedBlack(void* alloc) {
 }
 
 /* static */
-bool BufferAllocator::TraceEdge(JSTracer* trc, void** bufferp,
-                                const char* name) {
-  // Buffers are conceptually part of the owning cell and are not reported to
-  // the tracer.
-
-  // TODO: This should be unified with the rest of the tracing system.
-
+bool BufferAllocator::MarkBuffer(JSTracer* trc, void** bufferp,
+                                 const char* name) {
   MOZ_ASSERT(bufferp);
 
   void* buffer;
@@ -1093,88 +1087,87 @@ bool BufferAllocator::TraceEdge(JSTracer* trc, void** bufferp,
   MOZ_ASSERT(IsBufferAlloc(buffer));
 
   if (MOZ_UNLIKELY(IsLargeAlloc(buffer))) {
-    TraceLargeAlloc(trc, bufferp, name);
+    LargeBuffer* largeBuffer = LookupLargeBuffer(trc, buffer);
+    Zone* zone = largeBuffer->zoneFromAnyThread();  // May be parallel marking.
+    if (zone->isGCMarking() && !largeBuffer->isNurseryOwned) {
+      zone->bufferAllocator.markLargeTenuredBuffer(largeBuffer);
+    }
     return true;
   }
 
   BufferChunk* chunk = BufferChunk::from(buffer);
-  BufferAllocator& allocator = chunk->zone->bufferAllocator;
-
-  if (IsSmallAlloc(buffer)) {
-    allocator.traceSmallAlloc(trc, buffer, name);
+  Zone* zone = chunk->zone;
+  if (!zone->isGCMarking()) {
     return true;
   }
 
-  allocator.traceMediumAlloc(trc, buffer, name);
+  if (IsSmallAlloc(buffer)) {
+    auto* region = SmallBufferRegion::from(buffer);
+    if (!region->isNurseryOwned(buffer)) {
+      zone->bufferAllocator.markSmallTenuredAlloc(buffer);
+    }
+    return true;
+  }
+
+  if (!chunk->isNurseryOwned(buffer)) {
+    zone->bufferAllocator.markMediumTenuredAlloc(buffer);
+  }
   return true;
 }
 
-void BufferAllocator::traceSmallAlloc(JSTracer* trc, void* alloc,
-                                      const char* name) {
-  auto* region = SmallBufferRegion::from(alloc);
+/* static */
+bool BufferAllocator::PromoteBuffer(JSTracer* trc, void** bufferp,
+                                    const char* name,
+                                    mozilla::Maybe<bool> nurseryOwned) {
+  MOZ_ASSERT(bufferp);
 
-  if (trc->isTenuringTracer()) {
-    if (region->isNurseryOwned(alloc)) {
-      bool nurseryOwned = TenuringTracer::From(trc)->sourceIsInNursery.value();
-      markSmallNurseryOwnedBuffer(alloc, nurseryOwned);
-    }
-    return;
+  void* buffer = *bufferp;
+  if (!buffer) {
+    return true;
   }
 
-  if (trc->isMarkingTracer()) {
-    if (zone->isGCMarking() && !region->isNurseryOwned(alloc)) {
-      markSmallTenuredAlloc(alloc);
-    }
-    return;
-  }
-}
-
-void BufferAllocator::traceMediumAlloc(JSTracer* trc, void* alloc,
-                                       const char* name) {
-  BufferChunk* chunk = BufferChunk::from(alloc);
-
-  if (trc->isTenuringTracer()) {
-    if (chunk->isNurseryOwned(alloc)) {
-      bool nurseryOwned = TenuringTracer::From(trc)->sourceIsInNursery.value();
-      markMediumNurseryOwnedBuffer(alloc, nurseryOwned);
-    }
-    return;
+  if (!IsLargeAlloc(buffer) &&
+      js::gc::detail::GetGCAddressChunkBase(buffer)->isNurseryChunk()) {
+    // JSObject slots and elements can be allocated in the nursery and this is
+    // handled separately.
+    return true;
   }
 
-  if (trc->isMarkingTracer()) {
-    if (zone->isGCMarking() && !chunk->isNurseryOwned(alloc)) {
-      markMediumTenuredAlloc(alloc);
+  MOZ_ASSERT(IsBufferAlloc(buffer));
+
+  if (MOZ_UNLIKELY(IsLargeAlloc(buffer))) {
+    LargeBuffer* largeBuffer = LookupLargeBuffer(trc, buffer);
+    if (largeBuffer->isNurseryOwned) {
+      Zone* zone = largeBuffer->zoneFromAnyThread();
+      zone->bufferAllocator.markLargeNurseryOwnedBuffer(largeBuffer,
+                                                        nurseryOwned.value());
     }
-    return;
+    return true;
   }
+
+  BufferChunk* chunk = BufferChunk::from(buffer);
+  Zone* zone = chunk->zone;
+
+  if (IsSmallAlloc(buffer)) {
+    auto* region = SmallBufferRegion::from(buffer);
+    if (region->isNurseryOwned(buffer)) {
+      zone->bufferAllocator.markSmallNurseryOwnedBuffer(buffer,
+                                                        nurseryOwned.value());
+    }
+    return true;
+  }
+
+  if (chunk->isNurseryOwned(buffer)) {
+    zone->bufferAllocator.markMediumNurseryOwnedBuffer(buffer,
+                                                       nurseryOwned.value());
+  }
+  return true;
 }
 
 /* static */
-void BufferAllocator::TraceLargeAlloc(JSTracer* trc, void** allocp,
-                                      const char* name) {
-  void* alloc = *allocp;
+LargeBuffer* BufferAllocator::LookupLargeBuffer(JSTracer* trc, void* alloc) {
   BufferAllocatorRuntime* runtime = &trc->runtime()->gc.bufferRuntime();
-  LargeBuffer* buffer = runtime->lookupLargeBuffer(alloc);
-  Zone* zone = buffer->zoneFromAnyThread();  // May be parallel marking here.
-  zone->bufferAllocator.traceLargeBuffer(trc, buffer, name);
-}
-
-void BufferAllocator::traceLargeBuffer(JSTracer* trc, LargeBuffer* buffer,
-                                       const char* name) {
-  if (trc->isTenuringTracer()) {
-    if (buffer->isNurseryOwned) {
-      bool nurseryOwned = TenuringTracer::From(trc)->sourceIsInNursery.value();
-      markLargeNurseryOwnedBuffer(buffer, nurseryOwned);
-    }
-    return;
-  }
-
-  if (trc->isMarkingTracer()) {
-    if (zone->isGCMarking() && !buffer->isNurseryOwned) {
-      markLargeTenuredBuffer(buffer);
-    }
-    return;
-  }
+  return runtime->lookupLargeBuffer(alloc);
 }
 
 bool BufferAllocator::markTenuredAlloc(void* alloc) {

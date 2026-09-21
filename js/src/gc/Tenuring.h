@@ -82,8 +82,6 @@ class TenuringTracer final : public JSTracer {
 #endif
 
  public:
-  static TenuringTracer* From(JSTracer* trc);
-
   TenuringTracer(JSRuntime* rt, Nursery* nursery, bool tenureEverything);
   ~TenuringTracer();
 

@@ -953,7 +953,7 @@ bool MarkingTracerT<opts>::onEdge(T** thingp, const char* name) {
 
 template <uint32_t opts>
 bool MarkingTracerT<opts>::onBufferEdge(void** bufferp, const char* name) {
-  return BufferAllocator::TraceEdge(this, bufferp, name);
+  return BufferAllocator::MarkBuffer(this, bufferp, name);
 }
 
 #define INSTANTIATE_ONEDGE_METHOD(name, type, _1, _2)                 \
