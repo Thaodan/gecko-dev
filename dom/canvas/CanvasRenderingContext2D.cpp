@@ -4487,6 +4487,18 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
     fontFaceSetImpl->FlushUserFontSet();
   }
 
+  auto& state = CurrentState();
+
+  // The fontGroup may be stale, which we can check by comparing the
+  // visibility provider set on its creation against the current
+  // visibility provider. Use this opportunity to destroy the old
+  // fontGroup so we can create a new one later and store it in the
+  // cache.
+  if (state.fontGroup &&
+      state.fontGroup->GetFontVisibilityProvider() != mOffscreenCanvas) {
+    state.fontGroup = nullptr;
+  }
+
   // Try to short-circuit the case where the exact same font is being re-
   // specified, and no other relevant properties have changed.
   if (FontIsUnchanged(aFont, fontFaceSetImpl)) {
@@ -4498,7 +4510,6 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
     mFontGroupCache = MakeUnique<FontGroupCache>();
   }
 
-  auto& state = CurrentState();
   FontGroupCacheKey key(
       aFont, state.resolvedFontLang, state.fontWidth, state.fontVariantCaps,
       state.fontKerning,
