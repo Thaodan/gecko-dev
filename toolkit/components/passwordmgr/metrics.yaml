@@ -999,8 +999,10 @@ pwmgr:
       any fatal error.
     bugs:
       - https://bugzil.la/2065593
+      - https://bugzil.la/2072278
     data_reviews:
       - https://bugzil.la/2065593
+      - https://bugzil.la/2072278
     data_sensitivity:
       - technical
     notification_emails:
@@ -1060,6 +1062,15 @@ pwmgr:
         description: >
           Number of logins that could not be restored. The Rust store is kept
           instead of wiped when this is non-zero, so the next startup retries.
+        type: quantity
+      number_of_logins_to_delete:
+        description: >
+          Number of logins the JSON store holds that the Rust store no longer
+          has, which is what carrying the deletions made under the Rust
+          backend over to the JSON store would delete. The restore deletes
+          nothing, and the number still includes any login the migration
+          failed to copy; telling those two apart is what it is collected for.
+          Absent from records written before bug 2072278.
         type: quantity
       end_state:
         description: >
