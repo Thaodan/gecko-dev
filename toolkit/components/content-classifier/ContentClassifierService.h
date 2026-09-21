@@ -290,7 +290,8 @@ class ContentClassifierService final : public nsIAsyncShutdownBlocker,
   // trailing exception engines see the propagated matched_rule.
   ContentClassifierResult ClassifyWithEngines(
       const nsTArray<RefPtr<ContentClassifierEngine>>& aEngines,
-      const ContentClassifierRequest& aRequest, bool aIndependentEngines);
+      const ContentClassifierRequest& aRequest, bool aIndependentEngines)
+      MOZ_REQUIRES(mLock);
 
   // Take a fresh pref snapshot, decide which active features need to be
   // (re)built — either because they have no engine yet, or because one of
