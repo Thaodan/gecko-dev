@@ -84,6 +84,11 @@ function StockTicker({
 }) {
   const direction = getDirection(changePercent);
   const isMatch = variant === "search";
+  // The tooltip goes on the two aria-hidden spans, not the li: there Firefox
+  // would expose it as the row's description and screen readers would read
+  // the stock name a second time after the row summary.
+  const tooltip =
+    !loading && !isMatch && size !== "small" ? stockName : undefined;
   const locale =
     typeof navigator !== "undefined" ? navigator.language : undefined;
   const displayPrice = formatPrice(price, locale);
@@ -153,11 +158,13 @@ function StockTicker({
           className={`stock-indicator stock-indicator--${direction}`}
           style={indicatorStyle}
           aria-hidden="true"
+          title={tooltip}
         />
       )}
       <span
         className="stock-ticker-label"
         aria-hidden={isMatch ? undefined : "true"}
+        title={tooltip}
       >
         {size === "large" && (
           <>

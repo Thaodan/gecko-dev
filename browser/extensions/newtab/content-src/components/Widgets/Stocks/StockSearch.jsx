@@ -145,6 +145,13 @@ export function StockSearch({
           })}
       </ul>
 
+      {searchStatus === "idle" && (
+        <p
+          className="stocks-search-hint"
+          data-l10n-id="newtab-stocks-search-hint"
+        />
+      )}
+
       <p className="stocks-search-message" role="status" aria-live="polite">
         {statusMessageId && (
           <span

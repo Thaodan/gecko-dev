@@ -56,6 +56,17 @@ describe("StockSearch", () => {
     expect(container.querySelector(".stock-ticker")).toBeNull();
   });
 
+  it("shows the search hint only while idle", () => {
+    const idle = renderSearch({ searchStatus: "idle" }).container;
+    expect(
+      idle.querySelector(".stocks-search-hint").getAttribute("data-l10n-id")
+    ).toBe("newtab-stocks-search-hint");
+    for (const searchStatus of ["loading", "success", "empty", "error"]) {
+      const { container } = renderSearch({ searchStatus });
+      expect(container.querySelector(".stocks-search-hint")).toBeNull();
+    }
+  });
+
   it("keeps the same status region mounted when a message appears", () => {
     const { container, rerender } = renderSearch();
     const before = container.querySelector(".stocks-search-message");
