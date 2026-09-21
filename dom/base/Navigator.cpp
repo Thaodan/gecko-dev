@@ -11,6 +11,7 @@
 #include "mozilla/ContentBlockingNotifier.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_beacon.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/BodyExtractor.h"
 #include "mozilla/dom/FetchBinding.h"
@@ -1309,6 +1310,12 @@ bool Navigator::SendBeaconInternal(const nsAString& aUrl,
     securityFlags |= nsILoadInfo::SEC_REQUIRE_CORS_INHERITS_SEC_CONTEXT;
   } else {
     securityFlags |= nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT;
+  }
+
+  // Bail out only after the spec-mandated validation above, so that a disabled
+  // beacon is indistinguishable from a successful one to content.
+  if (!StaticPrefs::beacon_enabled()) {
+    return true;
   }
 
   nsCOMPtr<nsIChannel> channel;

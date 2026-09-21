@@ -977,7 +977,9 @@
 # Prefs starting with "beacon."
 #---------------------------------------------------------------------------
 
-# Is support for Navigator.sendBeacon enabled?
+# Should navigator.sendBeacon() actually send requests?
+# When false, sendBeacon() is still exposed and still reports success, but
+# no request is sent.
 - name: beacon.enabled
   type: bool
   value: true
