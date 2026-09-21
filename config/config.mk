@@ -188,8 +188,7 @@ HOST_CXX_LDFLAGS = $(COMPUTED_HOST_LDFLAGS) $(COMPUTED_HOST_CXX_LDFLAGS)
 WASM_CFLAGS = $(COMPUTED_WASM_CFLAGS) $(_DEPEND_CFLAGS) $(MK_COMPILE_DEFINES)
 WASM_CXXFLAGS = $(COMPUTED_WASM_CXXFLAGS) $(_DEPEND_CFLAGS) $(MK_COMPILE_DEFINES)
 
-ifdef MOZ_LTO
-ifeq (Darwin,$(OS_TARGET))
+ifdef MOZ_LTO_OBJECT_PATH
 # When linking on macOS, debug info is not linked along with the final binary,
 # and the dwarf data stays in object files until they are "linked" with the
 # dsymutil tool.
@@ -205,7 +204,6 @@ ifeq (Darwin,$(OS_TARGET))
 # last linked binary. So we use a subdirectory containing the name of the
 # linked binary.
 LDFLAGS += -Wl,-object_path_lto,$(@F).lto.o/
-endif
 endif
 
 # We only add color flags if neither the flag to disable color

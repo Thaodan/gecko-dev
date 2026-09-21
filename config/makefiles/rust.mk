@@ -158,17 +158,12 @@ export PYTHON3
 export CARGO_PROFILE_RELEASE_OPT_LEVEL
 export CARGO_PROFILE_DEV_OPT_LEVEL
 
-# Set COREAUDIO_SDK_PATH for third_party/rust/coreaudio-sys/build.rs
-ifeq ($(OS_ARCH), Darwin)
-ifdef MACOS_SDK_DIR
-export COREAUDIO_SDK_PATH=$(MACOS_SDK_DIR)
+ifdef MOZ_RUST_COREAUDIO_SDK_PATH
+export COREAUDIO_SDK_PATH=$(MOZ_RUST_COREAUDIO_SDK_PATH)
 endif
 ifdef IPHONEOS_SDK_DIR
-export COREAUDIO_SDK_PATH=$(IPHONEOS_SDK_DIR)
 # export for build/macosx/xcrun
 export IPHONEOS_SDK_DIR
-PATH := $(topsrcdir)/build/macosx:$(PATH)
-endif
 endif
 # Use the same prefix as set through modules/zlib/src/mozzconf.h
 # for libz-rs-sys, since we still use the headers from there.
@@ -232,9 +227,6 @@ define CARGO_BUILD
 $(call RUN_CARGO,rustc$(if $(BUILDSTATUS), --timings)$(if $(findstring k,$(filter-out --%, $(MAKEFLAGS))), --keep-going))
 endef
 
-cargo_host_linker_env_var := CARGO_TARGET_$(call varize,$(RUST_HOST_TARGET))_LINKER
-cargo_linker_env_var := CARGO_TARGET_$(call varize,$(RUST_TARGET))_LINKER
-
 export MOZ_CLANG_NEWER_THAN_RUSTC_LLVM
 export MOZ_CARGO_WRAP_LDFLAGS
 export MOZ_CARGO_WRAP_LD
@@ -248,29 +240,20 @@ export MOZ_CARGO_WRAP_HOST_LD_CXX
 # CARGO_TARGET_*_LINKER for its linker, so we always pass the
 # cargo-linker wrapper, and fill MOZ_CARGO_WRAP_{HOST_,}LD* more or less
 # appropriately for all recipes.
-ifeq (WINNT,$(HOST_OS_ARCH))
-# Use .bat wrapping on Windows hosts, and shell wrapping on other hosts.
 # Like for CC/C*FLAGS, we want the target values to trump the host values when
 # both variables are the same.
-export $(cargo_host_linker_env_var):=$(topsrcdir)/build/cargo-host-linker.bat
-export $(cargo_linker_env_var):=$(topsrcdir)/build/cargo-linker.bat
-WRAP_HOST_LINKER_LIBPATHS:=$(HOST_LINKER_LIBPATHS_BAT)
-else
-export $(cargo_host_linker_env_var):=$(topsrcdir)/build/cargo-host-linker
-export $(cargo_linker_env_var):=$(topsrcdir)/build/cargo-linker
-WRAP_HOST_LINKER_LIBPATHS:=$(HOST_LINKER_LIBPATHS)
+ifdef MOZ_CARGO_HOST_LINKER_ENV_VAR
+export $(MOZ_CARGO_HOST_LINKER_ENV_VAR):=$(MOZ_CARGO_HOST_LINKER)
+endif
+ifdef MOZ_CARGO_LINKER_ENV_VAR
+export $(MOZ_CARGO_LINKER_ENV_VAR):=$(MOZ_CARGO_LINKER)
 endif
 
 $(TARGET_RECIPES): MOZ_CARGO_WRAP_LDFLAGS:=$(filter-out $(MOZ_CARGO_LDFLAGS_FILTER_OUT),$(LDFLAGS))
 force-cargo-program-build: MOZ_CARGO_WRAP_LDFLAGS:=$(filter-out $(MOZ_CARGO_PROGRAM_LDFLAGS_FILTER_OUT),$(MOZ_CARGO_WRAP_LDFLAGS))
 
-# Rustc assumes that *-windows-gnu targets build with mingw-gcc and manually
-# add runtime libraries that don't exist with mingw-clang. We created dummy
-# libraries in $(topobjdir)/build/win32, but that's not enough, because some
-# of the wanted symbols that come from these libraries are available in a
-# different library, that we add manually.
-ifeq (WINNT_clang,$(OS_ARCH)_$(CC_TYPE))
-force-cargo-program-build: MOZ_CARGO_WRAP_LDFLAGS+=-L$(topobjdir)/build/win32 -lunwind
+ifdef MOZ_RUST_PROGRAM_LDFLAGS
+force-cargo-program-build: MOZ_CARGO_WRAP_LDFLAGS+=$(MOZ_RUST_PROGRAM_LDFLAGS)
 endif
 ifdef MOZ_RUST_PROGRAM_RUSTCFLAGS
 force-cargo-program-build: CARGO_RUSTCFLAGS += $(MOZ_RUST_PROGRAM_RUSTCFLAGS)
@@ -278,28 +261,15 @@ endif
 
 $(TARGET_RECIPES): RUSTFLAGS += $(MOZ_RUSTFLAGS_DEFAULT_LINKER_LIBRARIES)
 
-$(HOST_RECIPES): MOZ_CARGO_WRAP_LDFLAGS:=$(HOST_LDFLAGS) $(WRAP_HOST_LINKER_LIBPATHS)
-$(TARGET_RECIPES) $(HOST_RECIPES): MOZ_CARGO_WRAP_HOST_LDFLAGS:=$(HOST_LDFLAGS) $(WRAP_HOST_LINKER_LIBPATHS)
+$(HOST_RECIPES): MOZ_CARGO_WRAP_LDFLAGS:=$(MOZ_CARGO_HOST_LDFLAGS)
+$(TARGET_RECIPES) $(HOST_RECIPES): MOZ_CARGO_WRAP_HOST_LDFLAGS:=$(MOZ_CARGO_HOST_LDFLAGS)
 
-ifeq (,$(filter clang-cl,$(CC_TYPE)))
-$(TARGET_RECIPES): MOZ_CARGO_WRAP_LD:=$(CC)
-$(TARGET_RECIPES): MOZ_CARGO_WRAP_LD_CXX:=$(CXX)
-else
-$(TARGET_RECIPES): MOZ_CARGO_WRAP_LD:=$(LINKER)
-$(TARGET_RECIPES): MOZ_CARGO_WRAP_LD_CXX:=$(LINKER)
-endif
-
-ifeq (,$(filter clang-cl,$(HOST_CC_TYPE)))
-$(HOST_RECIPES): MOZ_CARGO_WRAP_LD:=$(HOST_CC)
-$(HOST_RECIPES): MOZ_CARGO_WRAP_LD_CXX:=$(HOST_CXX)
-$(TARGET_RECIPES) $(HOST_RECIPES): MOZ_CARGO_WRAP_HOST_LD:=$(HOST_CC)
-$(TARGET_RECIPES) $(HOST_RECIPES): MOZ_CARGO_WRAP_HOST_LD_CXX:=$(HOST_CXX)
-else
-$(HOST_RECIPES): MOZ_CARGO_WRAP_LD:=$(HOST_LINKER)
-$(HOST_RECIPES): MOZ_CARGO_WRAP_LD_CXX:=$(HOST_LINKER)
-$(TARGET_RECIPES) $(HOST_RECIPES): MOZ_CARGO_WRAP_HOST_LD:=$(HOST_LINKER)
-$(TARGET_RECIPES) $(HOST_RECIPES): MOZ_CARGO_WRAP_HOST_LD_CXX:=$(HOST_LINKER)
-endif
+$(TARGET_RECIPES): MOZ_CARGO_WRAP_LD:=$(MOZ_CARGO_LD)
+$(TARGET_RECIPES): MOZ_CARGO_WRAP_LD_CXX:=$(MOZ_CARGO_LD_CXX)
+$(HOST_RECIPES): MOZ_CARGO_WRAP_LD:=$(MOZ_CARGO_HOST_LD)
+$(HOST_RECIPES): MOZ_CARGO_WRAP_LD_CXX:=$(MOZ_CARGO_HOST_LD_CXX)
+$(TARGET_RECIPES) $(HOST_RECIPES): MOZ_CARGO_WRAP_HOST_LD:=$(MOZ_CARGO_HOST_LD)
+$(TARGET_RECIPES) $(HOST_RECIPES): MOZ_CARGO_WRAP_HOST_LD_CXX:=$(MOZ_CARGO_HOST_LD_CXX)
 
 define make_default_rule
 $(1):
