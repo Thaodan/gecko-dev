@@ -1515,24 +1515,9 @@ static const struct wp_image_description_v1_listener
         WaylandSurface::ImageDescriptionReady,
 };
 
-static int YUVColorSpaceToWLColorCoeficients(
-    mozilla::gfx::YUVColorSpace aColorSpace) {
-  switch (aColorSpace) {
-    case gfx::YUVColorSpace::BT601:
-      return WP_COLOR_REPRESENTATION_SURFACE_V1_COEFFICIENTS_BT601;
-    case gfx::YUVColorSpace::BT709:
-      return WP_COLOR_REPRESENTATION_SURFACE_V1_COEFFICIENTS_BT709;
-    case gfx::YUVColorSpace::BT2020:
-      return WP_COLOR_REPRESENTATION_SURFACE_V1_COEFFICIENTS_BT2020;
-    default:
-      MOZ_DIAGNOSTIC_CRASH("Unsupported YUV color space!");
-      return 0;
-  }
-}
-
 void WaylandSurface::SetColorRepresentationLocked(
     const WaylandSurfaceLock& aProofOfLock,
-    mozilla::gfx::YUVColorSpace aColorSpace, bool aFullRange,
+    int aWLColorCoeficients, bool aFullRange,
     uint32_t aWPChromaLocation) {
   auto* colorRepresentation =
       WaylandDisplayGet()->GetColorRepresentationManager();
@@ -1540,11 +1525,7 @@ void WaylandSurface::SetColorRepresentationLocked(
     return;
   }
 
-  LOGWAYLAND(
-      "WaylandSurface::SetColorRepresentationLocked() colorspace %s full "
-      "range "
-      "%d",
-      mozilla::ToString(aColorSpace).c_str(), aFullRange);
+  LOGWAYLAND("WaylandSurface::SetColorRepresentationLocked() color coefficients %s full range %d", BufferSurface::GetWLColorCoeficientsName(aWLColorCoeficients), aFullRange);
 
   MOZ_DIAGNOSTIC_ASSERT(!mColorRepresentationSurface);
   mColorRepresentationSurface = WUniquePtr<wp_color_representation_surface_v1>(
@@ -1554,12 +1535,9 @@ void WaylandSurface::SetColorRepresentationLocked(
     wp_color_representation_surface_v1_set_chroma_location(
         mColorRepresentationSurface.get(), aWPChromaLocation);
   }
-  if (auto coefficients = YUVColorSpaceToWLColorCoeficients(aColorSpace)) {
-    if (auto range =
-            WaylandDisplayGet()->GetColorRange(coefficients, aFullRange)) {
-      wp_color_representation_surface_v1_set_coefficients_and_range(
-          mColorRepresentationSurface.get(), coefficients, range);
-    }
+  if (auto range = WaylandDisplayGet()->GetColorRange(aWLColorCoeficients, aFullRange)) {
+    wp_color_representation_surface_v1_set_coefficients_and_range(
+        mColorRepresentationSurface.get(), aWLColorCoeficients, range);
   }
 }
 
@@ -1712,7 +1690,6 @@ void WaylandSurface::SetHDRMetadata(
     wp_image_description_creator_params_v1* aParams,
     gfx::TransferFunction aTransferFunction, GdkWindow* aGdkWindow,
     const mozilla::gfx::HDRMetadata& aHDRMetadata) {
-  // PQ metadata
   if (aTransferFunction == gfx::TransferFunction::PQ) {
     if (aHDRMetadata.mContentLightLevel.isSome()) {
       LOGWAYLAND(
