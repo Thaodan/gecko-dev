@@ -108,12 +108,7 @@ test_newtab({
     await setDefaultTopSites(args);
   },
   test: async function topsites_menu_no_stuck_hover_after_mouse() {
-    const siteSelector = ".top-site-outer:not(.search-shortcut, .placeholder)";
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(siteSelector),
-      "Wait for a topsite tile"
-    );
-    const tile = content.document.querySelector(siteSelector);
+    const tile = await content.waitForAnyTopSite();
     const menuButton = tile.querySelector(".context-menu-button");
     const panelList = tile.querySelector("panel-list");
 
@@ -167,12 +162,7 @@ test_newtab({
     await setDefaultTopSites(args);
   },
   test: async function topsites_menu_no_stuck_hover_after_pin_via_menu() {
-    const siteSelector = ".top-site-outer:not(.search-shortcut, .placeholder)";
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(siteSelector),
-      "Wait for a topsite tile"
-    );
-    const tile = content.document.querySelector(siteSelector);
+    const tile = await content.waitForAnyTopSite();
     const menuButton = () => tile.querySelector(".context-menu-button");
     const panelList = () => tile.querySelector("panel-list");
 
@@ -244,12 +234,7 @@ test_newtab({
     await setDefaultTopSites(args);
   },
   test: async function topsites_menu_visible_on_keyboard_focus() {
-    const siteSelector = ".top-site-outer:not(.search-shortcut, .placeholder)";
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(siteSelector),
-      "Wait for a topsite tile"
-    );
-    const tile = content.document.querySelector(siteSelector);
+    const tile = await content.waitForAnyTopSite();
     const link = tile.querySelector("a.top-site-button");
     const menuButton = tile.querySelector(".context-menu-button");
 
@@ -293,12 +278,7 @@ test_newtab({
     await setDefaultTopSites(args);
   },
   test: async function topsites_menu_opens_from_keyboard() {
-    const siteSelector = ".top-site-outer:not(.search-shortcut, .placeholder)";
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(siteSelector),
-      "Wait for a topsite tile"
-    );
-    const tile = content.document.querySelector(siteSelector);
+    const tile = await content.waitForAnyTopSite();
     const menuButton = tile.querySelector(".context-menu-button");
     const panelList = tile.querySelector("panel-list");
 
