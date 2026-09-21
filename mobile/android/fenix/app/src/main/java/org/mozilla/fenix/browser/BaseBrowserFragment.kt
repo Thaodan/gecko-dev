@@ -181,6 +181,7 @@ import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.permissions.FenixSitePermissionLearnMoreUrlProvider
 import org.mozilla.fenix.browser.readermode.DefaultReaderModeController
 import org.mozilla.fenix.browser.readermode.ReaderModeController
+import org.mozilla.fenix.browser.reloadcover.TabReloadCoverFeature
 import org.mozilla.fenix.browser.store.BrowserScreenMiddleware
 import org.mozilla.fenix.browser.store.BrowserScreenState
 import org.mozilla.fenix.browser.store.BrowserScreenStore
@@ -293,6 +294,7 @@ abstract class BaseBrowserFragment :
 
     protected val readerViewFeature = ViewBoundFeatureWrapper<ReaderViewFeature>()
     protected val thumbnailsFeature = ViewBoundFeatureWrapper<BrowserThumbnails>()
+    private val tabReloadCoverFeature = ViewBoundFeatureWrapper<TabReloadCoverFeature>()
 
     @VisibleForTesting internal val messagingFeatureMicrosurvey = ViewBoundFeatureWrapper<MessagingFeature>()
 
@@ -1202,6 +1204,18 @@ abstract class BaseBrowserFragment :
                     requireComponents.useCases.sessionUseCases.goForward,
                     binding.engineView,
                     customTabSessionId,
+                ),
+            owner = this,
+            view = view,
+        )
+
+        tabReloadCoverFeature.set(
+            feature =
+                TabReloadCoverFeature(
+                    store = requireComponents.core.store,
+                    thumbnailStorage = requireComponents.core.thumbnailStorage,
+                    coverView = binding.tabReloadCover,
+                    tabId = customTabSessionId,
                 ),
             owner = this,
             view = view,
