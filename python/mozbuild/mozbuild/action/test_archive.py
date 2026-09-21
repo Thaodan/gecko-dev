@@ -450,19 +450,6 @@ ARCHIVE_FILES = {
         {"source": buildconfig.topsrcdir, "pattern": "build/mach_initialize.py"},
         {
             "source": buildconfig.topsrcdir,
-            "pattern": "python/sites/build.txt",
-        },
-        {
-            "source": buildconfig.topsrcdir,
-            "pattern": "python/sites/common.txt",
-        },
-        {
-            "source": buildconfig.topsrcdir,
-            "pattern": "python/sites/mach.txt",
-        },
-        {"source": buildconfig.topsrcdir, "pattern": "mach/**"},
-        {
-            "source": buildconfig.topsrcdir,
             "pattern": "testing/web-platform/tests/tools/third_party/certifi/**",
         },
         {"source": buildconfig.topsrcdir, "pattern": "testing/mozharness/**"},

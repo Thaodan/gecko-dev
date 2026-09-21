@@ -1171,16 +1171,6 @@ def add_gecko_profile_symbolication_deps(config, tasks):
 
 
 @transforms.add
-def set_tag(config, tasks):
-    """Set test for a specific tag."""
-    tag = None
-    for task in tasks:
-        if tag:
-            task["mozharness"]["extra-options"].extend(["--tag", tag])
-        yield task
-
-
-@transforms.add
 def set_test_type(config, tasks):
     types = ["mochitest", "reftest", "talos", "raptor", "geckoview-junit", "gtest"]
     for task in tasks:
