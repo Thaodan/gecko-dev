@@ -3,6 +3,8 @@ http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
+import android.os.Handler
+import android.os.Looper
 import android.view.KeyEvent
 import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -46,6 +48,9 @@ class PromptDelegateTest :
                     }
             ),
     ) {
+    // Never completed; a field so the prompt is not GC-dismissed while the test drives it.
+    private val pendingResponse = GeckoResult<PromptResponse>(Handler(Looper.getMainLooper()))
+
     @Test
     fun popupTestAllow() {
         // Ensure popup blocking is enabled for this test.
@@ -330,7 +335,7 @@ class PromptDelegateTest :
                     assertThat("auth matches", authInfo.password, equalTo("bar"))
                     promptInstanceDelegate.prompt = request
                     request.setDelegate(promptInstanceDelegate)
-                    return GeckoResult()
+                    return pendingResponse
                 }
             }
         )
