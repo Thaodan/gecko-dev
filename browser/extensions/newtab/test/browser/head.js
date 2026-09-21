@@ -149,11 +149,15 @@ function addContentHelpers() {
     /**
      * Click the context menu button for an item and get its options list.
      *
-     * @param selector {String} Selector to get an item (e.g., top site, card)
+     * @param itemOrSelector {Element|String} An item (e.g., top site, card),
+     *   or a selector to get one.
      * @return {Array} The nodes for the options.
      */
-    async openContextMenuAndGetOptions(selector) {
-      const item = document.querySelector(selector);
+    async openContextMenuAndGetOptions(itemOrSelector) {
+      const item =
+        typeof itemOrSelector === "string"
+          ? document.querySelector(itemOrSelector)
+          : itemOrSelector;
       const contextButton = item.querySelector(".context-menu-button");
       contextButton.click();
       // Gives fluent-dom the time to render strings
