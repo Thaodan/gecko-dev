@@ -31,6 +31,7 @@ import com.google.android.material.R as materialR
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import mozilla.components.compose.menu.Menu
 import mozilla.components.compose.menu.store.MenuState
 import mozilla.components.compose.menu.store.MenuStore
@@ -60,6 +61,7 @@ import org.mozilla.fenix.components.menu.middleware.MenuTelemetryMiddleware
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.isToolbarAtBottom
 import org.mozilla.fenix.ext.requireComponents
+import org.mozilla.fenix.home.topsites.ShortcutMenuItemProvider
 import org.mozilla.fenix.ipprotection.VpnMenuItemProvider
 import org.mozilla.fenix.summarization.SummarizePageMenuItemProvider
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -287,6 +289,14 @@ class MenuFragment : BottomSheetDialogFragment() {
                     browserStore = requireComponents.core.store,
                     scope = viewLifecycleOwner.lifecycle.coroutineScope,
                 )
+
+            FenixMenuItem.Shortcut ->
+                ShortcutMenuItemProvider(
+                    browserStore = requireComponents.core.store,
+                    pinnedSiteStorage = requireComponents.core.pinnedSiteStorage,
+                    areShortcutsEnabled = requireComponents.settings.showTopSitesFeature,
+                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                )
         }
     }
 
@@ -312,6 +322,8 @@ class MenuFragment : BottomSheetDialogFragment() {
                         summarizationEligibilityChecker = requireComponents.core.summarizationEligibilityChecker,
                         settings = requireComponents.settings,
                         webCompatReporterMoreInfoSender = buildWebCompatReporterMoreInfoSender(),
+                        pinnedSiteStorage = requireComponents.core.pinnedSiteStorage,
+                        materialAlertDialogBuilder = MaterialAlertDialogBuilder(requireContext()),
                         scope = viewLifecycleOwner.lifecycle.coroutineScope,
                         applicationScope = requireComponents.applicationScope,
                     ),

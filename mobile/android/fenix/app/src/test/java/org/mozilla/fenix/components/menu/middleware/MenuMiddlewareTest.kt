@@ -4,10 +4,13 @@
 
 package org.mozilla.fenix.components.menu.middleware
 
+import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.navigation.NavController
 import androidx.navigation.NavDirections
 import androidx.navigation.NavOptions
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -47,6 +50,9 @@ import mozilla.components.feature.ipprotection.store.state.IPProtectionState
 import mozilla.components.feature.ipprotection.store.state.ProxyStatus
 import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.tabs.TabsUseCases
+import mozilla.components.feature.top.sites.PinnedSiteStorage
+import mozilla.components.feature.top.sites.TopSite
+import mozilla.components.feature.top.sites.TopSitesUseCases
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Rule
 import org.junit.Test
@@ -60,6 +66,7 @@ import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppAction.BookmarkAction
 import org.mozilla.fenix.components.appstate.AppAction.FindInPageAction
 import org.mozilla.fenix.components.appstate.AppAction.ReaderViewAction
+import org.mozilla.fenix.components.appstate.AppAction.ShortcutAction
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.bookmarks.BookmarksUseCase
 import org.mozilla.fenix.components.menu.BrowserMenuBuilder
@@ -84,6 +91,8 @@ import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.optionsEq
 import org.mozilla.fenix.helpers.FenixGleanTestRule
+import org.mozilla.fenix.home.topsites.AddShortcutEntryPoint
+import org.mozilla.fenix.home.topsites.AddShortcutSource
 import org.mozilla.fenix.summarization.eligibility.SummarizationEligibilityChecker
 import org.mozilla.fenix.summarization.onboarding.SummarizationFeatureDiscoveryConfiguration
 import org.mozilla.fenix.summarization.onboarding.SummarizeDiscoveryEvent
@@ -111,6 +120,8 @@ class MenuMiddlewareTest {
     private val addBookmarkUseCase: BookmarksUseCase.AddBookmarksUseCase = mockk()
     private val requestDesktopSiteUseCase: SessionUseCases.RequestDesktopSiteUseCase = mockk(relaxed = true)
     private val migratePrivateTabUseCase: TabsUseCases.MigratePrivateTabUseCase = mockk(relaxed = true)
+    private val addPinnedSiteUseCase: TopSitesUseCases.AddPinnedSiteUseCase = mockk(relaxed = true)
+    private val removeTopSitesUseCase: TopSitesUseCases.RemoveTopSiteUseCase = mockk(relaxed = true)
     private val fenixBrowserUseCase: FenixBrowserUseCases = mockk(relaxed = true)
     private val goBackUseCase: SessionUseCases.GoBackUseCase = mockk(relaxed = true)
     private val goForwardUseCase: SessionUseCases.GoForwardUseCase = mockk(relaxed = true)
@@ -129,6 +140,11 @@ class MenuMiddlewareTest {
             }
         every { tabsUseCases } returns
             mockk { every { migratePrivateTabUseCase } returns this@MenuMiddlewareTest.migratePrivateTabUseCase }
+        every { topSitesUseCase } returns
+            mockk {
+                every { addPinnedSites } returns addPinnedSiteUseCase
+                every { removeTopSites } returns removeTopSitesUseCase
+            }
         every { fenixBrowserUseCases } returns fenixBrowserUseCase
         every { shareUseCases } returns shareUrlUseCase
     }
@@ -142,8 +158,10 @@ class MenuMiddlewareTest {
     private val summarizationEligibilityChecker: SummarizationEligibilityChecker = mockk {
         coEvery { checkLanguage(any()) } returns Result.success(true)
     }
-    private val settings: Settings = mockk(relaxed = true)
+    private val settings: Settings = mockk(relaxed = true) { every { topSitesMaxLimit } returns TOP_SITES_MAX_LIMIT }
     private val webCompatReporterMoreInfoSender: WebCompatReporterMoreInfoSender = mockk(relaxed = true)
+    private val pinnedSiteStorage: PinnedSiteStorage = mockk(relaxed = true)
+    private val materialAlertDialogBuilder: MaterialAlertDialogBuilder = mockk(relaxed = true)
     private val testDispatcher = StandardTestDispatcher()
 
     @Test
@@ -545,6 +563,98 @@ class MenuMiddlewareTest {
         }
 
     @Test
+    fun `WHEN adding the current page to shortcuts THEN pin it, inform about it and dismiss the menu`() =
+        runTest(testDispatcher) {
+            coEvery { pinnedSiteStorage.getPinnedSites() } returns emptyList()
+            val store = createStore()
+
+            store.dispatch(MenuAction.AddShortcut)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            coVerify { addPinnedSiteUseCase(title = TEST_TITLE, url = TEST_URL) }
+            verify {
+                appStore.dispatch(
+                    ShortcutAction.ShortcutAdded(
+                        source = AddShortcutSource.MANUAL,
+                        entryPoint = AddShortcutEntryPoint.PAGE_MENU,
+                    )
+                )
+                navController.popBackStack(R.id.menuFragment, true)
+            }
+        }
+
+    @Test
+    fun `GIVEN as many shortcuts as allowed WHEN trying to add another one THEN inform the user about this and don't add it`() =
+        runTest(testDispatcher) {
+            every { settings.topSitesMaxLimit } returns 1
+            coEvery { pinnedSiteStorage.getPinnedSites() } returns listOf(otherShortcut)
+            val alertDialog: AlertDialog = mockk(relaxed = true)
+            every { materialAlertDialogBuilder.create() } returns alertDialog
+            every { alertDialog.findViewById<TextView>(any()) } returns mockk(relaxed = true)
+            val store = createStore()
+
+            store.dispatch(MenuAction.AddShortcut)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify {
+                materialAlertDialogBuilder.setTitle(R.string.shortcut_max_limit_title)
+                navController.popBackStack(R.id.menuFragment, true)
+            }
+            coVerify(exactly = 0) { addPinnedSiteUseCase(any(), any(), any()) }
+        }
+
+    @Test
+    fun `GIVEN shortcuts that the user cannot remove exist WHEN adding another one THEN don't count them towards the shortcuts limit`() =
+        runTest(testDispatcher) {
+            every { settings.topSitesMaxLimit } returns 1
+            coEvery { pinnedSiteStorage.getPinnedSites() } returns
+                listOf(
+                    TopSite.Provided(
+                        id = 2,
+                        title = null,
+                        url = "https://example.org",
+                        clickUrl = "",
+                        imageUrl = "",
+                        impressionUrl = "",
+                        createdAt = 0,
+                    )
+                )
+            val store = createStore()
+
+            store.dispatch(MenuAction.AddShortcut)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            coVerify { addPinnedSiteUseCase(title = TEST_TITLE, url = TEST_URL) }
+        }
+
+    @Test
+    fun `GIVEN the current page is already a shortcut WHEN trying to add it again THEN abort`() =
+        runTest(testDispatcher) {
+            coEvery { pinnedSiteStorage.getPinnedSites() } returns
+                listOf(TopSite.Pinned(id = 1, title = TEST_TITLE, url = TEST_URL, createdAt = 0))
+            val store = createStore()
+
+            store.dispatch(MenuAction.AddShortcut)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            coVerify(exactly = 0) { addPinnedSiteUseCase(any(), any(), any()) }
+        }
+
+    @Test
+    fun `WHEN removing the current page from shortcuts THEN remove it and dismiss the menu`() =
+        runTest(testDispatcher) {
+            val shortcut = TopSite.Pinned(id = 1, title = TEST_TITLE, url = TEST_URL, createdAt = 0)
+            coEvery { pinnedSiteStorage.getPinnedSites() } returns listOf(shortcut)
+            val store = createStore()
+
+            store.dispatch(MenuAction.RemoveShortcut)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            coVerify { removeTopSitesUseCase(topSite = shortcut) }
+            verify { navController.popBackStack(R.id.menuFragment, true) }
+        }
+
+    @Test
     fun `WHEN handling back navigation THEN dismiss the menu and navigate back in the current tab`() {
         val store = createStore()
 
@@ -752,6 +862,8 @@ class MenuMiddlewareTest {
                         summarizationEligibilityChecker = summarizationEligibilityChecker,
                         settings = settings,
                         webCompatReporterMoreInfoSender = webCompatReporterMoreInfoSender,
+                        pinnedSiteStorage = pinnedSiteStorage,
+                        materialAlertDialogBuilder = materialAlertDialogBuilder,
                         scope = CoroutineScope(testDispatcher),
                         applicationScope = CoroutineScope(testDispatcher),
                     )
@@ -766,6 +878,9 @@ class MenuMiddlewareTest {
         const val TEST_URL = "https://mozilla.org"
         const val TEST_TITLE = "Mozilla"
         const val TAB_ID = "tab1"
+        const val TOP_SITES_MAX_LIMIT = 16
+
+        val otherShortcut = TopSite.Pinned(id = 2, title = "Example", url = "https://example.org", createdAt = 0)
 
         val readerViewItem =
             StandardMenuItem(title = Text.String("Customize reader view"), onClickEvent = CustomizeReaderViewEvent)

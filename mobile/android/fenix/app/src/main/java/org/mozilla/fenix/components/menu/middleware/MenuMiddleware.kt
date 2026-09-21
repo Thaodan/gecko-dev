@@ -7,6 +7,7 @@ package org.mozilla.fenix.components.menu.middleware
 import androidx.navigation.NavController
 import androidx.navigation.NavDirections
 import androidx.navigation.NavOptions
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
@@ -23,8 +24,11 @@ import mozilla.components.concept.engine.EngineSession.LoadUrlFlags
 import mozilla.components.concept.engine.prompt.ShareData
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
+import mozilla.components.feature.top.sites.PinnedSiteStorage
+import mozilla.components.feature.top.sites.TopSite
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
+import mozilla.components.ui.widgets.withCenterAlignedButtons
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Vpn
 import org.mozilla.fenix.NavGraphDirections
@@ -35,10 +39,12 @@ import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppAction.BookmarkAction
 import org.mozilla.fenix.components.appstate.AppAction.FindInPageAction
 import org.mozilla.fenix.components.appstate.AppAction.ReaderViewAction
+import org.mozilla.fenix.components.appstate.AppAction.ShortcutAction
 import org.mozilla.fenix.components.menu.BrowserMenuBuilder
 import org.mozilla.fenix.components.menu.MenuFragmentDirections
 import org.mozilla.fenix.components.menu.store.IPProtectionMenuStatus
 import org.mozilla.fenix.components.menu.store.MenuAction.AddBookmark
+import org.mozilla.fenix.components.menu.store.MenuAction.AddShortcut
 import org.mozilla.fenix.components.menu.store.MenuAction.CustomizeReaderView
 import org.mozilla.fenix.components.menu.store.MenuAction.FindInPage
 import org.mozilla.fenix.components.menu.store.MenuAction.IPProtectionToggle
@@ -46,6 +52,7 @@ import org.mozilla.fenix.components.menu.store.MenuAction.MoveToNonPrivateTab
 import org.mozilla.fenix.components.menu.store.MenuAction.Navigate
 import org.mozilla.fenix.components.menu.store.MenuAction.OnMoreMenuClicked
 import org.mozilla.fenix.components.menu.store.MenuAction.OnSummarizationMenuExposed
+import org.mozilla.fenix.components.menu.store.MenuAction.RemoveShortcut
 import org.mozilla.fenix.components.menu.store.MenuAction.RequestDesktopSite
 import org.mozilla.fenix.components.menu.store.MenuAction.RequestMobileSite
 import org.mozilla.fenix.components.menu.toMenuState
@@ -53,6 +60,8 @@ import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.openToBrowser
+import org.mozilla.fenix.home.topsites.AddShortcutEntryPoint
+import org.mozilla.fenix.home.topsites.AddShortcutSource
 import org.mozilla.fenix.summarization.eligibility.SummarizationEligibilityChecker
 import org.mozilla.fenix.summarization.isSummarizePageMenuItem
 import org.mozilla.fenix.summarization.onboarding.FenixSummarizationFeatureConfiguration
@@ -78,6 +87,9 @@ import org.mozilla.fenix.webcompat.WebCompatReporterMoreInfoSender
  * @param settings [Settings] for checking the user's preferences, like whether they allow telemetry.
  * @param webCompatReporterMoreInfoSender [WebCompatReporterMoreInfoSender] for sending the details of a broken site to
  *   webcompat.com.
+ * @param pinnedSiteStorage [PinnedSiteStorage] for checking the shortcuts the user already has.
+ * @param materialAlertDialogBuilder [MaterialAlertDialogBuilder] for telling the user when they cannot have another
+ *   shortcut.
  * @param scope [CoroutineScope] tied to the lifetime of the menu, used for all work that is only useful while the menu
  *   is shown.
  * @param applicationScope [CoroutineScope] tied to the lifetime of the application, used for the work that cannot be
@@ -95,6 +107,8 @@ class MenuMiddleware(
     private val summarizationEligibilityChecker: SummarizationEligibilityChecker,
     private val settings: Settings,
     private val webCompatReporterMoreInfoSender: WebCompatReporterMoreInfoSender,
+    private val pinnedSiteStorage: PinnedSiteStorage,
+    private val materialAlertDialogBuilder: MaterialAlertDialogBuilder,
     private val scope: CoroutineScope,
     private val applicationScope: CoroutineScope,
 ) : Middleware<MenuState, MenuAction> {
@@ -166,6 +180,10 @@ class MenuMiddleware(
                 }
 
             is Navigate.WebCompatReporter -> reportBrokenSite()
+
+            is AddShortcut -> addShortcut()
+
+            is RemoveShortcut -> removeShortcut()
 
             is Navigate.Back -> handleBackNavigation(action)
 
@@ -269,6 +287,59 @@ class MenuMiddleware(
                 private = appStore.state.mode.isPrivate,
             )
         }
+    }
+
+    /** Shortcuts are limited in number, so the user is told when the current page cannot become one of them. */
+    private fun addShortcut() = scope.launch {
+        val selectedTab = browserStore.state.selectedTab ?: return@launch
+        val url = selectedTab.getTabUrl() ?: return@launch
+        val title = selectedTab.content.title
+
+        val shortcuts = pinnedSiteStorage.getPinnedSites()
+        // The menu item may have been shown before the page was known to already be a shortcut.
+        if (shortcuts.any { it.url == url }) return@launch
+
+        if (shortcuts.count { it.isPinned() } >= settings.topSitesMaxLimit) {
+            showMaxShortcutsReached()
+            dismissMenu()
+            return@launch
+        }
+
+        useCases.topSitesUseCase.addPinnedSites(title = title, url = url)
+
+        appStore.dispatch(
+            ShortcutAction.ShortcutAdded(
+                source = AddShortcutSource.MANUAL,
+                entryPoint = AddShortcutEntryPoint.PAGE_MENU,
+            )
+        )
+
+        dismissMenu()
+    }
+
+    private fun removeShortcut() = scope.launch {
+        val url = browserStore.state.selectedTab?.getTabUrl() ?: return@launch
+        val shortcut = pinnedSiteStorage.getPinnedSites().firstOrNull { it.url == url } ?: return@launch
+
+        // Removing a shortcut also deletes the history entries of that page, which will run until completion even if
+        // the
+        // coroutine is canceled. As such we must ensure the work below does not reference any property of this
+        // middleware which could result in it being leaked - together with everything it holds - while waiting.
+        val removeShortcut = useCases.topSitesUseCase.removeTopSites
+        applicationScope.async { removeShortcut(topSite = shortcut) }.await()
+
+        dismissMenu()
+    }
+
+    private fun showMaxShortcutsReached() {
+        materialAlertDialogBuilder
+            .apply {
+                setTitle(R.string.shortcut_max_limit_title)
+                setMessage(R.string.shortcut_max_limit_content)
+                setPositiveButton(R.string.top_sites_max_limit_confirmation_button) { dialog, _ -> dialog.dismiss() }
+                create().withCenterAlignedButtons()
+            }
+            .show()
     }
 
     private fun navigateToEditBookmark(guidToEdit: String?) {
@@ -404,6 +475,9 @@ class MenuMiddleware(
     private fun dismissMenu() {
         navController.popBackStack(R.id.menuFragment, true)
     }
+
+    /** Only the shortcuts the user can add themselves count towards the limit of how many they can have. */
+    private fun TopSite.isPinned() = this is TopSite.Default || this is TopSite.Pinned
 
     private suspend fun SessionState?.checkSummarizationEligibility(): Boolean =
         this@checkSummarizationEligibility?.engineState?.engineSession?.let { session ->
