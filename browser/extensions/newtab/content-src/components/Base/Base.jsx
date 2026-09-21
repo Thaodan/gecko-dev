@@ -1167,8 +1167,16 @@ export class BaseContent extends React.PureComponent {
       ]
         .filter(Boolean)
         .join(" ");
+      // Variant B of the search bar carries its own row above the input, which
+      // a centered logo would sit under.
+      const searchHasOwnRow =
+        prefs.showSearch &&
+        "variant-b" in
+          (this.props.ExternalComponents.components.find(
+            c => c.type === "SEARCH"
+          )?.attributes ?? {});
       const logoShouldBeCentered =
-        noFeedOrContentWidgets && !hasManyTopSitesRows;
+        noFeedOrContentWidgets && !hasManyTopSitesRows && !searchHasOwnRow;
       // The 5-column story grid is driven by the layout data alone: the content
       // band only widens when every section has a columnCount: 5 entry. Sections
       // share one subgrid track count, so a layout set where only some sections
@@ -1236,7 +1244,7 @@ export class BaseContent extends React.PureComponent {
             className={`nova-outer-wrapper${this.state.fixedSearch ? " stuck-search" : ""}`}
           >
             <div
-              className={`container nova-enabled${logoShouldBeCentered ? " logo-in-content" : ""}${hasFiveColumnLayout ? " sections-5-col" : ""}`}
+              className={`container nova-enabled${logoShouldBeCentered ? " logo-in-content" : ""}${searchHasOwnRow ? " search-has-own-row" : ""}${hasFiveColumnLayout ? " sections-5-col" : ""}`}
             >
               <aside className="sidebar-inline-start">
                 {!prefs.hideLogo && !logoShouldBeCentered && !isPageEmpty && (
@@ -1593,6 +1601,7 @@ export const Base = connect(state => ({
   Prefs: state.Prefs,
   Sections: state.Sections,
   DiscoveryStream: state.DiscoveryStream,
+  ExternalComponents: state.ExternalComponents,
   Messages: state.Messages,
   Notifications: state.Notifications,
   Search: state.Search,
