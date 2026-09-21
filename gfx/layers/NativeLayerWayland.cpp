@@ -37,6 +37,7 @@
 #include "mozilla/layers/SurfacePoolWayland.h"
 #include "mozilla/webrender/RenderDMABUFTextureHost.h"
 #include "mozilla/webrender/RenderThread.h"
+#include "mozilla/widget/nsWaylandDisplay.h"
 #include "mozilla/widget/WaylandSurface.h"
 #include "nsGtkUtils.h"
 
@@ -1518,7 +1519,10 @@ NativeLayerWaylandRender::~NativeLayerWaylandRender() {
 }
 
 RefPtr<DMABufSurface> NativeLayerWaylandExternal::GetSurface() {
-  return mTextureHost ? mTextureHost->GetSurface() : nullptr;
+  if (mFrontBuffer && mFrontBuffer->AsWaylandBufferDMABUF()) {
+    return mFrontBuffer->AsWaylandBufferDMABUF()->GetSurface();
+  }
+  return nullptr;
 }
 
 NativeLayerWaylandExternal::NativeLayerWaylandExternal(
@@ -1551,7 +1555,7 @@ void NativeLayerWaylandExternal::AttachExternalImage(
   }
   mTextureHost = texture;
 
-  auto surface = mTextureHost->GetSurface();
+  RefPtr<DMABufSurface> surface = mTextureHost->GetSurface();
   mIsHDR = surface->IsHDRSurface();
 
   LOG("NativeLayerWaylandExternal::AttachExternalImage() host [%p] "
@@ -1560,6 +1564,24 @@ void NativeLayerWaylandExternal::AttachExternalImage(
       mTextureHost.get(), mTextureHost->GetSurface().get(),
       mTextureHost->GetSurface()->GetUID(), mSize.width, mSize.height, mIsHDR,
       mIsOpaque, surface->CanRecycle());
+
+  // TODO: Cache converted surfaces if source is the same?
+
+  // If HLG is not supported, transfer to RGBA/PQ
+  if (mIsHDR &&
+      surface->GetTransferFunction() == gfx::TransferFunction::HLG &&
+      !WaylandDisplayGet()->IsTFSupported(WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_HLG)) {
+    MOZ_DIAGNOSTIC_ASSERT(surface->GetAsDMABufSurfaceYUV(),
+                          "Unsupported surface type!");
+    surface = surface->GetAsDMABufSurfaceYUV()->ConvertHLGToPQ(mRootLayer->gl());
+    if (!surface) {
+      LOG("  HLG->PQ conversion failed, quit.");
+      mFrontBuffer = nullptr;
+      return;
+    }
+    surface->DisableRecycle();
+    LOG("  HLG->PQ converted, new surface [%p]", surface.get());
+  }
 
   mFrontBuffer = surface->CanRecycle()
                      ? mRootLayer->BorrowExternalBuffer(surface)
@@ -1601,6 +1623,9 @@ bool NativeLayerWaylandExternal::CommitFrontBufferToScreenLocked(
     const WaylandSurfaceLock& aProofOfLock) {
   LOG("NativeLayerWaylandExternal::CommitFrontBufferToScreenLocked()");
   mSurface->InvalidateLocked(aProofOfLock);
+  if (auto* buffer = mFrontBuffer->AsWaylandBufferDMABUF()) {
+    buffer->GetSurface()->FenceWait(mRootLayer->gl());
+  }
   mSurface->AttachLocked(aProofOfLock, mFrontBuffer);
   return true;
 }
