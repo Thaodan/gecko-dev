@@ -723,6 +723,8 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && vertical_tab", # Bug 1971008
 ]
 
+["browser_tabswitch_discard.js"]
+
 ["browser_tabswitch_select.js"]
 support-files = ["open_window_in_new_tab.html"]
 tags = "vertical-tabs"
