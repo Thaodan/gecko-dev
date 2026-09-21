@@ -1377,12 +1377,12 @@ newtab-clock-widget-custom-zone-results =
 newtab-clock-widget-custom-zone-no-results = No matching time zones
 # Returns from the custom clock form back to the city search.
 newtab-clock-widget-custom-back = Back
-# "Open menu for clock" is an icon-only button in the widget toolbar — the
+# "Clock options" is an icon-only button in the widget toolbar — the
 # attributes are consumed as tooltip/screen-reader label only. The button
 # never renders visible text.
-newtab-clock-widget-menu-button =
-    .title = Open menu for clock
-    .aria-label = Open menu for clock
+newtab-clock-widget-menu-button2 =
+    .title = Clock options
+    .aria-label = Clock options
 # $nickname (String) - The user-defined nickname for a saved clock location (e.g., "Home", "Office").
 newtab-clock-widget-label-nickname-with-value = Nickname: { $nickname }
 
@@ -1618,6 +1618,13 @@ newtab-privacy-widget-label =
 
 # Context menu item linking to more information about the Privacy widget.
 newtab-privacy-menu-learn-more = Learn more
+
+# "Privacy options" is an icon-only button in the widget toolbar — the
+# attributes are consumed as tooltip/screen-reader label only. The button
+# never renders visible text.
+newtab-privacy-widget-menu-button =
+    .title = Privacy options
+    .aria-label = Privacy options
 
 ## Privacy widget — count readout
 

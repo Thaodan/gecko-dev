@@ -1841,8 +1841,8 @@ impl Renderer {
 
         self.profile.set(profiler::DEPTH_TARGETS_MEM, profiler::bytes_to_mb(self.device.depth_targets_memory()));
 
-        self.profile.set(profiler::TEXTURES_CREATED, self.device.textures_created);
-        self.profile.set(profiler::TEXTURES_DELETED, self.device.textures_deleted);
+        self.profile.set(profiler::TEXTURES_CREATED, self.device.textures_created());
+        self.profile.set(profiler::TEXTURES_DELETED, self.device.textures_deleted());
 
         results.stats.texture_upload_mb = self.profile.get_or(profiler::TEXTURE_UPLOADS_MEM, 0.0);
         results.compositor_surface_overlays =
@@ -3430,7 +3430,7 @@ impl Renderer {
         }
 
         if needs_depth {
-            self.device.reuse_render_target::<u8>(
+            self.device.reuse_render_target(
                 texture,
                 RenderTargetInfo { has_depth: needs_depth },
             );
@@ -3929,7 +3929,6 @@ impl Renderer {
 
         self.device.set_depth_write(false);
         self.set_blend_mode(BlendMode::None, FramebufferKind::Other);
-        self.device.disable_stencil();
 
         self.bind_frame_data(frame);
 

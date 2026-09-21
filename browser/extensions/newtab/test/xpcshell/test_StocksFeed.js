@@ -1207,28 +1207,27 @@ function makeSearchFeed(sandbox, { enabled = true } = {}) {
   return feed;
 }
 
-// A fake search Merino client. Each fetch() call takes the next outcome in
-// order: { values } for results, or { status } for an error.
-function searchClient(sandbox, outcomes) {
+// A fake search Merino client. fetch() records `outcome.status` ("success"
+// unless given) and returns one suggestion carrying `outcome.matches`, or []
+// when there are none.
+function searchClient(sandbox, outcome = {}) {
   const client = {
     lastFetchStatus: "success",
-    fetch: sandbox.stub(),
+    fetch: sandbox.stub().callsFake(async () => {
+      client.lastFetchStatus = outcome.status ?? "success";
+      const matches = outcome.matches ?? [];
+      return matches.length
+        ? [{ custom_details: { polygon: { matches } } }]
+        : [];
+    }),
     resetSession: sandbox.stub(),
   };
-  outcomes.forEach((outcome, i) => {
-    client.fetch.onCall(i).callsFake(async () => {
-      client.lastFetchStatus = outcome.status ?? "success";
-      const values = outcome.values ?? [];
-      return values.length ? [{ custom_details: { polygon: { values } } }] : [];
-    });
-  });
   return client;
 }
 
-// search() creates one client per call, so a single search reuses one client for
-// its bare and dollar lookups. Hand it the fake by stubbing MerinoClient.
-function stubSearchClient(sandbox, feed, outcomes) {
-  const client = searchClient(sandbox, outcomes);
+// search() creates its own client, so stub the MerinoClient factory.
+function stubSearchClient(sandbox, feed, outcome) {
+  const client = searchClient(sandbox, outcome);
   sandbox.stub(feed, "MerinoClient").returns(client);
   return client;
 }
@@ -1237,21 +1236,34 @@ function lastSearchResponse(feed) {
   return feed.store.dispatch.getCalls().at(-1)?.args[0];
 }
 
+const APPLE = {
+  ticker: "AAPL",
+  name: "Apple Inc.",
+  exchange: "NASDAQ",
+  is_etf: false,
+};
+
 add_task(async function test_search_success_replies_to_target() {
   const sandbox = sinon.createSandbox();
   const feed = makeSearchFeed(sandbox);
-  const client = stubSearchClient(sandbox, feed, [
-    { values: [{ ticker: "AAPL", name: "Apple" }] },
-  ]);
-  await feed.search("AAPL", "r1", "port-1");
+  const client = stubSearchClient(sandbox, feed, { matches: [APPLE] });
+  await feed.search("Apple", "r1", "port-1");
   const res = lastSearchResponse(feed);
   Assert.equal(res.type, actionTypes.WIDGETS_STOCKS_SEARCH_RESPONSE);
   Assert.equal(res.data.status, "success");
-  Assert.deepEqual(res.data.values, [{ ticker: "AAPL", name: "Apple" }]);
+  Assert.deepEqual(res.data.matches, [APPLE]);
   Assert.equal(res.data.requestId, "r1", "echoes the requestId");
-  Assert.equal(res.data.query, "AAPL", "echoes the query");
+  Assert.equal(res.data.query, "Apple", "echoes the query");
   Assert.equal(res.meta.toTarget, "port-1", "replies only to the asking tab");
-  Assert.equal(client.fetch.callCount, 1, "one call for a bare hit");
+  Assert.equal(client.fetch.callCount, 1, "one request per search");
+  const [options] = client.fetch.firstCall.args;
+  Assert.equal(options.query, "Apple", "the query is sent as typed");
+  Assert.deepEqual(options.providers, ["polygon"]);
+  Assert.deepEqual(
+    options.otherParams,
+    { source: "newtab", request_type: "ticker_search" },
+    "asks Merino for the widget's ticker search"
+  );
   Assert.ok(
     client.resetSession.calledOnce,
     "ends the per-search client's session so it can be released"
@@ -1259,140 +1271,70 @@ add_task(async function test_search_success_replies_to_target() {
   sandbox.restore();
 });
 
-add_task(async function test_search_empty_after_both_forms() {
+add_task(async function test_search_empty_replies_empty() {
   const sandbox = sinon.createSandbox();
   const feed = makeSearchFeed(sandbox);
-  const client = stubSearchClient(sandbox, feed, [
-    { status: "no_suggestion", values: [] },
-    { status: "no_suggestion", values: [] },
-  ]);
+  const client = stubSearchClient(sandbox, feed, {
+    status: "no_suggestion",
+    matches: [],
+  });
   await feed.search("ZZZZ", "r1", "port-1");
   const res = lastSearchResponse(feed);
   Assert.equal(res.data.status, "empty");
-  Assert.deepEqual(res.data.values, []);
-  Assert.equal(
-    client.fetch.callCount,
-    2,
-    'tries the "<query> stock" form when the bare query is empty'
-  );
+  Assert.deepEqual(res.data.matches, []);
+  Assert.equal(client.fetch.callCount, 1, "no second lookup for a miss");
   sandbox.restore();
 });
 
-add_task(async function test_search_stock_fallback_resolves_blocklisted() {
+add_task(async function test_search_malformed_matches_replies_empty() {
   const sandbox = sinon.createSandbox();
   const feed = makeSearchFeed(sandbox);
-  const client = stubSearchClient(sandbox, feed, [
-    { values: [] },
-    { values: [{ ticker: "SPY", name: "SPDR" }] },
-  ]);
-  await feed.search("SPY", "r1", "port-1");
-  const res = lastSearchResponse(feed);
-  Assert.equal(res.data.status, "success");
-  Assert.deepEqual(res.data.values, [{ ticker: "SPY", name: "SPDR" }]);
-  Assert.equal(
-    client.fetch.secondCall.args[0].query,
-    "spy stock",
-    'the fallback uses the "<query> stock" form'
-  );
-  sandbox.restore();
-});
-
-add_task(async function test_search_stock_fallback_resolves_company_name() {
-  const sandbox = sinon.createSandbox();
-  const feed = makeSearchFeed(sandbox);
-  const client = stubSearchClient(sandbox, feed, [
-    { values: [] },
-    { values: [{ ticker: "AMZN", name: "Amazon.com Inc" }] },
-  ]);
-  await feed.search("Amazon", "r1", "port-1");
-  const res = lastSearchResponse(feed);
-  Assert.equal(res.data.status, "success");
-  Assert.deepEqual(res.data.values, [
-    { ticker: "AMZN", name: "Amazon.com Inc" },
-  ]);
-  Assert.equal(
-    client.fetch.secondCall.args[0].query,
-    "amazon stock",
-    'a company name is looked up lower-cased with a "stock" suffix'
-  );
-  sandbox.restore();
-});
-
-add_task(async function test_search_no_fallback_when_bare_hits() {
-  const sandbox = sinon.createSandbox();
-  const feed = makeSearchFeed(sandbox);
-  const client = stubSearchClient(sandbox, feed, [
-    { values: [{ ticker: "AAPL" }] },
-  ]);
+  const client = {
+    lastFetchStatus: "success",
+    fetch: sandbox
+      .stub()
+      .resolves([{ custom_details: { polygon: { matches: "bad" } } }]),
+    resetSession: sandbox.stub(),
+  };
+  sandbox.stub(feed, "MerinoClient").returns(client);
   await feed.search("AAPL", "r1", "port-1");
-  Assert.equal(
-    client.fetch.callCount,
-    1,
-    "no dollar fallback after a bare hit"
-  );
+  const res = lastSearchResponse(feed);
+  Assert.equal(res.data.status, "empty");
+  Assert.deepEqual(res.data.matches, []);
   sandbox.restore();
 });
 
-add_task(async function test_search_transport_error_no_fallback() {
+add_task(async function test_search_transport_error_replies_error() {
   const sandbox = sinon.createSandbox();
   const feed = makeSearchFeed(sandbox);
-  const client = stubSearchClient(sandbox, feed, [
-    { status: "timeout", values: [] },
-  ]);
+  stubSearchClient(sandbox, feed, { status: "timeout", matches: [] });
   await feed.search("AAPL", "r1", "port-1");
   Assert.equal(lastSearchResponse(feed).data.status, "error");
-  Assert.equal(
-    client.fetch.callCount,
-    1,
-    "a transport error is not retried with the fallback"
-  );
-  sandbox.restore();
-});
-
-add_task(async function test_search_fallback_transport_error_replies_error() {
-  const sandbox = sinon.createSandbox();
-  const feed = makeSearchFeed(sandbox);
-  const client = stubSearchClient(sandbox, feed, [
-    { values: [] },
-    { status: "timeout", values: [] },
-  ]);
-  await feed.search("ZZZZ", "r1", "port-1");
-  Assert.equal(lastSearchResponse(feed).data.status, "error");
-  Assert.equal(
-    client.fetch.callCount,
-    2,
-    "a transport error on the fallback replies error"
-  );
   sandbox.restore();
 });
 
 add_task(async function test_search_strips_leading_dollars() {
   const sandbox = sinon.createSandbox();
   const feed = makeSearchFeed(sandbox);
-  const client = stubSearchClient(sandbox, feed, [
-    { values: [] },
-    { values: [{ ticker: "BRK.B" }] },
-  ]);
+  const client = stubSearchClient(sandbox, feed, {
+    matches: [{ ticker: "BRK.B", name: "Berkshire", exchange: "NYSE" }],
+  });
   await feed.search("$$BRK.B", "r1", "port-1");
   Assert.equal(
     client.fetch.firstCall.args[0].query,
     "BRK.B",
-    "all leading dollars are stripped before the bare lookup"
+    "all leading dollars are stripped before the lookup"
   );
-  Assert.equal(
-    client.fetch.secondCall.args[0].query,
-    "brk.b stock",
-    'the fallback appends " stock" to the stripped, lower-cased query'
-  );
+  Assert.equal(lastSearchResponse(feed).data.status, "success");
   sandbox.restore();
 });
 
 add_task(async function test_search_whitespace_replies_empty_without_fetch() {
   const sandbox = sinon.createSandbox();
   const feed = makeSearchFeed(sandbox);
-  const client = stubSearchClient(sandbox, feed, [
-    { values: [{ ticker: "SPY" }] },
-  ]);
+  const client = stubSearchClient(sandbox, feed, {
+    matches: [{ ticker: "SPY" }],
+  });
   await feed.search("   ", "r1", "port-1");
   Assert.equal(lastSearchResponse(feed).data.status, "empty");
   Assert.ok(
@@ -1405,7 +1347,7 @@ add_task(async function test_search_whitespace_replies_empty_without_fetch() {
 add_task(async function test_search_non_string_replies_error_without_fetch() {
   const sandbox = sinon.createSandbox();
   const feed = makeSearchFeed(sandbox);
-  const client = stubSearchClient(sandbox, feed, [{ values: [] }]);
+  const client = stubSearchClient(sandbox, feed, { matches: [] });
   await feed.search(undefined, "r1", "port-1");
   Assert.equal(lastSearchResponse(feed).data.status, "error");
   Assert.ok(!client.fetch.called, "a non-string query does not fetch");
@@ -1437,9 +1379,9 @@ add_task(async function test_search_unexpected_throw_replies_error() {
 add_task(async function test_search_disabled_replies_error_without_fetch() {
   const sandbox = sinon.createSandbox();
   const feed = makeSearchFeed(sandbox, { enabled: false });
-  const client = stubSearchClient(sandbox, feed, [
-    { values: [{ ticker: "AAPL" }] },
-  ]);
+  const client = stubSearchClient(sandbox, feed, {
+    matches: [{ ticker: "AAPL" }],
+  });
   await feed.search("AAPL", "r1", "port-1");
   Assert.equal(lastSearchResponse(feed).data.status, "error");
   Assert.ok(!client.fetch.called, "a disabled widget does not fetch");
@@ -1449,7 +1391,7 @@ add_task(async function test_search_disabled_replies_error_without_fetch() {
 add_task(async function test_search_no_target_does_not_reply() {
   const sandbox = sinon.createSandbox();
   const feed = makeSearchFeed(sandbox);
-  const client = stubSearchClient(sandbox, feed, [{ values: [] }]);
+  const client = stubSearchClient(sandbox, feed, { matches: [] });
   await feed.search("AAPL", "r1", undefined);
   Assert.ok(
     !feed.store.dispatch.called,
@@ -1462,8 +1404,8 @@ add_task(async function test_search_no_target_does_not_reply() {
 add_task(async function test_search_uses_a_separate_client_per_call() {
   const sandbox = sinon.createSandbox();
   const feed = makeSearchFeed(sandbox);
-  const clientA = searchClient(sandbox, [{ values: [{ ticker: "BRK.B" }] }]);
-  const clientB = searchClient(sandbox, [{ values: [{ ticker: "AAPL" }] }]);
+  const clientA = searchClient(sandbox, { matches: [{ ticker: "BRK.B" }] });
+  const clientB = searchClient(sandbox, { matches: [{ ticker: "AAPL" }] });
   const queue = [clientA, clientB];
   sandbox.stub(feed, "MerinoClient").callsFake(() => queue.shift());
   // Two searches interleave; each runs on its own client so they cannot abort
@@ -1481,9 +1423,9 @@ add_task(async function test_search_uses_a_separate_client_per_call() {
     byTarget[action.meta.toTarget] = action.data;
   }
   Assert.equal(byTarget["port-A"].status, "success");
-  Assert.deepEqual(byTarget["port-A"].values, [{ ticker: "BRK.B" }]);
+  Assert.deepEqual(byTarget["port-A"].matches, [{ ticker: "BRK.B" }]);
   Assert.equal(byTarget["port-B"].status, "success");
-  Assert.deepEqual(byTarget["port-B"].values, [{ ticker: "AAPL" }]);
+  Assert.deepEqual(byTarget["port-B"].matches, [{ ticker: "AAPL" }]);
   sandbox.restore();
 });
 
@@ -1496,7 +1438,7 @@ add_task(async function test_does_not_touch_feed_state() {
     fetch: sandbox.stub().rejects(new Error("default client must not be used")),
   };
   const cacheSet = sandbox.stub(feed, "_cacheSet").resolves();
-  stubSearchClient(sandbox, feed, [{ values: [{ ticker: "MSFT" }] }]);
+  stubSearchClient(sandbox, feed, { matches: [{ ticker: "MSFT" }] });
   await feed.search("MSFT", "r1", "port-1");
   Assert.deepEqual(
     feed.tickers,
@@ -1544,7 +1486,7 @@ add_task(async function test_onAction_search_request_calls_search() {
 add_task(async function test_onAction_search_request_missing_meta_is_safe() {
   const sandbox = sinon.createSandbox();
   const feed = makeSearchFeed(sandbox);
-  stubSearchClient(sandbox, feed, [{ values: [] }]);
+  stubSearchClient(sandbox, feed, { matches: [] });
   await feed.onAction({
     type: actionTypes.WIDGETS_STOCKS_SEARCH_REQUEST,
     data: { query: "AAPL", requestId: "r1" },

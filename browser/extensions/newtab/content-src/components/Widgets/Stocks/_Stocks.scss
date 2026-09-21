@@ -252,7 +252,8 @@
   background-color: var(--text-color-deemphasized);
 }
 
-.stock-ticker-price {
+.stock-ticker-price,
+.stock-ticker-exchange {
   font-size: var(--newtab-font-size-xsmall);
   color: var(--text-color-deemphasized);
 }
@@ -321,7 +322,8 @@
 
 // Rows keep their natural height and stack from the top, so a short list is not
 // stretched to fill the scroll area.
-.stocks-list--watchlist .stock-ticker {
+.stocks-list--watchlist .stock-ticker,
+.stocks-search-results .stock-ticker {
   flex: none;
 }
 
@@ -385,7 +387,8 @@
   color: var(--text-color-deemphasized);
 }
 
-.stock-ticker--large .stock-ticker-price {
+.stock-ticker--large .stock-ticker-price,
+.stock-ticker--large .stock-ticker-exchange {
   font-size: var(--font-size-small);
 }
 
@@ -497,22 +500,32 @@
   inline-size: 100%;
 }
 
-// Merino returns at most three results, so the list sits directly under the
-// search box at its natural height rather than filling the panel.
+// Up to ten matches, more than fit the card, so the list scrolls. Unlike the
+// watchlist it has no flex: 1, so a short list keeps its natural height and
+// the status message sits directly under it.
 .stocks-search-results {
   display: flex;
   flex-direction: column;
   gap: var(--space-large);
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+// flex: none keeps the message visible under a tall list; with overflow hidden
+// the flex layout would otherwise shrink it to nothing. Two lines fit the
+// watchlist-full message, and an unbroken long query wraps instead of overflowing.
 .stocks-search-message {
+  flex: none;
   margin: 0;
   font-size: var(--font-size-small);
   color: var(--text-color-deemphasized);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
