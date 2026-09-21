@@ -343,6 +343,13 @@ NS_IMETHODIMP ContentClassifierService::CollectReports(
         "Memory owned by the cosmetic filter cache beyond the filter data it "
         "shares with the matcher. The rules it serves are reported under "
         "filter-rules, not here.");
+
+    REPORT(nsPrintfCString("explicit/content-classifier/engines/%s/resources",
+                           engine.mFeatureName.get()),
+           engine.mSizes.resources,
+           "Memory used by this engine's redirect and scriptlet resource "
+           "backend. Excludes whatever the backend stores, which Firefox never "
+           "populates.");
   }
 
 #undef REPORT

@@ -99,6 +99,8 @@ pub struct ContentClassifierEngineSizes {
     /// Whatever the cosmetic filter cache owns beyond the filter data it
     /// shares with the matcher.
     pub cosmetic_cache: usize,
+    /// The boxed resource backend, excluding whatever it stores.
+    pub resources: usize,
 }
 
 /// `malloc_enclosing_size_of` sizes an allocation from an interior pointer.
@@ -128,6 +130,7 @@ pub unsafe extern "C" fn content_classifier_engine_size_of(
         regex_table: breakdown.regex_table,
         enabled_tags: breakdown.enabled_tags,
         cosmetic_cache: breakdown.cosmetic_cache,
+        resources: breakdown.resources,
     }
 }
 
