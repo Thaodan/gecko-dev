@@ -4120,13 +4120,16 @@ def repackage_single_locales(command_context, verbose=False, locales=[], dest=No
         "Processing chrome Gecko resources for locales {locales}",
     )
 
-    def line_handler(line):
-        command_context.log(
-            logging.INFO,
-            "repackage-single-locales",
-            {"line": line},
-            "export> {line}",
-        )
+    def prefixed_line_handler(prefix):
+        def line_handler(line):
+            command_context.log(
+                logging.INFO,
+                "repackage-single-locales",
+                {"prefix": prefix, "line": line},
+                "{prefix}> {line}",
+            )
+
+        return line_handler
 
     command_context.run_process(
         [
@@ -4140,70 +4143,105 @@ def repackage_single_locales(command_context, verbose=False, locales=[], dest=No
         append_env=append_env,
         pass_thru=False,
         ensure_exit_code=True,
-        line_handler=line_handler,
+        line_handler=prefixed_line_handler("export"),
     )
 
-    for locale in locales:
-        command_context.log(
-            logging.INFO,
-            "repackage-single-locales",
-            {"locale": locale},
-            "Repackaging locale {locale}",
-        )
+    command_context.reload_config_environment()
 
-        def line_handler(line):
+    from mozbuild.action.l10n_repackage import uses_local_package
+
+    en_us_package = en_us_snapshot = None
+    if uses_local_package(command_context.substs):
+        suffix = command_context.substs["PKG_SUFFIX"]
+        package_name = append_env["MOZ_SIMPLE_PACKAGE_NAME"]
+        en_us_package = (
+            Path(command_context.topobjdir) / "dist" / f"{package_name}{suffix}"
+        )
+        if not en_us_package.is_file():
+            # `MOZ_SIMPLE_PACKAGE_NAME` gives the package this fixed name, so
+            # the package built here is the one every locale unpacks.
             command_context.log(
                 logging.INFO,
                 "repackage-single-locales",
-                {"locale": locale, "line": line},
-                "{locale}> {line}",
+                {"package": str(en_us_package)},
+                "Building the en-US package {package}",
+            )
+            command_context.run_process(
+                [
+                    sys.executable,
+                    mozpath.join(command_context.topsrcdir, "mach"),
+                    "--log-no-times",
+                    "package",
+                ]
+                + (["-v"] if verbose else []),
+                append_env=append_env,
+                pass_thru=False,
+                ensure_exit_code=True,
+                line_handler=prefixed_line_handler("package"),
+            )
+        en_us_snapshot = en_us_package.with_name(f"{package_name}.en-US{suffix}")
+        shutil.copy2(en_us_package, en_us_snapshot)
+        append_env["MOZ_ARTIFACT_FILE"] = str(en_us_snapshot)
+
+    try:
+        for locale in locales:
+            command_context.log(
+                logging.INFO,
+                "repackage-single-locales",
+                {"locale": locale},
+                "Repackaging locale {locale}",
             )
 
-        command_context.run_process(
-            [
-                sys.executable,
-                mozpath.join(command_context.topsrcdir, "mach"),
-                "--log-no-times",
-                "configure",
-                f"--enable-ui-locale={locale}",
-            ],
-            append_env=append_env,
-            pass_thru=False,
-            ensure_exit_code=True,
-            line_handler=line_handler,
-        )
+            line_handler = prefixed_line_handler(locale)
 
-        command_context.run_process(
-            [
-                sys.executable,
-                mozpath.join(command_context.topsrcdir, "mach"),
-                "--log-no-times",
-                "build",
-            ]
-            + (["-v"] if verbose else [])
-            + [
-                f"installers-{locale}",
-            ],
-            append_env=append_env,
-            pass_thru=False,
-            ensure_exit_code=True,
-            line_handler=line_handler,
-        )
+            command_context.run_process(
+                [
+                    sys.executable,
+                    mozpath.join(command_context.topsrcdir, "mach"),
+                    "--log-no-times",
+                    "configure",
+                    f"--enable-ui-locale={locale}",
+                ],
+                append_env=append_env,
+                pass_thru=False,
+                ensure_exit_code=True,
+                line_handler=line_handler,
+            )
 
-        append_env["UPLOAD_PATH"] = mozpath.join(dest, locale)
+            command_context.run_process(
+                [
+                    sys.executable,
+                    mozpath.join(command_context.topsrcdir, "mach"),
+                    "--log-no-times",
+                    "build",
+                ]
+                + (["-v"] if verbose else [])
+                + [
+                    f"installers-{locale}",
+                ],
+                append_env=append_env,
+                pass_thru=False,
+                ensure_exit_code=True,
+                line_handler=line_handler,
+            )
 
-        command_context._run_make(
-            directory=os.path.join(command_context.topobjdir),
-            target=["upload", f"AB_CD={locale}"],
-            append_env=append_env,
-            pass_thru=False,
-            print_directory=False,
-            ensure_exit_code=True,
-            silent=not verbose,
-            # We do our own logging.
-            log=False,
-            line_handler=line_handler,
-        )
+            append_env["UPLOAD_PATH"] = mozpath.join(dest, locale)
+
+            command_context._run_make(
+                directory=os.path.join(command_context.topobjdir),
+                target=["upload", f"AB_CD={locale}"],
+                append_env=append_env,
+                pass_thru=False,
+                print_directory=False,
+                ensure_exit_code=True,
+                silent=not verbose,
+                # We do our own logging.
+                log=False,
+                line_handler=line_handler,
+            )
+    finally:
+        if en_us_snapshot:
+            shutil.move(en_us_snapshot, en_us_package)
 
     return 0
 

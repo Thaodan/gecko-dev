@@ -18,8 +18,6 @@
 #   language pack and zip package.
 #   Other targets like windows installers might be listed, too, and should
 #   be defined in the including makefile.
-#   The installer-% targets should not set AB_CD, so that the unpackaging
-#   step finds the original package.
 # The including makefile should provide values for the variables
 #   MOZ_APP_VERSION and MOZ_LANGPACK_EID.
 
@@ -52,7 +50,7 @@ include $(MOZILLA_DIR)/toolkit/mozapps/installer/packager.mk
 
 repackage-zip-%: AB_CD=$*
 repackage-zip-%:
-	$(call py_action,l10n_repackage,--locale=$* --mach=$(topsrcdir)/mach --make='$(MAKE)' --l10n-stage='$(DIST)/l10n-stage' --unpack-distdir='$(DIST)/l10n-stage/$(MOZ_PKG_DIR)' --stagedist='$(STAGEDIST)' --xpi-stage='$(ABS_DIST)/xpi-stage/locale-$*' --pkg-dir='$(MOZ_PKG_DIR)' --pkg-format=$(MOZ_PKG_FORMAT) --pkg-filename='$(PACKAGE)' --tar=$(TAR) --output='$(ZIP_OUT)' --moz-widget-toolkit=$(MOZ_WIDGET_TOOLKIT) --os-arch=$(OS_ARCH) --installer-dir='$(DEPTH)/$(MOZ_BUILD_APP)/installer/windows' --real-locale-mergedir='$(REAL_LOCALE_MERGEDIR)' $(addprefix --extra-l10n=,$(MOZ_PKG_EXTRAL10N)) $(if $(filter omni,$(MOZ_PACKAGER_FORMAT)),$(addprefix --non-resource=,$(NON_OMNIJAR_FILES))) $(if $(MOZ_PACKAGER_MINIFY),--minify) $(MOZ_PACKAGE_EXTRA_ARGS))
+	$(call py_action,l10n_repackage,--locale=$* --mach=$(topsrcdir)/mach --make='$(MAKE)' --l10n-stage='$(DIST)/l10n-stage' --unpack-distdir='$(DIST)/l10n-stage/$(MOZ_PKG_DIR)' --en-us-package='$(foreach AB_CD,en-US,$(ABS_DIST)/$(PACKAGE))' --stagedist='$(STAGEDIST)' --xpi-stage='$(ABS_DIST)/xpi-stage/locale-$*' --pkg-dir='$(MOZ_PKG_DIR)' --pkg-format=$(MOZ_PKG_FORMAT) --pkg-filename='$(PACKAGE)' --tar=$(TAR) --output='$(ZIP_OUT)' --moz-widget-toolkit=$(MOZ_WIDGET_TOOLKIT) --os-arch=$(OS_ARCH) --installer-dir='$(DEPTH)/$(MOZ_BUILD_APP)/installer/windows' --real-locale-mergedir='$(REAL_LOCALE_MERGEDIR)' $(addprefix --extra-l10n=,$(MOZ_PKG_EXTRAL10N)) $(if $(filter omni,$(MOZ_PACKAGER_FORMAT)),$(addprefix --non-resource=,$(NON_OMNIJAR_FILES))) $(if $(MOZ_PACKAGER_MINIFY),--minify) $(MOZ_PACKAGE_EXTRA_ARGS))
 
 # Dealing with app sub dirs: If DIST_SUBDIRS is defined it contains a
 # listing of app sub-dirs we should include in langpack xpis. If not,
