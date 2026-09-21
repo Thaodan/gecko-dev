@@ -24,6 +24,8 @@ import mozilla.components.browser.thumbnails.storage.ThumbnailStorage
 import mozilla.components.concept.base.images.ImageLoadRequest
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.ktx.kotlinx.coroutines.flow.ifAnyChanged
+import org.mozilla.fenix.browser.store.BrowserScreenAction.TabReloadCoverVisibilityUpdated
+import org.mozilla.fenix.browser.store.BrowserScreenStore
 
 // Safety timers for the cover's lifecycle. A typical restore reveal walks the timeline:
 //
@@ -60,6 +62,13 @@ private const val COVER_POST_FCP_HOLD_MS = 400L
  * The [start] flow reacts to only three per-tab signals: tab id, `firstContentfulPaint`, and `engineSession != null`.
  * Everything else (URL updates, loading state, progress) is churn we deliberately ignore.
  *
+ * ## Side-channel visibility
+ *
+ * Cover visibility is mirrored into [browserScreenStore] via [TabReloadCoverVisibilityUpdated] so the toolbar can
+ * render a "Cached" URL prefix while the cover is up. That store-flag also gates the "Live page" toast: the toast fires
+ * only on the natural timer-driven finalize (when a cover that actually reached the user gives way to the live page),
+ * never on user-driven dismissal or on covers whose bitmap load never completed.
+ *
  * ## Threading
  *
  * All mutation runs on [dispatcher] (Main in production, injected for tests). The store observation and both
@@ -67,6 +76,7 @@ private const val COVER_POST_FCP_HOLD_MS = 400L
  */
 class TabReloadCoverFeature(
     private val store: BrowserStore,
+    private val browserScreenStore: BrowserScreenStore,
     private val thumbnailStorage: ThumbnailStorage,
     coverView: ImageView,
     private val tabId: String? = null,
@@ -199,6 +209,9 @@ class TabReloadCoverFeature(
             // over a different tab's content.
             if (trackedTabId != coverTabId || !covering) return@launch
             presenter.show(bitmap)
+            // Announce cover-up to the browser screen store. Consumers: the toolbar reads this to swap the URL for
+            // a "Cached" chip, and the timer-driven finalize below gates its toast on the same flag.
+            browserScreenStore.dispatch(TabReloadCoverVisibilityUpdated(isVisible = true))
         }
     }
 
@@ -208,28 +221,43 @@ class TabReloadCoverFeature(
         timerJob?.cancel()
         timerJob = scope?.launch {
             delay(delayMs.milliseconds)
-            // The timer can outlive its purpose — e.g. the user dismissed the cover after we scheduled the timer
-            // but before it fired. Guard on `covering`; if we've already reset, do nothing.
-            if (covering) hideAndReset()
+            onTimerFired()
         }
+    }
+
+    private fun onTimerFired() {
+        // The timer can outlive its purpose — e.g. the user dismissed the cover after we scheduled the timer
+        // but before it fired. Guard on `covering`; if we've already reset, do nothing.
+        if (!covering) return
+        // Timer-driven finalize is the only path that reveals a live page over a cover that actually reached the
+        // user; that's the moment a "Live page" toast is meaningful. Gate the toast on the store's visibility flag
+        // rather than `covering`: `covering=true` includes the window where the bitmap load hasn't landed yet,
+        // and a toast for a cover the user never saw would be a spurious surprise.
+        val wasVisible = browserScreenStore.state.isShowingTabReloadCover
+        hideAndReset(withToast = wasVisible)
     }
 
     private fun onDismissed() {
         // Fires when the user taps the cover. The presenter has already torn the view down locally (see
-        // [ImageViewCoverPresenter.show] for why); our job here is to reset the tracking flags.
-        hideAndReset()
+        // [ImageViewCoverPresenter.show] for why); our job here is to reset the tracking flags and mirror the
+        // hide into the store. Never surface the "Live page" toast on a user-dismiss — the user just told us
+        // they've seen enough.
+        hideAndReset(withToast = false)
     }
 
     private fun tearDown() {
         // Split on `covering` so we don't fire a hide animation for a tab we never covered. If we latched a
-        // fresh-nav / already-linked tab (`covering=false`), we just reset the flags.
-        if (covering) hideAndReset() else resetTracking()
+        // fresh-nav / already-linked tab (`covering=false`), we just reset the flags. Teardown is also never a
+        // toast-worthy transition — it fires on tab switch, private-tab activation, or stop().
+        if (covering) hideAndReset(withToast = false) else resetTracking()
     }
 
-    private fun hideAndReset() {
+    private fun hideAndReset(withToast: Boolean) {
         thumbnailJob?.cancel()
         timerJob?.cancel()
         presenter.hideWithFade()
+        if (withToast) presenter.showLivePageToast()
+        browserScreenStore.dispatch(TabReloadCoverVisibilityUpdated(isVisible = false))
         resetTracking()
     }
 

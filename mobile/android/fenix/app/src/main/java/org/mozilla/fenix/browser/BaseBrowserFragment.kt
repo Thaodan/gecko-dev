@@ -1213,6 +1213,7 @@ abstract class BaseBrowserFragment :
             feature =
                 TabReloadCoverFeature(
                     store = requireComponents.core.store,
+                    browserScreenStore = browserScreenStore,
                     thumbnailStorage = requireComponents.core.thumbnailStorage,
                     coverView = binding.tabReloadCover,
                     tabId = customTabSessionId,

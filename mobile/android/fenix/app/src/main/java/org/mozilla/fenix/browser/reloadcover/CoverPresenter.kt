@@ -6,9 +6,12 @@ package org.mozilla.fenix.browser.reloadcover
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
+import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.widget.ImageView
+import android.widget.TextView
+import android.widget.Toast
 import org.mozilla.fenix.R
 
 private const val COVER_HIDE_ANIMATION_DURATION_MS = 150L
@@ -40,6 +43,9 @@ internal interface CoverPresenter {
 
     /** Pixel width the caller should request for the thumbnail bitmap. */
     fun preferredThumbnailWidth(): Int
+
+    /** Shows the "Live page" toast, indicating the reveal has swapped from cached to live. */
+    fun showLivePageToast()
 
     /** Releases view resources. Called from [TabReloadCoverFeature.stop]. */
     fun detach()
@@ -105,6 +111,22 @@ internal class ImageViewCoverPresenter(private val coverView: ImageView) : Cover
     override fun detach() {
         coverView.animate().cancel()
         resetViewState()
+    }
+
+    // A Toast composes its own window params for the inflated view root, so the null LayoutInflater root here is
+    // intentional. Suppressing InflateParams for that reason only.
+    @SuppressLint("InflateParams")
+    override fun showLivePageToast() {
+        val context = coverView.context
+        val toastView = LayoutInflater.from(context).inflate(R.layout.tab_reload_toast, null)
+        toastView.findViewById<TextView>(R.id.tab_reload_toast_text).setText(R.string.browser_toolbar_live_page_toast)
+        @Suppress("DEPRECATION")
+        Toast(context)
+            .apply {
+                view = toastView
+                duration = Toast.LENGTH_SHORT
+            }
+            .show()
     }
 
     @SuppressLint("ClickableViewAccessibility")

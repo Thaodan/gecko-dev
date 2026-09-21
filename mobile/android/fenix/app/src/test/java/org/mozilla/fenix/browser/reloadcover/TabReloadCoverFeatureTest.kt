@@ -14,6 +14,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.EngineState
 import mozilla.components.browser.state.state.createTab
@@ -24,15 +25,19 @@ import mozilla.components.support.test.robolectric.testContext
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.R
+import org.mozilla.fenix.browser.store.BrowserScreenStore
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.shadows.ShadowToast
 
 /**
  * Integration tests for [TabReloadCoverFeature]. These exercise the view-level wiring — [store] events flowing through
- * the Feature's imperative show/hide logic and into [CoverPresenter] and the [ImageView].
+ * the Feature's imperative show/hide logic into [CoverPresenter] and the [ImageView], plus the side-channel dispatches
+ * into [BrowserScreenStore] that drive the toolbar's "Cached" chip and the "Live page" toast.
  */
 @RunWith(RobolectricTestRunner::class)
 class TabReloadCoverFeatureTest {
@@ -47,7 +52,6 @@ class TabReloadCoverFeatureTest {
     @Before
     fun setUp() {
         // A tab with a persisted engine state but no linked engine session — i.e., restore pending.
-        // This is what triggers the cover: the decider only shows for restore-pending tabs.
         val restorePendingTab =
             createTab(url = "https://www.mozilla.org", id = "1")
                 .copy(engineState = EngineState(engineSessionState = mockk<EngineSessionState>()))
@@ -70,6 +74,7 @@ class TabReloadCoverFeatureTest {
         feature =
             TabReloadCoverFeature(
                 store = store,
+                browserScreenStore = BrowserScreenStore(),
                 thumbnailStorage = thumbnailStorage,
                 coverView = coverView,
                 tabId = null,
@@ -80,14 +85,15 @@ class TabReloadCoverFeatureTest {
     @After
     fun tearDown() {
         feature.stop()
+        ShadowToast.reset()
     }
 
     @Test
     fun `when fully visible, cover image is dismissed on touch, rather than left static as the live page scrolls behind it`() =
         runTest(testDispatcher) {
             feature.start()
-            // runCurrent rather than advanceUntilIdle: the latter burns through the full safety
-            // timeout and hides the cover before the assertions run.
+            // runCurrent rather than advanceUntilIdle: the latter burns through the full safety timeout and hides
+            // the cover before the assertions run.
             testDispatcher.scheduler.runCurrent()
 
             assertEquals(View.VISIBLE, coverView.visibility)
@@ -106,8 +112,6 @@ class TabReloadCoverFeatureTest {
     @Test
     fun `fresh navigation on an already-linked tab does not show the cover`() =
         runTest(testDispatcher) {
-            // Rebuild the store with a tab whose engine session is already linked (fresh nav / tab switch
-            // scenario, not restore-pending). The cover must not appear.
             val alreadyLinkedTab =
                 createTab(url = "https://www.mozilla.org", id = "2")
                     .copy(engineState = EngineState(engineSession = mockk(relaxed = true)))
@@ -115,6 +119,7 @@ class TabReloadCoverFeatureTest {
             feature =
                 TabReloadCoverFeature(
                     store = store,
+                    browserScreenStore = BrowserScreenStore(),
                     thumbnailStorage = thumbnailStorage,
                     coverView = coverView,
                     tabId = null,
@@ -130,19 +135,17 @@ class TabReloadCoverFeatureTest {
     @Test
     fun `restore-pending tab with stale fcp=true still shows the cover`() =
         runTest(testDispatcher) {
-            // Content-process-crash scenario: the previous paint's fcp flag persists across the crash, so
-            // firstContentfulPaint is true at first sighting even though the tab is visually blank. We must
-            // still show the cover.
+            // Content-process-crash scenario: firstContentfulPaint persists across the crash. The Feature must not
+            // treat the stale fcp=true as a fresh paint and skip the cover.
             val restoreWithStaleFcp =
                 createTab(url = "https://www.mozilla.org", id = "3")
                     .copy(engineState = EngineState(engineSessionState = mockk<EngineSessionState>()))
-                    .let {
-                        it.copy(content = it.content.copy(firstContentfulPaint = true))
-                    }
+                    .let { it.copy(content = it.content.copy(firstContentfulPaint = true)) }
             store = BrowserStore(BrowserState(tabs = listOf(restoreWithStaleFcp), selectedTabId = "3"))
             feature =
                 TabReloadCoverFeature(
                     store = store,
+                    browserScreenStore = BrowserScreenStore(),
                     thumbnailStorage = thumbnailStorage,
                     coverView = coverView,
                     tabId = null,
@@ -153,6 +156,31 @@ class TabReloadCoverFeatureTest {
             testDispatcher.scheduler.runCurrent()
 
             assertEquals(View.VISIBLE, coverView.visibility)
+        }
+
+    @Test
+    fun `during the post-FCP hold, the cover is still dismissable by touch and dismissal does not fire the Live page toast`() =
+        runTest(testDispatcher) {
+            feature.start()
+            testDispatcher.scheduler.runCurrent()
+            assertEquals(View.VISIBLE, coverView.visibility)
+
+            // FCP schedules a 400ms hold before the natural finalize. During that window the cover stays fully
+            // visible and must remain dismissable. A user-dismiss during the hold must not fire the toast (the
+            // toast is only meaningful when the timer's natural finalize actually reveals a live page).
+            store.dispatch(ContentAction.UpdateFirstContentfulPaintStateAction("1", true))
+            testDispatcher.scheduler.runCurrent()
+            assertEquals(View.VISIBLE, coverView.visibility)
+
+            val down = MotionEvent.obtain(0L, 0L, MotionEvent.ACTION_DOWN, 10f, 10f, 0)
+            try {
+                coverView.dispatchTouchEvent(down)
+
+                assertEquals(View.GONE, coverView.visibility)
+                assertNull(ShadowToast.getLatestToast())
+            } finally {
+                down.recycle()
+            }
         }
 
     @Test
