@@ -1407,8 +1407,15 @@ CSSIntSize nsImageLoadingContent::NaturalSize(
   // and transfer that through the aspect ratio to produce a height.)
   CSSIntSize size;  // defaults to 0,0
   size.width = intrinsicSize.mWidth.valueOr(kFallbackIntrinsicWidthInPixels);
-  size.height =
-      intrinsicSize.mHeight.valueOr(kFallbackIntrinsicHeightInPixels);
+
+  bool isUsingFallbackHeight;
+  if (intrinsicSize.mHeight) {
+    size.height = *intrinsicSize.mHeight;
+    isUsingFallbackHeight = false;
+  } else {
+    size.height = kFallbackIntrinsicHeightInPixels;
+    isUsingFallbackHeight = true;
+  }
 
   AspectRatio ratio = image->GetIntrinsicRatio();
   if (ratio) {
@@ -1416,6 +1423,7 @@ CSSIntSize nsImageLoadingContent::NaturalSize(
       // Compute the height from the width & ratio.  (Note that the width we
       // use here might be kFallbackIntrinsicWidthInPixels, and that's fine.)
       size.height = ratio.Inverted().ApplyTo(size.width);
+      isUsingFallbackHeight = false;
     } else if (!intrinsicSize.mWidth) {
       // Compute the width from the height & ratio.
       size.width = ratio.ApplyTo(size.height);
@@ -1436,7 +1444,10 @@ CSSIntSize nsImageLoadingContent::NaturalSize(
     }
   }
 
-  resolution.ApplyTo(size.width, size.height);
+  resolution.ApplyXTo(size.width);
+  if (!isUsingFallbackHeight) {
+    resolution.ApplyYTo(size.height);
+  }
   return size;
 }
 
