@@ -1571,6 +1571,13 @@ class RecursiveMakeBackend(MakeBackend):
         if libdef.output_category:
             self._process_non_default_target(libdef, rust_lib, backend_file)
 
+        if (
+            libdef.KIND == "target"
+            and not libdef.no_lto
+            and self.environment.substs.get("RUST_LTO_ELIGIBLE")
+        ):
+            backend_file.write("RUST_LIBRARY_LTO := 1\n")
+
     def _process_host_shared_library(self, libdef, backend_file):
         backend_file.write("HOST_SHARED_LIBRARY = %s\n" % libdef.lib_name)
 

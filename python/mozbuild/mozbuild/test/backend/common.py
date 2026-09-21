@@ -71,6 +71,17 @@ CONFIGS = defaultdict(
             "substs": {
                 "COMPILE_ENVIRONMENT": "1",
                 "RUST_TARGET": "x86_64-unknown-linux-gnu",
+                "RUST_LTO_ELIGIBLE": "1",
+                "LIB_PREFIX": "lib",
+                "LIB_SUFFIX": "a",
+            },
+        },
+        "rust-library-no-lto": {
+            "defines": {},
+            "substs": {
+                "COMPILE_ENVIRONMENT": "1",
+                "RUST_TARGET": "x86_64-unknown-linux-gnu",
+                "RUST_LTO_ELIGIBLE": "1",
                 "LIB_PREFIX": "lib",
                 "LIB_SUFFIX": "a",
             },
@@ -100,6 +111,7 @@ CONFIGS = defaultdict(
             "substs": {
                 "COMPILE_ENVIRONMENT": "1",
                 "RUST_TARGET": "x86_64-unknown-linux-gnu",
+                "RUST_LTO_ELIGIBLE": "1",
                 "LIB_PREFIX": "lib",
                 "LIB_SUFFIX": "a",
             },

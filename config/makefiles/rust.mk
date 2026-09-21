@@ -54,12 +54,9 @@ cargo_build_flags += $(MOZ_CARGO_BUILD_STD_ARGS)
 # These flags are passed via `cargo rustc` and only apply to the final rustc
 # invocation (i.e., only the top-level crate, not its dependencies).
 cargo_rustc_flags = $(CARGO_RUSTCFLAGS)
-ifdef RUST_LTO_ELIGIBLE
-# Enable link-time optimization for release builds, but not when linking
-# gkrust_gtest.
-ifeq (,$(findstring gkrust_gtest,$(RUST_LIBRARY_FILE)))
+# Enable link-time optimization for release builds.
+ifdef RUST_LIBRARY_LTO
 cargo_rustc_flags += -Clto
-endif
 endif
 
 ifdef CARGO_INCREMENTAL
@@ -333,7 +330,7 @@ ifndef MOZ_PROFILE_GENERATE
 ifeq ($(OS_ARCH), Linux)
 ifeq (,$(RUST_SANCOV_FLAGS)$(MOZ_ASAN)$(MOZ_TSAN)$(MOZ_UBSAN))
 ifndef MOZ_LTO_RUST_CROSS
-ifneq (,$(filter -Clto,$(cargo_rustc_flags)))
+ifdef RUST_LIBRARY_LTO
 	$(call py_action,check_binary $(@F),--networking $(RUST_LIBRARY_FILE))
 endif
 endif

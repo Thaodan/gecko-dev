@@ -729,6 +729,7 @@ class BaseRustLibrary:
         "is_gkrust",
         "cargo_profile_suffix",
         "cargo_crate_type",
+        "no_lto",
     )
 
     def init(
@@ -742,10 +743,12 @@ class BaseRustLibrary:
         is_gkrust,
         cargo_profile_suffix,
         cargo_crate_type,
+        no_lto,
     ):
         self.is_gkrust = is_gkrust
         self.cargo_profile_suffix = cargo_profile_suffix
         self.cargo_crate_type = cargo_crate_type
+        self.no_lto = no_lto
         self.cargo_file = cargo_file
         self.crate_type = crate_type
         # We need to adjust our naming here because cargo replaces '-' in
@@ -804,6 +807,7 @@ class RustLibrary(BaseRustLibrary, StaticLibrary):
         is_gkrust=False,
         cargo_profile_suffix="",
         cargo_crate_type="",
+        no_lto=False,
         link_into=None,
     ):
         StaticLibrary.__init__(
@@ -826,6 +830,7 @@ class RustLibrary(BaseRustLibrary, StaticLibrary):
             is_gkrust,
             cargo_profile_suffix,
             cargo_crate_type,
+            no_lto,
         )
 
 
@@ -994,6 +999,7 @@ class HostRustLibrary(BaseRustLibrary, HostLibrary):
         is_gkrust,
         cargo_profile_suffix="",
         cargo_crate_type="",
+        no_lto=False,
     ):
         HostLibrary.__init__(self, context, basename)
         BaseRustLibrary.init(
@@ -1007,6 +1013,7 @@ class HostRustLibrary(BaseRustLibrary, HostLibrary):
             is_gkrust,
             cargo_profile_suffix,
             cargo_crate_type,
+            no_lto,
         )
 
 

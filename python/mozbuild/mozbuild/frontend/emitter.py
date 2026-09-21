@@ -632,6 +632,7 @@ class TreeMetadataEmitter(LoggingMixin):
         is_gkrust=False,
         cargo_profile_suffix="",
         cargo_crate_type="",
+        no_lto=False,
         cls=RustLibrary,
     ):
         # We need to note any Rust library for linking purposes.
@@ -694,6 +695,7 @@ class TreeMetadataEmitter(LoggingMixin):
             is_gkrust,
             cargo_profile_suffix=cargo_profile_suffix,
             cargo_crate_type=cargo_crate_type,
+            no_lto=no_lto,
             **static_args,
         )
 
@@ -1015,6 +1017,7 @@ class TreeMetadataEmitter(LoggingMixin):
                         cargo_crate_type=context.get(
                             "RUST_LIBRARY_CARGO_CRATE_TYPE", ""
                         ),
+                        no_lto=bool(context.get("RUST_LIBRARY_NO_LTO")),
                     )
                 else:
                     lib = StaticLibrary(context, libname, **static_args)

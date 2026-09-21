@@ -1123,6 +1123,27 @@ class TestRecursiveMakeBackend(BackendTester):
             "RUST_LIBRARY_FILE := x86_64-unknown-linux-gnu/release/libtest_library.a",
             "CARGO_FILE := $(srcdir)/Cargo.toml",
             "CARGO_TARGET_DIR := %s" % env.topobjdir,
+            "RUST_LIBRARY_LTO := 1",
+        ]
+
+        self.assertEqual(lines, expected)
+
+    def test_rust_library_with_no_lto(self):
+        """Test that a Rust library's LTO opt out keeps RUST_LIBRARY_LTO unset."""
+        env = self._consume("rust-library-no-lto", RecursiveMakeBackend)
+
+        backend_path = mozpath.join(env.topobjdir, "backend.mk")
+        lines = [
+            l.strip()
+            for l in open(backend_path).readlines()[2:]
+            # Strip out computed flags, they're a PITA to test.
+            if not l.startswith("COMPUTED_")
+        ]
+
+        expected = [
+            "RUST_LIBRARY_FILE := x86_64-unknown-linux-gnu/release/libno_lto_library.a",
+            "CARGO_FILE := $(srcdir)/Cargo.toml",
+            "CARGO_TARGET_DIR := %s" % env.topobjdir,
         ]
 
         self.assertEqual(lines, expected)
@@ -1208,6 +1229,7 @@ class TestRecursiveMakeBackend(BackendTester):
             "CARGO_FILE := $(srcdir)/Cargo.toml",
             "CARGO_TARGET_DIR := %s" % env.topobjdir,
             "RUST_LIBRARY_FEATURES := musthave,cantlivewithout",
+            "RUST_LIBRARY_LTO := 1",
         ]
 
         self.assertEqual(lines, expected)
