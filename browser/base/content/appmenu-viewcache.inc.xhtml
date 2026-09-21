@@ -57,24 +57,20 @@
         <html:moz-button id="appMenu-nova-fxa-label"/>
       </toolbaritem>
       <hbox id="appMenu-fxa-sign-in-promo"
-            align="center"
-            closemenu="none">
+            align="center">
         <html:img class="fxa-menu-sign-in-promo-image"
                   alt=""
                   src="chrome://browser/content/kit-signed-out.svg"/>
         <vbox class="fxa-menu-sign-in-promo-text" flex="1">
           <label class="fxa-menu-sign-in-promo-heading"
-                 data-l10n-id="appmenu-fxa-sign-in-promo-heading2"/>
-          <html:a id="appMenu-fxa-sign-in-promo-link"
-                  class="fxa-menu-sign-in-promo-link"
-                  role="link"
-                  data-l10n-id="appmenu-fxa-sign-in-promo-link"/>
+                 data-l10n-id="appmenu-fxa-sign-in-promo-heading"/>
+          <description class="fxa-menu-sign-in-promo-message"
+                       data-l10n-id="appmenu-fxa-sign-in-promo-message"/>
         </vbox>
-        <html:moz-button type="ghost"
+        <html:moz-button type="primary"
                          size="small"
-                         id="appMenu-fxa-sign-in-promo-dismiss-button"
-                         iconsrc="chrome://global/skin/icons/close.svg"
-                         data-l10n-id="appmenu-fxa-sign-in-promo-dismiss-button"/>
+                         id="appMenu-fxa-sign-in-promo-button"
+                         data-l10n-id="appmenu-fxa-sign-in-promo-button"/>
       </hbox>
       <toolbarbutton id="appMenu-create-profile-button"
                      class="subviewbutton subviewbutton-nav"

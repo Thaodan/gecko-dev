@@ -38,9 +38,6 @@ var { DEVICE_TYPE_MOBILE, DEVICE_TYPE_TABLET } = ChromeUtils.importESModule(
 
 const MIN_STATUS_ANIMATION_DURATION = 1600;
 
-const APP_MENU_SIGN_IN_PROMO_DISMISSED_PREF =
-  "identity.fxaccounts.toolbar.appMenuSignInPromo.dismissed";
-
 // Campaign params shared by every product CTA in the Mozilla account toolbar
 // panel. The per-variant utm_content is added by gSync._ctaURL.
 const FXA_CTA_UTM_PARAMS = {
@@ -1374,13 +1371,6 @@ var gSync = {
       "FXA_CTA_MENU_ENABLED",
       "identity.fxaccounts.toolbar.pxiToolbarEnabled"
     );
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
-      "APP_MENU_SIGN_IN_PROMO_DISMISSED",
-      APP_MENU_SIGN_IN_PROMO_DISMISSED_PREF,
-      false,
-      () => this.updateAppMenuSignInPromo()
-    );
   },
 
   maybeUpdateUIState() {
@@ -1493,17 +1483,11 @@ var gSync = {
 
     EnsureFxAccountsWebChannel();
 
-    // Sign-in promo shown in the app menu (main view) when signed out, unless
-    // the user dismissed it.
+    // Sign-in promo shown in the app menu (main view) when signed out.
     PanelMultiView.getViewNode(
       document,
-      "appMenu-fxa-sign-in-promo-link"
+      "appMenu-fxa-sign-in-promo-button"
     ).addEventListener("click", this);
-    PanelMultiView.getViewNode(
-      document,
-      "appMenu-fxa-sign-in-promo-dismiss-button"
-    ).addEventListener("click", this);
-    this.updateAppMenuSignInPromo();
 
     // Sign-in button shown in the app menu (main view) after signing out.
     PanelMultiView.getViewNode(
@@ -1639,23 +1623,6 @@ var gSync = {
     if (NimbusFeatures.fxaAppMenuItem.getVariable("ctaCopyVariant")) {
       NimbusFeatures.fxaAppMenuItem.recordExposureEvent();
     }
-  },
-
-  /**
-   * Reflects whether the app menu's sign-in promo has been dismissed onto the
-   * root element, which is how CSS knows to show the compact sign-in row in its
-   * place. The dismissal is permanent, and it is shared by every window, so the
-   * pref getter re-runs this when another window dismisses the promo.
-   */
-  updateAppMenuSignInPromo() {
-    document.documentElement.toggleAttribute(
-      "fxa-sign-in-promo-dismissed",
-      this.APP_MENU_SIGN_IN_PROMO_DISMISSED
-    );
-  },
-
-  dismissAppMenuSignInPromo() {
-    Services.prefs.setBoolPref(APP_MENU_SIGN_IN_PROMO_DISMISSED_PREF, true);
   },
 
   onFxAPanelViewShowing(panelview) {
@@ -1951,14 +1918,11 @@ var gSync = {
       case "PanelUI-fxa-menu-sign-in-promo-button":
         this.openFxAEmailFirstPageFromFxaMenu(button);
         break;
-      case "appMenu-fxa-sign-in-promo-link":
+      case "appMenu-fxa-sign-in-promo-button":
       case "appMenu-fxa-signed-out-sign-in-button":
         // Sign-in from the app menu: go to the sign-in page, close the menu.
         this.openFxAEmailFirstPageFromFxaMenu(button);
         PanelUI.hide();
-        break;
-      case "appMenu-fxa-sign-in-promo-dismiss-button":
-        this.dismissAppMenuSignInPromo();
         break;
       case "PanelUI-fxa-menu-account-signout-button":
         this.disconnect();
