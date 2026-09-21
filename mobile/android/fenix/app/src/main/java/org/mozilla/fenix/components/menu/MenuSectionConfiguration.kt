@@ -21,14 +21,17 @@ sealed interface FenixMenuItem {
     /** A menu item allowing to switch the current page between the desktop and the mobile version. */
     data object DesktopSite : FenixMenuItem
 
-    /** A menu item allowing to navigate back in browser history. */
+    /** A menu item allowing to navigate back. */
     data object Back : FenixMenuItem
 
-    /** A menu item allowing to navigate forward in browser history. */
+    /** A menu item allowing to navigate forward. */
     data object Forward : FenixMenuItem
 
     /** A menu item allowing to share the current page. */
     data object Share : FenixMenuItem
+
+    /** A menu item allowing to refresh or stop loading the current page. */
+    data object Refresh : FenixMenuItem
 }
 
 /**
