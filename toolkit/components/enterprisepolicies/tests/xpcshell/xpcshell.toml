@@ -8,3 +8,5 @@ run-if = [
 ["test_combined_provider_precedence.js"]
 
 ["test_empty.js"]
+
+["test_null_policy_value.js"]
