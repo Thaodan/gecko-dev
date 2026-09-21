@@ -200,12 +200,8 @@ appmenu-fxa-sign-in-promo-button =
     .label = Sign in
 appmenu-fxa-setup-sync =
     .label = Turn On Syncing…
-appmenu-fxa-setup-sync-new = Turn On
 appmenuitem-save-page =
     .label = Save Page As…
-
-appmenuitem-fxa-sync-off-title = Sync is off
-appmenuitem-fxa-sync-off-description = Protect and access your bookmarks, passwords, and more anywhere.
 
 ## The Firefox Profiler – The popup is the UI to turn on the profiler, and record
 ## performance profiles. To enable it go to profiler.firefox.com and click
