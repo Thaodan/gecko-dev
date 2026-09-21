@@ -29,7 +29,7 @@ function injectValues(queryMap) {
   document.title = queryMap.title;
   tryAgainButton.innerHTML = queryMap.button;
   continueHttpButton.innerHTML = queryMap.continueHttpButton;
-  backFromHttpButton.innerHTML = queryMap.badCertGoBack;
+  backFromHttpButton.innerHTML = queryMap.backFromHttpButton;
   document.getElementById("errorTitleText").innerHTML = queryMap.title;
   document.getElementById("errorShortDesc").innerHTML = queryMap.description;
   document.getElementById("advancedButton").innerHTML =
