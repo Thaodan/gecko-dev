@@ -6,7 +6,6 @@ import os
 
 config = {
     "default_actions": [
-        "clobber",
         "build",
     ],
     #### 64 bit build specific #####

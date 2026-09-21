@@ -28,7 +28,6 @@ class FxDesktopBuild(BuildScript):
             "config_options": BUILD_BASE_CONFIG_OPTIONS,
             "all_actions": [
                 "get-secrets",
-                "clobber",
                 "build",
                 "valgrind-test",
                 "multi-l10n",
