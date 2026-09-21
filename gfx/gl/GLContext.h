@@ -38,6 +38,7 @@
 #include "mozilla/ThreadLocal.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
+#include "mozilla/gfx/Point.h"
 #include "nsRegionFwd.h"
 #include "nsString.h"
 #include "nsTArray.h"

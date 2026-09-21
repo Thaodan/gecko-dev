@@ -147,10 +147,11 @@ struct StrokeOptions {
                          JoinStyle aLineJoin = JoinStyle::MITER_OR_BEVEL,
                          CapStyle aLineCap = CapStyle::BUTT,
                          Float aMiterLimit = 10.0f, size_t aDashLength = 0,
-                         const Float* aDashPattern = 0, Float aDashOffset = 0.f)
+                         const Float* aDashPattern = nullptr,
+                         Float aDashOffset = 0.f)
       : mLineWidth(aLineWidth),
         mMiterLimit(aMiterLimit),
-        mDashPattern(aDashLength > 0 ? aDashPattern : 0),
+        mDashPattern(aDashLength > 0 ? aDashPattern : nullptr),
         mDashLength(aDashLength),
         mDashOffset(aDashOffset),
         mLineJoin(aLineJoin),
@@ -353,7 +354,7 @@ class LinearGradientPatternT : public Pattern {
   }
 
   bool IsWeak() const override {
-    return std::is_same<decltype(this), const Weak*>::value;
+    return std::is_same_v<decltype(this), const Weak*>;
   }
 
   bool IsValid() const override { return IsRefValid(mStops); }
@@ -416,7 +417,7 @@ class RadialGradientPatternT : public Pattern {
   }
 
   bool IsWeak() const override {
-    return std::is_same<decltype(this), const Weak*>::value;
+    return std::is_same_v<decltype(this), const Weak*>;
   }
 
   bool IsValid() const override { return IsRefValid(mStops); }
@@ -478,7 +479,7 @@ class ConicGradientPatternT : public Pattern {
   }
 
   bool IsWeak() const override {
-    return std::is_same<decltype(this), const Weak*>::value;
+    return std::is_same_v<decltype(this), const Weak*>;
   }
 
   bool IsValid() const override { return IsRefValid(mStops); }
@@ -540,7 +541,7 @@ class SurfacePatternT : public Pattern {
   }
 
   bool IsWeak() const override {
-    return std::is_same<decltype(this), const Weak*>::value;
+    return std::is_same_v<decltype(this), const Weak*>;
   }
 
   bool IsValid() const override { return IsRefValid(mSurface); }
@@ -782,6 +783,9 @@ class DataSourceSurface : public SourceSurface {
       }
     }
 
+    ScopedMap(const ScopedMap& aOther) = delete;
+    ScopedMap& operator=(const ScopedMap& aOther) = delete;
+
     uint8_t* GetData() const {
       MOZ_ASSERT(mIsMapped);
       return mMap.mData;
@@ -805,9 +809,6 @@ class DataSourceSurface : public SourceSurface {
     bool IsMapped() const { return mIsMapped; }
 
    private:
-    ScopedMap(const ScopedMap& aOther) = delete;
-    ScopedMap& operator=(const ScopedMap& aOther) = delete;
-
     RefPtr<DataSourceSurface> mSurface;
     MappedSurface mMap;
     bool mIsMapped;
