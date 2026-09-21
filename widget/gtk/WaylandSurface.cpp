@@ -1516,16 +1516,19 @@ static const struct wp_image_description_v1_listener
 };
 
 void WaylandSurface::SetColorRepresentationLocked(
-    const WaylandSurfaceLock& aProofOfLock,
-    int aWLColorCoeficients, bool aFullRange,
-    uint32_t aWPChromaLocation) {
+    const WaylandSurfaceLock& aProofOfLock, int aWLColorCoeficients,
+    bool aFullRange, uint32_t aWPChromaLocation) {
   auto* colorRepresentation =
       WaylandDisplayGet()->GetColorRepresentationManager();
   if (!colorRepresentation) {
     return;
   }
 
-  LOGWAYLAND("WaylandSurface::SetColorRepresentationLocked() color coefficients %s full range %d", BufferSurface::GetWLColorCoeficientsName(aWLColorCoeficients), aFullRange);
+  LOGWAYLAND(
+      "WaylandSurface::SetColorRepresentationLocked() color coefficients %s "
+      "full range %d",
+      BufferSurface::GetWLColorCoeficientsName(aWLColorCoeficients),
+      aFullRange);
 
   MOZ_DIAGNOSTIC_ASSERT(!mColorRepresentationSurface);
   mColorRepresentationSurface = WUniquePtr<wp_color_representation_surface_v1>(
@@ -1535,7 +1538,8 @@ void WaylandSurface::SetColorRepresentationLocked(
     wp_color_representation_surface_v1_set_chroma_location(
         mColorRepresentationSurface.get(), aWPChromaLocation);
   }
-  if (auto range = WaylandDisplayGet()->GetColorRange(aWLColorCoeficients, aFullRange)) {
+  if (auto range =
+          WaylandDisplayGet()->GetColorRange(aWLColorCoeficients, aFullRange)) {
     wp_color_representation_surface_v1_set_coefficients_and_range(
         mColorRepresentationSurface.get(), aWLColorCoeficients, range);
   }

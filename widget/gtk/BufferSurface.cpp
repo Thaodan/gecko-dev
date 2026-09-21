@@ -159,7 +159,7 @@ int BufferSurface::GetWLColorCoeficients() {
   }
 }
 
-#ifdef MOZ_LOGGING
+#  ifdef MOZ_LOGGING
 const char* BufferSurface::GetWLColorCoeficientsName(int aWLColorCoeficients) {
   switch (aWLColorCoeficients) {
     case WP_COLOR_REPRESENTATION_SURFACE_V1_COEFFICIENTS_IDENTITY:
@@ -174,7 +174,7 @@ const char* BufferSurface::GetWLColorCoeficientsName(int aWLColorCoeficients) {
       return "Unknow";
   }
 }
-#endif
+#  endif
 #endif
 
 size_t BufferSurface::GetUsedMemory(int aWidth, int aHeight) const {

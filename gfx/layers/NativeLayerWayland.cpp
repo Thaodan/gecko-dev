@@ -37,8 +37,8 @@
 #include "mozilla/layers/SurfacePoolWayland.h"
 #include "mozilla/webrender/RenderDMABUFTextureHost.h"
 #include "mozilla/webrender/RenderThread.h"
-#include "mozilla/widget/nsWaylandDisplay.h"
 #include "mozilla/widget/WaylandSurface.h"
+#include "mozilla/widget/nsWaylandDisplay.h"
 #include "nsGtkUtils.h"
 
 #ifdef MOZ_LOGGING
@@ -1100,10 +1100,9 @@ void NativeLayerWayland::SetColorProperties(
     return;
   }
 
-  mSurface->SetColorRepresentationLocked(aSurfaceLock,
-                                         surface->GetWLColorCoeficients(),
-                                         surface->IsFullRange(),
-                                         surface->GetWPChromaLocation());
+  mSurface->SetColorRepresentationLocked(
+      aSurfaceLock, surface->GetWLColorCoeficients(), surface->IsFullRange(),
+      surface->GetWPChromaLocation());
 
   if (!WaylandDisplayGet()->IsParametricSupported()) {
     LOG("NativeLayerWayland::SetColorProperties() - Parametric not supported. "
@@ -1556,12 +1555,13 @@ void NativeLayerWaylandExternal::AttachExternalImage(
   // TODO: Cache converted surfaces if source is the same?
 
   // If HLG is not supported, transfer to RGBA/PQ
-  if (mIsHDR &&
-      surface->GetTransferFunction() == gfx::TransferFunction::HLG &&
-      !WaylandDisplayGet()->IsTFSupported(WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_HLG)) {
+  if (mIsHDR && surface->GetTransferFunction() == gfx::TransferFunction::HLG &&
+      !WaylandDisplayGet()->IsTFSupported(
+          WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_HLG)) {
     MOZ_DIAGNOSTIC_ASSERT(surface->GetAsDMABufSurfaceYUV(),
                           "Unsupported surface type!");
-    surface = surface->GetAsDMABufSurfaceYUV()->ConvertHLGToPQ(mRootLayer->gl());
+    surface =
+        surface->GetAsDMABufSurfaceYUV()->ConvertHLGToPQ(mRootLayer->gl());
     if (!surface) {
       LOG("  HLG->PQ conversion failed, quit.");
       mFrontBuffer = nullptr;

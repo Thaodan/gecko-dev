@@ -341,8 +341,7 @@ class WaylandSurface final {
                        RefPtr<WaylandSurface> aParent);
 
   void SetColorRepresentationLocked(const WaylandSurfaceLock& aProofOfLock,
-                                    int aWLColorCoeficients,
-                                    bool aFullRange,
+                                    int aWLColorCoeficients, bool aFullRange,
                                     uint32_t aWPChromaLocation = 0);
 
   static void ImageDescriptionFailed(

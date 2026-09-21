@@ -135,9 +135,9 @@ class BufferSurface {
 
 #ifdef MOZ_WAYLAND
   int GetWLColorCoeficients();
-#ifdef MOZ_LOGGING
+#  ifdef MOZ_LOGGING
   static const char* GetWLColorCoeficientsName(int aWLColorCoeficients);
-#endif
+#  endif
 #endif
 
 #ifdef MOZ_WAYLAND

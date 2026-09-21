@@ -405,7 +405,8 @@ class DMABufSurfaceYUV final : public DMABufSurface {
 
   DMABufSurfaceYUV();
 
-  already_AddRefed<DMABufSurfaceRGBA> ConvertHLGToPQ(mozilla::gl::GLContext* gl);
+  already_AddRefed<DMABufSurfaceRGBA> ConvertHLGToPQ(
+      mozilla::gl::GLContext* gl);
 
   bool UpdateYUVData(const VADRMPRIMESurfaceDescriptor& aDesc, int aWidth,
                      int aHeight, bool aCopy);
