@@ -21,6 +21,9 @@ enum class HideReason {
 
     /** The user tapped the cover, dismissing it early. */
     DISMISSED,
+
+    /** The cover would have been revealed but the device was offline; the paint is likely an error page. */
+    OFFLINE,
 }
 
 /**
@@ -101,6 +104,7 @@ class TabReloadCoverTelemetry(private val recorder: TabReloadCoverRecorder = Gle
                 HideReason.FINALIZED -> if (sawFcp) HIDE_REASON_FCP else HIDE_REASON_SAFETY_TIMEOUT
                 HideReason.STOPPED -> HIDE_REASON_STOPPED
                 HideReason.DISMISSED -> if (sawFcp) HIDE_REASON_USER_DISMISSED_AFTER_FCP else HIDE_REASON_USER_DISMISSED
+                HideReason.OFFLINE -> HIDE_REASON_OFFLINE
             }
         recorder.recordExited(hideReason, elapsedMs.toInt())
         showStartElapsedMs = NOT_SHOWING
@@ -117,5 +121,6 @@ class TabReloadCoverTelemetry(private val recorder: TabReloadCoverRecorder = Gle
         const val HIDE_REASON_STOPPED = "stopped"
         const val HIDE_REASON_USER_DISMISSED = "user_dismissed"
         const val HIDE_REASON_USER_DISMISSED_AFTER_FCP = "user_dismissed_after_fcp"
+        const val HIDE_REASON_OFFLINE = "offline"
     }
 }

@@ -43,6 +43,7 @@ class ScrollAwareThumbnailFeature(
     private val store: BrowserStore,
     lifecycleOwner: LifecycleOwner,
     private val thumbnailsFeature: () -> BrowserThumbnails?,
+    private val isOnline: () -> Boolean,
 ) : LifecycleAwareFeature {
 
     private var scope: CoroutineScope? = null
@@ -111,6 +112,10 @@ class ScrollAwareThumbnailFeature(
 
     private fun maybeCaptureThumbnail() {
         if (lastCapturedScrollX == currentScrollX && lastCapturedScrollY == currentScrollY) return
+        // Skip capture when offline — the current paint is likely an error page or cached content;
+        // snapshotting an error page would replace the good thumbnail and show the error as the
+        // "cached preview" on the next restore.
+        if (!isOnline()) return
         val feature = thumbnailsFeature() ?: return
         feature.requestScreenshot(CaptureAttemptedTriggers.TAB_BACKGROUNDED)
         lastCapturedScrollX = currentScrollX

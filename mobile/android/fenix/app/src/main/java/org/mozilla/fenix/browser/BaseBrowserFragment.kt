@@ -219,6 +219,7 @@ import org.mozilla.fenix.ext.getBottomToolbarHeight
 import org.mozilla.fenix.ext.getPreferenceKey
 import org.mozilla.fenix.ext.getTopToolbarHeight
 import org.mozilla.fenix.ext.hideToolbar
+import org.mozilla.fenix.ext.isOnline
 import org.mozilla.fenix.ext.isToolbarAtBottom
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.registerForActivityResult
@@ -1213,6 +1214,9 @@ abstract class BaseBrowserFragment :
 
         val isCoverEnabled = TabReloadCoverGating.isCoverEnabled(settings)
         val isScrollAwareEnabled = TabReloadCoverGating.isScrollAwareEnabled(settings)
+        val isOnline = {
+            context.getSystemService<android.net.ConnectivityManager>()?.isOnline() ?: false
+        }
 
         if (isCoverEnabled) {
             tabReloadCoverFeature.set(
@@ -1223,6 +1227,7 @@ abstract class BaseBrowserFragment :
                         thumbnailStorage = requireComponents.core.thumbnailStorage,
                         coverView = binding.tabReloadCover,
                         tabId = customTabSessionId,
+                        isOnline = isOnline,
                     ),
                 owner = this,
                 view = view,
@@ -1236,6 +1241,7 @@ abstract class BaseBrowserFragment :
                         store = requireComponents.core.store,
                         lifecycleOwner = viewLifecycleOwner,
                         thumbnailsFeature = { thumbnailsFeature.get() },
+                        isOnline = isOnline,
                     ),
                 owner = this,
                 view = view,

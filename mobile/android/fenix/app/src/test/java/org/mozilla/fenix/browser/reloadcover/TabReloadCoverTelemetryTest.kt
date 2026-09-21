@@ -8,6 +8,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mozilla.fenix.browser.reloadcover.TabReloadCoverTelemetry.Companion.HIDE_REASON_FCP
+import org.mozilla.fenix.browser.reloadcover.TabReloadCoverTelemetry.Companion.HIDE_REASON_OFFLINE
 import org.mozilla.fenix.browser.reloadcover.TabReloadCoverTelemetry.Companion.HIDE_REASON_SAFETY_TIMEOUT
 import org.mozilla.fenix.browser.reloadcover.TabReloadCoverTelemetry.Companion.HIDE_REASON_STOPPED
 import org.mozilla.fenix.browser.reloadcover.TabReloadCoverTelemetry.Companion.HIDE_REASON_USER_DISMISSED
@@ -94,6 +95,15 @@ class TabReloadCoverTelemetryTest {
 
         assertTrue(recorder.exited.isEmpty())
         assertEquals(0, recorder.shownCount)
+    }
+
+    @Test
+    fun `WHEN onExit(OFFLINE) is called after onShown THEN exited event with hide_reason=offline is recorded`() {
+        telemetry.onShown()
+        telemetry.onExit(HideReason.OFFLINE)
+
+        assertEquals(1, recorder.exited.size)
+        assertEquals(HIDE_REASON_OFFLINE, recorder.exited.first().hideReason)
     }
 
     @Test

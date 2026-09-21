@@ -17317,7 +17317,9 @@ tab_reload_cover:
           cover isn't providing value), `user_dismissed_after_fcp`
           (user tapped during the post-FCP hold — page is effectively
           live and they skipped the fade; low duration here means the
-          hold is too long).
+          hold is too long), `offline` (device had no validated internet
+          connection at reveal time; the paint is likely an error page
+          or cached content, so the "live page" toast is suppressed).
         type: string
       visible_duration_ms:
         description: |

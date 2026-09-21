@@ -81,6 +81,7 @@ class TabReloadCoverFeatureTest {
                 thumbnailStorage = thumbnailStorage,
                 coverView = coverView,
                 tabId = null,
+                isOnline = { true },
                 telemetry = telemetry,
                 dispatcher = testDispatcher,
             )
@@ -128,6 +129,7 @@ class TabReloadCoverFeatureTest {
                     thumbnailStorage = thumbnailStorage,
                     coverView = coverView,
                     tabId = null,
+                    isOnline = { true },
                     telemetry = telemetry,
                     dispatcher = testDispatcher,
                 )
@@ -155,6 +157,7 @@ class TabReloadCoverFeatureTest {
                     thumbnailStorage = thumbnailStorage,
                     coverView = coverView,
                     tabId = null,
+                    isOnline = { true },
                     telemetry = telemetry,
                     dispatcher = testDispatcher,
                 )

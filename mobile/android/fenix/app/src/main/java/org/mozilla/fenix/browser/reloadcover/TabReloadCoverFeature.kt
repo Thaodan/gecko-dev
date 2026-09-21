@@ -76,6 +76,15 @@ private const val COVER_POST_FCP_HOLD_MS = 400L
  * and `onExit(reason)` on every teardown path (natural finalize, user dismissal, feature stop, offline). Keeping the
  * recording behind a facade lets tests inject a Recorder fake without perturbing Glean's global state.
  *
+ * ## Offline behavior
+ *
+ * When [isOnline] returns false we skip the reveal entirely — whatever loads underneath is almost certainly an error
+ * page, so a cached preview would promise a reveal we can't deliver. We check at two places: at first sighting (never
+ * begin covering when offline) and at fresh-FCP-while-covering (bail immediately rather than holding). Known caveat
+ * inherited from [mozilla.components.browser.thumbnails.BrowserThumbnails]: its auto-capture on load-complete runs
+ * regardless of connectivity, so an offline error-page render can overwrite the on-disk thumbnail and briefly appear as
+ * the cover on the next restore. Fix (gating BrowserThumbnails' captures on connectivity) is deferred.
+ *
  * ## Threading
  *
  * All mutation runs on [dispatcher] (Main in production, injected for tests). The store observation and both
@@ -87,6 +96,7 @@ class TabReloadCoverFeature(
     private val thumbnailStorage: ThumbnailStorage,
     coverView: ImageView,
     private val tabId: String? = null,
+    private val isOnline: () -> Boolean,
     private val telemetry: TabReloadCoverTelemetry = TabReloadCoverTelemetry(),
     private val dispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : LifecycleAwareFeature {
@@ -170,10 +180,19 @@ class TabReloadCoverFeature(
         if (!tab.content.firstContentfulPaint) initialFcpStale = false
 
         if (tab.content.firstContentfulPaint && !initialFcpStale && covering) {
-            // Fresh FCP fired while covering: hold briefly to smooth late reflows behind the cover before revealing.
-            // Record onFcp here rather than on exit — this is the FCP-during-cover signal, not the exit reason.
-            telemetry.onFcp()
-            startTimer(COVER_POST_FCP_HOLD_MS)
+            if (!isOnline()) {
+                // Offline at reveal time: whatever painted is almost certainly Gecko's error page rather than
+                // the live site. Hide immediately — no post-FCP hold (nothing worth smoothing over) and no
+                // toast (the "Live page" promise would be a lie).
+                telemetry.onExit(HideReason.OFFLINE)
+                hideAndReset(withToast = false)
+            } else {
+                // Fresh FCP fired while covering: hold briefly to smooth late reflows behind the cover before
+                // revealing. Record onFcp here rather than on exit — this is the FCP-during-cover signal, not
+                // the exit reason.
+                telemetry.onFcp()
+                startTimer(COVER_POST_FCP_HOLD_MS)
+            }
             return
         }
 
@@ -196,7 +215,9 @@ class TabReloadCoverFeature(
         // attached a fresh engine session to it. Fresh navigation on an already-alive tab has engineSession != null
         // and never blanks the view, so it wouldn't benefit from a cover.
         val restorePending = tab.engineState.engineSession == null && tab.engineState.engineSessionState != null
-        if (restorePending) {
+        // Skip when offline: whatever loads is almost certainly an error page, so a cached preview
+        // would promise a reveal we can't deliver.
+        if (restorePending && isOnline()) {
             covering = true
             startLoadAndShow(tab.id)
             startTimer(COVER_PRE_FCP_TIMEOUT_MS)
