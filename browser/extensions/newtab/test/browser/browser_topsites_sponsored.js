@@ -89,6 +89,17 @@ add_setup(async function () {
   await topSitesFeed.refresh({ broadcast: true });
 
   registerCleanupFunction(async () => {
+    Services.prefs.clearUserPref(
+      "browser.newtabpage.activity-stream.unifiedAds.blockedAds"
+    );
+    Services.prefs.clearUserPref("browser.topsites.blockedSponsors");
+    Services.prefs.clearUserPref("browser.newtabpage.blocked");
+
+    // Clearing the preference does not reset NewTabUtils.blockedLinks'
+    // in-memory copy, and the feed does not re-read it on its own.
+    await new Promise(resolve => NewTabUtils.undoAll(resolve));
+    await topSitesFeed.refresh({ broadcast: true });
+
     lazy.DEFAULT_TOP_SITES.length = 0;
   });
 });
@@ -142,10 +153,4 @@ add_task(async function test_dismiss() {
       "Should have 3 topsites after dismiss"
     );
   });
-
-  Services.prefs.clearUserPref(
-    "browser.newtabpage.activity-stream.unifiedAds.blockedAds"
-  );
-  Services.prefs.clearUserPref("browser.topsites.blockedSponsors");
-  Services.prefs.clearUserPref("browser.newtabpage.blocked");
 });
