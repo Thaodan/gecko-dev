@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.compose.menu.data.ExpandableMenuItem
 import mozilla.components.compose.menu.store.MenuAction
 import mozilla.components.compose.menu.store.MenuAction.Init
 import mozilla.components.compose.menu.store.MenuAction.Update
@@ -42,6 +43,7 @@ import org.mozilla.fenix.components.menu.store.MenuAction.CustomizeReaderView
 import org.mozilla.fenix.components.menu.store.MenuAction.FindInPage
 import org.mozilla.fenix.components.menu.store.MenuAction.IPProtectionToggle
 import org.mozilla.fenix.components.menu.store.MenuAction.Navigate
+import org.mozilla.fenix.components.menu.store.MenuAction.OnMoreMenuClicked
 import org.mozilla.fenix.components.menu.store.MenuAction.OnSummarizationMenuExposed
 import org.mozilla.fenix.components.menu.store.MenuAction.RequestDesktopSite
 import org.mozilla.fenix.components.menu.store.MenuAction.RequestMobileSite
@@ -50,6 +52,7 @@ import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.summarization.eligibility.SummarizationEligibilityChecker
+import org.mozilla.fenix.summarization.isSummarizePageMenuItem
 import org.mozilla.fenix.summarization.onboarding.FenixSummarizationFeatureConfiguration
 import org.mozilla.fenix.summarization.onboarding.SummarizationFeatureDiscoveryConfiguration
 import org.mozilla.fenix.summarization.onboarding.SummarizeDiscoveryEvent
@@ -142,18 +145,9 @@ class MenuMiddleware(
                 )
             }
 
-            is OnSummarizationMenuExposed ->
-                scope.launch {
-                    val currentTab = browserStore.state.selectedTab
-                    val isSummarizationEnabled =
-                        summarizationSettings.showMenuItem &&
-                            currentTab?.isNormalTab() ?: false &&
-                            currentTab.checkSummarizationEligibility()
+            is OnMoreMenuClicked -> handleMoreBeingClicked(store)
 
-                    if (isSummarizationEnabled) {
-                        summarizationSettings.cacheDiscoveryEvent(SummarizeDiscoveryEvent.MenuItemExposure)
-                    }
-                }
+            is OnSummarizationMenuExposed -> handleSummarizationOptionBeingShown()
 
             is Navigate.Back -> handleBackNavigation(action)
 
@@ -241,6 +235,35 @@ class MenuMiddleware(
         navigate(
             NavGraphDirections.actionGlobalIpProtectionFragment(entrypoint = FenixFxAEntryPoint.IPProtectionMainMenu)
         )
+    }
+
+    private fun handleMoreBeingClicked(store: Store<MenuState, MenuAction>) {
+        val moreItem =
+            store.state.menuGroups
+                .flatMap { it.items }
+                .filterIsInstance<ExpandableMenuItem>()
+                .firstOrNull { it.onClickEvent == OnMoreMenuClicked }
+        if (
+            moreItem?.subMenuItems?.any { it.isSummarizePageMenuItem() } == true &&
+                browserStore.state.selectedTab?.content?.private == false &&
+                summarizationSettings.shouldHighlightOverflowMenuItem
+        ) {
+            summarizationSettings.cacheDiscoveryEvent(SummarizeDiscoveryEvent.MenuOverflowInteraction)
+        }
+    }
+
+    private fun handleSummarizationOptionBeingShown() {
+        scope.launch {
+            val currentTab = browserStore.state.selectedTab
+            val isSummarizationEnabled =
+                summarizationSettings.showMenuItem &&
+                    currentTab?.isNormalTab() ?: false &&
+                    currentTab.checkSummarizationEligibility()
+
+            if (isSummarizationEnabled) {
+                summarizationSettings.cacheDiscoveryEvent(SummarizeDiscoveryEvent.MenuItemExposure)
+            }
+        }
     }
 
     private fun handleBackNavigation(action: Navigate.Back) {

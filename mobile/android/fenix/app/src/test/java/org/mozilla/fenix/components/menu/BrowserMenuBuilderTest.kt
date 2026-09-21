@@ -172,11 +172,14 @@ class BrowserMenuBuilderTest {
         assertEquals(moreItem.copy(subMenuItems = listOf(findInPageItem)), shown)
     }
 
-    private fun createExpandingMenuBuilder(expandingTo: StateFlow<MenuItem?>) =
+    private fun createExpandingMenuBuilder(
+        expandingTo: StateFlow<MenuItem?>,
+        header: StateFlow<MenuItem?> = MutableStateFlow(moreItem),
+    ) =
         BrowserMenuBuilder(
             providerResolver = { item ->
                 when (item) {
-                    is More -> FakeMenuItemProvider(MutableStateFlow(moreItem))
+                    is More -> FakeExpandableMenuItemProvider(header)
                     else -> FakeMenuItemProvider(expandingTo)
                 }
             },
@@ -208,7 +211,60 @@ class BrowserMenuBuilderTest {
             )
         )
 
+    @Test
+    fun `WHEN assembling More THEN pass visible children to its provider`() = runTest {
+        var receivedChildren: List<StandardMenuItem>? = null
+        val provider =
+            object : ExpandableMenuItemProvider {
+                override val itemFlow = MutableStateFlow<MenuItem?>(moreItem)
+
+                override fun updateWithSubMenuItems(subMenuItems: List<StandardMenuItem>): ExpandableMenuItem {
+                    receivedChildren = subMenuItems
+
+                    return moreItem.copy(subMenuItems = subMenuItems)
+                }
+            }
+        val builder =
+            BrowserMenuBuilder(
+                providerResolver = { item ->
+                    when (item) {
+                        is More -> provider
+                        FindInPage -> FakeMenuItemProvider(MutableStateFlow(findInPageItem))
+                        else -> FakeMenuItemProvider(MutableStateFlow(null))
+                    }
+                },
+                configuration =
+                    listOf(
+                        MenuSectionConfiguration(
+                            id = MENU_GROUP_ID,
+                            presentationMode = Row,
+                            items = listOf(More(listOf(FindInPage, CustomizeReaderView))),
+                        )
+                    ),
+            )
+
+        val shown = builder.menuStructure.first().single().items.single()
+
+        assertEquals(listOf(findInPageItem), receivedChildren)
+        assertEquals(moreItem.title, shown.title)
+    }
+
+    @Test
+    fun `WHEN only the header changes THEN rebuild the expandable item`() = runTest {
+        val header = MutableStateFlow<MenuItem?>(moreItem)
+        val builder = createExpandingMenuBuilder(MutableStateFlow(findInPageItem), header)
+        assertEquals(moreItem.title, builder.menuStructure.first().single().items.single().title)
+
+        header.value = moreItem.copy(title = Text.String("Updated More"))
+
+        assertEquals(Text.String("Updated More"), builder.menuStructure.first().single().items.single().title)
+    }
+
     private class FakeMenuItemProvider(override val itemFlow: StateFlow<MenuItem?>) : MenuItemProvider
+
+    /** Configures its item with whatever it expands to, which is all an expanding item needs by default. */
+    private class FakeExpandableMenuItemProvider(override val itemFlow: StateFlow<MenuItem?>) :
+        ExpandableMenuItemProvider
 
     private data object TestMenuEvent : MenuEvent
 

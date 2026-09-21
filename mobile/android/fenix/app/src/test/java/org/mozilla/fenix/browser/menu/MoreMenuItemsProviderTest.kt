@@ -4,30 +4,77 @@
 
 package org.mozilla.fenix.browser.menu
 
+import io.mockk.every
+import io.mockk.mockk
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
+import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.state.createTab
+import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.text.Text
-import mozilla.components.compose.menu.data.ExpandableMenuItem
-import mozilla.components.compose.menu.ui.MenuItemIconRes
-import mozilla.components.ui.icons.R as iconsR
+import mozilla.components.compose.menu.data.StandardMenuItem
+import mozilla.components.compose.menu.ui.MenuItemState
 import org.junit.Test
-import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.store.MenuAction
+import org.mozilla.fenix.summarization.onboarding.SummarizationFeatureDiscoveryConfiguration
 
 class MoreMenuItemsProviderTest {
     @Test
-    fun `WHEN building the menu item THEN provide the item expanding to the other menu items`() {
-        val provider = MoreMenuItemsProvider()
+    fun `WHEN children are supplied THEN preserve their order in the expandable item`() = runTest {
+        val children = listOf(translateItem, summarizeItem)
 
-        assertEquals(
-            ExpandableMenuItem(
-                title = Text.Resource(R.string.browser_menu_more_settings),
-                icon = MenuItemIconRes(iconsR.drawable.mozac_ic_ellipsis_horizontal_24),
-                // The items to expand to are not known by this provider, they are filled in by the menu builder.
-                subMenuItems = emptyList(),
-                onClickEvent = MenuAction.OnMoreMenuClicked,
-                hideOnExpand = true,
-            ),
-            provider.itemFlow.value,
-        )
+        assertEquals(children, provider().resolve(children).subMenuItems)
+    }
+
+    @Test
+    fun `GIVEN summarize as a child WHEN this should be highlighted THEN highlight More`() = runTest {
+        assertEquals(provider().resolve(listOf(summarizeItem)).icon?.isHighlighted, true)
+    }
+
+    @Test
+    fun `GIVEN summarize as a child WHEN it is disabled THEN still highlight More`() = runTest {
+        val item = summarizeItem.copy(state = MenuItemState.DISABLED)
+
+        assertEquals(provider().resolve(listOf(item)).icon?.isHighlighted, true)
+    }
+
+    @Test
+    fun `GIVEN summarize is not a child THEN don't highlight More`() = runTest {
+        assertNotEquals(provider().resolve(listOf(translateItem)).icon?.isHighlighted, true)
+    }
+
+    @Test
+    fun `GIVEN summarize as a child WHEN this should not be highlighted THEN don't highlight More`() = runTest {
+        assertNotEquals(provider(highlight = false).resolve(listOf(summarizeItem)).icon?.isHighlighted, true)
+    }
+
+    @Test
+    fun `GIVEN summarize as a child WHEN the current tab is private THEN don't highlight More`() = runTest {
+        assertNotEquals(provider(isPrivate = true).resolve(listOf(summarizeItem)).icon?.isHighlighted, true)
+    }
+
+    private fun MoreMenuItemsProvider.resolve(children: List<StandardMenuItem>) = updateWithSubMenuItems(children)
+
+    private fun TestScope.provider(
+        highlight: Boolean = true,
+        isPrivate: Boolean = false,
+        hasTab: Boolean = true,
+    ): MoreMenuItemsProvider {
+        val settings =
+            mockk<SummarizationFeatureDiscoveryConfiguration> {
+                every { shouldHighlightOverflowMenuItem } returns highlight
+            }
+        val tab = createTab(url = "https://mozilla.org", private = isPrivate)
+        val browserStore = BrowserStore(BrowserState(tabs = listOf(tab), selectedTabId = tab.id.takeIf { hasTab }))
+        return MoreMenuItemsProvider(browserStore, settings, backgroundScope)
+    }
+
+    private companion object {
+        val translateItem =
+            StandardMenuItem(title = Text.String("Translate"), onClickEvent = MenuAction.Navigate.Translate)
+        val summarizeItem =
+            StandardMenuItem(title = Text.String("Summarize"), onClickEvent = MenuAction.Navigate.Summarizer)
     }
 }

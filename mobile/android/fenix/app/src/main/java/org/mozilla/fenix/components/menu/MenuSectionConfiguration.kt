@@ -5,7 +5,7 @@
 package org.mozilla.fenix.components.menu
 
 /** Type of items that can be expanded to show other (even unrelated) menu items. */
-sealed interface ExpandableMenuItem {
+sealed interface FenixExpandableMenuItem {
 
     /** The other menu items to show when this is expanded. */
     val subMenuItems: List<FenixMenuItem>
@@ -33,7 +33,7 @@ sealed interface FenixMenuItem {
      *
      * @property subMenuItems The other menu items to show when this is expanded.
      */
-    data class More(override val subMenuItems: List<FenixMenuItem>) : FenixMenuItem, ExpandableMenuItem
+    data class More(override val subMenuItems: List<FenixMenuItem>) : FenixMenuItem, FenixExpandableMenuItem
 
     /** A menu item allowing to translate the current page. */
     data object Translate : FenixMenuItem

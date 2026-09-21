@@ -30,11 +30,13 @@ import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.text.Text
+import mozilla.components.compose.menu.data.ExpandableMenuItem
 import mozilla.components.compose.menu.data.MenuItem
 import mozilla.components.compose.menu.data.MenuItemsGroup
 import mozilla.components.compose.menu.data.StandardMenuItem
 import mozilla.components.compose.menu.store.MenuState
 import mozilla.components.compose.menu.store.MenuStore
+import mozilla.components.compose.menu.ui.MenuItemIconRes
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
@@ -63,6 +65,7 @@ import org.mozilla.fenix.components.menu.MenuFragmentDirections
 import org.mozilla.fenix.components.menu.MenuItemProvider
 import org.mozilla.fenix.components.menu.MenuPresentationMode.Row
 import org.mozilla.fenix.components.menu.MenuSectionConfiguration
+import org.mozilla.fenix.components.menu.store.MenuAction
 import org.mozilla.fenix.components.menu.store.MenuAction.AddBookmark
 import org.mozilla.fenix.components.menu.store.MenuAction.CustomizeReaderView as CustomizeReaderViewEvent
 import org.mozilla.fenix.components.menu.store.MenuAction.FindInPage
@@ -401,6 +404,73 @@ class MenuMiddlewareTest {
         }
 
     @Test
+    fun `GIVEN summarization asks for attention WHEN More containing it is clicked THEN count it as noticed`() =
+        runTest(testDispatcher) {
+            every { summarizationSettings.shouldHighlightOverflowMenuItem } returns true
+            val item = moreItemForDiscovery(containsSummarize = true)
+            val store = createStore(provided = MutableStateFlow(item))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            store.dispatch(MenuAction.OnMoreMenuClicked)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(exactly = 1) {
+                summarizationSettings.cacheDiscoveryEvent(SummarizeDiscoveryEvent.MenuOverflowInteraction)
+            }
+        }
+
+    @Test
+    fun `GIVEN summarize is not one of More's items WHEN More is clicked THEN don't count it as noticed`() =
+        runTest(testDispatcher) {
+            every { summarizationSettings.shouldHighlightOverflowMenuItem } returns true
+            val item = moreItemForDiscovery(containsSummarize = false).copy(icon = MenuItemIconRes(0, true))
+            val store = createStore(provided = MutableStateFlow(item))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            store.dispatch(MenuAction.OnMoreMenuClicked)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(exactly = 0) {
+                summarizationSettings.cacheDiscoveryEvent(SummarizeDiscoveryEvent.MenuOverflowInteraction)
+            }
+        }
+
+    @Test
+    fun `GIVEN summarization no longer asks for attention WHEN More containing it is clicked THEN don't count it as noticed`() =
+        runTest(testDispatcher) {
+            every { summarizationSettings.shouldHighlightOverflowMenuItem } returns false
+            val store = createStore(provided = MutableStateFlow(moreItemForDiscovery(containsSummarize = true)))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            store.dispatch(MenuAction.OnMoreMenuClicked)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(exactly = 0) {
+                summarizationSettings.cacheDiscoveryEvent(SummarizeDiscoveryEvent.MenuOverflowInteraction)
+            }
+        }
+
+    @Test
+    fun `GIVEN a private tab WHEN More containing summarize is clicked THEN don't count it as noticed`() =
+        runTest(testDispatcher) {
+            every { summarizationSettings.shouldHighlightOverflowMenuItem } returns true
+            val tab = createTab(url = TEST_URL, private = true)
+            val store =
+                createStore(
+                    provided = MutableStateFlow(moreItemForDiscovery(containsSummarize = true)),
+                    browserStore = BrowserStore(BrowserState(tabs = listOf(tab), selectedTabId = tab.id)),
+                )
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            store.dispatch(MenuAction.OnMoreMenuClicked)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(exactly = 0) {
+                summarizationSettings.cacheDiscoveryEvent(SummarizeDiscoveryEvent.MenuOverflowInteraction)
+            }
+        }
+
+    @Test
     fun `WHEN handling back navigation THEN dismiss the menu and navigate back in the current tab`() {
         val store = createStore()
 
@@ -541,6 +611,20 @@ class MenuMiddlewareTest {
             stopLoadingUseCase(tabId = TAB_ID)
         }
     }
+
+    private fun moreItemForDiscovery(containsSummarize: Boolean) =
+        ExpandableMenuItem(
+            title = Text.String("More"),
+            onClickEvent = MenuAction.OnMoreMenuClicked,
+            subMenuItems =
+                listOf(
+                    if (containsSummarize) {
+                        StandardMenuItem(title = Text.String("Summarize"), onClickEvent = Navigate.Summarizer)
+                    } else {
+                        readerViewItem
+                    }
+                ),
+        )
 
     // Whether the page can be summarized is asked from the engine, so the tab needs a session to ask it from.
     private fun browserStoreWithEngineSession(isPrivate: Boolean = false) =

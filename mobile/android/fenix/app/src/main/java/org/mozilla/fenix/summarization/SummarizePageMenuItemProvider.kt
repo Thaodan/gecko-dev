@@ -97,3 +97,6 @@ private fun summarizePageItem(
                 else -> MenuItemState.DISABLED
             },
     )
+
+/** Whether this menu item is the summarization one. */
+internal fun StandardMenuItem.isSummarizePageMenuItem() = onClickEvent == MenuAction.Navigate.Summarizer

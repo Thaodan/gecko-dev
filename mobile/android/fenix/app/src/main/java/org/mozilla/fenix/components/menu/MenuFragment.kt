@@ -233,7 +233,12 @@ class MenuFragment : BottomSheetDialogFragment() {
                     scope = viewLifecycleOwner.lifecycle.coroutineScope,
                 )
 
-            is FenixMenuItem.More -> MoreMenuItemsProvider()
+            is FenixMenuItem.More ->
+                MoreMenuItemsProvider(
+                    browserStore = requireComponents.core.store,
+                    summarizationSettings = requireComponents.core.summarizeFeatureSettings,
+                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                )
 
             FenixMenuItem.Translate ->
                 TranslationsMenuItemProvider(

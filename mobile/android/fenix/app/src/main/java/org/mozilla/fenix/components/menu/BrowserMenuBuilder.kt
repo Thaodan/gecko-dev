@@ -9,8 +9,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import mozilla.components.compose.menu.data.ExpandableMenuItem as ExpandableItem
-import mozilla.components.compose.menu.data.MenuItem
+import mozilla.components.compose.menu.data.MenuItem as ShownMenuItem
 import mozilla.components.compose.menu.data.MenuItemsGroup
 import mozilla.components.compose.menu.data.StandardMenuItem
 import org.mozilla.fenix.components.menu.FenixMenuItem.Back
@@ -61,46 +60,42 @@ class BrowserMenuBuilder(
      * An item that should not be shown for now is offered as `null`, meaning the provider decided that its item should
      * not be shown rather than that it has not decided yet.
      */
-    private fun List<FenixMenuItem>.itemsFromProviders(): Flow<Map<FenixMenuItem, MenuItem?>> =
+    private fun List<FenixMenuItem>.itemsFromProviders(): Flow<Map<FenixMenuItem, ShownMenuItem?>> =
         combine(map { providerResolver(it).itemFlow }) { provided -> zip(provided).toMap() }
 
     /**
      * A [MenuItemsGroup] for each of these sections, laid out the way the section asks for and holding only the items
      * that are currently shown. Sections left with nothing to show are dropped.
      */
-    private fun List<MenuSectionConfiguration>.toGroups(items: Map<FenixMenuItem, MenuItem?>) = map { section ->
-        section.toGroup(shownItems = section.items.mapNotNull { it.shownItem(items) })
+    private fun List<MenuSectionConfiguration>.toGroups(items: Map<FenixMenuItem, ShownMenuItem?>) = map { section ->
+        section.toGroup(shownItems = section.items.mapNotNull { it.getMenuItemToShow(items) })
     }
         .filterNot { it.items.isEmpty() }
 
     /** This item and the ones it expands to, since each of them is configured by a provider of its own. */
     private fun FenixMenuItem.withSubItems(): List<FenixMenuItem> =
         when (this) {
-            is ExpandableMenuItem -> listOf(this) + subMenuItems
+            is FenixExpandableMenuItem -> listOf(this) + subMenuItems
             else -> listOf(this)
         }
 
-    /** What to show for this item, with the items it expands to filled in from what their own providers offer. */
-    private fun FenixMenuItem.shownItem(items: Map<FenixMenuItem, MenuItem?>): MenuItem? =
-        when (this) {
-            is ExpandableMenuItem -> items[this].expandingTo(subMenuItems.mapNotNull { items[it] })
-            else -> items[this]
-        }
-
     /**
-     * This item showing [subItems] once expanded, or `null` when there is nothing left to expand to - an item that
-     * expands to nothing being of no use. Only plain items can be shown inside an expanding one.
+     * Get the menu item configuration to show for this or `null` if it isn't available
+     *
+     * @param items A map of all the menu items wanted to be shown in the menu to the actual menu items configuration
+     *   available.
      */
-    private fun MenuItem?.expandingTo(subItems: List<MenuItem>): MenuItem? {
-        val shownSubItems = subItems.filterIsInstance<StandardMenuItem>()
+    private fun FenixMenuItem.getMenuItemToShow(items: Map<FenixMenuItem, ShownMenuItem?>): ShownMenuItem? {
+        if (this !is FenixExpandableMenuItem) return items[this]
 
-        return when {
-            this !is ExpandableItem || shownSubItems.isEmpty() -> null
-            else -> copy(subMenuItems = shownSubItems)
-        }
+        val children = subMenuItems.mapNotNull { items[it] as? StandardMenuItem }
+        if (children.isEmpty()) return null
+
+        val provider = providerResolver(this) as? ExpandableMenuItemProvider
+        return provider?.updateWithSubMenuItems(children)
     }
 
-    private fun MenuSectionConfiguration.toGroup(shownItems: List<MenuItem>) =
+    private fun MenuSectionConfiguration.toGroup(shownItems: List<ShownMenuItem>) =
         when (presentationMode) {
             Row -> MenuItemsGroup.Row(id = id, items = shownItems, isSticky = isSticky)
             Grid -> MenuItemsGroup.Grid(id = id, items = shownItems, isSticky = isSticky)
