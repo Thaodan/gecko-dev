@@ -76,6 +76,10 @@ function clearPinnedTopSites() {
   );
 }
 
+// Whatever a test pins is still pinned when the next test file starts, so every
+// file in this folder starts from an unpinned row.
+add_setup(clearPinnedTopSites);
+
 async function setTestTopSites() {
   await pushPrefs([
     "browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts",
