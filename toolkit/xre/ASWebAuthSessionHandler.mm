@@ -328,3 +328,11 @@ void RegisterASWebAuthSessionObservers() {
     RegisterObservers();
   }
 }
+
+bool WasLaunchedByAuthenticationServices() {
+  bool wasLaunched = ASWebAuthenticationSessionWebBrowserSessionManager
+                         .sharedManager.wasLaunchedByAuthenticationServices;
+  MOZ_LOG(gASWebAuthLog, mozilla::LogLevel::Info,
+          ("wasLaunchedByAuthenticationServices: %d", wasLaunched));
+  return wasLaunched;
+}
