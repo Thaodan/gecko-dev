@@ -22,8 +22,6 @@
 #include "nsTHashMap.h"
 #include "nsWrapperCache.h"
 
-class nsIPrincipal;
-
 class nsDOMMutationObserver;
 using mozilla::dom::MutationObservingInfo;
 
@@ -421,7 +419,7 @@ class nsDOMMutationObserver final : public nsISupports, public nsWrapperCache {
 
   void Observe(nsINode& aTarget,
                const mozilla::dom::MutationObserverInit& aOptions,
-               nsIPrincipal& aSubjectPrincipal, mozilla::ErrorResult& aRv);
+               mozilla::ErrorResult& aRv);
 
   void Disconnect();
 
