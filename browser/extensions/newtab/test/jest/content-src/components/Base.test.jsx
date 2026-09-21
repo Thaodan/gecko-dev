@@ -1895,6 +1895,9 @@ describe("<Base> Nova logo placement with the search bar in variant B", () => {
       container.querySelector(".container.nova-enabled.search-has-own-row")
     ).toBeInTheDocument();
     expect(
+      container.querySelector(".nova-outer-wrapper.search-has-own-row")
+    ).toBeInTheDocument();
+    expect(
       container.querySelector(
         ".sidebar-inline-start .logo-and-wordmark-wrapper"
       )

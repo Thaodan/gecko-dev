@@ -37,7 +37,6 @@
   // The wordmark ends at the logo, its margin and its own width from the
   // container's start edge.
   .nova-enabled.search-has-own-row & .wordmark {
-    $search-card-overhang: 80px;
     // The wordmark's margin-inline-start is var(--space-large), 1rem.
     $wordmark-end: calc(#{$logo-size + $wordmark-size} + 1rem);
     $overlap-threshold-6-cols: calc(#{6 * $col-width-px} + #{5 * $col-gap-px} + 2 * (#{$search-card-overhang} + #{$wordmark-end}));

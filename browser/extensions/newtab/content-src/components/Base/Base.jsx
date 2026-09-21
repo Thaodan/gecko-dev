@@ -1241,7 +1241,7 @@ export class BaseContent extends React.PureComponent {
       return (
         <BaseContext.Provider value={baseContextValue}>
           <div
-            className={`nova-outer-wrapper${this.state.fixedSearch ? " stuck-search" : ""}`}
+            className={`nova-outer-wrapper${this.state.fixedSearch ? " stuck-search" : ""}${searchHasOwnRow ? " search-has-own-row" : ""}`}
           >
             <div
               className={`container nova-enabled${logoShouldBeCentered ? " logo-in-content" : ""}${searchHasOwnRow ? " search-has-own-row" : ""}${hasFiveColumnLayout ? " sections-5-col" : ""}`}
