@@ -78,8 +78,8 @@ endif
 
 rustflags_override += $(MOZ_RUSTFLAGS_AFTER_EXTRA)
 
-ifneq (,$(or $(MOZ_USING_SCCACHE),$(MOZ_USING_BUILDCACHE)))
-export RUSTC_WRAPPER=$(CCACHE)
+ifdef MOZ_RUSTC_WRAPPER
+export RUSTC_WRAPPER=$(MOZ_RUSTC_WRAPPER)
 endif
 
 # `cargo clippy` only lints workspace members, which leaves out every crate the
@@ -96,26 +96,13 @@ endif
 
 # We start with host variables because the rust host and the rust target might be the same,
 # in which case we want the latter to take priority.
+export CC_$(MOZ_CARGO_HOST_CC_ENV_SUFFIX)=$(MOZ_CARGO_HOST_CC)
+export CXX_$(MOZ_CARGO_HOST_CC_ENV_SUFFIX)=$(MOZ_CARGO_HOST_CXX)
+export AR_$(MOZ_CARGO_HOST_CC_ENV_SUFFIX)=$(HOST_AR)
 
-# We're passing these for consumption by the `cc` crate, which doesn't use the same
-# convention as cargo itself:
-# https://github.com/alexcrichton/cc-rs/blob/baa71c0e298d9ad7ac30f0ad78f20b4b3b3a8fb2/src/lib.rs#L1715
-rust_host_cc_env_name := $(subst -,_,$(RUST_HOST_TARGET))
-
-# HOST_CC/HOST_CXX/CC/CXX usually contain base flags for e.g. the build target.
-# We want to pass those through CFLAGS_*/CXXFLAGS_* instead, so that they end up
-# after whatever cc-rs adds to the compiler command line, so that they win.
-# Ideally, we'd use CRATE_CC_NO_DEFAULTS=1, but that causes other problems at the
-# moment.
-export CC_$(rust_host_cc_env_name)=$(filter-out $(HOST_CC_BASE_FLAGS),$(HOST_CC))
-export CXX_$(rust_host_cc_env_name)=$(filter-out $(HOST_CXX_BASE_FLAGS),$(HOST_CXX))
-export AR_$(rust_host_cc_env_name)=$(HOST_AR)
-
-rust_cc_env_name := $(subst -,_,$(RUST_TARGET))
-
-export CC_$(rust_cc_env_name)=$(filter-out $(CC_BASE_FLAGS),$(CC))
-export CXX_$(rust_cc_env_name)=$(filter-out $(CXX_BASE_FLAGS),$(CXX))
-export AR_$(rust_cc_env_name)=$(AR)
+export CC_$(MOZ_CARGO_CC_ENV_SUFFIX)=$(MOZ_CARGO_CC)
+export CXX_$(MOZ_CARGO_CC_ENV_SUFFIX)=$(MOZ_CARGO_CXX)
+export AR_$(MOZ_CARGO_CC_ENV_SUFFIX)=$(AR)
 
 # cc-rs may not know whether we are using a compiler wrapper, so explicitly
 # tell it that we do.
@@ -131,50 +118,13 @@ endif
 # support wildcards). Harmless for single-path CC/CXX, so we do it unconditionally
 # on Windows.
 ifeq (WINNT,$(HOST_OS_ARCH))
-export MSYS2_ENV_CONV_EXCL := $(if $(MSYS2_ENV_CONV_EXCL),$(MSYS2_ENV_CONV_EXCL);)CC_$(rust_cc_env_name);CXX_$(rust_cc_env_name);CC_$(rust_host_cc_env_name);CXX_$(rust_host_cc_env_name)
+export MSYS2_ENV_CONV_EXCL := $(if $(MSYS2_ENV_CONV_EXCL),$(MSYS2_ENV_CONV_EXCL);)CC_$(MOZ_CARGO_CC_ENV_SUFFIX);CXX_$(MOZ_CARGO_CC_ENV_SUFFIX);CC_$(MOZ_CARGO_HOST_CC_ENV_SUFFIX);CXX_$(MOZ_CARGO_HOST_CC_ENV_SUFFIX)
 endif
 
-ifeq (WINNT,$(HOST_OS_ARCH))
-HOST_CC_BASE_FLAGS += -DUNICODE
-HOST_CXX_BASE_FLAGS += -DUNICODE
-endif
-ifeq (WINNT,$(OS_ARCH))
-CC_BASE_FLAGS += -DUNICODE
-CXX_BASE_FLAGS += -DUNICODE
-endif
-
-ifneq (1,$(PASS_ONLY_BASE_CFLAGS_TO_RUST))
-export CFLAGS_$(rust_host_cc_env_name)=$(HOST_CC_BASE_FLAGS) $(COMPUTED_HOST_CFLAGS)
-export CXXFLAGS_$(rust_host_cc_env_name)=$(HOST_CXX_BASE_FLAGS) $(COMPUTED_HOST_CXXFLAGS)
-# We exclude -fprofile-generate from the PGO flags because on non-cross compiles,
-# that affects build scripts, and they fail to link because the linker flags are
-# not adequate, and also, we don't want to run instrumented build scripts.
-# The cc crate will fill in for those flags anyways, but we do need the PGO and
-# LTO flags to fill in for what the cc crate doesn't handle
-# (e.g. -pgo-temporal-instrumentation)
-# We can't use LTO flags with GCC, though: https://github.com/rust-lang/rust/issues/138681
-ifneq (,$(filter clang%,$(CC_TYPE)))
-RUST_LTO_CFLAGS=$(MOZ_LTO_CFLAGS)
-endif
-export CFLAGS_$(rust_cc_env_name)=$(CC_BASE_FLAGS) $(RUST_LTO_CFLAGS) $(COMPUTED_CFLAGS) $(RUST_PGO_CFLAGS)
-export CXXFLAGS_$(rust_cc_env_name)=$(CXX_BASE_FLAGS) $(RUST_LTO_CFLAGS) $(COMPUTED_CXXFLAGS) $(RUST_PGO_CFLAGS)
-else
-# Because cargo doesn't allow to distinguish builds happening for build
-# scripts/procedural macros vs. those happening for the rust target,
-# we can't blindly pass all our flags down for cc-rs to use them, because of the
-# side effects they can have on what otherwise should be host builds.
-# So for sanitizer and coverage builds, we only pass the base compiler flags.
-# This means C code built by rust is not going to be covered by sanitizers
-# and coverage. But at least we control what compiler is being used,
-# rather than relying on cc-rs guesses, which, sometimes fail us.
-# -fno-sized-deallocation is important, though, as -fsized-deallocation may be the
-# compiler default and we don't want it to be used
-# (see build/moz.configure/flags.configure). Likewise with -fno-aligned-new.
-export CFLAGS_$(rust_host_cc_env_name)=$(HOST_CC_BASE_FLAGS)
-export CXXFLAGS_$(rust_host_cc_env_name)=$(HOST_CXX_BASE_FLAGS)
-export CFLAGS_$(rust_cc_env_name)=$(CC_BASE_FLAGS)
-export CXXFLAGS_$(rust_cc_env_name)=$(CXX_BASE_FLAGS) $(filter -fno-aligned-new -fno-sized-deallocation,$(COMPUTED_CXXFLAGS))
-endif
+export CFLAGS_$(MOZ_CARGO_HOST_CC_ENV_SUFFIX)=$(MOZ_CARGO_HOST_CFLAGS_BASE) $(filter $(MOZ_CARGO_HOST_CFLAGS_FILTER),$(COMPUTED_HOST_CFLAGS))
+export CXXFLAGS_$(MOZ_CARGO_HOST_CC_ENV_SUFFIX)=$(MOZ_CARGO_HOST_CXXFLAGS_BASE) $(filter $(MOZ_CARGO_HOST_CXXFLAGS_FILTER),$(COMPUTED_HOST_CXXFLAGS))
+export CFLAGS_$(MOZ_CARGO_CC_ENV_SUFFIX)=$(MOZ_CARGO_CFLAGS_BASE) $(filter $(MOZ_CARGO_CFLAGS_FILTER),$(RUST_LTO_CFLAGS) $(COMPUTED_CFLAGS) $(RUST_PGO_CFLAGS))
+export CXXFLAGS_$(MOZ_CARGO_CC_ENV_SUFFIX)=$(MOZ_CARGO_CXXFLAGS_BASE) $(filter $(MOZ_CARGO_CXXFLAGS_FILTER),$(RUST_LTO_CFLAGS) $(COMPUTED_CXXFLAGS) $(RUST_PGO_CFLAGS))
 
 define sanitizer_options
 export $1:=$$($1:%=%:)intercept_tls_get_addr=0
