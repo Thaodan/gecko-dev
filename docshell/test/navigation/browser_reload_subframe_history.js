@@ -61,7 +61,11 @@ async function reloadFromContent(browser, forceReload = false) {
 // leave stale entries behind for force reload. See bug 2037346.
 
 // Test force reload on a page with static subframe
-async function checkForceReload(reload, description) {
+async function checkForceReload(pref, reload, description) {
+  await SpecialPowers.pushPrefEnv({
+    set: [["docshell.shistory.restoreSubframesOnReload", pref]],
+  });
+
   await withNavigatedSubframe(async ({ browser, shistory, srcURI }) => {
     const loaded = BrowserTestUtils.browserLoaded(browser, { wantLoad: PAGE });
     await reload(browser);
@@ -93,13 +97,23 @@ const FORCE_RELOAD_FLAGS =
 
 add_task(async function forceReloadFromUI() {
   await checkForceReload(
+    false,
     browser => reloadFromUI(browser, FORCE_RELOAD_FLAGS),
     "force reload from UI"
   );
 });
 
+add_task(async function forceReloadFromUIWithPref() {
+  await checkForceReload(
+    true,
+    browser => reloadFromUI(browser, FORCE_RELOAD_FLAGS),
+    "force reload from UI with pref"
+  );
+});
+
 add_task(async function forceReloadFromContent() {
   await checkForceReload(
+    false,
     browser => reloadFromContent(browser, /* force */ true),
     "location.reload(true)"
   );
@@ -110,11 +124,16 @@ add_task(async function forceReloadFromContent() {
 
 // Test non-force reload on a page with a static subframe
 async function checkNormalReload(
+  pref,
   reload,
   description,
   expectRestored,
   expired = false
 ) {
+  await SpecialPowers.pushPrefEnv({
+    set: [["docshell.shistory.restoreSubframesOnReload", pref]],
+  });
+
   await withNavigatedSubframe(
     async ({ browser, shistory, srcURI, navigatedURI }) => {
       const loaded = BrowserTestUtils.browserLoaded(browser, {
@@ -149,6 +168,7 @@ async function checkNormalReload(
 
 add_task(async function expiredReloadFromUI() {
   await checkNormalReload(
+    false,
     browser => reloadFromUI(browser),
     "expired reload from UI",
     false,
@@ -158,6 +178,7 @@ add_task(async function expiredReloadFromUI() {
 
 add_task(async function expiredReloadFromContent() {
   await checkNormalReload(
+    false,
     browser => reloadFromContent(browser),
     "expired location.reload()",
     false,
@@ -167,16 +188,27 @@ add_task(async function expiredReloadFromContent() {
 
 add_task(async function normalReloadFromUI() {
   await checkNormalReload(
+    false,
     browser => reloadFromUI(browser, Ci.nsIWebNavigation.LOAD_FLAGS_NONE),
     "normal reload",
+    false
+  );
+});
+
+add_task(async function normalReloadFromUIWithPref() {
+  await checkNormalReload(
+    true,
+    browser => reloadFromUI(browser, Ci.nsIWebNavigation.LOAD_FLAGS_NONE),
+    "normal reload with pref",
     true
   );
 });
 
 add_task(async function normalReloadFromContent() {
   await checkNormalReload(
+    false,
     browser => reloadFromContent(browser),
     "location.reload()",
-    true
+    false
   );
 });
