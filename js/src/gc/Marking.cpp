@@ -1794,12 +1794,10 @@ inline bool MarkingTracerT<opts>::processMarkStackTop(SliceBudget& budget) {
       case SlotsOrElementsKind::DynamicSlots: {
         base = nobj->slots_.getForTracing();
         if constexpr (hasOption(MarkingOptions::ConcurrentMarking)) {
-          // TODO: Investigate whether we can safely restrict this to the number
-          // of used slots.
-
           // Initialization fence.
           MemoryAcquireFence<opts>(gcMarker()->runtime());
-          end = ObjectSlots::fromSlots(base)->capacity_.getForTracing();
+          Shape* shape = nobj->headerPtrForTracing();
+          end = NumNativeObjectUsedDynamicSlotsForTracing(shape, base);
         } else {
           end = NumUsedDynamicSlots(nobj);
         }
