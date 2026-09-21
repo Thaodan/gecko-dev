@@ -267,10 +267,10 @@ this.test = class extends ExtensionAPI {
           alertsService.teardown();
         },
 
-        async notifyUserGestureActivation(tabId) {
-          return getActorForTab(tabId, "TestSupport").sendQuery(
-            "NotifyUserGestureActivation"
-          );
+        async showPicker(tabId, selector) {
+          return getActorForTab(tabId, "TestSupport").sendQuery("ShowPicker", {
+            selector,
+          });
         },
 
         /* Seeds the tracking protection database with the given content blocking log. */

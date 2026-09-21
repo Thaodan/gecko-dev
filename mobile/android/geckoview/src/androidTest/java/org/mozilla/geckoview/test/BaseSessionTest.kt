@@ -323,7 +323,7 @@ open class BaseSessionTest(
 
     fun GeckoSession.teardownAlertsService() = sessionRule.teardownAlertsService(this)
 
-    fun GeckoSession.notifyUserGestureActivation() = sessionRule.notifyUserGestureActivation(this)
+    fun GeckoSession.showPicker(selector: String) = sessionRule.showPicker(this, selector)
 
     var GeckoSession.active: Boolean
         get() = sessionRule.getActive(this)
