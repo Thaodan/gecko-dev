@@ -315,6 +315,11 @@ bool BrowsingContext::IsOwnedByProcess() const {
          !nsDocShell::Cast(mDocShell)->WillChangeProcess();
 }
 
+bool BrowsingContext::IsScriptClosable() const {
+  return GetTopLevelCreatedByWebContent() ||
+         (mChildSessionHistory && mChildSessionHistory->Count() == 1);
+}
+
 bool BrowsingContext::SameOriginWithTop() {
   MOZ_ASSERT(IsInProcess());
   // If the top BrowsingContext is not same-process to us, it is cross-origin
@@ -2171,20 +2176,31 @@ bool BrowsingContext::RemoveRootFromBFCacheSync() {
   return false;
 }
 
-nsresult BrowsingContext::CheckSandboxFlags(nsDocShellLoadState* aLoadState) {
+nsresult BrowsingContext::EnsureSourceSandboxAllowsNavigation(
+    nsDocShellLoadState* aLoadState, bool aForClose) {
   const auto& sourceBC = aLoadState->SourceBrowsingContext();
   if (sourceBC.IsNull()) {
     return NS_OK;
   }
+  return EnsureSourceSandboxAllowsNavigation(sourceBC.GetMaybeDiscarded(),
+                                             aForClose);
+}
 
+nsresult BrowsingContext::EnsureSourceSandboxAllowsNavigation(
+    BrowsingContext* aSourceBC, bool aForClose) {
   // We might be called after the source BC has been discarded, but before we've
   // destroyed our in-process instance of the BrowsingContext object in some
   // situations (e.g. after creating a new pop-up with window.open while the
   // window is being closed). In these situations we want to still perform the
   // sandboxing check against our in-process copy. If we've forgotten about the
   // context already, assume it is sanboxed. (bug 1643450)
-  BrowsingContext* bc = sourceBC.GetMaybeDiscarded();
-  if (!bc || bc->IsSandboxedFrom(this)) {
+  if (!aSourceBC || aSourceBC->IsSandboxedFrom(this)) {
+    nsPrintfCString msg(
+        "Blocked attempt to %s another window from a sandboxed frame.",
+        aForClose ? "close" : "navigate");
+    nsContentUtils::ReportToConsoleNonLocalized(
+        NS_ConvertUTF8toUTF16(msg), nsIScriptError::errorFlag, "Window"_ns,
+        aSourceBC ? aSourceBC->GetExtantDocument() : nullptr);
     return NS_ERROR_DOM_SECURITY_ERR;
   }
   return NS_OK;
@@ -2314,7 +2330,7 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
   // triggering the load, and we don't want the target process to have to trust
   // the triggering process to do the appropriate checks for the
   // BrowsingContext's sandbox flags.
-  MOZ_TRY(CheckSandboxFlags(aLoadState));
+  MOZ_TRY(EnsureSourceSandboxAllowsNavigation(aLoadState));
   SetTriggeringAndInheritPrincipals(aLoadState->TriggeringPrincipal(),
                                     aLoadState->PrincipalToInherit(),
                                     aLoadState->GetLoadIdentifier());
@@ -2475,7 +2491,7 @@ nsresult BrowsingContext::InternalLoad(nsDocShellLoadState* aLoadState) {
   // triggering the load, and we don't want the target process to have to trust
   // the triggering process to do the appropriate checks for the
   // BrowsingContext's sandbox flags.
-  MOZ_TRY(CheckSandboxFlags(aLoadState));
+  MOZ_TRY(EnsureSourceSandboxAllowsNavigation(aLoadState));
 
   const auto& sourceBC = aLoadState->SourceBrowsingContext();
 
@@ -2736,10 +2752,20 @@ void BrowsingContext::Close(CallerType aCallerType, ErrorResult& aError) {
     return;
   }
 
+  if (RefPtr<nsGlobalWindowInner> callerInner =
+          nsContentUtils::IncumbentInnerWindow()) {
+    if (BrowsingContext* callerBC = callerInner->GetBrowsingContext()) {
+      if (NS_FAILED(EnsureSourceSandboxAllowsNavigation(callerBC, true))) {
+        return;
+      }
+    }
+  }
+
   // This is a bit of a hack for webcompat. Content needs to see an updated
   // |window.closed| value as early as possible, so we set this before we
   // actually send the DOMWindowClose event, which happens in the process where
   // the document for this browsing context is loaded.
+  // XXX bug 2074011, close might fail / get canceled but closed stays true.
   MOZ_ALWAYS_SUCCEEDS(SetClosed(true));
 
   if (ContentChild* cc = ContentChild::GetSingleton()) {

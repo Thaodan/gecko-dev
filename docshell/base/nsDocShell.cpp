@@ -8594,7 +8594,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   // available in the process triggering the load, and we don't want the target
   // process to have to trust the triggering process to do the appropriate
   // checks for the BrowsingContext's sandbox flags.
-  MOZ_TRY(mBrowsingContext->CheckSandboxFlags(aLoadState));
+  MOZ_TRY(mBrowsingContext->EnsureSourceSandboxAllowsNavigation(aLoadState));
   MOZ_TRY(mBrowsingContext->CheckFramebusting(aLoadState));
 
   NS_ENSURE_STATE(!HasUnloadedParent());

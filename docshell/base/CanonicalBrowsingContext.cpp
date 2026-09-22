@@ -1642,8 +1642,9 @@ Maybe<int32_t> CanonicalBrowsingContext::HistoryGo(
   }
 
   for (auto& loadResult : loadResults) {
-    if (nsresult result = loadResult.mBrowsingContext->CheckSandboxFlags(
-            loadResult.mLoadState);
+    if (nsresult result =
+            loadResult.mBrowsingContext->EnsureSourceSandboxAllowsNavigation(
+                loadResult.mLoadState);
         NS_FAILED(result)) {
       aResolver(result);
       MOZ_LOG(gSHLog, LogLevel::Debug,
