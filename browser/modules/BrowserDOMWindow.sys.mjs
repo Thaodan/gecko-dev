@@ -102,12 +102,11 @@ export class BrowserDOMWindow {
   ) {
     let win, needToFocusWin;
 
-    // try the current window. if we're in a popup, a taskbar tab or a mini
-    // window, fall back on the most recent browser window
+    // try the current window. if we're in a popup or a taskbar tab, fall
+    // back on the most recent browser window
     if (
       this.win.toolbar.visible &&
-      !lazy.TaskbarTabsUtils.isTaskbarTabWindow(this.win) &&
-      !this.win.document.documentElement.hasAttribute("mini-window")
+      !lazy.TaskbarTabsUtils.isTaskbarTabWindow(this.win)
     ) {
       win = this.win;
     } else {

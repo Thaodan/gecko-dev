@@ -189,11 +189,6 @@ var gBrowserInit = {
       }
     }
 
-    let tabToAdopt = this.getTabToAdopt();
-    if (tabToAdopt?.hasAttribute?.("mini-window")) {
-      document.documentElement.setAttribute("mini-window", "true");
-    }
-
     // Run menubar initialization first, to avoid CustomTitlebar code picking
     // up mutations from it and causing a reflow.
     BrowserUtils.callModulesFromCategory(
@@ -338,8 +333,7 @@ var gBrowserInit = {
 
     if (
       !window.toolbar.visible ||
-      window.document.documentElement.hasAttribute("taskbartab") ||
-      window.document.documentElement.hasAttribute("mini-window")
+      window.document.documentElement.hasAttribute("taskbartab")
     ) {
       // adjust browser UI for popups
       gURLBar.readOnly = true;
