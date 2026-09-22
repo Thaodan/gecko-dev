@@ -1516,26 +1516,8 @@ nsresult nsSocketTransportService::DoPollIteration() {
   if (profiling) {
     TimeStamp endTime = TimeStamp::Now();
     if ((endTime - startTime).ToMilliseconds() >= SOCKET_THREAD_LONGTASK_MS) {
-      struct LongTaskMarker {
-        static constexpr Span<const char> MarkerTypeName() {
-          return MakeStringSpan("SocketThreadLongTask");
-        }
-        static void StreamJSONMarkerData(
-            baseprofiler::SpliceableJSONWriter& aWriter) {
-          aWriter.StringProperty("category", "LongTask");
-        }
-        static MarkerSchema MarkerTypeDisplay() {
-          using MS = MarkerSchema;
-          MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-          schema.AddKeyLabelFormat("category", "Type", MS::Format::String);
-          return schema;
-        }
-      };
-
-      profiler_add_marker(ProfilerString8View("LongTaskSocketProcessing"),
-                          geckoprofiler::category::OTHER,
-                          MarkerTiming::Interval(startTime, endTime),
-                          LongTaskMarker{});
+      PROFILER_MARKER_UNTYPED("LongTaskSocketProcessing", OTHER,
+                              MarkerTiming::Interval(startTime, endTime));
     }
   }
 
