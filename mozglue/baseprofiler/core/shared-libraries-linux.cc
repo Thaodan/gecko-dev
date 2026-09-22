@@ -4,15 +4,24 @@
 
 #include "mozilla/SharedLibraries.h"
 
-#define PATH_MAX_TOSTRING(x) #x
-#define PATH_MAX_STRING(x) PATH_MAX_TOSTRING(x)
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <limits.h>
 #include <unistd.h>
-#include <fstream>
-#include "platform.h"
 #include "mozilla/Sprintf.h"
+
+#if defined(GP_OS_android)
+// Only the Android /proc/<pid>/maps scan needs these.
+#  define PATH_MAX_TOSTRING(x) #x
+#  define PATH_MAX_STRING(x) PATH_MAX_TOSTRING(x)
+#  include <fstream>
+#  include "platform.h"
+#endif
+
+#if defined(GP_OS_linux)
+#  include <sys/auxv.h>
+#endif
 
 #include <algorithm>
 #include <arpa/inet.h>
@@ -688,6 +697,32 @@ static std::string getCodeId(
   return {};
 }
 
+#if defined(GP_OS_linux)
+// Returns the path of the main executable, or an empty string if it can't be
+// determined.
+static std::string GetExecutablePath() {
+  const char* execfn = reinterpret_cast<const char*>(getauxval(AT_EXECFN));
+  if (!execfn || execfn[0] == '\0') {
+    return {};
+  }
+  if (execfn[0] == '/') {
+    return execfn;
+  }
+
+  // execfn is relative, because getauxval(AT_EXECFN) returns the path
+  // exactly as it was passed to execve.  It needs resolving.
+  //
+  // This works in the parent process, but in child processes the sandbox
+  // would prevent realpath from working.  However child process' are execed
+  // with an absolute path in their command line, see XRE_InitCommandLine.
+  char resolved[PATH_MAX];
+  if (!realpath(execfn, resolved)) {
+    return execfn;
+  }
+  return resolved;
+}
+#endif  // defined(GP_OS_linux)
+
 static SharedLibrary SharedLibraryAtPath(
     std::string pathStr, unsigned long libStart, unsigned long libEnd,
     unsigned long offset = 0,
@@ -713,12 +748,10 @@ class DLIterateState {
 #if defined(GP_OS_linux)
   bool mExeNameAssigned = false;
   std::string mExeName;
-  const unsigned long mExeExeAddr;
 #endif
 
-  DLIterateState(SharedLibraryInfo& aInfo, const char* aExeName,
-                 unsigned long aExeExeAddr)
-      : mInfo(aInfo), mExeName(aExeName), mExeExeAddr(aExeExeAddr) {}
+  DLIterateState(SharedLibraryInfo& aInfo, std::string&& aExeName)
+      : mInfo(aInfo), mExeName(aExeName) {}
 
   static int Callback(struct dl_phdr_info* dl_info, size_t size, void* data) {
     DLIterateState* state = reinterpret_cast<DLIterateState*>(data);
@@ -782,10 +815,25 @@ class DLIterateState {
     std::string libName = dl_info->dlpi_name ? dl_info->dlpi_name : "";
 
 #if defined(GP_OS_linux)
-    // If we see a nameless object mapped at what we earlier established to be
-    // the main executable's load address, use the executable's name instead.
-    if (!mExeNameAssigned && firstMappingStart <= mExeExeAddr &&
-        mExeExeAddr <= lastMappingEnd && libName.empty()) {
+    // The main executable won't have a name and we need to fix that.  The
+    // manpage for dl_iterate_phdr says that the item will be the main
+    // executable.
+    if (!mExeNameAssigned) {
+      // This is the first item,  These assertions can help check though.
+
+      // The name is empty.
+      MOZ_ASSERT(libName.empty());
+
+      // The program header matches
+      MOZ_ASSERT(reinterpret_cast<void*>(getauxval(AT_PHDR)) ==
+                 dl_info->dlpi_phdr);
+
+#  ifdef MOZ_DEBUG
+      unsigned long entry = getauxval(AT_ENTRY);
+      MOZ_ASSERT(entry != 0 && firstMappingStart <= entry &&
+                 entry < lastMappingEnd);
+#  endif
+
       libName = mExeName;
       mExeNameAssigned = true;
     }
@@ -802,27 +850,6 @@ class DLIterateState {
 SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
   SharedLibraryInfo info;
 
-#if defined(GP_OS_linux)
-  // We need to find the name of the executable (exeName, exeNameLen) and the
-  // address of its executable section (exeExeAddr) in the running image.
-  char exeName[PATH_MAX];
-  memset(exeName, 0, sizeof(exeName));
-
-  ssize_t exeNameLen = readlink("/proc/self/exe", exeName, sizeof(exeName) - 1);
-  if (exeNameLen == -1) {
-    // readlink failed for whatever reason.  Note this, but keep going.
-    exeName[0] = '\0';
-    exeNameLen = 0;
-    // LOG("SharedLibraryInfo::GetInfoForSelf(): readlink failed");
-  } else {
-    // Assert no buffer overflow.
-    MOZ_RELEASE_ASSERT(exeNameLen >= 0 &&
-                       exeNameLen < static_cast<ssize_t>(sizeof(exeName)));
-  }
-
-  unsigned long exeExeAddr = 0;
-#endif
-
 #if defined(GP_OS_android)
   // If dl_iterate_phdr doesn't exist, we give up immediately.
   if (!dl_iterate_phdr) {
@@ -834,7 +861,7 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
   }
 #endif
 
-#if defined(GP_OS_linux) || defined(GP_OS_android)
+#if defined(GP_OS_android)
   // Read info from /proc/self/maps. We ignore most of it.
   pid_t pid = mozilla::baseprofiler::profiler_current_process_id().ToNumber();
   char path[PATH_MAX];
@@ -861,12 +888,6 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
       continue;
     }
 
-#  if defined(GP_OS_linux)
-    // Try to establish the main executable's load address.
-    if (exeNameLen > 0 && strcmp(modulePath, exeName) == 0) {
-      exeExeAddr = start;
-    }
-#  elif defined(GP_OS_android)
     // Use /proc/pid/maps to get the dalvik-jit section since it has no
     // associated phdrs.
     if (0 == strcmp(modulePath, "/dev/ashmem/dalvik-jit-code-cache")) {
@@ -878,12 +899,11 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
         break;
       }
     }
-#  endif
   }
 #endif
 
 #if defined(GP_OS_linux)
-  DLIterateState state(info, exeName, exeExeAddr);
+  DLIterateState state(info, GetExecutablePath());
 #else
   DLIterateState state(info);
 #endif
