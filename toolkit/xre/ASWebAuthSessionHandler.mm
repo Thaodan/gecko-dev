@@ -166,7 +166,6 @@ ASWebAuthSessionRequestWrapper::Cancel() {
   return NS_OK;
 }
 
-API_AVAILABLE(macos(12.0))
 @interface ASWebAuthSessionHandler
     : NSObject <ASWebAuthenticationSessionWebBrowserSessionHandling>
 @end
@@ -253,8 +252,7 @@ API_AVAILABLE(macos(12.0))
 
 namespace {
 
-class API_AVAILABLE(macos(12.0)) ASWebAuthServiceReadyObserver final
-    : public nsIObserver {
+class ASWebAuthServiceReadyObserver final : public nsIObserver {
  public:
   NS_DECL_ISUPPORTS
 
@@ -304,10 +302,16 @@ NS_IMPL_ISUPPORTS(ASWebAuthServiceReadyObserver, nsIObserver)
 
 }  // namespace
 
-static ASWebAuthSessionHandler* sHandler API_AVAILABLE(macos(12.0)) = nil;
+static ASWebAuthSessionHandler* sHandler = nil;
 static bool sObserversRegistered = false;
 
-static void RegisterObservers() API_AVAILABLE(macos(12.0)) {
+void RegisterASWebAuthSessionHandler() {
+  sHandler = [[ASWebAuthSessionHandler alloc] init];
+  ASWebAuthenticationSessionWebBrowserSessionManager.sharedManager
+      .sessionHandler = sHandler;
+}
+
+void RegisterASWebAuthSessionObservers() {
   if (sObserversRegistered || !sHandler) {
     return;
   }
@@ -324,20 +328,6 @@ static void RegisterObservers() API_AVAILABLE(macos(12.0)) {
 
   sObserversRegistered = true;
   obsServ->NotifyObservers(nullptr, "aswebauthsession-native-ready", nullptr);
-}
-
-void RegisterASWebAuthSessionHandler() {
-  if (@available(macOS 12.0, *)) {
-    sHandler = [[ASWebAuthSessionHandler alloc] init];
-    ASWebAuthenticationSessionWebBrowserSessionManager.sharedManager
-        .sessionHandler = sHandler;
-  }
-}
-
-void RegisterASWebAuthSessionObservers() {
-  if (@available(macOS 12.0, *)) {
-    RegisterObservers();
-  }
 }
 
 bool WasLaunchedByAuthenticationServices() {
