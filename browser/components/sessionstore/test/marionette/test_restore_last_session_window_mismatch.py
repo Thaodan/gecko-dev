@@ -471,6 +471,14 @@ class TestPrivateWindowSessionRestore(SessionStoreTestCase):
         )
 
 
+# Mirrors the features string session_store_test_case.py's
+# open_taskbartab_window() builds for a taskbar tab window.
+TASKBARTAB_FEATURES = (
+    "chrome,dialog=no,titlebar,close,toolbar,location,personalbar=no,"
+    "status,menubar=no,resizable,minimizable"
+)
+
+
 class TestTaskbarTabWindowSessionRestore(SessionStoreTestCase):
     """
     Bug 1915738: Don't restore last session into an open taskbar tab window.
@@ -496,13 +504,10 @@ class TestTaskbarTabWindowSessionRestore(SessionStoreTestCase):
 
         # Make the top window at restore time a taskbar tab window instead
         # of the normal startup window.
-        self.open_taskbartab_window()
-        taskbartab_window = self.marionette.close_chrome_window()[0]
-        self.marionette.switch_to_window(taskbartab_window)
+        self.replace_current_window({"taskbartab": True}, features=TASKBARTAB_FEATURES)
+        taskbartab_window = self.marionette.current_chrome_window_handle
         self.assertTrue(
-            self.marionette.execute_script(
-                "return document.documentElement.hasAttribute('taskbartab');"
-            ),
+            self.get_window_document_attribute("taskbartab"),
             msg="Top window at restore time should be a genuine taskbar tab window",
         )
         taskbartab_urls_before = self.get_urls_for_window(taskbartab_window)

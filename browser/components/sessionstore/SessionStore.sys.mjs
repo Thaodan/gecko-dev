@@ -1604,7 +1604,11 @@ class _SessionStore {
           let overwrite = this.#isCmdLineEmpty(aWindow, aInitialState);
 
           this.#cmdLineHadURLOnStartup = !overwrite;
-          let options = { firstWindow: true, overwriteTabs: overwrite };
+          let options = {
+            firstWindow: true,
+            overwriteTabs: overwrite,
+            restoreSource: "automatic_startup",
+          };
           this.#restoreWindows(aWindow, aInitialState, options);
         }
       } else {
@@ -1638,6 +1642,7 @@ class _SessionStore {
           : 0;
         this.#restoreWindows(aWindow, this.#deferredInitialState, {
           firstWindow: true,
+          restoreSource: "deferred_initial_state",
         });
       }
       this.#deferredInitialState = null;
@@ -1731,6 +1736,7 @@ class _SessionStore {
       }
       this.#restoreWindows(aWindow, lastSessionState, {
         firstWindow: true,
+        restoreSource: "automatic_with_taskbar_tab",
       });
       this.#shouldRestoreLastSession = false;
     }
@@ -3459,7 +3465,10 @@ class _SessionStore {
     lazy.SessionCookies.restore(state.cookies || []);
 
     // restore to the given state
-    this.#restoreWindows(window, state, { overwriteTabs: true });
+    this.#restoreWindows(window, state, {
+      overwriteTabs: true,
+      restoreSource: "set_browser_state",
+    });
 
     // Notify of changes to closed objects.
     this.#notifyOfClosedObjectsChange();
@@ -3505,7 +3514,10 @@ class _SessionStore {
       );
     }
 
-    this.#restoreWindows(aWindow, aState, { overwriteTabs: aOverwrite });
+    this.#restoreWindows(aWindow, aState, {
+      overwriteTabs: aOverwrite,
+      restoreSource: "set_window_state",
+    });
 
     // Notify of changes to closed objects.
     this.#notifyOfClosedObjectsChange();
@@ -5415,6 +5427,40 @@ class _SessionStore {
   }
 
   /**
+   * Provides a list of immutable window features for a given window state.
+   * These features need to be set at window creation time.
+   *
+   * @param {WindowStateData} winState
+   * @returns {Set<string>}
+   *   Names of immutable window features (e.g. `isPopup`) present on
+   *   `winState`.
+   */
+  #getImmutableWindowFeatures(winState) {
+    const features = new Set();
+
+    if (winState.isPrivate) {
+      features.add("private");
+    }
+
+    if (winState.isPopup) {
+      features.add("popup");
+    }
+
+    if (winState.isTaskbarTab) {
+      features.add("taskbartab");
+    }
+
+    if (winState.args?.[ARG_CHROMELESS_WINDOW]) {
+      features.add(ARG_CHROMELESS_WINDOW);
+    }
+    if (winState.args?.[ARG_WEB_EXTENSION_POPUP_WINDOW]) {
+      features.add(ARG_WEB_EXTENSION_POPUP_WINDOW);
+    }
+
+    return features;
+  }
+
+  /**
    * Returns a list of tabs in an existing window `aWindow` that are "empty"
    * and can therefore be closed before restoring session into `aWindow`.
    *
@@ -6267,6 +6313,32 @@ class _SessionStore {
     }
 
     let firstWindowData = root.windows.splice(0, 1);
+    let firstWindowState = firstWindowData[0];
+    if (!this.#canRestoreIntoExistingWindow(aWindow, firstWindowState)) {
+      try {
+        let existingState = this.#getWindowStateData(aWindow);
+        let existingFeatures = this.#getImmutableWindowFeatures(existingState);
+        let requestedFeatures =
+          this.#getImmutableWindowFeatures(firstWindowState);
+        this.#log.warn(
+          "SessionStore.#restoreWindows: existing window's features don't " +
+            "match the state being restored into it; a window's chrome " +
+            "can't change after creation, so this state can't be fully applied"
+        );
+        Glean.sessionRestore.windowFeaturesMismatchIgnored.record({
+          entry_point: aOptions.restoreSource ?? "unknown",
+          existing_features: Array.from(existingFeatures).join(","),
+          requested_features: Array.from(requestedFeatures).join(","),
+        });
+      } catch (ex) {
+        // Suppress errors if `aWindow` is undefined or not tracked.
+        this.#log.warn(
+          "SessionStore.#restoreWindows: failed to compare" +
+            "mismatched window features: " +
+            ex.message
+        );
+      }
+    }
     // Store the restore state and restore option of the current window,
     // so that the window can be restored in reversed z-order.
     this.#updateWindowRestoreState(aWindow, {
