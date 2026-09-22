@@ -39,8 +39,6 @@ for k, v in expat_defines:
 
 LICENSES += ["expat"]
 LICENSES["expat"].title = "Expat License"
-LICENSES["expat"].text = "LICENSE-NOTICE.txt"
-LICENSES["expat"].spdx = "MIT"
 LICENSES["expat"].notice = """
 <p>This license applies to certain files in the directory <code>parser/expat/</code>.</p>
 """

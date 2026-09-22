@@ -110,11 +110,35 @@ LICENSES["myspell"].spdx = "BSD-2-Clause"
 LICENSES["myspell"].subcomponent = True
 ```
 
-For the same reason, prefer pointing `text` at the license file the library
-already ships -- `LICENSE`, `COPYING` -- over a separate `LICENSE-NOTICE.txt`
-repeating it. A notice file earns its place when it is not a copy of a single
-shipped file: `media/libvpx` needs one because its notice is `LICENSE` plus the
-VP8 patent grant, which upstream keeps in `libvpx/PATENTS`.
+The flag also reaches the SBOM: the enclosing library's component carries the
+subcomponent's expression alongside the one `moz.yaml` declares, instead of
+`moz.yaml`'s answer standing for code it does not cover.
+
+The notice text duplicates the same way. A vendored library already names the
+file it ships its license in, in `origin.license-file`, so leave `text` unset
+and the notice is read from there:
+
+```yaml
+origin:
+  license: MIT
+  license-file: COPYING
+```
+
+```python
+LICENSES += ["expat"]
+LICENSES["expat"].title = "Expat License"
+```
+
+The linter reports a `text` naming the file that manifest already names. Where
+`moz.yaml` has no `license-file`, add it rather than copying the text into a
+`LICENSE-NOTICE.txt` next to the `moz.build`: the manifest is what `mach vendor`
+checks against upstream, so it is the copy that stays current.
+
+A separate notice file earns its place when it is not a copy of a single
+shipped file. `media/libvpx` needs one because its notice is `LICENSE` plus the
+VP8 patent grant, which upstream keeps in `libvpx/PATENTS`; `netwerk/sctp`
+needs one because its notice reproduces the FreeBSD and Cisco copyright headers
+its sources carry, which upstream's `LICENSE.md` does not.
 
 ## Rendering `about:license` Without a Build
 

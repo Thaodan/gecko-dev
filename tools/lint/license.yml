@@ -124,8 +124,10 @@ license-declarations:
     description: |
         Checks that every LICENSED_UNDER id in a moz.build has a matching
         LICENSES declaration somewhere in the tree, that every `spdx` flag is
-        a valid SPDX expression, and that nothing still sets the
-        APP_LICENSE_*_BLOCK defines about:license no longer reads.
+        a valid SPDX expression, that neither `spdx` nor `text` repeats the
+        `origin.license` or `origin.license-file` of a covering moz.yaml, and
+        that nothing still sets the APP_LICENSE_*_BLOCK defines about:license
+        no longer reads.
     include:
         - .
     exclude:
@@ -140,6 +142,7 @@ license-declarations:
     support-files:
         - 'tools/lint/license/**'
         - 'python/mozbuild/mozbuild/licenses.py'
+        - '**/moz.yaml'
     # The declared set is gathered from the whole tree on every run, so this
     # wants the paths in one job rather than once per parallel chunk.
     type: global

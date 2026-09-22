@@ -61,8 +61,6 @@ if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
 
 LICENSES += ["openvr"]
 LICENSES["openvr"].title = "OpenVR License"
-LICENSES["openvr"].text = "LICENSE-NOTICE.txt"
-LICENSES["openvr"].spdx = "BSD-3-Clause"
 LICENSES["openvr"].notice = """
 <p>This license applies to certain files in the directory <code>gfx/vr/service/openvr</code>.</p>
 """
