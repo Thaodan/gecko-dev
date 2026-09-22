@@ -21,7 +21,6 @@ DIRS += [
     "performance-new",
     "preferences",
     "responsive",
-    "settings",
     "shared",
     "storage",
     "styleeditor",
