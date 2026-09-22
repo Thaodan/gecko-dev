@@ -165,6 +165,12 @@ namespace InspectorUtils {
                                            UTF8String expression,
                                            Element element,
                                            optional [LegacyNullToEmptyString] DOMString pseudo = "");
+
+  // Given a "CSS expression" (e.g. `var(--x, attr(data-y))`), returns an expression with
+  // the substitution function calls actually substituted
+  UTF8String? getSubstitutedValue(UTF8String expression,
+                                 Element element,
+                                 optional [LegacyNullToEmptyString] DOMString pseudo = "");
 };
 
 enum InspectorAnchorType {
