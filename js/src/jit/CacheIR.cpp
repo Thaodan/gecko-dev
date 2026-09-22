@@ -11991,7 +11991,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIsTypedArray(
   // A shape guard is cheaper than loading the class, so start by
   // optimistically assuming that this site is monomorphic.
   bool canGuardShape =
-      isFirstStub() && !(isPossiblyWrapped && obj->is<WrapperObject>());
+      isFirstStub() && !(isPossiblyWrapped && obj->is<ProxyObject>());
   if (canGuardShape) {
     writer.guardShapeForClass(objArgId, obj->shape());
     writer.loadBooleanResult(obj->is<TypedArrayObject>());
