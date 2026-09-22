@@ -45,8 +45,6 @@
  *   Whether the window is an AI window.
  * @property {string} [title]
  *   Title of the window's selected tab.
- * @property {string} [hidden]
- *   Comma-separated list of the window's hidden toolbars.
  * @property {"normal"|"maximized"|"minimized"|"fullscreen"} [sizemode]
  *   Size mode of the window.
  * @property {"normal"|"maximized"|"minimized"|"fullscreen"} [sizemodeBeforeMinimized]
@@ -169,10 +167,6 @@ const CHROME_FLAGS_MAP = [
   [Ci.nsIWebBrowserChrome.CHROME_MODAL, "modal"],
   [Ci.nsIWebBrowserChrome.CHROME_OPENAS_DIALOG, "dialog", "dialog=0"],
 ];
-
-// Hideable window features to restore
-// TODO(bug 2065234): This could just be an "is popup" bit now.
-const WINDOW_HIDEABLE_FEATURES = ["toolbar"];
 
 // These are tab events that we listen to.
 const TAB_EVENTS = [
@@ -773,10 +767,6 @@ class _SessionStore {
           this.#updateSessionStartTime(state);
 
           if (state.windows.length) {
-            // Make sure that at least the first window doesn't have anything hidden.
-            delete state.windows[0].hidden;
-            // Since nothing is hidden in the first window, it cannot be a popup.
-            delete state.windows[0].isPopup;
             // We don't want to minimize and then open a window at startup.
             if (state.windows[0].sizemode == "minimized") {
               state.windows[0].sizemode = "normal";
@@ -1674,7 +1664,6 @@ class _SessionStore {
           // #closedWindows.
           this.#removeClosedWindow(closedWindowIndex);
           newWindowState = closedWindowState;
-          delete newWindowState.hidden;
         }
 
         if (newWindowState) {
@@ -5090,8 +5079,6 @@ class _SessionStore {
 
     // We want to re-use the last opened window instead of opening a new one in
     // the case where it's "empty" and not associated with a window in the session.
-    // We will do more processing via #prepWindowToRestoreInto if we need to use
-    // the lastWindow.
     let lastWindow = this.#getTopWindow();
     let canUseLastWindow = lastWindow && !lastWindow.__SS_lastSessionWindowID;
 
@@ -5136,17 +5123,15 @@ class _SessionStore {
       if (
         !windowToUse &&
         canUseLastWindow &&
-        lastWindowIsAIWindow == thisWindowIsAIWindow
+        lastWindowIsAIWindow == thisWindowIsAIWindow &&
+        this.#canRestoreIntoExistingWindow(lastWindow, winState)
       ) {
         windowToUse = lastWindow;
         canUseLastWindow = false;
       }
 
-      let [canUseWindow, canOverwriteTabs] =
-        this.#prepWindowToRestoreInto(windowToUse);
-
       // If there's a window already open that we can restore into, use that
-      if (canUseWindow) {
+      if (windowToUse) {
         if (!PERSIST_SESSIONS) {
           // Since we're not overwriting existing tabs, we want to merge _closedTabs,
           // putting existing ones first. Then make sure we're respecting the max pref.
@@ -5161,6 +5146,20 @@ class _SessionStore {
             );
           }
         }
+
+        let removableTabs = this.#getRemovableHomePages(windowToUse);
+        let canOverwriteTabs = false;
+        if (windowToUse.gBrowser.tabs.length == removableTabs.length) {
+          canOverwriteTabs = true;
+        } else {
+          // If we're not overwriting all of the tabs, then close the home tabs.
+          while (removableTabs.length) {
+            windowToUse.gBrowser.removeTab(removableTabs.pop(), {
+              animate: false,
+            });
+          }
+        }
+
         // We don't restore window right away, just store its data.
         // Later, these windows will be restored with newly opened windows.
         this.#updateWindowRestoreState(windowToUse, {
@@ -5337,25 +5336,53 @@ class _SessionStore {
   }
 
   /**
-   * See if aWindow is usable for use when restoring a previous session via
-   * restoreLastSession. If usable, prepare it for use.
+   * Whether session state of a window can be restored into the `aExisting`
+   * window. This should return `false` if `aPreviousState` has any
+   * characteristics that `aExisting` cannot adopt, e.g. if `aExisting` is a
+   * popup window and `aPreviousState` is not.
    *
-   * @param {Window} aWindow
-   *        the window to inspect & prepare
-   * @returns {boolean[]}
-   *          canUseWindow: can the window be used to restore into
-   *          canOverwriteTabs: all of the current tabs are home pages and we
-   *                            can overwrite them
+   * @param {Window} aExisting
+   *   Existing window to consider restoring a session into.
+   * @param {WindowStateData} aPreviousState
+   *   Session state for a window.
+   * @returns {boolean}
    */
-  #prepWindowToRestoreInto(aWindow) {
-    if (!aWindow) {
-      return [false, false];
+  #canRestoreIntoExistingWindow(aExisting, aPreviousState) {
+    if (!aExisting) {
+      return false;
     }
 
-    // We might be able to overwrite the existing tabs instead of just adding
-    // the previous session's tabs to the end. This will be set if possible.
-    let canOverwriteTabs = false;
+    let existingState = this.#getWindowStateData(aExisting);
+    if (Boolean(existingState.isPopup) != Boolean(aPreviousState.isPopup)) {
+      return false;
+    }
 
+    if (Boolean(existingState.isPrivate) != Boolean(aPreviousState.isPrivate)) {
+      return false;
+    }
+
+    if (
+      Boolean(existingState.isTaskbarTab) !=
+      Boolean(aPreviousState.isTaskbarTab)
+    ) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Returns a list of tabs in an existing window `aWindow` that are "empty"
+   * and can therefore be closed before restoring session into `aWindow`.
+   *
+   * @param {Window} aWindow
+   *   An existing window into which the last session will be restored
+   *   on demand.
+   * @returns {MozTabbrowserTab[]}
+   *   Tabs in `aWindow` that can be removed before the last session is
+   *   restored into `aWindow`.
+   */
+  #getRemovableHomePages(aWindow) {
     // Look at the open tabs in comparison to home pages. If all the tabs are
     // home pages then we'll end up overwriting all of them. Otherwise we'll
     // just close the tabs that match home pages. Tabs with the about:blank
@@ -5388,16 +5415,7 @@ class _SessionStore {
       removableTabs.shift();
     }
 
-    if (tabbrowser.tabs.length == removableTabs.length) {
-      canOverwriteTabs = true;
-    } else {
-      // If we're not overwriting all of the tabs, then close the home tabs.
-      for (let i = removableTabs.length - 1; i >= 0; i--) {
-        tabbrowser.removeTab(removableTabs.pop(), { animate: false });
-      }
-    }
-
-    return [true, canOverwriteTabs];
+    return removableTabs;
   }
 
   /* ........ Saving Functionality .............. */
@@ -5417,15 +5435,6 @@ class _SessionStore {
 
     if (winData.sizemode != "minimized") {
       winData.sizemodeBeforeMinimized = winData.sizemode;
-    }
-
-    var hidden = WINDOW_HIDEABLE_FEATURES.filter(function (aItem) {
-      return aWindow[aItem] && !aWindow[aItem].visible;
-    });
-    if (hidden.length) {
-      winData.hidden = hidden.join(",");
-    } else if (winData.hidden) {
-      delete winData.hidden;
     }
 
     const sidebarUIState = aWindow.SidebarController.getUIState();
@@ -6635,9 +6644,6 @@ class _SessionStore {
    *        Options for the restoration
    */
   #restoreWindowFeatures(aWindow, aWinData, aOptions = {}) {
-    var isTaskbarTab =
-      aWindow.document.documentElement.hasAttribute("taskbartab");
-
     // A restored window keeps its saved type: Classic stays Classic and Smart
     // stays Smart, for both automatic (startup.page=3 / crash) and manual
     // "Restore previous session" restores.
@@ -6661,18 +6667,6 @@ class _SessionStore {
       lazy.AIWindow.toggleAIWindow(aWindow, shouldBeAIWindow, trigger);
     } else if (shouldBeAIWindow) {
       lazy.AIWindow.recordOpenWindowTelemetry(trigger);
-    }
-
-    if (aWinData.isPopup) {
-      this.#windows[aWindow.__SSi].isPopup = true;
-      if (aWindow.gURLBar) {
-        aWindow.gURLBar.readOnly = true;
-      }
-    } else {
-      delete this.#windows[aWindow.__SSi].isPopup;
-      if (aWindow.gURLBar && !isTaskbarTab) {
-        aWindow.gURLBar.readOnly = false;
-      }
     }
 
     let promiseParts = Promise.withResolvers();
@@ -7032,8 +7026,7 @@ class _SessionStore {
    * @param {boolean} [isPrivate]
    *        Optional boolean to get only non-private or private windows
    *        When omitted, we'll return whatever the top-most window is regardless of privateness
-   * @returns {Window}
-   *          The most recent window
+   * @returns {Window|undefined}
    */
   #getTopWindow(isPrivate) {
     const options = { allowPopups: true };
@@ -7090,11 +7083,9 @@ class _SessionStore {
   #openWindowWithState(aState) {
     // Build arguments string
     let argString;
-    // Build feature string
-    let features;
+    let features = ["chrome", "suppressanimation"];
     let winState = aState.windows[0];
     if (winState.chromeFlags) {
-      features = ["chrome", "suppressanimation"];
       let chromeFlags = winState.chromeFlags;
       const allFlags = Ci.nsIWebBrowserChrome.CHROME_ALL;
       const hasAll = (chromeFlags & allFlags) == allFlags;
@@ -7111,18 +7102,13 @@ class _SessionStore {
         }
       }
     } else {
-      // |chromeFlags| is not found. Fallbacks to the old method.
-      features = ["chrome", "dialog=no", "suppressanimation"];
-      let hidden = winState.hidden?.split(",") || [];
-      if (!hidden.length) {
-        features.push("all");
-      } else {
+      // `chromeFlags` is not found despite its introduction in Firefox 99
+      // in bug 1728800. This code should be a one-time fallback
+      features.push("dialog=no");
+      if (winState.isPopup) {
         features.push("resizable");
-        WINDOW_HIDEABLE_FEATURES.forEach(aFeature => {
-          if (!hidden.includes(aFeature)) {
-            features.push(aFeature);
-          }
-        });
+      } else {
+        features.push("all");
       }
     }
     WINDOW_ATTRIBUTES.forEach(aFeature => {
@@ -7649,7 +7635,6 @@ class _SessionStore {
         // Not copying over:
         // - extData
         // - isPopup
-        // - hidden
 
         // Assign a unique ID to correlate the window to be opened with the
         // remaining data
