@@ -328,7 +328,10 @@ static MConstant* EvaluateIntConstantOperands(TempAllocator& alloc,
 
 static MConstant* EvaluateInt32ConstantOperands(TempAllocator& alloc,
                                                 MBinaryInstruction* ins) {
-  return EvaluateIntConstantOperands<MIRType::Int32>(alloc, ins);
+  MConstant* result = EvaluateIntConstantOperands<MIRType::Int32>(alloc, ins);
+  MOZ_RELEASE_ASSERT(!result || !ins->range() ||
+                     ins->range()->contains(result->toInt32()));
+  return result;
 }
 
 static MConstant* EvaluateInt64ConstantOperands(TempAllocator& alloc,
