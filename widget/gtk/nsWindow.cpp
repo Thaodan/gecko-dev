@@ -7575,11 +7575,11 @@ void nsWindow::InsertEmoji(RefPtr<nsWindow> aToplevelWindow) {
                          return;
                        }
                        LOGW("[%p] nsWindow::Emoji() insert_text", window);
-                       WidgetContentCommandEvent insertTextEvent(
-                           true, eContentCommandInsertText, window);
-                       NS_ConvertUTF8toUTF16 str(text);
-                       insertTextEvent.mString.emplace(str);
-                       window->DispatchEvent(&insertTextEvent);
+                       if (TextEventDispatcher* const dispatcher =
+                               window->GetTextEventDispatcher()) {
+                         (void)dispatcher->DispatchInsertTextCommandEvent(
+                             NS_ConvertUTF8toUTF16(text));
+                       }
                      }),
                      aToplevelWindow);
   }
