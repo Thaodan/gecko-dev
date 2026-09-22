@@ -1475,12 +1475,12 @@ toolbar[inactive="true"] .urlbar,
 
   .searchmode-switcher[wordmark="bing"] & {
     background-image: url("chrome://browser/skin/urlbar/engine-wordmarks/Bing.svg");
-    aspect-ratio: 144 / 62.08;
+    aspect-ratio: 138 / 62;
   }
 
   .searchmode-switcher[wordmark="ddg"] & {
     background-image: url("chrome://browser/skin/urlbar/engine-wordmarks/DuckDuckGo.svg");
-    aspect-ratio: 211 / 62.08;
+    aspect-ratio: 286 / 62;
   }
 
   .searchmode-switcher[wordmark="ebay"] & {
