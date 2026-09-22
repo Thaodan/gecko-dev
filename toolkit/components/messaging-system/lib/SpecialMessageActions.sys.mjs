@@ -61,6 +61,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PlacesUIUtils: "moz-src:///browser/components/places/PlacesUIUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  PushNotificationHelper:
+    "resource://gre/modules/PushNotificationHelper.sys.mjs",
   // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
   Referrals: "resource:///modules/referrals/Referrals.sys.mjs",
   ResetProfile: "resource://gre/modules/ResetProfile.sys.mjs",
@@ -784,6 +786,21 @@ export const SpecialMessageActions = {
     await lazy.CustomIconManager.apply(id);
   },
 
+  /**
+   * Turns closed-browser web notifications on or off on the user's behalf.
+   *
+   * PushNotificationHelper is only packaged on Windows, so this is a no-op on
+   * other platforms to avoid importing a module that does not exist.
+   *
+   * @param {boolean} value Whether the helper should run.
+   */
+  setClosedBrowserNotifications(value) {
+    if (AppConstants.platform !== "win") {
+      return;
+    }
+    lazy.PushNotificationHelper.setEnabled(value);
+  },
+
   async createAndOpenProfile() {
     await lazy.SelectableProfileService.createNewProfile(
       true,
@@ -991,6 +1008,12 @@ export const SpecialMessageActions = {
         break;
       case "REMOVE_LAUNCH_ON_LOGIN":
         await lazy.LaunchOnLogin.disable();
+        break;
+      case "ENABLE_CLOSED_BROWSER_NOTIFICATIONS":
+        this.setClosedBrowserNotifications(true);
+        break;
+      case "DISABLE_CLOSED_BROWSER_NOTIFICATIONS":
+        this.setClosedBrowserNotifications(false);
         break;
       case "CREATE_GROUP_FROM_CURRENT_TAB": {
         let tab =
