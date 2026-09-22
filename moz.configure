@@ -102,9 +102,9 @@ set_define("ENABLE_TESTS", enable_tests)
 
 
 option(
-    "--disable-makefile-installer-build",
+    "--enable-makefile-installer-build",
     env="MOZ_USE_MAKEFILE_INSTALLER_BUILD",
-    help="Disable the Windows installer build driven by Make",
+    help="Enable the Windows installer build driven by Make",
 )
 
 
