@@ -60,6 +60,13 @@ export class MiniWindow {
   #originTabIndex;
 
   /**
+   * Whether this mini window frames a cropped region rather than the whole tab.
+   *
+   * @type {boolean}
+   */
+  #cropped;
+
+  /**
    * Reveals the collapsed toolbar when the user hovers near the top of
    * the window.
    *
@@ -100,15 +107,33 @@ export class MiniWindow {
    * @param {object} manager - The MiniWindowManager singleton.
    * @param {ChromeWindow} originWin - The tab's source window.
    * @param {MozTabbrowserTab} sourceTab - The tab to move.
-   * @param {object} cropInfo - The page region to frame, in content CSS px.
-   *   Carries left/top/width/height plus the viewport size and fullZoom it
-   *   was captured against; see MiniWindowUtils.
+   * @param {object|null} [cropInfo] - The page region to frame, in content CSS
+   *   px. Carries left/top/width/height plus the viewport size and fullZoom it
+   *   was captured against; see MiniWindowUtils. Null makes a full-tab mini
+   *   window.
    */
-  constructor(manager, originWin, sourceTab, cropInfo) {
+  constructor(manager, originWin, sourceTab, cropInfo = null) {
     this.manager = manager;
     this.originWin = originWin;
     this.#sourceTab = sourceTab;
-    this._cropInfo = cropInfo;
+    this.#cropped = !!cropInfo;
+    let browser = sourceTab.linkedBrowser;
+    if (cropInfo) {
+      this._cropInfo = cropInfo;
+    } else {
+      // A full-tab mini window frames no crop, so width/height here are just
+      // the size to open at.
+      let { width, height } = lazy.MiniWindowUtils.fullTabSize();
+      this._cropInfo = {
+        left: 0,
+        top: 0,
+        width,
+        height,
+        viewportWidth: browser.clientWidth,
+        viewportHeight: browser.clientHeight,
+        fullZoom: browser.fullZoom,
+      };
+    }
     this.#originTabIndex = originWin.gBrowser.tabs.indexOf(sourceTab);
     this.miniWin = null;
     this._state = MiniWindowState.OPENING;
@@ -124,6 +149,15 @@ export class MiniWindow {
    */
   get state() {
     return this._state;
+  }
+
+  /**
+   * Whether this Mini Window frames a cropped region rather than the whole tab.
+   *
+   * @returns {boolean}
+   */
+  get isCropped() {
+    return this.#cropped;
   }
 
   /**
@@ -177,6 +211,9 @@ export class MiniWindow {
 
     // Mark the tab being moved out to make sure styling is correct.
     this.#sourceTab.setAttribute("mini-window", "true");
+    if (this.#cropped) {
+      this.#sourceTab.setAttribute("cropped-mini-window", "true");
+    }
 
     this.miniWin = gBrowser.replaceTabWithWindow(this.#sourceTab, features);
 
@@ -186,6 +223,7 @@ export class MiniWindow {
           the mini window - replaceTabWithWindow returned null"
       );
       this.#sourceTab.removeAttribute("mini-window");
+      this.#sourceTab.removeAttribute("cropped-mini-window");
       this._state = MiniWindowState.CLOSED;
       return null;
     }
@@ -194,7 +232,11 @@ export class MiniWindow {
       "browser-delayed-startup-finished",
       subject => subject == this.miniWin
     );
-    await this.#frame();
+    if (this.#cropped) {
+      // Only a crop needs the framing and the wheel panning that substitutes
+      // for scrolling.
+      await this.#frame();
+    }
     this._state = MiniWindowState.FRAMED;
     lazy.logConsole.debug("open: state -> FRAMED");
 
@@ -217,16 +259,21 @@ export class MiniWindow {
    */
   #restrictShortcuts() {
     const ALLOWED_KEYS = new Set([
-      "goBackKb",
-      "goBackKb2",
-      "goForwardKb",
-      "goForwardKb2",
       "key_close",
       "key_reload",
       "key_reload2",
       "key_reload_skip_cache",
       "key_reload_skip_cache2",
+      "key_closeWindow",
+      "key_toggleMute",
     ]);
+    // A crop frames one specific page, so history navigation only makes sense
+    // in a full-tab mini window.
+    if (!this.#cropped) {
+      for (let id of ["goBackKb", "goBackKb2", "goForwardKb", "goForwardKb2"]) {
+        ALLOWED_KEYS.add(id);
+      }
+    }
     let keyset = this.miniWin.document.getElementById("mainKeyset");
     for (let key of keyset ? [...keyset.children] : []) {
       if (key.localName === "key" && !ALLOWED_KEYS.has(key.id)) {

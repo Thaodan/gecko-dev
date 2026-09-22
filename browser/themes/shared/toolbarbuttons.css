@@ -179,6 +179,15 @@
    before the address bar does. The rest of its chrome is hidden in
    browser-shared.css. */
 :root[mini-window] {
+  /* Cropped mini window's dont have any business navigating - they are meant
+     to be ephemeral states of the tab. */
+  &[cropped-mini-window] {
+    #back-button,
+    #forward-button {
+      display: none;
+    }
+  }
+
   @media (width < 400px) {
     #back-button,
     #forward-button,

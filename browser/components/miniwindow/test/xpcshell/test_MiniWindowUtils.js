@@ -155,3 +155,11 @@ add_task(async function test_window_rect_rtl_corners_bottom_left() {
   Assert.equal(rect.left, 1512, "RTL pins to the avail rect's left edge");
   Assert.equal(rect.top, 742, "RTL still corners against the bottom");
 });
+
+add_task(async function test_full_tab_default_size() {
+  Assert.deepEqual(
+    MiniWindowUtils.fullTabSize(),
+    { width: 640, height: 400 },
+    "a full-tab mini window opens at 640x400"
+  );
+});
