@@ -262,6 +262,11 @@ class API_AVAILABLE(macos(12.0)) ASWebAuthServiceReadyObserver final
                      const char16_t* aData) override {
     if (!strcmp(aTopic, "aswebauthsession-service-shutdown")) {
       sServiceReady = false;
+      // Queued requests never reached the browser UI, so the apps waiting
+      // on them have to be told that nothing is handling them.
+      for (const auto& request : sPendingBeginRequests.Values()) {
+        request->Cancel();
+      }
       sPendingBeginRequests.Clear();
       return NS_OK;
     }
