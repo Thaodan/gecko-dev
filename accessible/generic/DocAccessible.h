@@ -243,6 +243,20 @@ class DocAccessible : public HyperTextAccessible,
       typename TNotification<Class, Args...>::Callback aMethod, Args*... aArgs);
 
   /**
+   * This function asserts that mContent is the document node's root element
+   * or null (not yet mapped).
+   * Return true if the given aNode is this document's mContent, and false
+   * otherwise.
+   */
+  bool IsRootContent(nsINode* aNode) const;
+
+  /**
+   * Returns the doc accessible when aNode is the root element, otherwise
+   * behaves identically to GetAccessible below.
+   */
+  LocalAccessible* GetAccessibleOrDocument(nsINode* aNode) const;
+
+  /**
    * Return the cached accessible by the given DOM node if it's in subtree of
    * this document accessible or the document accessible itself, otherwise null.
    *
