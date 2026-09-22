@@ -60,6 +60,10 @@ toolkit/components/formautofill/shared/CreditCardRuleset.sys.mjs
 **/*.inc.xhtml
 **/*.inc.html
 
+# Verbatim upstream license notices rendered by about:license. Some are
+# fragments prettier cannot parse.
+toolkit/content/licenses/*.html
+
 # Ignore preprocessed xhtml/html files
 browser/base/content/aboutDialog.xhtml
 browser/base/content/browser.xhtml

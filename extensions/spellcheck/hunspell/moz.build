@@ -9,3 +9,16 @@ if not CONFIG["MOZ_WASM_SANDBOXING_HUNSPELL"]:
 
 if CONFIG["ENABLE_TESTS"]:
     XPCSHELL_TESTS_MANIFESTS += ["tests/unit/xpcshell.toml"]
+
+LICENSES += ["myspell"]
+LICENSES["myspell"].title = "MySpell License"
+LICENSES["myspell"].text = "LICENSE-NOTICE.txt"
+LICENSES["myspell"].spdx = "BSD-2-Clause"
+LICENSES["myspell"].notice = """
+<p>This license applies to some files in the directory <code>extensions/spellcheck/hunspell</code>.</p>
+"""
+
+LICENSED_UNDER += [
+    "mit",
+    "myspell",
+]
