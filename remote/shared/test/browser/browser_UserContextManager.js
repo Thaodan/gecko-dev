@@ -223,6 +223,17 @@ add_task(async function test_create_context_name() {
   const identity1 =
     ContextualIdentityService.getPublicIdentityFromId(internalId1);
   is(identity1.name, "foo", "The new identity used the provided name");
+  is(
+    userContextManager.getUserContextIdsByName(identity1.name).length,
+    1,
+    "getUserContextIdsByName returned the expected number of context ids"
+  );
+  ok(
+    userContextManager
+      .getUserContextIdsByName(identity1.name)
+      .includes(userContextId1),
+    "getUserContextIdsByName returns the expected user context id"
+  );
 
   info("Create another context with the same custom name via createContext");
   const userContextId2 = userContextManager.createContext({
@@ -232,6 +243,17 @@ add_task(async function test_create_context_name() {
   const identity2 =
     ContextualIdentityService.getPublicIdentityFromId(internalId2);
   is(identity2.name, "foo", "The new identity used the (same) provided name");
+  is(
+    userContextManager.getUserContextIdsByName(identity2.name).length,
+    2,
+    "getUserContextIdsByName returned the expected number of context ids"
+  );
+  ok(
+    userContextManager
+      .getUserContextIdsByName(identity2.name)
+      .includes(userContextId2),
+    "getUserContextIdsByName returns the expected user context id"
+  );
 
   info("Create another context with another custom name");
   const userContextId3 = userContextManager.createContext({
@@ -241,6 +263,17 @@ add_task(async function test_create_context_name() {
   const identity3 =
     ContextualIdentityService.getPublicIdentityFromId(internalId3);
   is(identity3.name, "bar", "The new identity used the provided name");
+  is(
+    userContextManager.getUserContextIdsByName(identity3.name).length,
+    1,
+    "getUserContextIdsByName returned the expected number of context ids"
+  );
+  ok(
+    userContextManager
+      .getUserContextIdsByName(identity3.name)
+      .includes(userContextId3),
+    "getUserContextIdsByName returns the expected user context id"
+  );
 
   info("Create another context with a custom name and a prefix");
   const userContextId4 = userContextManager.createContext({
@@ -254,6 +287,17 @@ add_task(async function test_create_context_name() {
     identity4.name,
     "baz",
     "The new identity used the provided name without using the prefix"
+  );
+  is(
+    userContextManager.getUserContextIdsByName(identity4.name).length,
+    1,
+    "getUserContextIdsByName returned the expected number of context ids"
+  );
+  ok(
+    userContextManager
+      .getUserContextIdsByName(identity4.name)
+      .includes(userContextId4),
+    "getUserContextIdsByName returns the expected user context id"
   );
 
   for (const invalidName of [null, undefined, "", "   "]) {
@@ -269,6 +313,17 @@ add_task(async function test_create_context_name() {
     ok(
       invalidIdentity.name.startsWith("should-be-used"),
       "The identity used the prefix"
+    );
+    is(
+      userContextManager.getUserContextIdsByName(invalidIdentity.name).length,
+      1,
+      "getUserContextIdsByName returned the expected number of context ids"
+    );
+    ok(
+      userContextManager
+        .getUserContextIdsByName(invalidIdentity.name)
+        .includes(invalidUserContextId),
+      "getUserContextIdsByName returns the expected user context id"
     );
     userContextManager.removeUserContext(invalidUserContextId);
   }

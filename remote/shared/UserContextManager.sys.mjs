@@ -229,6 +229,27 @@ export class UserContextManagerClass {
   }
 
   /**
+   * Retrieve the user context ids for containers matching the provided name.
+   *
+   * @param {string} name
+   *     The expected name for the container.
+   *
+   * @returns {Array<string>}
+   *     The array of user context ids with the expected name, can be empty.
+   */
+  getUserContextIdsByName(name) {
+    const userContextIds = [];
+    for (const [internalId, id] of this.#userContextIds) {
+      const identity =
+        lazy.ContextualIdentityService.getPublicIdentityFromId(internalId);
+      if (identity?.name === name) {
+        userContextIds.push(id);
+      }
+    }
+    return userContextIds;
+  }
+
+  /**
    * Checks if the provided user context id is known by this UserContextManager.
    *
    * @param {string} userContextId
