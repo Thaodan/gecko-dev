@@ -3,10 +3,33 @@
 
 "use strict";
 
-const BARPROP_NAMES = ["locationbar", "menubar", "personalbar", "toolbar"];
+// Validates that reopening a closed window with specific chrome flags/window
+// features will restore all of those chrome flags/window features.
 
+const ALL_BARPROPS = {
+  locationbar: true,
+  menubar: true,
+  personalbar: true,
+  toolbar: true,
+};
+
+/**
+ * @typedef {object} TestData
+ * @property {true} [chrome]
+ * @property {string} url
+ * @property {true} [checkContentTitleEmpty]
+ * @property {string} features
+ * @property {Partial<typeof ALL_BARPROPS>} barprops
+ * @property {u32} chromeFlags
+ * @property {u32} [unsetFlags]
+ */
+
+/**
+ * @param {Window} win
+ * @param {TestData} test
+ */
 function testFeatures(win, test) {
-  for (let name of BARPROP_NAMES) {
+  for (let name of Object.keys(ALL_BARPROPS)) {
     is(
       win[name].visible,
       !!test.barprops?.[name],
@@ -33,16 +56,12 @@ function testFeatures(win, test) {
 add_task(async function testRestoredWindowFeatures() {
   const DUMMY_PAGE =
     "browser/components/tabbrowser/test/browser/tabs/dummy_page.html";
-  const ALL_BARPROPS = {
-    locationbar: true,
-    menubar: true,
-    personalbar: true,
-    toolbar: true,
-  };
+
+  /** @type {TestData[]} */
   const TESTS = [
     {
       url: "http://example.com/browser/" + DUMMY_PAGE,
-      features: "menubar=0,resizable",
+      features: "resizable",
       barprops: { locationbar: true },
       chromeFlags: Ci.nsIWebBrowserChrome.CHROME_WINDOW_RESIZE,
       unsetFlags: Ci.nsIWebBrowserChrome.CHROME_OPENAS_DIALOG,
@@ -50,7 +69,7 @@ add_task(async function testRestoredWindowFeatures() {
     {
       url: "data:,", // title should be empty
       checkContentTitleEmpty: true,
-      features: "location,resizable",
+      features: "resizable",
       barprops: { locationbar: true },
       chromeFlags: Ci.nsIWebBrowserChrome.CHROME_WINDOW_RESIZE,
       unsetFlags: Ci.nsIWebBrowserChrome.CHROME_OPENAS_DIALOG,

@@ -2,6 +2,8 @@
 subsuite = "integration"
 tags = "local os_integration"
 
+["test_close_last_nonpopup_window.py"]
+
 ["test_log_files.py"]
 
 ["test_new_tab_on_restore.py"]
@@ -12,6 +14,8 @@ skip-if = [
 ["test_persist_closed_tabs_restore_manually.py"]
 
 ["test_restore_aiwindow.py"]
+
+["test_restore_last_session_window_mismatch.py"]
 
 ["test_restore_loading_tab.py"]
 
