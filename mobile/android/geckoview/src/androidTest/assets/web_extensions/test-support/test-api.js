@@ -113,8 +113,18 @@ this.test = class extends ExtensionAPI {
         },
 
         async waitForContentTransformsReceived(tabId) {
-          return getActorForTab(tabId).sendQuery(
-            "WaitForContentTransformsReceived"
+          const { browsingContext } =
+            context.extension.tabManager.get(tabId).browser;
+          return Promise.all(
+            browsingContext
+              .getAllBrowsingContextsInSubtree()
+              .map(bc => bc.currentWindowGlobal)
+              .filter(windowGlobal => windowGlobal?.isProcessRoot)
+              .map(windowGlobal =>
+                windowGlobal
+                  .getActor("TestSupport")
+                  .sendQuery("WaitForContentTransformsReceived")
+              )
           );
         },
 
