@@ -923,12 +923,11 @@ export class SearchModeSwitcher {
     let menuitem = this.#createButton(undefined);
     menuitem.classList.add("searchmode-switcher-panel-search-settings-button");
     menuitem.dataset.action = "openpreferences";
-    menuitem.setAttribute("data-l10n-attrs", "accesskey");
     this.#input.document.l10n.setAttributes(
       menuitem,
       UrlbarPrefs.get("browser.nova.enabled")
-        ? "urlbar-searchmode-popup-settings"
-        : "urlbar-searchmode-popup-search-settings"
+        ? "urlbar-searchmode-popup-settings2"
+        : "urlbar-searchmode-popup-search-settings2"
     );
     this.#addCommandListeners(menuitem);
     this.#panelList.appendChild(menuitem);
@@ -943,7 +942,6 @@ export class SearchModeSwitcher {
     menuitem.classList.add("searchmode-switcher-installed");
     menuitem.setAttribute("label", engine.name);
     menuitem.setAttribute("title", engine.name);
-    menuitem.setAttribute("accesskey", engine.name[0]);
     menuitem.setAttribute("closemenu", "none");
 
     if (engine.isNew() && engine.isAppProvided) {
@@ -972,7 +970,6 @@ export class SearchModeSwitcher {
     );
     menuitem.dataset.action = "localsearchmode";
     menuitem.dataset.restrict = mode.restrict;
-    menuitem.setAttribute("data-l10n-attrs", "accesskey");
     this.#addCommandListeners(menuitem);
     this.#input.document.l10n.setAttributes(menuitem, mode.uiLabel);
     return menuitem;

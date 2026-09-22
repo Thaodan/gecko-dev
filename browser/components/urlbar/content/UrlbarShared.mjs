@@ -29,7 +29,6 @@ import UrlbarPrefs from "chrome://browser/content/urlbar/UrlbarContentPrefs.mjs"
  *   The telemetry label for recording searches in this mode.
  * @property {string} uiLabel
  *   The L10n ID to use for the UI label.
- *   Has a value and an accesskey attribute.
  */
 
 /**
@@ -436,7 +435,7 @@ export const UrlbarShared = {
         icon: "chrome://browser/skin/bookmark.svg",
         pref: "shortcuts.bookmarks",
         telemetryLabel: "bookmarks",
-        uiLabel: "urlbar-searchmode-bookmarks3",
+        uiLabel: "urlbar-searchmode-bookmarks4",
       },
       {
         source: this.RESULT_SOURCE.TABS,
@@ -444,7 +443,7 @@ export const UrlbarShared = {
         icon: "chrome://browser/skin/open-tabs.svg",
         pref: "shortcuts.tabs",
         telemetryLabel: "tabs",
-        uiLabel: "urlbar-searchmode-tabs3",
+        uiLabel: "urlbar-searchmode-tabs4",
       },
       {
         source: this.RESULT_SOURCE.HISTORY,
@@ -452,7 +451,7 @@ export const UrlbarShared = {
         icon: "chrome://browser/skin/history.svg",
         pref: "shortcuts.history",
         telemetryLabel: "history",
-        uiLabel: "urlbar-searchmode-history3",
+        uiLabel: "urlbar-searchmode-history4",
       },
       {
         source: this.RESULT_SOURCE.ACTIONS,
@@ -460,7 +459,7 @@ export const UrlbarShared = {
         icon: "chrome://browser/skin/lightning-bolt.svg",
         pref: "shortcuts.actions",
         telemetryLabel: "actions",
-        uiLabel: "urlbar-searchmode-actions3",
+        uiLabel: "urlbar-searchmode-actions4",
       },
     ]);
   },
