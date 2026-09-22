@@ -462,15 +462,16 @@ export const AIWindow = {
 
   /**
    * Whether the monitor toolbar button is enabled. It is the toolbar surface of
-   * the Smart Window agent, so it needs the agent feature as well as its own
-   * gate, both default-off, and the same region gate the rest of the feature
-   * uses. Somewhere the button cannot create a monitor it should not appear,
-   * not even in the customize palette.
+   * the Smart Window agent, so it needs Smart Window to be enabled, the
+   * agent feature and its own toolbar gate, and the same region gate the rest of
+   * the feature uses. Where the button cannot create a monitor
+   * it should not appear
    *
    * @returns {boolean}
    */
   get monitorButtonEnabled() {
     return (
+      this.isAIWindowEnabled() &&
       lazy.agentEnabled &&
       lazy.agentToolbarEnabled &&
       lazy.MonitorUIUtils.isMonitorRegionSupported()

@@ -2433,7 +2433,7 @@ pref("browser.smartwindow.smartformfill.minFormFields", 4);
 pref("browser.smartwindow.agent.enabled", true);
 pref("browser.smartwindow.agent.supportedRegions", "US,CA");
 // Toolbar button that opens the monitor creation panel (bug 2062113).
-pref("browser.smartwindow.agent.toolbar.enabled", false);
+pref("browser.smartwindow.agent.toolbar.enabled", true);
 // Announces the monitor agent as a new feature with a dot on the toolbar
 // button, for as long as the rollout runs. Set on the default branch by Nimbus
 // so that dismissing it, which writes the user branch, survives the rollout
