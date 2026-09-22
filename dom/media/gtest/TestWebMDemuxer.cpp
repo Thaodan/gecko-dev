@@ -215,10 +215,10 @@ TEST(MatroskaDemuxer, AACFrameCountNotParsed)
             EXPECT_TRUE(audioInfo->mMimeType.EqualsLiteral("audio/mp4a-latm"));
             ASSERT_TRUE(
                 audioInfo->mCodecSpecificConfig.is<AacCodecSpecificData>());
-            // The exact total must not be computed; it stays at default 0.
-            EXPECT_EQ(audioInfo->mCodecSpecificConfig.as<AacCodecSpecificData>()
-                          .mMediaFrameCount,
-                      0u);
+            // The exact total must not be computed; it stays unset.
+            EXPECT_TRUE(
+                audioInfo->mCodecSpecificConfig.as<AacCodecSpecificData>()
+                    .mMediaFrameCount.isNothing());
             RefPtr<MediaTrackDemuxer> audioTrack =
                 demuxer->GetTrackDemuxer(TrackInfo::kAudioTrack, 0);
             audioTrack->GetSamples()->Then(
