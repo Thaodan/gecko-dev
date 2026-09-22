@@ -29,10 +29,10 @@ export const MiniWindowManager = new (class {
   #originWinToMinis = new WeakMap();
 
   /**
-   * @type {WeakSet<Window>} origin windows that already have an SSWindowClosing
-   * listener.
+   * @type {WeakMap<Window, AbortController>} origin windows with lifecycle
+   * hooks installed, mapped to the controller that removes them.
    */
-  #hookedOriginWins = new WeakSet();
+  #originWinHooks = new WeakMap();
 
   #observing = false;
 
@@ -86,11 +86,8 @@ export const MiniWindowManager = new (class {
       this.#originWinToMinis.set(originWin, minisForOriginWin);
     }
     minisForOriginWin.add(miniwindow);
-    if (!this.#hookedOriginWins.has(originWin)) {
-      this.#hookedOriginWins.add(originWin);
-      originWin.addEventListener("SSWindowClosing", () =>
-        this.#putBackMinisForOriginWins(originWin)
-      );
+    if (!this.#originWinHooks.has(originWin)) {
+      this.#hookOriginWin(originWin);
     }
 
     let win = await miniwindow.open();
@@ -128,6 +125,7 @@ export const MiniWindowManager = new (class {
     minisForOriginWin.delete(miniwindow);
     if (!minisForOriginWin.size) {
       this.#originWinToMinis.delete(miniwindow.originWin);
+      this.#unhookOriginWin(miniwindow.originWin);
     }
     this._log.debug("_unregister", { remaining: this._miniwindows.size });
   }
@@ -154,6 +152,60 @@ export const MiniWindowManager = new (class {
         mini.returnToOriginWin(false);
       }
     }
+  }
+
+  /**
+   * Install the per-origin-window lifecycle hooks. Every listener added here
+   * must pass the controller's signal so #unhookOriginWin can drop them all.
+   *
+   * @param {Window} originWin
+   */
+  #hookOriginWin(originWin) {
+    let abortController = new AbortController();
+    originWin.addEventListener(
+      "SSWindowClosing",
+      () => this.#putBackMinisForOriginWins(originWin),
+      { signal: abortController.signal }
+    );
+    this.#originWinHooks.set(originWin, abortController);
+  }
+
+  /**
+   * Undo #hookOriginWin. No-op while the origin window still has mini windows -
+   * they depend on the SSWindowClosing teardown, so removing it early would
+   * leak them if the window closed.
+   *
+   * @param {Window} originWin
+   */
+  #unhookOriginWin(originWin) {
+    if (this.#originWinToMinis.get(originWin)?.size) {
+      return;
+    }
+
+    let abortController = this.#originWinHooks.get(originWin);
+    if (!abortController) {
+      return;
+    }
+
+    this.#originWinHooks.delete(originWin);
+    abortController.abort();
+  }
+
+  /**
+   * Moves the oldest popped tab back to the origin window.
+   *
+   * @param {Window} originWin
+   * @returns {boolean} true if a popped tab was moved home.
+   */
+  maybeMoveOldestMiniWindow(originWin) {
+    // The per-origin-window set preserves insertion order.
+    let oldest = this.#originWinToMinis.get(originWin)?.values().next().value;
+    if (!oldest) {
+      // Looks like there's no more to put back.
+      return false;
+    }
+    oldest.returnToOriginWin(true);
+    return true;
   }
 
   #putBackMinisForOriginWins(originWin) {
