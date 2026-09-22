@@ -39,3 +39,8 @@ screenshots-component-reselect-button = Start over
 toolbar-button-mini-window =
   .label = Mini Window
   .tooltiptext = Use Mini Window
+
+# Opens up the Mini Window section selector tool.
+main-context-menu-use-mini-window =
+    .label = Move Section to Mini Window
+    .accesskey = M
