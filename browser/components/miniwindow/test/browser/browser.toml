@@ -29,6 +29,8 @@ prefs = [
 
 ["browser_sessionstore.js"]
 
+["browser_sidebar.js"]
+
 ["browser_toolbar.js"]
 
 ["browser_toolbar_button.js"]

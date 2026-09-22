@@ -15,9 +15,14 @@ ChromeUtils.defineESModuleGetters(lazy, {
 export class MiniWindowParent extends JSWindowActorParent {
   receiveMessage(message) {
     switch (message.name) {
-      case "ScrolledUp": {
+      case "Scrolled": {
         let browser = this.browsingContext?.top?.embedderElement;
-        lazy.MiniWindowManager._miniWindowForBrowser(browser)?.revealToolbar();
+        let miniwindow = lazy.MiniWindowManager._miniWindowForBrowser(browser);
+        if (message.data.up) {
+          miniwindow?.revealToolbar();
+        } else {
+          miniwindow?.hideToolbarOnScrollDown();
+        }
         break;
       }
     }
