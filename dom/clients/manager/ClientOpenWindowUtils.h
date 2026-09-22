@@ -14,7 +14,7 @@ class ThreadsafeContentParentHandle;
 using BrowsingContextCallbackReceivedPromise =
     MozPromise<RefPtr<BrowsingContext>, CopyableErrorResult, false>;
 
-[[nodiscard]] MOZ_CAN_RUN_SCRIPT RefPtr<ClientOpPromise> ClientOpenWindow(
+[[nodiscard]] RefPtr<ClientOpPromise> ClientOpenWindow(
     ThreadsafeContentParentHandle* aOriginContent,
     const ClientOpenWindowArgs& aArgs);
 

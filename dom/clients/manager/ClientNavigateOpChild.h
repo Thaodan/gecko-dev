@@ -13,7 +13,6 @@ class ClientNavigateOpChild final : public PClientNavigateOpChild {
   MozPromiseRequestHolder<ClientOpPromise> mPromiseRequestHolder;
   nsCOMPtr<nsISerialEventTarget> mSerialEventTarget;
 
-  MOZ_CAN_RUN_SCRIPT
   [[nodiscard]] RefPtr<ClientOpPromise> DoNavigate(
       const ClientNavigateOpConstructorArgs& aArgs,
       mozilla::ipc::ActorLifecycleProxy* aProxy);
@@ -25,7 +24,6 @@ class ClientNavigateOpChild final : public PClientNavigateOpChild {
   ClientNavigateOpChild() = default;
   ~ClientNavigateOpChild() = default;
 
-  MOZ_CAN_RUN_SCRIPT
   void Init(const ClientNavigateOpConstructorArgs& aArgs,
             mozilla::ipc::ActorLifecycleProxy* aProxy);
 };

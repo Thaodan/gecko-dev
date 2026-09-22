@@ -37,7 +37,6 @@ class nsXULAlerts : public nsIAlertsService, public nsIAlertsDoNotDisturb {
  protected:
   virtual ~nsXULAlerts() = default;
   void PersistentAlertFinished();
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult ShowAlertImpl(nsIAlertNotification* aAlert,
                          nsIAlertCallbacks* aAlertListener);
 

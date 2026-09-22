@@ -247,7 +247,6 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   mozilla::dom::ChromeMessageBroadcaster* GetGroupMessageManager(
       const nsAString& aGroup);
 
-  MOZ_CAN_RUN_SCRIPT
   nsresult OpenJS(const nsACString& aUrl, const nsAString& aName,
                   const nsAString& aOptions,
                   mozilla::dom::BrowsingContext** _retval);
@@ -540,11 +539,9 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   nsPIDOMWindowOuter* GetInProcessScriptableParentOrNull() override;
   mozilla::dom::Element* GetFrameElement(nsIPrincipal& aSubjectPrincipal);
   mozilla::dom::Element* GetFrameElement() override;
-  MOZ_CAN_RUN_SCRIPT
   mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder> OpenOuter(
       const nsAString& aUrl, const nsAString& aName, const nsAString& aOptions,
       mozilla::ErrorResult& aError);
-  MOZ_CAN_RUN_SCRIPT
   nsresult Open(const nsACString& aUrl, const nsAString& aName,
                 const nsAString& aOptions, nsDocShellLoadState* aLoadState,
                 bool aForceNoOpener,
@@ -613,13 +610,11 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
                  bool aWrapAround, bool aWholeWord, bool aSearchInFrames,
                  bool aShowDialog, mozilla::ErrorResult& aError);
 
-  MOZ_CAN_RUN_SCRIPT
   mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder> OpenDialogOuter(
       JSContext* aCx, const nsAString& aUrl, const nsAString& aName,
       const nsAString& aOptions,
       const mozilla::dom::Sequence<JS::Value>& aExtraArgument,
       mozilla::ErrorResult& aError);
-  MOZ_CAN_RUN_SCRIPT
   nsresult OpenDialog(const nsACString& aUrl, const nsAString& aName,
                       const nsAString& aOptions, nsIArray* aArguments,
                       mozilla::dom::BrowsingContext** _retval) override;
@@ -681,7 +676,6 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   // Window Control Functions
 
   // Outer windows only.
-  MOZ_CAN_RUN_SCRIPT
   virtual nsresult OpenNoNavigate(
       const nsACString& aUrl, const nsAString& aName, const nsAString& aOptions,
       mozilla::dom::BrowsingContext** _retval) override;
@@ -741,7 +735,6 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
    *
    * Outer windows only.
    */
-  MOZ_CAN_RUN_SCRIPT
   nsresult OpenInternal(const nsACString& aUrl, const nsAString& aName,
                         const nsAString& aOptions, bool aDialog,
                         bool aCalledNoScript, bool aDoJSFixups, bool aNavigate,

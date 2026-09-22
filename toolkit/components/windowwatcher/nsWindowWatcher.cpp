@@ -434,8 +434,7 @@ nsresult nsWindowWatcher::CreateChromeWindow(nsIWebBrowserChrome* aParentChrome,
     }
   }
   nsCOMPtr<nsIWebBrowserChrome> newWindowChrome;
-  nsCOMPtr windowCreator = mWindowCreator;
-  nsresult rv = windowCreator->CreateChromeWindow(
+  nsresult rv = mWindowCreator->CreateChromeWindow(
       aParentChrome, aChromeFlags, aOpenWindowInfo, &cancel,
       getter_AddRefs(newWindowChrome));
 
