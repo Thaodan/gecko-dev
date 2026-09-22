@@ -262,6 +262,7 @@ var SessionFileInternal = {
             loadfail_reason:
               "Wrong format/version: " + JSON.stringify(parsed.version) + ".",
           });
+          corrupted = true;
           continue;
         }
         result = {
