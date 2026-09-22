@@ -518,15 +518,6 @@ void Element::TraverseCustomElementRegistry(
   }
 }
 
-/* static */
-void Element::UnlinkCustomElementRegistry(Element* aElement) {
-  if (aElement->GetCustomElementRegistryState() ==
-      CustomElementRegistryState::Scoped) {
-    CustomElementRegistry::RemoveScopedRegistry(*aElement);
-    aElement->SetCustomElementRegistryState(CustomElementRegistryState::Global);
-  }
-}
-
 void Element::Focus(const FocusOptions& aOptions, CallerType aCallerType,
                     ErrorResult& aError) {
   const RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager();
@@ -576,7 +567,6 @@ void Element::SetCustomElementRegistry(
       "We shouldn't override an already assigned scoped registry");
 
   if (aCustomElementRegistry->IsScoped()) {
-    SetCustomElementRegistryState(CustomElementRegistryState::Scoped);
     CustomElementRegistry::SetScopedRegistry(*this, *aCustomElementRegistry);
     // https://html.spec.whatwg.org/#scoped-document-set
     // Append element's node document to the registry's scoped document set.

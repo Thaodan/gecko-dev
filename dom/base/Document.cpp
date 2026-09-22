@@ -2576,6 +2576,9 @@ Document::~Document() {
   }
 
   DocumentOrShadowRoot::Unlink(this);
+  MOZ_DIAGNOSTIC_ASSERT(
+      !mHasScopedCustomElementRegistry,
+      "Scoped registry should have been removed in LastRelease or Unlink");
 
   UnlinkOriginalDocumentIfStatic();
 
@@ -2676,6 +2679,12 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(Document)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPopoverHintStackParent)
 
   DocumentOrShadowRoot::Traverse(tmp, cb);
+  if (tmp->mHasScopedCustomElementRegistry) {
+    RefPtr<CustomElementRegistry> registry =
+        CustomElementRegistry::GetScopedRegistry(*tmp);
+    NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "scoped CustomElementRegistry");
+    cb.NoteXPCOMChild(registry);
+  }
 
   if (tmp->mRadioGroupContainer) {
     RadioGroupContainer::Traverse(tmp->mRadioGroupContainer.get(), cb);
@@ -2889,6 +2898,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFrameRequestManager)
 
   DocumentOrShadowRoot::Unlink(tmp);
+  CustomElementRegistry::RemoveScopedRegistry(*tmp);
 
   tmp->mRadioGroupContainer = nullptr;
 
