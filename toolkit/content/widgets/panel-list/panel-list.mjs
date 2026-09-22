@@ -1141,40 +1141,51 @@ export class PanelItem extends HTMLElement {
       }
       case "mouseup": {
         let event = /** @type {MouseEvent} */ (e);
-        if (
-          // preventClickEvent is undefined outside of chrome contexts.
-          !event.preventClickEvent ||
-          !this.panel?.clickOnMouseup ||
-          e.button != 0
-        ) {
+        if (!this.panel?.clickOnMouseup || e.button != 0) {
           break;
         }
 
         // A click event would be fired on the nearest common ancestor of
         // the mousedown and mouseup elements. We want to retarget the
-        // click to the panel-item where mouseup happened so we prevent
-        // the native click and synthesize one on the panel-list.
+        // click to the panel-item where mouseup happened, so we swallow the
+        // one the release generates and synthesize our own on the item.
         // This enables opening a panel-list and choosing an item with a
         // single click.
+        if (event.preventClickEvent) {
+          event.preventClickEvent();
+        } else {
+          // The retargeted click follows this event synchronously.
+          let swallowClick = retargeted => {
+            if (retargeted.isTrusted) {
+              retargeted.stopPropagation();
+              retargeted.preventDefault();
+              removeSwallowClick();
+            }
+          };
+          let removeSwallowClick = () =>
+            window.removeEventListener("click", swallowClick, {
+              capture: true,
+            });
+          window.addEventListener("click", swallowClick, { capture: true });
+          setTimeout(removeSwallowClick);
+        }
 
-        event.preventClickEvent();
-        this.button.dispatchEvent(
-          new PointerEvent("click", {
-            bubbles: true,
-            composed: true,
-            view: event.view,
-            shiftKey: event.shiftKey,
-            ctrlKey: event.ctrlKey,
-            altKey: event.altKey,
-            metaKey: event.metaKey,
-            screenX: event.screenX,
-            screenY: event.screenY,
-            clientX: event.clientX,
-            clientY: event.clientY,
-            button: event.button,
-            // The inputSource of the click event will always be MOZ_SOURCE_UNKNOWN.
-          })
-        );
+        let click = new PointerEvent("click", {
+          bubbles: true,
+          composed: true,
+          view: event.view,
+          shiftKey: event.shiftKey,
+          ctrlKey: event.ctrlKey,
+          altKey: event.altKey,
+          metaKey: event.metaKey,
+          screenX: event.screenX,
+          screenY: event.screenY,
+          clientX: event.clientX,
+          clientY: event.clientY,
+          button: event.button,
+          // The inputSource of the click event will always be MOZ_SOURCE_UNKNOWN.
+        });
+        this.button.dispatchEvent(click);
         break;
       }
     }
