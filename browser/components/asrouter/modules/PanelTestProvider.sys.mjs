@@ -2804,7 +2804,6 @@ const MESSAGES = () => [
       id: "TEST_HNT_CARD_STACK",
       transitions: false,
       backdrop: "transparent",
-      wrapper_content_style: { height: "204px" },
       screens: [
         {
           id: "CARD_STACK_SCREEN_1",
