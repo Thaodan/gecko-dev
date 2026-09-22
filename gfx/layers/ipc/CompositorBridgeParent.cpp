@@ -60,6 +60,7 @@
 #include "mozilla/mozalloc.h"                          // for operator new, etc
 #include "mozilla/webrender/RenderThread.h"
 #include "mozilla/webrender/WebRenderAPI.h"
+#include "mozilla/widget/HeadlessCompositorWidgetParent.h"
 #include "nsCOMPtr.h"         // for already_AddRefed
 #include "nsDebug.h"          // for NS_ASSERTION, etc
 #include "nsISupportsImpl.h"  // for MOZ_COUNT_CTOR, etc
@@ -1521,6 +1522,14 @@ CompositorBridgeParent::AllocPCompositorWidgetParent(
     return nullptr;
   }
 
+  if (aInitData.type() ==
+      CompositorWidgetInitData::THeadlessCompositorWidgetInitData) {
+    RefPtr widget = MakeRefPtr<widget::HeadlessCompositorWidgetParent>(
+        aInitData.get_HeadlessCompositorWidgetInitData(), mOptions);
+    mWidget = widget;
+    return widget.forget();
+  }
+
   RefPtr widget =
       MakeRefPtr<widget::CompositorWidgetParent>(aInitData, mOptions);
 
@@ -1536,6 +1545,10 @@ CompositorBridgeParent::AllocPCompositorWidgetParent(
 mozilla::ipc::IPCResult
 CompositorBridgeParent::RecvPCompositorWidgetConstructor(
     PCompositorWidgetParent* actor, CompositorWidgetInitData&& aInitData) {
+  if (aInitData.type() ==
+      CompositorWidgetInitData::THeadlessCompositorWidgetInitData) {
+    return IPC_OK();
+  }
   // macOS CocoaCompositorWidget (a superclass of the platform-specific
   // CompositorWidgetParent) requires an extra step to pass aInitData
   // with move semantics, because IPDL can't generate move semantics
