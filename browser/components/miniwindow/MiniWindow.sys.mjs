@@ -120,13 +120,12 @@ export class MiniWindow {
       this._cropInfo
     );
 
-    // Pop the tab out like a normal move-to-window
-
-    // TODO : last-tab edge cases are handled further down the stack.
+    // Pop the tab out like a normal move-to-window.
 
     let features = {
       alwaysontop: 1,
       lockaspectratio: 1,
+      replaceLastTab: true,
       outerWidth: rect.width,
       outerHeight: rect.height,
       screenX: rect.left,
