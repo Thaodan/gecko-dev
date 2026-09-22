@@ -20,8 +20,8 @@
  */
 
 /**
- * pdfjsVersion = 6.4.191
- * pdfjsBuild = ccd820e12
+ * pdfjsVersion = 6.4.195
+ * pdfjsBuild = d54c193bd
  */
 
 ;// ./src/scripting_api/constants.js
@@ -1056,10 +1056,7 @@ class AForm {
     }
   }
   AFPercent_Format(nDec, sepStyle, percentPrepend = false) {
-    if (typeof nDec !== "number") {
-      return;
-    }
-    if (typeof sepStyle !== "number") {
+    if (typeof nDec !== "number" || typeof sepStyle !== "number") {
       return;
     }
     if (nDec < 0) {

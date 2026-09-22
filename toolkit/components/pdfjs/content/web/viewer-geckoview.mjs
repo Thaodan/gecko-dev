@@ -20,8 +20,8 @@
  */
 
 /**
- * pdfjsVersion = 6.4.191
- * pdfjsBuild = ccd820e12
+ * pdfjsVersion = 6.4.195
+ * pdfjsBuild = d54c193bd
  */
 
 ;// ./web/ui_utils.js
@@ -892,7 +892,7 @@ const {
 } = globalThis.pdfjsLib;
 
 ;// ./web/internal_evt.js
-const INTERNAL_EVT = "4eba7ddc-e476-46d8-af27-d30960a4af59";
+const INTERNAL_EVT = "6059afab-e34a-4dff-9dfa-3909d4d805dc";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -4976,10 +4976,7 @@ class PDFHistory {
         return false;
       }
     }
-    if (!Number.isInteger(state.uid) || state.uid < 0) {
-      return false;
-    }
-    if (state.destination === null || typeof state.destination !== "object") {
+    if (!Number.isInteger(state.uid) || state.uid < 0 || state.destination === null || typeof state.destination !== "object") {
       return false;
     }
     return true;
@@ -5133,10 +5130,7 @@ function isDestHashesEqual(destHash, pushHash) {
 }
 function isDestArraysEqual(firstDest, secondDest) {
   function isEntryEqual(first, second) {
-    if (typeof first !== typeof second) {
-      return false;
-    }
-    if (Array.isArray(first) || Array.isArray(second)) {
+    if (typeof first !== typeof second || Array.isArray(first) || Array.isArray(second)) {
       return false;
     }
     if (first !== null && typeof first === "object" && second !== null) {
@@ -5982,10 +5976,7 @@ class AnnotationEditorLayerBuilder {
     viewport,
     intent = "display"
   }) {
-    if (intent !== "display") {
-      return;
-    }
-    if (this._cancelled) {
+    if (intent !== "display" || this._cancelled) {
       return;
     }
     const clonedViewport = viewport.clone({
@@ -8819,7 +8810,7 @@ class PDFViewer {
   #savedPageViews = null;
   #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "6.4.191";
+    const viewerVersion = "6.4.195";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
@@ -12241,10 +12232,7 @@ const PDFViewerApplication = {
       copyLevels
     }
   }) {
-    if (!this.downloadManager) {
-      return;
-    }
-    if (!this.pdfDocument) {
+    if (!this.downloadManager || !this.pdfDocument) {
       return;
     }
     const modifiedPdfBytes = await this.pdfDocument.extractPages(pageInfos, copyLevels);

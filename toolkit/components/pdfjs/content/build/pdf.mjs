@@ -20,8 +20,8 @@
  */
 
 /**
- * pdfjsVersion = 6.4.191
- * pdfjsBuild = ccd820e12
+ * pdfjsVersion = 6.4.195
+ * pdfjsBuild = d54c193bd
  */
 
 ;// ./src/shared/util.js
@@ -1057,10 +1057,7 @@ class XfaLayer {
       attributes.name = `${attributes.name}-${intent}`;
     }
     for (const [key, value] of Object.entries(attributes)) {
-      if (value === null || value === undefined) {
-        continue;
-      }
-      if (disallowedEventHandlerAttrRegExp.test(key)) {
+      if (value === null || value === undefined || disallowedEventHandlerAttrRegExp.test(key)) {
         continue;
       }
       if (intent === "richText" && !this._allowedRichTextAttributes.has(key)) {
@@ -2064,7 +2061,7 @@ class FloatingToolbar {
 }
 
 ;// ./src/shared/internal_evt.js
-const INTERNAL_EVT = "4eba7ddc-e476-46d8-af27-d30960a4af59";
+const INTERNAL_EVT = "6059afab-e34a-4dff-9dfa-3909d4d805dc";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -5302,10 +5299,7 @@ class AnnotationEditor {
     }
   }
   focusout(event) {
-    if (!this._focusEventsAllowed) {
-      return;
-    }
-    if (!this.isAttachedToDOM) {
+    if (!this._focusEventsAllowed || !this.isAttachedToDOM) {
       return;
     }
     const target = event.relatedTarget;
@@ -14532,7 +14526,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "6.4.191",
+    apiVersion: "6.4.195",
     data,
     password,
     disableAutoFetch,
@@ -16173,8 +16167,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "6.4.191";
-const build = "ccd820e12";
+const version = "6.4.195";
+const build = "d54c193bd";
 
 ;// ./src/display/editor/color_picker.js
 
@@ -17223,10 +17217,7 @@ class AnnotationElement {
         id,
         exportValues
       } of fieldObj) {
-        if (page === -1) {
-          continue;
-        }
-        if (id === skipId) {
+        if (page === -1 || id === skipId) {
           continue;
         }
         const exportValue = typeof exportValues === "string" ? exportValues : null;
@@ -17248,10 +17239,7 @@ class AnnotationElement {
         exportValue
       } = domElement;
       const id = domElement.getAttribute("data-element-id");
-      if (id === skipId) {
-        continue;
-      }
-      if (!GetElementsByNameSet.has(domElement)) {
+      if (id === skipId || !GetElementsByNameSet.has(domElement)) {
         continue;
       }
       fields.push({
@@ -21543,10 +21531,7 @@ class DrawingEditor extends AnnotationEditor {
   }
   static _drawMove(event) {
     CurrentPointers.isSameTimeStamp(event.timeStamp);
-    if (!DrawingEditor.#currentDraw) {
-      return;
-    }
-    if (!CurrentPointers.isSamePointerId(event.pointerId)) {
+    if (!DrawingEditor.#currentDraw || !CurrentPointers.isSamePointerId(event.pointerId)) {
       return;
     }
     if (CurrentPointers.isUsingMultiplePointers()) {
@@ -25858,10 +25843,7 @@ class AnnotationEditorLayer {
     if (annotationLayer) {
       for (const editable of annotationLayer.getEditableAnnotations()) {
         editable.hide();
-        if (this.#uiManager.isDeletedAnnotationElement(editable.data.id)) {
-          continue;
-        }
-        if (annotationElementIds.has(editable.data.id)) {
+        if (this.#uiManager.isDeletedAnnotationElement(editable.data.id) || annotationElementIds.has(editable.data.id)) {
           continue;
         }
         const editor = await this.deserialize(editable);
