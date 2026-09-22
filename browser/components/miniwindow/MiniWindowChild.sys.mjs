@@ -12,12 +12,79 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", () =>
   })
 );
 
+ChromeUtils.defineESModuleGetters(lazy, {
+  DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
+});
+
+// Scrolling fires continuously, so sample it on a timer instead of reading the
+// position on every event.
+const SCROLL_SAMPLE_MS = 100;
+
 /**
  * Content-side actor for Mini Window.
  */
 export class MiniWindowChild extends JSWindowActorChild {
+  #lastScrollY = 0;
+  #scrollTask = null;
+
+  /**
+   * Start reporting upward scrolls to reveal the toolbar.
+   */
+  #enableScrollReveal() {
+    this.#lastScrollY = this.#scrollY();
+    this.contentWindow?.addEventListener("scroll", this, {
+      capture: true,
+      passive: true,
+    });
+  }
+
+  handleEvent(event) {
+    if (event.type === "scroll") {
+      this.#scrollTask ??= new lazy.DeferredTask(
+        () => this.#onScroll(),
+        SCROLL_SAMPLE_MS
+      );
+      this.#scrollTask.arm();
+    }
+  }
+
+  /**
+   * @returns {number} The window's vertical scroll offset, read without
+   *   flushing layout - this runs off a timer, so layout may well be dirty.
+   */
+  #scrollY() {
+    let utils = this.contentWindow?.windowUtils;
+    if (!utils) {
+      return 0;
+    }
+    let scrollX = {},
+      scrollY = {};
+    utils.getScrollXY(false, scrollX, scrollY);
+    return scrollY.value;
+  }
+
+  /**
+   * The toolbar pops back up when the user scrolls up, so only upward movement
+   * is reported. Chrome can't observe scrolling in remote content itself.
+   */
+  #onScroll() {
+    let y = this.#scrollY();
+    let scrolledUp = y < this.#lastScrollY;
+    this.#lastScrollY = y;
+    if (scrolledUp) {
+      this.sendAsyncMessage("ScrolledUp");
+    }
+  }
+
+  didDestroy() {
+    this.#scrollTask?.disarm();
+  }
+
   receiveMessage(message) {
     switch (message.name) {
+      case "EnableScrollReveal":
+        this.#enableScrollReveal();
+        break;
       case "GetSize":
         return this.#getSize();
       case "ScrollTo":

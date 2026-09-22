@@ -31,6 +31,9 @@
     --toolbarbutton-padding-inner: var(--toolbarbutton-padding-inner-compact);
     --bookmark-block-padding: 1px;
   }
+  &:where([mini-window]) {
+    --toolbarbutton-padding-inner: var(--toolbarbutton-padding-inner-compact);
+  }
 
   /* Smart window properties */
   --smartwindow-ask-btn-gradient: linear-gradient(
@@ -169,6 +172,19 @@
   #taskbar-tabs-audio:is([soundplaying], [muted]),
   #fullscreen-button {
     display: revert;
+  }
+}
+
+/* A mini window is narrow enough that the navigation buttons have to go
+   before the address bar does. The rest of its chrome is hidden in
+   browser-shared.css. */
+:root[mini-window] {
+  @media (width < 400px) {
+    #back-button,
+    #forward-button,
+    #stop-reload-button {
+      display: none;
+    }
   }
 }
 
