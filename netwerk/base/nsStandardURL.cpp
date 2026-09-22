@@ -198,8 +198,13 @@ const nsACString& nsStandardURL::nsSegmentEncoder::EncodeSegment(
 
 #ifdef DEBUG_DUMP_URLS_AT_SHUTDOWN
 static StaticMutex gAllURLsMutex;
-constinit static LinkedList<nsStandardURL> gAllURLs
-    MOZ_GUARDED_BY(gAllURLsMutex);
+
+// Deliberately leaked (never destroyed): nsStandardURL objects may still be
+// alive when the process shuts down abnormally (e.g. Ctrl+C from a console on
+// Windows), and destroying a non-empty list would abort a DEBUG build with a
+// MOZ_CRASH during DLL teardown.
+static LinkedList<nsStandardURL>* gAllURLs MOZ_GUARDED_BY(gAllURLsMutex) =
+    nullptr;
 #endif
 
 nsStandardURL::nsStandardURL(bool aSupportsFileURL, bool aTrackURL)
@@ -219,7 +224,10 @@ nsStandardURL::nsStandardURL(bool aSupportsFileURL, bool aTrackURL)
 #ifdef DEBUG_DUMP_URLS_AT_SHUTDOWN
   if (aTrackURL) {
     StaticMutexAutoLock lock(gAllURLsMutex);
-    gAllURLs.insertBack(this);
+    if (!gAllURLs) {
+      gAllURLs = new LinkedList<nsStandardURL>();
+    }
+    gAllURLs->insertBack(this);
   }
 #endif
 }
@@ -351,12 +359,12 @@ struct DumpLeakedURLs {
 DumpLeakedURLs::~DumpLeakedURLs() {
   MOZ_ASSERT(NS_IsMainThread());
   StaticMutexAutoLock lock(gAllURLsMutex);
-  if (!gAllURLs.isEmpty()) {
+  if (gAllURLs && !gAllURLs->isEmpty()) {
     printf("Leaked URLs:\n");
-    for (auto* url : gAllURLs) {
+    for (auto* url : *gAllURLs) {
       url->PrintSpec();
     }
-    gAllURLs.clear();
+    gAllURLs->clear();
   }
 }
 #endif
