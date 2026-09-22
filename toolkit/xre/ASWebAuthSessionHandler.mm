@@ -231,7 +231,7 @@ API_AVAILABLE(macos(12.0))
   mozilla::CopyNSStringToXPCOMString(request.UUID.UUIDString, uuidXPCOM);
   NS_DispatchToMainThread(NS_NewRunnableFunction(
       "ASWebAuthSessionHandler::cancelHandling",
-      [uuidXPCOM = nsString(uuidXPCOM)]() {
+      [request = [request retain], uuidXPCOM = nsString(uuidXPCOM)]() {
         sPendingBeginRequests.Remove(uuidXPCOM);
 
         nsCOMPtr<nsIObserverService> obsServ =
@@ -240,6 +240,12 @@ API_AVAILABLE(macos(12.0))
           obsServ->NotifyObservers(nullptr, "aswebauthsession-request-cancel",
                                    uuidXPCOM.get());
         }
+
+        // AuthenticationServices requires -cancelWithError: once teardown is
+        // done, even when the app is the one that asked for the cancellation.
+        // Without it the app cannot start another session.
+        CancelRequestObject(request);
+        [request release];
       }));
 }
 
