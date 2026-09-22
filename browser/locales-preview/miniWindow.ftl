@@ -12,6 +12,17 @@ mini-window-restore-button =
     .label = Put tab back
     .tooltiptext = Put tab back
 
+## These strings are used as the label and tooltip for the button that mutes
+## and unmutes the mini window's tab. The button only appears while the tab is
+## playing audio, or while it is muted.
+
+mini-window-audio-mute =
+    .label = Mute tab
+    .tooltiptext = Mute tab
+mini-window-audio-unmute =
+    .label = Unmute tab
+    .tooltiptext = Unmute tab
+
 ## These strings label the buttons on the Screenshots selection overlay while
 ## it is being used to pick the region for a Mini Window.
 
