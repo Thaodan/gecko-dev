@@ -646,12 +646,15 @@ toolbar[inactive="true"] .urlbar,
 
   /* With the search engine button on its own row, a plain glass marks the
      input's start. */
-  .urlbar[variant-b] &::before {
-    content: url("chrome://global/skin/icons/search-glass.svg");
+  .urlbar[variant-b] & {
+    background: url("chrome://global/skin/icons/search-glass.svg") no-repeat left var(--space-xsmall) center;
     -moz-context-properties: fill;
     fill: var(--text-color-deemphasized);
-    align-self: center;
-    margin-inline: var(--space-xsmall) var(--space-medium);
+    padding-inline-start: calc(var(--space-xsmall) + var(--icon-size) + var(--space-medium));
+
+    &:dir(rtl) {
+      background-position-x: right var(--space-xsmall);
+    }
   }
 
   #urlbar & {
