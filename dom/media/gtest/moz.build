@@ -163,6 +163,7 @@ TEST_HARNESS_FILES.gtest += [
     "../test/av1.mp4",
     "../test/gizmo-frag.mp4",
     "../test/gizmo.mp4",
+    "../test/output_aac.mkv",
     "../test/reftest/color_quads/720p.png.bt2020.pq.tv.yuv420p10.hevc.mp4",
     "../test/vp9cake.webm",
     "av1-color-metadata.mp4",
