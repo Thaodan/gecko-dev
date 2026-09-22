@@ -702,14 +702,12 @@ export const AIWindow = {
    *
    * @param {object} options Used in BrowserWindowTracker.openWindow
    * @param {object} options.openerWindow Window making the BrowserWindowTracker.openWindow call
-   * @param {nsIMutableArray} [options.args] Array of arguments to pass to new window
+   * @param {object} options.args Array of arguments to pass to new window
    * @param {boolean} [options.aiWindow] Should new window be AI Window (true), Classic Window (false), or inherited from opener (undefined, default)
    * @param {boolean} [options.private] Should new window be Private Window
    * @param {string} [options.restoreSessionURL] URL of the selected tab being restored
    *
-   * @returns {nsIMutableArray}
-   *   Updated arguments array with additional `extraOptions` added for
-   *   the AI Window.
+   * @returns {object} Modified arguments appended to the options object
    */
   handleAIWindowOptions({
     openerWindow,
