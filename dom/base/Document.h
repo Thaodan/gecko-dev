@@ -3662,6 +3662,7 @@ class Document : public nsINode,
   Document* Open(const mozilla::dom::Optional<nsAString>& /* unused */,
                  const mozilla::dom::Optional<nsAString>& /* unused */,
                  mozilla::ErrorResult& aError);
+  MOZ_CAN_RUN_SCRIPT
   mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder> Open(
       const nsACString& aURL, const nsAString& aName,
       const nsAString& aFeatures, mozilla::ErrorResult& rv);
@@ -4527,7 +4528,7 @@ class Document : public nsINode,
 
   dom::XPathEvaluator* XPathEvaluator();
 
-  void MaybeInitializeFinalizeFrameLoaders();
+  MOZ_CAN_RUN_SCRIPT void MaybeInitializeFinalizeFrameLoaders();
 
   void SetDelayFrameLoaderInitialization(bool aDelayFrameLoaderInitialization) {
     mDelayFrameLoaderInitialization = aDelayFrameLoaderInitialization;
@@ -5819,7 +5820,7 @@ class Document : public nsINode,
 
   nsTArray<RefPtr<nsFrameLoader>> mInitializableFrameLoaders;
   nsTArray<nsCOMPtr<nsIRunnable>> mFrameLoaderFinalizers;
-  RefPtr<nsRunnableMethod<Document>> mFrameLoaderRunner;
+  RefPtr<nsIRunnable> mFrameLoaderRunner;
 
   nsTArray<PendingFrameStaticClone> mPendingFrameStaticClones;
 
