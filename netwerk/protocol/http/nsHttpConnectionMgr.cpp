@@ -15,6 +15,7 @@
 #include <utility>
 
 #include "ConnectionHandle.h"
+#include "ETWTools.h"
 #include "HttpConnectionUDP.h"
 #include "NullHttpTransaction.h"
 #include "SpeculativeTransaction.h"
@@ -54,10 +55,24 @@ using namespace mozilla;
 
 namespace geckoprofiler::markers {
 
-struct UrlMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("Url");
-  }
+struct UrlMarker : public BaseMarkerType<UrlMarker> {
+  static constexpr const char* Name = "Url";
+  // "SpeculativeConnect", "DispatchTransaction" and "ProcessNewTransaction"
+  // only differ by their name.
+  static constexpr bool ETWStoreName = true;
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"url", MS::InputType::CString, nullptr, MS::Format::Url},
+      {"duration", MS::InputType::TimeDuration, "Duration",
+       MS::Format::Duration},
+      // Bug 1618687 - Use channelId to segment "Waiting for Socket Thread".
+      {"channelId", MS::InputType::Uint64, nullptr, MS::Format::Integer},
+  };
+  static constexpr const char* TableLabel = "{marker.data.url}";
   static void StreamJSONMarkerData(
       mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
       const mozilla::ProfilerString8View& aURL, const TimeDuration& aDuration,
@@ -70,15 +85,12 @@ struct UrlMarker {
     }
     aWriter.IntProperty("channelId", static_cast<int64_t>(aChannelId));
   }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema(MS::Location::MarkerChart, MS::Location::MarkerTable);
-    schema.SetTableLabel("{marker.data.url}");
-    schema.AddKeyFormat("url", MS::Format::Url);
-    schema.AddKeyLabelFormat("duration", "Duration", MS::Format::Duration);
-    // Bug 1618687 - Use channelId to segment "Waiting for Socket Thread".
-    schema.AddKeyFormat("channelId", MS::Format::Integer);
-    return schema;
+
+  // TODO: Remove once bug 2071910 is fixed.
+  static void TranslateMarkerInputToSchema(
+      void* aContext, const mozilla::ProfilerString8View& aURL,
+      const TimeDuration& aDuration, uint64_t aChannelId) {
+    ETW::OutputMarkerSchema(aContext, UrlMarker{}, aURL, aDuration, aChannelId);
   }
 };
 
