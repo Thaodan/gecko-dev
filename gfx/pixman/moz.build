@@ -3,8 +3,3 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 DIRS += ["pixman/pixman"]
-
-LICENSED_UNDER += ["mit"]
-LICENSED_UNDER["mit"].paths = [
-    "pixman",
-]

@@ -7,14 +7,3 @@ with Files("**"):
 
 DIRS += ['include', 'src']
 
-
-LICENSES += ["libnestegg"]
-LICENSES["libnestegg"].title = "libnestegg License"
-LICENSES["libnestegg"].text = "LICENSE-NOTICE.txt"
-LICENSES["libnestegg"].notice = """
-<p>This license applies to certain files in the directory <code>media/libnestegg</code>.</p>
-"""
-
-LICENSED_UNDER += [
-    "libnestegg",
-]

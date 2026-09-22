@@ -24,7 +24,3 @@ include('/tools/fuzzing/libfuzzer-config.mozbuild')
 
 if CONFIG['FUZZING']:
     DEFINES['DISABLE_CRC'] = 1
-
-LICENSED_UNDER += [
-    "xiph",
-]
