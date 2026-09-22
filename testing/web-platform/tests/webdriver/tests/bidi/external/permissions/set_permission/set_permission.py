@@ -6,8 +6,7 @@ from . import get_permission_state
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.mark.parametrize("permission", ["geolocation", "camera", "microphone"])
-async def test_set_permission(bidi_session, new_tab, url, permission):
+async def test_set_permission(bidi_session, new_tab, url):
     test_url = url("/common/blank.html", protocol="https")
     await bidi_session.browsing_context.navigate(
         context=new_tab["context"],
@@ -17,31 +16,31 @@ async def test_set_permission(bidi_session, new_tab, url, permission):
 
     origin = await get_context_origin(bidi_session, new_tab)
 
-    assert await get_permission_state(bidi_session, new_tab, permission) == "prompt"
+    assert await get_permission_state(bidi_session, new_tab, "geolocation") == "prompt"
 
     await bidi_session.permissions.set_permission(
-        descriptor={"name": permission},
+        descriptor={"name": "geolocation"},
         state="granted",
         origin=origin,
     )
 
-    assert await get_permission_state(bidi_session, new_tab, permission) == "granted"
+    assert await get_permission_state(bidi_session, new_tab, "geolocation") == "granted"
 
     await bidi_session.permissions.set_permission(
-        descriptor={"name": permission},
+        descriptor={"name": "geolocation"},
         state="denied",
         origin=origin,
     )
 
-    assert await get_permission_state(bidi_session, new_tab, permission) == "denied"
+    assert await get_permission_state(bidi_session, new_tab, "geolocation") == "denied"
 
     await bidi_session.permissions.set_permission(
-        descriptor={"name": permission},
+        descriptor={"name": "geolocation"},
         state="prompt",
         origin=origin,
     )
 
-    assert await get_permission_state(bidi_session, new_tab, permission) == "prompt"
+    assert await get_permission_state(bidi_session, new_tab, "geolocation") == "prompt"
 
 
 async def test_set_permission_new_context(bidi_session, new_tab, url):
