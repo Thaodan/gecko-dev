@@ -292,9 +292,17 @@ void DocAccessible::TakeFocus() const {
 // HyperTextAccessible method
 already_AddRefed<EditorBase> DocAccessible::GetEditor() const {
   // Check if document is editable (designMode="on" case). Otherwise check if
-  // the html:body (for HTML document case) or document element is editable.
+  // the body element, or the root element when there is no body, is editable.
+  // The editable flag cascades down from the root, so it's usually sufficient
+  // to check the attribute's existence on the body. However content _can_ be
+  // shoehorned directly into the root element, so we still check the root if
+  // the body doesn't exist.
+  dom::Element* editableEl = mDocumentNode->GetBodyElement();
+  if (!editableEl) {
+    editableEl = mDocumentNode->GetRootElement();
+  }
   if (!mDocumentNode->IsInDesignMode() &&
-      (!mContent || !mContent->HasFlag(NODE_IS_EDITABLE))) {
+      (!editableEl || !editableEl->HasFlag(NODE_IS_EDITABLE))) {
     return nullptr;
   }
 
@@ -1093,6 +1101,21 @@ void DocAccessible::ARIAActiveDescendantChanged(LocalAccessible* aAccessible) {
 void DocAccessible::ElementStateChanged(dom::Document* aDocument,
                                         dom::Element* aElement,
                                         dom::ElementState aStateMask) {
+  const bool isEditable =
+      aElement->State().HasState(dom::ElementState::READWRITE);
+  if (aStateMask.HasState(dom::ElementState::READWRITE) &&
+      IsBodyElement(aElement)) {
+    // Any editable state reflected on the body element needs to be forwarded
+    // to the doc accessible. We do this here instead of below because the body
+    // is not guaranteed to have its own acc.
+    auto event =
+        MakeRefPtr<AccStateChangeEvent>(this, states::EDITABLE, isEditable);
+    FireDelayedEvent(event);
+    event =
+        MakeRefPtr<AccStateChangeEvent>(this, states::READONLY, !isEditable);
+    FireDelayedEvent(event);
+  }
+
   LocalAccessible* accessible =
       aElement == mContent ? this : GetAccessible(aElement);
 
@@ -1102,8 +1125,6 @@ void DocAccessible::ElementStateChanged(dom::Document* aDocument,
 
   if (aStateMask.HasState(dom::ElementState::READWRITE) &&
       !accessible->IsTextField()) {
-    const bool isEditable =
-        aElement->State().HasState(dom::ElementState::READWRITE);
     auto event = MakeRefPtr<AccStateChangeEvent>(accessible, states::EDITABLE,
                                                  isEditable);
     FireDelayedEvent(event);
