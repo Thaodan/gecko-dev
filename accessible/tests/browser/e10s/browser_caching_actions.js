@@ -221,12 +221,14 @@ addAccessibleTask(
     await untilCacheIs(() => link1Acc.actionCount, 0, "link has no actions");
     is(link1Acc.firstChild.actionCount, 0, "linkable child's actions removed");
 
-    // Add a click handler to the body. The body gets an Accessible of its own,
-    // so the action belongs to that rather than to the document. Ensure it
+    // Add a click handler to the body. The body gets an acc of its own, so
+    // the action belongs to that acc rather than to the document. Ensure it
     // still propagates to descendants.
+    let e = waitForEvent(EVENT_REORDER, docAcc);
     await invokeContentTask(browser, [], () => {
       content.document.body.onclick = () => {};
     });
+    await e;
     await untilCacheIs(
       () => findAccessibleChildByID(docAcc, "link1")?.actionCount,
       1,
