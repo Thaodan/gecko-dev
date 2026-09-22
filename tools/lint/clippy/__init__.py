@@ -201,46 +201,14 @@ def lint_gkrust(path_group, config, log, fix, root, lint_results):
     """
     paths = list(expand_exclusions(path_group.paths, config, root))
     paths.sort()
-    # gkrust depends on things from the mach environment, so we need to run `./mach cargo` instead
-    # of `cargo` directly.
-    mach_path = root + "/mach"
     # can be extended in build/cargo/cargo-clippy.yaml
-    clippy_args = [
-        sys.executable,
-        mach_path,
-        "--log-no-times",
-        "cargo",
-        "clippy",
-    ]
+    cargo_args = ["clippy"]
     if fix:
-        clippy_args.extend(CLIPPY_FIX_ARGS)
+        cargo_args.extend(CLIPPY_FIX_ARGS)
     # --keep-going lets cargo check independent crates even after one fails,
     # so a single broken crate doesn't hide warnings in everything downstream.
-    clippy_args.extend(["--", "--keep-going", "--message-format=json"])
-    driver_flags = get_clippy_driver_flags(config)
-    # MOZ_RUST_DEFAULT_FLAGS sets `-Dwarnings` (warnings-as-errors), which
-    # promotes any clippy warning to a hard error and stops cargo at the first
-    # offending crate. For linting we want to surface every warning across
-    # every included crate, so demote it back to warn-level (last `-W/-D` wins
-    # for the same lint group, and extra_rustflags is appended after the
-    # defaults).
-    flags = ["-W", "warnings"] + driver_flags
-    env = os.environ.copy()
-    env["extra_rustflags"] = " ".join(flags)
-    log.debug("Run clippy with = {}".format(" ".join(clippy_args)))
-    completed_proc = subprocess.run(
-        clippy_args,
-        check=False,  # non-zero exit codes are not unexpected
-        capture_output=True,
-        text=True,
-        env=env,
-    )
-    check_clippy_ran(completed_proc, "gkrust", log)
-    for l in completed_proc.stdout.splitlines():
-        handle_clippy_msg(config, l, log, root, paths, lint_results)
-
-    if fix and build_succeeded(completed_proc):
-        lint_results["fixed"] += 1
+    cargo_args.extend(["--", "--keep-going", "--message-format=json"])
+    run_clippy(cargo_args, "gkrust", paths, config, log, fix, root, lint_results)
 
 
 def lint_crate(path_group, config, log, fix, root, lint_results):
@@ -251,16 +219,10 @@ def lint_crate(path_group, config, log, fix, root, lint_results):
       * Print out all clippy errors for the crate.
       * Support the `--fix` flag to automatically apply fixes.
     """
-    # Go through `./mach cargo` like gkrust so the crate shares the objdir, the
-    # vendored sources and the dependencies already checked there. mach's own
-    # options (-p, --message-format-json) must precede the cargo subcommand.
-    # mach's clippy wrapper lints every crate it compiles, so --no-deps keeps
-    # the results to the requested crate.
-    clippy_args = [
-        sys.executable,
-        root + "/mach",
-        "--log-no-times",
-        "cargo",
+    # mach's own options (-p, --message-format-json) must precede the cargo
+    # subcommand. mach's clippy wrapper lints every crate it compiles, so
+    # --no-deps keeps the results to the requested crate.
+    cargo_args = [
         "--message-format-json",
         "-p",
         path_group.crate_name,
@@ -268,12 +230,31 @@ def lint_crate(path_group, config, log, fix, root, lint_results):
         "--no-deps",
     ]
     if fix:
-        clippy_args.extend([*CLIPPY_FIX_ARGS, "--allow-dirty"])
-    # Same RUSTFLAGS handling as lint_gkrust, see there.
-    env = os.environ.copy()
-    env["extra_rustflags"] = " ".join(
-        ["-W", "warnings"] + get_clippy_driver_flags(config)
+        cargo_args.extend([*CLIPPY_FIX_ARGS, "--allow-dirty"])
+    run_clippy(
+        cargo_args, path_group.crate_name, None, config, log, fix, root, lint_results
     )
+
+
+def run_clippy(cargo_args, crate_name, paths, config, log, fix, root, lint_results):
+    """
+    Run `./mach cargo` with the given arguments and collect clippy's messages.
+
+    `paths` restricts the reported messages to those files; None keeps all of them.
+    """
+    # Crates depend on things from the mach environment (objdir, vendored
+    # sources), so we need to run `./mach cargo` instead of `cargo` directly.
+    clippy_args = [sys.executable, root + "/mach", "--log-no-times", "cargo"]
+    clippy_args.extend(cargo_args)
+    # MOZ_RUST_DEFAULT_FLAGS sets `-Dwarnings` (warnings-as-errors), which
+    # promotes any clippy warning to a hard error and stops cargo at the first
+    # offending crate. For linting we want to surface every warning across
+    # every included crate, so demote it back to warn-level (last `-W/-D` wins
+    # for the same lint group, and extra_rustflags is appended after the
+    # defaults).
+    flags = ["-W", "warnings"] + get_clippy_driver_flags(config)
+    env = os.environ.copy()
+    env["extra_rustflags"] = " ".join(flags)
     log.debug("Run clippy with = {}".format(" ".join(clippy_args)))
     completed_proc = subprocess.run(
         clippy_args,
@@ -282,10 +263,9 @@ def lint_crate(path_group, config, log, fix, root, lint_results):
         text=True,
         env=env,
     )
-    check_clippy_ran(completed_proc, path_group.crate_name, log)
-
+    check_clippy_ran(completed_proc, crate_name, log)
     for l in completed_proc.stdout.splitlines():
-        handle_clippy_msg(config, l, log, root, None, lint_results)
+        handle_clippy_msg(config, l, log, root, paths, lint_results)
 
     if fix and build_succeeded(completed_proc):
         lint_results["fixed"] += 1
