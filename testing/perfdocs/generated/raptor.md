@@ -2892,7 +2892,7 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
 * **gecko profile interval**: 1
 * **gecko profile threads**: GeckoMain,Compositor,Renderer,TaskController,StyleThread
 * **host from parent**: true
-* **link searchfox**: {searchfox}`testing/raptor/raptor/tests/benchmarks/speedometer-desktop.toml#31`
+* **link searchfox**: {searchfox}`testing/raptor/raptor/tests/benchmarks/speedometer-desktop.toml#33`
 * **lower is better**: false
 * **page cycles**: 5
 * **page timeout**: 600000
@@ -4109,7 +4109,7 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
 
 **Owner**: Performance Team
 
-* **alert threshold**: 2.0
+* **alert threshold**: 0.5
 * **apps**: firefox, chrome, safari, safari-tp, custom-car
 * **benchmark port**: 62763
 * **browser cycles**: 5
@@ -4125,6 +4125,7 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
 * **lower is better**: false
 * **page cycles**: 5
 * **page timeout**: 600000
+* **subtest alert threshold**: 2.0
 * **subtest lower is better**: true
 * **subtest unit**: ms
 * **support class**: speedometer3.py
