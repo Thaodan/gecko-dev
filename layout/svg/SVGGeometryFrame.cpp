@@ -256,6 +256,22 @@ nsIFrame* SVGGeometryFrame::GetFrameForPoint(const gfxPoint& aPoint) {
   return nullptr;
 }
 
+bool SVGGeometryFrame::ComputeCustomOverflow(OverflowAreas& aOverflowAreas) {
+  if (!StyleSVG()->mStroke.kind.IsNone()) {
+    // Stroke geometry is included in our overflow rect, nothing to do.
+    return true;
+  }
+  // We might need to hit test the stroke, so need to track that as
+  // ink-overflow.
+  float inkOverflowInflation = SVGUtils::GetStrokeWidth(
+      this, SVGContextPaint::GetContextPaint(GetContent()));
+  if (inkOverflowInflation > 0.0f) {
+    aOverflowAreas.InkOverflow().Inflate(
+        CSSPixel::ToAppUnits(inkOverflowInflation));
+  }
+  return true;
+}
+
 void SVGGeometryFrame::ReflowSVG() {
   NS_ASSERTION(SVGUtils::OuterSVGIsCallingReflowSVG(this),
                "This call is probably a wasteful mistake");
@@ -272,24 +288,12 @@ void SVGGeometryFrame::ReflowSVG() {
   SVGBBoxFlags flags = {SVGBBoxFlag::IncludeFillGeometry,
                         SVGBBoxFlag::IncludeStroke, SVGBBoxFlag::IncludeMarkers,
                         SVGBBoxFlag::EstimateStrokeBounds};
-  float inkOverflowInflation = 0.0f;
   if (!StyleSVG()->mStroke.kind.IsNone()) {
     flags += SVGBBoxFlag::IncludeStrokeGeometry;
-  } else {
-    // We might need to hit test the stroke, so need to track that as
-    // ink-overflow.
-    inkOverflowInflation = SVGUtils::GetStrokeWidth(
-        this, SVGContextPaint::GetContextPaint(GetContent()));
   }
   SVGBBox extent = GetBBoxContribution({}, flags);
   mRect = nsLayoutUtils::RoundGfxRectToAppRect(extent.ToThebesRect(),
                                                AppUnitsPerCSSPixel());
-
-  const nsRect scrollableOverflow(nsPoint(), mRect.Size());
-  nsRect inkOverflow(nsPoint(), mRect.Size());
-  if (inkOverflowInflation > 0.0f) {
-    inkOverflow.Inflate(CSSPixel::ToAppUnits(inkOverflowInflation));
-  }
 
   if (HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
     // Make sure we have our filter property (if any) before calling
@@ -298,7 +302,9 @@ void SVGGeometryFrame::ReflowSVG() {
     SVGObserverUtils::UpdateEffects(this);
   }
 
-  OverflowAreas overflowAreas(inkOverflow, scrollableOverflow);
+  const nsRect overflowRect(nsPoint(), mRect.Size());
+  OverflowAreas overflowAreas(overflowRect, overflowRect);
+  ComputeCustomOverflow(overflowAreas);
   FinishAndStoreOverflow(overflowAreas, mRect.Size());
 
   RemoveStateBits(NS_FRAME_FIRST_REFLOW | NS_FRAME_IS_DIRTY |
