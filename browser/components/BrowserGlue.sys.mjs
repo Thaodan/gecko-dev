@@ -77,7 +77,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   TRRRacer: "resource:///modules/TRRPerformance.sys.mjs",
   WebChannel: "resource://gre/modules/WebChannel.sys.mjs",
   WebProtocolHandlerRegistrar:
-    "resource:///modules/WebProtocolHandlerRegistrar.sys.mjs",
+    "moz-src:///browser/components/protocolhandler/WebProtocolHandlerRegistrar.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
 });
 

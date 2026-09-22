@@ -1651,9 +1651,6 @@
       "resource:///modules/UpdatePolicyEnforcer.sys.mjs": [
         "../../../browser/modules/UpdatePolicyEnforcer.sys.mjs"
       ],
-      "resource:///modules/WebProtocolHandlerRegistrar.sys.mjs": [
-        "../../../browser/components/protocolhandler/WebProtocolHandlerRegistrar.sys.mjs"
-      ],
       "resource:///modules/WindowsJumpLists.sys.mjs": [
         "../../../browser/modules/WindowsJumpLists.sys.mjs"
       ],
@@ -1834,8 +1831,8 @@
       "resource:///modules/webrtcUI.sys.mjs": [
         "../../../browser/modules/webrtcUI.sys.mjs"
       ],
-      "resource://autofill/AddressStorageMigrator.sys.mjs": [
-        "../../../toolkit/components/formautofill/AddressStorageMigrator.sys.mjs"
+      "resource://autofill/AutofillStorageMigrator.sys.mjs": [
+        "../../../toolkit/components/formautofill/AutofillStorageMigrator.sys.mjs"
       ],
       "resource://autofill/FormAutofill.sys.mjs": [
         "../../../toolkit/components/formautofill/FormAutofill.sys.mjs"
@@ -7715,7 +7712,7 @@
         "../../../tools/code-coverage/PerTestCoverageUtils.sys.mjs"
       ],
       "resource://testing-common/PerfTestHelpers.sys.mjs": [
-        "../../../browser/base/content/test/performance/PerfTestHelpers.sys.mjs"
+        "../../../browser/base/content/test/browser-performance/PerfTestHelpers.sys.mjs"
       ],
       "resource://testing-common/PermissionTestUtils.sys.mjs": [
         "../../../extensions/permissions/test/PermissionTestUtils.sys.mjs"
