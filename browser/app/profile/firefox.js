@@ -3027,6 +3027,10 @@ pref("screenshots.browser.component.preventContentEvents", true);
 pref("browser.screenshots.folderList", 4);
 pref("browser.screenshots.dir", "");
 
+// Enable/disable opening a tab into a mini window.
+pref("browser.mini-window.enabled", false);
+pref("browser.mini-window.log", false);
+
 // DoH Rollout: whether to clear the mode value at shutdown.
 pref("doh-rollout.clearModeOnShutdown", false);
 
