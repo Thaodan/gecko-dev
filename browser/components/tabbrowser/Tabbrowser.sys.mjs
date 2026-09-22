@@ -2884,13 +2884,6 @@ export class Tabbrowser {
       aBrowser.urlbarChangeTracker.startedLoad();
     }
 
-    // This shouldn't really be necessary, however, this has the side effect
-    // of sending MozLayerTreeReady / MozLayerTreeCleared events for remote
-    // frames, which the tab switcher depends on.
-    //
-    // eslint-disable-next-line no-self-assign
-    aBrowser.docShellIsActive = aBrowser.docShellIsActive;
-
     // Create a new tab progress listener for the new browser we just injected,
     // since tab progress listeners have logic for handling the initial about:blank
     // load
@@ -10050,13 +10043,6 @@ export class Tabbrowser {
         if (hadStartedLoad) {
           browser.urlbarChangeTracker.startedLoad();
         }
-
-        // This shouldn't really be necessary, however, this has the side effect
-        // of sending MozLayerTreeReady / MozLayerTreeCleared events for remote
-        // frames, which the tab switcher depends on.
-        //
-        // eslint-disable-next-line no-self-assign
-        browser.docShellIsActive = browser.docShellIsActive;
 
         // Create a new tab progress listener for the new browser we just
         // injected, since tab progress listeners have logic for handling the

@@ -3659,6 +3659,16 @@ void BrowserParent::PreserveLayers(bool aPreserveLayers) {
   (void)SendPreserveLayers(aPreserveLayers);
 }
 
+void BrowserParent::TransferLayerState(bool aRenderLayers, bool aPreserveLayers,
+                                       bool aPriorityHint) {
+  PreserveLayers(aPreserveLayers);
+  if (mRenderLayers != aRenderLayers) {
+    mRenderLayers = aRenderLayers;
+    SetRenderLayersInternal(aRenderLayers);
+  }
+  SetPriorityHint(aPriorityHint);
+}
+
 void BrowserParent::NotifyResolutionChanged() {
   if (mIsDestroyed) {
     return;
@@ -3808,6 +3818,11 @@ void BrowserParent::LayerTreeUpdate(bool aActive) {
   }
 
   if (mIsDestroyed) {
+    return;
+  }
+
+  // The frame element shows another page while this one sits in the bfcache.
+  if (mBrowsingContext->IsInBFCache()) {
     return;
   }
 

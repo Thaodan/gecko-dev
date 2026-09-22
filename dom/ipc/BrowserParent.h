@@ -708,6 +708,13 @@ class BrowserParent final : public PBrowserParent,
   bool GetPriorityHint();
   void SetPriorityHint(bool aPriorityHint);
   void PreserveLayers(bool aPreserveLayers);
+  bool IsPreservingLayers() const { return mIsPreservingLayers; }
+  // Applies the layer state of the BrowserParent this one replaces. Unlike
+  // SetRenderLayers, this stops rendering layers even while they are
+  // preserved, since the replaced BrowserParent's state already accounts for
+  // that.
+  void TransferLayerState(bool aRenderLayers, bool aPreserveLayers,
+                          bool aPriorityHint);
   void NotifyResolutionChanged();
   void NotifyTransparencyChanged();
 

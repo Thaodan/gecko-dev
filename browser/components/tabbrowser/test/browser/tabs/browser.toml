@@ -724,6 +724,10 @@ skip-if = [
 
 ["browser_tabswitch_discard.js"]
 
+["browser_tabswitch_remoteness_change.js"]
+
+["browser_tabswitch_remoteness_change_bfcache.js"]
+
 ["browser_tabswitch_select.js"]
 support-files = ["open_window_in_new_tab.html"]
 tags = "vertical-tabs"
