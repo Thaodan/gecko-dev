@@ -1258,11 +1258,11 @@ void nsRange::AssertIfMismatchRootAndRangeBoundaries(
 // Calling DoSetRange with either parent argument null will collapse
 // the range to have both endpoints point to the other node
 template <typename SPT, typename SRT, typename EPT, typename ERT>
-void nsRange::
-    DoSetRange(const RangeBoundaryBase<SPT, SRT>& aStartBoundary,
-               const RangeBoundaryBase<EPT, ERT>& aEndBoundary,
-               nsINode* aRootNode,
-               bool aNotInsertedYet /* = false */, RangeBehaviour aRangeBehaviour /* = CollapseDefaultRangeAndCrossShadowBoundaryRanges */) {
+void nsRange::DoSetRange(
+    const RangeBoundaryBase<SPT, SRT>& aStartBoundary,
+    const RangeBoundaryBase<EPT, ERT>& aEndBoundary, nsINode* aRootNode,
+    bool aNotInsertedYet /* = false */, RangeBehaviour aRangeBehaviour
+    /* = CollapseDefaultRangeAndCrossShadowBoundaryRanges */) {
   mIsPositioned = aStartBoundary.IsSetAndValid() &&
                   aEndBoundary.IsSetAndValid() && aRootNode;
   MOZ_ASSERT_IF(!mIsPositioned, !aStartBoundary.IsSet());
