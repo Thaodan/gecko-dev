@@ -19,6 +19,11 @@
 class nsIURI;
 class nsILoadInfo;
 
+namespace mozilla::ipc {
+class ConnectionAllowlistEntry;
+class ConnectionAllowlistsArgs;
+}  // namespace mozilla::ipc
+
 namespace mozilla::dom {
 
 // A parsed connection allowlist, holding the enforced and report-only
@@ -41,6 +46,10 @@ class ConnectionAllowlists final {
 
   bool ShouldLoad(nsIURI* aURI, nsILoadInfo* aLoadInfo) const;
 
+  void ToArgs(mozilla::ipc::ConnectionAllowlistsArgs& aArgs) const;
+  static already_AddRefed<ConnectionAllowlists> FromArgs(
+      const mozilla::ipc::ConnectionAllowlistsArgs& aArgs);
+
  private:
   ~ConnectionAllowlists() = default;
 
@@ -61,12 +70,25 @@ class ConnectionAllowlists final {
   // A single parsed "connection allowlist" struct.
   // https://wicg.github.io/connection-allowlists/#connection-allowlist
   struct Allowlist {
+    // Parses |aSerializedPattern| and if successfull appends it to
+    // |aAllowlist|.
+    void AppendPattern(const nsACString& aSerializedPattern);
+
+    void ToEntryArgs(mozilla::ipc::ConnectionAllowlistEntry& aEntry) const;
+    static Allowlist FromEntryArgs(
+        const mozilla::ipc::ConnectionAllowlistEntry& aEntry,
+        Disposition aDisposition);
+
     nsTArray<UrlPattern> mPatterns;
+    // The serialized form of |mPatterns|, kept around because a parsed pattern
+    // cannot be serialized back and has to be re-parsed when sent over IPC.
+    nsTArray<nsCString> mSerializedPatterns;
     // Whether the `response-origin` token was present. The token is kept
     // unresolved, because an allowlist is inherited together with the policy
     // container and has to resolve against the response URL of the document
     // it is applied to, not the one that delivered the header.
     bool mMatchesResponseOrigin = false;
+
     // The `report-to` reporting endpoint, or empty when unset.
     nsCString mReportingEndpoint;
     Disposition mDisposition = Disposition::Enforce;
