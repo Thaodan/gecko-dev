@@ -1194,6 +1194,25 @@ nsSocketTransportService::Run() {
   TimeStamp startOfIteration;
   TimeStamp startOfNextIteration;
 
+  TimeStamp shutdownStarted;
+  auto keepProcessingEvents = [&]() {
+    if (!mShuttingDown) {
+      return true;
+    }
+    if (shutdownStarted.IsNull()) {
+      shutdownStarted = TimeStamp::NowLoRes();
+    }
+
+    uint32_t shutdownGracePeriod =
+        StaticPrefs::network_socket_shutdown_process_events_ms();
+    if (!shutdownGracePeriod) {
+      return true;
+    }
+
+    return (TimeStamp::NowLoRes() - shutdownStarted).ToMilliseconds() <
+           (double)shutdownGracePeriod;
+  };
+
   for (;;) {
     bool pendingEvents = false;
     if (Telemetry::CanRecordPrereleaseData()) {
@@ -1229,7 +1248,7 @@ nsSocketTransportService::Run() {
       }
 
       mRawThread->HasPendingEvents(&pendingEvents);
-      if (!hadPriorityEvent && pendingEvents) {
+      if ((!hadPriorityEvent || mShuttingDown) && pendingEvents) {
         if (!mServingPendingQueue) {
           nsresult rv = Dispatch(
               NewRunnableMethod(
@@ -1266,7 +1285,7 @@ nsSocketTransportService::Run() {
       }
       AutoReadLock lock(mQueueLock);
       pendingEvents = pendingEvents || !mPriorityEventQueue.IsEmpty();
-    } while (pendingEvents);
+    } while (pendingEvents && keepProcessingEvents());
 
     bool goingOffline = false;
     // now that our event queue is empty, check to see if we should exit
