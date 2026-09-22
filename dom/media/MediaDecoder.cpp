@@ -1354,9 +1354,7 @@ IntervalType MediaDecoder::GetSeekableImpl() {
   if (!IsMediaSeekable()) {
     return IntervalType();
   }
-  // An unbounded resource has no known end to seek towards. Limit seeks to
-  // data we already have, as for non-seekable transports.
-  if (!IsTransportSeekable() || (IsLiveStream() && IsInfinite())) {
+  if (!IsTransportSeekable()) {
     return IntervalType(positiveBuffered);
   }
 
