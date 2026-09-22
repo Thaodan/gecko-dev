@@ -197,6 +197,14 @@
   }
 }
 
+#mini-window-audio-button {
+  display: none;
+
+  :root[mini-window] &:is([soundplaying], [muted]) {
+    display: revert;
+  }
+}
+
 toolbar .toolbarbutton-1 {
   /* horizontal padding + actual icon width */
   --toolbarbutton-icon-size: calc(2 * var(--toolbarbutton-padding-inner) + 16px);

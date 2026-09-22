@@ -511,7 +511,14 @@ body {
  * it keeps only back/forward/reload, the address bar, and the two mini-window
  * controls. Everything else in the bar goes. */
 :root[mini-window] {
-  .chromeclass-toolbar-additional:not(#back-button, #forward-button, #stop-reload-button, #mini-window-restore-button, #mini-window-close-button) {
+  .chromeclass-toolbar-additional:not(
+    #back-button,
+    #forward-button,
+    #stop-reload-button,
+    #mini-window-audio-button,
+    #mini-window-restore-button,
+    #mini-window-close-button
+  ) {
     display: none;
   }
 
