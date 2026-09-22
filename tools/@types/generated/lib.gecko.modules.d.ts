@@ -413,6 +413,7 @@ export interface Modules {
   "moz-src:///browser/components/remotecontrol/RemoteControlServers.sys.mjs": typeof import("moz-src:///browser/components/remotecontrol/RemoteControlServers.sys.mjs"),
   "moz-src:///browser/components/reportbrokensite/ReportBrokenSite.sys.mjs": typeof import("moz-src:///browser/components/reportbrokensite/ReportBrokenSite.sys.mjs"),
   "moz-src:///browser/components/screenshots/ScreenshotsOverlayChild.sys.mjs": typeof import("moz-src:///browser/components/screenshots/ScreenshotsOverlayChild.sys.mjs"),
+  "moz-src:///browser/components/screenshots/ScreenshotsSelectionModes.sys.mjs": typeof import("moz-src:///browser/components/screenshots/ScreenshotsSelectionModes.sys.mjs"),
   "moz-src:///browser/components/screenshots/ScreenshotsUtils.sys.mjs": typeof import("moz-src:///browser/components/screenshots/ScreenshotsUtils.sys.mjs"),
   "moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs": typeof import("moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs"),
   "moz-src:///browser/components/search/OpenSearchManager.sys.mjs": typeof import("moz-src:///browser/components/search/OpenSearchManager.sys.mjs"),
