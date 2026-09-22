@@ -260,6 +260,20 @@ class SessionStoreTestCase(WindowManagerMixin, MarionetteTestCase):
             """
         )
 
+    def wait_for_fog(self):
+        """Glean's blocking test APIs (testGetValue) park the main thread
+        forever if Glean is still pre-init, and FOG is initialized from a
+        startup idle task, so it can lag the point where the browser reports
+        itself started up."""
+        Wait(self.marionette, timeout=60).until(
+            lambda _: self.marionette.execute_script(
+                """
+                return Services.fog.initialized;
+                """
+            ),
+            message="FOG should be initialized before reading Glean metrics.",
+        )
+
     def get_closed_windows(self) -> list:
         """Returns SessionStore.getClosedWindowData()."""
         return self.marionette.execute_script(
