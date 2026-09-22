@@ -110,3 +110,17 @@ function parseTranslate(transform) {
     ? { x: parseFloat(m[1]), y: m[2] !== undefined ? parseFloat(m[2]) : 0 }
     : null;
 }
+
+/**
+ * Pop the whole `tab` into a full-tab mini window and resolve to the mini
+ * window once framed.
+ *
+ * @param {MozTabbrowserTab} tab
+ */
+async function popWholeTabForTest(tab) {
+  let opened = BrowserTestUtils.domWindowOpenedAndLoaded(null);
+  let winPromise = MiniWindowManager.popTab(tab);
+  let miniWin = await opened;
+  await winPromise;
+  return miniWin;
+}
