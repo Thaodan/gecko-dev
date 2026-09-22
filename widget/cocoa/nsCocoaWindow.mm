@@ -6391,12 +6391,17 @@ void nsCocoaWindow::CocoaWindowDidEnterFullscreen(bool aFullscreen) {
 
   TransitionType transition =
       aFullscreen ? TransitionType::Fullscreen : TransitionType::Windowed;
+  const nsSizeMode sizeModeBefore = mSizeMode;
   if (receivedExpectedFullscreen) {
     // Everything is as expected. Update our state if needed.
     HandleUpdateFullscreenOnResize();
   } else {
-    // We weren't expecting this fullscreen state. Update our fullscreen state
-    // to the new reality.
+    // We weren't expecting this fullscreen state. The pending update belongs to
+    // a transition that is not happening, so drop it before an unrelated resize
+    // applies it.
+    mUpdateFullscreenOnResize.reset();
+
+    // Update our fullscreen state to the new reality.
     UpdateFullscreenState(aFullscreen, true);
 
     // If we have a current transition, switch it to match what we just did.
@@ -6420,6 +6425,16 @@ void nsCocoaWindow::CocoaWindowDidEnterFullscreen(bool aFullscreen) {
   if (restoreKeyToPlayer && NSApp.isActive && mWindow.isVisible &&
       !mWindow.isKeyWindow) {
     [mWindow makeKeyAndOrderFront:nil];
+  }
+
+  // Our size mode changes only along with a size mode event, so an unchanged
+  // size mode here means we reconciled to a fullscreen state we were already
+  // reporting, and our listener is still waiting for the fullscreen change it
+  // asked us for. Tell it last, once our own state has settled, because this
+  // runs script.
+  if (!receivedExpectedFullscreen && mSizeMode == sizeModeBefore &&
+      mWidgetListener) {
+    mWidgetListener->FullscreenChangeFailed(aFullscreen);
   }
 }
 
@@ -7882,29 +7897,23 @@ LayoutDeviceIntPoint nsCocoaWindow::GetNativeLockedPoint() {
   mGeckoWindow->CocoaWindowDidEnterFullscreen(false);
 }
 
-- (void)windowDidFailToEnterFullScreen:(NSNotification*)notification {
+- (void)windowDidFailToEnterFullScreen:(NSWindow*)window {
   if (!mGeckoWindow) {
     return;
   }
 
   MOZ_ASSERT((mGeckoWindow->GetCocoaWindow().styleMask &
               NSWindowStyleMaskFullScreen) == 0);
-  MOZ_ASSERT(mGeckoWindow->SizeMode() == nsSizeMode_Fullscreen);
 
-  // We're in a strange situation. We've told DOM that we are going to
-  // fullscreen by changing our size mode, and therefore the window
-  // content is what we would show if we were properly in fullscreen.
-  // But the window is actually in a windowed style. We have to do
-  // several things:
-  // 1) Clear sWindowInNativeTransition and mTransitionCurrent, both set
-  //    when we started the fullscreen transition.
-  // 2) Change our size mode to windowed.
-  // Conveniently, we can do these things by pretending we just arrived
-  // at windowed mode, and all will be sorted out.
+  // macOS has given up on the transition, so the window stays windowed. We can
+  // get the right result by pretending we just arrived at windowed mode: that
+  // releases the native transition for other windows, clears the transition we
+  // are in the middle of, and reconciles our fullscreen state and the DOM's,
+  // whichever of the two the transition had already reached.
   mGeckoWindow->CocoaWindowDidEnterFullscreen(false);
 }
 
-- (void)windowDidFailToExitFullScreen:(NSNotification*)notification {
+- (void)windowDidFailToExitFullScreen:(NSWindow*)window {
   if (!mGeckoWindow) {
     return;
   }
