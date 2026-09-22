@@ -7849,10 +7849,58 @@ Maybe<uint64_t> profiler_get_inner_window_id_from_docshell(
 
 namespace geckoprofiler::markers {
 
-struct CPUAwakeMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("Awake");
+struct CPUAwakeMarker : public BaseMarkerType<CPUAwakeMarker> {
+  static constexpr const char* Name = "Awake";
+
+  using MS = MarkerSchema;
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"cpuTime", MS::InputType::Double, "CPU Time", MS::Format::Duration},
+#if !defined(GP_PLAT_unknown) && !defined(GP_PLAT_arm64_darwin)
+      {"cpuId", MS::InputType::Int64, "CPU Id", MS::Format::Integer},
+#endif
+#ifdef GP_OS_windows
+      {"priority", MS::InputType::Int32, "Relative Thread Priority",
+       MS::Format::Integer},
+      {"absPriority", MS::InputType::Int32, "Base Thread Priority",
+       MS::Format::Integer},
+      {"curPriority", MS::InputType::Int32, "Current Thread Priority",
+       MS::Format::Integer},
+#endif
+#ifdef GP_OS_darwin
+      {"QoS", MS::InputType::CString, "Quality of Service", MS::Format::String},
+#endif
+  };
+  static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
+                                               MS::Location::MarkerTable};
+#if !defined(GP_PLAT_unknown) && !defined(GP_PLAT_arm64_darwin)
+  static constexpr const char* TableLabel =
+      "Awake - CPU Id = {marker.data.cpuId}";
+#endif
+
+  static double ToMilliseconds(int64_t aCPUTimeNs) {
+    constexpr double NS_PER_MS = 1'000'000;
+    return double(aCPUTimeNs) / NS_PER_MS;
   }
+
+#ifdef GP_OS_darwin
+  static ProfilerString8View QoSString(uint32_t aQoS) {
+    switch (aQoS) {
+      case QOS_CLASS_USER_INTERACTIVE:
+        return "User Interactive";
+      case QOS_CLASS_USER_INITIATED:
+        return "User Initiated";
+      case QOS_CLASS_DEFAULT:
+        return "Default";
+      case QOS_CLASS_UTILITY:
+        return "Utility";
+      case QOS_CLASS_BACKGROUND:
+        return "Background";
+      default:
+        return "Unspecified";
+    }
+  }
+#endif
+
   static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
                                    int64_t aCPUTimeNs
 #if !defined(GP_PLAT_unknown) && !defined(GP_PLAT_arm64_darwin)
@@ -7871,15 +7919,14 @@ struct CPUAwakeMarker {
 #endif
   ) {
     if (aCPUTimeNs) {
-      constexpr double NS_PER_MS = 1'000'000;
-      aWriter.DoubleProperty("CPU Time", double(aCPUTimeNs) / NS_PER_MS);
+      aWriter.DoubleProperty("cpuTime", ToMilliseconds(aCPUTimeNs));
       // CPU Time is only provided for the end marker, the other fields are for
       // the start marker.
       return;
     }
 
 #if !defined(GP_PLAT_unknown) && !defined(GP_PLAT_arm64_darwin)
-    aWriter.IntProperty("CPU Id", aCPUId);
+    aWriter.IntProperty("cpuId", aCPUId);
 #endif
 #ifdef GP_OS_windows
     if (aAbsolutePriority) {
@@ -7891,52 +7938,41 @@ struct CPUAwakeMarker {
     aWriter.IntProperty("priority", aRelativePriority);
 #endif
 #ifdef GP_OS_darwin
-    const char* QoS = "";
-    switch (aQoS) {
-      case QOS_CLASS_USER_INTERACTIVE:
-        QoS = "User Interactive";
-        break;
-      case QOS_CLASS_USER_INITIATED:
-        QoS = "User Initiated";
-        break;
-      case QOS_CLASS_DEFAULT:
-        QoS = "Default";
-        break;
-      case QOS_CLASS_UTILITY:
-        QoS = "Utility";
-        break;
-      case QOS_CLASS_BACKGROUND:
-        QoS = "Background";
-        break;
-      default:
-        QoS = "Unspecified";
-    }
-
-    aWriter.StringProperty("QoS",
-                           ProfilerString8View::WrapNullTerminatedString(QoS));
+    aWriter.StringProperty("QoS", QoSString(aQoS));
 #endif
   }
 
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyFormat("CPU Time", MS::Format::Duration);
+  static void TranslateMarkerInputToSchema(void* aContext, int64_t aCPUTimeNs
 #if !defined(GP_PLAT_unknown) && !defined(GP_PLAT_arm64_darwin)
-    schema.AddKeyFormat("CPU Id", MS::Format::Integer);
-    schema.SetTableLabel("Awake - CPU Id = {marker.data.CPU Id}");
-#endif
-#ifdef GP_OS_windows
-    schema.AddKeyLabelFormat("priority", "Relative Thread Priority",
-                             MS::Format::Integer);
-    schema.AddKeyLabelFormat("absPriority", "Base Thread Priority",
-                             MS::Format::Integer);
-    schema.AddKeyLabelFormat("curPriority", "Current Thread Priority",
-                             MS::Format::Integer);
+                                           ,
+                                           int64_t aCPUId
 #endif
 #ifdef GP_OS_darwin
-    schema.AddKeyLabelFormat("QoS", "Quality of Service", MS::Format::String);
+                                           ,
+                                           uint32_t aQoS
 #endif
-    return schema;
+#ifdef GP_OS_windows
+                                           ,
+                                           int32_t aAbsolutePriority,
+                                           int32_t aRelativePriority,
+                                           int32_t aCurrentPriority
+#endif
+  ) {
+    ETW::OutputMarkerSchema(
+        aContext, CPUAwakeMarker{}, ToMilliseconds(aCPUTimeNs)
+#if !defined(GP_PLAT_unknown) && !defined(GP_PLAT_arm64_darwin)
+                                        ,
+        aCPUId
+#endif
+#ifdef GP_OS_windows
+        ,
+        aRelativePriority, aAbsolutePriority, aCurrentPriority
+#endif
+#ifdef GP_OS_darwin
+        ,
+        QoSString(aQoS)
+#endif
+    );
   }
 };
 
