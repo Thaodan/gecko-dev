@@ -149,6 +149,22 @@ body {
     --toolbox-background-size: auto, var(--lwt-background-size);
   }
 
+  /* A mini window is a small always-on-top window. */
+  &[mini-window] {
+    @media not (forced-colors) {
+      --mini-window-toolbar-background: light-dark(var(--color-white), var(--color-gray-70));
+
+      --toolbox-background-image: none;
+      --toolbox-background-color: var(--mini-window-toolbar-background);
+      --toolbox-background-color-inactive: var(--mini-window-toolbar-background);
+    }
+
+    --mini-window-slide-duration: 180ms;
+    --mini-window-fade-duration: 140ms;
+    --mini-window-ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+    --mini-window-ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
   --ext-theme-background-transition: background-color 0.1s cubic-bezier(0.17, 0.67, 0.83, 0.67);
 
   --inactive-window-transition: 0.2s ease;
@@ -229,27 +245,59 @@ body {
     border-bottom-color: var(--chrome-content-separator-color);
   }
 
-  /* Mini window: the toolbox collapses away entirely and expands in-flow,
-   * pushing the content down rather than overlaying it. The collapsed toolbar
-   * can't be its own hover target, so MiniWindow watches the pointer via
-   * MousePosTracker instead. Once expanded, CSS holds it open under the
-   * pointer or keyboard focus; JS toggles mini-window-revealed for the timed
-   * reveals (open, navigation) and while a doorhanger/infobar needs the
-   * toolbar. */
+  /* Mini window: the toolbar is pinned to the top of the window and slides in/out
+   * of it.
+   *
+   * MiniWindow watches the top few pixels via MousePosTracker to reveal the bar. CSS
+   * holds the bar open under the pointer or keyboard focus; JS toggles mini-window-revealed
+   * for the timed reveals. */
   :root[mini-window] & {
-    max-height: 0;
-    overflow: hidden;
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    transform: translateY(-100%);
+    opacity: 0;
 
     @media (prefers-reduced-motion: no-preference) {
-      transition: max-height 150ms ease;
+      transition:
+        transform var(--mini-window-slide-duration) var(--mini-window-ease-emphasized),
+        opacity var(--mini-window-fade-duration) var(--mini-window-ease-standard);
+    }
+
+    @media (prefers-reduced-motion) {
+      transition: opacity 80ms var(--mini-window-ease-standard);
     }
 
     &:is(.mini-window-revealed, :hover, :focus-within) {
-      /* Only needs to exceed the nav-bar's tallest layout for the
-         transition to look right. */
-      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-      max-height: 120px;
+      transform: translateY(0);
+      opacity: 1;
     }
+  }
+}
+
+/* The page is pushed down while the bar is shown so the bar never covers it,
+ * and takes the whole window back when it hides.
+ *
+ * This moves the page rather than resizing it: a margin would change the remote
+ * browser's height, reflowing the page and running its resize handlers every
+ * time the bar comes and goes, where a transform costs a composite. The page
+ * keeps the window's full height throughout, so while the bar is up its last
+ * few rows sit below the bottom of the window. */
+:root[mini-window] {
+  #navigator-toolbox:is(.mini-window-revealed, :hover, :focus-within) ~ #browser {
+    /* 0 until the bar has been measured, which happens before it is first revealed. */
+    transform: translateY(var(--mini-window-toolbar-height, 0));
+  }
+
+  #browser {
+    @media (prefers-reduced-motion: no-preference) {
+      transition: transform var(--mini-window-slide-duration) var(--mini-window-ease-emphasized);
+    }
+  }
+
+  /* Set for the frame in which the bar is first revealed. */
+  &[mini-window-first-open] :is(#navigator-toolbox, #browser) {
+    transition: none;
   }
 }
 

@@ -64,16 +64,17 @@ export class MiniWindowChild extends JSWindowActorChild {
   }
 
   /**
-   * The toolbar pops back up when the user scrolls up, so only upward movement
-   * is reported. Chrome can't observe scrolling in remote content itself.
+   * Called when the content window is scrolled.
+   * The parent can't observe scrolling in remote content itself.
    */
   #onScroll() {
     let y = this.#scrollY();
-    let scrolledUp = y < this.#lastScrollY;
-    this.#lastScrollY = y;
-    if (scrolledUp) {
-      this.sendAsyncMessage("ScrolledUp");
+    if (y === this.#lastScrollY) {
+      return;
     }
+    let up = y < this.#lastScrollY;
+    this.#lastScrollY = y;
+    this.sendAsyncMessage("Scrolled", { up });
   }
 
   didDestroy() {
