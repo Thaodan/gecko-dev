@@ -176,9 +176,17 @@ class SessionStoreTestCase(WindowManagerMixin, MarionetteTestCase):
         self.marionette.switch_to_window(taskbar_tab_window_handle)
         self.marionette.open(type="window")
 
-    def open_window_with_extra_options(self, features="chrome,dialog=no,all"):
-        """Open a new browser window with the given features string.
+    def open_window_with_extra_options(
+        self, extra_options: dict, features="chrome,dialog=no,all"
+    ):
+        """Open a new browser window with the given extraOptions and
+        features string, mirroring how real callers (WebExtensions
+        windows.create, URILoadingHelper's "chromeless" open, taskbar
+        tabs) build the arguments array passed to Services.ww.openWindow.
 
+        @param extra_options (dict)
+               Maps nsIWritablePropertyBag2 keys to bool/string values to
+               set on the extraOptions bag passed as window.arguments[1].
         @param features (str)
                The chrome features string to open the window with.
 
@@ -187,14 +195,29 @@ class SessionStoreTestCase(WindowManagerMixin, MarionetteTestCase):
         current_windows = set(self.marionette.chrome_window_handles)
         self.marionette.execute_async_script(
             """
-            let [features, resolve] = arguments;
+            let [extraOptionsData, features, resolve] = arguments;
             (async () => {
+                let extraOptions = Cc["@mozilla.org/hash-property-bag;1"].createInstance(
+                    Ci.nsIWritablePropertyBag2
+                );
+                for (let [key, value] of Object.entries(extraOptionsData)) {
+                    if (typeof value == "boolean") {
+                        extraOptions.setPropertyAsBool(key, value);
+                    } else {
+                        extraOptions.setPropertyAsAString(key, value);
+                    }
+                }
+
+                let args = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
+                args.appendElement(null);
+                args.appendElement(extraOptions);
+
                 let win = Services.ww.openWindow(
                     null,
                     AppConstants.BROWSER_CHROME_URL,
                     "_blank",
                     features,
-                    null
+                    args
                 );
                 await new Promise(resolve => {
                     win.addEventListener("load", resolve, { once: true });
@@ -202,21 +225,31 @@ class SessionStoreTestCase(WindowManagerMixin, MarionetteTestCase):
                 await win.delayedStartupPromise;
             })().then(resolve);
             """,
-            script_args=[features],
+            script_args=[extra_options, features],
         )
         [new_window] = list(
             set(self.marionette.chrome_window_handles) - current_windows
         )
         return new_window
 
-    def replace_current_window(self, features="chrome,dialog=no,all"):
+    def replace_current_window(
+        self, extra_options: dict, features="chrome,dialog=no,all"
+    ):
         """Open a new window like open_window_with_extra_options, close the
         current window, and switch to the new one so it becomes the sole
         (and top) open window."""
-        new_window = self.open_window_with_extra_options(features)
+        new_window = self.open_window_with_extra_options(extra_options, features)
         self.marionette.close_chrome_window()
         self.marionette.switch_to_window(new_window)
         return new_window
+
+    def get_window_document_attribute(self, name: str):
+        """Returns the value of an attribute on the current window's
+        `document.documentElement`."""
+        return self.marionette.execute_script(
+            "return document.documentElement.hasAttribute(arguments[0]);",
+            script_args=[name],
+        )
 
     def is_current_window_popup(self) -> bool:
         """Returns whether the current window is a popup window. This is based
@@ -248,6 +281,16 @@ class SessionStoreTestCase(WindowManagerMixin, MarionetteTestCase):
             while (SessionStore.getClosedWindowCount() > 0) {
                 SessionStore.forgetClosedWindow(0);
             }
+            """
+        )
+
+    def get_sessionstore_window_state(self):
+        return self.marionette.execute_script(
+            """
+            let { SessionStore } = ChromeUtils.importESModule(
+                "moz-src:///browser/components/sessionstore/SessionStore.sys.mjs"
+            );
+            return SessionStore.getWindowState(window).windows[0];
             """
         )
 
@@ -319,6 +362,28 @@ class SessionStoreTestCase(WindowManagerMixin, MarionetteTestCase):
             message = (
                 f"{e.message}. Expected {expected_windows}, got {current_windows}."
             )
+            raise errors.TimeoutException(message)
+
+    def wait_for_tab_urls(self, win, expected_urls, message, timeout=20):
+        """Wait until the given window's tabs match expected_urls exactly.
+
+        Tab content can still be loading asynchronously after a
+        restore has been completed, so callers that just triggered a
+        restore should wait for this instead of reading
+        get_urls_for_window() once immediately.
+        """
+        current_urls = None
+
+        def check(_):
+            nonlocal current_urls
+            current_urls = self.get_urls_for_window(win)
+            return current_urls == expected_urls
+
+        try:
+            wait = Wait(self.marionette, timeout=timeout, interval=0.1)
+            wait.until(check, message=message)
+        except errors.TimeoutException as e:
+            message = f"{e.message}. Expected {expected_urls}, got {current_urls}."
             raise errors.TimeoutException(message)
 
     def get_urls_for_window(self, win):

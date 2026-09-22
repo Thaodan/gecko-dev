@@ -22,6 +22,7 @@ const ALL_BARPROPS = {
  * @property {Partial<typeof ALL_BARPROPS>} barprops
  * @property {u32} chromeFlags
  * @property {u32} [unsetFlags]
+ * @property {object} [extraOptions]
  */
 
 /**
@@ -50,6 +51,19 @@ function testFeatures(win, test) {
   is(chromeFlags & test.chromeFlags, test.chromeFlags, "flags should be set");
   if (test.unsetFlags) {
     is(chromeFlags & test.unsetFlags, 0, "flags should be unset");
+  }
+}
+
+/**
+ * @param {Window} win
+ * @param {TestData} test
+ */
+function testExtraOptions(win, test) {
+  for (let key of Object.keys(test.extraOptions)) {
+    ok(
+      win.document.documentElement.hasAttribute(key),
+      `${key} attribute should be set`
+    );
   }
 }
 
@@ -104,6 +118,34 @@ add_task(async function testRestoredWindowFeatures() {
       barprops: ALL_BARPROPS,
       chromeFlags: Ci.nsIWebBrowserChrome.CHROME_DEPENDENT,
     },
+    {
+      // Mirrors URILoadingHelper.sys.mjs's openInWindow() when opening a
+      // chromeless window with no width/height override.
+      url: "http://example.com/browser/" + DUMMY_PAGE,
+      features: "chrome,dialog=no,resizable,minimizable,titlebar,close",
+      barprops: { locationbar: true },
+      chromeFlags:
+        Ci.nsIWebBrowserChrome.CHROME_WINDOW_RESIZE |
+        Ci.nsIWebBrowserChrome.CHROME_WINDOW_MINIMIZE |
+        Ci.nsIWebBrowserChrome.CHROME_TITLEBAR,
+      unsetFlags: Ci.nsIWebBrowserChrome.CHROME_OPENAS_DIALOG,
+      extraOptions: { "chromeless-window": true },
+    },
+    {
+      // Mirrors ext-windows.js's windows.create() opening a popup-type
+      // window with no explicit left/top (so it centers on screen).
+      url: "http://example.com/browser/" + DUMMY_PAGE,
+      features:
+        "chrome,dialog,resizable,minimizable,titlebar,close,centerscreen",
+      barprops: { locationbar: true },
+      chromeFlags:
+        Ci.nsIWebBrowserChrome.CHROME_OPENAS_DIALOG |
+        Ci.nsIWebBrowserChrome.CHROME_WINDOW_RESIZE |
+        Ci.nsIWebBrowserChrome.CHROME_WINDOW_MINIMIZE |
+        Ci.nsIWebBrowserChrome.CHROME_TITLEBAR |
+        Ci.nsIWebBrowserChrome.CHROME_CENTER_SCREEN,
+      extraOptions: { "web-extension-popup-window": true },
+    },
   ];
   const TEST_URL_CHROME = "chrome://mochitests/content/browser/" + DUMMY_PAGE;
 
@@ -118,7 +160,28 @@ add_task(async function testRestoredWindowFeatures() {
       url: test.url,
     });
     let win;
-    if (test.chrome) {
+    if (test.extraOptions) {
+      let args = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
+      let uri = Cc["@mozilla.org/supports-string;1"].createInstance(
+        Ci.nsISupportsString
+      );
+      uri.data = test.url;
+      args.appendElement(uri);
+      let extraOptions = Cc["@mozilla.org/hash-property-bag;1"].createInstance(
+        Ci.nsIWritablePropertyBag2
+      );
+      for (let [key, value] of Object.entries(test.extraOptions)) {
+        extraOptions.setPropertyAsBool(key, value);
+      }
+      args.appendElement(extraOptions);
+      Services.ww.openWindow(
+        window,
+        AppConstants.BROWSER_CHROME_URL,
+        "_blank",
+        test.features,
+        args
+      );
+    } else if (test.chrome) {
       win = window.openDialog(
         AppConstants.BROWSER_CHROME_URL,
         "_blank",
@@ -143,6 +206,9 @@ add_task(async function testRestoredWindowFeatures() {
     }
 
     testFeatures(win, test);
+    if (test.extraOptions) {
+      testExtraOptions(win, test);
+    }
     let chromeFlags = win.docShell.treeOwner
       .QueryInterface(Ci.nsIInterfaceRequestor)
       .getInterface(Ci.nsIAppWindow).chromeFlags;
@@ -157,6 +223,9 @@ add_task(async function testRestoredWindowFeatures() {
 
     is(title, win.document.title, "title should be preserved");
     testFeatures(win, test);
+    if (test.extraOptions) {
+      testExtraOptions(win, test);
+    }
     is(
       win.docShell.treeOwner
         .QueryInterface(Ci.nsIInterfaceRequestor)

@@ -45,6 +45,8 @@
  *   Whether the window is an AI window.
  * @property {string} [title]
  *   Title of the window's selected tab.
+ * @property {WindowArgumentsState} [args]
+ *   Window creation arguments necessary to recreate this window.
  * @property {"normal"|"maximized"|"minimized"|"fullscreen"} [sizemode]
  *   Size mode of the window.
  * @property {"normal"|"maximized"|"minimized"|"fullscreen"} [sizemodeBeforeMinimized]
@@ -167,6 +169,20 @@ const CHROME_FLAGS_MAP = [
   [Ci.nsIWebBrowserChrome.CHROME_MODAL, "modal"],
   [Ci.nsIWebBrowserChrome.CHROME_OPENAS_DIALOG, "dialog", "dialog=0"],
 ];
+
+/** Whether a window is a popup specifically opened by a WebExtension. */
+const ARG_WEB_EXTENSION_POPUP_WINDOW = "web-extension-popup-window";
+/** Whether a window should be displayed with minimal chrome UI. */
+const ARG_CHROMELESS_WINDOW = "chromeless-window";
+
+/** @typedef {"web-extension-popup-window"|"chromeless-window"} WindowArgument */
+
+/**
+ * @typedef {Partial<Record<WindowArgument, true>>} WindowArgumentsState
+ *   Arguments for {@link nsIWindowWatcher.openWindow} that are not managed
+ *   by other modules (e.g. AI Window/Smart Window and Taskbar Tabs manage
+ *   their own window arguments). Serializes to/from {@link nsIPropertyBag2}.
+ */
 
 // These are tab events that we listen to.
 const TAB_EVENTS = [
@@ -1472,9 +1488,12 @@ class _SessionStore {
       _lastClosedTabGroupCount: -1,
       lastClosedTabGroupId: null,
       busy: false,
+      /** @type {u32} */
       chromeFlags: aWindow.docShell.treeOwner
         .QueryInterface(Ci.nsIInterfaceRequestor)
         .getInterface(Ci.nsIAppWindow).chromeFlags,
+      /** @type {WindowArgumentsState} */
+      args: {},
     };
 
     if (PrivateBrowsingUtils.isWindowPrivate(aWindow)) {
@@ -1493,6 +1512,18 @@ class _SessionStore {
 
     if (lazy.AIWindow.isAIWindowActiveAndEnabled(aWindow)) {
       this.#windows[aWindow.__SSi].isAIWindow = true;
+    }
+
+    if (aWindow.document.documentElement.hasAttribute(ARG_CHROMELESS_WINDOW)) {
+      this.#windows[aWindow.__SSi].args[ARG_CHROMELESS_WINDOW] = true;
+    }
+
+    if (
+      aWindow.document.documentElement.hasAttribute(
+        ARG_WEB_EXTENSION_POPUP_WINDOW
+      )
+    ) {
+      this.#windows[aWindow.__SSi].args[ARG_WEB_EXTENSION_POPUP_WINDOW] = true;
     }
 
     let tabbrowser = aWindow.gBrowser;
@@ -5371,7 +5402,16 @@ class _SessionStore {
       return false;
     }
 
-    return true;
+    let existingArgs = existingState.args ?? {};
+    let previousArgs = aPreviousState.args ?? {};
+
+    if (Object.keys(existingArgs).length != Object.keys(previousArgs).length) {
+      return false;
+    }
+
+    return Object.entries(existingArgs).every(
+      ([key, value]) => previousArgs[key] == value
+    );
   }
 
   /**
@@ -7084,8 +7124,8 @@ class _SessionStore {
    *        Object containing session data
    */
   #openWindowWithState(aState) {
-    // Build arguments string
-    let argString;
+    let args = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
+
     let features = ["chrome", "suppressanimation"];
     let winState = aState.windows[0];
     if (winState.chromeFlags) {
@@ -7132,38 +7172,71 @@ class _SessionStore {
         let activeIndex = this.historyIndex(tab);
         restoreSessionURL = tab.entries[activeIndex].url;
       }
-      argString = lazy.AIWindow.handleAIWindowOptions({
+      args = lazy.AIWindow.handleAIWindowOptions({
         openerWindow: null,
-        args: argString,
+        args,
         aiWindow: winState.isAIWindow,
         restoreSessionURL,
       });
     }
 
-    if (!argString) {
-      argString = Cc["@mozilla.org/supports-string;1"].createInstance(
-        Ci.nsISupportsString
+    if (!args.length) {
+      // Argument 0 for opening a window is the URL to open.
+      // This can be a falsy value since SessionStore will restore specific
+      // tabs and URLs after the window is open.
+      args.appendElement(null);
+    }
+
+    // Argument 1 for opening a window is extra options.
+    let extraOptions;
+    try {
+      extraOptions = args.queryElementAt(1, Ci.nsIWritablePropertyBag2);
+    } catch (e) {
+      extraOptions = Cc["@mozilla.org/hash-property-bag;1"].createInstance(
+        Ci.nsIWritablePropertyBag2
       );
-      argString.data = "";
+      args.appendElement(extraOptions);
+    }
+
+    if (winState.args?.[ARG_WEB_EXTENSION_POPUP_WINDOW]) {
+      extraOptions.setPropertyAsBool(ARG_WEB_EXTENSION_POPUP_WINDOW, true);
+    }
+    if (winState.args?.[ARG_CHROMELESS_WINDOW]) {
+      extraOptions.setPropertyAsBool(ARG_CHROMELESS_WINDOW, true);
     }
 
     this.#log.debug(
       `Opening window:${winState.closedId} with features: ${features.join(
         ","
-      )}, argString: ${argString}.`
+      )}, extraOptions: ${JSON.stringify(this.#serializePropertyBag(extraOptions))}.`
     );
     var window = Services.ww.openWindow(
       null,
       AppConstants.BROWSER_CHROME_URL,
       "_blank",
       features.join(","),
-      argString
+      args
     );
 
     this.#updateWindowRestoreState(window, aState);
     WINDOW_SHOWING_PROMISES.set(window, Promise.withResolvers());
 
     return window;
+  }
+
+  /**
+   * Serialize a property bag to a plain object so that it can be output
+   * for debugging purposes.
+   *
+   * @param {nsIPropertyBag} bag
+   * @returns {{[string]: any}}
+   */
+  #serializePropertyBag(bag) {
+    const obj = {};
+    for (const { name, value } of bag.enumerator) {
+      obj[name] = value;
+    }
+    return obj;
   }
 
   /**

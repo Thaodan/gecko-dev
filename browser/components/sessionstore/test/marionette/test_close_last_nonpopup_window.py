@@ -35,7 +35,7 @@ class TestCloseLastNonPopupWindow(SessionStoreTestCase):
         normal_window = self.marionette.current_chrome_window_handle
         self.open_tabs(normal_window, (inline("normal window tab"),))
 
-        popup_window = self.open_window_with_extra_options(features=POPUP_FEATURES)
+        popup_window = self.open_window_with_extra_options({}, features=POPUP_FEATURES)
 
         self.marionette.switch_to_window(normal_window)
         self.marionette.close_chrome_window()
@@ -58,7 +58,7 @@ class TestCloseLastNonPopupWindow(SessionStoreTestCase):
         )
 
         # Cleanup.
-        new_window = self.open_window_with_extra_options()
+        new_window = self.open_window_with_extra_options({})
         self.marionette.switch_to_window(popup_window)
         self.marionette.close_chrome_window()
         self.marionette.switch_to_window(new_window)
