@@ -334,7 +334,8 @@ class InspectorUtils {
   static void GetComputationStepsSupportedCSSFunctions(
       GlobalObject& aGlobal, nsTArray<nsCString>& aResult);
   static void GetComputationSteps(GlobalObject& aGlobal,
-                                  const nsAString& aExpression, Element&,
+                                  const nsACString& aProperty,
+                                  const nsACString& aExpression, Element&,
                                   const nsAString& aPseudo,
                                   nsTArray<nsCString>& aResult);
 };

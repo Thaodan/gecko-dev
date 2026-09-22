@@ -11506,11 +11506,14 @@ pub unsafe extern "C" fn Servo_GetComputationStepsSupportedCSSFunctions(
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Servo_GetComputationSteps(
-    str: &nsAString,
+    str: &nsACString,
     element: &RawGeckoElement,
     pseudo_type: PseudoStyleType,
     style: &ComputedValues,
     raw_data: &PerDocumentStyleData,
+    // The percentage basis for the property the expression is used for, in CSS pixels.
+    // This will be NaN if we couldn't compute the percentage basis (see GetPercentageBasisFor in InspectorUtils.cpp)
+    percentage_basis: f32,
     out: &mut nsTArray<nsCString>,
 ) {
     use style::custom_properties::VariableValue;
@@ -11670,8 +11673,15 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
 
     // Go through the leaves so we have consistent units to run the computation
     node = node.map_leaves(|leaf| match *leaf {
-        // TODO: Percentages should be replaced by the appropriate value (See Bug 2041621)
-        // Leaf::Percentage(p) => { },
+        Leaf::Percentage(p) => {
+            // If percentage_basis is NaN, that means we couldn't compute it (see
+            // InspectorUtils.cpp `GetPercentageBasisFor`).
+            if percentage_basis.is_nan() {
+                return leaf.clone();
+            }
+
+            Leaf::Length(NoCalcLength::from_px(p.get() * percentage_basis))
+        },
         Leaf::Length(l) => {
             let result = l.to_computed_value(&context);
             Leaf::Length(NoCalcLength::from_computed_value(&result))
