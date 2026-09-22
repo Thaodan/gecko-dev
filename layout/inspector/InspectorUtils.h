@@ -334,14 +334,9 @@ class InspectorUtils {
   static void GetComputationStepsSupportedCSSFunctions(
       GlobalObject& aGlobal, nsTArray<nsCString>& aResult);
   static void GetComputationSteps(GlobalObject& aGlobal,
-                                  const nsACString& aProperty,
-                                  const nsACString& aExpression, Element&,
+                                  const nsAString& aExpression, Element&,
                                   const nsAString& aPseudo,
                                   nsTArray<nsCString>& aResult);
-  static void GetSubstitutedValue(GlobalObject& aGlobal,
-                                  const nsACString& aExpression, Element&,
-                                  const nsAString& aPseudo,
-                                  nsACString& aResult);
 };
 
 }  // namespace mozilla::dom

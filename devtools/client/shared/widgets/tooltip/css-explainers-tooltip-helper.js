@@ -10,9 +10,8 @@ class CssExplainersTooltipHelper {
   /**
    * Fill the tooltip with container information.
    */
-  async setContent({ expression, property, pseudoElement, rule }, tooltip) {
+  async setContent({ expression, pseudoElement, rule }, tooltip) {
     const res = await rule.domRule.getCssExplainersData(
-      property,
       expression,
       pseudoElement,
       rule.inherited
