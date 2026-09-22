@@ -513,9 +513,18 @@ class DocAccessible : public HyperTextAccessible,
   virtual void DoInitialUpdate();
 
   /**
-   * Updates root element and picks up ARIA role on it if any.
+   * Assign mContent to the root element, and call UpdateDocRoleMapEntry.
    */
-  void UpdateRootElIfNeeded();
+  void UpdateRootElement();
+
+  /**
+   * Adjust the role exposed on this document and fire a role change event.
+   * When a role is exposed on the body, we use that role as the document's
+   * role. Otherwise, we check for a role on the root element and use that.
+   * In both cases, this function verifies the retrieved role is valid for the
+   * document before using it.
+   */
+  void UpdateDocRoleMapEntry();
 
   /**
    * Process document load notification, fire document load and state busy
@@ -902,8 +911,6 @@ class DocAccessible : public HyperTextAccessible,
   friend class ::nsAccessibilityService;
 
  private:
-  void SetRoleMapEntryForDoc(dom::Element* aElement);
-
   /**
    * This must be called whenever an Accessible is moved in a content process.
    * It keeps track of Accessibles moved during this tick.

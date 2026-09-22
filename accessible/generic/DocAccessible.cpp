@@ -1850,7 +1850,7 @@ void DocAccessible::DoInitialUpdate() {
   }
 
   // Set up a root element and ARIA role mapping.
-  UpdateRootElIfNeeded();
+  UpdateRootElement();
 
   // Build initial tree.
   CacheChildrenInSubtree(this);
@@ -2157,10 +2157,14 @@ void DocAccessible::RemoveDependentElementsFor(LocalAccessible* aRelProvider,
 bool DocAccessible::UpdateAccessibleOnAttrChange(dom::Element* aElement,
                                                  nsAtom* aAttribute) {
   if (aAttribute == nsGkAtoms::role) {
-    // It is common for js libraries to set the role on the body element after
-    // the document has loaded. In this case we just update the role map entry.
-    if (mContent == aElement) {
-      UpdateRootElIfNeeded();
+    // If we're dealing with a role change on the body or the root element
+    // we may need to update the role exposed for the doc accessible.
+    // We never want to recreate this acc during a role change, as doing
+    // so would require we recreate all of the document's content too.
+    // The doc acc has a small set of valid roles, none of which change
+    // the interfaces we should expose, so skipping recreation is safe.
+    if (mContent == aElement || IsBodyElement(aElement)) {
+      UpdateDocRoleMapEntry();
       return true;
     }
 
@@ -2251,14 +2255,33 @@ bool DocAccessible::UpdateAccessibleOnAttrChange(dom::Element* aElement,
   return false;
 }
 
-void DocAccessible::UpdateRootElIfNeeded() {
-  dom::Element* rootEl = mDocumentNode->GetRootElement();
-  mContent = rootEl;
+void DocAccessible::UpdateDocRoleMapEntry() {
+  // The document exposes the body's role, or the root element's when the
+  // document has no body.
+  dom::Element* roleEl = mDocumentNode->GetBodyElement();
+  if (!roleEl) {
+    roleEl = mDocumentNode->GetRootElement();
+  }
+  const nsRoleMapEntry* entry = aria::GetRoleMap(roleEl);
+  if (entry && !nsAccUtils::IsARIARoleAllowedOnContentDoc(entry->role) &&
+      // Role alert isn't valid on the body element according to the ARIA spec,
+      // but it's useful for our UI; e.g. the WebRTC sharing indicator.
+      (entry->role != roles::ALERT || mDocumentNode->IsContentDocument())) {
+    // If we have a role other than those listed above, it isn't valid on the
+    // doc and we shouldn't expose it.
+    entry = nullptr;
+  }
+
   const uint8_t oldRoleMapEntryIndex = mRoleMapEntryIndex;
-  SetRoleMapEntryForDoc(rootEl);
+  SetRoleMapEntry(entry);
   if (mIPCDoc && mRoleMapEntryIndex != oldRoleMapEntryIndex) {
     mIPCDoc->SendRoleChangedEvent(mRoleMapEntryIndex);
   }
+}
+
+void DocAccessible::UpdateRootElement() {
+  mContent = mDocumentNode->GetRootElement();
+  UpdateDocRoleMapEntry();
 }
 
 /**
@@ -2432,7 +2455,7 @@ void DocAccessible::ProcessContentInserted(
 
   // If new root content has been inserted then update it.
   if (aContainer == this) {
-    UpdateRootElIfNeeded();
+    UpdateRootElement();
   }
 
   InsertIterator iter(aContainer, aNodes);
@@ -3206,19 +3229,6 @@ void DocAccessible::ARIAActiveDescendantIDMaybeMoved(
         ->ScheduleNotification<DocAccessible, LocalAccessible>(
             this, &DocAccessible::ARIAActiveDescendantChanged, widget);
   }
-}
-
-void DocAccessible::SetRoleMapEntryForDoc(dom::Element* aElement) {
-  const nsRoleMapEntry* entry = aria::GetRoleMap(aElement);
-  if (!entry || nsAccUtils::IsARIARoleAllowedOnContentDoc(entry->role) ||
-      // Role alert isn't valid on the body element according to the ARIA spec,
-      // but it's useful for our UI; e.g. the WebRTC sharing indicator.
-      (entry->role == roles::ALERT && !mDocumentNode->IsContentDocument())) {
-    SetRoleMapEntry(entry);
-    return;
-  }
-  // No other ARIA roles are valid on body elements.
-  SetRoleMapEntry(nullptr);
 }
 
 bool DocAccessible::IsRootContent(nsINode* aNode) const {
