@@ -13,9 +13,18 @@ import os
 import sys
 
 
-def generate(topsrcdir, repo, output=None, version=None, strict=False):
-    """Write the SBOM to ``output``, or to stdout. Returns a process exit code."""
-    from mozbuild.vendor.sbom import collect_records
+def generate(topsrcdir, topobjdir, repo, output=None, version=None, strict=False):
+    """Write the SBOM to ``output``, or to stdout. Returns a process exit code.
+
+    ``topobjdir`` may name a directory that holds no licenses.json, in which
+    case the document is built from the moz.yaml manifests alone.
+    """
+    from mozbuild.vendor.sbom import (
+        collect_records,
+        load_license_notices,
+        merge_license_notices,
+    )
+    from mozbuild.vendor.sbom_cargo import collect_dependency_kinds, crate_records
     from mozbuild.vendor.sbom_cyclonedx import build_bom, to_json, utc_timestamp
 
     def log(message):
@@ -25,6 +34,38 @@ def generate(topsrcdir, repo, output=None, version=None, strict=False):
     if errors and strict:
         log(f"{len(errors)} manifest(s) failed to load.")
         return 1
+
+    # Cargo.lock describes third_party/rust exactly: versions, checksums and
+    # the crate-to-crate graph, none of which moz.yaml has. `cargo metadata`
+    # adds what Cargo.lock cannot express: whether a crate is reached as a
+    # normal, a build or a dev dependency, and so whether it ships at all.
+    kinds = collect_dependency_kinds(topsrcdir, topobjdir)
+    crates, _ = crate_records(topsrcdir, kinds=kinds)
+    records.extend(crates)
+
+    if kinds:
+        shipped = sum(1 for c in crates if {"normal", "build"} & set(c["kinds"]))
+        dev_only = sum(1 for c in crates if c["kinds"] == ["dev"])
+        log(
+            f"{len(crates)} crates: {shipped} built into the product, "
+            f"{dev_only} test-only, "
+            f"{len(crates) - shipped - dev_only} not reached by cargo metadata.",
+        )
+    else:
+        log(
+            "cargo metadata unavailable; crate dependency kinds not collected.",
+        )
+
+    # The build backend writes this from the tree-wide moz.build LICENSES
+    # declarations. It is absent in an unconfigured tree, in which case the
+    # SBOM is built from moz.yaml alone.
+    notices = load_license_notices(os.path.join(topobjdir, "licenses.json"))
+    if notices:
+        merge_license_notices(records, notices)
+    else:
+        log(
+            "licenses.json not found; run ./mach build-backend for license data.",
+        )
 
     if version is None:
         with open(
@@ -56,6 +97,8 @@ def generate(topsrcdir, repo, output=None, version=None, strict=False):
     timestamp = utc_timestamp(commit_time)
 
     unrecognized = []
+    records.sort(key=lambda record: record["bom_ref"])
+
     bom = build_bom(
         records, version, source_revision, timestamp, unrecognized=unrecognized
     )
@@ -72,7 +115,8 @@ def generate(topsrcdir, repo, output=None, version=None, strict=False):
         with open(output, "w", encoding="utf-8", newline="\n") as output_file:
             output_file.write(document)
         log(
-            f"Wrote {len(records)} components to {output}.",
+            f"Wrote {len(records)} components ({len(crates)} crates, "
+            f"{len(notices)} license notices) to {output}.",
         )
     else:
         sys.stdout.write(document)
@@ -95,6 +139,7 @@ def main(argv):
 
     return generate(
         buildconfig.topsrcdir,
+        buildconfig.topobjdir,
         get_repository_object(buildconfig.topsrcdir),
         output=args.output,
         strict=args.strict,
