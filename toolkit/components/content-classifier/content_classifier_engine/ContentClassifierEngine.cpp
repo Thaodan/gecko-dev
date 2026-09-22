@@ -5,6 +5,7 @@
 #include "mozilla/ContentClassifierEngine.h"
 #include "ContentClassifierFeatureUtils.h"
 #include "ContentClassifierService.h"
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/extensions/WebExtensionPolicy.h"
 #include "mozilla/net/UrlClassifierCommon.h"
 #include "nsIEffectiveTLDService.h"
@@ -116,8 +117,6 @@ ContentClassifierRequest::ContentClassifierRequest(nsIChannel* aChannel)
 
   mIsNonRecommendedAddon = IsNonRecommendedAddonFromLoadInfo(loadInfo);
 
-  mValid = true;
-
   // Unwrap nested URI schemes (jar:, view-source:, ...) before looking
   // at the host, mirroring AsyncUrlChannelClassifier::FeatureData::
   // InitializeList which calls NS_GetInnermostURI on the channel URI
@@ -167,12 +166,23 @@ ContentClassifierRequest::ContentClassifierRequest(nsIChannel* aChannel)
   // check in CheckNetworkRequest.
   nsCOMPtr<nsIPrincipal> loadingPrincipal = loadInfo->GetLoadingPrincipal();
   if (loadingPrincipal) {
-    if (NS_FAILED(nsContentUtils::GetHostOrIPv6WithBrackets(loadingPrincipal,
-                                                            mSourceHostname))) {
+    // A system or an expanded principal has neither a host nor a base domain,
+    // and both appear on legitimate loads, such as the expanded principal a
+    // content script's fetch carries. Classify those with an empty source
+    // site rather than dropping the request; any other failure is unexpected
+    // and leaves the request invalid.
+    if (loadingPrincipal->IsSystemPrincipal() ||
+        loadingPrincipal->GetIsExpandedPrincipal()) {
       mSourceHostname.Truncate();
+      mSourceSchemelessSite.Truncate();
+    } else {
+      rv = nsContentUtils::GetHostOrIPv6WithBrackets(loadingPrincipal,
+                                                     mSourceHostname);
+      if (NS_FAILED(rv)) return;
+
+      rv = loadingPrincipal->GetBaseDomain(mSourceSchemelessSite);
+      if (NS_FAILED(rv)) return;
     }
-    rv = loadingPrincipal->GetBaseDomain(mSourceSchemelessSite);
-    if (NS_FAILED(rv)) return;
   }
 
   // Third-party-ness is the precomputed BrowsingContext flag the
@@ -182,6 +192,8 @@ ContentClassifierRequest::ContentClassifierRequest(nsIChannel* aChannel)
   // mozIThirdPartyUtil check.
   mThirdParty = loadInfo->GetIsThirdPartyContextToTopWindow();
   mThirdPartyToSource = !mSchemelessSite.Equals(mSourceSchemelessSite);
+
+  mValid = true;
 }
 
 static bool IsValidRequestType(const nsACString& aRequestType) {

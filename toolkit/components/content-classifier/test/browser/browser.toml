@@ -10,6 +10,8 @@ support-files = [
 
 ["browser_content_classifier_blocking.js"]
 
+["browser_content_classifier_content_script.js"]
+
 ["browser_content_classifier_engines_pref.js"]
 
 ["browser_content_classifier_harmful_addon.js"]
