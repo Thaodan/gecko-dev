@@ -67,6 +67,21 @@ export class MiniWindow {
   #cropped;
 
   /**
+   * Session-history listener that returns the tab home when it navigates away
+   * from the cropped page.
+   *
+   * @type {nsISHistoryListener|null}
+   */
+  #historyListener = null;
+
+  /**
+   * URI the tab showed when the crop was taken. Snapshot, not live currentURI.
+   *
+   * @type {nsIURI|null}
+   */
+  #tabURI = null;
+
+  /**
    * Reveals the collapsed toolbar when the user hovers near the top of
    * the window.
    *
@@ -251,7 +266,71 @@ export class MiniWindow {
 
     this._state = MiniWindowState.ACTIVE;
     lazy.logConsole.debug("open: state -> ACTIVE");
+
+    // Now that the tab is settled in the mini window, watch for it navigating away.
+    this.#attachHistoryListener();
     return this.miniWin;
+  }
+
+  /**
+   * Watch a cropped mini window's session history. A crop frames one specific
+   * page, so any navigation away from it - a real load or an SPA `pushState` -
+   * invalidates the crop. `replaceState` and same-page anchors are ignored. This
+   * only applies to cropped mini windows.
+   */
+  #attachHistoryListener() {
+    if (!this.#cropped) {
+      return;
+    }
+    let sessionHistory = this.browser?.browsingContext?.sessionHistory;
+    if (!sessionHistory) {
+      return;
+    }
+    this.#tabURI = this.browser.currentURI;
+    this.#historyListener = {
+      OnHistoryNewEntry: aNewURI => {
+        if (this._state !== MiniWindowState.ACTIVE) {
+          return;
+        }
+        // Ignore in-page anchors;
+        if (this.#tabURI && aNewURI?.equalsExceptRef(this.#tabURI)) {
+          return;
+        }
+        // Defer so we don't tear down while session history is mid-update.
+        Services.tm.dispatchToMainThread(() => this.returnToOriginWin(true));
+      },
+      OnHistoryReload: () => true,
+      OnHistoryGotoIndex: () => {
+        if (this._state !== MiniWindowState.ACTIVE) {
+          return;
+        }
+        Services.tm.dispatchToMainThread(() => this.returnToOriginWin(true));
+      },
+      OnHistoryPurge() {},
+      OnHistoryTruncate() {},
+      OnHistoryReplaceEntry() {},
+      OnHistoryCommit() {},
+      QueryInterface: ChromeUtils.generateQI([
+        "nsISHistoryListener",
+        "nsISupportsWeakReference",
+      ]),
+    };
+    sessionHistory.addSHistoryListener(this.#historyListener);
+  }
+
+  #detachHistoryListener() {
+    if (!this.#historyListener) {
+      return;
+    }
+    try {
+      this.browser?.browsingContext?.sessionHistory?.removeSHistoryListener(
+        this.#historyListener
+      );
+    } catch (e) {
+      lazy.logConsole.error("#detachHistoryListener failed", e);
+    }
+    this.#historyListener = null;
+    this.#tabURI = null;
   }
 
   /**
@@ -640,8 +719,16 @@ export class MiniWindow {
       return;
     }
     this._state = MiniWindowState.RESTORING;
-    this.#returnTabToOrigin(focus);
+    let { tab: adopted, win: targetWin } = this.#returnTabToOrigin(focus);
     this.uninit();
+    // Focus wherever the tab actually landed (originWin, or the fallback
+    // window if originWin already closed).
+    if (focus && adopted && targetWin && !targetWin.closed) {
+      targetWin.focus();
+      // The page might've navigated without a user gesture - make sure the
+      // user is aware where it went.
+      targetWin.getAttention();
+    }
   }
 
   /**
@@ -684,6 +771,7 @@ export class MiniWindow {
 
     // A throw during teardown must not strand this popup registered;
     try {
+      this.#detachHistoryListener();
       this.#abortController?.abort();
       this.#unwireToolbarReveal();
 

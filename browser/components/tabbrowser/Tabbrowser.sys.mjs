@@ -7698,8 +7698,7 @@ export class Tabbrowser {
    * @param {boolean} [options.replaceLastTab=false]
    *   When true, opens a newtab to prevent the window from closing.
    */
-  replaceTabWithWindow(aTab, options = {}) {
-    let { replaceLastTab = false, ...features } = options;
+  replaceTabWithWindow(aTab, { replaceLastTab = false, ...features } = {}) {
     if (this.tabs.length == 1) {
       if (!replaceLastTab) {
         return null;
