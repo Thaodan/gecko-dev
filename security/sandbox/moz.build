@@ -237,3 +237,17 @@ elif CONFIG["OS_ARCH"] == "WINNT":
     SOURCES["chromium/sandbox/win/src/sandbox.cc"].flags += [
         "-Wno-unused-but-set-global"
     ]
+
+LICENSED_UNDER += [
+    "chromium",
+]
+
+LICENSED_UNDER += ["superfasthash"]
+LICENSED_UNDER["superfasthash"].paths = [
+    "chromium/base/third_party/superfasthash",
+]
+
+LICENSED_UNDER += ["unicode"]
+LICENSED_UNDER["unicode"].paths = [
+    "chromium/base/third_party/icu",
+]

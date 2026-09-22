@@ -59,6 +59,8 @@ license:
         - testing/marionette/harness/marionette_harness/www/
         # Browsertime can't handle this script when there's a comment at the top
         - testing/raptor/browsertime/browsertime_benchmark.js
+        # Verbatim upstream license notices rendered by about:license
+        - toolkit/content/licenses
         - toolkit/components/reputationservice/chromium/chrome/common/safe_browsing/csd.pb.cc
         - toolkit/components/reputationservice/chromium/chrome/common/safe_browsing/csd.pb.h
         - toolkit/mozapps/update/updater/crctable.h
