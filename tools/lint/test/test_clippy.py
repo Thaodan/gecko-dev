@@ -249,7 +249,6 @@ def test_fixed_counter_uses_build_finished_message(tmpdir):
                 mock.MagicMock(),
                 True,
                 str(tmpdir),
-                "cargo",
                 results,
             )
         return results["fixed"]

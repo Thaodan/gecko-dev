@@ -168,15 +168,11 @@ class PathGroup:
     paths: list[str] = field(default_factory=list)
 
 
-def lint(paths, config, log, root, substs=None, fix=None, **_lintargs):
-    if substs is None:
-        substs = {}
+def lint(paths, config, log, root, fix=None, **_lintargs):
     lint_results = {
         "results": [],
         "fixed": 0,
     }
-
-    cargo_bin = substs.get("CARGO", "cargo")
 
     errors = []
     for path_group in group_paths(paths, config, root):
@@ -184,7 +180,7 @@ def lint(paths, config, log, root, substs=None, fix=None, **_lintargs):
             if path_group.crate_name == "gkrust":
                 lint_gkrust(path_group, config, log, fix, root, lint_results)
             else:
-                lint_crate(path_group, config, log, fix, root, cargo_bin, lint_results)
+                lint_crate(path_group, config, log, fix, root, lint_results)
         except RuntimeError as e:
             errors.append(str(e))
 
@@ -247,32 +243,44 @@ def lint_gkrust(path_group, config, log, fix, root, lint_results):
         lint_results["fixed"] += 1
 
 
-def lint_crate(path_group, config, log, fix, root, cargo_bin, lint_results):
+def lint_crate(path_group, config, log, fix, root, lint_results):
     """
-    Lint crates other than gkrust.
+    Lint workspace crates other than gkrust.
 
     These are newer and more self-contained, so we can use a more aggressive approach to linting:
       * Print out all clippy errors for the crate.
       * Support the `--fix` flag to automatically apply fixes.
     """
+    # Go through `./mach cargo` like gkrust so the crate shares the objdir, the
+    # vendored sources and the dependencies already checked there. mach's own
+    # options (-p, --message-format-json) must precede the cargo subcommand.
+    # mach's clippy wrapper lints every crate it compiles, so --no-deps keeps
+    # the results to the requested crate.
     clippy_args = [
-        cargo_bin,
-        "clippy",
+        sys.executable,
+        root + "/mach",
+        "--log-no-times",
+        "cargo",
+        "--message-format-json",
         "-p",
         path_group.crate_name,
-        "--message-format=json",
+        "clippy",
+        "--no-deps",
     ]
     if fix:
         clippy_args.extend([*CLIPPY_FIX_ARGS, "--allow-dirty"])
-    driver_flags = get_clippy_driver_flags(config)
-    if driver_flags:
-        clippy_args.extend(["--"] + driver_flags)
+    # Same RUSTFLAGS handling as lint_gkrust, see there.
+    env = os.environ.copy()
+    env["extra_rustflags"] = " ".join(
+        ["-W", "warnings"] + get_clippy_driver_flags(config)
+    )
     log.debug("Run clippy with = {}".format(" ".join(clippy_args)))
     completed_proc = subprocess.run(
         clippy_args,
         check=False,  # non-zero exit codes are not unexpected
         capture_output=True,
         text=True,
+        env=env,
     )
     check_clippy_ran(completed_proc, path_group.crate_name, log)
 
