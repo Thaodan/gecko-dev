@@ -40,7 +40,7 @@ class ReentrantCallback final : public nsResolveHostCallback {
         mCompleted(aCompleted) {}
 
   void OnResolveHostComplete(nsHostResolver* aResolver, nsHostRecord* aRecord,
-                             nsresult aStatus) override {
+                             nsresult aStatus, bool aFromStaleCache) override {
     if (mShouldReenter) {
       RefPtr<ReentrantCallback> inner = new ReentrantCallback(
           mResolver, /* aShouldReenter */ false, mMutex, mCondVar, mCompleted);

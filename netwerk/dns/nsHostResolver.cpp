@@ -114,7 +114,10 @@ nsHostResolver::~nsHostResolver() = default;
 void nsHostResolver::FireCallbacks(const CallbackArray& aCallbacks,
                                    nsHostRecord* aRec, nsresult aStatus) {
   for (const auto& cb : aCallbacks) {
-    cb->OnResolveHostComplete(this, aRec, aStatus);
+    // A completed lookup always delivers a freshly resolved answer, never a
+    // stale (grace-period) cache serve.
+    cb->OnResolveHostComplete(this, aRec, aStatus,
+                              /* aFromStaleCache = */ false);
   }
 }
 
@@ -485,6 +488,11 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
   // if result is set inside the lock, then we need to issue the
   // callback before returning.
   RefPtr<nsHostRecord> result;
+  // Whether |result| was served from a stale (grace-period) cache entry. Only
+  // FromCache sets it; every other way of producing |result| (literal, unspec,
+  // fresh lookup) is not stale. Captured under the lock and passed to the
+  // callback so it describes this specific answer.
+  bool fromStaleCache = false;
   nsresult status = NS_OK, rv = NS_OK;
   {
     MutexAutoLock dbLock(mDBLock);
@@ -575,7 +583,7 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
 
       if (!(flags & nsIDNSService::RESOLVE_BYPASS_CACHE) &&
           rec->HasUsableResult(now, flags)) {
-        result = FromCache(rec, host, type, status);
+        result = FromCache(rec, host, type, status, fromStaleCache);
       } else if (addrRec && addrRec->addr) {
         // if the host name is an IP address literal and has been
         // parsed, go ahead and use it.
@@ -608,9 +616,9 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
         // A/AAAA request can check for an alternative entry like AF_UNSPEC.
         // Otherwise we need to start a new query.
       } else if (!rec->mResolving) {
-        result =
-            FromUnspecEntry(rec, host, aTrrServer, originSuffix, type, flags,
-                            af, aOriginAttributes.IsPrivateBrowsing(), status);
+        result = FromUnspecEntry(
+            rec, host, aTrrServer, originSuffix, type, flags, af,
+            aOriginAttributes.IsPrivateBrowsing(), status, fromStaleCache);
         // If this is a by-type request or if no valid record was found
         // in the cache or this is an AF_UNSPEC request, then start a
         // new lookup.
@@ -692,7 +700,7 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
   }  // lock
 
   if (result) {
-    callback->OnResolveHostComplete(this, result, status);
+    callback->OnResolveHostComplete(this, result, status, fromStaleCache);
   }
 
   return rv;
@@ -700,14 +708,17 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
 
 already_AddRefed<nsHostRecord> nsHostResolver::FromCache(
     nsHostRecord* aRec, const nsACString& aHost, uint16_t aType,
-    nsresult& aStatus) {
+    nsresult& aStatus, bool& aFromStaleCache) {
   LOG(("  Using cached record for host [%s].\n",
        nsPromiseFlatCString(aHost).get()));
 
   // put reference to host record on stack...
   RefPtr<nsHostRecord> result = aRec;
 
-  aRec->mFromStaleCache =
+  // Whether *this* answer is stale is a property of the delivered result, so
+  // report it back to the caller rather than storing it on the shared record
+  // (which any concurrent resolver could overwrite before the callback runs).
+  aFromStaleCache =
       aRec->CheckExpiration(TimeStamp::NowLoRes()) == nsHostRecord::EXP_GRACE;
 
   // For cached entries that are in the grace period or negative, use the cache
@@ -772,7 +783,8 @@ bool nsHostResolver::OtherFamilyHasUsablePositiveResult(
 already_AddRefed<nsHostRecord> nsHostResolver::FromUnspecEntry(
     nsHostRecord* aRec, const nsACString& aHost, const nsACString& aTrrServer,
     const nsACString& aOriginSuffix, uint16_t aType,
-    nsIDNSService::DNSFlags aFlags, uint16_t af, bool aPb, nsresult& aStatus) {
+    nsIDNSService::DNSFlags aFlags, uint16_t af, bool aPb, nsresult& aStatus,
+    bool& aFromStaleCache) {
   RefPtr<nsHostRecord> result = nullptr;
   // If this is an IPV4 or IPV6 specific request, check if there is
   // an AF_UNSPEC entry we can use. Otherwise, hit the resolver...
@@ -842,6 +854,10 @@ already_AddRefed<nsHostRecord> nsHostResolver::FromUnspecEntry(
       // Now check if we have a new record.
       if (aRec->HasUsableResult(now, aFlags)) {
         result = aRec;
+        // aRec inherited the AF_UNSPEC entry's expiration above, so this is a
+        // stale serve when that entry is in its grace period (same rule as
+        // FromCache). ConditionallyRefreshRecord kicks the background refresh.
+        aFromStaleCache = aRec->CheckExpiration(now) == nsHostRecord::EXP_GRACE;
         if (aRec->negative) {
           aStatus = NS_ERROR_UNKNOWN_HOST;
         }
@@ -902,7 +918,8 @@ void nsHostResolver::DetachCallback(
   // complete callback with the given status code; this would only be done if
   // the record was in the process of being resolved.
   if (rec) {
-    callback->OnResolveHostComplete(this, rec, status);
+    callback->OnResolveHostComplete(this, rec, status,
+                                    /* aFromStaleCache = */ false);
   }
 }
 
@@ -1488,8 +1505,6 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookupLocked(
   MOZ_ASSERT(rec->pb == pb);
   MOZ_ASSERT(rec->IsAddrRecord());
 
-  rec->mFromStaleCache = false;
-
   RefPtr<AddrHostRecord> addrRec = do_QueryObject(rec);
   MOZ_ASSERT(addrRec);
 
@@ -1683,8 +1698,6 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookupByTypeLocked(
   MOZ_ASSERT(rec);
   MOZ_ASSERT(rec->pb == pb);
   MOZ_ASSERT(!rec->IsAddrRecord());
-
-  rec->mFromStaleCache = false;
 
   if (rec->LoadNative()) {
     // If this was resolved using the native resolver
