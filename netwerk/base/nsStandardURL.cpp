@@ -548,9 +548,11 @@ nsresult nsStandardURL::BuildNormalizedSpec(const char* spec,
   // escaping is required).
   nsAutoCString encUsername, encPassword, encHost, encDirectory, encBasename,
       encExtension, encQuery, encRef;
-  bool useEncUsername, useEncPassword, useEncHost = false, useEncDirectory,
-                                       useEncBasename, useEncExtension,
-                                       useEncQuery, useEncRef;
+  // EncodeSegmentCount only writes these when its segment is present, and the
+  // path fast path below reads all of them unconditionally.
+  bool useEncUsername = false, useEncPassword = false, useEncHost = false,
+       useEncDirectory = false, useEncBasename = false, useEncExtension = false,
+       useEncQuery = false, useEncRef = false;
   nsAutoCString portbuf;
 
   //
@@ -759,52 +761,89 @@ nsresult nsStandardURL::BuildNormalizedSpec(const char* spec,
     // record corrected (file)path starting position
     mPath.mPos = mFilepath.mPos = i - leadingSlash;
 
-    i = AppendSegmentToBuf(buf, i, spec, directory, mDirectory, &encDirectory,
-                           useEncDirectory, &diff);
-    ShiftFromBasename(diff);
-
-    // the directory must end with a '/'
-    if (buf[i - 1] != '/') {
-      buf[i++] = '/';
-      mDirectory.mLen++;
-    }
-
-    i = AppendSegmentToBuf(buf, i, spec, basename, mBasename, &encBasename,
-                           useEncBasename, &diff);
-    ShiftFromExtension(diff);
-
-    // make corrections to directory segment if leadingSlash
-    if (leadingSlash) {
-      mDirectory.mPos = mPath.mPos;
-      if (mDirectory.mLen >= 0) {
-        mDirectory.mLen += leadingSlash;
-      } else {
-        mDirectory.mLen = 1;
+    // Fast path: nothing in the path region needs escaping, the spec already
+    // begins with '/', and the directory already ends with '/'. In that case
+    // the slow per-segment loop would write back the spec bytes verbatim, so
+    // we can copy the whole [directory][basename][.ext][?query][#ref] block
+    // with one memcpy and rebase the segment positions.
+    bool pathFastPath = leadingSlash == 0 && !useEncDirectory &&
+                        !useEncBasename && !useEncExtension && !useEncQuery &&
+                        !useEncRef && directory.mLen > 0 &&
+                        spec[directory.mPos + directory.mLen - 1] == '/';
+    if (pathFastPath) {
+      memcpy(buf + i, spec + path.mPos, path.mLen);
+      uint32_t pathStart = i;
+      mDirectory.mPos = pathStart + (directory.mPos - path.mPos);
+      // mDirectory.mLen unchanged
+      mBasename.mPos = pathStart + (basename.mPos - path.mPos);
+      // mBasename.mLen unchanged
+      if (mExtension.mLen >= 0) {
+        mExtension.mPos = pathStart + (extension.mPos - path.mPos);
       }
-    }
+      if (mQuery.mLen >= 0) {
+        mQuery.mPos = pathStart + (query.mPos - path.mPos);
+      }
+      if (mRef.mLen >= 0) {
+        mRef.mPos = pathStart + (ref.mPos - path.mPos);
+      }
+      int32_t filepathLen = path.mLen;
+      if (mQuery.mLen >= 0) {
+        filepathLen -= 1 + query.mLen;
+      }
+      if (mRef.mLen >= 0) {
+        filepathLen -= 1 + ref.mLen;
+      }
+      mFilepath.mLen = filepathLen;
+      mPath.mLen = path.mLen;
+      i += path.mLen;
+    } else {
+      i = AppendSegmentToBuf(buf, i, spec, directory, mDirectory, &encDirectory,
+                             useEncDirectory, &diff);
+      ShiftFromBasename(diff);
 
-    if (mExtension.mLen >= 0) {
-      buf[i++] = '.';
-      i = AppendSegmentToBuf(buf, i, spec, extension, mExtension, &encExtension,
-                             useEncExtension, &diff);
-      ShiftFromQuery(diff);
-    }
-    // calculate corrected filepath length
-    mFilepath.mLen = i - mFilepath.mPos;
+      // the directory must end with a '/'
+      if (buf[i - 1] != '/') {
+        buf[i++] = '/';
+        mDirectory.mLen++;
+      }
 
-    if (mQuery.mLen >= 0) {
-      buf[i++] = '?';
-      i = AppendSegmentToBuf(buf, i, spec, query, mQuery, &encQuery,
-                             useEncQuery, &diff);
-      ShiftFromRef(diff);
+      i = AppendSegmentToBuf(buf, i, spec, basename, mBasename, &encBasename,
+                             useEncBasename, &diff);
+      ShiftFromExtension(diff);
+
+      // make corrections to directory segment if leadingSlash
+      if (leadingSlash) {
+        mDirectory.mPos = mPath.mPos;
+        if (mDirectory.mLen >= 0) {
+          mDirectory.mLen += leadingSlash;
+        } else {
+          mDirectory.mLen = 1;
+        }
+      }
+
+      if (mExtension.mLen >= 0) {
+        buf[i++] = '.';
+        i = AppendSegmentToBuf(buf, i, spec, extension, mExtension,
+                               &encExtension, useEncExtension, &diff);
+        ShiftFromQuery(diff);
+      }
+      // calculate corrected filepath length
+      mFilepath.mLen = i - mFilepath.mPos;
+
+      if (mQuery.mLen >= 0) {
+        buf[i++] = '?';
+        i = AppendSegmentToBuf(buf, i, spec, query, mQuery, &encQuery,
+                               useEncQuery, &diff);
+        ShiftFromRef(diff);
+      }
+      if (mRef.mLen >= 0) {
+        buf[i++] = '#';
+        i = AppendSegmentToBuf(buf, i, spec, ref, mRef, &encRef, useEncRef,
+                               &diff);
+      }
+      // calculate corrected path length
+      mPath.mLen = i - mPath.mPos;
     }
-    if (mRef.mLen >= 0) {
-      buf[i++] = '#';
-      i = AppendSegmentToBuf(buf, i, spec, ref, mRef, &encRef, useEncRef,
-                             &diff);
-    }
-    // calculate corrected path length
-    mPath.mLen = i - mPath.mPos;
   }
 
   buf[i] = '\0';
