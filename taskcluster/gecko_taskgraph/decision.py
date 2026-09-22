@@ -276,7 +276,6 @@ def taskgraph_decision(options, parameters):
         )
 
     # upload run-task, fetch-content, robustcheckout.py and more as artifacts
-    mozharness_dir = Path(GECKO, "testing", "mozharness")
     scripts_dir = Path(GECKO, "taskcluster", "scripts")
     taskgraph_dir = Path(taskgraph.__file__).parent
     to_copy = {
@@ -284,7 +283,7 @@ def taskgraph_decision(options, parameters):
         scripts_dir / "tester" / "test-linux.sh": ARTIFACTS_DIR,
         taskgraph_dir / "run-task" / "fetch-content": ARTIFACTS_DIR,
         taskgraph_dir / "run-task" / "run-task": f"{ARTIFACTS_DIR}/run-task-git",
-        mozharness_dir / "external_tools" / "robustcheckout.py": ARTIFACTS_DIR,
+        scripts_dir / "robustcheckout.py": ARTIFACTS_DIR,
     }
     for target, dest in to_copy.items():
         shutil.copy2(target, dest)
