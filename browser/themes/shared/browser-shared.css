@@ -75,7 +75,7 @@ body {
     direction: rtl;
   }
 
-  &:not([popup-window]) {
+  &:not([popup-window], [mini-window]) {
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     min-width: var(--window-min-width);
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
@@ -227,6 +227,29 @@ body {
     /* Variables defined in browser-colors.css will be updated to use design tokens, see bug 1952566. */
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     border-bottom-color: var(--chrome-content-separator-color);
+  }
+
+  /* Mini window: the toolbox collapses away entirely and expands in-flow,
+   * pushing the content down rather than overlaying it. The collapsed toolbar
+   * can't be its own hover target, so MiniWindow watches the pointer via
+   * MousePosTracker instead. Once expanded, CSS holds it open under the
+   * pointer or keyboard focus; JS toggles mini-window-revealed for the timed
+   * reveals (open, navigation) and while a doorhanger/infobar needs the
+   * toolbar. */
+  :root[mini-window] & {
+    max-height: 0;
+    overflow: hidden;
+
+    @media (prefers-reduced-motion: no-preference) {
+      transition: max-height 150ms ease;
+    }
+
+    &:is(.mini-window-revealed, :hover, :focus-within) {
+      /* Only needs to exceed the nav-bar's tallest layout for the
+         transition to look right. */
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      max-height: 120px;
+    }
   }
 }
 
@@ -427,12 +450,36 @@ body {
   }
 }
 
-/* Popup windows hide all of the browser chrome. Taskbar tabs hide the same
- * thing except for the navigation buttons, which have their own allowlist in
- * toolbarbuttons.css */
+/* Popup windows hide all of the browser chrome. Taskbar tabs and Mini
+ * windows hide the same thing except for the navigation buttons; taskbar tabs
+ * keep theirs via an allowlist in toolbarbuttons.css, mini windows via the
+ * rule below. */
 :root[popup-window] :is(#toolbar-menubar, #PersonalToolbar, .chromeclass-toolbar-additional, .chromeclass-extrachrome),
-:root[taskbartab] :is(#toolbar-menubar, #PersonalToolbar, .chromeclass-extrachrome) {
+:root:is([taskbartab], [mini-window]) :is(#toolbar-menubar, #PersonalToolbar, .chromeclass-extrachrome) {
   display: none;
+}
+
+/* A Mini window is a focused, single-tab utility window (like a taskbar tab):
+ * it keeps only back/forward/reload, the address bar, and the two mini-window
+ * controls. Everything else in the bar goes. */
+:root[mini-window] {
+  .chromeclass-toolbar-additional:not(#back-button, #forward-button, #stop-reload-button, #mini-window-restore-button, #mini-window-close-button) {
+    display: none;
+  }
+
+  /* The app menu and page-action buttons expose tab/window management, add-on
+     and page tools that don't apply to a single popped-out tab. */
+  #PanelUI-button,
+  #page-action-buttons {
+    display: none;
+  }
+
+  /* The reused nav-bar acts as the titlebar here, so there are no window
+     controls or titlebar drag spacers to show. */
+  .titlebar-buttonbox-container,
+  .titlebar-spacer {
+    display: none;
+  }
 }
 
 /* Menu bar */
@@ -635,6 +682,11 @@ toolbarpaletteitem > #personal-bookmarks > #PlacesToolbar,
   @media -moz-pref("browser.nova.enabled") {
     --info-bar-margin: 0;
   }
+}
+
+:root[mini-window] notification-message .notification-button-container {
+  /* Mini Window's can be quite small, so we need to wrap the buttons */
+  flex-wrap: wrap;
 }
 
 .bookmark-item[cutting] {

@@ -481,6 +481,14 @@
   }
 }
 
+#mini-window-restore-button {
+  list-style-image: url("chrome://global/skin/icons/open-in-new.svg");
+}
+
+#mini-window-close-button {
+  list-style-image: url("chrome://global/skin/icons/close.svg");
+}
+
 #smartwindow-ask-button-inner {
   list-style-image: url("chrome://browser/content/aiwindow/assets/ask-icon.svg");
 
