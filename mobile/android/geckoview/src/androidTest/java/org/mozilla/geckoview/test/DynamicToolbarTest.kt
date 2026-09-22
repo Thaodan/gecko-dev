@@ -379,6 +379,9 @@ class DynamicToolbarTest : BaseSessionTest() {
         // Simulate the dynamic toolbar being hidden by the scroll
         sessionRule.display?.run { setVerticalClipping(-dynamicToolbarMaxHeight) }
 
+        mainSession.flushApzRepaints()
+        mainSession.promiseAllPaintsDone()
+
         mainSession.synthesizeTap(5, 25)
 
         mainSession.waitUntilCalled(
@@ -409,6 +412,9 @@ class DynamicToolbarTest : BaseSessionTest() {
 
         // Simulate the dynamic toolbar being hidden by the scroll
         sessionRule.display?.run { setVerticalClipping(-dynamicToolbarMaxHeight) }
+
+        mainSession.flushApzRepaints()
+        mainSession.promiseAllPaintsDone()
 
         mainSession.synthesizeTap(5, 25)
 
