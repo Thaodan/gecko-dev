@@ -1462,6 +1462,20 @@ void nsCocoaWindow::DispatchAPZWheelInputEvent(InputData& aEvent) {
   }
 }
 
+void nsCocoaWindow::PerformHapticFeedback(mozilla::HapticFeedbackType aType) {
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+
+  if (aType == mozilla::HapticFeedbackType::ThresholdCrossing) {
+    [[NSHapticFeedbackManager defaultPerformer]
+        performFeedbackPattern:NSHapticFeedbackPatternAlignment
+               performanceTime:NSHapticFeedbackPerformanceTimeNow];
+  }
+
+  // Any other HapticFeedbackType values are not implemented on macOS.
+
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
+}
+
 void nsCocoaWindow::DispatchDoubleTapGesture(
     TimeStamp aEventTimeStamp, LayoutDeviceIntPoint aScreenPosition,
     mozilla::Modifiers aModifiers) {

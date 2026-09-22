@@ -322,6 +322,8 @@ class nsCocoaWindow final : public nsIWidget {
   void DispatchAPZWheelInputEvent(mozilla::InputData& aEvent);
   nsEventStatus DispatchAPZInputEvent(mozilla::InputData& aEvent);
 
+  void PerformHapticFeedback(mozilla::HapticFeedbackType aType) override;
+
   void DispatchDoubleTapGesture(mozilla::TimeStamp aEventTimeStamp,
                                 LayoutDeviceIntPoint aScreenPosition,
                                 mozilla::Modifiers aModifiers);
