@@ -1145,18 +1145,21 @@ export class UrlbarView {
     rowToRemove.remove();
     this.#updateIndices();
 
-    if (!updateSelection) {
-      return;
+    if (updateSelection) {
+      // Select the row that shifted into the removed row's position, clamping
+      // to the last remaining row when the last row was removed. A negative
+      // index clears the selection, which resets the input value when no
+      // results remain.
+      let newSelectionIndex = Math.min(
+        removedIndex,
+        this.#rows.children.length - 1
+      );
+      this.selectedRowIndex = newSelectionIndex;
     }
-    // Select the row that shifted into the removed row's position, clamping to
-    // the last remaining row when the last row was removed. A negative index
-    // clears the selection, which resets the input value when no results
-    // remain.
-    let newSelectionIndex = Math.min(
-      removedIndex,
-      this.#rows.children.length - 1
-    );
-    this.selectedRowIndex = newSelectionIndex;
+
+    if (!this.#rows.children.length) {
+      this.close();
+    }
   }
 
   openResultMenu(result, anchor) {
