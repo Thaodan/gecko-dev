@@ -293,10 +293,33 @@ void AbsoluteContainingBlock::PullAbsoluteFramesFrom(
        iter != absCB->GetChildList().end();) {
     // Advance the iterator first, so it's safe to move |child|.
     nsIFrame* const child = *iter++;
-    if (aOnlyFirstInFlows == OnlyFirstInFlows::No || !child->GetPrevInFlow()) {
-      absCB->StealFrame(child);
+    nsIFrame* const childPrevInFlow = child->GetPrevInFlow();
+    if (aOnlyFirstInFlows == OnlyFirstInFlows::Yes && childPrevInFlow) {
+      continue;
+    }
+    absCB->StealFrame(child);
+    if (childPrevInFlow && childPrevInFlow->GetParent() == aDelegatingFrame) {
+      // We already hold child's prev-in-flow, so child should be appended
+      // into our pushed child list to keep the continuations in order.
+      mPushedAbsoluteFrames.AppendFrame(aDelegatingFrame, child);
+    } else {
+      // Either child is a first-in-flow or its prev-in-flow lives in another
+      // absolute containing block, so it moves into our child list to be
+      // reflowed.
       mAbsoluteFrames.AppendFrame(aDelegatingFrame, child);
-      child->RemoveStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW);
+      if (!childPrevInFlow) {
+        child->RemoveStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW);
+      }
+    }
+  }
+
+  if (aOnlyFirstInFlows == OnlyFirstInFlows::No) {
+    // We are told to pull every frame from aContinuation. Move aContinuation's
+    // pushed child list by appending into our pushed child list.
+    nsFrameList pushedFrames = absCB->StealPushedChildList();
+    if (pushedFrames.NotEmpty()) {
+      mPushedAbsoluteFrames.AppendFrames(aDelegatingFrame,
+                                         std::move(pushedFrames));
     }
   }
 }
