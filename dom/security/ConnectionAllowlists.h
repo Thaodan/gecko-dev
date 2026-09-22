@@ -11,9 +11,13 @@
 
 #include "mozilla/Maybe.h"
 #include "mozilla/net/urlpattern_glue.h"
+#include "nsCOMPtr.h"
 #include "nsISupportsImpl.h"
 #include "nsString.h"
 #include "nsTArray.h"
+
+class nsIURI;
+class nsILoadInfo;
 
 namespace mozilla::dom {
 
@@ -33,6 +37,9 @@ class ConnectionAllowlists final {
   static nsresult ParseHeaders(const nsACString& aHeader,
                                const nsACString& aReportOnlyHeader,
                                ConnectionAllowlists** aResult);
+  void SetResponseURI(nsIURI* aURI);
+
+  bool ShouldLoad(nsIURI* aURI, nsILoadInfo* aLoadInfo) const;
 
  private:
   ~ConnectionAllowlists() = default;
@@ -67,11 +74,16 @@ class ConnectionAllowlists final {
     WebRTC mWebRTC = WebRTC::Block;
   };
 
+  bool ShouldBlockURL(nsIURI* aURI, nsILoadInfo* aLoadInfo) const;
+
   static Maybe<Allowlist> ParseConnectionAllowlistHeader(
       const nsACString& aHeader, Disposition aDisposition);
 
+  bool MatchURL(nsIURI* aURI, const Allowlist& aAllowlist) const;
+
   Maybe<Allowlist> mEnforcement;
   Maybe<Allowlist> mReportOnly;
+  nsCOMPtr<nsIURI> mResponseURI;
 };
 
 }  // namespace mozilla::dom
