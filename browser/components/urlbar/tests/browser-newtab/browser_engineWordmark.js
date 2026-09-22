@@ -76,6 +76,7 @@ add_task(async function knownEngines() {
     ["ebay-uk", "ebay"],
     ["google", "google"],
     ["perplexity", "perplexity"],
+    ["startpage", "startpage"],
     ["wikipedia-fr", "wikipedia"],
   ]) {
     await SearchTestUtils.updateRemoteSettingsConfig([{ identifier }]);

@@ -1478,6 +1478,11 @@ toolbar[inactive="true"] .urlbar,
     aspect-ratio: 230 / 62.08;
   }
 
+  .searchmode-switcher[wordmark="startpage"] & {
+    background-image: url("chrome://browser/skin/urlbar/engine-wordmarks/Startpage.svg");
+    aspect-ratio: 211 / 62;
+  }
+
   .searchmode-switcher[wordmark="wikipedia"] & {
     background-image: url("chrome://browser/skin/urlbar/engine-wordmarks/Wikipedia.svg");
     aspect-ratio: 233 / 62.08;

@@ -51,6 +51,7 @@ const WORDMARK_ENGINE_FAMILIES = new Set([
   "ebay",
   "google",
   "perplexity",
+  "startpage",
   "wikipedia",
 ]);
 
