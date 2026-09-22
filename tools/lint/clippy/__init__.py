@@ -89,9 +89,12 @@ def handle_clippy_msg(config, line, log, base_path, files, lint_results):
 
 
 def check_clippy_ran(completed_proc, crate_name, log):
-    """Raise if clippy failed to execute (e.g. build environment not set up)."""
-    if completed_proc.returncode == 0:
-        return
+    """Raise if clippy failed to execute (e.g. build environment not set up).
+
+    Judged from the output rather than the exit code, which `mach cargo`
+    swallows: once cargo has run with --message-format=json it always prints
+    at least a build-finished message.
+    """
 
     def is_valid_json(line):
         try:
@@ -116,6 +119,18 @@ def check_clippy_ran(completed_proc, crate_name, log):
             f"(exit code {completed_proc.returncode}). "
             "Ensure the build environment is set up correctly."
         )
+
+
+def build_succeeded(completed_proc):
+    """Whether cargo reported a successful build in its JSON output."""
+    for line in completed_proc.stdout.splitlines():
+        try:
+            msg = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if msg.get("reason") == "build-finished":
+            return bool(msg.get("success"))
+    return False
 
 
 def group_paths(paths, config, root):
@@ -228,7 +243,7 @@ def lint_gkrust(path_group, config, log, fix, root, lint_results):
     for l in completed_proc.stdout.splitlines():
         handle_clippy_msg(config, l, log, root, paths, lint_results)
 
-    if fix and completed_proc.returncode == 0:
+    if fix and build_succeeded(completed_proc):
         lint_results["fixed"] += 1
 
 
@@ -264,5 +279,5 @@ def lint_crate(path_group, config, log, fix, root, cargo_bin, lint_results):
     for l in completed_proc.stdout.splitlines():
         handle_clippy_msg(config, l, log, root, None, lint_results)
 
-    if fix and completed_proc.returncode == 0:
+    if fix and build_succeeded(completed_proc):
         lint_results["fixed"] += 1
