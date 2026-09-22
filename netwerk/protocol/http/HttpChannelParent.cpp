@@ -68,10 +68,21 @@ using namespace mozilla;
 
 namespace geckoprofiler::markers {
 
-struct ChannelMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("ChannelMarker");
-  }
+struct ChannelMarker : public BaseMarkerType<ChannelMarker> {
+  static constexpr const char* Name = "ChannelMarker";
+  static constexpr const char* Description =
+      "Timestamp capturing various phases of a network channel's lifespan.";
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"url", MS::InputType::CString, nullptr, MS::Format::Url},
+      // Bug 1618687 - Use channelId to segment "Waiting for Socket Thread".
+      {"channelId", MS::InputType::Uint64, nullptr, MS::Format::Integer},
+  };
+  static constexpr const char* TableLabel = "{marker.data.url}";
   static void StreamJSONMarkerData(
       mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
       const mozilla::ProfilerString8View& aURL, uint64_t aChannelId) {
@@ -79,18 +90,6 @@ struct ChannelMarker {
       aWriter.StringProperty("url", aURL);
     }
     aWriter.IntProperty("channelId", static_cast<int64_t>(aChannelId));
-  }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema(MS::Location::MarkerChart, MS::Location::MarkerTable);
-    schema.SetTableLabel("{marker.data.url}");
-    schema.AddKeyFormat("url", MS::Format::Url);
-    // Bug 1618687 - Use channelId to segment "Waiting for Socket Thread".
-    schema.AddKeyFormat("channelId", MS::Format::Integer);
-    schema.AddStaticLabelValue(
-        "Description",
-        "Timestamp capturing various phases of a network channel's lifespan.");
-    return schema;
   }
 };
 
