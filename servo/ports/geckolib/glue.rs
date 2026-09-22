@@ -11681,7 +11681,7 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
     out: &mut nsTArray<nsCString>,
 ) {
     use style::values::generics::calc::SimplificationResult;
-    use style::values::specified::calc::{CalcNode, CalcParseFlags, Leaf};
+    use style::values::specified::calc::{CalcNode, CalcParseFlags, CalcPercentageLeaf, Leaf};
 
     let string = unsafe { string.as_str_unchecked() };
     let mut substituted = None;
@@ -11709,26 +11709,36 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
     let substituted_str = substituted.as_deref().unwrap_or(&string);
     let mut parser = Parser::new(substituted_str);
 
-    // At the moment, we're only supporting top-level Math function
-    // TODO: we should handle simple values too.
-    let Ok(Token::Function(name)) = parser.next() else {
-        return;
-    };
-    let Ok(math_func) = CalcNode::math_function(&parser_context, name) else {
-        return;
-    };
-
     let flags = CalcParseFlags {
         percentage_context: PercentageContext::allowed(),
         in_place_operations: CalcNodeParseInPlaceOperations::No,
         ..Default::default()
     };
+
     // Initial parsing
-    let mut node = match CalcNode::parse(&parser_context, &mut parser, math_func, flags) {
-        Ok(n) => n,
-        Err(_) => {
-            return;
+    let Ok(token) = parser.next() else { return };
+    let mut node = match token {
+        Token::Function(name) => {
+            let Ok(math_func) = CalcNode::math_function(&parser_context, name) else {
+                return;
+            };
+            match CalcNode::parse(&parser_context, &mut parser, math_func, flags) {
+                Ok(n) => n,
+                Err(_) => return,
+            }
         },
+        Token::Percentage { unit_value, .. } => CalcNode::Leaf(Leaf::Percentage(
+            CalcPercentageLeaf::new(*unit_value, Optional::None),
+        )),
+        Token::Dimension { value, unit, .. } => {
+            let Ok(length) =
+                NoCalcLength::parse_dimension_with_context(&parser_context, *value, unit)
+            else {
+                return;
+            };
+            CalcNode::Leaf(Leaf::Length(length))
+        },
+        _ => return,
     };
 
     let mut value = match node.as_leaf() {
