@@ -45,7 +45,7 @@ export const MiniWindowManager = new (class {
   }
 
   /**
-   * Pop a cropped region of `tab` into a new mini window.
+   * Pop a region of `tab` into a new always-on-top window.
    *
    * TODO (later in the stack): the user-facing entry points that call this land
    * in a later commit; for now it is reached programmatically and by tests.
@@ -55,31 +55,8 @@ export const MiniWindowManager = new (class {
    * @returns {Promise<object|null>} the MiniWindow, or null.
    */
   async popRegion(tab, cropInfo) {
-    return this.#pop(tab, cropInfo);
-  }
-
-  /**
-   * Pop the whole `tab` into a new always-on-top window.
-   *
-   * @param {MozTabbrowserTab} tab - the tab to move.
-   * @returns {Promise<object|null>} the MiniWindow, or null.
-   */
-  async popTab(tab) {
-    return this.#pop(tab, null);
-  }
-
-  /**
-   * Opens a tab in a new Mini Window. Optionally, pop's just a region
-   * that is passed in for the tab.
-   *
-   * @param {MozTabbrowserTab} tab - the tab to move.
-   * @param {object|null} cropInfo - the region to frame (see MiniWindow),
-   *   or null for a full-tab mini window.
-   * @returns {Promise<object|null>} the MiniWindow, or null.
-   */
-  async #pop(tab, cropInfo) {
     let browser = tab.linkedBrowser;
-    this._log.debug("pop: We're about to pop a mini window out: ", {
+    this._log.debug("popRegion: We're about to pop a region out: ", {
       url: browser.currentURI?.spec,
       crop: cropInfo,
     });
@@ -115,12 +92,12 @@ export const MiniWindowManager = new (class {
 
     let win = await miniwindow.open();
     if (!win) {
-      this._log.debug("pop: open failed, returning null");
+      this._log.debug("popRegion: open failed, returning null");
       this._unregister(miniwindow);
       return null;
     }
 
-    this._log.debug("pop: mini window opened");
+    this._log.debug("popRegion: popup opened");
     return miniwindow;
   }
 

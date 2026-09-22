@@ -31,9 +31,6 @@
     --toolbarbutton-padding-inner: var(--toolbarbutton-padding-inner-compact);
     --bookmark-block-padding: 1px;
   }
-  &:where([mini-window]) {
-    --toolbarbutton-padding-inner: var(--toolbarbutton-padding-inner-compact);
-  }
 
   /* Smart window properties */
   --smartwindow-ask-btn-gradient: linear-gradient(
@@ -171,36 +168,6 @@
   #nav-bar-overflow-button,
   #taskbar-tabs-audio:is([soundplaying], [muted]),
   #fullscreen-button {
-    display: revert;
-  }
-}
-
-/* A mini window is narrow enough that the navigation buttons have to go
-   before the address bar does. The rest of its chrome is hidden in
-   browser-shared.css. */
-:root[mini-window] {
-  /* Cropped mini window's dont have any business navigating - they are meant
-     to be ephemeral states of the tab. */
-  &[cropped-mini-window] {
-    #back-button,
-    #forward-button {
-      display: none;
-    }
-  }
-
-  @media (width < 400px) {
-    #back-button,
-    #forward-button,
-    #stop-reload-button {
-      display: none;
-    }
-  }
-}
-
-#mini-window-audio-button {
-  display: none;
-
-  :root[mini-window] &:is([soundplaying], [muted]) {
     display: revert;
   }
 }

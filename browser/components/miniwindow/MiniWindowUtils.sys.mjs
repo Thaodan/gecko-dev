@@ -5,24 +5,8 @@
 export const MIN_WIDTH = 200;
 export const MIN_HEIGHT = 150;
 
-export const FULL_TAB_DEFAULT_WIDTH = 640;
-export const FULL_TAB_DEFAULT_HEIGHT = 400;
-
 /** Static sizing/framing helpers for a Mini Window. */
 export class MiniWindowUtils {
-  /**
-   * Size for a full-tab mini window, which frames no crop and so has no
-   * natural size of its own.
-   *
-   * @returns {{width: number, height: number}} in CSS px.
-   */
-  static fullTabSize() {
-    return {
-      width: FULL_TAB_DEFAULT_WIDTH,
-      height: FULL_TAB_DEFAULT_HEIGHT,
-    };
-  }
-
   /**
    * Where and how large to open the mini window for `cropInfo`. Reads the
    * screen originWin is on; computeWindowRectForScreen does the math.
