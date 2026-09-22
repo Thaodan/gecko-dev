@@ -808,6 +808,7 @@ this.FxAMenuDeviceList = class FxAMenuDeviceList {
     viewAllBtn.onclick = () => {
       CustomizableUI.hidePanelForNode(viewAllBtn);
       SidebarController.show("viewTabsSidebar");
+      gSync.emitFxaToolbarTelemetry("view_all_synced_tabs", viewAllBtn);
     };
   }
 
@@ -2801,13 +2802,17 @@ var gSync = {
     if (sourceElement.id == "fxa-toolbar-menu-button") {
       return "fxa_avatar_menu";
     }
-    // ... or is in the panel shown by that button (PanelUI-fxa-menu) or one
-    // of its sibling Send Tab panelviews (PanelUI-fxa-menu-sendtab-*).
+    // ... or is in the panel shown by that button (PanelUI-fxa-menu). Its
+    // subviews are siblings of that panel, so they have to be named here too:
+    // the Send Tab panelviews (PanelUI-fxa-menu-sendtab-*) and the per-device recent tabs
+    // "view all tabs" button (#PanelUI-fxa-device-view-all-tabs).
     // PanelUI-profiles is also found in the app menu, but reaching it here
     // means it came from the avatar menu. Profile actions taken in the app menu
     // would have already returned "fxa_app_menu" above.
     if (
-      sourceElement.closest?.('[id^="PanelUI-fxa-menu"], #PanelUI-profiles')
+      sourceElement.closest?.(
+        '[id^="PanelUI-fxa-menu"], #PanelUI-profiles, #PanelUI-fxa-device-view-all-tabs'
+      )
     ) {
       return "fxa_avatar_menu";
     }
