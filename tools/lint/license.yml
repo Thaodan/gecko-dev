@@ -139,6 +139,7 @@ license-declarations:
         - mozbuild
     support-files:
         - 'tools/lint/license/**'
+        - 'python/mozbuild/mozbuild/licenses.py'
     # The declared set is gathered from the whole tree on every run, so this
     # wants the paths in one job rather than once per parallel chunk.
     type: global

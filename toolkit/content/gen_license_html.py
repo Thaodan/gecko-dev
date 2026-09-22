@@ -14,7 +14,6 @@ import html
 import json
 import re
 
-import buildconfig
 from mako.template import Template
 
 # MPL and the LGPLs head the list: they cover the bulk of the product rather
@@ -69,21 +68,36 @@ def read_blocks(paths):
     return blocks
 
 
-def main(output, template_path, licenses_path, *app_block_paths):
-    with open(licenses_path, encoding="utf-8") as fh:
-        licenses = json.load(fh)["licenses"]
+def render(template_path, licenses, substs, blocks=None):
+    """Render about:license.
 
+    Kept free of buildconfig, which is an objdir module, so `mach vendor
+    licenses` can call it with the substs it already holds.
+    """
     for license in licenses:
         if not license.get("html"):
             license["text"] = html.escape(license["text"], quote=False)
         license["notice_leads_paths"] = leads_paths(license.get("notice") or "")
 
-    output.write(
-        Template(filename=template_path, output_encoding=None).render(
-            licenses=sorted(licenses, key=sort_key),
-            config=buildconfig.substs,
-            **read_blocks(app_block_paths),
-        )
+    return Template(filename=template_path, output_encoding=None).render(
+        licenses=sorted(licenses, key=sort_key),
+        config=substs,
+        **(blocks or dict.fromkeys(APP_BLOCKS, "")),
     )
 
+
+def main(output, template_path, licenses_path, *app_block_paths):
+    import buildconfig
+
+    with open(licenses_path, encoding="utf-8") as fh:
+        licenses = json.load(fh)["licenses"]
+
+    output.write(
+        render(
+            template_path,
+            licenses,
+            buildconfig.substs,
+            read_blocks(app_block_paths),
+        )
+    )
     return {template_path, licenses_path, *app_block_paths}
