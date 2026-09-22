@@ -1052,7 +1052,7 @@ void CookieService::GetCookiesForURI(
       }
 
       // check if the cookie has expired
-      if (cookie->ExpiryInMSec() <= currentTimeInMSec) {
+      if (cookie->IsExpired(currentTimeInMSec)) {
         continue;
       }
 
@@ -1775,6 +1775,11 @@ void CookieService::GetCookiesFromHost(
 
   CookieStorage* storage = PickStorage(aOriginAttributes);
   storage->GetCookiesFromHost(aBaseDomain, aOriginAttributes, aCookies);
+
+  int64_t currentTimeInMSec = PR_Now() / PR_USEC_PER_MSEC;
+  aCookies.RemoveElementsBy([currentTimeInMSec](const RefPtr<Cookie>& aCookie) {
+    return aCookie->IsExpired(currentTimeInMSec);
+  });
 }
 
 void CookieService::StaleCookies(const nsTArray<RefPtr<Cookie>>& aCookies,
