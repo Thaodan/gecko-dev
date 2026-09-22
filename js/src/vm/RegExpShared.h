@@ -71,7 +71,7 @@ class RegExpShared
   friend class js::gc::CellAllocator;
 
  public:
-  enum class Kind : uint32_t { Unparsed, Atom, RegExp };
+  enum class Kind : uint8_t { Unparsed, Atom, RegExp };
   enum class CodeKind { Bytecode, Jitcode, Any };
 
   using ByteCode = js::irregexp::ByteArrayData;
@@ -110,12 +110,12 @@ class RegExpShared
 
  private:
   RegExpCompilation compilationArray[2];
+  GCPtr<JSAtom*> patternAtom_;
 
   uint32_t pairCount_;
   JS::RegExpFlags flags;
 
   RegExpShared::Kind kind_ = Kind::Unparsed;
-  GCPtr<JSAtom*> patternAtom_;
   uint32_t maxRegisters_ = 0;
   uint32_t ticks_ = 0;
 
