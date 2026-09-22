@@ -5477,6 +5477,12 @@ const SingleSelect = ({
     }
     const selected = theme && theme === activeTheme || isSingleSelect && activeSingleSelectSelections[singleSelectId] === value;
     const valOrObj = val => typeof val === "object" ? val : {};
+    const iconStyle = _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_4__.MultiStageUtils.getValidStyle(icon, CONFIGURABLE_STYLES);
+    if (icon?.darkModeBackground) {
+      iconStyle["--single-select-icon-background"] = icon.background;
+      iconStyle["--single-select-icon-background-dark"] = icon.darkModeBackground;
+      delete iconStyle.background;
+    }
     const handleClick = evt => {
       if (isSingleSelect) {
         setActiveSingleSelectSelection(value, singleSelectId); // Update selection for the specific component
@@ -5494,7 +5500,7 @@ const SingleSelect = ({
       key: value + (isSingleSelect ? "" : label),
       text: valOrObj(tooltip)
     }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("label", {
-      className: `select-item ${type}`,
+      className: `select-item ${type} ${selected ? " selected" : ""}`,
       onKeyDown: e => handleKeyDown(e),
       style: {
         ..._lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_4__.MultiStageUtils.getValidStyle(style, CONFIGURABLE_STYLES),
@@ -5517,8 +5523,8 @@ const SingleSelect = ({
       disabled: inert,
       onClick: e => handleClick(e)
     })), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-      className: `icon ${selected ? " selected" : ""} ${value}`,
-      style: _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_4__.MultiStageUtils.getValidStyle(icon, CONFIGURABLE_STYLES)
+      className: `icon ${icon?.darkModeBackground ? " has-dark-background" : ""} ${selected ? " selected" : ""} ${value}`,
+      style: iconStyle
     }), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
       text: label
     }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
@@ -5573,7 +5579,6 @@ const TileButton = props => {
     let mockEvent = {
       currentTarget: ref.current,
       source: event.target.id,
-      name: "command",
       action: content.action
     };
     handleAction(mockEvent);

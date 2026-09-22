@@ -2599,7 +2599,6 @@ const TileButton = props => {
     let mockEvent = {
       currentTarget: ref.current,
       source: event.target.id,
-      name: "command",
       action: content.action
     };
     handleAction(mockEvent);
@@ -2746,6 +2745,12 @@ const SingleSelect = ({
     }
     const selected = theme && theme === activeTheme || isSingleSelect && activeSingleSelectSelections[singleSelectId] === value;
     const valOrObj = val => typeof val === "object" ? val : {};
+    const iconStyle = MultiStageUtils.getValidStyle(icon, CONFIGURABLE_STYLES);
+    if (icon?.darkModeBackground) {
+      iconStyle["--single-select-icon-background"] = icon.background;
+      iconStyle["--single-select-icon-background-dark"] = icon.darkModeBackground;
+      delete iconStyle.background;
+    }
     const handleClick = evt => {
       if (isSingleSelect) {
         setActiveSingleSelectSelection(value, singleSelectId); // Update selection for the specific component
@@ -2763,7 +2768,7 @@ const SingleSelect = ({
       key: value + (isSingleSelect ? "" : label),
       text: valOrObj(tooltip)
     }, /*#__PURE__*/external_React_default().createElement("label", {
-      className: `select-item ${type}`,
+      className: `select-item ${type} ${selected ? " selected" : ""}`,
       onKeyDown: e => handleKeyDown(e),
       style: {
         ...MultiStageUtils.getValidStyle(style, CONFIGURABLE_STYLES),
@@ -2786,8 +2791,8 @@ const SingleSelect = ({
       disabled: inert,
       onClick: e => handleClick(e)
     })), /*#__PURE__*/external_React_default().createElement("div", {
-      className: `icon ${selected ? " selected" : ""} ${value}`,
-      style: MultiStageUtils.getValidStyle(icon, CONFIGURABLE_STYLES)
+      className: `icon ${icon?.darkModeBackground ? " has-dark-background" : ""} ${selected ? " selected" : ""} ${value}`,
+      style: iconStyle
     }), /*#__PURE__*/external_React_default().createElement(Localized, {
       text: label
     }, /*#__PURE__*/external_React_default().createElement("div", {
