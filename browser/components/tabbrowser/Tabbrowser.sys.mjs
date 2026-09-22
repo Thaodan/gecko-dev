@@ -22,8 +22,6 @@ const lazy = XPCOMUtils.declareLazy({
   E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
   FaviconUtils: "moz-src:///toolkit/modules/FaviconUtils.sys.mjs",
   KeyboardLockUtils: "resource://gre/modules/KeyboardLockUtils.sys.mjs",
-  MiniWindowManager:
-    "moz-src:///browser/components/miniwindow/MiniWindowManager.sys.mjs",
   NewTabPagePreloading:
     "moz-src:///browser/components/tabbrowser/NewTabPagePreloading.sys.mjs",
   notificationEnableDelay: {
@@ -6347,15 +6345,6 @@ export class Tabbrowser {
       this.documentGlobal.windowUtils.getBoundsWithoutFlushing(aTab).width;
     let isLastTab = this.#isLastTabInWindow(aTab);
     if (
-      isLastTab &&
-      Services.prefs.getBoolPref("browser.mini-window.enabled", false) &&
-      lazy.MiniWindowManager.maybeMoveOldestMiniWindow(this.documentGlobal)
-    ) {
-      // Mini window kept this window open by moving one of its popped tabs back
-      // into it, so aTab is no longer the last tab.
-      isLastTab = false;
-    }
-    if (
       !this.#beginRemoveTab(aTab, {
         closeWindowFastpath: true,
         skipPermitUnload,
@@ -7695,17 +7684,11 @@ export class Tabbrowser {
    * @param {MozTabbrowserTab|MozTabbrowserTabGroup|MozTabbrowserTabGroupLabel} aTab
    * @param {object} [options={}]
    *   Key-value pairs that will be serialized into the features string.
-   * @param {boolean} [options.replaceLastTab=false]
-   *   When true, opens a newtab to prevent the window from closing.
    */
-  replaceTabWithWindow(aTab, { replaceLastTab = false, ...features } = {}) {
+  replaceTabWithWindow(aTab, options = {}) {
     if (this.tabs.length == 1) {
-      if (!replaceLastTab) {
-        return null;
-      }
-      this.addTrustedTab(this.documentGlobal.BROWSER_NEW_TAB_URL);
+      return null;
     }
-
     // TODO bug 1967925: Consider handling the case where aTab is a tab group
     // and also the only tab group in its window.
 
@@ -7721,7 +7704,7 @@ export class Tabbrowser {
     args.appendElement(/** @type {nsISupports} */ (aTab.splitview ?? aTab));
     return lazy.BrowserWindowTracker.openWindow({
       private: lazy.PrivateBrowsingUtils.isWindowPrivate(this.documentGlobal),
-      features: Object.entries(features)
+      features: Object.entries(options)
         .map(([key, value]) => `${key}=${value}`)
         .join(","),
       openerWindow: this.documentGlobal,

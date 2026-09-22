@@ -575,7 +575,7 @@ export const InfoBar = {
 
   /**
    * Helper to check the window's state and whether it's a
-   * private browsing window, a popup, taskbar tab or mini window.
+   * private browsing window, a popup or a taskbar tab.
    *
    * @returns {boolean} `true` if the window is valid for showing an infobar.
    */
@@ -591,9 +591,6 @@ export const InfoBar = {
       return false;
     }
     if (win.document.documentElement.hasAttribute("taskbartab")) {
-      return false;
-    }
-    if (win.document.documentElement.hasAttribute("mini-window")) {
       return false;
     }
     return true;

@@ -388,8 +388,7 @@ export class CustomizeMode {
   enter() {
     if (
       !this.#window.toolbar.visible ||
-      this.#window.document.documentElement.hasAttribute("taskbartab") ||
-      this.#window.document.documentElement.hasAttribute("mini-window")
+      this.#window.document.documentElement.hasAttribute("taskbartab")
     ) {
       let w = lazy.URILoadingHelper.getTargetWindow(this.#window, {
         skipPopups: true,

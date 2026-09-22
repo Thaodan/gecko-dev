@@ -139,7 +139,6 @@ var TabContextMenu = {
             "#context_moveToStart",
             "#context_moveToEnd",
             "#context_openTabInWindow",
-            "#context_openTabInMiniWindow",
             "#moveTabSeparator",
             "#context_moveTabToGroupSeparator",
             "#context_selectAllSeparator",
@@ -312,7 +311,6 @@ var TabContextMenu = {
             "#context_moveToStart",
             "#context_moveToEnd",
             "#context_openTabInWindow",
-            "#context_openTabInMiniWindow",
             "#moveTabSeparator",
           ],
         },
@@ -518,9 +516,6 @@ var TabContextMenu = {
         splitViews.add(tab.splitview);
       }
     }
-
-    document.getElementById("context_openTabInMiniWindow").hidden =
-      !Services.prefs.getBoolPref("browser.mini-window.enabled", false);
 
     let disabled = gBrowser.tabs.length == 1;
     let tabCountInfo = JSON.stringify({

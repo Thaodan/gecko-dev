@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { SELECTION_MODES } from "moz-src:///browser/components/screenshots/ScreenshotsSelectionModes.sys.mjs";
-
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -60,7 +58,7 @@ export class ScreenshotsComponentChild extends JSWindowActorChild {
   receiveMessage(message) {
     switch (message.name) {
       case "Screenshots:ShowOverlay":
-        return this.startScreenshotsOverlay(message.data?.mode);
+        return this.startScreenshotsOverlay();
       case "Screenshots:HideOverlay":
         return this.endScreenshotsOverlay(message.data);
       case "Screenshots:isOverlayShowing":
@@ -144,15 +142,6 @@ export class ScreenshotsComponentChild extends JSWindowActorChild {
       case "Screenshots:Download":
         this.requestDownloadScreenshot(event.detail.region);
         break;
-      case "Screenshots:MiniWindow": {
-        this.sendAsyncMessage("Screenshots:MiniWindowCropSelection", {
-          region: event.detail.region,
-          viewportWidth: event.detail.viewportWidth,
-          viewportHeight: event.detail.viewportHeight,
-        });
-        this.endScreenshotsOverlay();
-        break;
-      }
       case "Screenshots:OverlaySelection": {
         let { hasSelection, overlayState } = event.detail;
         this.sendOverlaySelection({ hasSelection, overlayState });
@@ -293,11 +282,10 @@ export class ScreenshotsComponentChild extends JSWindowActorChild {
   /**
    * Wait until the document is ready and then show the screenshots overlay
    *
-   * @param {string} [mode] Which overlay mode to run; see SELECTION_MODES.
    * @returns {boolean} true when document is ready and the overlay is shown
    * otherwise false
    */
-  async startScreenshotsOverlay(mode = SELECTION_MODES.SCREENSHOTS) {
+  async startScreenshotsOverlay() {
     try {
       await this.documentIsReady();
     } catch (ex) {
@@ -307,11 +295,10 @@ export class ScreenshotsComponentChild extends JSWindowActorChild {
     await this.documentIsReady();
     let overlay =
       this.overlay ||
-      (this.#overlay = new lazy.ScreenshotsOverlay(this.document, mode));
+      (this.#overlay = new lazy.ScreenshotsOverlay(this.document));
     this.addEventListeners();
 
-    // Pass mode so a reused overlay rebuilds its buttons for this session.
-    overlay.initialize(mode);
+    overlay.initialize();
     return true;
   }
 
