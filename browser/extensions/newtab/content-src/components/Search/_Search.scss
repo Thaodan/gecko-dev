@@ -295,7 +295,7 @@ $glyph-forward: url('chrome://browser/skin/forward.svg');
     inset-inline-start: calc(anchor(start) - var(--search-card-overhang));
     inset-inline-end: calc(anchor(end) - var(--search-card-overhang));
     border-radius: var(--border-radius-xlarge);
-    background-color: var(--background-color-box);
+    background-color: var(--newtab-background-card);
     z-index: -1;
     pointer-events: none;
   }

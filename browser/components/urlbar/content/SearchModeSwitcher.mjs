@@ -80,8 +80,8 @@ export class SearchModeSwitcher {
   /** @type {HTMLButtonElement} */
   #closebutton;
   /**
-   * Matches when the wordmark images, which are fixed-color and drawn for a
-   * light background, must give way to the engine's icon and name.
+   * Matches when the wordmark images, whose brand colors may not meet a
+   * contrast preference, must give way to the engine's icon and name.
    *
    * @type {MediaQueryList}
    */
@@ -119,10 +119,9 @@ export class SearchModeSwitcher {
       this.#button.setAttribute("type", "ghost");
     }
     // documentGlobal is chrome-only, and this also runs in about:newtab.
-    // eslint-disable-next-line mozilla/use-documentGlobal
-    this.#noWordmarkQuery = input.ownerDocument.defaultView.matchMedia(
-      "(forced-colors) or (prefers-color-scheme: dark)"
-    );
+    this.#noWordmarkQuery =
+      // eslint-disable-next-line mozilla/use-documentGlobal
+      input.ownerDocument.defaultView.matchMedia("(prefers-contrast)");
 
     // MozButton and PanelList have to be hooked up via id.
     this.#panelList.id = "searchmode-switcher-panel-list-" + input.sapName;
