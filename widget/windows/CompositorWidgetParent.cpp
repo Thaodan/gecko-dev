@@ -140,11 +140,6 @@ mozilla::ipc::IPCResult CompositorWidgetParent::RecvUpdateTransparency(
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult CompositorWidgetParent::RecvNotifyClientSizeChanged(
-    const LayoutDeviceIntSize&) {
-  return IPC_OK();
-}
-
 nsIWidget* CompositorWidgetParent::RealWidget() { return nullptr; }
 
 void CompositorWidgetParent::ObserveVsync(VsyncObserver* aObserver) {

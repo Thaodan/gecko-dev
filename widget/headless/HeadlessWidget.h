@@ -133,7 +133,7 @@ class HeadlessWidget final : public nsIWidget {
   bool mVisible;
   bool mDestroyed;
   bool mAlwaysOnTop;
-  CompositorWidgetDelegate* mCompositorWidgetDelegate;
+  HeadlessCompositorWidget* mCompositorWidget;
   nsSizeMode mSizeMode;
   // The size mode before entering fullscreen mode.
   nsSizeMode mLastSizeMode;

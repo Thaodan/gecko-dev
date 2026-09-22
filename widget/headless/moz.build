@@ -18,17 +18,10 @@ LOCAL_INCLUDES += [
     "/widget/%s" % widget_dir,
 ]
 
-EXPORTS.mozilla.widget += [
-    "HeadlessCompositorWidget.h",
-    "HeadlessCompositorWidgetParent.h",
-    "HeadlessWidget.h",
-]
-
 UNIFIED_SOURCES += [
     "HeadlessClipboard.cpp",
     "HeadlessClipboardData.cpp",
     "HeadlessCompositorWidget.cpp",
-    "HeadlessCompositorWidgetParent.cpp",
     "HeadlessScreenHelper.cpp",
     "HeadlessSound.cpp",
     "HeadlessWidget.cpp",

@@ -48,9 +48,6 @@ class HeadlessCompositorWidget;
 
 class CompositorWidgetDelegate {
  public:
-  virtual void NotifyClientSizeChanged(const LayoutDeviceIntSize& aClientSize) {
-  }
-
   virtual PlatformCompositorWidgetDelegate* AsPlatformSpecificDelegate() {
     return nullptr;
   }

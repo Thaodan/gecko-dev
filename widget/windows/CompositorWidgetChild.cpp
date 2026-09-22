@@ -21,27 +21,18 @@ CompositorWidgetChild::CompositorWidgetChild(
     const CompositorWidgetInitData& aInitData)
     : mVsyncDispatcher(std::move(aVsyncDispatcher)),
       mVsyncObserver(std::move(aVsyncObserver)),
-      mIsHeadless(aInitData.type() ==
-                  CompositorWidgetInitData::THeadlessCompositorWidgetInitData),
       mCompositorWnd(nullptr),
-      mWnd(nullptr) {
+      mWnd(reinterpret_cast<HWND>(
+          aInitData.get_WinCompositorWidgetInitData().hWnd())) {
   MOZ_ASSERT(XRE_IsParentProcess());
-
-  if (!mIsHeadless) {
-    mWnd = reinterpret_cast<HWND>(
-        aInitData.get_WinCompositorWidgetInitData().hWnd());
-    MOZ_ASSERT(mWnd && ::IsWindow(mWnd));
-  }
+  MOZ_ASSERT(!gfxPlatform::IsHeadless());
+  MOZ_ASSERT(mWnd && ::IsWindow(mWnd));
 }
 
 CompositorWidgetChild::~CompositorWidgetChild() {}
 
 bool CompositorWidgetChild::Initialize(
     const layers::CompositorOptions& aOptions) {
-  if (mIsHeadless) {
-    return true;
-  }
-
   // We only use remote_backbuffer::Provider with software WebRender.
   if (!aOptions.UseSoftwareWebRender()) {
     return true;
@@ -69,18 +60,7 @@ void CompositorWidgetChild::LeavePresentLock() { (void)SendLeavePresentLock(); }
 void CompositorWidgetChild::OnDestroyWindow() {}
 
 bool CompositorWidgetChild::OnWindowResize(const LayoutDeviceIntSize& aSize) {
-  if (mIsHeadless) {
-    (void)NotifyClientSizeChanged(aSize);
-  }
   return true;
-}
-
-void CompositorWidgetChild::NotifyClientSizeChanged(
-    const LayoutDeviceIntSize& aClientSize) {
-  MOZ_ASSERT(mIsHeadless);
-  if (mIsHeadless) {
-    (void)SendNotifyClientSizeChanged(aClientSize);
-  }
 }
 
 void CompositorWidgetChild::NotifyVisibilityUpdated(bool aIsFullyOccluded) {
@@ -104,11 +84,6 @@ mozilla::ipc::IPCResult CompositorWidgetChild::RecvUnobserveVsync() {
 mozilla::ipc::IPCResult CompositorWidgetChild::RecvUpdateCompositorWnd(
     const WindowsHandle& aCompositorWnd, const WindowsHandle& aParentWnd,
     UpdateCompositorWndResolver&& aResolve) {
-  if (mIsHeadless) {
-    aResolve(false);
-    return IPC_OK();
-  }
-
   HWND parentWnd = reinterpret_cast<HWND>(aParentWnd);
   if (mWnd == parentWnd) {
     mCompositorWnd = reinterpret_cast<HWND>(aCompositorWnd);
