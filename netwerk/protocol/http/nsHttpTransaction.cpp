@@ -16,6 +16,7 @@
 #include "mozilla/AppShutdown.h"
 #include "mozilla/Components.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/SlicedInputStream.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/Tokenizer.h"
 #include "mozilla/glean/NetwerkMetrics.h"
@@ -317,6 +318,20 @@ nsresult nsHttpTransaction::Init(
   if (mHasRequestBody && NS_SUCCEEDED(NS_CloneInputStream(
                              requestBody, getter_AddRefs(requestBodyClone)))) {
     requestBody = requestBodyClone;
+  }
+
+  // Bug 2059211: cap the body stream at the declared Content-Length.  A body
+  // stream whose backing data grew after the size was declared (e.g. a
+  // FileBlobImpl whose file was extended via OPFS) could otherwise push excess
+  // bytes onto a keep-alive connection, enabling HTTP request smuggling.
+  nsCOMPtr<nsIInputStream> cappedRequestBody;
+  if (mHasRequestBody && requestContentLength && !mRequestBodyIsStreaming) {
+    nsCOMPtr<nsIInputStream> bodyToWrap =
+        requestBodyClone ? requestBodyClone.forget()
+                         : nsCOMPtr<nsIInputStream>(requestBody);
+    cappedRequestBody =
+        new SlicedInputStream(bodyToWrap.forget(), 0, requestContentLength);
+    requestBody = cappedRequestBody;
   }
 
   requestContentLength += mReqHeaderBuf.Length();
