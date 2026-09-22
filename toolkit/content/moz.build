@@ -36,6 +36,13 @@ if CONFIG["OS_TARGET"] == "Android":
 if CONFIG["MOZ_INSTALL_TRACKING"]:
     DEFINES["MOZ_INSTALL_TRACKING"] = 1
 
+GENERATED_FILES += ["license.html"]
+GENERATED_FILES["license.html"].script = "gen_license_html.py"
+GENERATED_FILES["license.html"].inputs = [
+    "license.html.mako",
+    "!/licenses.json",
+]
+
 JAR_MANIFESTS += ["jar.mn"]
 
 SPHINX_TREES["toolkit_widgets"] = "widgets/docs"

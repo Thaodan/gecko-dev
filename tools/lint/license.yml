@@ -123,8 +123,9 @@ license:
 license-declarations:
     description: |
         Checks that every LICENSED_UNDER id in a moz.build has a matching
-        LICENSES declaration somewhere in the tree, and that every `spdx`
-        flag is a valid SPDX expression.
+        LICENSES declaration somewhere in the tree, that every `spdx` flag is
+        a valid SPDX expression, and that nothing still sets the
+        APP_LICENSE_*_BLOCK defines about:license no longer reads.
     include:
         - .
     exclude:

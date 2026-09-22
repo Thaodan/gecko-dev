@@ -20,6 +20,15 @@ from mozlint.pathutils import expand_exclusions
 DECLARES = "LICENSES"
 REFERENCES = "LICENSED_UNDER"
 
+# The preprocessor hook an application used to splice its own sections into the
+# hand-maintained license.html with. The page is generated now, so setting
+# these has no effect at all.
+REMOVED_DEFINES = (
+    "APP_LICENSE_BLOCK",
+    "APP_LICENSE_LIST_BLOCK",
+    "APP_LICENSE_BODY_BLOCK",
+)
+
 # `LicenseRef-<name>` and `DocumentRef-<doc>:LicenseRef-<name>` are valid SPDX
 # expressions, but name a license the SPDX list does not carry, so
 # license_expression rejects them in validating mode. Substituting a known id
@@ -84,6 +93,7 @@ class Declarations:
         # (id, flag) -> the assigned constants, one per assignment: a flag set
         # twice is two values to check, not one.
         self.flags = collections.defaultdict(list)
+        self.removed_defines = {}
         # The lines whose ids this cannot read, reported rather than skipped.
         self.non_literals = {}
 
@@ -92,6 +102,15 @@ class Declarations:
                 self._add(node, *_target(target))
 
     def _add(self, node, variable, key, flag):
+        if variable == "DEFINES":
+            try:
+                define = _string_literal(key) if key is not None else None
+            except NonLiteral:
+                return
+            if define in REMOVED_DEFINES:
+                self.removed_defines.setdefault(define, node.lineno)
+            return
+
         if variable not in (DECLARES, REFERENCES):
             return
 
@@ -200,6 +219,17 @@ def lint(paths, config, **lintargs):
                 f'LICENSES["{license_id}"] declaration anywhere in the tree.',
                 "Declare the notice once, with a title and a text file, "
                 "in the moz.build that owns the license text.",
+            ))
+
+        for define, lineno in declarations.removed_defines.items():
+            problems.append((
+                lineno,
+                f'DEFINES["{define}"] no longer reaches about:license.',
+                "The page is generated from the LICENSES declarations rather "
+                "than preprocessed, so this define is dead and the section it "
+                "names is not rendered. Generate the application's own "
+                "license.html the way browser/base/moz.build does, passing "
+                "the block as an extra input to gen_license_html.py.",
             ))
 
         for lineno, reason in declarations.non_literals.items():
