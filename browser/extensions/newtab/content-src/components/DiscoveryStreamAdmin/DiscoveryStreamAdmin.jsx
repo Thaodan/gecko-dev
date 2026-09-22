@@ -20,6 +20,9 @@ import {
   resolvePopulatedSpaces,
   resolveThematicSpacesConfig,
 } from "common/PageLayoutVariants.mjs";
+// @nova-cleanup(move-directory): Update import path after useWidgetLabels moves
+// to components/CustomizeMenu/WidgetsManagementPanel/
+import { useWidgetLabels } from "content-src/components/Nova/CustomizeMenu/WidgetsManagementPanel/useWidgetLabels.jsx";
 import { connect } from "react-redux";
 import React from "react";
 
@@ -41,13 +44,6 @@ const PREF_ALLOWED_ENDPOINTS = "discoverystream.endpoints";
 const PREF_OHTTP_CONFIG = "discoverystream.ohttp.configURL";
 const PREF_OHTTP_RELAY = "discoverystream.ohttp.relayURL";
 const PREF_WIDGETS_SYSTEM_ENABLED = "widgets.system.enabled";
-
-// Turn a camelCase widget id into a human-readable label, e.g.
-// "pictureOfTheDay" -> "Picture Of The Day".
-function widgetLabel(id) {
-  const spaced = id.replace(/([A-Z])/g, " $1");
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
-}
 
 // Internal, pref-gated widget features that default off but we want to test in
 // devtools. Hand-maintained (outside the automatic registry-driven toggles).
@@ -71,6 +67,48 @@ function prettyJson(value) {
   } catch {
     return value;
   }
+}
+
+// Sorted A-Z by the customize panel label, the rule the panel and the
+// about:preferences Widgets group use. onToggle sets the pref named by the
+// toggle's id.
+function WidgetSystemToggles({ otherPrefs, widgetsSystemEnabled, onToggle }) {
+  const activeWidgets = WIDGET_REGISTRY.filter(w => !w.retired);
+  const labels = useWidgetLabels(activeWidgets);
+  const sortedWidgets = labels
+    ? [...activeWidgets].sort((a, b) =>
+        (labels.get(a.id) ?? a.id).localeCompare(labels.get(b.id) ?? b.id)
+      )
+    : [];
+
+  return sortedWidgets.map(widget => (
+    <React.Fragment key={widget.id}>
+      <div className="toggle-wrapper">
+        <moz-toggle
+          id={widget.systemEnabledPref}
+          pressed={otherPrefs[widget.systemEnabledPref] || null}
+          disabled={!widgetsSystemEnabled || null}
+          ontoggle={onToggle}
+          data-l10n-id={widget.customizeL10nId}
+        />
+      </div>
+      {(WIDGET_EXTRA_FEATURES[widget.id] || []).map(feature => (
+        <div
+          className="toggle-wrapper"
+          key={feature.pref}
+          style={{ marginInlineStart: "var(--space-large)" }}
+        >
+          <moz-toggle
+            id={feature.pref}
+            pressed={otherPrefs[feature.pref] || null}
+            disabled={!widgetsSystemEnabled || null}
+            ontoggle={onToggle}
+            label={feature.label}
+          />
+        </div>
+      ))}
+    </React.Fragment>
+  ));
 }
 
 // Devtools-only copy, so not localized. A variant with no entry falls back to its
@@ -1384,36 +1422,11 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
             </moz-button>
           </div>
           <hr />
-          {WIDGET_REGISTRY.filter(w => !w.retired).map(widget => (
-            <React.Fragment key={widget.id}>
-              <div className="toggle-wrapper">
-                <moz-toggle
-                  id={widget.systemEnabledPref}
-                  pressed={
-                    this.props.otherPrefs[widget.systemEnabledPref] || null
-                  }
-                  disabled={!widgetsSystemEnabled || null}
-                  ontoggle={this.handleWidgetToggle}
-                  label={widgetLabel(widget.id)}
-                />
-              </div>
-              {(WIDGET_EXTRA_FEATURES[widget.id] || []).map(feature => (
-                <div
-                  className="toggle-wrapper"
-                  key={feature.pref}
-                  style={{ marginInlineStart: "var(--space-large)" }}
-                >
-                  <moz-toggle
-                    id={feature.pref}
-                    pressed={this.props.otherPrefs[feature.pref] || null}
-                    disabled={!widgetsSystemEnabled || null}
-                    ontoggle={this.handleWidgetToggle}
-                    label={feature.label}
-                  />
-                </div>
-              ))}
-            </React.Fragment>
-          ))}
+          <WidgetSystemToggles
+            otherPrefs={this.props.otherPrefs}
+            widgetsSystemEnabled={widgetsSystemEnabled}
+            onToggle={this.handleWidgetToggle}
+          />
         </details>
         <h3>Layout</h3>
         {layout.map((row, rowIndex) => (
