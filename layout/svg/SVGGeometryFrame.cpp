@@ -272,24 +272,24 @@ void SVGGeometryFrame::ReflowSVG() {
   SVGBBoxFlags flags = {SVGBBoxFlag::IncludeFillGeometry,
                         SVGBBoxFlag::IncludeStroke, SVGBBoxFlag::IncludeMarkers,
                         SVGBBoxFlag::EstimateStrokeBounds};
-
-  // Our "visual" overflow rect needs to be valid for building display lists
-  // for hit testing, which means that for certain values of 'pointer-events'
-  // it needs to include the geometry of the fill or stroke even when the fill/
-  // stroke don't actually render (e.g. when stroke="none" or
-  // stroke-opacity="0"). GetGeometryHitTestFlags() accounts for
-  // 'pointer-events'.
-  SVGHitTestFlags hitTestFlags = SVGUtils::GetGeometryHitTestFlags(this);
-  if (hitTestFlags.contains(SVGHitTestFlag::Fill)) {
-    flags += SVGBBoxFlag::IncludeFillGeometry;
-  }
-  if (hitTestFlags.contains(SVGHitTestFlag::Stroke)) {
+  float inkOverflowInflation = 0.0f;
+  if (!StyleSVG()->mStroke.kind.IsNone()) {
     flags += SVGBBoxFlag::IncludeStrokeGeometry;
+  } else {
+    // We might need to hit test the stroke, so need to track that as
+    // ink-overflow.
+    inkOverflowInflation = SVGUtils::GetStrokeWidth(
+        this, SVGContextPaint::GetContextPaint(GetContent()));
   }
-
-  SVGBBox extent = GetBBoxContribution({}, flags).ToThebesRect();
-  mRect = nsLayoutUtils::RoundGfxRectToAppRect((const Rect&)extent,
+  SVGBBox extent = GetBBoxContribution({}, flags);
+  mRect = nsLayoutUtils::RoundGfxRectToAppRect(extent.ToThebesRect(),
                                                AppUnitsPerCSSPixel());
+
+  const nsRect scrollableOverflow(nsPoint(), mRect.Size());
+  nsRect inkOverflow(nsPoint(), mRect.Size());
+  if (inkOverflowInflation > 0.0f) {
+    inkOverflow.Inflate(CSSPixel::ToAppUnits(inkOverflowInflation));
+  }
 
   if (HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
     // Make sure we have our filter property (if any) before calling
@@ -298,8 +298,7 @@ void SVGGeometryFrame::ReflowSVG() {
     SVGObserverUtils::UpdateEffects(this);
   }
 
-  nsRect overflow = nsRect(nsPoint(0, 0), mRect.Size());
-  OverflowAreas overflowAreas(overflow, overflow);
+  OverflowAreas overflowAreas(inkOverflow, scrollableOverflow);
   FinishAndStoreOverflow(overflowAreas, mRect.Size());
 
   RemoveStateBits(NS_FRAME_FIRST_REFLOW | NS_FRAME_IS_DIRTY |

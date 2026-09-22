@@ -3306,14 +3306,9 @@ void nsStyleUI::TriggerImageLoads(Document& aDocument,
 }
 
 nsChangeHint nsStyleUI::CalcDifference(const nsStyleUI& aNewData) const {
-  // SVGGeometryFrame's mRect depends on stroke _and_ on the value of
-  // pointer-events. See SVGGeometryFrame::ReflowSVG's use of GetHitTestFlags.
-  // (Only a reflow, no visual change.)
-  //
   // pointer-events changes can change event regions overrides on layers and
   // so needs a repaint.
-  const auto kPointerEventsHint =
-      nsChangeHint_NeedReflow | nsChangeHint_SchedulePaint;
+  const auto kPointerEventsHint = nsChangeHint_SchedulePaint;
 
   nsChangeHint hint = nsChangeHint(0);
   if (mCursor != aNewData.mCursor) {
