@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -94,9 +95,15 @@ def l10n_repackage(
     if is_winnt:
         if installer_dir is None:
             raise ValueError("--installer-dir is required on WINNT")
-        if result := _build_helper_exe(
-            make, installer_dir, locale, real_locale_mergedir, stagedist
-        ):
+        if buildconfig.substs.get("MOZ_USE_MAKEFILE_INSTALLER_BUILD"):
+            result = _build_helper_exe(
+                make, installer_dir, locale, real_locale_mergedir, stagedist
+            )
+        else:
+            result = _build_uninstaller(
+                installer_dir, locale, real_locale_mergedir, stagedist
+            )
+        if result:
             return result
 
     suffix = action_package.FORMAT_SUFFIX.get(pkg_format)
@@ -264,6 +271,32 @@ def _build_helper_exe(
     helper_dst.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(helper_src, helper_dst)
     return 0
+
+
+def _build_uninstaller(
+    installer_dir: Path,
+    locale: str,
+    real_locale_mergedir: Path,
+    stagedist: Path,
+) -> int:
+    from mozbuild.action import nsis_build, nsis_stage
+
+    substs = buildconfig.substs
+    config_dir = installer_dir / "l10ngen"
+    if result := nsis_stage.stage_repack(
+        spec_path=installer_dir / nsis_stage.SPEC_FILENAME,
+        config_dir=config_dir,
+        ab_cd=locale,
+        real_locale_mergedir=real_locale_mergedir,
+    ):
+        return result
+    return nsis_build.nsis_build(
+        config_dir=config_dir,
+        nsi="uninstaller.nsi",
+        makensis=substs["MAKENSISU"],
+        makensis_flags=shlex.split(substs.get("MAKENSISU_FLAGS", "")),
+        output=str(stagedist / "uninstall" / "helper.exe"),
+    )
 
 
 def main(argv: list[str]) -> int:

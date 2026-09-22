@@ -46,6 +46,7 @@ if CONFIG["MAKENSISU"] and not CONFIG["MOZ_USE_MAKEFILE_INSTALLER_BUILD"]:
 
     GeneratedFile(
         "nsis-stage.stamp",
+        "nsis-stage.json",
         script="/python/mozbuild/mozbuild/action/nsis_stage.py",
         entry_point="generate",
         extra_deps=nsis_srcdir_files
@@ -55,7 +56,11 @@ if CONFIG["MAKENSISU"] and not CONFIG["MOZ_USE_MAKEFILE_INSTALLER_BUILD"]:
             nsis_preprocess_locale,
             "!/buildid.h",
         ],
-        flags=[f"--config-dir={nsis_config_dir}"]
+        flags=[
+            f"--config-dir={nsis_config_dir}",
+            f"--spec-out={OBJDIR}/nsis-stage.json",
+            "--repack-l10n-dir=browser/installer",
+        ]
         + [f"--install={SRCDIR}/{f}" for f in CONFIG["NSIS_INSTALLER_FILES"]]
         + [f"--install={TOPSRCDIR}{f}" for f in nsis_topsrcdir_files]
         + [
