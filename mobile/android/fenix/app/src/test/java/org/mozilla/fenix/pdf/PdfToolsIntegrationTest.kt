@@ -271,6 +271,24 @@ class PdfToolsIntegrationTest {
         assertFalse(integration.signatureState.isSigning)
     }
 
+    @Test
+    fun `WHEN the feature is started THEN the overlays are traversed between the address bar and the page`() {
+        // Test for Bug 2066197
+        val addressBar = View(activity).apply { id = R.id.composable_toolbar }
+        val content = View(activity).apply { id = R.id.engineView }
+        container.addView(addressBar)
+        container.addView(content)
+
+        integration().start()
+        shadowOf(Looper.getMainLooper()).idle()
+
+        val tools = container.children.elementAt(2)
+        val dialog = container.children.elementAt(3)
+        assertEquals(addressBar.id, tools.accessibilityTraversalAfter)
+        assertEquals(tools.id, dialog.accessibilityTraversalAfter)
+        assertEquals(dialog.id, content.accessibilityTraversalAfter)
+    }
+
     /** Stands in for the browser toolbar, which removes the navigation bar as its composition is created. */
     private class SiblingRemovingView(context: Context, private val sibling: View) : View(context) {
         override fun onAttachedToWindow() {
