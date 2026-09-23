@@ -989,6 +989,7 @@ export class TopSitesFeed {
     this._refreshGeneration = 0;
     this._broadcastPending = false;
     this._latestRefreshPromise = Promise.resolve();
+    this._uninitialized = false;
     ChromeUtils.defineLazyGetter(
       this,
       "_currentSearchHostname",
@@ -1046,6 +1047,7 @@ export class TopSitesFeed {
   }
 
   uninit() {
+    this._uninitialized = true;
     lazy.PageThumbs.removeExpirationFilter(this);
     Services.obs.removeObserver(this, "browser-search-engine-modified");
     Services.obs.removeObserver(this, "browser-region-updated");
@@ -2095,6 +2097,11 @@ export class TopSitesFeed {
    * @param {bool} options.isStartup Being called while TopSitesFeed is initting.
    */
   async refresh(options = {}) {
+    if (this._uninitialized) {
+      // The store has already dropped this feed, and may hold a newer instance.
+      // An in-flight Contile fetch can still get here, through _readDefaults().
+      return;
+    }
     if (!this._startedUp && !options.isStartup) {
       // Initial refresh still pending.
       return;
@@ -2116,7 +2123,7 @@ export class TopSitesFeed {
         },
         refreshId
       );
-      if (refreshId !== this._refreshGeneration) {
+      if (this._uninitialized || refreshId !== this._refreshGeneration) {
         return;
       }
 
