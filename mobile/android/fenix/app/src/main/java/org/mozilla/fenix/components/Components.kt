@@ -526,7 +526,7 @@ class Components(
         )
     }
 
-    val clientUUID by lazyMonitored { ClientUUID.build(context) }
+    val clientUUID by lazyMonitored { ClientUuid.build(context) }
 
     val ipProtection by lazyMonitored {
         IPProtection(
