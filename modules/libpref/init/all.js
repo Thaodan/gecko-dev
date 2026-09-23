@@ -579,6 +579,9 @@ pref("toolkit.telemetry.user_characteristics_ping.logLevel", "Warn");
 #else
   pref("toolkit.asyncshutdown.crash_timeout", 60000); // 1 minute
 #endif // !defined(MOZ_ASAN) && !defined(MOZ_TSAN)
+// Additional delay before the terminator crashes on top of crash_timeout, to
+// let AsyncShutdown write its own crash report first.
+pref("toolkit.asyncshutdown.crash_timeout_additional_wait", 10000); // 10 seconds
 // Extra logging for AsyncShutdown barriers and phases
 pref("toolkit.asyncshutdown.log", false);
 
