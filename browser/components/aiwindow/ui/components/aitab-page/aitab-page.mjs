@@ -8,6 +8,8 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import "chrome://browser/content/aiwindow/components/aitab-header.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/aitab-list.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://browser/content/aiwindow/components/aitab-timeline.mjs";
 
 // The same names the child and parent actors use, so a message can be traced
 // straight through without a translation table.
@@ -160,13 +162,20 @@ export class AITabPage extends MozLitElement {
     if (!block?.type) {
       return nothing;
     }
-    if (block.type.toLowerCase() == "list") {
-      return html`<aitab-list
-        .title=${block.title ?? ""}
-        description=${block.description ?? ""}
-        .groups=${block.groups ?? []}
-        layout=${block.layout ?? "column"}
-      ></aitab-list>`;
+    switch (block.type.toLowerCase()) {
+      case "list":
+        return html`<aitab-list
+          .title=${block.title ?? ""}
+          description=${block.description ?? ""}
+          .groups=${block.groups ?? []}
+          layout=${block.layout ?? "column"}
+        ></aitab-list>`;
+      case "timeline":
+        return html`<aitab-timeline
+          .title=${block.title ?? ""}
+          description=${block.description ?? ""}
+          .items=${block.items ?? []}
+        ></aitab-timeline>`;
     }
     return html`
       <section class="aitab-block" data-block-type=${block.type}>

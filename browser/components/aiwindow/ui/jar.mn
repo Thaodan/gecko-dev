@@ -128,6 +128,8 @@ browser.jar:
   content/browser/aiwindow/components/aitab-header.css              (components/aitab-page/aitab-header/aitab-header.css)
   content/browser/aiwindow/components/aitab-list.mjs                (components/aitab-page/aitab-list/aitab-list.mjs)
   content/browser/aiwindow/components/aitab-list.css                (components/aitab-page/aitab-list/aitab-list.css)
+  content/browser/aiwindow/components/aitab-timeline.mjs            (components/aitab-page/aitab-timeline/aitab-timeline.mjs)
+  content/browser/aiwindow/components/aitab-timeline.css            (components/aitab-page/aitab-timeline/aitab-timeline.css)
   content/browser/aiwindow/components/aitab-page-actions.mjs        (components/aitab-page/aitab-page-actions/aitab-page-actions.mjs)
   content/browser/aiwindow/components/aitab-page-actions.css        (components/aitab-page/aitab-page-actions/aitab-page-actions.css)
   content/browser/aiwindow/components/agent-monitor-item.mjs        (components/agent-monitor-item/agent-monitor-item.mjs)
