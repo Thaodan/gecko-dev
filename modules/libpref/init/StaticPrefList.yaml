@@ -11082,7 +11082,7 @@
 # https://drafts.csswg.org/css-values-4/#calc-type-checking
 - name: layout.css.calc-typed-arithmetic.enabled
   type: RelaxedAtomicBool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
   rust: true
 
