@@ -3877,10 +3877,9 @@ void Simulator::decodeTypeOp17(SimInstruction* instr) {
       if (std::isfinite(fj) && fj != 0 && fk == 0) {
         setFCSRBitsByException(FCSRException::DivideByZero);
       }
-      setFpuRegisterFloat(
-          fd_reg(instr),
-          FPUProcessNaNBinop<float>(fj, fk,
-                                    [](float a, float b) { return a / b; }));
+      setFpuRegisterFloat(fd_reg(instr),
+                          FPUProcessNaNBinop<float>(
+                              fj, fk, [](float a, float b) { return a / b; }));
       break;
     }
 
@@ -3892,9 +3891,8 @@ void Simulator::decodeTypeOp17(SimInstruction* instr) {
         setFCSRBitsByException(FCSRException::DivideByZero);
       }
       setFpuRegisterDouble(
-          fd_reg(instr),
-          FPUProcessNaNBinop<double>(fj, fk,
-                                     [](double a, double b) { return a / b; }));
+          fd_reg(instr), FPUProcessNaNBinop<double>(
+                             fj, fk, [](double a, double b) { return a / b; }));
       break;
     }
     case op_fmax_s: {
