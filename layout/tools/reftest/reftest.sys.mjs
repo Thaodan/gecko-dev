@@ -6,7 +6,7 @@ import { FileUtils } from "resource://gre/modules/FileUtils.sys.mjs";
 
 import { globals } from "resource://reftest/globals.sys.mjs";
 
-import { setTimeout } from "resource://gre/modules/Timer.sys.mjs";
+import { setTimeout, clearTimeout } from "resource://gre/modules/Timer.sys.mjs";
 
 const {
   XHTML_NS,
@@ -56,6 +56,9 @@ XPCOMUtils.defineLazyServiceGetters(lazy, {
     Ci.nsIProtocolProxyService,
   ],
 });
+
+const DEFAULT_LOAD_TIMEOUT_MS = 5 * 60 * 1000;
+const FOCUS_TIMEOUT_MS = 90 * 1000;
 
 function HasUnexpectedResult() {
   return (
@@ -240,7 +243,10 @@ function InitAndStartRefTests() {
   }
 
   /* set the g.loadTimeout */
-  g.loadTimeout = Services.prefs.getIntPref("reftest.timeout", 5 * 60 * 1000);
+  g.loadTimeout = Services.prefs.getIntPref(
+    "reftest.timeout",
+    DEFAULT_LOAD_TIMEOUT_MS
+  );
 
   /* Get the logfile for android tests */
   try {
@@ -330,6 +336,10 @@ function InitAndStartRefTests() {
       Focus();
     }
     g.browser.addEventListener("focus", ReadTests, true);
+    // nsFocusManager only dispatches focus events to the active window, so if
+    // our window never becomes active this listener never runs and we would
+    // sit here silently until the harness' no-output timeout.
+    g.focusTimeout = setTimeout(OnFocusTimeout, FOCUS_TIMEOUT_MS);
     g.browser.focus();
   } else {
     ReadTests();
@@ -384,6 +394,8 @@ function ReadTests() {
     if (g.focusFilterMode != FOCUS_FILTER_NON_NEEDS_FOCUS_TESTS) {
       g.browser.removeEventListener("focus", ReadTests, true);
     }
+    clearTimeout(g.focusTimeout);
+    g.focusTimeout = null;
 
     g.urls = [];
 
@@ -669,6 +681,21 @@ function BuildUseCounts() {
       }
     }
   }
+}
+
+// Called when the focus event that starts the test run never arrives, so that
+// the log says why instead of going silent until the harness times out.
+function OnFocusTimeout() {
+  g.focusTimeout = null;
+  let active = Services.focus.activeWindow;
+  logger.error(
+    "Timed out waiting for the reftest window to be focused. " +
+      (active
+        ? "The active window is " + active.document.documentURI + "."
+        : "No window is active, so the application is not in the foreground.")
+  );
+  ++g.testResults.Exception;
+  DoneTests();
 }
 
 // Return true iff this window is focused when this function returns.
