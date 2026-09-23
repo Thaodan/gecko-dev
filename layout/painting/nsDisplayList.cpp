@@ -1401,7 +1401,10 @@ void nsDisplayListBuilder::LeavePresShell(const nsIFrame* aReferenceFrame,
       }
     }
     nsRootPresContext* rootPresContext = pc->GetRootPresContext();
-    if (!pc->HasStoppedGeneratingLCP() && rootPresContext) {
+    // NotifyContentfulPaint is responsible for dropping LCP entries that
+    // arrive after scroll.
+    if (rootPresContext &&
+        (!pc->HadFirstContentfulPaint() || !pc->HasStoppedGeneratingLCP())) {
       if (!CurrentPresShellState()->mIsBackgroundOnly) {
         if (pc->HasEverBuiltInvisibleText() ||
             DisplayListIsContentful(this, aPaintedContents)) {
