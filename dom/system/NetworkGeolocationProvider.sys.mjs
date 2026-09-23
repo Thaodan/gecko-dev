@@ -15,6 +15,11 @@ ChromeUtils.defineESModuleGetters(lazy, {
 // GeolocationPositionError has no interface object, so we can't use that here.
 const POSITION_UNAVAILABLE = 2;
 
+// A cached location is only valid on the network it was obtained from, so the
+// cache drops itself when the network link changes and the public IP (or set of
+// visible access points) may differ. See nsINetworkLinkService.
+const NETWORK_LINK_TOPIC = "network:link-status-changed";
+
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "gNetworkGeolocationLogLevel",
@@ -87,11 +92,27 @@ function wifiSetsApproxEqual(setA, setB) {
 // Caches the most recent network-geolocation response so repeated lookups can
 // reuse it instead of re-querying.
 class CachedResponse {
-  #wifis;
+  QueryInterface = ChromeUtils.generateQI(["nsIObserver"]);
 
-  constructor(location, wifiList) {
+  location = null;
+  #wifis = new Set();
+
+  constructor() {
+    Services.obs.addObserver(this, NETWORK_LINK_TOPIC);
+  }
+
+  store(location, wifiList) {
     this.location = location;
     this.#wifis = wifiMacSet(wifiList);
+  }
+
+  clear() {
+    this.location = null;
+    this.#wifis = new Set();
+  }
+
+  hasLocation() {
+    return !!this.location;
   }
 
   hasWifis() {
@@ -105,11 +126,29 @@ class CachedResponse {
   isWifiApproxEqual(wifiList) {
     return wifiSetsApproxEqual(this.#wifis, wifiMacSet(wifiList));
   }
+
+  observe(subject, topic, data) {
+    // "down"/"unknown" do not imply a different network. Losing the link cannot
+    // make a cached position wrong, and up/down are edge-triggered, so any
+    // return of the link fires "up" and invalidates before the first request
+    // that could have been served from the stale entry.
+    if (topic === NETWORK_LINK_TOPIC && (data === "changed" || data === "up")) {
+      this.clear();
+    }
+  }
 }
 
+// The single cache instance, created lazily to avoid needlessly registering
+// the NetworkLinkService observer.
 /** @type {CachedResponse?} */
 var gCachedResponse = null;
 var gDebugCacheReasoning = ""; // for logging the caching logic
+
+function ensureCachedResponse() {
+  if (!gCachedResponse) {
+    gCachedResponse = new CachedResponse();
+  }
+}
 
 // Returns the cached location to reuse for a request with the given wifi list,
 // or null if the cache is unusable: disabled, empty, or insufficiently
@@ -122,10 +161,10 @@ function getValidCachedLocation(newWifiList) {
   );
   // Mochitest needs this pref to simulate request failure
   if (!isNetworkRequestCacheEnabled) {
-    gCachedResponse = null;
+    gCachedResponse?.clear();
   }
 
-  if (!gCachedResponse || !isNetworkRequestCacheEnabled) {
+  if (!gCachedResponse?.hasLocation() || !isNetworkRequestCacheEnabled) {
     gDebugCacheReasoning = "No cached data";
     return null;
   }
@@ -464,7 +503,8 @@ NetworkGeolocationProvider.prototype = {
         this.listener.update(newLocation);
       }
 
-      gCachedResponse = new CachedResponse(newLocation, data.wifiAccessPoints);
+      ensureCachedResponse();
+      gCachedResponse.store(newLocation, data.wifiAccessPoints);
 
       // Recovered: if we had backed off, return the timer to normal cadence.
       if (this._currentTimerInterval !== this._wifiMonitorTimeout) {
