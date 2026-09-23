@@ -35,6 +35,7 @@ DIRS += [
     "contentanalysis",
     "contextualidentity",
     "controlcenter",
+    "miniwindow",
     "customizableui",
     "customkeys",
     "downloads",

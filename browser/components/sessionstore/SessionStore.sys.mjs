@@ -1761,9 +1761,12 @@ class _SessionStore {
    *        Window reference
    */
   #onBeforeBrowserWindowShown(aWindow) {
-    // Do not track Document Picture-in-Picture windows since these are
-    // ephemeral and tied to a specific tab's browser document.
-    if (aWindow.browsingContext.isDocumentPiP) {
+    // Do not track Document Picture-in-Picture windows or mini windows since
+    // these are ephemeral and tied to a specific tab's browser document.
+    if (
+      aWindow.browsingContext.isDocumentPiP ||
+      aWindow.document.documentElement.hasAttribute("mini-window")
+    ) {
       return;
     }
 
