@@ -9,7 +9,7 @@ import android.content.SharedPreferences
 import androidx.core.content.edit
 import java.security.MessageDigest
 import java.util.UUID
-import mozilla.components.lib.integrity.googleplay.RequestHashProvider
+import mozilla.components.concept.integrity.RequestHashProvider
 import mozilla.components.lib.llm.mlpa.UserIdProvider
 import mozilla.components.lib.llm.mlpa.service.UserId
 import mozilla.components.support.ktx.kotlin.toHexString
