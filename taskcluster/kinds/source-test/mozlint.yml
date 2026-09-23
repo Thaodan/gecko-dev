@@ -335,7 +335,7 @@ lintpref:
 node-licenses:
     description: Lint for node licenses issues
     treeherder:
-        symbol: misc(node-licenses)
+        symbol: legal(node-licenses)
     run:
         using: run-task
         cwd: '{checkout}'
