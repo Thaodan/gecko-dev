@@ -3294,6 +3294,10 @@ class Settings(
             default = { DefaultTabManagementFeatureHelper.tabGroupsStripEnabled },
         )
 
+    /** Whether the Tab Groups strip should be shown: its feature is enabled and the tab strip is not shown. */
+    val shouldShowTabGroupsStrip: Boolean
+        get() = tabGroupsStripEnabled && !isTabStripEnabled
+
     /** Whether the Tab Groups feature is visible in the browser menu. */
     var showTabGroupsInMenu by
         booleanPreference(
