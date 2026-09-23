@@ -1713,6 +1713,16 @@ class XPCShellTests:
                     "Failed to find symbolizer at %s" % llvmsym
                 )
 
+        if "MOZ_APP_DATA" not in self.env:
+            appdata_dir = os.path.join(self.tempDir, "moz-appdata")
+            os.makedirs(appdata_dir, exist_ok=True)
+            self.env["MOZ_APP_DATA"] = os.path.normpath(
+                os.path.join(appdata_dir, "AppData", "Roaming")
+            )
+            self.env["MOZ_LOCAL_APP_DATA"] = os.path.normpath(
+                os.path.join(appdata_dir, "Local")
+            )
+
         return self.env
 
     def getPipes(self):
