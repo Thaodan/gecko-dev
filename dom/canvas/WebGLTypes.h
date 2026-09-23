@@ -874,7 +874,7 @@ struct LinkActiveInfo final {
 };
 
 struct LinkResult final : public SupportsWeakPtr {
-  LinkResult() {}
+  LinkResult() = default;
   ~LinkResult() = default;
 
   bool pending = true;
