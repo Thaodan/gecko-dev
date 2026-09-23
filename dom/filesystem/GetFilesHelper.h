@@ -15,11 +15,12 @@
 class nsIGlobalObject;
 
 namespace mozilla {
+
+class BlobImpl;
 class ErrorResult;
 
 namespace dom {
 
-class BlobImpl;
 class ContentParent;
 class File;
 class GetFilesHelperParent;
@@ -41,10 +42,9 @@ class GetFilesCallback {
 
 class GetFilesHelperBase {
  protected:
-  explicit GetFilesHelperBase(bool aRecursiveFlag)
-      : mRecursiveFlag(aRecursiveFlag) {}
+  explicit GetFilesHelperBase(bool aRecursiveFlag);
 
-  virtual ~GetFilesHelperBase() = default;
+  virtual ~GetFilesHelperBase();
 
   virtual bool IsCanceled() { return false; }
 
