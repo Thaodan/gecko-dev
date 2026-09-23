@@ -67,6 +67,7 @@ static const char sPrintSettingsServiceContractID[] =
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLFrameElement.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/gfx/DrawEventRecorder.h"
 #include "mozilla/layout/RemotePrintJobChild.h"
 #include "nsComponentManagerUtils.h"
@@ -81,7 +82,6 @@ static const char sPrintSettingsServiceContractID[] =
 #include "nsISupportsUtils.h"
 #include "nsIWebBrowserChrome.h"
 #include "nsPageSequenceFrame.h"
-#include "nsRange.h"
 
 #ifdef ACCESSIBILITY
 #  include "mozilla/a11y/DocManager.h"

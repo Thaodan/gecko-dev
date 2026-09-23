@@ -15,6 +15,7 @@
 #include "mozilla/ToString.h"
 #include "mozilla/dom/CharacterDataBuffer.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/Range.h"
 
 #include "nsDebug.h"
 #include "nsAtom.h"
@@ -22,7 +23,6 @@
 #include "nsUnicodeProperties.h"
 #include "nsServiceManagerUtils.h"
 #include "nsIContent.h"
-#include "nsRange.h"
 #include "nsContentUtils.h"
 #include "nsIFrame.h"
 

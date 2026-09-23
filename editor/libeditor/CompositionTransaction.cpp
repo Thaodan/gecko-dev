@@ -10,12 +10,12 @@
 #include "mozilla/TextComposition.h"  // TextComposition
 #include "mozilla/TextEditor.h"       // TextEditor
 #include "mozilla/ToString.h"
+#include "mozilla/dom/Range.h"       // local var
 #include "mozilla/dom/Selection.h"   // local var
 #include "mozilla/dom/Text.h"        // mTextNode
 #include "nsAString.h"               // params
 #include "nsDebug.h"                 // for NS_ASSERTION, etc
 #include "nsError.h"                 // for NS_SUCCEEDED, NS_FAILED, etc
-#include "nsRange.h"                 // local var
 #include "nsISelectionController.h"  // for nsISelectionController constants
 #include "nsQueryObject.h"           // for do_QueryObject
 

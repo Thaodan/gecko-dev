@@ -5,8 +5,8 @@
 #include "ScriptableContentIterator.h"
 
 #include "mozilla/ContentIterator.h"
+#include "mozilla/dom/Range.h"
 #include "nsINode.h"
-#include "nsRange.h"
 
 namespace mozilla {
 

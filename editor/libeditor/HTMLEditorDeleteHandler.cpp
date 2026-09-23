@@ -35,6 +35,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementInlines.h"  // for Element::IsContentEditablePlainTextOnly
 #include "mozilla/dom/HTMLBRElement.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/Selection.h"
 #include "nsAtom.h"
 #include "nsComputedDOMStyle.h"  // for nsComputedDOMStyle
@@ -45,7 +46,6 @@
 #include "nsGkAtoms.h"
 #include "nsIContent.h"
 #include "nsINode.h"
-#include "nsRange.h"
 #include "nsString.h"
 #include "nsStringFwd.h"
 #include "nsStyleConsts.h"  // for StyleWhiteSpace

@@ -12,7 +12,7 @@
 #include "mozInlineSpellWordUtil.h"
 #include "mozilla/EditorDOMPoint.h"
 #include "mozilla/Result.h"
-#include "nsRange.h"
+#include "mozilla/dom/Range.h"
 #include "nsWeakReference.h"
 
 class InitEditorSpellCheckCallback;

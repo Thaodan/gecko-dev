@@ -10,12 +10,12 @@
 #include "mozilla/RangeUtils.h"
 #include "mozilla/Result.h"
 #include "mozilla/dom/HTMLSlotElement.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "nsContentUtils.h"
 #include "nsElementTable.h"
 #include "nsIContent.h"
 #include "nsIContentInlines.h"
-#include "nsRange.h"
 
 namespace mozilla {
 

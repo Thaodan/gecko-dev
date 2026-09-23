@@ -14,6 +14,7 @@
 #include "mozilla/dom/CrossShadowBoundaryRange.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/ShadowIncludingTreeIterator.h"
 #include "mozilla/dom/StaticRange.h"
@@ -23,7 +24,6 @@
 #include "nsFmtString.h"
 #include "nsINode.h"
 #include "nsLayoutUtils.h"
-#include "nsRange.h"
 #include "nsTArray.h"
 #include "nsTextFrame.h"
 

@@ -8,6 +8,7 @@
 
 #include "mozilla/ContentIterator.h"
 #include "mozilla/dom/AbstractRange.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/mozalloc.h"
 #include "nsAtom.h"
@@ -20,7 +21,6 @@
 #include "nsINode.h"
 #include "nsISupports.h"
 #include "nsISupportsUtils.h"
-#include "nsRange.h"
 
 namespace mozilla {
 

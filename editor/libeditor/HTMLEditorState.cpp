@@ -14,6 +14,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/Selection.h"
 
 #include "nsAString.h"
@@ -23,7 +24,6 @@
 #include "nsGkAtoms.h"
 #include "nsIContent.h"
 #include "nsINode.h"
-#include "nsRange.h"
 #include "nsString.h"
 #include "nsStringFwd.h"
 #include "nsTArray.h"

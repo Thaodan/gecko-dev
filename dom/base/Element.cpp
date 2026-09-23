@@ -211,7 +211,7 @@
 #include "nsXULElement.h"
 
 #ifdef DEBUG
-#  include "nsRange.h"
+#  include "mozilla/dom/Range.h"
 #endif
 
 #ifdef ACCESSIBILITY

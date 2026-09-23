@@ -18,13 +18,13 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/Range.h"
 #include "mozInlineSpellChecker.h"
 #include "nsContentUtils.h"
 #include "nsIContent.h"
 #include "nsIContentInlines.h"
 #include "nsIMutationObserver.h"
 #include "nsINode.h"
-#include "nsRange.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla {

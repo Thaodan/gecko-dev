@@ -9,9 +9,9 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/RangeBoundary.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/dom/Range.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsINode.h"
-#include "nsRange.h"
 #include "nsTArray.h"
 
 class nsIContent;

@@ -4,10 +4,10 @@
 
 #include "mozilla/dom/CrossShadowBoundaryRange.h"
 
+#include "mozilla/dom/Range.h"
 #include "nsContentUtils.h"
 #include "nsIContentInlines.h"
 #include "nsINode.h"
-#include "nsRange.h"
 
 namespace mozilla::dom {
 template already_AddRefed<CrossShadowBoundaryRange>

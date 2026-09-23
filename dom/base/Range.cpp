@@ -6,7 +6,7 @@
  * Implementation of the DOM Range object.
  */
 
-#include "nsRange.h"
+#include "mozilla/dom/Range.h"
 
 #include "RangeBoundary.h"
 #include "mozilla/Assertions.h"

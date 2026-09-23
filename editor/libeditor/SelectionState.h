@@ -10,10 +10,10 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/Range.h"
 #include "nsCOMPtr.h"
 #include "nsDirection.h"
 #include "nsINode.h"
-#include "nsRange.h"
 #include "nsTArray.h"
 #include "nscore.h"
 

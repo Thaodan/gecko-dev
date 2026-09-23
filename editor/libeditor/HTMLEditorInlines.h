@@ -17,11 +17,11 @@
 #include "mozilla/RefPtr.h"
 
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/Range.h"
 
 #include "nsAtom.h"
 #include "nsGkAtoms.h"
 #include "nsIContent.h"
-#include "nsRange.h"
 #include "nsString.h"
 
 #include <ostream>

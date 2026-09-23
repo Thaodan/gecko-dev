@@ -13,12 +13,12 @@
 #include "mozilla/IntegerRange.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/Selection.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
 #include "nsFrameSelection.h"
 #include "nsIContentInlines.h"
-#include "nsRange.h"
 
 namespace mozilla {
 

@@ -7,7 +7,7 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/CaretPositionBinding.h"
 #include "mozilla/dom/DOMRect.h"
-#include "nsRange.h"
+#include "mozilla/dom/Range.h"
 
 using namespace mozilla::dom;
 

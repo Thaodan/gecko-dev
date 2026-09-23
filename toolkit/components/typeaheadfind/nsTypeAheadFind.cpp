@@ -34,11 +34,11 @@
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/HTMLTextAreaElement.h"
 #include "mozilla/dom/Link.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/RangeBinding.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/StaticPrefs_accessibility.h"
 #include "nsLayoutUtils.h"
-#include "nsRange.h"
 
 #include "nsTypeAheadFind.h"
 

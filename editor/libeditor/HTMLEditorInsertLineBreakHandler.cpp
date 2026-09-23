@@ -26,6 +26,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/TextComposition.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/RangeBinding.h"
 #include "mozilla/dom/Selection.h"
 #include "nsContentUtils.h"
@@ -35,7 +36,6 @@
 #include "nsGkAtoms.h"
 #include "nsIContent.h"
 #include "nsINode.h"
-#include "nsRange.h"
 #include "nsTArray.h"
 #include "nsTextNode.h"
 

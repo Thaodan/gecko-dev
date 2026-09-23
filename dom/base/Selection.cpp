@@ -37,6 +37,7 @@
 #include "mozilla/dom/ChildIterator.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/SelectionBinding.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/StaticRange.h"
@@ -69,7 +70,6 @@
 #include "nsLayoutUtils.h"
 #include "nsPIDOMWindow.h"
 #include "nsPresContext.h"
-#include "nsRange.h"
 #include "nsRefreshDriver.h"
 #include "nsString.h"
 #include "nsTArray.h"
@@ -3716,7 +3716,7 @@ bool Selection::ContainsNode(nsINode& aNode, bool aAllowPartial,
     return false;
   }
 
-  // XXXbz this duplicates the GetNodeLength code in nsRange.cpp
+  // XXXbz this duplicates the GetNodeLength code in Range.cpp
   uint32_t nodeLength;
   auto* nodeAsCharData = CharacterData::FromNode(aNode);
   if (nodeAsCharData) {

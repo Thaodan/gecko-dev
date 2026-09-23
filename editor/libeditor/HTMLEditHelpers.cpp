@@ -11,9 +11,9 @@
 
 #include "mozilla/ContentIterator.h"
 #include "mozilla/OwningNonNull.h"
+#include "mozilla/dom/Range.h"
 #include "nsIContent.h"
 #include "nsINode.h"
-#include "nsRange.h"
 
 // from vs/Windows Kits/10/.../rpcndr.h
 #ifdef small

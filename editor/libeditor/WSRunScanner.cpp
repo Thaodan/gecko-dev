@@ -12,12 +12,12 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Casting.h"  // for AssertedCast
 #include "mozilla/dom/Comment.h"
+#include "mozilla/dom/Range.h"
 
 #include "nsDebug.h"
 #include "nsError.h"
 #include "nsIContent.h"
 #include "nsIContentInlines.h"
-#include "nsRange.h"
 
 namespace mozilla {
 

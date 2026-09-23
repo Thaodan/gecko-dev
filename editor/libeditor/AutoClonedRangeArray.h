@@ -20,6 +20,7 @@
 #include "mozilla/Result.h"                   // for Result<>
 #include "mozilla/dom/Element.h"              // for dom::Element
 #include "mozilla/dom/HTMLBRElement.h"        // for dom::HTMLBRElement
+#include "mozilla/dom/Range.h"                // for dom::Range
 #include "mozilla/dom/Selection.h"            // for dom::Selection
 #include "mozilla/dom/Text.h"                 // for dom::Text
 #include "mozilla/intl/BidiEmbeddingLevel.h"  // for BidiEmbeddingLevel
@@ -28,7 +29,6 @@
 #include "nsDirection.h"       // for nsDirection
 #include "nsError.h"           // for NS_SUCCESS_* and NS_ERROR_*
 #include "nsFrameSelection.h"  // for nsFrameSelection
-#include "nsRange.h"           // for nsRange
 
 namespace mozilla {
 

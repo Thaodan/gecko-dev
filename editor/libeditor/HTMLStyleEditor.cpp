@@ -28,6 +28,7 @@
 #include "mozilla/dom/ElementInlines.h"
 #include "mozilla/dom/HTMLBRElement.h"
 #include "mozilla/dom/NameSpaceConstants.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/Text.h"
 
@@ -47,7 +48,6 @@
 #include "nsISupportsImpl.h"
 #include "nsLiteralString.h"
 #include "nsNameSpaceManager.h"
-#include "nsRange.h"
 #include "nsReadableUtils.h"
 #include "nsString.h"
 #include "nsStringFwd.h"

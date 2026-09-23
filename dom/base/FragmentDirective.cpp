@@ -21,6 +21,7 @@
 #include "mozilla/dom/FragmentDirectiveBinding.h"
 #include "mozilla/dom/FragmentOrElement.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/glean/DomMetrics.h"
 #include "nsContentUtils.h"
@@ -29,7 +30,6 @@
 #include "nsIFrame.h"
 #include "nsINode.h"
 #include "nsIURIMutator.h"
-#include "nsRange.h"
 #include "nsString.h"
 
 namespace mozilla::dom {

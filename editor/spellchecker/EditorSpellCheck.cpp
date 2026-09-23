@@ -10,6 +10,7 @@
 
 #include "mozilla/dom/Element.h"  // for Element
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/StaticRange.h"
 #include "mozilla/intl/Locale.h"         // for mozilla::intl::Locale
@@ -30,13 +31,12 @@
 #include "mozilla/dom/Document.h"     // for Document
 #include "nsIEditor.h"                // for nsIEditor
 #include "nsILoadContext.h"
-#include "nsISupports.h"       // for nsISupports
-#include "nsISupportsUtils.h"  // for NS_ADDREF
-#include "nsIURI.h"            // for nsIURI
-#include "nsThreadUtils.h"     // for GetMainThreadSerialEventTarget
-#include "nsVariant.h"         // for nsIWritableVariant, etc
-#include "nsLiteralString.h"   // for NS_LITERAL_STRING, etc
-#include "nsRange.h"
+#include "nsISupports.h"            // for nsISupports
+#include "nsISupportsUtils.h"       // for NS_ADDREF
+#include "nsIURI.h"                 // for nsIURI
+#include "nsThreadUtils.h"          // for GetMainThreadSerialEventTarget
+#include "nsVariant.h"              // for nsIWritableVariant, etc
+#include "nsLiteralString.h"        // for NS_LITERAL_STRING, etc
 #include "nsReadableUtils.h"        // for ToNewUnicode, EmptyString, etc
 #include "nsServiceManagerUtils.h"  // for do_GetService
 #include "nsString.h"               // for nsAutoString, nsString, etc

@@ -9,7 +9,7 @@
 #include "mozilla/dom/CSSFontFaceRule.h"
 #include "mozilla/dom/InspectorUtilsBinding.h"
 #include "mozilla/dom/NonRefcountedDOMObject.h"
-#include "nsRange.h"
+#include "mozilla/dom/Range.h"
 
 class gfxFontEntry;
 class gfxFontGroup;

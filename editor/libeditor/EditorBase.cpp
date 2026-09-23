@@ -86,6 +86,7 @@
 #include "mozilla/dom/EventTarget.h"       // for EventTarget
 #include "mozilla/dom/HTMLBodyElement.h"
 #include "mozilla/dom/HTMLBRElement.h"
+#include "mozilla/dom/Range.h"        // for Range
 #include "mozilla/dom/Selection.h"    // for Selection, etc.
 #include "mozilla/dom/StaticRange.h"  // for StaticRange
 #include "mozilla/dom/Text.h"
@@ -126,7 +127,6 @@
 #include "nsIWidget.h"                 // for nsIWidget, IMEState, etc.
 #include "nsPIDOMWindow.h"             // for nsPIDOMWindow
 #include "nsPresContext.h"             // for nsPresContext
-#include "nsRange.h"                   // for nsRange
 #include "nsReadableUtils.h"           // for EmptyString, ToNewCString
 #include "nsString.h"                  // for nsAutoString, nsString, etc.
 #include "nsStringFwd.h"               // for nsString

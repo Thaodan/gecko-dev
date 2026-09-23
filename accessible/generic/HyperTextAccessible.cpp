@@ -22,6 +22,7 @@
 #include "mozilla/a11y/Role.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLBRElement.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/Selection.h"
 #include "nsAccessibilityService.h"
 #include "nsCaret.h"
@@ -35,7 +36,6 @@
 #include "nsILineIterator.h"
 #include "nsIMathMLFrame.h"
 #include "nsLayoutUtils.h"
-#include "nsRange.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;

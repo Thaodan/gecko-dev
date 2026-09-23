@@ -20,6 +20,7 @@
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementInlines.h"
+#include "mozilla/dom/Range.h"
 #include "nsAString.h"
 #include "nsCOMPtr.h"
 #include "nsDebug.h"
@@ -34,7 +35,6 @@
 #include "nsITableCellLayout.h"  // For efficient access to table cell
 #include "nsLiteralString.h"
 #include "nsQueryFrame.h"
-#include "nsRange.h"
 #include "nsString.h"
 #include "nsTArray.h"
 #include "nsTableCellFrame.h"

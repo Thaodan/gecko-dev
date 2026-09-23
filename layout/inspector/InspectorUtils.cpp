@@ -41,6 +41,7 @@
 #include "mozilla/dom/InspectorFontFace.h"
 #include "mozilla/dom/InspectorUtilsBinding.h"
 #include "mozilla/dom/LinkStyle.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/gfx/Matrix.h"
 #include "nsArray.h"
@@ -59,7 +60,6 @@
 #include "nsNameSpaceManager.h"
 #include "nsPresContext.h"
 #include "nsQueryObject.h"
-#include "nsRange.h"
 #include "nsString.h"
 #include "nsStyleUtil.h"
 

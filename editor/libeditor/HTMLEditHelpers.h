@@ -21,6 +21,7 @@
 #include "mozilla/RangeBoundary.h"
 #include "mozilla/Result.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/StaticRange.h"
 
 #include "nsCOMPtr.h"
@@ -28,7 +29,6 @@
 #include "nsError.h"
 #include "nsGkAtoms.h"
 #include "nsIContent.h"
-#include "nsRange.h"
 #include "nsString.h"
 
 class nsISimpleEnumerator;

@@ -14,6 +14,7 @@
 #include "mozilla/IntegerRange.h"  // for IntegerRange
 #include "mozilla/Likely.h"        // For MOZ_LIKELY and MOZ_UNLIKELY
 #include "mozilla/RangeUtils.h"    // for RangeUtils
+#include "mozilla/dom/Range.h"     // for Range
 #include "mozilla/dom/RangeBinding.h"
 #include "mozilla/dom/Selection.h"  // for Selection
 #include "nsAString.h"              // for nsAString::Length
@@ -22,7 +23,6 @@
 #include "nsError.h"          // for NS_OK, etc.
 #include "nsIContent.h"       // for nsIContent
 #include "nsISupportsImpl.h"  // for nsRange::Release
-#include "nsRange.h"          // for nsRange
 
 namespace mozilla {
 

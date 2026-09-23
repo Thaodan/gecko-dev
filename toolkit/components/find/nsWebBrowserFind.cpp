@@ -5,7 +5,7 @@
 #include "nsWebBrowserFind.h"
 
 // Only need this for NS_FIND_CONTRACTID,
-// else we could use nsRange.h and nsIFind.h.
+// else we could use mozilla/dom/Range.h and nsIFind.h.
 #include "nsFind.h"
 
 #include "mozilla/dom/ScriptSettings.h"
@@ -24,10 +24,10 @@
 #include "nsFind.h"
 #include "nsError.h"
 #include "nsFocusManager.h"
-#include "nsRange.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/Services.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/Selection.h"
 #include "nsComponentManagerUtils.h"
 #include "nsContentUtils.h"

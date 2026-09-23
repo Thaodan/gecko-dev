@@ -77,6 +77,7 @@
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/HTMLAnchorElement.h"
 #include "mozilla/dom/Link.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/Selection.h"
 #include "nsBidiPresUtils.h"
 #include "nsBidiUtils.h"
@@ -87,7 +88,6 @@
 #include "nsIContent.h"
 #include "nsIURIMutator.h"
 #include "nsLayoutUtils.h"
-#include "nsRange.h"
 #include "nsStyleStructInlines.h"
 
 using namespace mozilla;

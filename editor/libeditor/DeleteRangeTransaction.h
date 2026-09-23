@@ -14,11 +14,12 @@
 
 #include "mozilla/RefPtr.h"
 
+#include "mozilla/dom/Range.h"
+
 #include "nsCycleCollectionParticipant.h"
 #include "nsID.h"
 #include "nsIEditor.h"
 #include "nsISupportsImpl.h"
-#include "nsRange.h"
 #include "nscore.h"
 
 class nsINode;

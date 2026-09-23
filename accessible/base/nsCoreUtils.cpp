@@ -23,6 +23,7 @@
 #include "mozilla/dom/HTMLOptionElement.h"
 #include "mozilla/dom/HTMLSelectElement.h"
 #include "mozilla/dom/MouseEventBinding.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/TouchEvent.h"
 #include "nsAccUtils.h"
@@ -36,7 +37,6 @@
 #include "nsISelectionController.h"
 #include "nsISimpleEnumerator.h"
 #include "nsPresContext.h"
-#include "nsRange.h"
 #include "nsTreeColumns.h"
 #include "nsXULElement.h"
 
