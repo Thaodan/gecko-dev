@@ -1758,7 +1758,12 @@ function getPromptBrowser(aBrowser, aRequest) {
   const pipBrowser = getDocumentPiPBrowser(aBrowser);
   if (
     activeWindow &&
-    activeWindow == pipBrowser?.browsingContext?.topChromeWindow
+    activeWindow == pipBrowser?.browsingContext?.topChromeWindow &&
+    // Keep the prompt in the opener while it's in DOM fullscreen. The spoofing
+    // protections in browser-fullScreenAndPointerLock.js only ever see their
+    // own window's PopupNotifications, so a prompt in the PiP would neither
+    // exit fullscreen nor be cancelled by entering it.
+    !aBrowser.browsingContext?.topChromeWindow?.document.fullscreenElement
   ) {
     return pipBrowser;
   }

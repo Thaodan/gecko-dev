@@ -4,6 +4,12 @@
 // Tests that a screen-sharing prompt for a request made on the opener follows
 // the user into the document picture-in-picture window it was triggered from.
 
+const { DOMFullscreenTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/DOMFullscreenTestUtils.sys.mjs"
+);
+
+DOMFullscreenTestUtils.init(this, window);
+
 /**
  * Open a tab and a document PiP window from it, and give the PiP document a
  * content-privileged helper to request capture with. Requesting from the
@@ -288,4 +294,48 @@ add_task(async function testCameraOnOpenerPromptsInOpener() {
   );
 
   await cleanUp(tab, pipWin);
+});
+
+add_task(async function testFullscreenOpenerKeepsItsPrompt() {
+  // A user clicking another window doesn't exit fullscreen, but chrome calling
+  // focus() does (nsFocusManager's FLAG_RAISE path), so opt out of that to
+  // reach the state a user can reach by hand.
+  await SpecialPowers.pushPrefEnv({
+    set: [["full-screen-api.exit-on.windowRaise", false]],
+  });
+
+  let [tab, pipWin] = await openTabWithPiP();
+
+  // Entering DOM fullscreen requires the opener to be the active window, and
+  // opening a PiP from fullscreen exits it, so this is the only usable order.
+  await SimpleTest.promiseFocus(window);
+  await DOMFullscreenTestUtils.changeFullscreen(tab.linkedBrowser, true);
+  ok(document.fullscreenElement, "opener is in DOM fullscreen");
+
+  await SimpleTest.promiseFocus(pipWin);
+  ok(document.fullscreenElement, "opener is still in DOM fullscreen");
+
+  await requestCaptureFromPiP(pipWin, "opener", "screen");
+  await TestUtils.waitForCondition(
+    () =>
+      PopupNotifications.getNotification(
+        "webRTC-shareDevices",
+        tab.linkedBrowser
+      ),
+    "prompt stays on the opener browser"
+  );
+  ok(
+    !pipWin.PopupNotifications.getNotification("webRTC-shareDevices"),
+    "prompt is not redirected to the PiP while the opener is fullscreen"
+  );
+
+  // Leave fullscreen before the tab goes away, otherwise removing the tab
+  // exits it for us and there is no state change left to wait for.
+  PopupNotifications.getNotification(
+    "webRTC-shareDevices",
+    tab.linkedBrowser
+  ).remove();
+  await DOMFullscreenTestUtils.changeFullscreen(tab.linkedBrowser, false);
+  await cleanUp(tab, pipWin);
+  await SpecialPowers.popPrefEnv();
 });
