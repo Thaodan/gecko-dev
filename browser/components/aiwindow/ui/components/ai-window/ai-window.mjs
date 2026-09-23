@@ -3549,12 +3549,16 @@ export class AIWindow extends MozLitElement {
     if (!this.showFooter) {
       return "";
     }
-    if (this.promoMessage) {
-      return html`<smartwindow-promo
-        .message=${this.promoMessage}
-      ></smartwindow-promo>`;
-    }
     return html`<smartwindow-footer></smartwindow-footer>`;
+  }
+
+  #promoTemplate() {
+    if (!this.promoMessage) {
+      return "";
+    }
+    return html`<smartwindow-promo
+      .message=${this.promoMessage}
+    ></smartwindow-promo>`;
   }
 
   render() {
@@ -3633,6 +3637,7 @@ export class AIWindow extends MozLitElement {
                   ></smartwindow-topsites>
                 `
               : ""}
+            ${this.#promoTemplate()}
             ${this.resumeCardsPref
               ? html`
                   <smartwindow-resume-section
