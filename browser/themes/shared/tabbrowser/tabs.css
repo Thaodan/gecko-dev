@@ -2674,6 +2674,11 @@ tab-group {
   &:hover {
     background-color: var(--tab-background-color-hover);
     outline-color: var(--tab-border-color-hover);
+
+    &:active {
+      color: var(--button-text-color-ghost-active);
+      background-color: var(--button-background-color-ghost-active);
+    }
   }
 
   &:focus-visible {
