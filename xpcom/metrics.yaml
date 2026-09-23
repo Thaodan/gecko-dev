@@ -120,9 +120,6 @@ memory_phc:
     description: >
       Over-allocation due to PHC's rounding (aka internal
       fragmentation).  Measured in bytes.
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram MEMORY_PHC_SLOP.
     memory_unit: byte
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1829127
@@ -142,9 +139,6 @@ memory_phc:
     type: custom_distribution
     description: >
       Number of PHC slots currently allocated
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram MEMORY_PHC_SLOTS_ALLOCATED.
     range_min: 1
     range_max: 16384
     bucket_count: 64
@@ -168,9 +162,6 @@ memory_phc:
     type: custom_distribution
     description: >
       Number of PHC slots allocated-then-freed
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram MEMORY_PHC_SLOTS_FREED.
     range_min: 1
     range_max: 16384
     bucket_count: 64
