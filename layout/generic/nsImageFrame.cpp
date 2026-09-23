@@ -2226,7 +2226,7 @@ ImgDrawResult nsImageFrame::DisplayAltFeedbackWithoutLayer(
       auto borderWidths = wr::ToBorderWidths(1.0, 1.0, 1.0, 1.0);
       wr::BorderSide side = {color, wr::BorderStyle::Solid};
       wr::BorderSide sides[4] = {side, side, side, side};
-      Range<const wr::BorderSide> sidesRange(sides, 4);
+      mozilla::Range<const wr::BorderSide> sidesRange(sides, 4);
       aBuilder.PushBorder(dest, wrBounds, isBackfaceVisible, borderWidths,
                           sidesRange, wr::EmptyBorderRadius());
 

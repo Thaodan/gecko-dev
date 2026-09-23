@@ -345,7 +345,7 @@ class MOZ_STACK_CLASS AutoSelectionRangeArray final {
     }
   }
 
-  AutoTArray<mozilla::OwningNonNull<nsRange>, 8> mRanges;
+  AutoTArray<mozilla::OwningNonNull<dom::Range>, 8> mRanges;
 };
 
 /******************************************************************************

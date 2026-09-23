@@ -3404,7 +3404,7 @@ void nsFocusManager::MoveCaretToFocus(PresShell* aPresShell,
   }
 
   ErrorResult rv;
-  RefPtr<nsRange> newRange = doc->CreateRange(rv);
+  RefPtr<dom::Range> newRange = doc->CreateRange(rv);
   if (NS_WARN_IF(rv.Failed())) {
     rv.SuppressException();
     domSelection->RemoveAllRanges(IgnoreErrors());
@@ -3495,7 +3495,7 @@ void nsFocusManager::GetSelectionLocation(Document* aDocument,
       &aPresShell->ConstFrameSelection()->NormalSelection();
   MOZ_ASSERT(domSelection);
 
-  const nsRange* domRange = domSelection->GetRangeAt(0);
+  const dom::Range* domRange = domSelection->GetRangeAt(0);
   if (!domRange || !domRange->IsPositioned()) {
     return;
   }

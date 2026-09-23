@@ -10589,13 +10589,13 @@ nsresult nsDocShell::ScrollToAnchor(bool aCurHasRef, bool aNewHasRef,
   // https://html.spec.whatwg.org/#scroll-to-fragid:~:text=This%20algorithm%20will%20be%20called%20twice
 
   const RefPtr fragmentDirective = GetDocument()->FragmentDirective();
-  const nsTArray<RefPtr<nsRange>> textDirectiveRanges =
+  const nsTArray<RefPtr<dom::Range>> textDirectiveRanges =
       fragmentDirective->FindTextFragmentsInDocument();
   fragmentDirective->HighlightTextDirectives(textDirectiveRanges);
   const bool scrollToTextDirective =
       !textDirectiveRanges.IsEmpty() &&
       fragmentDirective->IsTextDirectiveAllowedToBeScrolledTo();
-  const RefPtr<nsRange> textDirectiveToScroll =
+  const RefPtr<dom::Range> textDirectiveToScroll =
       scrollToTextDirective ? textDirectiveRanges[0] : nullptr;
 
   // If we have no new anchor, we do not want to scroll, unless there is a

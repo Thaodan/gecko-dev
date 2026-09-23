@@ -411,7 +411,7 @@ void HTMLEditor::DoContentInserted(nsIContent* aChild,
         return;
       }
 
-      RefPtr<nsRange> range = nsRange::Create(aChild);
+      RefPtr<dom::Range> range = dom::Range::Create(aChild);
       range->SelectNodesInContainer(container, aChild, endContent);
       DebugOnly<nsresult> rvIgnored =
           mInlineSpellChecker->SpellCheckRangeIgnoringWordAtCaret(range);
@@ -502,7 +502,7 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void HTMLEditor::CharacterDataChanged(
     return;
   }
 
-  RefPtr<nsRange> range = nsRange::Create(aContent);
+  RefPtr<dom::Range> range = dom::Range::Create(aContent);
   range->SelectNodesInContainer(parent, aContent, aContent);
   DebugOnly<nsresult> rvIgnored =
       mInlineSpellChecker->SpellCheckRangeIgnoringWordAtCaret(range);

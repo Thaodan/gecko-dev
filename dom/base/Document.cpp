@@ -6861,7 +6861,7 @@ void Document::DeferredContentEditableCountChange(Element* aElement) {
 
         if (spellChecker &&
             aElement->InclusiveDescendantMayNeedSpellchecking(htmlEditor)) {
-          RefPtr<nsRange> range = nsRange::Create(aElement);
+          RefPtr<dom::Range> range = dom::Range::Create(aElement);
           IgnoredErrorResult res;
           range->SelectNodeContents(*aElement, res);
           if (res.Failed()) {
@@ -9829,8 +9829,8 @@ already_AddRefed<nsINode> Document::ImportNode(
   return nullptr;
 }
 
-already_AddRefed<nsRange> Document::CreateRange(ErrorResult& rv) {
-  return nsRange::Create(this, 0, this, 0, rv);
+already_AddRefed<Range> Document::CreateRange(ErrorResult& rv) {
+  return Range::Create(this, 0, this, 0, rv);
 }
 
 already_AddRefed<NodeIterator> Document::CreateNodeIterator(
@@ -14278,11 +14278,11 @@ void Document::ScrollToRef() {
   // Monkeypatching HTML § 7.4.6.3 Scrolling to a fragment:
   // 1. Let text directives be the document's pending text directives.
   const RefPtr fragmentDirective = FragmentDirective();
-  const nsTArray<RefPtr<nsRange>> textDirectives =
+  const nsTArray<RefPtr<Range>> textDirectives =
       fragmentDirective->FindTextFragmentsInDocument();
   // 2. If ranges is non-empty, then:
   // 2.1 Let firstRange be the first item of ranges
-  const RefPtr<nsRange> textDirectiveToScroll =
+  const RefPtr<Range> textDirectiveToScroll =
       !textDirectives.IsEmpty() ? textDirectives[0] : nullptr;
   // 2.2 Visually indicate each range in ranges in an implementation-defined
   // way. The indication must not be observable from author script. See § 3.7
@@ -14506,8 +14506,8 @@ static nsINode* GetCorrespondingNodeInDocument(const nsINode* aOrigNode,
  * Note that we cannot use the selection obtained from GetOriginalDocument()
  * since that selection may have mutated after the print was invoked.
  *
- * Note also that because nsRange objects point into a specific document's
- * nodes, we cannot reuse an array of nsRange objects across multiple static
+ * Note also that because Range objects point into a specific document's
+ * nodes, we cannot reuse an array of Range objects across multiple static
  * clone documents. For that reason we cache a new array of ranges on each
  * static clone that we create.
  *
@@ -14553,10 +14553,10 @@ static void CachePrintSelectionRanges(const Document& aSourceDoc,
   }
 
   const Selection* origSelection = nullptr;
-  const nsTArray<RefPtr<nsRange>>* origRanges = nullptr;
+  const nsTArray<RefPtr<Range>>* origRanges = nullptr;
 
   if (sourceDocIsStatic) {
-    origRanges = static_cast<nsTArray<RefPtr<nsRange>>*>(
+    origRanges = static_cast<nsTArray<RefPtr<Range>>*>(
         aSourceDoc.GetProperty(nsGkAtoms::printselectionranges));
   } else if (PresShell* shell = aSourceDoc.GetPresShell()) {
     origSelection = shell->GetCurrentSelection(SelectionType::eNormal);
@@ -14568,13 +14568,13 @@ static void CachePrintSelectionRanges(const Document& aSourceDoc,
 
   const uint32_t rangeCount =
       sourceDocIsStatic ? origRanges->Length() : origSelection->RangeCount();
-  auto printRanges = MakeUnique<nsTArray<RefPtr<nsRange>>>(rangeCount);
+  auto printRanges = MakeUnique<nsTArray<RefPtr<Range>>>(rangeCount);
 
   for (const uint32_t i : IntegerRange(rangeCount)) {
     MOZ_ASSERT_IF(!sourceDocIsStatic,
                   origSelection->RangeCount() == rangeCount);
-    const nsRange* range = sourceDocIsStatic ? origRanges->ElementAt(i).get()
-                                             : origSelection->GetRangeAt(i);
+    const Range* range = sourceDocIsStatic ? origRanges->ElementAt(i).get()
+                                           : origSelection->GetRangeAt(i);
     MOZ_ASSERT(range);
     nsINode* startContainer = range->GetMayCrossShadowBoundaryStartContainer();
     nsINode* endContainer = range->GetMayCrossShadowBoundaryEndContainer();
@@ -14592,10 +14592,10 @@ static void CachePrintSelectionRanges(const Document& aSourceDoc,
       continue;
     }
 
-    RefPtr<nsRange> clonedRange =
-        nsRange::Create(startNode, range->MayCrossShadowBoundaryStartOffset(),
-                        endNode, range->MayCrossShadowBoundaryEndOffset(),
-                        IgnoreErrors(), AllowRangeCrossShadowBoundary::Yes);
+    RefPtr<Range> clonedRange =
+        Range::Create(startNode, range->MayCrossShadowBoundaryStartOffset(),
+                      endNode, range->MayCrossShadowBoundaryEndOffset(),
+                      IgnoreErrors(), AllowRangeCrossShadowBoundary::Yes);
     if (clonedRange &&
         !clonedRange->AreNormalRangeAndCrossShadowBoundaryRangeCollapsed()) {
       printRanges->AppendElement(std::move(clonedRange));
@@ -14608,7 +14608,7 @@ static void CachePrintSelectionRanges(const Document& aSourceDoc,
 
   aStaticClone.SetProperty(nsGkAtoms::printselectionranges,
                            printRanges.release(),
-                           nsINode::DeleteProperty<nsTArray<RefPtr<nsRange>>>);
+                           nsINode::DeleteProperty<nsTArray<RefPtr<Range>>>);
 }
 
 already_AddRefed<Document> Document::CreateStaticClone(
@@ -15257,8 +15257,7 @@ already_AddRefed<nsDOMCaretPosition> Document::CaretPositionFromPoint(
   return aCaretPos.forget();
 }
 
-already_AddRefed<nsRange> Document::CaretRangeFromPoint(int32_t aX,
-                                                        int32_t aY) {
+already_AddRefed<Range> Document::CaretRangeFromPoint(int32_t aX, int32_t aY) {
   RefPtr<nsDOMCaretPosition> caretPos = CaretPositionFromPoint(
       float(aX), float(aY), CaretPositionFromPointOptions());
   if (!caretPos) {
@@ -15274,8 +15273,8 @@ already_AddRefed<nsRange> Document::CaretRangeFromPoint(int32_t aX,
     offset = 0;
   }
 
-  RefPtr<nsRange> range =
-      nsRange::Create(node, offset, node, offset, mozilla::IgnoreErrors());
+  RefPtr<Range> range =
+      Range::Create(node, offset, node, offset, mozilla::IgnoreErrors());
   if (!range) {
     return nullptr;
   }

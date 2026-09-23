@@ -1247,11 +1247,11 @@ nsresult HTMLEditor::DeleteTableElementAndChildrenWithTransaction(
       }
     }
 
-    RefPtr<nsRange> range = nsRange::Create(&aTableElement);
+    RefPtr<dom::Range> range = dom::Range::Create(&aTableElement);
     ErrorResult error;
     range->SelectNode(aTableElement, error);
     if (error.Failed()) {
-      NS_WARNING("nsRange::SelectNode() failed");
+      NS_WARNING("Range::SelectNode() failed");
       return error.StealNSResult();
     }
     SelectionRef().AddRangeAndSelectFramesAndNotifyListeners(*range, error);
@@ -3334,7 +3334,7 @@ NS_IMETHODIMP HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents) {
     uint32_t rangeCount = SelectionRef().RangeCount();
 
     // TODO: Rewriting this with reversed ranged-loop may make it simpler.
-    RefPtr<nsRange> range;
+    RefPtr<dom::Range> range;
     for (uint32_t i = 0; i < rangeCount; i++) {
       range = SelectionRef().GetRangeAt(i);
       if (NS_WARN_IF(!range)) {

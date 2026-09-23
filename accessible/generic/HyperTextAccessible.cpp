@@ -678,7 +678,7 @@ bool HyperTextAccessible::RemoveFromSelection(int32_t aSelectionNum) {
     return false;
   }
 
-  const RefPtr<nsRange> range{
+  const RefPtr<mozilla::dom::Range> range{
       domSel->GetRangeAt(static_cast<uint32_t>(aSelectionNum))};
   domSel->RemoveRangeAndUnselectFramesAndNotifyListeners(*range,
                                                          IgnoreErrors());
@@ -695,7 +695,7 @@ void HyperTextAccessible::ScrollSubstringToPoint(int32_t aStartOffset,
   LayoutDeviceIntPoint coords =
       nsAccUtils::ConvertToScreenCoords(aX, aY, aCoordinateType, this);
 
-  RefPtr<nsRange> domRange = nsRange::Create(mContent);
+  RefPtr<mozilla::dom::Range> domRange = mozilla::dom::Range::Create(mContent);
   TextRange range(this, this, aStartOffset, this, aEndOffset);
   if (!range.AssignDOMRange(domRange)) {
     return;

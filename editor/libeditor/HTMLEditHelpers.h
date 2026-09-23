@@ -1004,7 +1004,7 @@ class MOZ_RAII DOMIterator {
   explicit DOMIterator(nsINode& aNode);
   virtual ~DOMIterator() = default;
 
-  nsresult Init(nsRange& aRange);
+  nsresult Init(dom::Range& aRange);
   nsresult Init(const RawRangeBoundary& aStartRef,
                 const RawRangeBoundary& aEndRef);
 
@@ -1038,7 +1038,7 @@ class MOZ_RAII DOMSubtreeIterator final : public DOMIterator {
   virtual ~DOMSubtreeIterator() = default;
   explicit DOMSubtreeIterator(nsINode& aNode) = delete;
 
-  nsresult Init(nsRange& aRange);
+  nsresult Init(dom::Range& aRange);
 
  private:
   ContentSubtreeIterator mSubtreeIter;

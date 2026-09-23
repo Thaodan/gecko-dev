@@ -921,7 +921,7 @@ uint64_t InspectorUtils::GetContentState(GlobalObject& aGlobalObject,
 
 /* static */
 void InspectorUtils::GetUsedFontFaces(GlobalObject& aGlobalObject,
-                                      nsRange& aRange, uint32_t aMaxRanges,
+                                      Range& aRange, uint32_t aMaxRanges,
                                       bool aSkipCollapsedWhitespace,
                                       nsLayoutUtils::UsedFontFaceList& aResult,
                                       ErrorResult& aRv) {

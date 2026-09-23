@@ -427,7 +427,7 @@ nsresult CompositionTransaction::SetIMESelection(
       continue;
     }
 
-    RefPtr<nsRange> clauseRange;
+    RefPtr<dom::Range> clauseRange;
     CheckedUint32 startOffset = aOffsetInNode;
     startOffset += std::min(textRange.mStartOffset, aLengthOfCompositionString);
     MOZ_ASSERT(startOffset.isValid());
@@ -437,10 +437,10 @@ nsresult CompositionTransaction::SetIMESelection(
     MOZ_ASSERT(endOffset.isValid());
     MOZ_ASSERT(endOffset.value() >= startOffset.value());
     MOZ_ASSERT(endOffset.value() <= maxOffset);
-    clauseRange = nsRange::Create(aTextNode, startOffset.value(), aTextNode,
-                                  endOffset.value(), IgnoreErrors());
+    clauseRange = dom::Range::Create(aTextNode, startOffset.value(), aTextNode,
+                                     endOffset.value(), IgnoreErrors());
     if (!clauseRange) {
-      NS_WARNING("nsRange::Create() failed, but might be ignored");
+      NS_WARNING("Range::Create() failed, but might be ignored");
       break;
     }
 

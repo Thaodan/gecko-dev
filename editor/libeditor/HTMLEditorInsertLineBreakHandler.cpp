@@ -407,7 +407,7 @@ HTMLEditor::AutoInsertLineBreakHandler::InsertLinefeed(
                          "EndOfLine) failed, but ignored");
     if (NS_FAILED(aHTMLEditor.TopLevelEditSubActionDataRef()
                       .mChangedRange->CollapseTo(pointToInsert))) {
-      NS_WARNING("nsRange::CollapseTo() failed");
+      NS_WARNING("Range::CollapseTo() failed");
       return Err(NS_ERROR_FAILURE);
     }
     NS_WARNING(
@@ -420,7 +420,7 @@ HTMLEditor::AutoInsertLineBreakHandler::InsertLinefeed(
                     .mChangedRange->SetStartAndEnd(
                         pointToInsert.ToRawRangeBoundary(),
                         pointToPutCaret.ToRawRangeBoundary()))) {
-    NS_WARNING("nsRange::SetStartAndEnd() failed");
+    NS_WARNING("Range::SetStartAndEnd() failed");
     return Err(NS_ERROR_FAILURE);
   }
 

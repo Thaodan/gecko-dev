@@ -30,7 +30,7 @@ class InspectorFontFace final : public NonRefcountedDOMObject {
   gfxFontEntry* GetFontEntry() const { return mFontEntry; }
   void AddMatchType(FontMatchType aMatchType) { mMatchType |= aMatchType; }
 
-  void AddRange(nsRange* aRange);
+  void AddRange(Range* aRange);
   size_t RangeCount() const { return mRanges.Length(); }
 
   // Web IDL
@@ -55,7 +55,7 @@ class InspectorFontFace final : public NonRefcountedDOMObject {
                              ErrorResult& aRV);
   void GetFeatures(nsTArray<InspectorFontFeature>& aResult, ErrorResult& aRV);
 
-  void GetRanges(nsTArray<RefPtr<nsRange>>& aResult);
+  void GetRanges(nsTArray<RefPtr<Range>>& aResult);
 
   bool WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto,
                   JS::MutableHandle<JSObject*> aReflector) {
@@ -68,7 +68,7 @@ class InspectorFontFace final : public NonRefcountedDOMObject {
   RefPtr<CSSFontFaceRule> mRule;
   FontMatchType mMatchType;
 
-  nsTArray<RefPtr<nsRange>> mRanges;
+  nsTArray<RefPtr<Range>> mRanges;
 };
 
 }  // namespace mozilla::dom

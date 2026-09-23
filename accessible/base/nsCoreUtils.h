@@ -18,7 +18,6 @@
 
 class nsAttrValue;
 class nsGenericHTMLElement;
-class nsRange;
 class nsTreeColumn;
 class nsIFrame;
 class nsIDocShell;
@@ -29,6 +28,7 @@ class PresShell;
 namespace dom {
 class Document;
 class Element;
+class Range;
 class XULTreeElement;
 }  // namespace dom
 }  // namespace mozilla
@@ -150,7 +150,7 @@ class nsCoreUtils {
    * @param aScrollType   the place a range should be scrolled to
    */
   MOZ_CAN_RUN_SCRIPT_BOUNDARY static nsresult ScrollSubstringTo(
-      nsIFrame* aFrame, nsRange* aRange, uint32_t aScrollType);
+      nsIFrame* aFrame, mozilla::dom::Range* aRange, uint32_t aScrollType);
 
   /** Helper method to scroll range into view, used for implementation of
    * nsIAccessibleText::scrollSubstringTo[Point]().
@@ -163,7 +163,8 @@ class nsCoreUtils {
    * and when.
    */
   MOZ_CAN_RUN_SCRIPT_BOUNDARY static nsresult ScrollSubstringTo(
-      nsIFrame* aFrame, nsRange* aRange, mozilla::AxisScrollParams aVertical,
+      nsIFrame* aFrame, mozilla::dom::Range* aRange,
+      mozilla::AxisScrollParams aVertical,
       mozilla::AxisScrollParams aHorizontal);
 
   /**

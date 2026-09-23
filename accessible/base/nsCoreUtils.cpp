@@ -227,7 +227,8 @@ bool nsCoreUtils::IsAncestorOf(nsINode* aPossibleAncestorNode,
   return false;
 }
 
-nsresult nsCoreUtils::ScrollSubstringTo(nsIFrame* aFrame, nsRange* aRange,
+nsresult nsCoreUtils::ScrollSubstringTo(nsIFrame* aFrame,
+                                        mozilla::dom::Range* aRange,
                                         uint32_t aScrollType) {
   AxisScrollParams vertical, horizontal;
   ConvertScrollTypeToPercents(aScrollType, &vertical, &horizontal);
@@ -235,7 +236,8 @@ nsresult nsCoreUtils::ScrollSubstringTo(nsIFrame* aFrame, nsRange* aRange,
   return ScrollSubstringTo(aFrame, aRange, vertical, horizontal);
 }
 
-nsresult nsCoreUtils::ScrollSubstringTo(nsIFrame* aFrame, nsRange* aRange,
+nsresult nsCoreUtils::ScrollSubstringTo(nsIFrame* aFrame,
+                                        mozilla::dom::Range* aRange,
                                         AxisScrollParams aVertical,
                                         AxisScrollParams aHorizontal) {
   if (!aFrame || !aRange) {

@@ -25,7 +25,7 @@ namespace mozilla {
 using namespace dom;
 
 SelectionChangeEventDispatcher::RawRangeData::RawRangeData(
-    const nsRange* aRange) {
+    const dom::Range* aRange) {
   if (aRange->IsPositioned()) {
     mStartContainer = aRange->GetStartContainer();
     mEndContainer = aRange->GetEndContainer();
@@ -40,7 +40,7 @@ SelectionChangeEventDispatcher::RawRangeData::RawRangeData(
 }
 
 bool SelectionChangeEventDispatcher::RawRangeData::Equals(
-    const nsRange* aRange) {
+    const dom::Range* aRange) {
   if (!aRange->IsPositioned()) {
     return !mStartContainer;
   }
@@ -90,7 +90,7 @@ void SelectionChangeEventDispatcher::OnSelectionChange(Document* aDoc,
     // Even if the raw ranges have not changed, it is possible that there
     // has been some change to the DOM which moved the live ranges given
     // at the time of the last selectionchange. So we still fire
-    // selectionchange if the nsRange mutation observer caused a selection
+    // selectionchange if the Range mutation observer caused a selection
     // range to be updated.
     if (!changed && !mSelectionRangeObservedMutation) {
       return;
