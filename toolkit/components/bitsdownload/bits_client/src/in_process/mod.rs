@@ -521,14 +521,16 @@ impl InProcessMonitor {
 
                         // Errors below can use the BCM to do `format_error()`, but this one just
                         // gets the basic `comedy::HResult` treatment.
-                        let error = HResultMessage {
-                            hr: e.code(),
-                            message: format!("{}", e),
+                        let Some(first) = first_error else {
+                            return Err(Error::ConnectBcm(e));
                         };
-                        return Ok(Err(match first_error {
-                            Some(first) => with_retry_failure(first, error),
-                            None => error,
-                        }));
+                        return Ok(Err(with_retry_failure(
+                            first,
+                            HResultMessage {
+                                hr: e.code(),
+                                message: format!("{}", e),
+                            },
+                        )));
                     }
                 },
             };
