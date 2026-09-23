@@ -648,8 +648,8 @@ downgraded. Decrypted content only ever exists in memory.
 
 The key is a 32-byte data encryption key owned by the profile keystore
 (`security/lockstore`) under the name `httpcache`, wrapped by the profile-wide
-`local` KEK `profileEncryption` that the rest of the profile's encrypted
-storage shares. It is fetched once per session, during `profile-do-change` and before the disk
+`local` KEK `profile` that the rest of the profile's encrypted storage shares.
+It is fetched once per session, during `profile-do-change` and before the disk
 cache becomes reachable, and held in memory for the lifetime of the process.
 Because the cache only ever sees the DEK, the wrapping tier can later be moved
 to a password or PKCS#11 KEK via `nsILockstore::switchKek` without changing the

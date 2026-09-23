@@ -28,7 +28,7 @@ using mozilla::security::lockstore::LockstoreService;
 // Name of the disk cache's data encryption key in the profile keystore, and
 // the identifier of the "local" KEK wrapping it.
 static constexpr auto kDekName = "httpcache"_ns;
-static constexpr auto kKekIdentifier = "profileEncryption"_ns;
+static constexpr auto kKekIdentifier = "profile"_ns;
 
 // Written on the cache I/O thread when the key load finishes, and on the main
 // thread at lifecycle boundaries (InitForTesting/Shutdown), so every access
