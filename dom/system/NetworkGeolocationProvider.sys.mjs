@@ -439,13 +439,19 @@ NetworkGeolocationProvider.prototype = {
 
     // From here on, do a network geolocation request //
     let url = Services.urlFormatter.formatURLPref("geo.provider.network.url");
-    let logStr = data.wifiAccessPoints ? " with wifi APs" : "";
-    lazy.log.info(
-      `Sending IP-address-based geolocation request${logStr} to network service: ${url}`
-    );
 
     let result;
     try {
+      // formatURLPref() returns about:blank for a pref without a value.
+      if (!url || url == "about:blank") {
+        throw new Error("No network geolocation service URL is configured");
+      }
+
+      let logStr = data.wifiAccessPoints ? " with wifi APs" : "";
+      lazy.log.info(
+        `Sending IP-address-based geolocation request${logStr} to network service: ${url}`
+      );
+
       result = await this.fetchLocation(url, wifiData);
       lazy.log.info(
         `geo provider reported: ${result.location.lng}:${result.location.lat}`
@@ -531,7 +537,26 @@ NetworkGeolocationProvider.prototype = {
       );
     }
 
-    let result = response.json();
+    let result;
+    try {
+      result = await response.json();
+    } catch (err) {
+      Glean.geolocation.networkFailures[label].add();
+      throw new Error("The geolocation provider returned a non-JSON response", {
+        cause: err,
+      });
+    }
+
+    if (
+      typeof result?.location?.lat != "number" ||
+      typeof result.location.lng != "number"
+    ) {
+      Glean.geolocation.networkFailures[label].add();
+      throw new Error(
+        "The geolocation provider returned a response without a location"
+      );
+    }
+
     return result;
   },
 };
