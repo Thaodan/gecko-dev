@@ -342,10 +342,10 @@ class FinalizationRegistryCleanup {
   JS::PersistentRooted<CallbackVector> mCallbacks;
 };
 
-bool EnqueueMicroTask(JSContext* aCx,
-                      already_AddRefed<MicroTaskRunnable> aRunnable);
-bool EnqueueDebugMicroTask(JSContext* aCx,
-                           already_AddRefed<MicroTaskRunnable> aRunnable);
+[[nodiscard]] bool EnqueueMicroTask(
+    JSContext* aCx, already_AddRefed<MicroTaskRunnable> aRunnable);
+[[nodiscard]] bool EnqueueDebugMicroTask(
+    JSContext* aCx, already_AddRefed<MicroTaskRunnable> aRunnable);
 
 MustConsumeMicroTask DequeueNextMicroTask(JSContext* aCx);
 MustConsumeMicroTask DequeueNextRegularMicroTask(JSContext* aCx);
