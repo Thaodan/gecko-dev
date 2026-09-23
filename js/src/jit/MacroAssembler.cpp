@@ -7439,12 +7439,12 @@ FaultingCodeRange MacroAssembler::branchWasmRefIsSubtypeAny(
     //    then we will segfault.
     // We could ignore the former check, but better to be precise and ensure
     // that we are getting the optimizations we expect.
-    MOZ_ASSERT_IF(signalNullChecks && fcr.isValid(), canOmitNullCheck);
-    MOZ_ASSERT_IF(signalNullChecks && !fcr.isValid(), !canOmitNullCheck);
+    MOZ_ASSERT_IF(!oom() && signalNullChecks,
+                  canOmitNullCheck == fcr.isValid());
 
     // We should never get a valid FCR if the caller doesn't expect signal
     // handling. This simplifies life for the caller.
-    MOZ_ASSERT_IF(!signalNullChecks, !fcr.isValid());
+    MOZ_ASSERT_IF(!oom() && !signalNullChecks, !fcr.isValid());
   }));
 
   // -----------------------------------
