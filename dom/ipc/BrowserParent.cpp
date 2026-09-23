@@ -817,7 +817,7 @@ void BrowserParent::ActorDestroy(ActorDestroyReason why) {
 
   ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
   if (cpm) {
-    cpm->UnregisterRemoteFrame(mTabId);
+    cpm->UnregisterRemoteFrame(this);
   }
 
   if (mRemoteLayerTreeOwner.IsInitialized()) {
