@@ -12,6 +12,7 @@ code it covers, which is what the old per-entry #ifdefs did by hand.
 
 import html
 import json
+import os
 import re
 
 from mako.template import Template
@@ -92,6 +93,23 @@ def main(output, template_path, licenses_path, *app_block_paths):
     with open(licenses_path, encoding="utf-8") as fh:
         licenses = json.load(fh)["licenses"]
 
+    # An artifact build does not traverse the directories only a compiling
+    # build does, so it takes their records from the build its binaries came
+    # from, as installed by `mach artifact install`.
+    deps = {template_path, licenses_path, *app_block_paths}
+    if buildconfig.substs.get("MOZ_ARTIFACT_BUILDS"):
+        compiled_path = os.path.join(
+            buildconfig.topobjdir, "dist", "licenses.artifact.json"
+        )
+        deps.add(compiled_path)
+        if os.path.exists(compiled_path):
+            with open(compiled_path, encoding="utf-8") as fh:
+                compiled = {l["id"]: l for l in json.load(fh)["licenses"]}
+            for license in licenses:
+                extra = compiled.pop(license["id"], {}).get("paths", [])
+                license["paths"] = sorted(set(license["paths"]) | set(extra))
+            licenses += compiled.values()
+
     output.write(
         render(
             template_path,
@@ -100,4 +118,4 @@ def main(output, template_path, licenses_path, *app_block_paths):
             read_blocks(app_block_paths),
         )
     )
-    return {template_path, licenses_path, *app_block_paths}
+    return deps
