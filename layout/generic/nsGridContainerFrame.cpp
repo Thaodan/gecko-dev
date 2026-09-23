@@ -5939,96 +5939,83 @@ static nscoord ContentContribution(const GridItemInfo& aGridItem,
   const bool isOrthogonal = childWM.IsOrthogonalTo(gridWM);
   auto childAxis = isOrthogonal ? GetOrthogonalAxis(aAxis) : aAxis;
   if (size == NS_INTRINSIC_ISIZE_UNKNOWN && childAxis == LogicalAxis::Block) {
-    if (aGridRI.mIsGridIntrinsicSizing && aAxis == LogicalAxis::Block) {
-      // We may reach here while computing the grid container's min-content
-      // contribution in ComputeIntrinsicISize(), potentially during row size
-      // resolution. In this context, the main reason for computing row sizes is
-      // to transfer the child's block-size to the inline-axis via aspect-ratio,
-      // contributing to the grid container's intrinsic inline-size in a later
-      // column size resolution. Since an indefinite block-size cannot be
-      // transferred in this way, we can safely skip MeasuringReflow() and
-      // simply use zero as a dummy value because the value does not affect the
-      // result.
-      size = 0;
+    // We need to reflow the child to find its BSize contribution.
+    nscoord availISize = INFINITE_ISIZE_COORD;
+    nscoord availBSize = NS_UNCONSTRAINEDSIZE;
+    // The next two variables are MinSizeClamp values in the child's axes.
+    nscoord iMinSizeClamp = NS_MAXSIZE;
+    nscoord bMinSizeClamp = NS_MAXSIZE;
+    LogicalSize cbSize = aPercentageBasis;
+    // Below, we try to resolve the child's grid-area size in its inline-axis
+    // to use as the CB/Available size in the MeasuringReflow that follows.
+    if (child->GetParent() != aGridRI.mFrame) {
+      // This item is a child of a subgrid descendant.
+      auto* subgridFrame =
+          static_cast<nsGridContainerFrame*>(child->GetParent());
+      MOZ_ASSERT(subgridFrame->IsGridContainerFrame());
+      auto* uts =
+          subgridFrame->GetOrCreateDeletableProperty(UsedTrackSizes::Prop());
+      // The grid-item's inline-axis as expressed in the subgrid's WM.
+      const auto subgridAxis = childWM.ConvertAxisTo(
+          LogicalAxis::Inline, subgridFrame->GetWritingMode());
+      uts->ResolveTrackSizesForAxis(subgridFrame, subgridAxis, *rc);
+      if (uts->mCanResolveLineRangeSize[subgridAxis]) {
+        auto* subgrid =
+            subgridFrame->GetProperty(nsGridContainerFrame::Subgrid::Prop());
+        const GridItemInfo* originalItem = nullptr;
+        for (const auto& item : subgrid->mGridItems) {
+          if (item.mFrame == child) {
+            originalItem = &item;
+            break;
+          }
+        }
+        MOZ_ASSERT(originalItem, "huh?");
+        const auto& range = originalItem->mArea.LineRangeForAxis(subgridAxis);
+        const nscoord sz = range.ToLength(uts->mTrackPlans[subgridAxis]);
+        if (childWM.IsOrthogonalTo(subgridFrame->GetWritingMode())) {
+          availBSize = sz;
+          cbSize.BSize(childWM) = sz;
+          if (aGridItem.mState[aAxis] & ItemState::eClampMarginBoxMinSize) {
+            bMinSizeClamp = sz;
+          }
+        } else {
+          availISize = sz;
+          cbSize.ISize(childWM) = sz;
+          if (aGridItem.mState[aAxis] & ItemState::eClampMarginBoxMinSize) {
+            iMinSizeClamp = sz;
+          }
+        }
+      }
     } else {
-      // We need to reflow the child to find its BSize contribution.
-      nscoord availISize = INFINITE_ISIZE_COORD;
-      nscoord availBSize = NS_UNCONSTRAINEDSIZE;
-      // The next two variables are MinSizeClamp values in the child's axes.
-      nscoord iMinSizeClamp = NS_MAXSIZE;
-      nscoord bMinSizeClamp = NS_MAXSIZE;
-      LogicalSize cbSize = aPercentageBasis;
-      // Below, we try to resolve the child's grid-area size in its inline-axis
-      // to use as the CB/Available size in the MeasuringReflow that follows.
-      if (child->GetParent() != aGridRI.mFrame) {
-        // This item is a child of a subgrid descendant.
-        auto* subgridFrame =
-            static_cast<nsGridContainerFrame*>(child->GetParent());
-        MOZ_ASSERT(subgridFrame->IsGridContainerFrame());
-        auto* uts =
-            subgridFrame->GetOrCreateDeletableProperty(UsedTrackSizes::Prop());
-        // The grid-item's inline-axis as expressed in the subgrid's WM.
-        const auto subgridAxis = childWM.ConvertAxisTo(
-            LogicalAxis::Inline, subgridFrame->GetWritingMode());
-        uts->ResolveTrackSizesForAxis(subgridFrame, subgridAxis, *rc);
-        if (uts->mCanResolveLineRangeSize[subgridAxis]) {
-          auto* subgrid =
-              subgridFrame->GetProperty(nsGridContainerFrame::Subgrid::Prop());
-          const GridItemInfo* originalItem = nullptr;
-          for (const auto& item : subgrid->mGridItems) {
-            if (item.mFrame == child) {
-              originalItem = &item;
-              break;
-            }
+      const LogicalAxis inlineAxisInChildWM =
+          isOrthogonal ? LogicalAxis::Block : LogicalAxis::Inline;
+      const nscoord colSize = cbSize.Size(inlineAxisInChildWM, childWM);
+      if (colSize != NS_UNCONSTRAINEDSIZE) {
+        MOZ_ASSERT(aGridRI.mCols.mCanResolveLineRangeSize,
+                   "Grid column sizes should be resolvable!");
+        if (isOrthogonal) {
+          availBSize = colSize;
+          if (aGridItem.mState[aAxis] & ItemState::eClampMarginBoxMinSize) {
+            bMinSizeClamp = colSize;
           }
-          MOZ_ASSERT(originalItem, "huh?");
-          const auto& range = originalItem->mArea.LineRangeForAxis(subgridAxis);
-          const nscoord sz = range.ToLength(uts->mTrackPlans[subgridAxis]);
-          if (childWM.IsOrthogonalTo(subgridFrame->GetWritingMode())) {
-            availBSize = sz;
-            cbSize.BSize(childWM) = sz;
-            if (aGridItem.mState[aAxis] & ItemState::eClampMarginBoxMinSize) {
-              bMinSizeClamp = sz;
-            }
-          } else {
-            availISize = sz;
-            cbSize.ISize(childWM) = sz;
-            if (aGridItem.mState[aAxis] & ItemState::eClampMarginBoxMinSize) {
-              iMinSizeClamp = sz;
-            }
-          }
-        }
-      } else {
-        const LogicalAxis inlineAxisInChildWM =
-            isOrthogonal ? LogicalAxis::Block : LogicalAxis::Inline;
-        const nscoord colSize = cbSize.Size(inlineAxisInChildWM, childWM);
-        if (colSize != NS_UNCONSTRAINEDSIZE) {
-          MOZ_ASSERT(aGridRI.mCols.mCanResolveLineRangeSize,
-                     "Grid column sizes should be resolvable!");
-          if (isOrthogonal) {
-            availBSize = colSize;
-            if (aGridItem.mState[aAxis] & ItemState::eClampMarginBoxMinSize) {
-              bMinSizeClamp = colSize;
-            }
-          } else {
-            availISize = colSize;
-            if (aGridItem.mState[aAxis] & ItemState::eClampMarginBoxMinSize) {
-              iMinSizeClamp = colSize;
-            }
+        } else {
+          availISize = colSize;
+          if (aGridItem.mState[aAxis] & ItemState::eClampMarginBoxMinSize) {
+            iMinSizeClamp = colSize;
           }
         }
       }
-      if (isOrthogonal == (aAxis == LogicalAxis::Inline)) {
-        bMinSizeClamp = aMinSizeClamp;
-      } else {
-        iMinSizeClamp = aMinSizeClamp;
-      }
-      LogicalSize availableSize(childWM, availISize, availBSize);
-      size = ::MeasuringReflow(child, aGridRI.mReflowInput, rc, availableSize,
-                               cbSize, iMinSizeClamp, bMinSizeClamp);
-      if (aGridRI.mIsGridIntrinsicSizing) {
-        MarkDirtyAfterIntrinsicSizingReflow(child);
-      }
+    }
+    if (isOrthogonal == (aAxis == LogicalAxis::Inline)) {
+      bMinSizeClamp = aMinSizeClamp;
+    } else {
+      iMinSizeClamp = aMinSizeClamp;
+    }
+    LogicalSize availableSize(childWM, availISize, availBSize);
+    size = ::MeasuringReflow(child, aGridRI.mReflowInput, rc, availableSize,
+                             cbSize, iMinSizeClamp, bMinSizeClamp);
+    if (aGridRI.mIsGridIntrinsicSizing) {
+      MarkDirtyAfterIntrinsicSizingReflow(child);
     }
     size += child->GetLogicalUsedMargin(childWM).BStartEnd(childWM);
     nscoord overflow = size - aMinSizeClamp;
