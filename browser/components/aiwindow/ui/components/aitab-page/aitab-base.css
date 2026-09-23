@@ -30,6 +30,7 @@
   @container aitab-page (width > 900px) {
     --aitab-heading-1: 80px;
     --aitab-heading-2: 64px;
+    --aitab-heading-3: 36px;
   }
 }
 
