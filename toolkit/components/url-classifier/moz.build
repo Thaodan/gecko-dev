@@ -99,8 +99,3 @@ if CONFIG["CC_TYPE"] == "gcc":
     ]
 
 include("/ipc/chromium/chromium-config.mozbuild")
-
-LICENSED_UNDER += ["chromium"]
-LICENSED_UNDER["chromium"].paths = [
-    "chromium",
-]

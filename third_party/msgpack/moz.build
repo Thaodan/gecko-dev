@@ -23,7 +23,3 @@ SOURCES += [
 ]
 
 FINAL_LIBRARY = 'xul'
-
-LICENSED_UNDER += [
-    "boost",
-]

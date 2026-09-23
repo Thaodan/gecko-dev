@@ -35,7 +35,3 @@ SPHINX_TREES["docs"] = "docs"
 
 with Files("**"):
     BUG_COMPONENT = ("Toolkit", "Form Autofill")
-
-LICENSED_UNDER += [
-    "chromium",
-]

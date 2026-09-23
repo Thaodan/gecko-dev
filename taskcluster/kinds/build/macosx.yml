@@ -358,7 +358,6 @@ macosx64-x64-devedition/opt:
         max-run-time: 7200
         env:
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
-            MOZ_GENERATE_SBOM: "1"
     run:
         config:
             - builds/releng_base_firefox.py
@@ -395,7 +394,6 @@ macosx64-aarch64-devedition/opt:
         max-run-time: 7200
         env:
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
-            MOZ_GENERATE_SBOM: "1"
             PERFHERDER_EXTRA_OPTIONS: aarch64
     run:
         config:
@@ -838,7 +836,6 @@ macosx64-x64-shippable/opt:
         max-run-time: 7200
         env:
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
-            MOZ_GENERATE_SBOM: "1"
     run:
         config:
             - builds/releng_base_firefox.py
@@ -873,7 +870,6 @@ macosx64-aarch64-shippable/opt:
         max-run-time: 7200
         env:
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
-            MOZ_GENERATE_SBOM: "1"
             PERFHERDER_EXTRA_OPTIONS: aarch64
     run:
         config:
@@ -908,8 +904,6 @@ macosx64-shippable/opt:
         tier: 1
     run-on-projects: ['release']
     worker:
-        # No MOZ_GENERATE_SBOM here: this task only recombines the
-        # per-architecture builds, which each upload their own SBOM.
         max-run-time: 1800
     run:
         job-script: taskcluster/scripts/misc/unify.sh

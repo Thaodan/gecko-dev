@@ -17,7 +17,3 @@ SOURCES += [
 
 # Suppress warnings in third-party code.
 SOURCES['xsum.cpp'].flags += ['-Wno-implicit-fallthrough', '-Wno-format', '-Wno-unused-value']
-
-LICENSED_UNDER += [
-    "mit",
-]

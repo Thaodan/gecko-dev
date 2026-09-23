@@ -105,7 +105,3 @@ Library('zstd')
 
 FINAL_LIBRARY = 'xul'
 
-
-LICENSED_UNDER += [
-    "bsd3clause",
-]

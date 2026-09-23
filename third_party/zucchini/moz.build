@@ -182,12 +182,3 @@ if CONFIG["MOZ_APP_NAME"] != "zucchini":
     TEST_DIRS += [
         "tests/gtest",
     ]
-
-LICENSED_UNDER += [
-    "chromium",
-]
-
-LICENSED_UNDER += ["unicode"]
-LICENSED_UNDER["unicode"].paths = [
-    "chromium/base/third_party/icu",
-]

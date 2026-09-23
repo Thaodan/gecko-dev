@@ -142,8 +142,3 @@ else:
 
 with Files("**"):
     BUG_COMPONENT = ("Toolkit", "Crash Reporting")
-
-LICENSED_UNDER += ["google-bsd"]
-LICENSED_UNDER["google-bsd"].paths = [
-    "google-breakpad",
-]
