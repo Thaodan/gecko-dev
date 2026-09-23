@@ -29,11 +29,8 @@ async function setupPrefs() {
 }
 
 async function resetPrefs() {
-  // We set 5 prefs in setupPrefs, so we should reset 5 prefs.
-  // 1 popPrefEnv from pushPrefEnv
-  // and 4 popPrefEnv happen internally in setDefaultTopSites.
-  await SpecialPowers.popPrefEnv();
-  await SpecialPowers.popPrefEnv();
+  // setupPrefs pushes 3 pref environments: 1 from its own pushPrefEnv and
+  // 2 inside setDefaultTopSites.
   await SpecialPowers.popPrefEnv();
   await SpecialPowers.popPrefEnv();
   await SpecialPowers.popPrefEnv();
