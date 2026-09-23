@@ -308,7 +308,7 @@ enum class DebugDrawerRoute(
                         debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.ListenToPageTools)
                     }
                     content = {
-                        ListenToPageTools(listenStore)
+                        ListenToPageTools(listenStore = listenStore, browserStore = browserStore)
                     }
                 }
             }
