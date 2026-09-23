@@ -38,7 +38,7 @@ import mozilla.components.ui.icons.R as IconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.compose.MenuGroup
 import org.mozilla.fenix.components.menu.compose.MenuItem
-import org.mozilla.fenix.share.ShareViewModel
+import org.mozilla.fenix.components.share.store.ShareUiState
 import org.mozilla.fenix.share.listadapters.SyncShareOption
 import org.mozilla.fenix.theme.FirefoxTheme
 
@@ -46,7 +46,7 @@ private val SendToDevicesContentBottomPadding = 64.dp
 
 @Composable
 internal fun SendToDevicesContent(
-    uiState: ShareViewModel.ShareUiState,
+    uiState: ShareUiState,
     onDismiss: () -> Unit,
     onSendToDevice: (SyncShareOption.SingleDevice) -> Unit,
     onSendToAll: () -> Unit,
@@ -297,7 +297,7 @@ private fun SendToDevicesContentWithDevicesPreview() {
         Surface {
             SendToDevicesContent(
                 uiState =
-                    ShareViewModel.ShareUiState(
+                    ShareUiState(
                         devices =
                             listOf(
                                 previewDevice("My Phone", DeviceType.MOBILE),
@@ -320,7 +320,7 @@ private fun SendToDevicesContentNoDevicesPreview() {
     FirefoxTheme {
         Surface {
             SendToDevicesContent(
-                uiState = ShareViewModel.ShareUiState(devices = emptyList()),
+                uiState = ShareUiState(devices = emptyList()),
                 onDismiss = {},
                 onSendToDevice = {},
                 onSendToAll = {},
@@ -337,7 +337,7 @@ private fun SendToDevicesContentReconnectToSyncPreview() {
     FirefoxTheme {
         Surface {
             SendToDevicesContent(
-                uiState = ShareViewModel.ShareUiState(devices = listOf(SyncShareOption.Reconnect)),
+                uiState = ShareUiState(devices = listOf(SyncShareOption.Reconnect)),
                 onDismiss = {},
                 onSendToDevice = {},
                 onSendToAll = {},
@@ -354,7 +354,7 @@ private fun SendToDevicesContentNoInternetPreview() {
     FirefoxTheme {
         Surface {
             SendToDevicesContent(
-                uiState = ShareViewModel.ShareUiState(devices = listOf(SyncShareOption.Offline)),
+                uiState = ShareUiState(devices = listOf(SyncShareOption.Offline)),
                 onDismiss = {},
                 onSendToDevice = {},
                 onSendToAll = {},
@@ -371,7 +371,7 @@ private fun SendToDevicesLoadingPreview() {
     FirefoxTheme {
         Surface {
             SendToDevicesContent(
-                uiState = ShareViewModel.ShareUiState(isLoading = true),
+                uiState = ShareUiState(isLoading = true),
                 onDismiss = {},
                 onSendToDevice = {},
                 onSendToAll = {},
