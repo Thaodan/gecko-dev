@@ -1927,7 +1927,7 @@ class WebExtensionTest : BaseSessionTest() {
                 ): GeckoResult<GeckoSession> {
                     assertEquals(details.url, "https://www.mozilla.org/en-US/")
                     assertEquals(details.active, true)
-                    assertEquals(tabsExtension!!, source)
+                    assertEquals(tabsExtension!!.id, source.id)
                     tabsCreateResult.complete(null)
                     return GeckoResult.fromValue(null)
                 }
@@ -2044,7 +2044,7 @@ class WebExtensionTest : BaseSessionTest() {
             object : WebExtension.SessionTabDelegate {
 
                 override fun onCloseTab(source: WebExtension?, session: GeckoSession): GeckoResult<AllowOrDeny> {
-                    assertEquals(tabsExtension, source)
+                    assertEquals(tabsExtension.id, source?.id)
                     assertEquals(newTabSession, session)
                     onCloseRequestResult.complete(null)
                     return GeckoResult.allow()
