@@ -90,10 +90,7 @@ export class MockEngineManager {
     dump(
       `[MockEngineManager] Waiting for the run request for the engine with purpose "${purpose}"\n`
     );
-    await TestUtils.waitForCondition(
-      () => engine.runRequests.size,
-      `[MockEngineManager] Failed to find a request for the engine with purpose "${purpose}"`
-    );
+    await engine.waitForRunRequest();
     const [requestId] = engine.getNextRequest();
     if (typeof response === "string") {
       dump(
@@ -126,10 +123,7 @@ export class MockEngineManager {
       () => this.engines.get(purpose),
       `Couldn't find the engine "${purpose}"`
     );
-    await TestUtils.waitForCondition(
-      () => engine.runRequests.size,
-      `[MockEngineManager] Failed to find a request for the engine with purpose "${purpose}"`
-    );
+    await engine.waitForRunRequest();
     const [requestId, { request }] = engine.getNextRequest();
     return {
       request,

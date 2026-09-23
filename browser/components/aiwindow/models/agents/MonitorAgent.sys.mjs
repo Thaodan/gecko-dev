@@ -75,6 +75,7 @@ let gMonitors = null;
 let gLoadPromise = null;
 let gShuttingDown = false;
 const gNotifiedRunIds = new Set();
+const gSnapshotRefreshPromises = new Map();
 
 export const NOTIFICATION_ACTIONS = {
   SNOOZE: "monitor-snooze",
@@ -422,6 +423,7 @@ export const MonitorAgent = {
       monitor.dispose(MONITOR_ERROR_CODES.CANCELED);
       gMonitors.delete(id);
       await lazy.MonitorStore.deleteMonitor(id);
+      gSnapshotRefreshPromises.delete(id);
     } catch (error) {
       monitor.restore();
       gMonitors.set(id, monitor);
@@ -498,21 +500,28 @@ export const MonitorAgent = {
    * @param {Monitor} monitor
    */
   _refreshInitialSnapshot(monitor) {
-    monitor
+    const refreshPromise = monitor
       .ensureInitialSnapshot()
-      .then(() => {
+      .then(async snapshot => {
         // the monitor may have been deleted or replaced while capturing
         if (gMonitors?.get(monitor.id) === monitor) {
-          return this._saveAndNotify(monitor);
+          await this._saveAndNotify(monitor);
         }
-        return null;
-      })
+        return snapshot;
+      });
+    gSnapshotRefreshPromises.set(monitor.id, refreshPromise);
+    refreshPromise
       .catch(error => {
         lazy.log.warn(
           `Failed to capture initial snapshot for monitor ${monitor.id}: ${
             error.message ?? error
           }`
         );
+      })
+      .finally(() => {
+        if (gSnapshotRefreshPromises.get(monitor.id) === refreshPromise) {
+          gSnapshotRefreshPromises.delete(monitor.id);
+        }
       });
   },
 
@@ -921,7 +930,31 @@ export const MonitorAgent = {
     gMonitors = null;
     gLoadPromise = null;
     gNotifiedRunIds.clear();
+    gSnapshotRefreshPromises.clear();
     gShuttingDown = false;
+  },
+
+  /**
+   * Waits for the latest background snapshot capture and its persistence.
+   *
+   * @param {string} id
+   * @returns {Promise<{ capturedAt: string, pageContent: string }>}
+   */
+  async _waitForSnapshotForTesting(id) {
+    await this._ensureLoaded();
+    const monitor = gMonitors.get(id);
+    if (!monitor) {
+      throw new Error(`Monitor with id ${id} not found`);
+    }
+
+    const refreshPromise = gSnapshotRefreshPromises.get(id);
+    if (refreshPromise) {
+      return refreshPromise;
+    }
+    if (monitor.initialSnapshot) {
+      return monitor.initialSnapshot;
+    }
+    throw new Error(`Monitor with id ${id} has no pending snapshot capture`);
   },
 
   async _resetForTesting() {
