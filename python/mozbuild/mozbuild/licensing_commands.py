@@ -44,6 +44,7 @@ def sbom(command_context, output, version, strict):
 
     return generate(
         command_context.topsrcdir,
+        command_context.topobjdir,
         command_context.repository,
         output=output,
         version=version,
