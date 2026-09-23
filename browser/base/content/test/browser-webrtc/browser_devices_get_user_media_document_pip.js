@@ -33,16 +33,21 @@ async function openTabWithPiP() {
     let script = content.document.createElement("script");
     script.textContent = `
       window.requestCapture = (target, kind) => {
-        let md = (target == "opener" ? window.opener : window)
-          .navigator.mediaDevices;
+        let win = target == "opener" ? window.opener : window;
+        let md = win.navigator.mediaDevices;
         let promise = kind == "screen"
           ? md.getDisplayMedia({ video: true })
           : md.getUserMedia({ video: true });
-        // Not awaited by the test: this doesn't settle until the prompt is
-        // answered, and these tests dismiss it instead.
-        promise.then(
-          () => {},
-          () => {}
+        // Exposed for the test to await. It settles only once the prompt is
+        // answered, and resolves either way so awaiting it can't produce an
+        // unhandled rejection. Parked on the target window, which for
+        // "opener" outlives this one.
+        win.captureOutcome = promise.then(
+          stream => {
+            stream.getTracks().forEach(track => track.stop());
+            return "granted";
+          },
+          error => error.name
         );
       };
     `;
@@ -123,6 +128,71 @@ add_task(async function testScreenOnOpenerPromptsInFocusedPiP() {
   checkDeviceSelectors(["screen"], pipWin);
 
   await cleanUp(tab, pipWin);
+});
+
+add_task(async function testClosingPiPDeniesPendingRequest() {
+  let [tab, pipWin] = await openTabWithPiP();
+
+  let shown = promisePopupNotificationShown(
+    "webRTC-shareDevices",
+    null,
+    pipWin
+  );
+  await requestCaptureFromPiP(pipWin, "opener", "screen");
+  await shown;
+
+  // Closing a window doesn't fire TabClose, so PopupNotifications won't deny
+  // the request for us.
+  await BrowserTestUtils.closeWindow(pipWin);
+
+  let result = await SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [],
+    () => content.wrappedJSObject.captureOutcome
+  );
+  is(result, "NotAllowedError", "closing the PiP denies the pending request");
+
+  BrowserTestUtils.removeTab(tab);
+  await checkNotSharing();
+});
+
+add_task(async function testClosingOpenerWithPromptInPiP() {
+  let [tab, pipWin] = await openTabWithPiP();
+
+  let shown = promisePopupNotificationShown(
+    "webRTC-shareDevices",
+    null,
+    pipWin
+  );
+  await requestCaptureFromPiP(pipWin, "opener", "screen");
+  await shown;
+
+  // Closing the opener destroys the window global backing the actor, and
+  // closes the PiP with it. The PiP unload handler must not try to deny
+  // through the dead actor.
+  let consoleErrors = [];
+  let listener = message => {
+    if (message instanceof Ci.nsIScriptError) {
+      consoleErrors.push(message.errorMessage);
+    }
+  };
+  Services.console.registerListener(listener);
+
+  let pipClosed = BrowserTestUtils.windowClosed(pipWin);
+  BrowserTestUtils.removeTab(tab);
+  await pipClosed;
+  ok(true, "closing the opener closed the PiP window");
+
+  // The error is reported asynchronously, so let it land before we look.
+  await TestUtils.waitForTick();
+  Services.console.unregisterListener(listener);
+  Assert.deepEqual(
+    consoleErrors.filter(error => error.includes("JSWindowActorParent")),
+    [],
+    "no attempt to send through the dead actor"
+  );
+
+  await checkNotSharing();
 });
 
 add_task(async function testBlockInPiPAppliesToOpener() {

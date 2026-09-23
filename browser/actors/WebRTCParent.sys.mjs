@@ -601,6 +601,7 @@ function prompt(aActor, aBrowser, aRequest) {
     originToShow = lazy.webrtcUI.getHostOrExtensionName(principal.URI);
   }
   let notification; // Used by action callbacks.
+  let stopWatchingPromptWindow; // Set when prompting in a document PiP window.
   const actionL10nIds = [{ id: "webrtc-action-allow" }];
 
   let notificationSilencingEnabled = Services.prefs.getBoolPref(
@@ -793,6 +794,11 @@ function prompt(aActor, aBrowser, aRequest) {
             menuPopup._commandEventListener = null;
           }
         }
+      }
+
+      if (aTopic == "removed") {
+        stopWatchingPromptWindow?.();
+        stopWatchingPromptWindow = null;
       }
 
       if (aTopic == "removed" && notification && withoutUserResponse) {
@@ -1382,6 +1388,24 @@ function prompt(aActor, aBrowser, aRequest) {
     options
   );
   notification.callID = aRequest.callID;
+
+  if (promptBrowser != aBrowser) {
+    // Closing a window tears its tabs down without firing TabClose, so
+    // PopupNotifications never fires its removal callback for a prompt in a
+    // document PiP window. Deny the request here instead, or the site is left
+    // holding a promise that never settles, since its window outlives the PiP.
+    const promptWindow = chromeDoc.defaultView;
+    const onUnload = () => {
+      stopWatchingPromptWindow = null;
+      if (!aActor.manager || aActor.manager.isClosed) {
+        return;
+      }
+      aActor.denyRequest(aRequest);
+    };
+    promptWindow.addEventListener("unload", onUnload, { once: true });
+    stopWatchingPromptWindow = () =>
+      promptWindow.removeEventListener("unload", onUnload);
+  }
 }
 
 /**
