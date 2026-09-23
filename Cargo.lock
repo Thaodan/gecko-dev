@@ -6699,6 +6699,10 @@ dependencies = [
  "fnv",
  "mozbuild",
  "mozilla-central-workspace-hack",
+ "serde_json",
+ "tempfile",
+ "thiserror 2.0.12",
+ "url",
  "windows-sys",
 ]
 
