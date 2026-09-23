@@ -317,7 +317,17 @@ class nsCoreUtils {
   static void DispatchAccEvent(RefPtr<nsIAccessibleEvent> aEvent);
 
   static bool IsDisplayContents(nsIContent* aContent);
-  static bool CanCreateAccessibleWithoutFrame(nsIContent* aContent);
+
+  /**
+   * If this returns false and aIsSubtreeHidden is passed, it is set to true
+   * only if nothing in aContent's subtree could ever be exposed regardless of
+   * its own state (e.g. display: none or content-visibility: hidden). It is
+   * left unchanged if a descendant might still be exposed despite aContent
+   * itself not being creatable (e.g. an inert ancestor with a descendant which
+   * is not inert, such as an open modal dialog).
+   */
+  static bool CanCreateAccessibleWithoutFrame(nsIContent* aContent,
+                                              bool* aIsSubtreeHidden = nullptr);
 
   /**
    * Return whether the document and all its in-process ancestors are visible in

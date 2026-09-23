@@ -587,7 +587,8 @@ bool nsCoreUtils::IsDisplayContents(nsIContent* aContent) {
   return element && element->IsDisplayContents();
 }
 
-bool nsCoreUtils::CanCreateAccessibleWithoutFrame(nsIContent* aContent) {
+bool nsCoreUtils::CanCreateAccessibleWithoutFrame(nsIContent* aContent,
+                                                  bool* aIsSubtreeHidden) {
   auto* element = Element::FromNodeOrNull(aContent);
   if (!element) {
     return false;
@@ -615,6 +616,11 @@ bool nsCoreUtils::CanCreateAccessibleWithoutFrame(nsIContent* aContent) {
   // Note that we need to check primary frame explicitly for the <select> case
   // above.
   if (!element->GetPrimaryFrame() && !element->IsDisplayContents()) {
+    // Nothing in aContent's subtree can ever render in this case, regardless of
+    // any ancestor.
+    if (aIsSubtreeHidden) {
+      *aIsSubtreeHidden = true;
+    }
     return false;
   }
 
@@ -628,8 +634,18 @@ bool nsCoreUtils::CanCreateAccessibleWithoutFrame(nsIContent* aContent) {
     if (nsIFrame* f = c->GetPrimaryFrame()) {
       if (f->HidesContent(nsIFrame::IncludeContentVisibility::Hidden) ||
           f->IsHiddenByContentVisibilityOnAnyAncestor(
-              nsIFrame::IncludeContentVisibility::Hidden) ||
-          !f->StyleVisibility()->IsVisible() || f->StyleUI()->IsInert()) {
+              nsIFrame::IncludeContentVisibility::Hidden)) {
+        if (aIsSubtreeHidden) {
+          // A descendant can't override content-visibility: hidden, so there's
+          // no point walking into the subtree.
+          *aIsSubtreeHidden = true;
+        }
+        return false;
+      }
+      if (!f->StyleVisibility()->IsVisible() || f->StyleUI()->IsInert()) {
+        // Unlike content-visibility, a descendant might still be exposed
+        // despite this (e.g. an open modal <dialog> which is not inert), so
+        // leave aIsSubtreeHidden alone and let the caller keep walking.
         return false;
       }
       break;
