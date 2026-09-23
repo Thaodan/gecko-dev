@@ -192,6 +192,9 @@ var gBrowserInit = {
     let tabToAdopt = this.getTabToAdopt();
     if (tabToAdopt?.hasAttribute?.("mini-window")) {
       document.documentElement.setAttribute("mini-window", "true");
+      if (tabToAdopt.hasAttribute("cropped-mini-window")) {
+        document.documentElement.setAttribute("cropped-mini-window", "true");
+      }
     }
 
     // Run menubar initialization first, to avoid CustomTitlebar code picking

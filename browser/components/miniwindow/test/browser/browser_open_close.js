@@ -109,20 +109,21 @@ add_task(async function test_only_allowed_shortcuts_kept_in_popup() {
   let popup = [...MiniWindowManager._miniwindows][0];
 
   let doc = miniWin.document;
-  // Only back, forward, reload and close stay enabled; everything else is
-  // disabled (kept in the DOM so id lookups elsewhere don't hit null).
+  // This pops a cropped mini window, which frames one specific page, so
+  // history navigation is disabled too - only reload and close stay enabled.
   let close = doc.getElementById("key_close");
   Assert.ok(
     close && !close.hasAttribute("disabled"),
     "close (Ctrl+W) stays enabled"
   );
   let back = doc.getElementById("goBackKb") || doc.getElementById("goBackKb2");
-  Assert.ok(back && !back.hasAttribute("disabled"), "back stays enabled");
+  Assert.equal(back?.getAttribute("disabled"), "true", "back is disabled");
   let forward =
     doc.getElementById("goForwardKb") || doc.getElementById("goForwardKb2");
-  Assert.ok(
-    forward && !forward.hasAttribute("disabled"),
-    "forward stays enabled"
+  Assert.equal(
+    forward?.getAttribute("disabled"),
+    "true",
+    "forward is disabled"
   );
   // Both the accel and the F5 reload shortcuts: leaving the accel ones
   // disabled would mean no working reload at all on macOS.

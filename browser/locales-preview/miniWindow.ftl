@@ -44,3 +44,8 @@ toolbar-button-mini-window =
 main-context-menu-use-mini-window =
     .label = Move Section to Mini Window
     .accesskey = M
+
+# Moves full-tab to a Mini Window.
+move-to-mini-window =
+    .label = Move to Mini Window
+    .accesskey = M
