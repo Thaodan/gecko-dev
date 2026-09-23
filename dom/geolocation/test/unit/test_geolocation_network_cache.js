@@ -32,6 +32,9 @@ function getCurrentPosition() {
 }
 
 add_setup(async function () {
+  do_get_profile();
+  Services.fog.initializeFOG();
+
   let httpserver = new HttpServer();
   httpserver.registerPathHandler("/geo", geoHandler);
   httpserver.start(-1);
@@ -88,4 +91,9 @@ add_task(async function cache_is_dropped_on_network_change() {
     3,
     "lookup after the link comes back performs a fresh request"
   );
+
+  let linkChanges = Glean.geolocation.networkLinkChange;
+  Assert.equal(linkChanges.down.testGetValue(), 1, "counted the down");
+  Assert.equal(linkChanges.changed.testGetValue(), 1, "counted the change");
+  Assert.equal(linkChanges.up.testGetValue(), 1, "counted the up");
 });

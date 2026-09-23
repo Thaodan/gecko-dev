@@ -128,11 +128,17 @@ class CachedResponse {
   }
 
   observe(subject, topic, data) {
+    if (topic !== NETWORK_LINK_TOPIC) {
+      return;
+    }
+
+    Glean.geolocation.networkLinkChange[data].add();
+
     // "down"/"unknown" do not imply a different network. Losing the link cannot
     // make a cached position wrong, and up/down are edge-triggered, so any
     // return of the link fires "up" and invalidates before the first request
     // that could have been served from the stale entry.
-    if (topic === NETWORK_LINK_TOPIC && (data === "changed" || data === "up")) {
+    if (data === "changed" || data === "up") {
       this.clear();
     }
   }
