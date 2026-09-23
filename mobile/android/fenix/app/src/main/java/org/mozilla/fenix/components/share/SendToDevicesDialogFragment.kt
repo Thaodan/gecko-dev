@@ -39,6 +39,7 @@ import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.SyncAuth
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
+import org.mozilla.fenix.components.share.store.ShareUiAction
 import org.mozilla.fenix.components.share.store.ShareUiState
 import org.mozilla.fenix.components.share.store.ShareUiStore
 import org.mozilla.fenix.ext.components
@@ -74,12 +75,12 @@ class SendToDevicesDialogFragment : BottomSheetDialogFragment() {
             SendToDevicesContent(
                 uiState = uiState,
                 onDismiss = { dismiss() },
-                onSendToDevice = { option: SyncShareOption.SingleDevice ->
-                    sendAndDismiss { sendTabsToDevice(option.device.id, tabs) }
+                onSend = { devices: Set<SyncShareOption.SingleDevice> ->
+                    sendAndDismiss {
+                        sendTabUseCases.sendToDeviceAsync.invoke(devices.map { it.device }, tabs).await()
+                    }
                 },
-                onSendToAll = {
-                    sendAndDismiss { sendTabsToAllDevices(tabs) }
-                },
+                onDeviceSelectionToggle = { shareUiStore.dispatch(ShareUiAction.DeviceSelectionToggle(it)) },
                 onSignInClicked = {
                     reconnectToSync(requireContext())
                 },
@@ -220,22 +221,6 @@ class SendToDevicesDialogFragment : BottomSheetDialogFragment() {
                 showSendResult(retryScope, onSuccess, onFailure, send)
             }
         }
-    }
-
-    private suspend fun sendTabsToDevice(
-        deviceId: String,
-        tabs: List<TabData>,
-    ): Boolean {
-        return sendTabUseCases.sendToDeviceAsync
-            .invoke(
-                deviceId = deviceId,
-                tabs = tabs,
-            )
-            .await()
-    }
-
-    private suspend fun sendTabsToAllDevices(tabs: List<TabData>): Boolean {
-        return sendTabUseCases.sendToAllAsync.invoke(tabs = tabs).await()
     }
 
     companion object {

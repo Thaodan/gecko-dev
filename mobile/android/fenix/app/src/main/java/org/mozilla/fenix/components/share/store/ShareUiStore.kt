@@ -14,11 +14,15 @@ import org.mozilla.fenix.share.listadapters.SyncShareOption
  *
  * @property devices The list of synchronized devices or account-related actions (e.g., Sign In).
  * @property isLoading Whether the initial data load or device refresh for the share sheet is in progress.
+ * @property selectedDevices The set of selected devices.
  */
 data class ShareUiState(
     val devices: List<SyncShareOption> = emptyList(),
     val isLoading: Boolean = false,
+    val selectedDevices: Set<SyncShareOption.SingleDevice> = emptySet(),
 ) : State {
+    val singleDevices: List<SyncShareOption.SingleDevice> = devices.filterIsInstance<SyncShareOption.SingleDevice>()
+
     companion object {
         val initial = ShareUiState(isLoading = true)
     }
@@ -33,6 +37,13 @@ sealed class ShareUiAction : Action {
      */
     data class UpdateDevices(val devices: List<SyncShareOption>) : ShareUiAction()
 
+    /**
+     * Dispatched when the selected devices are changed.
+     *
+     * @property tappedDevice The device tapped by the user.
+     */
+    data class DeviceSelectionToggle(val tappedDevice: SyncShareOption.SingleDevice) : ShareUiAction()
+
     /** Dispatched when devices are updating. */
     data object Loading : ShareUiAction()
 }
@@ -46,6 +57,15 @@ private fun reduce(
             state.copy(
                 devices = action.devices,
                 isLoading = false,
+            )
+        is ShareUiAction.DeviceSelectionToggle ->
+            state.copy(
+                selectedDevices =
+                    if (action.tappedDevice in state.selectedDevices) {
+                        state.selectedDevices - action.tappedDevice
+                    } else {
+                        state.selectedDevices + action.tappedDevice
+                    }
             )
         ShareUiAction.Loading -> state.copy(isLoading = true)
     }
