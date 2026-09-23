@@ -1944,11 +1944,6 @@ pref("browser.topsites.useRemoteSetting", true);
 pref("browser.topsites.contile.enabled", true);
 pref("browser.topsites.contile.endpoint", "https://contile.services.mozilla.com/v1/tiles");
 
-// The base URL for the Quick Suggest anonymizing proxy. To make a request to
-// the proxy, include a campaign ID in the path.
-pref("browser.partnerlink.attributionURL", "https://topsites.services.mozilla.com/cid/");
-pref("browser.partnerlink.campaign.topsites", "amzn_2020_a1");
-
 // Activates preloading of the new tab url.
 pref("browser.newtab.preload", true);
 
