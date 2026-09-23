@@ -90,6 +90,15 @@ export class MiniWindow {
   #edgeListener = null;
 
   /**
+   * Set when a scroll down hides the toolbar, so that a pointer already
+   * resting in the top edge doesn't immediately bring it back. Cleared when
+   * the pointer leaves the edge.
+   *
+   * @type {boolean}
+   */
+  #edgeSuppressed = false;
+
+  /**
    * Pending timer that re-hides the nav-bar after it's revealed.
    *
    * @type {number|null}
@@ -110,6 +119,13 @@ export class MiniWindow {
    * @type {object|null}
    */
   #progressListener = null;
+
+  /**
+   * Keeps the page's inset matched to the bar's height as it changes.
+   *
+   * @type {ResizeObserver|null}
+   */
+  #toolbarHeightObserver = null;
 
   /**
    * Aborts all the toolbox listeners at once on teardown.
@@ -399,8 +415,16 @@ export class MiniWindow {
         );
         return { top: 0, bottom: TOOLBAR_EDGE_ZONE_PX, left: 0, right: width };
       },
-      onMouseEnter: () => this.#scheduleHoverReveal(),
+      onMouseEnter: () => {
+        // A scroll down dismissed the bar while the pointer was already at the
+        // top edge; don't hand it straight back.
+        if (this.#edgeSuppressed) {
+          return;
+        }
+        this.#scheduleHoverReveal();
+      },
       onMouseLeave: () => {
+        this.#edgeSuppressed = false;
         this.#cancelHoverReveal();
         if (toolbox.classList.contains("mini-window-revealed")) {
           this.#startHideCountdown();
@@ -408,6 +432,8 @@ export class MiniWindow {
       },
     };
     win.MousePosTracker.addListener(this.#edgeListener);
+
+    this.#trackToolbarHeight(toolbox);
 
     // While the pointer or keyboard focus is on the toolbar, CSS holds it open
     let onToolbarLeave = event => {
@@ -435,7 +461,62 @@ export class MiniWindow {
       signal,
     });
 
+    this.#revealForFirstOpen();
+  }
+
+  /**
+   * The bar should already be on screen when the mini window appears, rather
+   * than sliding in after it. Suppress the transition for the frame in which
+   * it is revealed, then hand animation back for every later reveal.
+   */
+  #revealForFirstOpen() {
+    let root = this.miniWin.document.documentElement;
+    root.setAttribute("mini-window-first-open", "true");
     this.revealToolbar(TOOLBAR_HIDE_DELAY_FIRST_OPEN_MS);
+    // Two frames: the first still has the suppressing attribute applied, so
+    // removing it any earlier would let the reveal animate after all.
+    this.miniWin.requestAnimationFrame(() => {
+      this.miniWin?.requestAnimationFrame(() => {
+        root.removeAttribute("mini-window-first-open");
+      });
+    });
+  }
+
+  /**
+   * The bar overlays the page, so the page has to move down by exactly the
+   * bar's height or the bar covers content.
+   *
+   * @param {Element} toolbox
+   */
+  #trackToolbarHeight(toolbox) {
+    let setHeight = height => {
+      if (!height) {
+        return;
+      }
+
+      this.miniWin?.document.documentElement.style.setProperty(
+        "--mini-window-toolbar-height",
+        `${height}px`
+      );
+    };
+
+    // getBoundsWithoutFlushing never forces a flush, so this can be stale
+    setHeight(
+      this.miniWin.windowUtils.getBoundsWithoutFlushing(toolbox).height
+    );
+
+    this.#toolbarHeightObserver = new this.miniWin.ResizeObserver(entries => {
+      setHeight(entries.at(-1)?.borderBoxSize?.[0]?.blockSize);
+    });
+    this.#toolbarHeightObserver.observe(toolbox);
+  }
+
+  /**
+   * Scrolling down dismisses the toolbar at once.
+   */
+  hideToolbarOnScrollDown() {
+    this.#hideToolbar();
+    this.#edgeSuppressed = true;
   }
 
   /**
@@ -546,6 +627,8 @@ export class MiniWindow {
     // cleanup.
     this.#clearHideTimer();
     this.#cancelHoverReveal();
+    this.#toolbarHeightObserver?.disconnect();
+    this.#toolbarHeightObserver = null;
     if (this.#progressListener) {
       this.miniWin?.gBrowser?.removeTabsProgressListener(
         this.#progressListener
