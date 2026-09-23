@@ -35,7 +35,6 @@ from gecko_taskgraph.optimize.schema import (
 )
 from gecko_taskgraph.transforms.job import JobDescriptionSchema
 from gecko_taskgraph.transforms.job.run_task import RunTaskSchema
-from gecko_taskgraph.transforms.test import linux_perf_platform_restrictions
 from gecko_taskgraph.transforms.test.other import get_mobile_project
 from gecko_taskgraph.util.chunking import manifest_loaders
 
@@ -563,10 +562,6 @@ def define_tags(config, tasks):
             tags.setdefault("test-variant", variant)
 
         yield task
-
-
-# Restrict most perf tests to Ubuntu 24.04, keeping only allowed exceptions on 18.04.
-transforms.add(linux_perf_platform_restrictions.restrict_tests_to_2404)
 
 
 @transforms.add
