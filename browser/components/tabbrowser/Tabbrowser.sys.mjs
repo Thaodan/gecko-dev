@@ -4264,6 +4264,12 @@ export class Tabbrowser {
       options.skipPermitUnload = true;
     }
 
+    // Deleting a group closes the tabs in it. If the group happens to hold
+    // every tab in the window, we still only want the tabs to close, because
+    // the user asked to delete a group and not to close the window. A caller
+    // can still ask for the old behaviour.
+    options.closeWindowWithLastTab ??= false;
+
     if (group.tabs.length == this.tabs.length) {
       // explicit calls to removeTabGroup are not expected to save groups.
       // if removing this group closes a window, we need to tell the window
@@ -6097,6 +6103,9 @@ export class Tabbrowser {
    * @param {boolean} [options.skipGroupCheck]
    *   Skip separate processing of whole tab groups from the set of tabs.
    *   Used by removeTabGroup.
+   * @param {boolean} [options.closeWindowWithLastTab]
+   *   Whether closing every tab in the window should close the window too.
+   *   Defaults to the `browser.tabs.closeWindowWithLastTab` preference.
    * @param {TabMetricsContext} [options.metricsContext]
    *   The context for the operation for telemetry purposes
    * @see Tabbrowser.runBeforeUnloadForTabs
@@ -6109,6 +6118,7 @@ export class Tabbrowser {
       skipPermitUnload = false,
       skipSessionStore = false,
       skipGroupCheck = false,
+      closeWindowWithLastTab,
       metricsContext,
     } = {}
   ) {
@@ -6116,7 +6126,8 @@ export class Tabbrowser {
     // can be considered equivalent to closing the window.
     if (
       this.tabs.length == tabs.length &&
-      Services.prefs.getBoolPref("browser.tabs.closeWindowWithLastTab")
+      (closeWindowWithLastTab ??
+        Services.prefs.getBoolPref("browser.tabs.closeWindowWithLastTab"))
     ) {
       this.documentGlobal.closeWindow(
         true,
@@ -6201,6 +6212,10 @@ export class Tabbrowser {
         prewarmed: true,
         skipPermitUnload,
         skipSessionStore,
+        // removeTab decides on its own whether to close the window when it
+        // takes the last tab, so pass this along or it will close the window
+        // even when we were asked not to.
+        closeWindowWithLastTab,
         metricsContext: this.TabMetrics.decomposedContext(metricsContext),
       };
 

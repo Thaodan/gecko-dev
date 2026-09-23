@@ -1223,8 +1223,10 @@ export class AIChatContent extends MozLitElement {
 
   #getGroupTabsData(confirmedData) {
     const selectedTabs = confirmedData.selectedTabs || [];
-    const tabCount = selectedTabs.length;
     const group = confirmedData.group || {};
+    // The group can also hold the chat tab, which the user never picked, so
+    // report the size of the group rather than the size of their selection.
+    const tabCount = group.tabCount ?? selectedTabs.length;
 
     const rows = this.#buildTabsRow(
       "smart-window-grouped-tabs-row-label",
