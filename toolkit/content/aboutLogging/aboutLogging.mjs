@@ -200,6 +200,7 @@ const gLoggingPresets = {
     // The IP Protection log modules all run on the parent process main thread;
     // firefox-platform records GeckoMain so the log markers are captured.
     profilerPreset: "firefox-platform",
+    javascriptTracing: true,
   },
   ...gOsSpecificLoggingPresets,
   custom: {
@@ -271,6 +272,7 @@ function populatePresets() {
     }
     setPresetAndDescription(dropdown.value);
     Services.prefs.setCharPref("logging.config.preset", dropdown.value);
+    updateJavascriptTracing();
   };
 
   $("#log-modules").value = gLoggingPresets[dropdown.value].modules;
@@ -279,6 +281,13 @@ function populatePresets() {
   $("#log-modules").oninput = () => {
     dropdown.value = "custom";
   };
+}
+
+function updateJavascriptTracing() {
+  const preset = gLoggingPresets[gLoggingSettings.loggingPreset];
+  $("#with-javascript-tracing-checkbox").checked =
+    !!preset?.javascriptTracing ||
+    Services.prefs.getBoolPref("logging.config.javascriptTracing", false);
 }
 
 function updateLoggingOutputType(profilerOutputType) {
@@ -590,10 +599,7 @@ function init() {
     false
   );
 
-  $("#with-javascript-tracing-checkbox").checked = Services.prefs.getBoolPref(
-    "logging.config.javascriptTracing",
-    false
-  );
+  updateJavascriptTracing();
 
   try {
     let running = Services.prefs.getBoolPref("logging.config.running");
@@ -917,7 +923,7 @@ function startLogging() {
         features.push("audiocallbacktracing");
       }
     }
-    if (Services.prefs.getBoolPref("logging.config.javascriptTracing", false)) {
+    if ($("#with-javascript-tracing-checkbox").checked) {
       dump(" add tracing\n");
       features.push("tracing");
     }
