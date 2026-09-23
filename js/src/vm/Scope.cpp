@@ -776,7 +776,6 @@ WasmFunctionScope* WasmFunctionScope::create(JSContext* cx,
   wasm::StackResults unusedStackResults;
   if (!instance->instance().debug().debugGetLocalTypes(
           funcIndex, &locals, &argsLength, &unusedStackResults)) {
-    ReportOutOfMemory(cx);
     return nullptr;
   }
   uint32_t namesCount = locals.length();
