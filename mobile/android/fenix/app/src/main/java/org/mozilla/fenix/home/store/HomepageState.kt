@@ -251,7 +251,7 @@ private fun buildHeaderState(settings: Settings): HeaderState {
             showStoriesButton = settings.showPocketRecommendationsFeature,
         )
     } else {
-        HeaderState.Normal
+        HeaderState.Normal(showStoriesButton = settings.showPocketRecommendationsFeature)
     }
 }
 
@@ -259,7 +259,7 @@ private fun buildPrivateHeaderState(settings: Settings): HeaderState {
     return if (settings.privateModeAndStoriesEntryPointEnabled) {
         HeaderState.Experimental.Private
     } else {
-        HeaderState.Normal
+        HeaderState.Normal(showStoriesButton = false)
     }
 }
 
@@ -269,8 +269,10 @@ internal sealed class HeaderState {
     /**
      * Represents the non-experimental header state for both normal and private mode. The header's colors are derived
      * from the wallpaper at render time (see `HomepageHeader`), so no colors are held here.
+     *
+     * @property showStoriesButton Whether to show the stories button.
      */
-    data object Normal : HeaderState()
+    data class Normal(val showStoriesButton: Boolean) : HeaderState()
 
     /** Represents the experimental states for the entry points experiment. */
     sealed class Experimental : HeaderState() {
