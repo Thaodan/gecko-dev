@@ -2753,7 +2753,7 @@ class WebExtensionTest : BaseSessionTest() {
     // - Create new GeckoSession for WebExtension to close
     // - Load url that will allow extension to identify the tab
     // - Registers a WebExtension
-    // - Extension finds the tab by url and removes it
+    // - Once the TabDelegate is registered, a message tells the extension to find the tab by url and remove it
     // - TabDelegate handles closing of the tab
     // - Verify that request targets previously created GeckoSession
     @Test
@@ -2778,6 +2778,17 @@ class WebExtensionTest : BaseSessionTest() {
                 }
             },
         )
+
+        val portResult = GeckoResult<WebExtension.Port>()
+        tabsExtension.setMessageDelegate(
+            object : WebExtension.MessageDelegate {
+                override fun onConnect(port: WebExtension.Port) {
+                    portResult.complete(port)
+                }
+            },
+            "browser",
+        )
+        sessionRule.waitForResult(portResult).postMessage(JSONObject())
 
         sessionRule.waitForResult(onCloseRequestResult)
         sessionRule.waitForResult(controller.uninstall(tabsExtension))
