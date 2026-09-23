@@ -1756,8 +1756,15 @@ def target_tasks_perftest_fenix_startup(full_task_graph, parameters, graph_confi
     """
     Select perftest tasks we want to run daily for fenix startup
     """
+    # Bug 2070794 - the shopify applink tests perma-fails on the bitbar p6 and s24
+    FENIX_STARTUP_EXCLUDED_LABELS = {
+        "perftest-android-hw-p6-aarch64-shippable-startup-fenix-shopify-applink-startup",
+        "perftest-android-hw-s24-aarch64-shippable-startup-fenix-shopify-applink-startup",
+    }
     for name, task in full_task_graph.tasks.items():
         if task.kind != "perftest":
+            continue
+        if name in FENIX_STARTUP_EXCLUDED_LABELS:
             continue
         if "fenix" in name and "startup" in name and "profiling" not in name:
             yield name
