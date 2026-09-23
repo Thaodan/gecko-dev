@@ -511,6 +511,7 @@ if (
 
       let popup = aDocument.createXULElement("menupopup");
       popup.setAttribute("id", "share-tab-popup");
+      popup.setAttribute("accesskey-conflicts-bug", "2073899");
       popup.addEventListener("popupshowing", () => {
         let browser = aDocument.defaultView.gBrowser.selectedBrowser;
         node.contextBrowserToShare = Cu.getWeakReference(browser);

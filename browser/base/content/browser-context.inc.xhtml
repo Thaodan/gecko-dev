@@ -413,6 +413,7 @@
 #ifdef NIGHTLY_BUILD
           <menuitem id="context-frameOsPid"
                     label="PID: Unknown"
+                    role="note"
                     disabled="true"/>
 #endif
         </menupopup>
@@ -427,7 +428,7 @@
                 />
       <menu id="spell-dictionaries"
             data-l10n-id="text-action-spell-dictionaries">
-          <menupopup id="spell-dictionaries-menu">
+          <menupopup id="spell-dictionaries-menu" accesskey-conflicts-bug="2073901">
               <menuseparator id="spell-language-separator"/>
               <menuitem id="spell-add-dictionaries"
                         data-l10n-id="text-action-spell-add-dictionaries"
