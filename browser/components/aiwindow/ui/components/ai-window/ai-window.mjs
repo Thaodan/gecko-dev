@@ -1819,11 +1819,12 @@ export class AIWindow extends MozLitElement {
         })
       ) {
         // This command renders the monitor chat UI, so switch to the chat
-        // layout as if communication has started
-        if (
-          this.mode === MODE.FULLPAGE &&
-          !this.classList.contains("chat-active")
-        ) {
+        // layout as if communication has started. This must run in every mode
+        // (matching the regular chat path in #generatePrompt), not just
+        // fullpage: in the sidebar it is what applies chat-active and lets
+        // #updateBrowserTabbable put the chat browser hosting the card back in
+        // the tab order, so keyboard users can reach the task-creation form.
+        if (!this.classList.contains("chat-active")) {
           this.#initActiveChatlayout();
         }
         return;
