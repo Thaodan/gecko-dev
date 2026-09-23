@@ -44,7 +44,9 @@ use filetime_win::FileTime;
 use guid_win::Guid;
 use winapi::shared::minwindef::DWORD;
 use winapi::shared::ntdef::{HRESULT, LANGIDFROMLCID, ULONG};
-use winapi::shared::winerror::{HRESULT_FROM_WIN32, S_FALSE};
+use winapi::shared::winerror::{
+    FACILITY_BACKGROUNDCOPY, HRESULT_FACILITY, HRESULT_FROM_WIN32, S_FALSE,
+};
 use winapi::um::bits::{
     IBackgroundCopyError, IBackgroundCopyFile, IBackgroundCopyJob, IBackgroundCopyManager,
     IEnumBackgroundCopyFiles, IEnumBackgroundCopyJobs, BG_JOB_PRIORITY, BG_JOB_PRIORITY_FOREGROUND,
@@ -97,6 +99,7 @@ pub enum BitsProxyUsage {
 
 type Result<T> = result::Result<T, HResult>;
 
+#[derive(Clone)]
 pub struct BackgroundCopyManager(ComRef<IBackgroundCopyManager>);
 
 fn ensure_mta() -> Result<()> {
@@ -104,6 +107,11 @@ fn ensure_mta() -> Result<()> {
         Err(e) => Err(e.clone()),
         Ok(_) => Ok(()),
     })
+}
+
+/// Whether `hr` is an answer from the BITS service itself rather than a COM or RPC failure.
+pub fn is_bits_error(hr: HRESULT) -> bool {
+    HRESULT_FACILITY(hr) == FACILITY_BACKGROUNDCOPY
 }
 
 // Activations that outlived their caller's timeout and are still pending. Two cover the monitor
@@ -210,6 +218,11 @@ impl BackgroundCopyManager {
                 Err(HResult::new(E_FAIL).function("connect_with_timeout"))
             }
         }
+    }
+
+    /// Whether both refer to the same interface instance.
+    pub fn ptr_eq(&self, other: &BackgroundCopyManager) -> bool {
+        self.0.as_raw() == other.0.as_raw()
     }
 
     /// Create a new download job with the given name.
