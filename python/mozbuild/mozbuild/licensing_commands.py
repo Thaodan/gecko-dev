@@ -32,8 +32,15 @@ from mach.decorators import Command, CommandArgument
 @CommandArgument(
     "--version",
     default=None,
-    help="Version to record for the product itself. Defaults to "
-    "browser/config/version_display.txt.",
+    help="Version to record for the product itself. Defaults to the "
+    "configuration's MOZ_APP_VERSION_DISPLAY, or to "
+    "browser/config/version_display.txt in an unconfigured tree.",
+)
+@CommandArgument(
+    "--product-name",
+    default=None,
+    help="Name to record for the product itself. Defaults to the "
+    "configuration's MOZ_APP_BASENAME, or to Firefox in an unconfigured tree.",
 )
 @CommandArgument(
     "--strict",
@@ -41,18 +48,29 @@ from mach.decorators import Command, CommandArgument
     default=False,
     help="Exit non-zero if any moz.yaml fails to load.",
 )
-def sbom(command_context, output, version, strict):
+def sbom(command_context, output, version, product_name, strict):
     from mozbuild.action.generate_sbom import generate
+    from mozbuild.base import BuildEnvironmentNotFoundException
 
     command_context.populate_logger()
     command_context.log_manager.enable_unstructured()
+
+    # The shippable builds that generate an SBOM include GeckoView and
+    # comm-central, so the root component describes whatever this configuration
+    # actually builds. An unconfigured tree has no answer and assumes desktop.
+    try:
+        substs = command_context.substs
+    except BuildEnvironmentNotFoundException:
+        substs = {}
 
     return generate(
         command_context.topsrcdir,
         command_context.topobjdir,
         command_context.repository,
+        substs=substs,
         output=output,
         version=version,
+        product_name=product_name,
         strict=strict,
     )
 
