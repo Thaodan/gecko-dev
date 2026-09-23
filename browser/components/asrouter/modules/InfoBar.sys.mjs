@@ -239,6 +239,7 @@ class InfoBarNotification {
       InfoBar._universalInfobars.push({
         box: notificationContainer,
         notification: this.notification,
+        win: browser.documentGlobal,
       });
     }
 
@@ -728,7 +729,7 @@ export const InfoBar = {
         () => {
           // Remove this window’s stale entry
           InfoBar._universalInfobars = InfoBar._universalInfobars.filter(
-            ({ box }) => box.documentGlobal !== win
+            entry => entry.win !== win
           );
 
           // This listener can outlive its notification, so only the current
@@ -741,7 +742,7 @@ export const InfoBar = {
           const survives =
             isUniversal &&
             InfoBar._universalInfobars.some(
-              ({ box }) => !box.documentGlobal?.closed
+              entry => entry.win && !entry.win.closed
             );
           if (!survives) {
             InfoBar._activeInfobar = null;
