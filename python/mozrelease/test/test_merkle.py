@@ -4,7 +4,8 @@ import random
 import unittest
 
 import mozunit
-from mozharness.mozilla.merkle import InclusionProof, MerkleTree
+
+from mozrelease.merkle import InclusionProof, MerkleTree
 
 decode_hex = codecs.getdecoder("hex_codec")
 encode_hex = codecs.getencoder("hex_codec")

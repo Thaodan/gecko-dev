@@ -13,8 +13,8 @@ sys.path.insert(1, os.path.dirname(os.path.dirname(sys.path[0])))
 
 from mozharness.base.python import VirtualenvMixin, virtualenv_config_options
 from mozharness.base.script import BaseScript
-from mozharness.mozilla.checksums import parse_checksums_file
-from mozharness.mozilla.merkle import MerkleTree
+from mozrelease.checksums import parse_checksums_file
+from mozrelease.merkle import MerkleTree
 
 
 class ChecksumsGenerator(BaseScript, VirtualenvMixin):
