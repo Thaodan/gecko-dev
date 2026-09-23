@@ -354,7 +354,12 @@ def _drop_redundant_chunks(full_task_graph, labels):
     kept = []
     for label in labels:
         task = full_task_graph.tasks.get(label)
+        suite = task.attributes.get("unittest_suite", "") if task else ""
         if task and task.attributes.get("test-manifests-restricted", False):
+            kept.append(label)
+        elif suite.startswith(("test-verify", "test-coverage")):
+            # Per-test mode slices the requested tests across chunks, so each
+            # chunk runs a different subset.
             kept.append(label)
         elif label.endswith("-1") or not label.rsplit("-", 1)[-1].isnumeric():
             kept.append(label)
