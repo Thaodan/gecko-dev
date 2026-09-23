@@ -1058,16 +1058,36 @@ function UpdateCanvasCache(url, canvas) {
 async function DoDrawWindow(ctx, x, y, w, h) {
   if (g.useDrawSnapshot) {
     try {
+      // drawSnapshot's rect is in the content document's CSS pixels, but ours
+      // is in canvas pixels, and full zoom is the ratio between the two. Zoom
+      // is applied by rounding the app units per device pixel though, so the
+      // ratio the document actually got is not the one that was asked for;
+      // nsDeviceContext::ApplyFullZoomToAPD is what we mirror here.
+      const appUnitsPerCSSPixel = 60;
+      const unzoomedAppUnits = Math.max(
+        1,
+        Math.round(appUnitsPerCSSPixel / g.containingWindow.devicePixelRatio)
+      );
+      const zoom =
+        unzoomedAppUnits /
+        Math.max(
+          1,
+          Math.round(unzoomedAppUnits / g.browser.browsingContext.fullZoom)
+        );
+      const left = Math.floor(x / zoom);
+      const top = Math.floor(y / zoom);
+      const right = Math.ceil((x + w) / zoom);
+      const bottom = Math.ceil((y + h) / zoom);
       // drawView matches what the DRAWWINDOW_DRAW_VIEW path below draws: the
       // rect is viewport relative, and the root scrollbars are included.
       let image =
         await g.browser.browsingContext.currentWindowGlobal.drawSnapshot(
-          new DOMRect(x, y, w, h),
-          1.0,
+          new DOMRect(left, top, right - left, bottom - top),
+          zoom,
           "#fff",
           { drawView: true }
         );
-      ctx.drawImage(image, x, y);
+      ctx.drawImage(image, left * zoom, top * zoom);
     } catch (ex) {
       logger.error(g.currentURL + " | drawSnapshot failed: " + ex);
       ++g.testResults.Exception;
