@@ -664,7 +664,9 @@ tab-split-view-wrapper[dragtarget] {
 
   @media -moz-pref("browser.nova.enabled") {
     top: 7px;
-    box-shadow: var(--box-shadow-level-1);
+    &:not([crashed]) {
+      box-shadow: var(--box-shadow-level-1);
+    }
   }
 
   #tabbrowser-tabs[orient="vertical"] & {
