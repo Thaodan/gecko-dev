@@ -112,6 +112,7 @@ macosx64-rusttests/opt:
             - builds/taskcluster_base_macosx.py
             - builds/releng_sub_mac_configs/rusttests.py
         extra-config:
+            app_name: tools/rusttests
             mozconfig_platform: macosx64
         mozconfig-variant: rusttests
     run-on-projects: ['mozilla-central']
@@ -144,6 +145,7 @@ macosx64-rusttests/debug:
             - builds/taskcluster_base_macosx.py
             - builds/releng_sub_mac_configs/rusttests.py
         extra-config:
+            app_name: tools/rusttests
             mozconfig_platform: macosx64
         mozconfig-variant: rusttests-debug
     run-on-projects: ['trunk']

@@ -42,6 +42,7 @@ tasks:
                 NEED_XVFB: "true"
                 PERFHERDER_EXTRA_OPTIONS: valgrind
                 MOZ_PERFHERDER_UPLOAD: /builds/worker/perfherder-data-valgrind.json
+                MOZCONFIG: browser/config/mozconfigs/linux64/valgrind
         run:
             using: mozharness
             actions: [get-secrets, build, valgrind-test]

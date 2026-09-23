@@ -926,6 +926,8 @@ win64-rusttests/opt:
             - builds/taskcluster_base_windows.py
             - builds/taskcluster_base_win64.py
             - builds/taskcluster_sub_win64/rusttests_opt.py
+        extra-config:
+            app_name: tools/rusttests
         mozconfig-variant: rusttests
     run-on-projects: ['mozilla-central']
     fetches:
@@ -968,6 +970,8 @@ win64-rusttests/debug:
             - builds/taskcluster_base_windows.py
             - builds/taskcluster_base_win64.py
             - builds/taskcluster_sub_win64/rusttests_opt.py
+        extra-config:
+            app_name: tools/rusttests
         mozconfig-variant: rusttests-debug
     run-on-projects: ['trunk']
     fetches:
