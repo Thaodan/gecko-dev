@@ -14,6 +14,7 @@
   --urlbar-container-min-width: 310px;
 
   --urlbar-basic-component-size: calc(var(--urlbar-height) - 2 * var(--urlbar-input-container-padding));
+  --urlbar-component-gap: calc(var(--urlbar-input-container-padding) - var(--urlbar-input-container-border-width));
   --urlbar-icon-padding: calc((var(--urlbar-basic-component-size) - 16px) / 2);
 
   /* Usually we wouldn't need snapping border widths manually, but we use this
@@ -48,6 +49,7 @@
   @media not -moz-pref("browser.nova.enabled") {
     --urlbar-basic-component-size: calc(var(--urlbar-height) - 2 * (var(--urlbar-input-container-border-width) + var(--urlbar-input-container-padding)));
     --urlbar-icon-padding: calc((var(--urlbar-height) - 2px /* border */ - 2px /* padding */ - 16px /* icon */) / 2);
+    --urlbar-component-gap: 0px;
     --urlbar-input-container-padding: round(up, 1px, env(hairline));
     --urlbar-background-overhang-open: 0px;
   }
@@ -180,8 +182,7 @@ toolbar[inactive="true"] .urlbar,
 #urlbar:not([actiontype="extension"]) > .urlbar-input-container > #urlbar-label-box > #urlbar-label-extension,
 .urlbar-input-container[pageproxystate="invalid"] > #page-action-buttons > .urlbar-page-action:not(#share-button),
 #identity-box.chromeUI ~ #page-action-buttons > .urlbar-page-action:not(#star-button-box, #split-view-button, #share-button),
-#urlbar[usertyping] > .urlbar-input-container > #page-action-buttons > #urlbar-zoom-button,
-#urlbar[usertyping] > .urlbar-input-container > #page-action-buttons > .urlbar-page-action,
+#urlbar[usertyping] > .urlbar-input-container > #page-action-buttons,
 .urlbar:not([usertyping]) > .urlbar-input-container > .urlbar-go-button,
 .urlbar:not(#searchbar-new, [focused]) > .urlbar-input-container > .urlbar-go-button,
 #urlbar-revert-button-container {
@@ -401,6 +402,12 @@ toolbar[inactive="true"] .urlbar,
 
   .urlbar[popover-open][focused] > & {
     outline: var(--urlbar-input-container-outline-open-focused);
+  }
+
+  /* Only the address bar has site-info pills to separate. The in-page bar
+     and the search bar have nothing to separate. */
+  #urlbar > & {
+    column-gap: var(--urlbar-component-gap);
   }
 }
 
@@ -665,7 +672,7 @@ toolbar[inactive="true"] .urlbar,
     /* Show the url scheme in a static box when overflowing to the left */
     position: relative;
     direction: ltr;
-    margin-inline-end: var(--urlbar-input-gap);
+    margin-inline: calc(var(--urlbar-input-gap) - var(--urlbar-component-gap));
   }
 
   :root[customizing] & {
