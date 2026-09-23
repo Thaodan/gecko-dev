@@ -931,6 +931,10 @@ Result<Ok, nsresult> Key::EncodeBinary(
     return Err(NS_ERROR_DOM_INDEXEDDB_DATA_ERR);
   }
 
+  if (aArrayBufferOrView.isResizable()) {
+    return Err(NS_ERROR_DOM_INDEXEDDB_DATA_ERR);
+  }
+
   // 1. Let aData be the result of getting the bytes held by the buffer source
   //    input.
   // 2. Return a new key with type binary and value aData.
