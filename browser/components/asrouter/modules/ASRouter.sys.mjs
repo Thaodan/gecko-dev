@@ -2491,12 +2491,7 @@ export class _ASRouter {
     return this.loadMessagesFromAllProviders();
   }
 
-  async sendPBNewTabMessage({ hideDefault, introPlaying }) {
-    // Nothing shows alongside the intro; it is offered again next time.
-    if (introPlaying) {
-      return { message: null };
-    }
-
+  async sendPBNewTabMessage({ hideDefault }) {
     let message = null;
     const PromoInfo = {
       VPN: { enabledPref: "browser.vpn_promo.enabled" },

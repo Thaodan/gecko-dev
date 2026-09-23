@@ -353,14 +353,10 @@ async function setupMessageConfig(config = null) {
 
   if (!config) {
     let hideDefault = window.PrivateBrowsingShouldHideDefault();
-    let introPlaying =
-      document.documentElement.classList.contains("intro-playing");
     try {
       let response = await window.ASRouterMessage({
         type: "PBNEWTAB_MESSAGE_REQUEST",
-        // introPlaying suppresses messaging for the run the intro animation
-        // plays on, without spending the message's frequency allocation.
-        data: { hideDefault: !!hideDefault, introPlaying },
+        data: { hideDefault: !!hideDefault },
       });
       message = response?.message;
       config = message?.content;
@@ -475,7 +471,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (!alreadyShown && !reduceMotion) {
       maskIntro.play = true;
-      document.documentElement.classList.add("intro-playing");
       RPMSetPref("browser.privatebrowsing.introAnimationShown", true);
     }
   }
