@@ -3,6 +3,8 @@ subsuite = "mozrelease"
 
 ["test_balrog.py"]
 
+["test_bouncer_check.py"]
+
 ["test_branding_urls.py"]
 
 ["test_buglist_creator.py"]
