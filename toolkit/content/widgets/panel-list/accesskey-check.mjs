@@ -120,9 +120,17 @@ export function checkAccessKeys(popup) {
 }
 
 function menupopupItems(popup) {
+  // TODO(bug 2074182): WebExtension items are skipped as we don't control them.
+  // Note that this will most likely lead to duplicate keys or extension items
+  // that are harder to reach. Duplicate keys fail gracefully (the key cycles
+  // between items that share it), whereas missing access keys in a mixed menu
+  // are a real problem. The only consistent ways to handle this correctly would
+  // be to 1) drop access keys from all menu items in those menus, or 2) move
+  // extension items to a sub menu so they don't mix with ours. Neither seems
+  // ideal.
   return Array.from(
     popup.querySelectorAll(
-      ":is(:scope, :scope > menugroup) > :is(menuitem, menu):not([hidden], [role][disabled])"
+      ":is(:scope, :scope > menugroup) > :is(menuitem, menu):not([hidden], [role][disabled], .webextension-menuitem)"
     ),
     item => ({
       accesskey: item.getAttribute("accesskey"),

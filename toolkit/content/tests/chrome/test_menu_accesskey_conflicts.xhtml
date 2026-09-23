@@ -58,6 +58,12 @@
     <menuitem label="One" accesskey="o"/>
     <menuitem label="Two" accesskey="o" intended-duplicate-accesskey="true"/>
   </menupopup>
+  <menupopup id="extension">
+    <menuitem label="One" accesskey="o"/>
+    <menuitem label="Two" accesskey="o" class="webextension-menuitem"/>
+    <menuitem label="Three" accesskey="t" class="webextension-menuitem"/>
+    <menuitem label="Four" accesskey="t" class="webextension-menuitem"/>
+  </menupopup>
 
   <script class="testbody" type="application/javascript">
   <![CDATA[
@@ -184,6 +190,14 @@ add_task(async function testTrackedMenuSkipped() {
     (await openAndCollectErrors("tracked")).length,
     0,
     "A menu naming its accesskey-conflicts bug is skipped"
+  );
+});
+
+add_task(async function testExtensionItemsSkipped() {
+  is(
+    (await openAndCollectErrors("extension")).length,
+    0,
+    "A WebExtension's items don't count, whatever their accesskeys"
   );
 });
 
