@@ -59,12 +59,13 @@ class GeckoViewSupport final
 
  public:
   // Create and attach a window.
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY static void Open(
-      const jni::Class::LocalRef& aCls,
-      java::GeckoSession::Window::Param aWindow, jni::Object::Param aQueue,
-      jni::Object::Param aCompositor, jni::Object::Param aDispatcher,
-      jni::Object::Param aSessionAccessibility, jni::Object::Param aInitData,
-      jni::String::Param aId, jni::String::Param aChromeURI, bool aPrivateMode);
+  static void Open(const jni::Class::LocalRef& aCls,
+                   java::GeckoSession::Window::Param aWindow,
+                   jni::Object::Param aQueue, jni::Object::Param aCompositor,
+                   jni::Object::Param aDispatcher,
+                   jni::Object::Param aSessionAccessibility,
+                   jni::Object::Param aInitData, jni::String::Param aId,
+                   jni::String::Param aChromeURI, bool aPrivateMode);
 
   // Close and destroy the nsWindow.
   MOZ_CAN_RUN_SCRIPT void Close();

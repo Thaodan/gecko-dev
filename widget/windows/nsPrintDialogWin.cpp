@@ -34,6 +34,26 @@ using namespace mozilla;
 using namespace mozilla::dom;
 using namespace mozilla::widget;
 
+/**
+ * ParamBlock
+ */
+
+class ParamBlock {
+ public:
+  ParamBlock() { mBlock = nullptr; }
+  ~ParamBlock() { NS_IF_RELEASE(mBlock); }
+  nsresult Init() {
+    return CallCreateInstance(NS_DIALOGPARAMBLOCK_CONTRACTID, &mBlock);
+  }
+  nsIDialogParamBlock* operator->() const MOZ_NO_ADDREF_RELEASE_ON_RETURN {
+    return mBlock;
+  }
+  operator nsIDialogParamBlock* const() { return mBlock; }
+
+ private:
+  nsIDialogParamBlock* mBlock;
+};
+
 NS_IMPL_ISUPPORTS(nsPrintDialogServiceWin, nsIPrintDialogService)
 
 NS_IMETHODIMP
@@ -107,8 +127,8 @@ nsPrintDialogServiceWin::ShowPageSetupDialog(mozIDOMWindowProxy* aParent,
   });
   promise.forget(aPromise);
 
-  nsCOMPtr<nsIDialogParamBlock> block =
-      do_CreateInstance(NS_DIALOGPARAMBLOCK_CONTRACTID, &rv);
+  ParamBlock block;
+  rv = block.Init();
   if (NS_FAILED(rv)) {
     return NS_OK;
   }
@@ -145,20 +165,27 @@ nsresult nsPrintDialogServiceWin::DoDialog(mozIDOMWindowProxy* aParent,
   // (though we'd rather this didn't fail, it's OK if it does. so there's
   // no failure or null check.)
   // retain ownership for method lifetime
-  nsCOMPtr<mozIDOMWindowProxy> activeParent = aParent;
-  if (!activeParent) {
+  nsCOMPtr<mozIDOMWindowProxy> activeParent;
+  if (!aParent) {
     mWatcher->GetActiveWindow(getter_AddRefs(activeParent));
+    aParent = activeParent;
   }
 
   // create a nsIMutableArray of the parameters
   // being passed to the window
   nsCOMPtr<nsIMutableArray> array = nsArray::Create();
-  array->AppendElement(aPS);
-  array->AppendElement(aParamBlock);
+
+  nsCOMPtr<nsISupports> psSupports(do_QueryInterface(aPS));
+  NS_ASSERTION(psSupports, "PrintSettings must be a supports");
+  array->AppendElement(psSupports);
+
+  nsCOMPtr<nsISupports> blkSupps(do_QueryInterface(aParamBlock));
+  NS_ASSERTION(blkSupps, "IOBlk must be a supports");
+  array->AppendElement(blkSupps);
 
   nsCOMPtr<mozIDOMWindowProxy> dialog;
-  nsresult rv = MOZ_KnownLive(mWatcher)->OpenWindow(
-      activeParent, nsDependentCString(aChromeURL), u"_blank"_ns,
+  nsresult rv = mWatcher->OpenWindow(
+      aParent, nsDependentCString(aChromeURL), u"_blank"_ns,
       "centerscreen,chrome,modal,titlebar"_ns, array, getter_AddRefs(dialog));
 
   return rv;

@@ -22,7 +22,6 @@ class WebIdentityChild final : public PWebIdentityChild {
 
   void SetHandler(WebIdentityHandler* aHandler);
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvOpenContinuationWindow(
       nsIURI* aContinueURI, const OpenContinuationWindowResolver& aResolver);
 
