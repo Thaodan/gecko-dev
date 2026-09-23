@@ -2166,13 +2166,23 @@
           "type": "boolean"
         },
         "Weather": {
-          "type": "boolean"
+          "type": "boolean",
+          "x-compatibility": {
+            "firefox": { "version_added": "152" },
+            "firefox_esr": { "version_added": "140.12.0" },
+            "firefox_enterprise": { "version_added": "152" }
+          }
         },
         "TopSites": {
           "type": "boolean"
         },
         "SponsoredTopSites": {
-          "type": "boolean"
+          "type": "boolean",
+          "x-compatibility": {
+            "firefox": { "version_added": "95" },
+            "firefox_esr": { "version_added": "91.4.0" },
+            "firefox_enterprise": { "version_added": "149" }
+          }
         },
         "Highlights": {
           "type": "boolean"
@@ -2181,19 +2191,48 @@
           "type": "boolean"
         },
         "Stories": {
-          "type": "boolean"
+          "type": "boolean",
+          "x-compatibility": {
+            "firefox": { "version_added": "141" },
+            "firefox_esr": { "version_added": "140.1.0" },
+            "firefox_enterprise": { "version_added": "149" },
+            "notes": "Replaces the `Pocket` property."
+          }
         },
         "SponsoredPocket": {
-          "type": "boolean"
+          "type": "boolean",
+          "x-compatibility": {
+            "firefox": { "version_added": "95" },
+            "firefox_esr": { "version_added": "91.4.0" },
+            "firefox_enterprise": { "version_added": "149" },
+            "notes": "Replaced by the `SponsoredStories` property in Firefox 141."
+          }
         },
         "SponsoredStories": {
-          "type": "boolean"
+          "type": "boolean",
+          "x-compatibility": {
+            "firefox": { "version_added": "141" },
+            "firefox_esr": { "version_added": "140.1.0" },
+            "firefox_enterprise": { "version_added": "149" },
+            "notes": "Replaces the `SponsoredPocket` property in Firefox 141."
+          }
         },
         "Snippets": {
-          "type": "boolean"
+          "type": "boolean",
+          "x-compatibility": {
+            "firefox": { "version_added": "68", "version_removed": "122" },
+            "firefox_esr": { "version_added": "68", "version_removed": "128" },
+            "firefox_enterprise": { "version_added": false },
+            "notes": "Deprecated in Firefox 122."
+          }
         },
         "Widgets": {
           "type": "object",
+          "x-compatibility": {
+            "firefox": { "version_added": "156" },
+            "firefox_esr": { "version_added": false },
+            "firefox_enterprise": { "version_added": "156" }
+          },
           "properties": {
             "Enabled": {
               "type": "boolean"
