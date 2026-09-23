@@ -115,10 +115,6 @@ class FetchDriver final : public nsIChannelEventSink,
               PerformanceStorage* aPerformanceStorage,
               net::ClassificationFlags aTrackingFlags);
 
-  FetchDriver() = delete;
-  FetchDriver(const FetchDriver&) = delete;
-  FetchDriver& operator=(const FetchDriver&) = delete;
-
   nsresult Fetch(AbortSignalImpl* aSignalImpl, FetchDriverObserver* aObserver);
 
   void SetDocument(Document* aDocument);
@@ -227,6 +223,9 @@ class FetchDriver final : public nsIChannelEventSink,
 
   friend class AlternativeDataStreamListener;
 
+  FetchDriver() = delete;
+  FetchDriver(const FetchDriver&) = delete;
+  FetchDriver& operator=(const FetchDriver&) = delete;
   ~FetchDriver();
 
   already_AddRefed<PreloaderBase> FindPreload(nsIURI* aURI);

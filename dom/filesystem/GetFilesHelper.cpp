@@ -5,7 +5,6 @@
 #include "GetFilesHelper.h"
 
 #include "FileSystemUtils.h"
-#include "mozilla/dom/BlobImpl.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/Directory.h"
@@ -326,11 +325,6 @@ void GetFilesHelper::RunIO() {
     }
   }
 }
-
-GetFilesHelperBase::GetFilesHelperBase(bool aRecursiveFlag)
-    : mRecursiveFlag(aRecursiveFlag) {}
-
-GetFilesHelperBase::~GetFilesHelperBase() = default;
 
 nsresult GetFilesHelperBase::ExploreDirectory(const nsAString& aDOMPath,
                                               nsIFile* aFile) {

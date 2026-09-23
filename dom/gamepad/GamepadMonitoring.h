@@ -4,7 +4,6 @@
 
 #ifndef mozilla_dom_GamepadMonitoring_h_
 #define mozilla_dom_GamepadMonitoring_h_
-#include "mozilla/Tainting.h"
 #include "mozilla/dom/GamepadHandle.h"
 
 namespace mozilla::dom {

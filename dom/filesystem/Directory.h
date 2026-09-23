@@ -28,9 +28,9 @@ class Directory final : public nsISupports, public nsWrapperCache {
                                                  const nsAString& aRealPath,
                                                  ErrorResult& aRv);
 
-  static already_AddRefed<Directory> Create(
-      nsIGlobalObject* aGlobal, nsIFile* aDirectory,
-      FileSystemBase* aFileSystem = nullptr);
+  static already_AddRefed<Directory> Create(nsIGlobalObject* aGlobal,
+                                            nsIFile* aDirectory,
+                                            FileSystemBase* aFileSystem = 0);
 
   // ========= Begin WebIDL bindings. ===========
 
