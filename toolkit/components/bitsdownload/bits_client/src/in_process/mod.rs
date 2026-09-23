@@ -18,10 +18,12 @@ use bits_protocol::*;
 
 use super::Error;
 
+const BCM_CONNECT_TIMEOUT: Duration = Duration::from_secs(30);
+
 // This is a macro in order to use the NotFound and GetJob variants from whatever enum is in scope.
 macro_rules! get_job {
     ($bcm:ident, $guid:expr, $name:expr) => {{
-        $bcm = BackgroundCopyManager::connect().map_err(|e| {
+        $bcm = BackgroundCopyManager::connect_with_timeout(BCM_CONNECT_TIMEOUT).map_err(|e| {
             ConnectBcm(HResultMessage {
                 hr: e.code(),
                 message: e.to_string(),
@@ -106,12 +108,13 @@ impl InProcessClient {
         // If the job is dropped before `AddFile` succeeds, I think it automatically gets
         // deleted from the queue. There is only one fallible call after that (`Resume`).
 
-        let bcm = BackgroundCopyManager::connect().map_err(|e| {
-            ConnectBcm(HResultMessage {
-                hr: e.code(),
-                message: e.to_string(),
-            })
-        })?;
+        let bcm =
+            BackgroundCopyManager::connect_with_timeout(BCM_CONNECT_TIMEOUT).map_err(|e| {
+                ConnectBcm(HResultMessage {
+                    hr: e.code(),
+                    message: e.to_string(),
+                })
+            })?;
         let mut job = bcm
             .create_job(&self.job_name)
             .map_err(|e| Create(format_error(&bcm, e)))?;
