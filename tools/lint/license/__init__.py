@@ -13,7 +13,9 @@ import collections
 import re
 from pathlib import Path
 
+import mozpack.path as mozpath
 from license_expression import ExpressionError, get_spdx_licensing
+from mozbuild.licenses import covering_manifest
 from mozlint import result
 from mozlint.pathutils import expand_exclusions
 
@@ -132,12 +134,12 @@ class Declarations:
             if flag is not None and isinstance(node.value, ast.Constant):
                 self.flags[(license_id, flag)].append((node.value.value, node.lineno))
 
-    def flag(self, license_id, name):
-        """The string values of one flag, in source order."""
+    def flag(self, license_id, name, of_type=str):
+        """The values of one flag, in source order, skipping the other types."""
         return [
             (value, lineno)
             for value, lineno in self.flags.get((license_id, name), ())
-            if isinstance(value, str)
+            if isinstance(value, of_type)
         ]
 
 
@@ -172,6 +174,7 @@ def lint(paths, config, **lintargs):
     declared_in_tree = _declared_in_tree(config, root)
 
     licensing = get_spdx_licensing()
+    manifests = {}
     results = []
 
     def report(path, lineno, message, hint):
@@ -241,8 +244,11 @@ def lint(paths, config, **lintargs):
                 "rest of the tree. Spell the id out.",
             ))
 
+        directory = mozpath.dirname(mozpath.normpath(path))
+        covering = covering_manifest(directory, root, manifests)
         for license_id in declarations.named:
-            for expression, lineno in declarations.flag(license_id, "spdx"):
+            spdx = declarations.flag(license_id, "spdx")
+            for expression, lineno in spdx:
                 try:
                     licensing.parse(
                         LICENSE_REF.sub("MIT", expression), validate=True, strict=True
@@ -255,6 +261,42 @@ def lint(paths, config, **lintargs):
                         "LicenseRef-<name> for a license that has none. "
                         "Combine ids with AND, OR and WITH.",
                     ))
+
+            if covering is None:
+                continue
+            subcomponent = any(
+                value
+                for value, _ in declarations.flag(license_id, "subcomponent", bool)
+            )
+            if spdx and covering.license and not subcomponent:
+                for _, lineno in spdx:
+                    problems.append((
+                        lineno,
+                        f'LICENSES["{license_id}"].spdx repeats `origin.license` '
+                        f"from {mozpath.relpath(covering.path, root)}, which "
+                        f"declares {covering.license}.",
+                        "moz.yaml owns the license of a vendored library, and "
+                        "the SBOM reads it from there rather than from this "
+                        "flag, so the two are free to drift apart. Drop the "
+                        "flag; or, if this notice covers code whose license "
+                        "differs from the library's own, set "
+                        f'LICENSES["{license_id}"].subcomponent = True.',
+                    ))
+
+            for text, lineno in declarations.flag(license_id, "text"):
+                declared_file = covering.license_file
+                if not declared_file or mozpath.normpath(
+                    mozpath.join(directory, text)
+                ) != mozpath.normpath(declared_file):
+                    continue
+                problems.append((
+                    lineno,
+                    f'LICENSES["{license_id}"].text repeats `origin.license-file` '
+                    f"from {mozpath.relpath(covering.path, root)}.",
+                    "A notice with no `text` is read from the file that "
+                    "manifest names, so the two cannot come to name different "
+                    "files. Drop the flag.",
+                ))
 
         for lineno, message, hint in sorted(problems):
             report(path, lineno, message, hint)

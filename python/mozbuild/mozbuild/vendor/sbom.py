@@ -150,6 +150,11 @@ def manifest_to_record(rel_path, manifest):
     }
 
 
+# Test fixtures, deliberately incomplete, so a manifest written to exercise a
+# validation failure does not become one under `--strict`.
+FIXTURE_PREFIXES = ("tools/lint/test/files/",)
+
+
 def discover_manifests(repo, topsrcdir):
     """Yield topsrcdir-relative paths of every tracked moz.yaml, sorted.
 
@@ -161,6 +166,7 @@ def discover_manifests(repo, topsrcdir):
         path
         for path, _ in finder.find("**/moz.yaml")
         if mozpath.basename(path) == "moz.yaml"
+        and not path.startswith(FIXTURE_PREFIXES)
     ]
     return sorted(paths)
 
@@ -223,6 +229,10 @@ def merge_license_notices(records, notices):
     ids are recorded as a property; where moz.yaml declared no license at all,
     the notice's SPDX expression fills the gap.
 
+    A notice flagged `subcomponent` is the exception to "moz.yaml wins": it
+    describes code whose license differs from that of the library it sits
+    inside, so its expression joins the component's rather than being dropped.
+
     Only `paths` is consulted, not `declared_in`: the declaring directory holds
     the notice text, which says nothing about the license of its own code.
     toolkit/content/licenses declares most of the shared notices and is itself
@@ -259,6 +269,18 @@ def merge_license_notices(records, notices):
             record["licenses"] = sorted({
                 notice["spdx"] for _, notice in covering if notice["spdx"]
             })
+        # A `subcomponent` notice covers code whose license differs from the
+        # enclosing library's -- the MySpell files inside hunspell -- so
+        # moz.yaml having answered for the library does not answer for it.
+        # Add it rather than let it drop.
+        for value in sorted({
+            notice["spdx"]
+            for _, notice in covering
+            if notice.get("subcomponent") and notice["spdx"]
+        }):
+            if value not in record["licenses"]:
+                record["licenses"].append(value)
+        record["licenses"].sort()
     return records
 
 

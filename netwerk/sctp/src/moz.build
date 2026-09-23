@@ -66,8 +66,11 @@ elif CONFIG['OS_TARGET'] == 'Darwin':
 
 LICENSES += ["sctp"]
 LICENSES["sctp"].title = "SCTP Licenses"
+# Unlike the other vendored libraries, this cannot point at the library's own
+# LICENSE.md: the notice reproduces the copyright headers the sources carry --
+# FreeBSD, Cisco, the WIDE project -- which that file, covering the usrsctp
+# code alone, does not.
 LICENSES["sctp"].text = "LICENSE-NOTICE.txt"
-LICENSES["sctp"].spdx = "BSD-3-Clause"
 LICENSES["sctp"].notice = """
 <p>These licenses apply to certain files in the directory <code>netwerk/sctp/src/</code>.</p>
 """

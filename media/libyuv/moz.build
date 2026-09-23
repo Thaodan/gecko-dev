@@ -44,8 +44,6 @@ GYP_DIRS['libyuv'].sandbox_vars['COMPILE_FLAGS'] = {'WARNINGS_AS_ERRORS': []}
 
 LICENSES += ["libyuv"]
 LICENSES["libyuv"].title = "libyuv License"
-LICENSES["libyuv"].text = "LICENSE-NOTICE.txt"
-LICENSES["libyuv"].spdx = "BSD-3-Clause"
 LICENSES["libyuv"].notice = """
 <p>This license applies to files in the directory <code>media/libyuv</code>.</p>
 """

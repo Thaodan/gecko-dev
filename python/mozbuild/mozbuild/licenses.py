@@ -10,8 +10,10 @@ tree without a build. Keeping the aggregation here stops the two from drifting.
 """
 
 import collections
+import os
 
 import mozpack.path as mozpath
+import yaml
 
 from mozbuild.frontend.context import Path, SourcePath
 from mozbuild.frontend.data import (
@@ -19,6 +21,96 @@ from mozbuild.frontend.data import (
     DeclaredLicenseNotice,
     LicenseError,
 )
+
+CoveringManifest = collections.namedtuple(
+    "CoveringManifest", ("path", "license", "license_file")
+)
+
+# directory -> CoveringManifest, shared by every from_context() call of one
+# process: the walk below runs once per moz.build and otherwise re-reads the
+# same handful of manifests thousands of times.
+_COVERING_MANIFESTS = {}
+
+
+def _manifest_fields(manifest, topsrcdir):
+    """Read one moz.yaml into a CoveringManifest.
+
+    Parsed with plain yaml rather than moz_yaml.load_moz_yaml: a manifest the
+    schema rejects still answers for the directory it owns, and reporting its
+    schema errors is the vendoring code's job.
+    """
+    try:
+        with open(manifest, encoding="utf-8") as fh:
+            data = yaml.safe_load(fh)
+    except (OSError, yaml.YAMLError):
+        data = None
+    if not isinstance(data, dict):
+        return CoveringManifest(manifest, None, None)
+
+    origin = data.get("origin") or {}
+    license = origin.get("license")
+    if isinstance(license, list):
+        license = " AND ".join(str(entry) for entry in license)
+
+    # `license-file` is relative to the vendored tree, which is not always the
+    # directory holding the manifest: gfx/angle/moz.yaml vendors into
+    # third_party/angle.
+    vendor_directory = (data.get("vendoring") or {}).get("vendor-directory")
+    directory = (
+        mozpath.join(topsrcdir, vendor_directory)
+        if vendor_directory
+        else mozpath.dirname(manifest)
+    )
+    license_file = origin.get("license-file")
+
+    return CoveringManifest(
+        manifest,
+        str(license) if license else None,
+        mozpath.join(directory, str(license_file)) if license_file else None,
+    )
+
+
+def covering_manifest(directory, topsrcdir, cache=None):
+    """The moz.yaml owning `directory`, as a CoveringManifest, or None.
+
+    The nearest manifest at or above the directory owns it, so the walk stops
+    at the first one found whether or not it declares anything.
+    """
+    if cache is None:
+        cache = _COVERING_MANIFESTS
+    directory = mozpath.normpath(directory)
+    if directory in cache:
+        return cache[directory]
+
+    manifest = mozpath.join(directory, "moz.yaml")
+    if os.path.isfile(manifest):
+        found = _manifest_fields(manifest, topsrcdir)
+    else:
+        parent = mozpath.dirname(directory)
+        if (
+            directory == mozpath.normpath(topsrcdir)
+            or not parent
+            or parent == directory
+        ):
+            found = None
+        else:
+            found = covering_manifest(parent, topsrcdir, cache)
+
+    cache[directory] = found
+    return found
+
+
+def _notice_text(context, fields):
+    """The absolute path of the file holding one notice's verbatim text.
+
+    `text` names it relative to the declaring moz.build. Left unset, it is the
+    `origin.license-file` of the covering moz.yaml, which is where a vendored
+    library already records the file it ships its license in.
+    """
+    if fields.text:
+        return SourcePath(context, fields.text).full_path
+    covering = covering_manifest(context.srcdir, context.config.topsrcdir)
+    return covering.license_file if covering else None
 
 
 def _reject_repeats(variable, ids):
@@ -66,11 +158,12 @@ def from_context(context):
             context,
             license_id,
             fields.title,
-            SourcePath(context, fields.text).full_path if fields.text else None,
+            _notice_text(context, fields),
             notice=fields.notice or None,
             spdx=fields.spdx or None,
             url=fields.url or None,
             paths=fields.paths or (),
+            subcomponent=fields.subcomponent,
         )
 
 

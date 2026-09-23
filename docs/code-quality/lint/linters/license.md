@@ -39,6 +39,8 @@ The `license-declarations` linter is a separate check on the `LICENSES` and
 - every `LICENSED_UNDER` id has a matching `LICENSES` declaration somewhere in
   the tree,
 - every `spdx` flag is a valid SPDX license expression,
+- no `spdx` flag repeats the `origin.license`, and no `text` flag the
+  `origin.license-file`, of the `moz.yaml` covering it,
 - nothing still sets the `APP_LICENSE_BLOCK`, `APP_LICENSE_LIST_BLOCK` or
   `APP_LICENSE_BODY_BLOCK` defines, which `about:license` no longer reads,
 - every license id is a string literal, in a `moz.build` that parses.
