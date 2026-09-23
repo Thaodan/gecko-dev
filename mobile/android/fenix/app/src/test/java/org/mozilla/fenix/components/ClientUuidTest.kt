@@ -9,17 +9,17 @@ import mozilla.components.support.test.fakes.android.FakeSharedPreferences
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class ClientUUIDTest {
+class ClientUuidTest {
     @Test
     fun `that a client uuid will only be generated the first time`() {
         val prefs = FakeSharedPreferences()
 
-        val first = PrefsBackedClientUUID({ prefs }, generateUUID = { "my-generated-uuid" })
+        val first = PrefsBackedClientUuid({ prefs }, generateUUID = { "my-generated-uuid" })
         assertEquals(UserId("my-generated-uuid"), first.getUserId())
         assertEquals(UserId("my-generated-uuid"), first.getUserId())
 
         val second =
-            PrefsBackedClientUUID(
+            PrefsBackedClientUuid(
                 { prefs },
                 generateUUID = {
                     throw IllegalStateException("We should not be generating another uuid")
@@ -34,7 +34,7 @@ class ClientUUIDTest {
         val prefs = FakeSharedPreferences()
 
         val clientUUID =
-            PrefsBackedClientUUID(
+            PrefsBackedClientUuid(
                 getPrefs = { prefs },
                 generateUUID = { "my-generated-uuid" },
                 hasher = { "This is a hashed value: $it" },
