@@ -9797,13 +9797,10 @@ nsPoint nsLayoutUtils::ComputeOffsetToUserSpace(nsDisplayListBuilder* aBuilder,
   // if we want "ctx" to be in user space, we first need to subtract the
   // frame's position so that SVG painting can later add it again and the
   // frame is painted in the right place.
-  gfxPoint toUserSpaceGfx =
-      SVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(aFrame);
-  nsPoint toUserSpace =
-      nsPoint(nsPresContext::CSSPixelsToAppUnits(float(toUserSpaceGfx.x)),
-              nsPresContext::CSSPixelsToAppUnits(float(toUserSpaceGfx.y)));
+  nsPoint toUserSpace = CSSPoint::ToAppUnits(
+      SVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(aFrame));
 
-  return (offsetToBoundingBox - toUserSpace);
+  return offsetToBoundingBox - toUserSpace;
 }
 
 /* static */
