@@ -954,7 +954,6 @@ let PromoInfo = {
     illegalRegions: [],
   },
   [BrowserUtils.PromoType.RELAY]: {
-    enabledPref: "browser.promo.relay.enabled",
     lazyStringSetPrefs: {},
     illegalRegions: [],
     // Returns true if user is using the FxA "production" instance, or returns
