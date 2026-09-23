@@ -94,13 +94,12 @@ test_newtab({
     );
     customizeButton.click();
 
-    let defaultPos = "matrix(1, 0, 0, 1, 0, 0)";
     await ContentTaskUtils.waitForCondition(
       () =>
-        content.getComputedStyle(
-          content.document.querySelector(".customize-menu")
-        ).transform === defaultPos,
-      "Customize Menu should be visible on screen"
+        content.document
+          .querySelector(".customize-menu")
+          .classList.contains("customize-animate-enter-done"),
+      "Customize Menu should have finished opening"
     );
 
     // Test that clicking the shortcuts toggle will make the section
@@ -218,13 +217,12 @@ test_newtab({
     );
     customizeButton.click();
 
-    let defaultPos = "matrix(1, 0, 0, 1, 0, 0)";
     await ContentTaskUtils.waitForCondition(
       () =>
-        content.getComputedStyle(
-          content.document.querySelector(".customize-menu")
-        ).transform === defaultPos,
-      "Customize Menu should be visible on screen"
+        content.document
+          .querySelector(".customize-menu")
+          .classList.contains("customize-animate-enter-done"),
+      "Customize Menu should have finished opening"
     );
 
     // @nova-cleanup(remove-conditional): Remove novaEnabled guard; always open the widgets sub-panel
@@ -301,13 +299,12 @@ test_newtab({
     );
     customizeButton.click();
 
-    let defaultPos = "matrix(1, 0, 0, 1, 0, 0)";
     await ContentTaskUtils.waitForCondition(
       () =>
-        content.getComputedStyle(
-          content.document.querySelector(".customize-menu")
-        ).transform === defaultPos,
-      "Customize Menu should be visible on screen"
+        content.document
+          .querySelector(".customize-menu")
+          .classList.contains("customize-animate-enter-done"),
+      "Customize Menu should have finished opening"
     );
 
     await ContentTaskUtils.waitForCondition(
@@ -329,11 +326,8 @@ test_newtab({
     let closeButton = content.document.querySelector("#close-button");
     closeButton.click();
     await ContentTaskUtils.waitForCondition(
-      () =>
-        content.getComputedStyle(
-          content.document.querySelector(".customize-menu")
-        ).transform !== defaultPos,
-      "Customize Menu should not be visible anymore"
+      () => !content.document.querySelector(".customize-menu").open,
+      "Customize Menu should have closed"
     );
 
     await ContentTaskUtils.waitForCondition(
@@ -361,41 +355,35 @@ test_newtab({
     customizeButton.click();
     await ContentTaskUtils.waitForCondition(
       () =>
-        content.getComputedStyle(
-          content.document.querySelector(".customize-menu")
-        ).transform === defaultPos,
-      "Customize Menu should be visible on screen now"
+        content.document
+          .querySelector(".customize-menu")
+          .classList.contains("customize-animate-enter-done"),
+      "Customize Menu should have finished opening again"
     );
 
     // Test closing with esc key.
     EventUtils.synthesizeKey("VK_ESCAPE", {}, content);
     await ContentTaskUtils.waitForCondition(
-      () =>
-        content.getComputedStyle(
-          content.document.querySelector(".customize-menu")
-        ).transform !== defaultPos,
-      "Customize Menu should not be visible anymore"
+      () => !content.document.querySelector(".customize-menu").open,
+      "Customize Menu should have closed"
     );
 
     // Reopen the customize menu
     customizeButton.click();
     await ContentTaskUtils.waitForCondition(
       () =>
-        content.getComputedStyle(
-          content.document.querySelector(".customize-menu")
-        ).transform === defaultPos,
-      "Customize Menu should be visible on screen now"
+        content.document
+          .querySelector(".customize-menu")
+          .classList.contains("customize-animate-enter-done"),
+      "Customize Menu should have finished opening again"
     );
 
     // Test closing with external click. With the dialog element, clicking outside
     // the panel content fires on the dialog element itself, so we click it directly.
     content.document.querySelector(".customize-menu").click();
     await ContentTaskUtils.waitForCondition(
-      () =>
-        content.getComputedStyle(
-          content.document.querySelector(".customize-menu")
-        ).transform !== defaultPos,
-      "Customize Menu should not be visible anymore"
+      () => !content.document.querySelector(".customize-menu").open,
+      "Customize Menu should have closed"
     );
   },
 });
