@@ -129,13 +129,14 @@ memory_phc:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1892149
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1969177
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2026442
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072826
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1829127
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1892149
     notification_emails:
       - memshrink-telemetry-alerts@mozilla.com
       - pbone@mozilla.com
-    expires: 160
+    expires: 173
 
   slots_allocated:
     type: custom_distribution
@@ -154,13 +155,14 @@ memory_phc:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1892149
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1969177
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2026442
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072826
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1829127
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1892149
     notification_emails:
       - memshrink-telemetry-alerts@mozilla.com
       - pbone@mozilla.com
-    expires: 160
+    expires: 173
 
   slots_freed:
     type: custom_distribution
@@ -179,13 +181,14 @@ memory_phc:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1892149
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1969177
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2026442
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072826
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1829127
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1892149
     notification_emails:
       - memshrink-telemetry-alerts@mozilla.com
       - pbone@mozilla.com
-    expires: 160
+    expires: 173
 
 cycle_collector:
   time:
