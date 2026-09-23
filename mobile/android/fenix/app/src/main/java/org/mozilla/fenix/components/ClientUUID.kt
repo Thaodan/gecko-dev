@@ -9,12 +9,12 @@ import android.content.SharedPreferences
 import androidx.core.content.edit
 import java.security.MessageDigest
 import java.util.UUID
-import mozilla.components.concept.integrity.RequestHashProvider
+import mozilla.components.lib.integrity.googleplay.RequestHashProvider
 import mozilla.components.lib.llm.mlpa.UserIdProvider
 import mozilla.components.lib.llm.mlpa.service.UserId
 import mozilla.components.support.ktx.kotlin.toHexString
 
-/** Interface for providing a hashing function to [ClientUuid]. */
+/** Interface for providing a hashing function to [ClientUUID]. */
 fun interface Hasher {
     /**
      * Hash a value.
@@ -34,30 +34,30 @@ fun interface Hasher {
 }
 
 /**
- * Generates and persists a stable per-install UUID, used to identify this client
- * consistently across [UserIdProvider] and [RequestHashProvider] consumers.
+ * Generates and persists a stable per-install UUID, used to identify this client consistently across [UserIdProvider]
+ * and [RequestHashProvider] consumers.
  */
-interface ClientUuid : UserIdProvider, RequestHashProvider {
+interface ClientUUID : UserIdProvider, RequestHashProvider {
     companion object {
         /**
-         * Convenience initializer that creates a [SharedPreferences] to be used by [ClientUuid].
+         * Convenience initializer that creates a [SharedPreferences] to be used by [ClientUUID].
          *
          * @param context the application context.
-         * @return an instance of [ClientUuid]
+         * @return an instance of [ClientUUID]
          */
-        fun build(context: Context): ClientUuid {
-            return PrefsBackedClientUuid({
+        fun build(context: Context): ClientUUID {
+            return PrefsBackedClientUUID({
                 context.getSharedPreferences("client_uuid", Context.MODE_PRIVATE)
             })
         }
     }
 }
 
-internal class PrefsBackedClientUuid(
+internal class PrefsBackedClientUUID(
     private val getPrefs: () -> SharedPreferences,
     private val generateUUID: () -> String = { UUID.randomUUID().toString() },
     private val hasher: Hasher = Hasher.sha256,
-) : ClientUuid {
+) : ClientUUID {
     private val uuid: String by lazy {
         getPrefs().let { prefs ->
             prefs.getString(KEY, null)

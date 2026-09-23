@@ -15,7 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import mozilla.components.concept.integrity.IntegrityClient
 import mozilla.components.concept.integrity.IntegrityToken
-import org.mozilla.fenix.components.ClientUuid
+import org.mozilla.fenix.components.ClientUUID
 
 /**
  * Debug drawer view to test an [IntegrityClient].
@@ -25,7 +25,7 @@ import org.mozilla.fenix.components.ClientUuid
  */
 @Composable
 fun IntegrityTools(
-    clientUUID: ClientUuid,
+    clientUUID: ClientUUID,
     integrityClient: IntegrityClient,
 ) {
     var token by remember { mutableStateOf<IntegrityToken?>(null) }
