@@ -31,7 +31,7 @@ export const MiniWindowState = {
   CLOSED: "closed",
 };
 
-const WINDOW_EVENTS = ["unload", "resize"];
+const WINDOW_EVENTS = ["unload"];
 
 const TOOLBAR_HIDE_DELAY_FIRST_OPEN_MS = 2500;
 const TOOLBAR_HIDE_DELAY_MS = 2000;
@@ -82,6 +82,13 @@ export class MiniWindow {
   #tabURI = null;
 
   /**
+   * The session history the history listener was attached to.
+   *
+   * @type {nsISHistory|null}
+   */
+  #historyListenerSH = null;
+
+  /**
    * Reveals the collapsed toolbar when the user hovers near the top of
    * the window.
    *
@@ -126,6 +133,13 @@ export class MiniWindow {
    * @type {ResizeObserver|null}
    */
   #toolbarHeightObserver = null;
+
+  /**
+   * Re-frames the crop when the window's size changes.
+   *
+   * @type {ResizeObserver|null}
+   */
+  #frameResizeObserver = null;
 
   /**
    * Aborts all the toolbox listeners at once on teardown.
@@ -332,6 +346,7 @@ export class MiniWindow {
       ]),
     };
     sessionHistory.addSHistoryListener(this.#historyListener);
+    this.#historyListenerSH = sessionHistory;
   }
 
   #detachHistoryListener() {
@@ -339,13 +354,13 @@ export class MiniWindow {
       return;
     }
     try {
-      this.browser?.browsingContext?.sessionHistory?.removeSHistoryListener(
-        this.#historyListener
-      );
+      // Detach from the session history the listener was attached to
+      this.#historyListenerSH?.removeSHistoryListener(this.#historyListener);
     } catch (e) {
       lazy.logConsole.error("#detachHistoryListener failed", e);
     }
     this.#historyListener = null;
+    this.#historyListenerSH = null;
     this.#tabURI = null;
   }
 
@@ -668,6 +683,8 @@ export class MiniWindow {
     this.#cancelHoverReveal();
     this.#toolbarHeightObserver?.disconnect();
     this.#toolbarHeightObserver = null;
+    this.#frameResizeObserver?.disconnect();
+    this.#frameResizeObserver = null;
     if (this.#progressListener) {
       this.miniWin?.gBrowser?.removeTabsProgressListener(
         this.#progressListener
@@ -687,9 +704,6 @@ export class MiniWindow {
     switch (event.type) {
       case "unload":
         this.#onUnload();
-        break;
-      case "resize":
-        this.#applyTransform();
         break;
     }
   }
@@ -744,6 +758,7 @@ export class MiniWindow {
     actor?.sendAsyncMessage("ScrollTo", { x: 0, y: 0 });
 
     this.#applyTransform();
+    this.#trackWindowResize();
   }
 
   /**
@@ -757,19 +772,40 @@ export class MiniWindow {
   }
 
   /**
-   * Re-frame the crop against the popup's current width. Called on every
-   * resize; a no-op until #frame has computed the crop.
+   * Re-frame the crop against the popup's current width. A no-op until #frame
+   * has computed the crop.
+   *
+   * @param {number} [innerWidth] The window's inner width, when the caller
+   *   already has it. Otherwise it is read without flushing layout.
    */
-  #applyTransform() {
+  #applyTransform(innerWidth) {
     if (!this._crop) {
       return;
     }
+    innerWidth ??= this.miniWin.windowUtils.getBoundsWithoutFlushing(
+      this.miniWin.document.documentElement
+    ).width;
     let { scale, tx, ty } = lazy.MiniWindowUtils.computeTransform(
-      this.miniWin.innerWidth,
+      innerWidth,
       this._crop,
       this._cropInfo.fullZoom || 1
     );
     this.browser.style.transform = `scale(${scale}) translate(${tx}px, ${ty}px)`;
+  }
+
+  /**
+   * Re-frame the crop whenever the window changes size.
+   *
+   */
+  #trackWindowResize() {
+    let root = this.miniWin.document.documentElement;
+    this.#frameResizeObserver = new this.miniWin.ResizeObserver(entries => {
+      let width = entries.at(-1)?.contentBoxSize?.[0]?.inlineSize;
+      if (width) {
+        this.#applyTransform(width);
+      }
+    });
+    this.#frameResizeObserver.observe(root);
   }
 
   // TODO: Scrolling horizontally won't work as is right now, a later commit in the stack
@@ -811,6 +847,10 @@ export class MiniWindow {
       return;
     }
     this._state = MiniWindowState.CLOSING;
+
+    this.#detachHistoryListener();
+    this.#abortController?.abort();
+    this.#unwireToolbarReveal();
 
     let flushed = this.tab
       ? lazy.TabStateFlusher.flush(this.tab.linkedBrowser)
