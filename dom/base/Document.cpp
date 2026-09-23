@@ -10342,6 +10342,20 @@ void Document::SetMayStartLayout(bool aMayStartLayout) {
   MaybeEditingStateChanged();
 }
 
+// Script runners can't hold a MOZ_CAN_RUN_SCRIPT method, so go through this
+// boundary trampoline instead. The document is passed by value to keep it alive
+// for the duration of the call.
+MOZ_CAN_RUN_SCRIPT_BOUNDARY static void RunMaybeInitializeFinalizeFrameLoaders(
+    RefPtr<Document> aDocument) {
+  aDocument->MaybeInitializeFinalizeFrameLoaders();
+}
+
+static already_AddRefed<nsIRunnable> NewFrameLoaderRunner(Document* aDocument) {
+  return NewRunnableFunction("Document::MaybeInitializeFinalizeFrameLoaders",
+                             &RunMaybeInitializeFinalizeFrameLoaders,
+                             RefPtr{aDocument});
+}
+
 nsresult Document::InitializeFrameLoader(nsFrameLoader* aLoader) {
   mInitializableFrameLoaders.RemoveElement(aLoader);
   // Don't even try to initialize.
@@ -10355,9 +10369,7 @@ nsresult Document::InitializeFrameLoader(nsFrameLoader* aLoader) {
   MOZ_RELEASE_ASSERT(aLoader, "Loader to initialize must not be null");
   mInitializableFrameLoaders.AppendElement(aLoader);
   if (!mFrameLoaderRunner) {
-    mFrameLoaderRunner =
-        NewRunnableMethod("Document::MaybeInitializeFinalizeFrameLoaders", this,
-                          &Document::MaybeInitializeFinalizeFrameLoaders);
+    mFrameLoaderRunner = NewFrameLoaderRunner(this);
     NS_ENSURE_TRUE(mFrameLoaderRunner, NS_ERROR_OUT_OF_MEMORY);
     nsContentUtils::AddScriptRunner(mFrameLoaderRunner);
   }
@@ -10374,9 +10386,7 @@ nsresult Document::FinalizeFrameLoader(nsFrameLoader* aLoader,
   LogRunnable::LogDispatch(aFinalizer);
   mFrameLoaderFinalizers.AppendElement(aFinalizer);
   if (!mFrameLoaderRunner) {
-    mFrameLoaderRunner =
-        NewRunnableMethod("Document::MaybeInitializeFinalizeFrameLoaders", this,
-                          &Document::MaybeInitializeFinalizeFrameLoaders);
+    mFrameLoaderRunner = NewFrameLoaderRunner(this);
     NS_ENSURE_TRUE(mFrameLoaderRunner, NS_ERROR_OUT_OF_MEMORY);
     nsContentUtils::AddScriptRunner(mFrameLoaderRunner);
   }
@@ -10396,9 +10406,7 @@ void Document::MaybeInitializeFinalizeFrameLoaders() {
     if (!mInDestructor && !mFrameLoaderRunner &&
         (mInitializableFrameLoaders.Length() ||
          mFrameLoaderFinalizers.Length())) {
-      mFrameLoaderRunner = NewRunnableMethod(
-          "Document::MaybeInitializeFinalizeFrameLoaders", this,
-          &Document::MaybeInitializeFinalizeFrameLoaders);
+      mFrameLoaderRunner = NewFrameLoaderRunner(this);
       nsContentUtils::AddScriptRunner(mFrameLoaderRunner);
     }
     return;
