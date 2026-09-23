@@ -50,6 +50,13 @@ def test_every_occurrence_of_a_repeated_spdx_flag_is_checked(lint, paths):
     assert [(r.relpath, r.lineno) for r in results] == [("bad/repeated.build", 5)]
 
 
+def test_retired_app_license_define_is_reported(lint, paths):
+    results = [r for r in lint(paths()) if "about:license" in r.message]
+
+    assert [(r.relpath, r.lineno) for r in results] == [("bad/bad.build", 16)]
+    assert "APP_LICENSE_BLOCK" in results[0].message
+
+
 def test_computed_license_id_is_reported(lint, paths):
     results = [r for r in lint(paths()) if "not a literal" in r.message]
 
