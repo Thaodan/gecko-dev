@@ -71,6 +71,10 @@
        below as if the trust panel was enabled. */
     --urlbar-container-min-width: 275px;
   }
+  &[mini-window] {
+    /* The address bar is read-only in mini-window mode. */
+    --urlbar-background-color: transparent;
+  }
   /* Enabling the trust panel saves up to two icons in the front part of the
      address bar.
      Vertical tab mode is more size-constrained due to window controls being in
@@ -706,6 +710,22 @@ toolbar[inactive="true"] .urlbar,
    * remains as wide. */
   :root[customizing] & {
     width: calc(var(--urlbar-container-min-width) - 30px);
+  }
+
+  /* A mini window centres the address bar rather than letting it span the
+   * bar, then narrows and finally drops it as the window gets too small to
+   * hold it alongside the navigation and mini-window buttons. */
+  :root[mini-window] & {
+    max-width: 60%;
+    margin-inline: auto;
+
+    @media (width < 400px) {
+      max-width: 80%;
+    }
+
+    @media (width < 150px) {
+      display: none;
+    }
   }
 }
 
