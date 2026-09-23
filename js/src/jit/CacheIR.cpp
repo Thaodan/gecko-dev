@@ -5521,11 +5521,10 @@ bool SetPropIRGenerator::canAttachAddSlotStub(HandleObject obj, HandleId id) {
 
     // We check above whether this is an out-of-bounds index to a typed array,
     // in which case the property write should be silently ignored.  If this is
-    // an in-bounds index for a resizable typed array on the proto chain, we
-    // can't optimize in case the array shrinks and the index is no longer in
-    // bounds.
-    if (proto->is<ResizableTypedArrayObject>() &&
-        ToTypedArrayIndex(id).isSome()) {
+    // an in-bounds index for a typed array on the proto chain, we can't
+    // optimize in case the array shrinks or is detached, and the index is no
+    // longer in bounds.
+    if (proto->is<TypedArrayObject>() && ToTypedArrayIndex(id).isSome()) {
       return false;
     }
   }
