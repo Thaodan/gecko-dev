@@ -4613,6 +4613,7 @@ dependencies = [
  "cssparser",
  "euclid",
  "hashbrown 0.17.1",
+ "parking_lot",
  "selectors",
  "servo_arc",
  "smallbitvec",
