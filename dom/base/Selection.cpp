@@ -1579,9 +1579,8 @@ nsresult Selection::StyledRanges::RemoveCollapsedRanges() {
     const bool collapsed =
         range->Collapsed() && !range->MayCrossShadowBoundary();
     // Cross boundary range should always be uncollapsed.
-    MOZ_ASSERT_IF(
-        range->MayCrossShadowBoundary(),
-        !range->AsRange()->CrossShadowBoundaryRangeCollapsed());
+    MOZ_ASSERT_IF(range->MayCrossShadowBoundary(),
+                  !range->AsRange()->CrossShadowBoundaryRangeCollapsed());
 
     if (collapsed) {
       nsresult rv = RemoveRangeAndUnregisterSelection(*range);
@@ -3452,7 +3451,7 @@ void Selection::ExtendInternal(nsINode& aContainer, uint32_t aOffset,
       SetDirection(eDirNext);
       const RefPtr<Range> diffRange =
           Range::Create(focusRefInTreeKindDOM, newFocusRefInTreeKindDOM, aRv,
-                          AllowRangeCrossShadowBoundary::Yes);
+                        AllowRangeCrossShadowBoundary::Yes);
       if (NS_WARN_IF(aRv.Failed())) {
         return;
       }
@@ -3486,7 +3485,7 @@ void Selection::ExtendInternal(nsINode& aContainer, uint32_t aOffset,
       // deselect from 2 to 1
       const RefPtr<Range> diffRange =
           Range::Create(newFocusRefInTreeKindDOM, focusRefInTreeKindDOM, aRv,
-                          AllowRangeCrossShadowBoundary::Yes);
+                        AllowRangeCrossShadowBoundary::Yes);
       if (NS_WARN_IF(aRv.Failed())) {
         return;
       }
@@ -3548,8 +3547,8 @@ void Selection::ExtendInternal(nsINode& aContainer, uint32_t aOffset,
       if (focusRefInTreeKindDOM != newFocusRefInTreeKindDOM) {
         // deselect from 1 to 2
         diffRange =
-            Range::Create(focusRefInTreeKindDOM, newFocusRefInTreeKindDOM,
-                            aRv, AllowRangeCrossShadowBoundary::Yes);
+            Range::Create(focusRefInTreeKindDOM, newFocusRefInTreeKindDOM, aRv,
+                          AllowRangeCrossShadowBoundary::Yes);
         if (NS_WARN_IF(aRv.Failed())) {
           return;
         }
@@ -3620,7 +3619,7 @@ void Selection::ExtendInternal(nsINode& aContainer, uint32_t aOffset,
       SetDirection(eDirPrevious);
       const RefPtr<Range> diffRange =
           Range::Create(newFocusRefInTreeKindDOM, focusRefInTreeKindDOM, aRv,
-                          AllowRangeCrossShadowBoundary::Yes);
+                        AllowRangeCrossShadowBoundary::Yes);
       if (NS_WARN_IF(aRv.Failed())) {
         return;
       }

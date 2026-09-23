@@ -97,8 +97,8 @@ class mozInlineSpellStatus {
       mozInlineSpellChecker* aSpellChecker, Operation aOp,
       RefPtr<mozilla::dom::Range>&& aRange,
       RefPtr<mozilla::dom::Range>&& aCreatedRange,
-      RefPtr<mozilla::dom::Range>&& aAnchorRange, bool aForceNavigationWordCheck,
-      int32_t aNewNavigationPositionOffset,
+      RefPtr<mozilla::dom::Range>&& aAnchorRange,
+      bool aForceNavigationWordCheck, int32_t aNewNavigationPositionOffset,
       SetAnchorToCaret aSetAnchorToCaret = SetAnchorToCaret::No);
 
   // For resuming a previously started check.

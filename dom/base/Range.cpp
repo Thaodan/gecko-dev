@@ -229,15 +229,15 @@ static void LogSelectionAPI(const dom::Selection* aSelection,
                             const char* aArgName3, bool aBoolArg) {
   if (aBoundary1 == aBoundary2) {
     MOZ_LOG(sSelectionAPILog, LogLevel::Info,
-            ("%p Range::%s(%s=%s=%s, %s=%s)", aSelection, aFuncName,
-             aArgName1, aArgName2, ToString(aBoundary1).c_str(), aArgName3,
+            ("%p Range::%s(%s=%s=%s, %s=%s)", aSelection, aFuncName, aArgName1,
+             aArgName2, ToString(aBoundary1).c_str(), aArgName3,
              aBoolArg ? "true" : "false"));
   } else {
     MOZ_LOG(
         sSelectionAPILog, LogLevel::Info,
-        ("%p Range::%s(%s=%s, %s=%s, %s=%s)", aSelection, aFuncName,
-         aArgName1, ToString(aBoundary1).c_str(), aArgName2,
-         ToString(aBoundary2).c_str(), aArgName3, aBoolArg ? "true" : "false"));
+        ("%p Range::%s(%s=%s, %s=%s, %s=%s)", aSelection, aFuncName, aArgName1,
+         ToString(aBoundary1).c_str(), aArgName2, ToString(aBoundary2).c_str(),
+         aArgName3, aBoolArg ? "true" : "false"));
   }
 }
 }  // namespace mozilla
@@ -273,21 +273,21 @@ template nsresult Range::SetStartAndEnd(
     AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary);
 
 template void Range::DoSetRange(const RangeBoundary& aStartBoundary,
-                                  const RangeBoundary& aEndBoundary,
-                                  nsINode* aRootNode, bool aNotInsertedYet,
-                                  RangeBehaviour aRangeBehaviour);
+                                const RangeBoundary& aEndBoundary,
+                                nsINode* aRootNode, bool aNotInsertedYet,
+                                RangeBehaviour aRangeBehaviour);
 template void Range::DoSetRange(const RangeBoundary& aStartBoundary,
-                                  const RawRangeBoundary& aEndBoundary,
-                                  nsINode* aRootNode, bool aNotInsertedYet,
-                                  RangeBehaviour aRangeBehaviour);
+                                const RawRangeBoundary& aEndBoundary,
+                                nsINode* aRootNode, bool aNotInsertedYet,
+                                RangeBehaviour aRangeBehaviour);
 template void Range::DoSetRange(const RawRangeBoundary& aStartBoundary,
-                                  const RangeBoundary& aEndBoundary,
-                                  nsINode* aRootNode, bool aNotInsertedYet,
-                                  RangeBehaviour aRangeBehaviour);
+                                const RangeBoundary& aEndBoundary,
+                                nsINode* aRootNode, bool aNotInsertedYet,
+                                RangeBehaviour aRangeBehaviour);
 template void Range::DoSetRange(const RawRangeBoundary& aStartBoundary,
-                                  const RawRangeBoundary& aEndBoundary,
-                                  nsINode* aRootNode, bool aNotInsertedYet,
-                                  RangeBehaviour aRangeBehaviour);
+                                const RawRangeBoundary& aEndBoundary,
+                                nsINode* aRootNode, bool aNotInsertedYet,
+                                RangeBehaviour aRangeBehaviour);
 
 template void Range::CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
     const RangeBoundary& aStartBoundary, const RangeBoundary& aEndBoundary);
@@ -299,8 +299,7 @@ template void Range::CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
     const RawRangeBoundary& aStartBoundary,
     const RawRangeBoundary& aEndBoundary);
 
-JSObject* Range::WrapObject(JSContext* aCx,
-                              JS::Handle<JSObject*> aGivenProto) {
+JSObject* Range::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
   return Range_Binding::Wrap(aCx, this, aGivenProto);
 }
 
@@ -664,7 +663,7 @@ Range::AutoCharacterDataChangedHandler::ComputeNewBoundaryOnModifyDataOrSplit(
 }
 
 void Range::CharacterDataChanged(nsIContent* aCharacterData,
-                                   const CharacterDataChangeInfo& aInfo) {
+                                 const CharacterDataChangeInfo& aInfo) {
   MOZ_ASSERT(aCharacterData);
   MOZ_ASSERT(mIsPositioned);
 
@@ -825,7 +824,7 @@ Range::AutoNewContentHandler::HandleCachedNextSiblingsOfSplitCharacterData()
 }
 
 void Range::ContentAppended(nsIContent* aFirstNewContent,
-                              const ContentAppendInfo&) {
+                            const ContentAppendInfo&) {
   MOZ_ASSERT(aFirstNewContent);
   MOZ_ASSERT(aFirstNewContent->GetParentNode());
   MOZ_ASSERT(mIsPositioned);
@@ -935,8 +934,7 @@ RawRangeBoundary Range::AutoContentWillBeRemovedHandler::ComputeNewBoundary(
   return RawRangeBoundary{};
 }
 
-void Range::ContentWillBeRemoved(nsIContent* aChild,
-                                   const ContentRemoveInfo&) {
+void Range::ContentWillBeRemoved(nsIContent* aChild, const ContentRemoveInfo&) {
   MOZ_ASSERT(aChild);
   MOZ_ASSERT(aChild->GetParentNode());
   MOZ_ASSERT(mIsPositioned);
@@ -999,9 +997,9 @@ bool Range::IsShadowIncludingInclusiveDescendantOfCrossBoundaryRangeAncestor(
 }
 
 bool Range::IsPointComparableToRange(const nsINode& aContainer,
-                                       uint32_t aOffset,
-                                       bool aAllowCrossShadowBoundary,
-                                       ErrorResult& aRv) const {
+                                     uint32_t aOffset,
+                                     bool aAllowCrossShadowBoundary,
+                                     ErrorResult& aRv) const {
   // our range is in a good state?
   if (!mIsPositioned) {
     aRv.Throw(NS_ERROR_NOT_INITIALIZED);
@@ -1045,8 +1043,8 @@ bool Range::IsPointComparableToRange(const nsINode& aContainer,
 }
 
 bool Range::IsPointInRange(const nsINode& aContainer, uint32_t aOffset,
-                             ErrorResult& aRv,
-                             bool aAllowCrossShadowBoundary) const {
+                           ErrorResult& aRv,
+                           bool aAllowCrossShadowBoundary) const {
   int16_t compareResult =
       ComparePoint(aContainer, aOffset, aRv, aAllowCrossShadowBoundary);
   // If the node isn't in the range's document, it clearly isn't in the range.
@@ -1059,8 +1057,8 @@ bool Range::IsPointInRange(const nsINode& aContainer, uint32_t aOffset,
 }
 
 int16_t Range::ComparePoint(const nsINode& aContainer, uint32_t aOffset,
-                              ErrorResult& aRv,
-                              bool aAllowCrossShadowBoundary) const {
+                            ErrorResult& aRv,
+                            bool aAllowCrossShadowBoundary) const {
   if (!IsPointComparableToRange(aContainer, aOffset, aAllowCrossShadowBoundary,
                                 aRv)) {
     return 0;
@@ -1275,7 +1273,7 @@ void Range::DoSetRange(
   MOZ_ASSERT(aStartBoundary.GetTreeKind() == TreeKind::DOM);
 
   Range::AssertIfMismatchRootAndRangeBoundaries(aStartBoundary, aEndBoundary,
-                                                  aRootNode, aNotInsertedYet);
+                                                aRootNode, aNotInsertedYet);
 
   if (mRoot != aRootNode) {
     if (mRoot) {
@@ -1491,7 +1489,7 @@ void Range::SetStartInternal(
 }
 
 void Range::SetStartAllowCrossShadowBoundary(nsINode& aNode, uint32_t aOffset,
-                                               ErrorResult& aErr) {
+                                             ErrorResult& aErr) {
   AutoCalledByJSRestore calledByJSRestorer(*this);
   mCalledByJS = true;
   SetStart(aNode, aOffset, aErr, AllowRangeCrossShadowBoundary::Yes);
@@ -1620,15 +1618,15 @@ void Range::SetEndInternal(
 }
 
 void Range::SetEndAllowCrossShadowBoundary(nsINode& aNode, uint32_t aOffset,
-                                             ErrorResult& aErr) {
+                                           ErrorResult& aErr) {
   AutoCalledByJSRestore calledByJSRestorer(*this);
   mCalledByJS = true;
   SetEnd(aNode, aOffset, aErr, AllowRangeCrossShadowBoundary::Yes);
 }
 
 void Range::SelectNodesInContainer(nsINode* aContainer,
-                                     nsIContent* aStartContent,
-                                     nsIContent* aEndContent) {
+                                   nsIContent* aStartContent,
+                                   nsIContent* aEndContent) {
   MOZ_ASSERT(aContainer);
   MOZ_ASSERT(aContainer->ComputeIndexOf(aStartContent).valueOr(0) <=
              aContainer->ComputeIndexOf(aEndContent).valueOr(0));
@@ -2424,8 +2422,8 @@ int16_t Range::CompareBoundaryPoints(uint16_t aHow, const Range& aOtherRange,
 
 /* static */
 nsresult Range::CloneParentsBetween(nsINode* aAncestor, nsINode* aNode,
-                                      nsINode** aClosestAncestor,
-                                      nsINode** aFarthestAncestor) {
+                                    nsINode** aClosestAncestor,
+                                    nsINode** aFarthestAncestor) {
   NS_ENSURE_ARG_POINTER(
       (aAncestor && aNode && aClosestAncestor && aFarthestAncestor));
 
@@ -3032,8 +3030,8 @@ already_AddRefed<DocumentFragment> Range::CreateContextualFragment(
 }
 
 nsresult Range::GetUsedFontFaces(nsLayoutUtils::UsedFontFaceList& aResult,
-                                   uint32_t aMaxRanges,
-                                   bool aSkipCollapsedWhitespace) {
+                                 uint32_t aMaxRanges,
+                                 bool aSkipCollapsedWhitespace) {
   NS_ENSURE_TRUE(mIsPositioned, NS_ERROR_UNEXPECTED);
 
   nsCOMPtr<nsINode> startContainer = mStart.GetContainer();
@@ -3271,7 +3269,7 @@ void Range::ExcludeNonSelectableNodes(nsTArray<RefPtr<Range>>* aOutRanges) {
         }
         newRange =
             Range::Create(startContainer, startOffset.valueOr(UINT32_MAX),
-                            endContainer, endOffset, IgnoreErrors());
+                          endContainer, endOffset, IgnoreErrors());
         if (!newRange || newRange->Collapsed()) {
           newRange = nullptr;
         }
@@ -3418,7 +3416,7 @@ static bool IsLastNonemptyRowGroupOfTable(nsIFrame* aFrame) {
 }
 
 void Range::GetInnerTextNoFlush(nsAString& aValue, ErrorResult& aError,
-                                  nsIContent* aContainer) {
+                                nsIContent* aContainer) {
   InnerTextAccumulator result(aValue);
 
   if (aContainer->IsText()) {
