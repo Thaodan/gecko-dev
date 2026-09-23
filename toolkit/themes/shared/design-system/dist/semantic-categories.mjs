@@ -361,10 +361,7 @@ export const tokensTable = {
       name: "--button-background-color-toolbar-active",
     },
     {
-      value: {
-        default: "var(--toolbarbutton-background-color)",
-        forcedColors: "var(--button-background-color-disabled)",
-      },
+      value: "var(--toolbarbutton-background-color-disabled)",
       name: "--button-background-color-toolbar-disabled",
     },
     {
@@ -587,6 +584,13 @@ export const tokensTable = {
         },
       },
       name: "--toolbarbutton-background-color-active",
+    },
+    {
+      value: {
+        default: "var(--toolbarbutton-background-color)",
+        forcedColors: "var(--button-background-color-disabled)",
+      },
+      name: "--toolbarbutton-background-color-disabled",
     },
     {
       value: {
@@ -3412,6 +3416,7 @@ export const tokensTable = {
         light: "var(--color-gray-70)",
         dark: "var(--color-gray-0)",
         nativeTheme: "currentColor",
+        forcedColors: "var(--button-text-color)",
         default: "light-dark(var(--color-gray-70), var(--color-gray-0))",
         platform: {
           default: "currentColor",
@@ -3423,6 +3428,20 @@ export const tokensTable = {
         },
       },
       name: "--toolbarbutton-icon-fill",
+    },
+    {
+      value: {
+        default: "var(--toolbarbutton-icon-fill)",
+        forcedColors: "var(--button-text-color-ghost-hover)",
+      },
+      name: "--toolbarbutton-icon-fill-hover",
+    },
+    {
+      value: {
+        default: "var(--toolbarbutton-icon-fill)",
+        forcedColors: "var(--button-text-color-ghost-active)",
+      },
+      name: "--toolbarbutton-icon-fill-active",
     },
     {
       value: {
@@ -4146,10 +4165,8 @@ export const variableLookupTable = {
     "var(--toolbarbutton-background-color-hover)",
   "button-background-color-toolbar-active":
     "var(--toolbarbutton-background-color-active)",
-  "button-background-color-toolbar-disabled": {
-    default: "var(--toolbarbutton-background-color)",
-    forcedColors: "var(--button-background-color-disabled)",
-  },
+  "button-background-color-toolbar-disabled":
+    "var(--toolbarbutton-background-color-disabled)",
   "button-background-color-toolbar-selected":
     "var(--button-background-color-ghost-active)",
   "button-badge-background-color": "var(--color-accent-attention)",
@@ -4874,6 +4891,7 @@ export const variableLookupTable = {
     light: "var(--color-gray-70)",
     dark: "var(--color-gray-0)",
     nativeTheme: "currentColor",
+    forcedColors: "var(--button-text-color)",
     default: "light-dark(var(--color-gray-70), var(--color-gray-0))",
     platform: {
       default: "currentColor",
@@ -4883,6 +4901,14 @@ export const variableLookupTable = {
         default: "light-dark(var(--color-gray-70), var(--color-gray-0))",
       },
     },
+  },
+  "toolbarbutton-icon-fill-hover": {
+    default: "var(--toolbarbutton-icon-fill)",
+    forcedColors: "var(--button-text-color-ghost-hover)",
+  },
+  "toolbarbutton-icon-fill-active": {
+    default: "var(--toolbarbutton-icon-fill)",
+    forcedColors: "var(--button-text-color-ghost-active)",
   },
   "toolbarbutton-icon-fill-attention": {
     light: "var(--color-blue-60)",
@@ -4942,6 +4968,10 @@ export const variableLookupTable = {
         default: "color-mix(in srgb, currentColor 30%, transparent)",
       },
     },
+  },
+  "toolbarbutton-background-color-disabled": {
+    default: "var(--toolbarbutton-background-color)",
+    forcedColors: "var(--button-background-color-disabled)",
   },
   "toolbarbutton-outline":
     "var(--border-width) solid var(--toolbarbutton-outline-color)",
