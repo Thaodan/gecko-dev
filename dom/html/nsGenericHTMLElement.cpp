@@ -848,13 +848,15 @@ void nsGenericHTMLElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
         }
         if (IsInUncomposedDoc()) {
           RecomputeContainerTimingRootForSubtree();
-          // Removing containertiming unregisters this element as a container
-          // root; drop its accumulated painted region so the record can't
-          // outlive the registration (and dangle), or be inherited if the
-          // attribute is added back later.
-          if (aName == nsGkAtoms::containertiming && !aValue) {
-            ContainerTimingHelpers::DropRecordForContainerRoot(this);
-          }
+        }
+        // Removing containertiming unregisters this element as a container
+        // root; drop its accumulated painted region so the record can't
+        // outlive the registration (and dangle), or be inherited if the
+        // attribute is added back later. This must run even when detached or
+        // in a shadow tree, where the record would otherwise linger with a
+        // dangling key until the element is freed.
+        if (aName == nsGkAtoms::containertiming && !aValue) {
+          ContainerTimingHelpers::DropRecordForContainerRoot(this);
         }
       }
     } else if (aName == nsGkAtoms::dir) {
