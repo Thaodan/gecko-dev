@@ -2033,7 +2033,9 @@ bool NativeLayerCARepresentation::ApplyChanges(
       // forcing the layer contents to display that frame. Our call to
       // enqueueSampleBuffer will handle future async updates to the layer;
       // buffers queued with enqueueSampleBuffer overwrite the layer contents.
-      if (layerNeedsInitialization) {
+      // DRM frames are left to enqueueSampleBuffer alone, because capture of
+      // the layer contents was observed not to be blocked by preventsCapture.
+      if (layerNeedsInitialization && !aIsDRM) {
         mContentCALayer.contents = (id)surface;
       }
 
