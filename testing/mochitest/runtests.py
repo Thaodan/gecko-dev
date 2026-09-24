@@ -1097,6 +1097,7 @@ class MochitestDesktop:
         self.browserProcessId = None
 
         self.haveDumpedScreen = False
+        self.appPid = None
         # Create variables to count the number of passes, fails, todos.
         self.countpass = 0
         self.countfail = 0
@@ -2810,7 +2811,21 @@ toolbar#nav-bar {
             )
             return
         self.haveDumpedScreen = True
-        dump_screen(utilityPath, self.log)
+        # The browser can quit before the macOS capture lands; keep it on screen.
+        pid = self.appPid if mozinfo.isMac else None
+        if pid:
+            try:
+                os.kill(pid, signal.SIGSTOP)
+            except OSError:
+                pid = None
+        try:
+            dump_screen(utilityPath, self.log)
+        finally:
+            if pid:
+                try:
+                    os.kill(pid, signal.SIGCONT)
+                except OSError:
+                    pass
 
     def killAndGetStack(self, processPID, utilityPath, debuggerInfo, dump_screen=False):
         """
@@ -3112,6 +3127,7 @@ toolbar#nav-bar {
                     outputTimeout=timeout,
                 )
                 proc = runner.process_handler
+                self.appPid = proc.pid
                 self.log.info(f"runtests.py | Application pid: {proc.pid}")
 
                 gecko_id = f"GECKO({proc.pid})"
@@ -3165,6 +3181,7 @@ toolbar#nav-bar {
             # see https://bugzilla.mozilla.org/show_bug.cgi?id=913970
             self.log.info("runtests.py | Waiting for browser...")
             status = proc.wait()
+            self.appPid = None
             if status is None:
                 self.log.warning(
                     "runtests.py | Failed to get app exit code - running/crashed?"
