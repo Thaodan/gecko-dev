@@ -41,6 +41,6 @@ add_task(async function searchModeSurvivesTabSwitch() {
     source: 3,
   });
 
-  await SearchbarTestUtils.exitSearchMode(window);
+  SearchbarTestUtils.exitSearchMode(window);
   gBrowser.removeTab(tab2);
 });

@@ -285,7 +285,7 @@ export class UrlbarSearchOneOffs extends SearchOneOffs {
 
   /**
    * Overrides the willHide method in the superclass to account for the local
-   * search mode buttons and the pref that disables the one-offs altogether.
+   * search mode buttons.
    *
    * @returns {Promise<boolean>}
    *   True if we will hide the one-offs when they are requested.
@@ -294,9 +294,6 @@ export class UrlbarSearchOneOffs extends SearchOneOffs {
     // We need to call super.willHide() even when we return false below because
     // it has the necessary side effect of creating this._engineInfo.
     let superWillHide = await super.willHide();
-    if (lazy.UrlbarPrefs.getScotchBonnetPref("scotchBonnet.disableOneOffs")) {
-      return true;
-    }
     if (
       lazy.UrlbarShared.LOCAL_SEARCH_MODES.some(m =>
         lazy.UrlbarPrefs.get(m.pref)
