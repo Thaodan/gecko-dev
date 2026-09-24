@@ -31,6 +31,7 @@ import mozilla.appservices.syncmanager.SyncTelemetry
 import mozilla.components.concept.sync.AccountObserver
 import mozilla.components.concept.sync.ConstellationState
 import mozilla.components.concept.sync.DeviceConstellationObserver
+import mozilla.components.concept.sync.Profile
 import mozilla.components.concept.sync.SyncEngine
 import mozilla.components.feature.automotive.isAndroidAutomotiveAvailable
 import mozilla.components.lib.state.ext.consumeFrom
@@ -68,6 +69,9 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
     private lateinit var accountSettingsInteractor: AccountSettingsInteractor
     private val args by navArgs<AccountSettingsFragmentArgs>()
 
+    private val isNewUiEnabled: Boolean
+        get() = requireComponents.settings.accountSettingsNewUi
+
     // Password and credit card syncing is disabled on Android Automotive until we implement the UX Google
     // requires for handling sensitive information there. See bug 2060936.
     private val areCredentialsSyncable by lazy { !requireContext().isAndroidAutomotiveAvailable() }
@@ -92,7 +96,26 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
                     }
                 }
             }
+
+            override fun onProfileUpdated(profile: Profile) {
+                if (!isNewUiEnabled) return
+                viewLifecycleOwner.lifecycleScope.launch {
+                    context?.let { accountPreferenceUpdater?.update(it, profile) }
+                }
+            }
         }
+
+    private val accountPreferenceUpdater by lazy {
+        if (isNewUiEnabled) {
+            AccountPreferenceUpdater(
+                requirePreference(R.string.pref_key_account),
+                lifecycleScope,
+                requireComponents.core.client,
+            )
+        } else {
+            null
+        }
+    }
 
     override fun onResume() {
         super.onResume()
@@ -139,6 +162,13 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        if (isNewUiEnabled) {
+            accountPreferenceUpdater?.update(
+                requireContext(),
+                accountManager.accountProfile(),
+            )
+        }
 
         @Suppress("DEPRECATION") // getLastSynced / setLastSynced is deprecated see bug 2067060
         accountSettingsStore =
