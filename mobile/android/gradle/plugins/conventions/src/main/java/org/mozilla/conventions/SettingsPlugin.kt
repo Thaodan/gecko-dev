@@ -7,10 +7,14 @@ package org.mozilla.conventions
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.initialization.Settings
+import org.gradle.api.invocation.Gradle
 import org.gradle.api.logging.Logging
 import org.gradle.api.tasks.testing.Test
+import org.gradle.build.event.BuildEventsListenerRegistry
 import org.gradle.kotlin.dsl.create
 import java.io.File
+import java.util.concurrent.atomic.AtomicReference
+import javax.inject.Inject
 
 private data class AutoPublishConfig(
     val propertyName: String,
@@ -22,8 +26,16 @@ private data class AutoPublishConfig(
 // which comes with a "py" launcher and respects the shebang line to specify the version.
 private val isWindows = System.getProperty("os.name").lowercase().contains("windows")
 
-class SettingsPlugin : Plugin<Settings> {
+abstract class SettingsPlugin : Plugin<Settings> {
     private val logger = Logging.getLogger(SettingsPlugin::class.java)
+
+    @get:Inject
+    protected abstract val buildEventsListenerRegistry: BuildEventsListenerRegistry
+
+    // No public Gradle API exposes a unique build-invocation id.
+    @get:Inject
+    @Suppress("InternalGradleApiUsage")
+    protected abstract val buildInvocationScopeId: org.gradle.internal.scopeids.id.BuildInvocationScopeId
 
     override fun apply(settings: Settings) {
         val extension = settings.extensions.create<SettingsExtension>("mozilla")
@@ -51,6 +63,13 @@ class SettingsPlugin : Plugin<Settings> {
         }
 
         configureAcTestAndLintDisabling(settings, extension)
+
+        // Initialize build metrics only if the buildMetrics property is set
+        settings.gradle.projectsEvaluated {
+            if (gradle.rootProject.hasProperty("buildMetrics")) {
+                initializeBuildMetrics(settings)
+            }
+        }
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -120,6 +139,39 @@ class SettingsPlugin : Plugin<Settings> {
         }
     }
 
+    private fun initializeBuildMetrics(settings: Settings) {
+        val rootGradle = generateSequence(settings.gradle) { it.parent }.last()
+
+        // Only initialize the shared service once from the root gradle build
+        if (rootGradleBuild.compareAndSet(null, rootGradle)) {
+            rootGradle.taskGraph.whenReady {
+                val provider = rootGradle.sharedServices.registrations.getByName("buildMetricsService")
+                val service = provider.service.get() as BuildMetricsService
+
+                service.invocationStart = System.currentTimeMillis()
+                service.configStart = System.currentTimeMillis()
+                service.configEnd = System.currentTimeMillis()
+            }
+        }
+
+        // Register a task listener for all builds
+        val buildMetricsProvider = rootGradle.sharedServices.registerIfAbsent(
+            "buildMetricsService",
+            BuildMetricsService::class.java
+        ) {
+            val outputDir = rootGradle.startParameter.projectProperties["buildMetricsOutputDir"]
+                ?: throw IllegalStateException("buildMetricsOutputDir property is required when buildMetrics is enabled")
+            @Suppress("InternalGradleApiUsage")
+            val fileSuffix = rootGradle.startParameter.projectProperties["buildMetricsFileSuffix"]
+                ?: buildInvocationScopeId.id.toString()
+
+            parameters.outputDir.set(outputDir)
+            parameters.fileSuffix.set(fileSuffix)
+        }
+
+        buildEventsListenerRegistry.onTaskCompletion(buildMetricsProvider)
+    }
+
     private fun buildPythonCommand(script: String): List<String> = buildList {
         if (isWindows) {
             add("py")
@@ -148,6 +200,8 @@ class SettingsPlugin : Plugin<Settings> {
     }
 
     companion object {
+        private val rootGradleBuild = AtomicReference<Gradle?>(null)
+
         private val AUTO_PUBLISH_CONFIGS = listOf(
             AutoPublishConfig(
                 propertyName = "application-services",
