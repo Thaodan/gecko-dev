@@ -528,7 +528,7 @@ CookieService::SetCookieStringFromHttp(nsIURI* aHostURI,
       return NS_OK;
     case STATUS_ACCEPTED:  // Fallthrough
     case STATUS_ACCEPT_SESSION:
-      NotifyAccepted(aChannel, rejectedReason);
+      NotifyAccepted(aChannel);
 
       // Notify the content blocking event if tracker cookies are partitioned.
       if (rejectedReason ==
@@ -657,11 +657,9 @@ CookieService::SetCookieStringFromHttp(nsIURI* aHostURI,
   return NS_OK;
 }
 
-void CookieService::NotifyAccepted(nsIChannel* aChannel,
-                                   uint32_t aRejectedReason) {
+void CookieService::NotifyAccepted(nsIChannel* aChannel) {
   ContentBlockingNotifier::OnDecision(
-      aChannel, ContentBlockingNotifier::BlockingDecision::eAllow,
-      aRejectedReason);
+      aChannel, ContentBlockingNotifier::BlockingDecision::eAllow, 0);
 }
 
 /******************************************************************************
@@ -884,8 +882,6 @@ void CookieService::GetCookiesForURI(
     nsTArray<RefPtr<Cookie>>& aCookieList) {
   NS_ASSERTION(aHostURI, "null host!");
 
-  uint32_t acceptedReason = 0;
-
   if (!CookieCommons::IsSchemeSupported(aHostURI)) {
     return;
   }
@@ -983,7 +979,6 @@ void CookieService::GetCookiesForURI(
       default:
         break;
     }
-    acceptedReason = rejectedReason;
 
     // Note: The following permissions logic is mirrored in
     // extensions::MatchPattern::MatchesCookie.
@@ -1110,7 +1105,7 @@ void CookieService::GetCookiesForURI(
 
   // Send a notification about the acceptance of the cookies now that we found
   // some.
-  NotifyAccepted(aChannel, acceptedReason);
+  NotifyAccepted(aChannel);
 
   // return cookies in order of path length; longest to shortest.
   // this is required per RFC2109.  if cookies match in length,
