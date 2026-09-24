@@ -9523,6 +9523,10 @@ class MRotate : public MBinaryInstruction, public NoTypePolicy::Data {
 
   bool isLeftRotate() const { return isLeftRotate_; }
 
+  [[nodiscard]] bool writeRecoverData(
+      CompactBufferWriter& writer) const override;
+  bool canRecoverOnBailout() const override { return type() == MIRType::Int32; }
+
   ALLOW_CLONE(MRotate)
 };
 
