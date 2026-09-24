@@ -287,7 +287,12 @@ def make_add_if_not_instruction(filename, manifest):
 
 def append_remove_instructions(newdir, manifest):
     removed_files_path = os.path.join(newdir, "removed-files")
-    if os.path.exists(removed_files_path):
+    if not os.path.isfile(removed_files_path):
+        # On mac the file only exists at the bundle-relative location.
+        removed_files_path = os.path.join(
+            newdir, "Contents", "Resources", "removed-files"
+        )
+    if os.path.isfile(removed_files_path):
         removed_files = get_text_from_compressed(removed_files_path).splitlines()
         with open(manifest, "a") as manifest_file:
             for line in removed_files:
