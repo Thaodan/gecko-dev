@@ -21,8 +21,9 @@
 
     <PreferenceCategory
         android:key="@string/preferences_sync_category"
-        android:layout="@layout/preference_cat_style"
-        android:title="@string/preferences_sync_category">
+        android:layout="@layout/preference_category_with_summary_no_icon_style"
+        android:summary="@string/preferences_sync_category_summary"
+        android:title="@string/preferences_category_sync">
 
         <org.mozilla.fenix.settings.account.AccountSettingsSwitchPreference
             android:defaultValue="true"
@@ -66,11 +67,12 @@
   <PreferenceCategory
     android:key="@string/preferences_device_name_category"
     android:title="@string/preferences_device_name_category"
-    android:layout="@layout/preference_cat_style">
+    android:layout="@layout/preference_category_no_icon_style">
 
     <EditTextPreference
       android:key="@string/pref_key_sync_device_name"
-      android:title="@string/preferences_sync_change_device_name" />
+      android:title="@string/preferences_sync_change_device_name"
+      app:iconSpaceReserved="false" />
 
   </PreferenceCategory>
 </PreferenceScreen>

@@ -13,6 +13,7 @@ import android.provider.Settings
 import android.text.InputFilter
 import android.text.format.DateUtils
 import android.view.View
+import androidx.annotation.StringRes
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.edit
 import androidx.lifecycle.lifecycleScope
@@ -182,6 +183,17 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
                 R.xml.account_settings_preferences_old_ui
             }
         setPreferencesFromResource(layout, rootKey)
+        setPreferencesVisibility()
+    }
+
+    private fun setPreferencesVisibility() {
+        requirePreference<TwoStatePreference>(R.string.pref_key_sync_address).isVisible =
+            requireComponents.settings.isAddressSyncEnabled
+        SyncEngineUiData.entries
+            .filter { it.needsPinWarning }
+            .forEach { engineUiData ->
+                requirePreference<TwoStatePreference>(engineUiData.prefId).isVisible = areCredentialsSyncable
+            }
     }
 
     override fun onDisplayPreferenceDialog(preference: Preference) {
@@ -257,62 +269,70 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
         )
     }
 
+    /**
+     * UI configuration for a sync engine preference in account settings.
+     *
+     * Associates each [SyncEngine] with its preference resource and whether changing it requires showing the PIN
+     * protection warning.
+     */
+    enum class SyncEngineUiData(
+        val engine: SyncEngine,
+        @StringRes val prefId: Int,
+        val needsPinWarning: Boolean,
+    ) {
+        HISTORY(SyncEngine.History, R.string.pref_key_sync_history, false),
+        BOOKMARKS(SyncEngine.Bookmarks, R.string.pref_key_sync_bookmarks, false),
+        PASSWORDS(SyncEngine.Passwords, R.string.pref_key_sync_logins, true),
+        TABS(SyncEngine.Tabs, R.string.pref_key_sync_tabs, false),
+        CREDIT_CARDS(SyncEngine.CreditCards, R.string.pref_key_sync_credit_cards, true),
+        ADDRESS(SyncEngine.Addresses, R.string.pref_key_sync_address, false),
+    }
+
     private fun setupSyncCategoriesPreferenceListeners() {
         // Make sure out sync engine checkboxes are up-to-date and disabled if currently syncing
         updateSyncEngineStates()
         setDisabledWhileSyncing(accountManager.isSyncActive())
 
-        listOf(
-                R.string.pref_key_sync_bookmarks,
-                R.string.pref_key_sync_credit_cards,
-                R.string.pref_key_sync_history,
-                R.string.pref_key_sync_logins,
-                R.string.pref_key_sync_tabs,
-                R.string.pref_key_sync_address,
-            )
-            .forEach { requirePreference<Preference>(it).tintIcon() }
+        SyncEngineUiData.entries
+            .filter { !it.needsPinWarning || areCredentialsSyncable }
+            .forEach { engineUiData ->
+                requirePreference<TwoStatePreference>(engineUiData.prefId).apply {
+                    tintIcon()
 
-        fun SyncEngine.prefId(): Int =
-            when (this) {
-                SyncEngine.History -> R.string.pref_key_sync_history
-                SyncEngine.Bookmarks -> R.string.pref_key_sync_bookmarks
-                SyncEngine.Passwords -> R.string.pref_key_sync_logins
-                SyncEngine.Tabs -> R.string.pref_key_sync_tabs
-                SyncEngine.CreditCards -> R.string.pref_key_sync_credit_cards
-                SyncEngine.Addresses -> R.string.pref_key_sync_address
-                else -> throw IllegalStateException("Accessing internal sync engines")
-            }
-
-        listOf(
-                SyncEngine.History,
-                SyncEngine.Bookmarks,
-                SyncEngine.Tabs,
-                SyncEngine.Addresses,
-            )
-            .forEach {
-                requirePreference<TwoStatePreference>(it.prefId()).apply {
                     setOnPreferenceChangeListener { _, newValue ->
-                        updateSyncEngineState(it, newValue as Boolean)
+                        if (engineUiData.needsPinWarning) {
+                            // 'Passwords' and 'Credit card' listeners are special, since we also display a pin
+                            // protection
+                            // warning.
+                            updateSyncEngineStateWithPinWarning(engineUiData.engine, newValue as Boolean)
+                        } else {
+                            updateSyncEngineState(engineUiData.engine, newValue as Boolean)
+                        }
                         true
                     }
                 }
             }
+    }
 
-        // 'Passwords' and 'Credit card' listeners are special, since we also display a pin protection warning.
-        if (areCredentialsSyncable) {
-            listOf(
-                    SyncEngine.Passwords,
-                    SyncEngine.CreditCards,
-                )
-                .forEach {
-                    requirePreference<TwoStatePreference>(it.prefId()).apply {
-                        setOnPreferenceChangeListener { _, newValue ->
-                            updateSyncEngineStateWithPinWarning(it, newValue as Boolean)
-                            true
-                        }
-                    }
+    private fun updateSyncedDataSectionDescription() {
+        val settings = requireComponents.settings
+        val syncEnginesStatus: Map<SyncEngine, Boolean> = SyncEnginesStorage(requireContext()).getStatus()
+
+        val isAnyEngineEnabled =
+            SyncEngineUiData.entries
+                .filterNot { it.engine == SyncEngine.Addresses && !settings.isAddressSyncEnabled }
+                .filterNot { it.needsPinWarning && !areCredentialsSyncable }
+                .any {
+                    syncEnginesStatus.getOrElse(it.engine) { false }
                 }
-        }
+
+        val summary =
+            if (isAnyEngineEnabled || syncEnginesStatus.isEmpty()) {
+                R.string.preferences_sync_category_summary
+            } else {
+                R.string.preferences_sync_category_no_engine_selected_summary
+            }
+        requirePreference<PreferenceCategory>(R.string.preferences_sync_category).setSummary(summary)
     }
 
     private fun Preference.tintIcon() {
@@ -356,6 +376,7 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
     private fun updateSyncEngineState(engine: SyncEngine, newValue: Boolean) {
         viewLifecycleOwner.lifecycleScope.launch {
             requireContext().components.backgroundServices.accountManager.setEngineEnabled(engine, newValue)
+            updateSyncedDataSectionDescription()
         }
     }
 
@@ -394,35 +415,15 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
 
     /** Updates the status of all [SyncEngine] states. */
     private fun updateSyncEngineStates() {
-        val settings = requireComponents.settings
         val syncEnginesStatus = SyncEnginesStorage(requireContext()).getStatus()
-        requirePreference<TwoStatePreference>(R.string.pref_key_sync_bookmarks).apply {
-            isEnabled = syncEnginesStatus.containsKey(SyncEngine.Bookmarks)
-            isChecked = syncEnginesStatus.getOrElse(SyncEngine.Bookmarks) { true }
+
+        SyncEngineUiData.entries.forEach { engineUiData ->
+            requirePreference<TwoStatePreference>(engineUiData.prefId).apply {
+                isEnabled = syncEnginesStatus.containsKey(engineUiData.engine)
+                isChecked = syncEnginesStatus.getOrElse(engineUiData.engine) { true }
+            }
         }
-        requirePreference<TwoStatePreference>(R.string.pref_key_sync_credit_cards).apply {
-            isVisible = areCredentialsSyncable
-            isEnabled = syncEnginesStatus.containsKey(SyncEngine.CreditCards)
-            isChecked = syncEnginesStatus.getOrElse(SyncEngine.CreditCards) { true }
-        }
-        requirePreference<TwoStatePreference>(R.string.pref_key_sync_history).apply {
-            isEnabled = syncEnginesStatus.containsKey(SyncEngine.History)
-            isChecked = syncEnginesStatus.getOrElse(SyncEngine.History) { true }
-        }
-        requirePreference<TwoStatePreference>(R.string.pref_key_sync_logins).apply {
-            isVisible = areCredentialsSyncable
-            isEnabled = syncEnginesStatus.containsKey(SyncEngine.Passwords)
-            isChecked = syncEnginesStatus.getOrElse(SyncEngine.Passwords) { true }
-        }
-        requirePreference<TwoStatePreference>(R.string.pref_key_sync_tabs).apply {
-            isEnabled = syncEnginesStatus.containsKey(SyncEngine.Tabs)
-            isChecked = syncEnginesStatus.getOrElse(SyncEngine.Tabs) { true }
-        }
-        requirePreference<TwoStatePreference>(R.string.pref_key_sync_address).apply {
-            isVisible = settings.isAddressSyncEnabled
-            isEnabled = syncEnginesStatus.containsKey(SyncEngine.Addresses)
-            isChecked = syncEnginesStatus.getOrElse(SyncEngine.Addresses) { true }
-        }
+        updateSyncedDataSectionDescription()
     }
 
     /** Manual sync triggered by the user. This also checks account authentication and refreshes the device list. */
