@@ -41,6 +41,9 @@ android-geckoview-docs/opt:
         script: "mozharness/scripts/fx_desktop_build.py"
         secrets: true
         custom-build-variant-cfg: android-geckoview-docs
+        mozconfig-variant: nightly-android-lints
+        extra-config:
+            mozconfig_platform: android-arm
         tooltool-downloads: internal
     fetches:
         toolchain:
