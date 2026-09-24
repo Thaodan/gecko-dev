@@ -91,12 +91,15 @@ export class CommandLineHandler {
    * never ends cannot keep Firefox alive forever. Both come from prefs under
    * app.backgroundNotifications.receivePushMessages.
    *
-   * Does nothing if push is disabled.
+   * A push message arriving isn't the same as it being handled. Its service
+   * worker still has to run its push event, and for a notification, call
+   * showNotification(). Each message is counted as pending until its
+   * push-message-handled notification arrives, and receiving doesn't stop
+   * while any message is pending. The total timeout stops new messages from
+   * being handled and waits for the pending ones. Their workers' own timers
+   * bound how long that takes.
    *
-   * TODO: A push message arriving isn't the same as its service worker having
-   * finished processing it. Ideally, we'd wait until the service worker is
-   * triggered and its event resolves. We can't do that yet (Bug 2068913), so
-   * this can still shut down before a service worker has responded properly.
+   * Does nothing if push is disabled.
    *
    * @returns {Promise<void>} Resolves when receiving stops.
    */
@@ -107,8 +110,13 @@ export class CommandLineHandler {
 
     await new Promise(resolve => {
       let receiving = true;
+      let pendingMessages = 0;
+      let messagesStoppedArriving = false;
+      let capped = false;
       let pushTopicObserver = null;
+      let pushMessageHandledTopicObserver = null;
       const pushTopic = lazy.PushService.pushTopic;
+      const pushMessageHandledTopic = lazy.PushService.pushMessageHandledTopic;
       let perMessageTimer = null;
       let totalTimer = null;
 
@@ -118,9 +126,19 @@ export class CommandLineHandler {
         }
         receiving = false;
         Services.obs.removeObserver(pushTopicObserver, pushTopic);
+        Services.obs.removeObserver(
+          pushMessageHandledTopicObserver,
+          pushMessageHandledTopic
+        );
         lazy.Timer.clearTimeout(perMessageTimer);
         lazy.Timer.clearTimeout(totalTimer);
         resolve();
+      };
+
+      const stopReceivingWhenDone = () => {
+        if (messagesStoppedArriving && pendingMessages == 0) {
+          stopReceiving();
+        }
       };
 
       const perMessageTimeoutMs = Services.prefs.getIntPref(
@@ -129,11 +147,12 @@ export class CommandLineHandler {
       );
 
       const startPerMessageTimer = () => {
+        messagesStoppedArriving = false;
         lazy.Timer.clearTimeout(perMessageTimer);
-        perMessageTimer = lazy.Timer.setTimeout(
-          stopReceiving,
-          perMessageTimeoutMs
-        );
+        perMessageTimer = lazy.Timer.setTimeout(() => {
+          messagesStoppedArriving = true;
+          stopReceivingWhenDone();
+        }, perMessageTimeoutMs);
       };
 
       const totalTimeoutMs = Services.prefs.getIntPref(
@@ -142,12 +161,35 @@ export class CommandLineHandler {
       );
 
       const startTotalTimer = () => {
-        totalTimer = lazy.Timer.setTimeout(stopReceiving, totalTimeoutMs);
+        totalTimer = lazy.Timer.setTimeout(() => {
+          // New messages aren't acked, so they come back on the next connection
+          lazy.PushService.wrappedJSObject.ignoreNewMessages();
+          capped = true;
+          messagesStoppedArriving = true;
+          lazy.Timer.clearTimeout(perMessageTimer);
+          stopReceivingWhenDone();
+        }, totalTimeoutMs);
       };
 
-      pushTopicObserver = () => startPerMessageTimer();
+      pushTopicObserver = () => {
+        pendingMessages++;
+        if (!capped) {
+          startPerMessageTimer();
+        }
+      };
+
+      pushMessageHandledTopicObserver = () => {
+        if (pendingMessages > 0) {
+          pendingMessages--;
+        }
+        stopReceivingWhenDone();
+      };
 
       Services.obs.addObserver(pushTopicObserver, pushTopic);
+      Services.obs.addObserver(
+        pushMessageHandledTopicObserver,
+        pushMessageHandledTopic
+      );
       startPerMessageTimer();
       startTotalTimer();
     });
