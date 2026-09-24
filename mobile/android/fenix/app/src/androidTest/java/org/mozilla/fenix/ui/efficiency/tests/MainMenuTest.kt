@@ -14,6 +14,7 @@ import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.Constants
 import org.mozilla.fenix.helpers.Constants.PackageName.PRINT_SPOOLER
 import org.mozilla.fenix.helpers.MockBrowserDataHelper
+import org.mozilla.fenix.helpers.TestAssetHelper.articleSummaryAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.firstForeignWebPageAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.pdfFormAsset
@@ -693,5 +694,22 @@ class MainMenuTest : BaseTest() {
             .mozVerifyElementAbsent(WebCompatReporterSelectors.DESCRIBE_PROBLEM_ERROR_MESSAGE)
             .mozClick(WebCompatReporterSelectors.SEND_REPORT_BUTTON)
             .mozVerify(WebCompatReporterSelectors.REPORT_SENT_SNACK_BAR_MESSAGE)
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4036009
+    @SmokeTest
+    @Test
+    fun verifyTheMoreMainMenuSummarizePageButtonTest() {
+        composeRule.activityRule.applySettingsExceptions {
+            it.hasSeenShakeToSummarizeToolbarCfr = true
+        }
+
+        val articlePage = mockWebServer.articleSummaryAsset
+
+        on.browserPage.navigateToPage(articlePage.url.toString())
+        on.mainMenu
+            .navigateToPage()
+            .mozClick(MainMenuSelectors.MORE_BUTTON)
+            .mozVerify(MainMenuSelectors.SUMMARIZE_PAGE_BUTTON)
     }
 }
