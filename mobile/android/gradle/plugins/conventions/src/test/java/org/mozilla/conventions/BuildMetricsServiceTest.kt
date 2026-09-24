@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.mockito.Mockito.*
 import java.io.File
+import java.lang.management.ManagementFactory
+import java.util.UUID
 
 class BuildMetricsServiceTest {
     @TempDir
@@ -63,6 +65,8 @@ class BuildMetricsServiceTest {
 
         assertNotNull(metrics["invocation"])
         assertNotNull(metrics["configPhase"])
+        assertNotNull(metrics["executionPhase"])
+        assertEquals(false, metrics["configurationCacheReused"])
         assertNotNull(metrics["tasks"])
 
         val tasks = metrics["tasks"] as List<*>
@@ -82,13 +86,28 @@ class BuildMetricsServiceTest {
     }
 
     @Test
+    fun `default file suffix is the invocation end timestamp`() {
+        val service = createService(tempDir, fileSuffix = null)
+
+        service.onFinish(createTaskEvent(":task1"))
+        service.close()
+
+        val files = tempDir.listFiles()!!.map { it.name }
+        assertEquals(1, files.size)
+        assertTrue(
+            Regex("""build-metrics-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}-\d{3}\.json""").matches(files[0]),
+            "unexpected file name ${files[0]}",
+        )
+    }
+
+    @Test
     fun `tasks appear in execution order`() {
         val suffix = "order"
         val service = createService(tempDir, suffix)
 
-        service.onFinish(createTaskEvent(":first"))
-        service.onFinish(createTaskEvent(":second"))
-        service.onFinish(createTaskEvent(":third"))
+        service.onFinish(createTaskEvent(":second", startMs = 2000L, endMs = 2500L))
+        service.onFinish(createTaskEvent(":first", startMs = 1000L, endMs = 3000L))
+        service.onFinish(createTaskEvent(":third", startMs = 2600L, endMs = 2700L))
 
         service.close()
 
@@ -106,17 +125,116 @@ class BuildMetricsServiceTest {
         val suffix = "timing"
         val service = createService(tempDir, suffix)
 
-        service.onFinish(createTaskEvent(":testTask"))
+        service.onFinish(createTaskEvent(":testTask", startMs = 1000L, endMs = 2500L))
         service.close()
 
         val metricsFile = File(tempDir, "build-metrics-$suffix.json")
         val metrics = JsonSlurper().parseText(metricsFile.readText()) as Map<*, *>
-        val tasks = metrics["tasks"] as List<*>
-        val task = tasks[0] as Map<*, *>
+        val task = (metrics["tasks"] as List<*>).single() as Map<*, *>
 
         assertNotNull(task["start"])
-        assertNotNull(task["stop"])
-        assertNotNull(task["duration"])
+        assertNotNull(task["end"])
+        assertEquals("1.500", task["duration"])
+        assertEquals(1000L, longValue(task["startMs"]))
+        assertEquals(2500L, longValue(task["endMs"]))
+        assertEquals(1500L, longValue(task["durationMs"]))
+    }
+
+    @Test
+    fun `phases are derived from the JVM start, the task graph readiness and the task timestamps`() {
+        val suffix = "phases"
+        val service = createService(tempDir, suffix, configStartMs = 1500L, configEndMs = 1800L)
+
+        service.onFinish(createTaskEvent(":plugin:compileKotlin", startMs = 1600L, endMs = 1700L))
+        service.onFinish(createTaskEvent(":late", startMs = 2500L, endMs = 4000L))
+        service.onFinish(createTaskEvent(":early", startMs = 2000L, endMs = 3000L))
+
+        service.close()
+
+        val metricsFile = File(tempDir, "build-metrics-$suffix.json")
+        val metrics = JsonSlurper().parseText(metricsFile.readText()) as Map<*, *>
+
+        val invocation = metrics["invocation"] as Map<*, *>
+        assertEquals(ManagementFactory.getRuntimeMXBean().startTime, longValue(invocation["startMs"]))
+        assertEquals("jvmStart", invocation["startMeasuredFrom"])
+        assertTrue(longValue(invocation["endMs"]) >= 4000L)
+
+        val configPhase = metrics["configPhase"] as Map<*, *>
+        assertEquals(1500L, longValue(configPhase["startMs"]))
+        assertEquals(1800L, longValue(configPhase["endMs"]))
+        assertEquals(300L, longValue(configPhase["durationMs"]))
+
+        val executionPhase = metrics["executionPhase"] as Map<*, *>
+        assertEquals(1800L, longValue(executionPhase["startMs"]))
+        assertEquals(4000L, longValue(executionPhase["endMs"]))
+        assertEquals(2200L, longValue(executionPhase["durationMs"]))
+        assertEquals("2.200", executionPhase["duration"])
+    }
+
+    @Test
+    fun `configuration without a ready task graph ends at the first task start`() {
+        val suffix = "no-graph"
+        val service = createService(tempDir, suffix, configStartMs = 1500L, configEndMs = null)
+
+        service.onFinish(createTaskEvent(":task", startMs = 2000L, endMs = 3000L))
+        service.close()
+
+        val metricsFile = File(tempDir, "build-metrics-$suffix.json")
+        val metrics = JsonSlurper().parseText(metricsFile.readText()) as Map<*, *>
+
+        val configPhase = metrics["configPhase"] as Map<*, *>
+        assertEquals(2000L, longValue(configPhase["endMs"]))
+        assertEquals(1000L, longValue((metrics["executionPhase"] as Map<*, *>)["durationMs"]))
+    }
+
+    @Test
+    fun `phases without tasks end at the invocation end`() {
+        val suffix = "no-tasks"
+        val service = createService(tempDir, suffix, configStartMs = 1500L, configEndMs = 1800L)
+
+        service.close()
+
+        val metricsFile = File(tempDir, "build-metrics-$suffix.json")
+        val metrics = JsonSlurper().parseText(metricsFile.readText()) as Map<*, *>
+
+        val invocation = metrics["invocation"] as Map<*, *>
+        val configPhase = metrics["configPhase"] as Map<*, *>
+        val executionPhase = metrics["executionPhase"] as Map<*, *>
+
+        assertEquals(1800L, longValue(configPhase["endMs"]))
+        assertEquals(1800L, longValue(executionPhase["startMs"]))
+        assertEquals(longValue(invocation["endMs"]), longValue(executionPhase["endMs"]))
+        assertTrue((metrics["tasks"] as List<*>).isEmpty())
+    }
+
+    @Test
+    fun `reused configuration reports no configuration phase`() {
+        val suffix = "reused"
+        val service = createService(tempDir, suffix, configured = false)
+
+        service.onFinish(createTaskEvent(":task", startMs = 2000L, endMs = 3000L))
+        service.close()
+
+        val metricsFile = File(tempDir, "build-metrics-$suffix.json")
+        val metrics = JsonSlurper().parseText(metricsFile.readText()) as Map<*, *>
+
+        assertEquals(true, metrics["configurationCacheReused"])
+        assertNotNull(metrics["invocation"])
+        assertFalse(metrics.containsKey("configPhase"))
+        assertEquals(1000L, longValue((metrics["executionPhase"] as Map<*, *>)["durationMs"]))
+        assertEquals(1, (metrics["tasks"] as List<*>).size)
+    }
+
+    @Test
+    fun `consuming a build leaves other recorded builds alone`() {
+        val other = UUID.randomUUID().toString()
+        ConfiguredBuilds.recordConfigStart(other)
+
+        val service = createService(tempDir, "isolation")
+        service.close()
+
+        assertNotNull(ConfiguredBuilds.consume(other))
+        assertNull(ConfiguredBuilds.consume(other))
     }
 
     @Test
@@ -156,42 +274,64 @@ class BuildMetricsServiceTest {
         assertTrue(metricsFile.exists())
     }
 
+    private fun longValue(value: Any?): Long = (value as Number).toLong()
+
     @Suppress("UNCHECKED_CAST")
-    private fun createService(outputDir: File, fileSuffix: String): BuildMetricsService {
-        val outputDirProperty = mock(org.gradle.api.provider.Property::class.java) as org.gradle.api.provider.Property<String>
-        `when`(outputDirProperty.get()).thenReturn(outputDir.absolutePath)
-
-        val fileSuffixProperty = mock(org.gradle.api.provider.Property::class.java) as org.gradle.api.provider.Property<String>
-        `when`(fileSuffixProperty.get()).thenReturn(fileSuffix)
-
-        val parameters = object : BuildMetricsServiceParameters {
-            override val outputDir = outputDirProperty
-            override val fileSuffix = fileSuffixProperty
+    private fun <T : Any> mockProperty(value: T?): org.gradle.api.provider.Property<T> {
+        val property = mock(org.gradle.api.provider.Property::class.java) as org.gradle.api.provider.Property<T>
+        `when`(property.orNull).thenReturn(value)
+        if (value != null) {
+            `when`(property.get()).thenReturn(value)
         }
-        return TestBuildMetricsService(parameters).apply {
-            invocationStart = System.currentTimeMillis()
-            configStart = invocationStart + 100
-            configEnd = configStart + 200
-        }
+        return property
     }
 
-    private fun createTaskEvent(taskPath: String, upToDate: Boolean = false, fromCache: Boolean = false, failed: Boolean = false, skipped: Boolean = false): TaskFinishEvent {
-        val result = if (failed) mockFailedResult() else if (skipped) mockSkippedResult() else mockSuccessResult(upToDate, fromCache)
+    private fun createService(
+        outputDir: File,
+        fileSuffix: String?,
+        configStartMs: Long = 800L,
+        configEndMs: Long? = 900L,
+        configured: Boolean = true,
+    ): BuildMetricsService {
+        val buildId = UUID.randomUUID().toString()
+        val parameters = object : BuildMetricsServiceParameters {
+            override val outputDir = mockProperty(outputDir.absolutePath)
+            override val fileSuffix = mockProperty(fileSuffix)
+            override val buildId = mockProperty(buildId)
+            override val configStartMs = mockProperty(configStartMs)
+        }
+        if (configured) {
+            ConfiguredBuilds.recordConfigStart(buildId)
+            configEndMs?.let { ConfiguredBuilds.recordConfigEnd(buildId, it) }
+        }
+        return TestBuildMetricsService(parameters)
+    }
+
+    private fun createTaskEvent(
+        taskPath: String,
+        upToDate: Boolean = false,
+        fromCache: Boolean = false,
+        failed: Boolean = false,
+        skipped: Boolean = false,
+        startMs: Long = 1000L,
+        endMs: Long = 2000L,
+    ): TaskFinishEvent {
+        val result = if (failed) mockFailedResult(startMs, endMs) else if (skipped) mockSkippedResult(startMs, endMs) else mockSuccessResult(upToDate, fromCache, startMs, endMs)
         val descriptor = mock(TaskOperationDescriptor::class.java).apply { `when`(getTaskPath()).thenReturn(taskPath) }
         return mock(TaskFinishEvent::class.java).apply { `when`(getDescriptor()).thenReturn(descriptor); `when`(getResult()).thenReturn(result) }
     }
 
-    private fun mockSuccessResult(upToDate: Boolean, fromCache: Boolean) = mock(TaskSuccessResult::class.java).apply {
-        `when`(getStartTime()).thenReturn(1000L); `when`(getEndTime()).thenReturn(2000L)
+    private fun mockSuccessResult(upToDate: Boolean, fromCache: Boolean, startMs: Long, endMs: Long) = mock(TaskSuccessResult::class.java).apply {
+        `when`(getStartTime()).thenReturn(startMs); `when`(getEndTime()).thenReturn(endMs)
         `when`(isUpToDate()).thenReturn(upToDate); `when`(isFromCache()).thenReturn(fromCache)
     }
 
-    private fun mockFailedResult() = mock(TaskFailureResult::class.java).apply {
-        `when`(getStartTime()).thenReturn(1000L); `when`(getEndTime()).thenReturn(2000L)
+    private fun mockFailedResult(startMs: Long, endMs: Long) = mock(TaskFailureResult::class.java).apply {
+        `when`(getStartTime()).thenReturn(startMs); `when`(getEndTime()).thenReturn(endMs)
     }
 
-    private fun mockSkippedResult() = mock(TaskSkippedResult::class.java).apply {
-        `when`(getStartTime()).thenReturn(1000L); `when`(getEndTime()).thenReturn(2000L)
+    private fun mockSkippedResult(startMs: Long, endMs: Long) = mock(TaskSkippedResult::class.java).apply {
+        `when`(getStartTime()).thenReturn(startMs); `when`(getEndTime()).thenReturn(endMs)
     }
 
     class TestBuildMetricsService(private val testParameters: BuildMetricsServiceParameters) : BuildMetricsService(testParameters) {
