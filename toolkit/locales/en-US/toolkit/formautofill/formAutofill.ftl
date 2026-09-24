@@ -32,9 +32,15 @@ autofill-options-link = Form autofill options
 # this checkbox is displayed on the doorhanger shown when saving credit card.
 credit-card-doorhanger-credit-cards-sync-checkbox = Sync all saved cards across my devices
 
-# Used on the doorhanger when users submit payment with credit card.
+## Used on the doorhanger when users submit payment with credit card.
+
 credit-card-save-doorhanger-header = Securely save this card?
 credit-card-save-doorhanger-description = { -brand-short-name } encrypts your card number. Your security code won’t be saved.
+credit-card-save-doorhanger-description-security-code = { -brand-short-name } encrypts your card number and security code, so only you can use them to fill payment forms.
+credit-card-doorhanger-save-security-codes-checkbox =
+    .label = Always save security codes for payment methods.
+
+##
 
 credit-card-capture-save-button =
     .label = Save

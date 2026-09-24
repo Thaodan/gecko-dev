@@ -988,6 +988,23 @@ export class CreditCardSaveDoorhanger extends AutofillDoorhanger {
     this.content.appendChild(docFragment);
   }
 
+  appendSecurityCodeCheckbox() {
+    const checkbox = this.doc.createElement("moz-checkbox");
+    checkbox.checked = true;
+    checkbox.setAttribute("support-page", "credit-card-autofill");
+    this.doc.l10n.setAttributes(
+      checkbox,
+      "credit-card-doorhanger-save-security-codes-checkbox"
+    );
+    checkbox.addEventListener("change", () => {
+      Services.prefs.setBoolPref(
+        FormAutofill.ENABLED_AUTOFILL_CREDITCARDS_CVV_PREF,
+        checkbox.checked
+      );
+    });
+    this.content.appendChild(checkbox);
+  }
+
   createPrivacyPanelLink() {
     const privacyLinkElement = this.doc.createXULElement("label", {
       is: "text-link",
@@ -1023,6 +1040,10 @@ export class CreditCardSaveDoorhanger extends AutofillDoorhanger {
     this.content.replaceChildren();
 
     this.appendDescription();
+
+    if (FormAutofill.isAutofillCreditCardCVVEnabled) {
+      this.appendSecurityCodeCheckbox();
+    }
   }
 
   onEventCallback(state) {
@@ -1384,7 +1405,11 @@ CONTENT = {
       l10nId: "credit-card-save-doorhanger-header",
     },
     description: {
-      l10nId: "credit-card-save-doorhanger-description",
+      get l10nId() {
+        return FormAutofill.isAutofillCreditCardCVVEnabled
+          ? "credit-card-save-doorhanger-description-security-code"
+          : "credit-card-save-doorhanger-description";
+      },
     },
     content: {},
     footer: {
@@ -1442,7 +1467,11 @@ CONTENT = {
       l10nId: "credit-card-update-doorhanger-header",
     },
     description: {
-      l10nId: "credit-card-update-doorhanger-description",
+      get l10nId() {
+        return FormAutofill.isAutofillCreditCardCVVEnabled
+          ? "credit-card-save-doorhanger-description-security-code"
+          : "credit-card-update-doorhanger-description";
+      },
     },
     content: {},
     footer: {

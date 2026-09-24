@@ -43,6 +43,8 @@ skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt", # perma-fail see Bug 1655601
 ]
 
+["browser_creditCard_doorhanger_cvv.js"]
+
 ["browser_creditCard_doorhanger_display.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1895422
