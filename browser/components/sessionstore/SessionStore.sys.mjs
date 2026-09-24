@@ -6533,7 +6533,6 @@ class _SessionStore {
     let window = tab.documentGlobal;
     let tabbrowser = window.gBrowser;
     let forceOnDemand = options.forceOnDemand;
-    let isRemotenessUpdate = options.isRemotenessUpdate;
 
     let willRestoreImmediately =
       options.restoreImmediately ||
@@ -6646,7 +6645,6 @@ class _SessionStore {
         tabData,
         epoch,
         loadArguments,
-        isRemotenessUpdate,
       });
 
       // This could cause us to ignore MAX_CONCURRENT_TAB_RESTORES a bit, but
@@ -6753,18 +6751,12 @@ class _SessionStore {
 
     this.#sendRestoreTabContent(browser, {
       loadArguments,
-      isRemotenessUpdate: aOptions.isRemotenessUpdate,
       reason:
         aOptions.restoreContentReason || RESTORE_TAB_CONTENT_REASON.SET_STATE,
     });
 
-    // Focus the tab's content area, unless the restore is for a new tab URL or
-    // was triggered by a DocumentChannel process switch.
-    if (
-      aTab.selected &&
-      !window.isBlankPageURL(uri) &&
-      !aOptions.isRemotenessUpdate
-    ) {
+    // Focus the tab's content area, unless the restore is for a new tab URL.
+    if (aTab.selected && !window.isBlankPageURL(uri)) {
       browser.focus();
     }
   }
@@ -8149,15 +8141,10 @@ class _SessionStore {
    *
    * @param {MozTabbrowserTab} aTab
    *        The tab which has been restored
-   * @param {boolean} aIsRemotenessUpdate
-   *        True if this tab was restored due to flip from running from
-   *        out-of-main-process to in-main-process or vice-versa.
    */
-  #sendTabRestoredNotification(aTab, aIsRemotenessUpdate) {
-    let event = aTab.ownerDocument.createEvent("CustomEvent");
-    event.initCustomEvent("SSTabRestored", true, false, {
-      isRemotenessUpdate: aIsRemotenessUpdate,
-    });
+  #sendTabRestoredNotification(aTab) {
+    let event = aTab.ownerDocument.createEvent("Events");
+    event.initEvent("SSTabRestored", true, false);
     aTab.dispatchEvent(event);
   }
 
@@ -8610,7 +8597,7 @@ class _SessionStore {
     }
 
     Promise.allSettled(promises).then(() => {
-      this.#restoreTabContentComplete(browser, options);
+      this.#restoreTabContentComplete(browser);
     });
   }
 
@@ -8705,7 +8692,7 @@ class _SessionStore {
     }
   }
 
-  #restoreTabContentComplete(browser, data) {
+  #restoreTabContentComplete(browser) {
     let win = browser.documentGlobal;
     let tab = win?.gBrowser.getTabForBrowser(browser);
     if (!tab) {
@@ -8735,7 +8722,7 @@ class _SessionStore {
     SessionStore.#resetLocalTabRestoringState(tab);
     SessionStore.#restoreNextTab();
 
-    this.#sendTabRestoredNotification(tab, data.isRemotenessUpdate);
+    this.#sendTabRestoredNotification(tab);
 
     Services.obs.notifyObservers(null, "sessionstore-one-or-no-tab-restored");
   }
