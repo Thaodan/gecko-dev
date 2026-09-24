@@ -1195,6 +1195,11 @@ abstract class BaseBrowserFragment :
                             requireContext(),
                             singleMediaPicker,
                             multipleMediaPicker,
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                AndroidPhotoPicker.allHdrCapabilities()
+                            } else {
+                                null
+                            },
                         ),
                 ),
             owner = this,
