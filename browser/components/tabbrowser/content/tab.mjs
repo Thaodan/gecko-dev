@@ -68,6 +68,49 @@ export class MozTabbrowserTab extends MozElements.MozTab {
     this.muteReason = undefined;
 
     this.closing = false;
+
+    // Assigned by other modules, mostly Tabbrowser.sys.mjs. Declared here for
+    // type checking only; these lines assign nothing.
+    /** @type {MozBrowser} */
+    this.linkedBrowser;
+    /** @type {object} */
+    this.permanentKey;
+    /** @type {MozTabbrowserTab|null} */
+    this.successor;
+    /** @type {Set<MozTabbrowserTab>} */
+    this.predecessors;
+    /** @type {string} */
+    this.canonicalUrl;
+    /** @type {boolean} */
+    this.initializingTab;
+    /** @type {boolean} */
+    this.removedByAdoption;
+    /** @type {boolean} */
+    this._fullyOpen;
+    /** @type {string} */
+    this._fullLabel;
+    /** @type {boolean} */
+    this._labelIsContentTitle;
+    /** @type {boolean} */
+    this._labelIsInitialTitle;
+    /** @type {boolean} */
+    this._pinnedUnscrollable;
+    /** @type {boolean} */
+    this._pendingPermitUnload;
+    /** @type {number} */
+    this._closeTimeAnimTimerId;
+    /** @type {number} */
+    this._closeTimeNoAnimTimerId;
+    /** @type {MozFindbar} */
+    this._findBar;
+    /** @type {Promise<MozFindbar | null>} */
+    this._pendingFindBar;
+    /** @type {[boolean, boolean]} */
+    this._endRemoveArgs;
+    /** @type {{uriIsAboutBlank: boolean, remoteType: string, usingPreloadedContent: boolean}} */
+    this._browserParams;
+    /** @type {nsIURI} */
+    this._originalRegisteredOpenURI;
   }
 
   static get inheritedAttributes() {
@@ -390,13 +433,17 @@ export class MozTabbrowserTab extends MozElements.MozTab {
     return this.querySelector(".tab-note-icon-overlay");
   }
 
+  /** @returns {MozTabbrowserTabGroup|null} */
   get group() {
-    return this.closest("tab-group");
+    return /** @type {MozTabbrowserTabGroup|null} */ (
+      this.closest("tab-group")
+    );
   }
 
+  /** @returns {MozTabSplitViewWrapper|null} */
   get splitview() {
     if (this.parentElement?.tagName == "tab-split-view-wrapper") {
-      return this.parentElement;
+      return /** @type {MozTabSplitViewWrapper} */ (this.parentElement);
     }
     return null;
   }
