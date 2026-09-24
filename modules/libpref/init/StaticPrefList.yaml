@@ -11133,6 +11133,12 @@
   value: false
   mirror: always
 
+# Whether grid intrinsic sizing measures bsize contributions.
+- name: layout.css.grid-intrinsic-sizing.measure-bsize
+  type: bool
+  value: false
+  mirror: always
+
 # Should we propagate baseline alignment information from a parent grid into
 # its subgrids?
 - name: layout.css.grid-subgrid-baselines.enabled
