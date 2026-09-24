@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // The tab strip's custom elements, as the modules that drive them see them.
-// content/tab.js is loaded as a subscript, so nothing can import its class and
+// content/tab.mjs is loaded as a subscript, so nothing can import its class and
 // the interfaces below stand in for it and for the label element, which has no
 // class at all. Nothing checks an interface against the element it describes: a
 // member that changes shape has to be changed here too.
@@ -42,7 +42,7 @@ interface MozTabbrowserTab extends XULElement {
   _mouseenter(options?: { withoutPointerEvent?: boolean }): void;
   _mouseleave(): void;
 
-  // Set on the element by the modules rather than declared by tab.js.
+  // Set on the element by the modules rather than declared by tab.mjs.
   _index: number;
   _hover: boolean;
   _fullyOpen: boolean;
