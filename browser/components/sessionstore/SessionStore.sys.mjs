@@ -6251,8 +6251,10 @@ class _SessionStore {
       let prepared = this.#prepareConnectionToHost(tab, url);
       // This is used to test if a connection has been made beforehand.
       if (gDebuggingEnabled) {
-        tab.__test_connection_prepared = prepared;
-        tab.__test_connection_url = url;
+        Object.assign(tab, {
+          __test_connection_prepared: prepared,
+          __test_connection_url: url,
+        });
       }
       // A flag indicate that we've prepared a connection for this tab and
       // if is called again, we shouldn't prepare another connection.
@@ -6661,8 +6663,10 @@ class _SessionStore {
             let url = tabData.entries[activeIndex].url;
             let prepared = this.#prepareConnectionToHost(tab, url);
             if (gDebuggingEnabled) {
-              tab.__test_connection_prepared = prepared;
-              tab.__test_connection_url = url;
+              Object.assign(tab, {
+                __test_connection_prepared: prepared,
+                __test_connection_url: url,
+              });
             }
           }
         }
