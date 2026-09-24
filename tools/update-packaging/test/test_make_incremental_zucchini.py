@@ -379,7 +379,7 @@ def test_download_file_raises_after_exhausting_retries(tmp_path):
     assert urlretrieve.call_count == mz.DOWNLOAD_ATTEMPTS
 
 
-def _process_single(tmp_path, make_partial, valid_channel_id=True):
+def _process_single(tmp_path, make_partial, valid_channel_id=True, **kwargs):
     workdir = tmp_path / "0"
     (workdir / "from_mar").mkdir(parents=True)
     (workdir / "from.mar").write_bytes(b"from")
@@ -388,7 +388,7 @@ def _process_single(tmp_path, make_partial, valid_channel_id=True):
         with mock.patch.object(
             mz, "validate_mar_channel_id", lambda *_: valid_channel_id
         ):
-            error, _, _ = mz.process_single(
+            error, mar_manifest, _ = mz.process_single(
                 update_number=1,
                 from_mar_url="http://ftp.mozilla.org/from.mar",
                 to_mar_dir=str(tmp_path / "to_mar"),
@@ -399,12 +399,13 @@ def _process_single(tmp_path, make_partial, valid_channel_id=True):
                 arch="x86",
                 force=None,
                 staging=False,
+                **kwargs,
             )
-    return workdir, error
+    return workdir, error, mar_manifest
 
 
 def test_process_single_removes_the_workdir_on_success(tmp_path):
-    workdir, error = _process_single(tmp_path, lambda **kwargs: ({}, None))
+    workdir, error, _ = _process_single(tmp_path, lambda **kwargs: ({}, None))
 
     assert error is None
     assert not workdir.exists()
@@ -414,19 +415,35 @@ def test_process_single_keeps_the_workdir_on_failure(tmp_path):
     def failing(**kwargs):
         raise Exception("boom")
 
-    workdir, error = _process_single(tmp_path, failing)
+    workdir, error, _ = _process_single(tmp_path, failing)
 
     assert isinstance(error, Exception)
     assert (workdir / "from_mar").is_dir()
 
 
 def test_process_single_keeps_the_workdir_on_invalid_channel_id(tmp_path):
-    workdir, error = _process_single(
+    workdir, error, _ = _process_single(
         tmp_path, lambda **kwargs: ({}, None), valid_channel_id=False
     )
 
     assert isinstance(error, Exception)
     assert (workdir / "from_mar").is_dir()
+
+
+def test_process_single_records_the_previous_build_fields(tmp_path):
+    _, error, mar_manifest = _process_single(
+        tmp_path,
+        lambda **kwargs: ({}, None),
+        previousVersion="142.0",
+        previousBuildNumber=3,
+    )
+
+    assert error is None
+    assert mar_manifest == {
+        "update_number": 1,
+        "previousVersion": "142.0",
+        "previousBuildNumber": 3,
+    }
 
 
 if __name__ == "__main__":

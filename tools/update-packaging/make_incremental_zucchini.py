@@ -626,6 +626,7 @@ def process_single(
     force,
     staging,
     previousVersion=None,
+    previousBuildNumber=None,
     compute_hashes=False,
     cache_entry=None,
     to_hashes=None,
@@ -650,6 +651,8 @@ def process_single(
         mar_manifest["update_number"] = update_number
         if previousVersion:
             mar_manifest["previousVersion"] = previousVersion
+        if previousBuildNumber:
+            mar_manifest["previousBuildNumber"] = previousBuildNumber
         # Validate the created mar has valid channel id
         if validate_mar_channel_id(target_mar, mar_channel_id):
             # The scratch tree is only kept when something went wrong, for
@@ -808,6 +811,7 @@ def main():
                 force=args.force,
                 staging=args.allow_staging_urls,
                 previousVersion=source_data.get("previousVersion"),
+                previousBuildNumber=source_data.get("previousBuildNumber"),
                 compute_hashes=compute_hashes,
                 cache_entry=cache_entry,
                 to_hashes=to_hashes,
