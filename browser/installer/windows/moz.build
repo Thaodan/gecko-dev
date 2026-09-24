@@ -108,7 +108,7 @@ if CONFIG["MAKENSISU"] and not CONFIG["MOZ_USE_MAKEFILE_INSTALLER_BUILD"]:
         )
         FINAL_TARGET_FILES += ["!maintenanceservice_installer.exe"]
 
-    if CONFIG["ENABLE_TESTS"]:
+    if CONFIG["ENABLE_TESTS"] and CONFIG["MOZ_STUB_INSTALLER"]:
         GeneratedFile(
             "test_stub_installer.exe",
             script="/python/mozbuild/mozbuild/action/nsis_build.py",
