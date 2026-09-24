@@ -26,7 +26,7 @@ inline nsresult CallQueryReferent(T* aSource, DestinationType** aDestination) {
 }
 
 inline const nsQueryReferent do_QueryReferent(nsIWeakReference* aRawPtr,
-                                              nsresult* aError = nullptr) {
+                                              nsresult* aError = 0) {
   return nsQueryReferent(aRawPtr, aError);
 }
 
@@ -34,9 +34,9 @@ inline const nsQueryReferent do_QueryReferent(nsIWeakReference* aRawPtr,
  * Deprecated, use |do_GetWeakReference| instead.
  */
 extern nsIWeakReference* NS_GetWeakReference(nsISupports*,
-                                             nsresult* aResult = nullptr);
+                                             nsresult* aResult = 0);
 extern nsIWeakReference* NS_GetWeakReference(nsISupportsWeakReference*,
-                                             nsresult* aResult = nullptr);
+                                             nsresult* aResult = 0);
 
 /**
  * |do_GetWeakReference| is a convenience function that bundles up all the work
@@ -47,17 +47,17 @@ extern nsIWeakReference* NS_GetWeakReference(nsISupportsWeakReference*,
  * do_GetWeakReference(aPtr);|.
  */
 inline already_AddRefed<nsIWeakReference> do_GetWeakReference(
-    nsISupports* aRawPtr, nsresult* aError = nullptr) {
+    nsISupports* aRawPtr, nsresult* aError = 0) {
   return dont_AddRef(NS_GetWeakReference(aRawPtr, aError));
 }
 
 inline already_AddRefed<nsIWeakReference> do_GetWeakReference(
-    nsISupportsWeakReference* aRawPtr, nsresult* aError = nullptr) {
+    nsISupportsWeakReference* aRawPtr, nsresult* aError = 0) {
   return dont_AddRef(NS_GetWeakReference(aRawPtr, aError));
 }
 
 inline void do_GetWeakReference(nsIWeakReference* aRawPtr,
-                                nsresult* aError = nullptr) {
+                                nsresult* aError = 0) {
   // This signature exists solely to _stop_ you from doing a bad thing.
   //  Saying |do_GetWeakReference()| on a weak reference itself,
   //  is very likely to be a programmer error.

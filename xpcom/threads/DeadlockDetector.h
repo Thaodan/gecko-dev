@@ -81,7 +81,7 @@ class DeadlockDetector {
           ,
           mExternalRefs(),
           mResource(aResource) {}
-    ~OrderingEntry() = default;
+    ~OrderingEntry() {}
 
     size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
       size_t n = aMallocSizeOf(this);
@@ -141,9 +141,6 @@ class DeadlockDetector {
 
     return n;
   }
-
-  DeadlockDetector(const DeadlockDetector& aDD) = delete;
-  DeadlockDetector& operator=(const DeadlockDetector& aDD) = delete;
 
   /**
    * Add
@@ -342,6 +339,10 @@ class DeadlockDetector {
    * detector.
    */
   PRLock* mLock;
+
+ private:
+  DeadlockDetector(const DeadlockDetector& aDD) = delete;
+  DeadlockDetector& operator=(const DeadlockDetector& aDD) = delete;
 };
 
 template <typename T>

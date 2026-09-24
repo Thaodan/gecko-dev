@@ -1508,6 +1508,7 @@ static_assert(sizeof(nsTSubstring<char>) ==
               "Don't add new data fields to nsTSubstring_CharT. "
               "Add to nsTStringRepr<T> instead.");
 
+#include "nsCharSeparatedTokenizer.h"
 #include "nsTDependentSubstring.h"
 
 /**

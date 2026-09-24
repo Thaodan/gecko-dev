@@ -68,7 +68,11 @@ class ArrayIterator {
   ArrayIterator(const array_type& aArray, index_type aIndex)
       : mArray(&aArray), mIndex(aIndex) {}
 
-  iterator_type& operator=(const iterator_type& aOther) = default;
+  iterator_type& operator=(const iterator_type& aOther) {
+    mArray = aOther.mArray;
+    mIndex = aOther.mIndex;
+    return *this;
+  }
 
   constexpr operator const_iterator_type() const {
     return mArray ? const_iterator_type{*mArray, mIndex}

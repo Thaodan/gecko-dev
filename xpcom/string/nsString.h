@@ -49,6 +49,7 @@ class MOZ_GSL_OWNER NS_LossyConvertUTF16toASCII : public nsAutoCString {
     LossyAppendUTF16toASCII(aString, *this);
   }
 
+ private:
   // NOT TO BE IMPLEMENTED
   NS_LossyConvertUTF16toASCII(char) = delete;
 };
@@ -75,6 +76,7 @@ class NS_ConvertASCIItoUTF16 : public nsAutoString {
     AppendASCIItoUTF16(aCString, *this);
   }
 
+ private:
   // NOT TO BE IMPLEMENTED
   NS_ConvertASCIItoUTF16(char16_t) = delete;
 };
@@ -105,6 +107,7 @@ class NS_ConvertUTF16toUTF8 : public nsAutoCString {
     AppendUTF16toUTF8(aString, *this);
   }
 
+ private:
   // NOT TO BE IMPLEMENTED
   NS_ConvertUTF16toUTF8(char) = delete;
 };
@@ -131,6 +134,7 @@ class NS_ConvertUTF8toUTF16 : public nsAutoString {
     AppendUTF8toUTF16(aCString, *this);
   }
 
+ private:
   // NOT TO BE IMPLEMENTED
   NS_ConvertUTF8toUTF16(char16_t) = delete;
 };

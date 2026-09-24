@@ -44,9 +44,6 @@ class OffTheBooksCondVar : BlockingResourceBase {
    **/
   ~OffTheBooksCondVar() = default;
 
-  OffTheBooksCondVar(const OffTheBooksCondVar&) = delete;
-  OffTheBooksCondVar& operator=(const OffTheBooksCondVar&) = delete;
-
   /**
    * Wait
    * @see prcvar.h
@@ -108,6 +105,8 @@ class OffTheBooksCondVar : BlockingResourceBase {
 
  private:
   OffTheBooksCondVar();
+  OffTheBooksCondVar(const OffTheBooksCondVar&) = delete;
+  OffTheBooksCondVar& operator=(const OffTheBooksCondVar&) = delete;
 
   OffTheBooksMutex* mLock;
   detail::ConditionVariableImpl mImpl;
@@ -125,11 +124,12 @@ class CondVar : public OffTheBooksCondVar {
     MOZ_COUNT_CTOR(CondVar);
   }
 
-  CondVar() = delete;
-  CondVar(const CondVar&) = delete;
-  CondVar& operator=(const CondVar&) = delete;
-
   MOZ_COUNTED_DTOR(CondVar)
+
+ private:
+  CondVar();
+  CondVar(const CondVar&);
+  CondVar& operator=(const CondVar&);
 };
 
 }  // namespace mozilla

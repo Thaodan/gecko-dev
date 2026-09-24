@@ -19,7 +19,6 @@
 #include "mozilla/dom/Promise.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsCOMPtr.h"
-#include "nsCharSeparatedTokenizer.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsIFile.h"

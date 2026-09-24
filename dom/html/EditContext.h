@@ -9,7 +9,6 @@
 #include "mozilla/EventForwards.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/EditContextBinding.h"
-#include "nsGenericHTMLElement.h"
 
 class nsTextNode;
 

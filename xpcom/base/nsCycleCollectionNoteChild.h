@@ -41,13 +41,13 @@ MOZ_ALWAYS_INLINE void CycleCollectionNoteEdgeName(
 
 template <typename T>
 nsISupports* ToSupports(
-    T* aPtr, typename T::NS_CYCLE_COLLECTION_INNERCLASS* aDummy = nullptr) {
+    T* aPtr, typename T::NS_CYCLE_COLLECTION_INNERCLASS* aDummy = 0) {
   return T::NS_CYCLE_COLLECTION_INNERCLASS::Upcast(aPtr);
 }
 
 // The default implementation of this class template is empty, because it
 // should never be used: see the partial specializations below.
-template <typename T, bool IsXPCOM = std::is_base_of_v<nsISupports, T>>
+template <typename T, bool IsXPCOM = std::is_base_of<nsISupports, T>::value>
 struct CycleCollectionNoteChildImpl {};
 
 template <typename T>

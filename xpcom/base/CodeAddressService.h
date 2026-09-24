@@ -91,7 +91,7 @@ class CodeAddressService
     uint32_t mInUse : 1;  // is the entry used?
 
     Entry()
-        : mPc(nullptr),
+        : mPc(0),
           mFunction(nullptr),
           mLibrary(nullptr),
           mLOffset(0),
@@ -216,8 +216,8 @@ class CodeAddressService
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
     size_t n = aMallocSizeOf(this);
-    for (auto& entry : mEntries) {
-      n += entry.SizeOfExcludingThis(aMallocSizeOf);
+    for (uint32_t i = 0; i < kNumEntries; i++) {
+      n += mEntries[i].SizeOfExcludingThis(aMallocSizeOf);
     }
 
     n += mLibraryStrings.shallowSizeOfExcludingThis(aMallocSizeOf);
@@ -232,8 +232,8 @@ class CodeAddressService
 
   size_t CacheCount() const {
     size_t n = 0;
-    for (const auto& entry : mEntries) {
-      if (entry.mInUse) {
+    for (size_t i = 0; i < kNumEntries; i++) {
+      if (mEntries[i].mInUse) {
         n++;
       }
     }

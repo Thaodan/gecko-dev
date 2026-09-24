@@ -10,7 +10,6 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/Telemetry.h"
 #include "nsAppDirectoryServiceDefs.h"
-#include "nsCRTGlue.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsLocalFile.h"
 #include "nsPrintfCString.h"

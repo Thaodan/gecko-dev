@@ -110,10 +110,6 @@ struct MOZ_STACK_CLASS AutoNestedEventLoopAnnotation {
     }
   }
 
-  AutoNestedEventLoopAnnotation(const AutoNestedEventLoopAnnotation&) = delete;
-  AutoNestedEventLoopAnnotation& operator=(
-      const AutoNestedEventLoopAnnotation&) = delete;
-
   static void CopyCurrentStack(nsCString& aNestedSpinStack) {
     // We need to copy this behind a mutex as the
     // memory for our instances is stack-bound and
@@ -127,6 +123,10 @@ struct MOZ_STACK_CLASS AutoNestedEventLoopAnnotation {
   }
 
  private:
+  AutoNestedEventLoopAnnotation(const AutoNestedEventLoopAnnotation&) = delete;
+  AutoNestedEventLoopAnnotation& operator=(
+      const AutoNestedEventLoopAnnotation&) = delete;
+
   // The declarations of these statics live in nsThreadManager.cpp.
   static AutoNestedEventLoopAnnotation* sCurrent MOZ_GUARDED_BY(sStackMutex);
   static StaticMutex sStackMutex;

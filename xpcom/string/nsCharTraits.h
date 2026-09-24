@@ -215,7 +215,7 @@ struct nsCharTraits<char16_t> {
       ++aStr;
     }
 
-    return nullptr;
+    return 0;
   }
 };
 
