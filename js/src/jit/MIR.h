@@ -9508,9 +9508,6 @@ class MRotate : public MBinaryInstruction, public NoTypePolicy::Data {
         isLeftRotate_(isLeftRotate) {
     setMovable();
     setResultType(type);
-    // Prevent reordering.  Although there's no problem eliding call result
-    // definitions, there's also no need, as they cause no codegen.
-    setGuard();
   }
 
  public:
