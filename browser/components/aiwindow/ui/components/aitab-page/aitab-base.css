@@ -26,6 +26,8 @@
   --aitab-heading-5: var(--font-size-large);
   --aitab-heading-6: var(--font-size-root);
   --aitab-body: var(--font-size-large);
+  /* The pill shape shared by the hero and the rounded block cards. */
+  --aitab-hero-radius: 128px;
 
   @container aitab-page (width >= 900px) {
     --aitab-heading-1: 80px;

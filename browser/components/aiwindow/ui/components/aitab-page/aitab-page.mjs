@@ -10,6 +10,8 @@ import "chrome://browser/content/aiwindow/components/aitab-header.mjs";
 import "chrome://browser/content/aiwindow/components/aitab-list.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/aitab-timeline.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://browser/content/aiwindow/components/aitab-highlights.mjs";
 import { httpUrl } from "chrome://browser/content/aiwindow/modules/AITabUtils.mjs";
 
 // The same names the child and parent actors use, so a message can be traced
