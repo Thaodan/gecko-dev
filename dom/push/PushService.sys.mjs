@@ -1001,22 +1001,23 @@ export var PushService = {
       Glean.webPush.apiNotify.add(1);
     }
 
+    let handled;
     if (payload) {
-      lazy.gPushNotifier.notifyPushWithData(
+      handled = lazy.gPushNotifier.notifyPushWithData(
         aPushRecord.scope,
         aPushRecord.principal,
         messageID,
         payload
       );
     } else {
-      lazy.gPushNotifier.notifyPush(
+      handled = lazy.gPushNotifier.notifyPush(
         aPushRecord.scope,
         aPushRecord.principal,
         messageID
       );
     }
 
-    return Ci.nsIPushErrorReporter.ACK_DELIVERED;
+    return handled.then(() => Ci.nsIPushErrorReporter.ACK_DELIVERED);
   },
 
   getByKeyID(aKeyID) {
