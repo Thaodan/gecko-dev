@@ -10,12 +10,25 @@ import "chrome://browser/content/aiwindow/components/aitab-header.mjs";
 import "chrome://browser/content/aiwindow/components/aitab-list.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/aitab-timeline.mjs";
-import { httpUrl } from "chrome://browser/content/aiwindow/modules/AITabUtils.mjs";
 
 // The same names the child and parent actors use, so a message can be traced
 // straight through without a translation table.
 const GET_PAGE_EVENT = "AITab:GetPage";
 const DELETE_PAGE_EVENT = "AITab:DeletePage";
+
+/**
+ * Returns the href as an http(s) URL, or null for anything else. Footer button
+ * hrefs can also be in-app route ids, which must not become links.
+ *
+ * @param {string} href
+ * @returns {?string}
+ */
+function httpUrl(href) {
+  const parsed = URL.parse(String(href ?? "").trim());
+  return parsed?.protocol == "http:" || parsed?.protocol == "https:"
+    ? parsed.href
+    : null;
+}
 
 /**
  * Root component for about:smartpage. Looks up the page config for the
@@ -178,7 +191,7 @@ export class AITabPage extends MozLitElement {
       ? html`<a
           class="aitab-chip"
           data-variant=${variant}
-          href=${url.href}
+          href=${url}
           target="_blank"
           rel="noopener noreferrer"
           >${button.text}</a
