@@ -85,6 +85,54 @@
  *   Whether the window's tabs are to be left out when the session is restored.
  */
 
+/**
+ * @typedef {Window|{private: boolean}} PrivacyFilter
+ *   Selects private or non-private windows: a window, selecting the windows
+ *   that share its privateness, or an object with a `private` flag.
+ */
+
+/**
+ * @typedef {object} ClosedTabsOptions
+ *   Selects the windows to include closed tabs from.
+ * @property {Window} [sourceWindow]
+ *   The window to include closed tabs from when `closedTabsFromAllWindows` is
+ *   false. When `private` is not set, this window's privateness is used.
+ *   Defaults to the top window.
+ * @property {boolean} [private]
+ *   Restricts the query to private windows (true) or to non-private windows
+ *   (false). Defaults to the privateness of `sourceWindow`.
+ * @property {boolean} [closedTabsFromAllWindows]
+ *   Overrides the `browser.sessionstore.closedTabsFromAllWindows` pref.
+ * @property {boolean} [closedTabsFromClosedWindows]
+ *   Overrides the `browser.sessionstore.closedTabsFromClosedWindows` pref.
+ */
+
+/**
+ * @typedef {Window|ClosedTabsOptions} ClosedTabsScope
+ *   The windows to include closed tabs from: a `ClosedTabsOptions` object, or
+ *   a window as shorthand for `{ sourceWindow: window }`.
+ */
+
+/**
+ * @typedef {object} ClosedDataSourceOptions
+ *   Identifies the window a closed tab or tab group was closed in.
+ * @property {Window} [sourceWindow]
+ *   The open window where the tab or tab group was closed.
+ * @property {WindowID} [sourceWindowId]
+ *   The SessionStore ID of the open window where the tab or tab group was
+ *   closed.
+ * @property {number} [sourceClosedId]
+ *   The `closedId` of the window where the tab or tab group was closed, for a
+ *   window that has since been closed itself. Its closed tabs and tab groups
+ *   stay with its closed-window state.
+ */
+
+/**
+ * @typedef {Window|ClosedDataSourceOptions} ClosedDataSource
+ *   The window a closed tab or tab group was closed in: the window itself, or
+ *   a `ClosedDataSourceOptions` object identifying it.
+ */
+
 // Current version of the format used by Session Restore.
 const FORMAT_VERSION = 1;
 
@@ -3875,8 +3923,10 @@ class _SessionStore {
   /**
    * Get the collection of all matching windows tracked by SessionStore
    *
-   * @param {Window | object} [aWindowOrOptions] Optionally an options object or a window to used to determine if we're filtering for private or non-private windows
-   * @param {boolean} [aWindowOrOptions.private] Determine if we should filter for private or non-private windows
+   * @param {PrivacyFilter} [aWindowOrOptions]
+   *   A window, to get the windows sharing its privateness, or an object with
+   *   a `private` flag saying whether to get private or non-private windows.
+   *   Defaults to the top window.
    */
   getWindows(aWindowOrOptions) {
     let isPrivate;
@@ -3982,6 +4032,11 @@ class _SessionStore {
     ).length;
   }
 
+  /**
+   * @param {ClosedTabsScope} [aOptions]
+   * @returns {ClosedTabsOptions}
+   *   The options with every property filled in.
+   */
   #prepareClosedTabOptions(aOptions = {}) {
     const sourceOptions = Object.assign(
       {
@@ -4015,18 +4070,9 @@ class _SessionStore {
   /**
    * Get the number of closed tabs associated with all matching windows
    *
-   * @param {Window | object} [aOptions]
-   *        Either a DOMWindow (see aOptions.sourceWindow) or an object with properties
-            to identify which closed tabs to include in the count.
-   * @param {Window} aOptions.sourceWindow
-            A browser window used to identity privateness.
-            When closedTabsFromAllWindows is false, we only count closed tabs assocated with this window.
-   * @param {boolean} [aOptions.private = false]
-            Explicit indicator to constrain tab count to only private or non-private windows,
-   * @param {boolean} [aOptions.closedTabsFromAllWindows]
-            Override the value of the closedTabsFromAllWindows preference.
-   * @param {boolean} [aOptions.closedTabsFromClosedWindows]
-            Override the value of the closedTabsFromClosedWindows preference.
+   * @param {ClosedTabsScope} [aOptions]
+   *   A window, standing for `{ sourceWindow }`, or options selecting the
+   *   windows to count closed tabs from.
    */
   getClosedTabCount(aOptions) {
     const sourceOptions = this.#prepareClosedTabOptions(aOptions);
@@ -4079,18 +4125,9 @@ class _SessionStore {
   /**
    * Get the closed tab data associated with all matching windows
    *
-   * @param {Window | object} [aOptions]
-   *        Either a DOMWindow (see aOptions.sourceWindow) or an object with properties
-            to identify which closed tabs to get data from
-   * @param {Window} aOptions.sourceWindow
-            A browser window used to identity privateness.
-            When closedTabsFromAllWindows is false, we only include closed tabs assocated with this window.
-   * @param {boolean} [aOptions.private = false]
-            Explicit indicator to constrain tab data to only private or non-private windows,
-   * @param {boolean} [aOptions.closedTabsFromAllWindows]
-            Override the value of the closedTabsFromAllWindows preference.
-   * @param {boolean} [aOptions.closedTabsFromClosedWindows]
-            Override the value of the closedTabsFromClosedWindows preference.
+   * @param {ClosedTabsScope} [aOptions]
+   *   A window, standing for `{ sourceWindow }`, or options selecting the
+   *   windows to include closed tabs from.
    */
   getClosedTabData(aOptions) {
     const sourceOptions = this.#prepareClosedTabOptions(aOptions);
@@ -4134,18 +4171,9 @@ class _SessionStore {
   /**
    * Get the closed tab group data associated with all matching windows
    *
-   * @param {Window|object} aOptions
-   *        Either a DOMWindow (see aOptions.sourceWindow) or an object with properties
-            to identify the window source of the closed tab groups
-   * @param {Window} [aOptions.sourceWindow]
-            A browser window used to identity privateness.
-            When closedTabsFromAllWindows is false, we only include closed tab groups assocated with this window.
-   * @param {boolean} [aOptions.private = false]
-            Explicit indicator to constrain tab group data to only private or non-private windows,
-   * @param {boolean} [aOptions.closedTabsFromAllWindows]
-            Override the value of the closedTabsFromAllWindows preference.
-   * @param {boolean} [aOptions.closedTabsFromClosedWindows]
-            Override the value of the closedTabsFromClosedWindows preference.
+   * @param {ClosedTabsScope} [aOptions]
+   *   A window, standing for `{ sourceWindow }`, or options selecting the
+   *   windows to include closed tab groups from.
    * @returns {ClosedTabGroupStateData[]}
    */
   getClosedTabGroups(aOptions) {
@@ -4319,13 +4347,8 @@ class _SessionStore {
   /**
    * Re-open a closed tab
    *
-   * @param {Window | object} aSource
-   *        Either a DOMWindow or an object with properties to resolve to the window
-   *        the tab was previously open in.
-   * @param {string} aSource.sourceWindowId
-            A SessionStore window id used to look up the window where the tab was closed
-   * @param {number} aSource.sourceClosedId
-            The closedId used to look up the closed window where the tab was closed
+   * @param {ClosedDataSource} aSource
+   *        The window the tab was closed in, or an object identifying it.
    * @param {number} [aIndex = 0]
    *        The index of the tab in the closedTabs array (via SessionStore.getClosedTabData), where 0 is most recent.
    * @param {Window} [aTargetWindow = aWindow] Optional window to open the tab into, defaults to current (topWindow).
@@ -4415,13 +4438,8 @@ class _SessionStore {
   /**
    * Re-open a tab from a closed window, which corresponds to the closedId
    *
-   * @param {Window | object} aSource
-   *        Either a DOMWindow or an object with properties to resolve to the window
-   *        the tab was previously open in.
-   * @param {string} aSource.sourceWindowId
-            A SessionStore window id used to look up the window where the tab was closed
-   * @param {number} aSource.sourceClosedId
-            The closedId used to look up the closed window where the tab was closed
+   * @param {ClosedDataSource} aSource
+   *        The window the tab was closed in, or an object identifying it.
    * @param {number} aClosedId
    *        The closedId of the tab or window
    * @param {Window} [aTargetWindow = aWindow] Optional window to open the tab into, defaults to current (topWindow).
@@ -4452,7 +4470,7 @@ class _SessionStore {
   }
 
   /**
-   * @param {Window|{sourceWindow: Window}|{sourceClosedId: number}|{sourceWindowId: string}} aSource
+   * @param {ClosedDataSource} aSource
    * @returns {WindowStateData}
    */
   #resolveClosedDataSource(aSource) {
@@ -4486,13 +4504,8 @@ class _SessionStore {
    * Removes the record at the given index so it cannot be un-closed or appear
    * in a list of recently-closed tabs
    *
-   * @param {Window | object} aSource
-   *        Either a DOMWindow or an object with properties to resolve to the window
-   *        the tab was previously open in.
-   * @param {string} aSource.sourceWindowId
-            A SessionStore window id used to look up the window where the tab was closed
-   * @param {number} aSource.sourceClosedId
-            The closedId used to look up the closed window where the tab was closed
+   * @param {ClosedDataSource} aSource
+   *        The window the tab was closed in, or an object identifying it.
    * @param {number} [aIndex = 0]
    *        The index into the window's list of closed tabs
    * @throws {InvalidArgumentError} if the window is not tracked by SessionStore, or index is out of bounds
@@ -4520,13 +4533,8 @@ class _SessionStore {
    * Removes the record at the given index so it cannot be un-closed or appear
    * in a list of recently-closed tabs
    *
-   * @param {Window | object} aSource
-   *        Either a DOMWindow or an object with properties to resolve to the window
-   *        the tab was previously open in.
-   * @param {string} aSource.sourceWindowId
-            A SessionStore window id used to look up the window where the tab group was closed
-   * @param {number} aSource.sourceClosedId
-            The closedId used to look up the closed window where the tab group was closed
+   * @param {ClosedDataSource} aSource
+   *        The window the tab group was closed in, or an object identifying it.
    * @param {string} tabGroupId
    *        The tab group ID of the closed tab group
    * @throws {InvalidArgumentError}
@@ -4614,16 +4622,10 @@ class _SessionStore {
    *
    * @param {number} aClosedId
    *        The closedId of the tab
-   * @param {Window | object} aSourceOptions
-   *        Either a DOMWindow or an object with properties to resolve to the window
-   *        the tab was previously open in.
-   * @param {boolean} [aSourceOptions.includePrivate = true]
-            If no other means of resolving a source window is given, this flag is used to
-            constrain a search across all open window's closed tabs.
-   * @param {string} aSourceOptions.sourceWindowId
-            A SessionStore window id used to look up the window where the tab was closed
-   * @param {number} aSourceOptions.sourceClosedId
-            The closedId used to look up the closed window where the tab was closed
+   * @param {ClosedDataSource|{includePrivate: boolean}} [aSourceOptions]
+   *        The window the tab was closed in, or an object identifying it.
+   *        Without either, every open window is searched, leaving out private
+   *        windows when `includePrivate` is false.
    * @throws {InvalidArgumentError} if the closedId doesnt match a closed tab in any window
    */
   forgetClosedTabById(aClosedId, aSourceOptions = {}) {
@@ -8877,7 +8879,7 @@ class _SessionStore {
   }
 
   /**
-   * @param {Window|{sourceWindowId: string}|{sourceClosedId: number}} source
+   * @param {ClosedDataSource} source
    * @param {string} tabGroupId
    * @returns {ClosedTabGroupStateData|undefined}
    */
@@ -8891,13 +8893,8 @@ class _SessionStore {
   /**
    * Re-open a closed tab group
    *
-   * @param {Window | object} source
-   *        Either a DOMWindow or an object with properties to resolve to the window
-   *        the tab was previously open in.
-   * @param {string} source.sourceWindowId
-            A SessionStore window id used to look up the window where the tab was closed.
-   * @param {number} source.sourceClosedId
-            The closedId used to look up the closed window where the tab was closed.
+   * @param {ClosedDataSource} source
+   *        The window the tab group was closed in, or an object identifying it.
    * @param {string} tabGroupId
    *        The unique ID of the group to restore.
    * @param {Window} [targetWindow] defaults to the top window if not specified.
