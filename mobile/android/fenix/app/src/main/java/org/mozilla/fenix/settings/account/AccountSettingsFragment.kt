@@ -119,7 +119,7 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
 
     override fun onResume() {
         super.onResume()
-        showToolbar(getString(R.string.preferences_account_settings))
+        showToolbar(getString(R.string.preferences_account_and_sync_settings))
         args.preferenceToScrollTo?.let {
             scrollToPreferenceWithHighlight(it)
         }

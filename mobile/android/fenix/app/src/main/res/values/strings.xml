@@ -837,6 +837,8 @@
     <string name="preferences_search_synced_tabs">Search synced tabs</string>
     <!-- Preference for account settings -->
     <string name="preferences_account_settings">Account settings</string>
+    <!-- Preference for account and sync settings -->
+    <string name="preferences_account_and_sync_settings">Account and sync</string>
     <!-- Preference for enabling url autocomplete-->
     <string name="preferences_enable_autocomplete_urls">Autocomplete URLs</string>
     <!-- Preference title for switch preference to show sponsored Firefox Suggest search suggestions -->
