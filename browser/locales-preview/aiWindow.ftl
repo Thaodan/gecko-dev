@@ -360,6 +360,13 @@ ai-tab-create-page-prompt =
        *[other] Create an { -ai-tab-brand-name } from these tabs:
     }
 
+# A rating cell in a generated table, for example "4.5 / 5". Both numbers
+# arrive already formatted for the locale.
+# Variables:
+#   $value (String) - The item's rating.
+#   $max (String) - The highest possible rating.
+ai-tab-table-rating = { $value } / { $max }
+
 ## Smartbar command palette
 ## Slash commands shown in the smartbar when the user types "/".
 
