@@ -1105,6 +1105,10 @@
     <string name="preferences_sign_out">Sign out</string>
     <!-- Preference displays and allows changing current FxA device name -->
     <string name="preferences_sync_device_name">Device name</string>
+    <!-- Preference category for Device name -->
+    <string name="preferences_device_name_category">Device name</string>
+    <!-- Label for the Preference that displays and allows changing current device name on Mozilla Account -->
+    <string name="preferences_sync_change_device_name">Change device name</string>
     <!-- Text shown when user enters empty device name -->
     <string name="empty_device_name_error">Device name cannot be empty.</string>
     <!-- Label indicating that sync is in progress -->

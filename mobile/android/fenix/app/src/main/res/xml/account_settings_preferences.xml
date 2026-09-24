@@ -15,10 +15,6 @@
         android:title="@string/preferences_sync_now"
         app:icon="@drawable/mozac_ic_sync_24" />
 
-    <EditTextPreference
-        android:key="@string/pref_key_sync_device_name"
-        android:title="@string/preferences_sync_device_name" />
-
     <Preference
         android:key="@string/pref_key_sign_out"
         android:title="@string/preferences_sign_out" />
@@ -66,4 +62,15 @@
             android:title="@string/preferences_sync_address"
             android:visible="false" />
     </PreferenceCategory>
+
+  <PreferenceCategory
+    android:key="@string/preferences_device_name_category"
+    android:title="@string/preferences_device_name_category"
+    android:layout="@layout/preference_cat_style">
+
+    <EditTextPreference
+      android:key="@string/pref_key_sync_device_name"
+      android:title="@string/preferences_sync_change_device_name" />
+
+  </PreferenceCategory>
 </PreferenceScreen>
