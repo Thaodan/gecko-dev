@@ -32,6 +32,7 @@ import mozilla.components.feature.listentopage.ListenAction
 import mozilla.components.feature.listentopage.ListenState
 import mozilla.components.feature.listentopage.ListenStore
 import mozilla.components.feature.listentopage.PlaybackPhase
+import mozilla.components.feature.listentopage.ui.ArticleDetails
 import mozilla.components.feature.listentopage.ui.ListenSheet
 import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.support.base.feature.LifecycleAwareFeature
@@ -131,7 +132,7 @@ class ListenSheetIntegration(
  * the article audio is ready for playback.
  *
  * @param shouldDisplayPlayer Whether the audio of the article in the selected tab is ready for playback.
- * @param state Contains title, url and playback state needed for media player
+ * @param state Contains title, site and playback state needed for media player
  * @param articleProgressState Contains position and duration needed to show elapsed time and total time in player.
  * @param progressState Contains calculated fraction of playback progress to be reflected in AudioProgressBar of player.
  * @param onAction Invoked to pass upwards a [ListenAction] in response to a UI event.
@@ -176,14 +177,14 @@ private fun ListenSheetContent(
     val playback = state.value.playbackState
     val cardContentDescription = stringResource(R.string.reader_mode_panel_media_player_content_description)
     ListenSheet(
-        title = state.value.title,
-        url = state.value.url,
+        article = ArticleDetails(title = state.value.title, site = state.value.site, url = state.value.url),
         elapsedTime = DateUtils.formatElapsedTime(articleProgressState.value.positionMs / MS_PER_SECOND),
         totalTime = DateUtils.formatElapsedTime((articleProgressState.value.durationMs) / MS_PER_SECOND),
         progressState = progressState,
         playing = playback.phase == PlaybackPhase.Playing,
-        expanded = expanded,
+        voiceState = state.value.voiceState,
         onAction = onAction,
+        expanded = expanded,
         modifier =
             Modifier.fillMaxWidth()
                 .testTag(LISTEN_SHEET_TEST_TAG)
