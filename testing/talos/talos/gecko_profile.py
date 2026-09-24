@@ -6,12 +6,13 @@
 module to handle Gecko profiling.
 """
 
+import json
 import os
 import tempfile
 import zipfile
 
 import mozfile
-from mozgeckoprofiler import symbolicate_profile_file
+from mozgeckoprofiler import save_gecko_profile, symbolicate_profile
 from mozlog import get_proxy_logger
 
 LOG = get_proxy_logger()
@@ -104,22 +105,24 @@ class GeckoProfile:
             "MOZ_PROFILER_STARTUP_FILTERS": str(self.option("threads")),
         })
 
-    def _save_gecko_profile(self, cycle, profile_path, out_path):
-        """Symbolicate profile_path to out_path, returning the path to archive.
-
-        The archive deflates its entries already, so the symbolicated profile
-        is written uncompressed rather than gzipped.
-        """
+    def _save_gecko_profile(self, cycle, profile_path):
         try:
-            if symbolicate_profile_file(profile_path, out_path):
-                return out_path
+            with open(profile_path, encoding="utf-8") as profile_file:
+                profile = json.load(profile_file)
+            symbolicate_profile(profile)
+            save_gecko_profile(profile, profile_path)
+        except MemoryError:
+            LOG.critical(
+                "Ran out of memory while trying"
+                f" to symbolicate profile {profile_path} (cycle {cycle})",
+                exc_info=True,
+            )
         except Exception:
             LOG.critical(
                 "Encountered an exception during profile"
                 f" symbolication {profile_path} (cycle {cycle})",
                 exc_info=True,
             )
-        return profile_path
 
     def symbolicate(self, cycle):
         """
@@ -134,19 +137,15 @@ class GeckoProfile:
 
         gecko_profile_dir = self.option("dir")
 
-        with tempfile.TemporaryDirectory() as sym_dir, zipfile.ZipFile(
-            self.profile_arcname, "a", mode
-        ) as arc:
+        with zipfile.ZipFile(self.profile_arcname, "a", mode) as arc:
             # Collect all individual profiles that the test
             # has put into gecko_profile_dir.
-            for index, profile_filename in enumerate(os.listdir(gecko_profile_dir)):
+            for profile_filename in os.listdir(gecko_profile_dir):
                 testname = profile_filename
                 if testname.endswith(".profile"):
                     testname = testname[0:-8]
                 profile_path = os.path.join(gecko_profile_dir, profile_filename)
-                archived_path = self._save_gecko_profile(
-                    cycle, profile_path, os.path.join(sym_dir, f"{index}.json")
-                )
+                self._save_gecko_profile(cycle, profile_path)
 
                 # Our zip will contain one directory per subtest,
                 # and each subtest directory will contain one or
@@ -163,7 +162,7 @@ class GeckoProfile:
                     f"Adding profile {path_in_zip} to archive {self.profile_arcname}"
                 )
                 try:
-                    arc.write(archived_path, path_in_zip)
+                    arc.write(profile_path, path_in_zip)
                 except Exception:
                     LOG.exception(
                         f"Failed to copy profile {profile_path} as {path_in_zip} to"
