@@ -10,6 +10,7 @@ import os
 
 import pytest
 from android_taskgraph import job
+from android_taskgraph.transforms import build_android_app
 from mozunit import main
 from taskgraph.config import load_graph_config
 from taskgraph.transforms.base import TransformConfig
@@ -57,6 +58,47 @@ def test_gradlew_uploads_build_metrics(config, monkeypatch):
         "name": "public/build/build-metrics",
         "path": job.BUILD_METRICS_DIR,
     } in worker["artifacts"]
+
+
+def test_track_build_times_labels_the_perfherder_series(config):
+    tasks = [
+        {
+            "name": "fenix-debug",
+            "run": {
+                "gradle-build-type": "debug",
+                "gradle-build-name": "debug",
+                "track-build-times": True,
+            },
+        },
+        {
+            "name": "fenix-debug",
+            "run": {
+                "gradle-build-type": "debug",
+                "gradle-build-name": "debug",
+                "gradle-package-command": "bundle",
+                "track-build-times": True,
+            },
+        },
+        {
+            "name": "fenix-nightly-firebase",
+            "run": {"gradle-build-type": "nightly", "gradle-build-name": "nightly"},
+        },
+    ]
+
+    tracked, bundle, untracked = build_android_app.build_gradle_command(config, tasks)
+
+    assert tracked["run"]["gradlew"] == [
+        "clean",
+        "assembleDebug",
+        "-PbuildMetricsPerfherderOptions=fenix-debug",
+    ]
+    assert "track-build-times" not in tracked["run"]
+    assert bundle["run"]["gradlew"] == [
+        "clean",
+        "bundleDebug",
+        "-PbuildMetricsPerfherderOptions=fenix-debug-bundle",
+    ]
+    assert untracked["run"]["gradlew"] == ["clean", "assembleNightly"]
 
 
 if __name__ == "__main__":

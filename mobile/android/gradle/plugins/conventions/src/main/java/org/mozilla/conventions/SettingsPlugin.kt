@@ -6,10 +6,13 @@ package org.mozilla.conventions
 
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
+import org.gradle.api.flow.FlowProviders
+import org.gradle.api.flow.FlowScope
 import org.gradle.api.initialization.Settings
 import org.gradle.api.logging.Logging
 import org.gradle.api.tasks.testing.Test
 import org.gradle.build.event.BuildEventsListenerRegistry
+import org.gradle.kotlin.dsl.always
 import org.gradle.kotlin.dsl.create
 import java.io.File
 import java.util.UUID
@@ -30,6 +33,12 @@ abstract class SettingsPlugin : Plugin<Settings> {
 
     @get:Inject
     protected abstract val buildEventsListenerRegistry: BuildEventsListenerRegistry
+
+    @get:Inject
+    protected abstract val flowScope: FlowScope
+
+    @get:Inject
+    protected abstract val flowProviders: FlowProviders
 
     override fun apply(settings: Settings) {
         val configStartMs = System.currentTimeMillis()
@@ -150,6 +159,18 @@ abstract class SettingsPlugin : Plugin<Settings> {
         }
 
         buildEventsListenerRegistry.onTaskCompletion(buildMetricsProvider)
+
+        val perfherderOptions = rootGradle.startParameter.projectProperties["buildMetricsPerfherderOptions"] ?: return
+        val instanceType = settings.providers.environmentVariable("TASKCLUSTER_INSTANCE_TYPE").orNull
+        flowScope.always(ReportBuildTimes::class) {
+            parameters.service.set(buildMetricsProvider)
+            parameters.failed.set(flowProviders.buildWorkResult.map { it.failure.isPresent })
+            parameters.extraOptions.set(
+                perfherderOptions.split(" ").filter { it.isNotBlank() } +
+                    listOfNotNull(instanceType?.let { "taskcluster-$it" })
+            )
+            parameters.outputDir.set(outputDir)
+        }
     }
 
     private fun buildPythonCommand(script: String): List<String> = buildList {
