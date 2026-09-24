@@ -2771,8 +2771,11 @@ nsresult nsFrameSelection::TableSelection::UnselectCells(
     bool aRemoveOutsideOfCellRange, mozilla::dom::Selection& aNormalSelection) {
   MOZ_ASSERT(aNormalSelection.Type() == SelectionType::eNormal);
 
-  nsTableWrapperFrame* tableFrame =
+  nsTableWrapperFrame* tableFrameCast =
       do_QueryFrame(aTableContent->GetPrimaryFrame());
+  // Declared as weak frame, as the frame may be freed during a call to a
+  // listener.
+  AutoWeakFrame tableFrame(tableFrameCast);
   if (!tableFrame) {
     return NS_ERROR_FAILURE;
   }
@@ -2804,6 +2807,9 @@ nsresult nsFrameSelection::TableSelection::UnselectCells(
             curColIndex < minColIndex || curColIndex > maxColIndex) {
           aNormalSelection.RemoveRangeAndUnselectFramesAndNotifyListeners(
               *range, IgnoreErrors());
+          if (!tableFrame.IsAlive()) {
+            return NS_OK;
+          }
           // Since we've removed the range, decrement pointer to next range
           mSelectedCellIndex--;
         }
@@ -2811,15 +2817,18 @@ nsresult nsFrameSelection::TableSelection::UnselectCells(
       } else {
         // Remove cell from selection if it belongs to the given cells range or
         // it is spanned onto the cells range.
+
+        auto tableFrameStatic =
+            static_cast<nsTableWrapperFrame*>(tableFrame.GetFrame());
         nsTableCellFrame* cellFrame =
-            tableFrame->GetCellFrameAt(curRowIndex, curColIndex);
+            tableFrameStatic->GetCellFrameAt(curRowIndex, curColIndex);
 
         uint32_t origRowIndex = cellFrame->RowIndex();
         uint32_t origColIndex = cellFrame->ColIndex();
         uint32_t actualRowSpan =
-            tableFrame->GetEffectiveRowSpanAt(origRowIndex, origColIndex);
+            tableFrameStatic->GetEffectiveRowSpanAt(origRowIndex, origColIndex);
         uint32_t actualColSpan =
-            tableFrame->GetEffectiveColSpanAt(curRowIndex, curColIndex);
+            tableFrameStatic->GetEffectiveColSpanAt(curRowIndex, curColIndex);
         if (origRowIndex <= static_cast<uint32_t>(maxRowIndex) &&
             maxRowIndex >= 0 &&
             origRowIndex + actualRowSpan - 1 >=
@@ -2830,6 +2839,9 @@ nsresult nsFrameSelection::TableSelection::UnselectCells(
                 static_cast<uint32_t>(minColIndex)) {
           aNormalSelection.RemoveRangeAndUnselectFramesAndNotifyListeners(
               *range, IgnoreErrors());
+          if (!tableFrame.IsAlive()) {
+            return NS_OK;
+          }
           // Since we've removed the range, decrement pointer to next range
           mSelectedCellIndex--;
         }
@@ -2864,8 +2876,11 @@ static nsresult AddCellsToSelection(const nsIContent* aTableContent,
                                     Selection& aNormalSelection) {
   MOZ_ASSERT(aNormalSelection.Type() == SelectionType::eNormal);
 
-  nsTableWrapperFrame* tableFrame =
+  nsTableWrapperFrame* tableFrameCast =
       do_QueryFrame(aTableContent->GetPrimaryFrame());
+  // Declared as weak frame, as the frame may be freed during a call to a
+  // listener.
+  AutoWeakFrame tableFrame(tableFrameCast);
   if (!tableFrame) {  // Check that |table| is a table.
     return NS_ERROR_FAILURE;
   }
@@ -2875,7 +2890,11 @@ static nsresult AddCellsToSelection(const nsIContent* aTableContent,
   while (true) {
     uint32_t col = aStartColumnIndex;
     while (true) {
-      nsTableCellFrame* cellFrame = tableFrame->GetCellFrameAt(row, col);
+      auto cellFrame =
+          tableFrame.IsAlive()
+              ? static_cast<nsTableWrapperFrame*>(tableFrame.GetFrame())
+                    ->GetCellFrameAt(row, col)
+              : nullptr;
 
       // Skip cells that are spanned from previous locations or are already
       // selected
@@ -2884,7 +2903,7 @@ static nsresult AddCellsToSelection(const nsIContent* aTableContent,
         uint32_t origCol = cellFrame->ColIndex();
         if (origRow == row && origCol == col && !cellFrame->IsSelected()) {
           result = SelectCellElement(cellFrame->GetContent(), aNormalSelection);
-          if (NS_FAILED(result)) {
+          if (NS_FAILED(result) || !tableFrame.IsAlive()) {
             return result;
           }
         }
