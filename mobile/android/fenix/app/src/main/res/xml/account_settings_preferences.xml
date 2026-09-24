@@ -24,43 +24,43 @@
         android:layout="@layout/preference_cat_style"
         android:title="@string/preferences_sync_category">
 
-        <CheckBoxPreference
+        <org.mozilla.fenix.settings.account.AccountSettingsSwitchPreference
             android:defaultValue="true"
             android:key="@string/pref_key_sync_bookmarks"
-            android:layout="@layout/checkbox_left_preference"
-            android:title="@string/preferences_sync_bookmarks" />
+            android:title="@string/preferences_sync_bookmarks"
+            app:icon="@drawable/mozac_ic_save_24" />
 
-        <CheckBoxPreference
-            android:defaultValue="true"
-            android:key="@string/pref_key_sync_credit_cards"
-            android:layout="@layout/checkbox_left_preference"
-            android:title="@string/preferences_sync_credit_cards_2" />
-
-        <CheckBoxPreference
+        <org.mozilla.fenix.settings.account.AccountSettingsSwitchPreference
             android:defaultValue="true"
             android:key="@string/pref_key_sync_history"
-            android:layout="@layout/checkbox_left_preference"
-            android:title="@string/preferences_sync_history" />
+            android:title="@string/preferences_sync_history"
+            app:icon="@drawable/mozac_ic_history_24" />
 
-        <CheckBoxPreference
+        <org.mozilla.fenix.settings.account.AccountSettingsSwitchPreference
             android:defaultValue="true"
             android:key="@string/pref_key_sync_logins"
-            android:layout="@layout/checkbox_left_preference"
-            android:title="@string/preferences_sync_logins_2" />
+            android:title="@string/preferences_sync_logins_2"
+            app:icon="@drawable/mozac_ic_login_24" />
 
-        <CheckBoxPreference
+        <org.mozilla.fenix.settings.account.AccountSettingsSwitchPreference
             android:defaultValue="true"
             android:key="@string/pref_key_sync_tabs"
-            android:layout="@layout/checkbox_left_preference"
-            android:title="@string/preferences_sync_tabs_2"/>
+            android:title="@string/preferences_sync_tabs_2"
+            app:icon="@drawable/mozac_ic_tab_tray_24" />
 
         <!-- The default visibility is 'false' because we don't display this on most channels. -->
-        <CheckBoxPreference
+        <org.mozilla.fenix.settings.account.AccountSettingsSwitchPreference
             android:defaultValue="true"
             android:key="@string/pref_key_sync_address"
-            android:layout="@layout/checkbox_left_preference"
             android:title="@string/preferences_sync_address"
-            android:visible="false" />
+            android:visible="false"
+            app:icon="@drawable/mozac_ic_location_24" />
+
+        <org.mozilla.fenix.settings.account.AccountSettingsSwitchPreference
+            android:defaultValue="true"
+            android:key="@string/pref_key_sync_credit_cards"
+            android:title="@string/preferences_sync_credit_cards_2"
+            app:icon="@drawable/mozac_ic_credit_card_24" />
     </PreferenceCategory>
 
   <PreferenceCategory

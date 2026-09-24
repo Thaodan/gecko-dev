@@ -13,16 +13,16 @@ import android.provider.Settings
 import android.text.InputFilter
 import android.text.format.DateUtils
 import android.view.View
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.edit
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
-import androidx.preference.CheckBoxPreference
 import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
-import com.google.android.material.R as materialR
+import androidx.preference.TwoStatePreference
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.launch
@@ -40,7 +40,6 @@ import mozilla.components.service.fxa.sync.SyncReason
 import mozilla.components.service.fxa.sync.SyncStatusObserver
 import mozilla.components.service.fxa.sync.getLastSynced
 import mozilla.components.service.fxa.sync.setLastSynced
-import mozilla.components.support.ktx.android.content.getColorFromAttr
 import mozilla.components.support.utils.ext.pixelSizeFor
 import mozilla.components.ui.widgets.withCenterAlignedButtons
 import mozilla.telemetry.glean.private.NoExtras
@@ -223,13 +222,7 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
         val preferenceSyncNow = requirePreference<Preference>(R.string.pref_key_sync_now)
         preferenceSyncNow.apply {
             onPreferenceClickListener = getClickListenerForSyncNow()
-
-            icon?.let {
-                icon =
-                    it.mutate().apply {
-                        setTint(context.getColorFromAttr(materialR.attr.colorOnSurface))
-                    }
-            }
+            tintIcon()
 
             // Current sync state
             if (requireComponents.backgroundServices.accountManager.isSyncActive()) {
@@ -269,6 +262,16 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
         updateSyncEngineStates()
         setDisabledWhileSyncing(accountManager.isSyncActive())
 
+        listOf(
+                R.string.pref_key_sync_bookmarks,
+                R.string.pref_key_sync_credit_cards,
+                R.string.pref_key_sync_history,
+                R.string.pref_key_sync_logins,
+                R.string.pref_key_sync_tabs,
+                R.string.pref_key_sync_address,
+            )
+            .forEach { requirePreference<Preference>(it).tintIcon() }
+
         fun SyncEngine.prefId(): Int =
             when (this) {
                 SyncEngine.History -> R.string.pref_key_sync_history
@@ -287,7 +290,7 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
                 SyncEngine.Addresses,
             )
             .forEach {
-                requirePreference<CheckBoxPreference>(it.prefId()).apply {
+                requirePreference<TwoStatePreference>(it.prefId()).apply {
                     setOnPreferenceChangeListener { _, newValue ->
                         updateSyncEngineState(it, newValue as Boolean)
                         true
@@ -302,12 +305,21 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
                     SyncEngine.CreditCards,
                 )
                 .forEach {
-                    requirePreference<CheckBoxPreference>(it.prefId()).apply {
+                    requirePreference<TwoStatePreference>(it.prefId()).apply {
                         setOnPreferenceChangeListener { _, newValue ->
                             updateSyncEngineStateWithPinWarning(it, newValue as Boolean)
                             true
                         }
                     }
+                }
+        }
+    }
+
+    private fun Preference.tintIcon() {
+        icon?.let {
+            icon =
+                it.mutate().apply {
+                    setTintList(AppCompatResources.getColorStateList(context, R.color.state_list_text_color))
                 }
         }
     }
@@ -384,29 +396,29 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
     private fun updateSyncEngineStates() {
         val settings = requireComponents.settings
         val syncEnginesStatus = SyncEnginesStorage(requireContext()).getStatus()
-        requirePreference<CheckBoxPreference>(R.string.pref_key_sync_bookmarks).apply {
+        requirePreference<TwoStatePreference>(R.string.pref_key_sync_bookmarks).apply {
             isEnabled = syncEnginesStatus.containsKey(SyncEngine.Bookmarks)
             isChecked = syncEnginesStatus.getOrElse(SyncEngine.Bookmarks) { true }
         }
-        requirePreference<CheckBoxPreference>(R.string.pref_key_sync_credit_cards).apply {
+        requirePreference<TwoStatePreference>(R.string.pref_key_sync_credit_cards).apply {
             isVisible = areCredentialsSyncable
             isEnabled = syncEnginesStatus.containsKey(SyncEngine.CreditCards)
             isChecked = syncEnginesStatus.getOrElse(SyncEngine.CreditCards) { true }
         }
-        requirePreference<CheckBoxPreference>(R.string.pref_key_sync_history).apply {
+        requirePreference<TwoStatePreference>(R.string.pref_key_sync_history).apply {
             isEnabled = syncEnginesStatus.containsKey(SyncEngine.History)
             isChecked = syncEnginesStatus.getOrElse(SyncEngine.History) { true }
         }
-        requirePreference<CheckBoxPreference>(R.string.pref_key_sync_logins).apply {
+        requirePreference<TwoStatePreference>(R.string.pref_key_sync_logins).apply {
             isVisible = areCredentialsSyncable
             isEnabled = syncEnginesStatus.containsKey(SyncEngine.Passwords)
             isChecked = syncEnginesStatus.getOrElse(SyncEngine.Passwords) { true }
         }
-        requirePreference<CheckBoxPreference>(R.string.pref_key_sync_tabs).apply {
+        requirePreference<TwoStatePreference>(R.string.pref_key_sync_tabs).apply {
             isEnabled = syncEnginesStatus.containsKey(SyncEngine.Tabs)
             isChecked = syncEnginesStatus.getOrElse(SyncEngine.Tabs) { true }
         }
-        requirePreference<CheckBoxPreference>(R.string.pref_key_sync_address).apply {
+        requirePreference<TwoStatePreference>(R.string.pref_key_sync_address).apply {
             isVisible = settings.isAddressSyncEnabled
             isEnabled = syncEnginesStatus.containsKey(SyncEngine.Addresses)
             isChecked = syncEnginesStatus.getOrElse(SyncEngine.Addresses) { true }
