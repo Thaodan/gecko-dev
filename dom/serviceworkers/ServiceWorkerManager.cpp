@@ -1131,12 +1131,11 @@ ServiceWorkerManager::SendPushEvent(const nsACString& aOriginAttributes,
     // whether we really need to in PushMessageDispatcher::NotifyWorkers.  Since
     // in practice this only affects JS callers that pass data, and we don't
     // have any right now, let's not worry about it.
-    SendPushEvent(aOriginAttributes, aScope, u""_ns, Some(aDataBytes.Clone()));
-    return NS_OK;
+    return SendPushEvent(aOriginAttributes, aScope, u""_ns,
+                         Some(aDataBytes.Clone()));
   }
   MOZ_ASSERT(optional_argc == 0);
-  SendPushEvent(aOriginAttributes, aScope, u""_ns, Nothing());
-  return NS_OK;
+  return SendPushEvent(aOriginAttributes, aScope, u""_ns, Nothing());
 }
 
 nsresult ServiceWorkerManager::SendCookieChangeEvent(
@@ -1162,20 +1161,15 @@ nsresult ServiceWorkerManager::SendCookieChangeEvent(
       aCookie, aCookieDeleted, registration);
 }
 
-RefPtr<PushHandledPromise> ServiceWorkerManager::SendPushEvent(
+nsresult ServiceWorkerManager::SendPushEvent(
     const nsACString& aOriginAttributes, const nsACString& aScope,
     const nsAString& aMessageId, const Maybe<nsTArray<uint8_t>>& aData) {
   OriginAttributes attrs;
   if (!attrs.PopulateFromSuffix(aOriginAttributes)) {
-    return PushHandledPromise::CreateAndReject(NS_ERROR_INVALID_ARG, __func__);
+    return NS_ERROR_INVALID_ARG;
   }
 
-  auto principalOrErr = ScopeToPrincipal(aScope, attrs);
-  if (NS_WARN_IF(principalOrErr.isErr())) {
-    return PushHandledPromise::CreateAndReject(principalOrErr.unwrapErr(),
-                                               __func__);
-  }
-  nsCOMPtr<nsIPrincipal> principal = principalOrErr.unwrap();
+  nsCOMPtr<nsIPrincipal> principal = MOZ_TRY(ScopeToPrincipal(aScope, attrs));
 
   // The registration handling a push notification must have an exact scope
   // match. This will try to find an exact match, unlike how fetch may find the
@@ -1183,14 +1177,14 @@ RefPtr<PushHandledPromise> ServiceWorkerManager::SendPushEvent(
   RefPtr<ServiceWorkerRegistrationInfo> registration =
       GetRegistration(principal, aScope);
   if (NS_WARN_IF(!registration)) {
-    return PushHandledPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
+    return NS_ERROR_FAILURE;
   }
 
   MOZ_DIAGNOSTIC_ASSERT(registration->Scope().Equals(aScope));
 
   ServiceWorkerInfo* serviceWorker = registration->GetActive();
   if (NS_WARN_IF(!serviceWorker)) {
-    return PushHandledPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
+    return NS_ERROR_FAILURE;
   }
 
   return serviceWorker->WorkerPrivate()->SendPushEvent(aMessageId, aData,

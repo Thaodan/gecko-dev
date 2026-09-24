@@ -90,7 +90,6 @@ function errorWithResult(message, result = Cr.NS_ERROR_FAILURE) {
 export var PushService = {
   _service: null,
   _state: PUSH_SERVICE_UNINIT,
-  _ignoreNewMessages: false,
   _db: null,
   _options: null,
   _visibleNotifications: new Map(),
@@ -485,7 +484,6 @@ export var PushService = {
     }
 
     this._setState(PUSH_SERVICE_ACTIVATING);
-    this._ignoreNewMessages = false;
 
     prefs.addObserver("serverURL", this);
     Services.obs.addObserver(this, "quit-application");
@@ -737,20 +735,6 @@ export var PushService = {
         );
       }
     );
-  },
-
-  /**
-   * Stop handling new push messages. Messages already being handled keep
-   * going. New ones aren't acked, so the server sends them again on the next
-   * connection.
-   */
-  ignoreNewMessages() {
-    lazy.console.debug("ignoreNewMessages()");
-    this._ignoreNewMessages = true;
-  },
-
-  get ignoresNewMessages() {
-    return this._ignoreNewMessages;
   },
 
   /**
@@ -1017,23 +1001,22 @@ export var PushService = {
       Glean.webPush.apiNotify.add(1);
     }
 
-    let handled;
     if (payload) {
-      handled = lazy.gPushNotifier.notifyPushWithData(
+      lazy.gPushNotifier.notifyPushWithData(
         aPushRecord.scope,
         aPushRecord.principal,
         messageID,
         payload
       );
     } else {
-      handled = lazy.gPushNotifier.notifyPush(
+      lazy.gPushNotifier.notifyPush(
         aPushRecord.scope,
         aPushRecord.principal,
         messageID
       );
     }
 
-    return handled.then(() => Ci.nsIPushErrorReporter.ACK_DELIVERED);
+    return Ci.nsIPushErrorReporter.ACK_DELIVERED;
   },
 
   getByKeyID(aKeyID) {

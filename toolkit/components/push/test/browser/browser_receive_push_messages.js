@@ -264,12 +264,8 @@ add_task(async function test_push_service_broken() {
   );
 });
 
-function countObservers(topic) {
-  return [...Services.obs.enumerateObservers(topic)].length;
-}
-
 function countPushTopicObservers() {
-  return countObservers(PUSH_SERVICE.pushTopic);
+  return [...Services.obs.enumerateObservers(PUSH_SERVICE.pushTopic)].length;
 }
 
 add_task(async function test_push_messages_not_observed_without_push_service() {
@@ -306,11 +302,8 @@ add_task(async function test_push_messages_observed_with_push_service() {
     ],
   });
 
-  const handledTopic = PUSH_SERVICE.pushMessageHandledTopic;
-
   try {
     is(countPushTopicObservers(), 0, "No observer before receiving");
-    is(countObservers(handledTopic), 0, "No handled observer before receiving");
 
     let receiving = CommandLineHandler.prototype.receivePushMessages();
 
@@ -321,25 +314,22 @@ add_task(async function test_push_messages_observed_with_push_service() {
       10
     );
 
-    is(countObservers(handledTopic), 1, "One handled observer while receiving");
-
     await receiving;
 
     is(countPushTopicObservers(), 0, "No observer after receiving");
-    is(countObservers(handledTopic), 0, "No handled observer after receiving");
   } finally {
     pushService.restore();
     await SpecialPowers.popPrefEnv();
   }
 });
 
-function sendPushMessage(messageId = "") {
+function sendPushMessage() {
   Cc["@mozilla.org/push/Notifier;1"]
     .getService(Ci.nsIPushNotifier)
     .notifyPush(
       "chrome://push-receive-push-messages",
       Services.scriptSecurityManager.getSystemPrincipal(),
-      messageId
+      ""
     );
 }
 
@@ -486,208 +476,5 @@ add_task(async function test_argument_not_handled_in_child_process() {
     cmdLine.findFlag("receive-push-messages", false),
     0,
     "The argument is left unhandled"
-  );
-});
-
-add_task(async function test_push_message_handled_notification() {
-  is(
-    PUSH_SERVICE.pushMessageHandledTopic,
-    "push-message-handled",
-    "The handled topic is exposed on the Push Service"
-  );
-
-  let handled = TestUtils.topicObserved(
-    PUSH_SERVICE.pushMessageHandledTopic,
-    (subject, data) => data == "test-message-id"
-  );
-
-  sendPushMessage("test-message-id");
-
-  await handled;
-  ok(true, "The push message is reported as handled");
-});
-
-// Stops the total timer from reaching the real Push Service
-const ignoreNewMessages = sinon.stub(
-  PUSH_SERVICE.wrappedJSObject,
-  "ignoreNewMessages"
-);
-registerCleanupFunction(() => ignoreNewMessages.restore());
-
-async function receivePushEventsDurationMs({
-  events,
-  perMessageTimeoutMs = PER_MESSAGE_TIMEOUT_MS,
-  totalTimeoutMs = TOTAL_TIMEOUT_MS,
-}) {
-  let pushService = sinon
-    .stub(CommandLineHandler.prototype, "ensurePushServiceReady")
-    .resolves(true);
-  ignoreNewMessages.resetHistory();
-
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      [
-        "app.backgroundNotifications.receivePushMessages.perMessageTimeoutMs",
-        perMessageTimeoutMs,
-      ],
-      [
-        "app.backgroundNotifications.receivePushMessages.totalTimeoutMs",
-        totalTimeoutMs,
-      ],
-    ],
-  });
-
-  let timers = [];
-
-  try {
-    let receiving = CommandLineHandler.prototype.receivePushMessages();
-
-    // The observers are added after the Push Service check resolves
-    await TestUtils.waitForCondition(
-      () => countPushTopicObservers() == 1,
-      "One observer while receiving",
-      10
-    );
-
-    let startedAt = ChromeUtils.now();
-
-    // Simulates push messages and their handling, without going through the
-    // real Push Notifier
-    for (let { atMs, topic, data } of events) {
-      // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
-      let timer = setTimeout(
-        () => Services.obs.notifyObservers(null, topic, data),
-        atMs
-      );
-      timers.push(timer);
-    }
-
-    await receiving;
-
-    return ChromeUtils.now() - startedAt;
-  } finally {
-    timers.forEach(clearTimeout);
-    pushService.restore();
-    await SpecialPowers.popPrefEnv();
-  }
-}
-
-const pushMessage = (atMs, data = "scope") => ({
-  atMs,
-  topic: PUSH_SERVICE.pushTopic,
-  data,
-});
-const pushMessageHandled = (atMs, data = "message-id") => ({
-  atMs,
-  topic: PUSH_SERVICE.pushMessageHandledTopic,
-  data,
-});
-
-// Timers can fire late on slow machines but never early, so these tests only
-// use one-sided bounds: an exact lower bound with a small slack for timer
-// resolution, and a total timeout too far away to be reached by lateness
-const HANDLED_DELAY_MS = 300;
-const LONG_TOTAL_TIMEOUT_MS = 5000;
-const TIMER_SLACK_MS = 20;
-
-add_task(async function test_receive_push_messages_until_message_handled() {
-  let durationMs = await receivePushEventsDurationMs({
-    events: [pushMessage(0), pushMessageHandled(HANDLED_DELAY_MS)],
-    totalTimeoutMs: LONG_TOTAL_TIMEOUT_MS,
-  });
-
-  Assert.greaterOrEqual(
-    durationMs,
-    HANDLED_DELAY_MS - TIMER_SLACK_MS,
-    "Receiving continues past the per message timeout until the message is handled"
-  );
-  Assert.less(
-    durationMs,
-    LONG_TOTAL_TIMEOUT_MS - TOLERANCE_MS,
-    "Receiving stops before the total timeout"
-  );
-  ok(!ignoreNewMessages.called, "New messages are still accepted");
-});
-
-add_task(async function test_receive_push_messages_handled_immediately() {
-  let durationMs = await receivePushEventsDurationMs({
-    events: [pushMessage(0), pushMessageHandled(0)],
-    totalTimeoutMs: LONG_TOTAL_TIMEOUT_MS,
-  });
-
-  Assert.greaterOrEqual(
-    durationMs,
-    PER_MESSAGE_TIMEOUT_MS - TIMER_SLACK_MS,
-    "A handled message doesn't stop receiving before the per message timeout"
-  );
-  Assert.less(
-    durationMs,
-    LONG_TOTAL_TIMEOUT_MS - TOLERANCE_MS,
-    "Receiving stops before the total timeout"
-  );
-});
-
-add_task(
-  async function test_receive_push_messages_handled_after_total_timeout() {
-    const handledAtMs = TOTAL_TIMEOUT_MS + HANDLED_DELAY_MS;
-    let durationMs = await receivePushEventsDurationMs({
-      events: [pushMessage(0), pushMessageHandled(handledAtMs)],
-    });
-
-    Assert.greaterOrEqual(
-      durationMs,
-      handledAtMs - TIMER_SLACK_MS,
-      "A pending message keeps receiving past the total timeout until it is handled"
-    );
-    ok(
-      ignoreNewMessages.calledOnce,
-      "New messages are ignored after the total timeout"
-    );
-  }
-);
-
-add_task(
-  async function test_receive_push_messages_ignored_after_total_timeout() {
-    // With a long per message timeout, a message arriving after the total
-    // timeout would keep receiving for a long time if it restarted that timer
-    const lateMessageAtMs = TOTAL_TIMEOUT_MS + 100;
-    const handledAtMs = TOTAL_TIMEOUT_MS + 200;
-    let durationMs = await receivePushEventsDurationMs({
-      events: [
-        pushMessage(0),
-        pushMessage(lateMessageAtMs),
-        pushMessageHandled(handledAtMs),
-        pushMessageHandled(handledAtMs),
-      ],
-      perMessageTimeoutMs: LONG_TOTAL_TIMEOUT_MS,
-    });
-
-    Assert.greaterOrEqual(
-      durationMs,
-      handledAtMs - TIMER_SLACK_MS,
-      "A message arriving after the total timeout is still waited for"
-    );
-    Assert.less(
-      durationMs,
-      LONG_TOTAL_TIMEOUT_MS - TOLERANCE_MS,
-      "A message arriving after the total timeout doesn't restart the per message timer"
-    );
-  }
-);
-
-add_task(async function test_stray_handled_notification_is_ignored() {
-  let durationMs = await receivePushEventsDurationMs({
-    events: [
-      pushMessageHandled(0, "stray-message-id"),
-      pushMessage(0),
-      pushMessageHandled(HANDLED_DELAY_MS),
-    ],
-    totalTimeoutMs: LONG_TOTAL_TIMEOUT_MS,
-  });
-
-  Assert.greaterOrEqual(
-    durationMs,
-    HANDLED_DELAY_MS - TIMER_SLACK_MS,
-    "A stray handled notification doesn't end the wait for a pending message"
   );
 });

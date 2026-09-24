@@ -212,22 +212,13 @@ ServiceWorkerPrivate::PendingPushEvent::PendingPushEvent(
   AssertIsOnMainThread();
 }
 
-ServiceWorkerPrivate::PendingPushEvent::~PendingPushEvent() {
-  mPromiseHolder.RejectIfExists(NS_ERROR_DOM_ABORT_ERR, __func__);
-}
-
 nsresult ServiceWorkerPrivate::PendingPushEvent::Send() {
   AssertIsOnMainThread();
   MOZ_ASSERT(mOwner);
   MOZ_ASSERT(mOwner->mInfo);
 
-  mOwner->SendPushEventInternal(std::move(mRegistration), std::move(mArgs))
-      ->ChainTo(mPromiseHolder.Steal(), __func__);
-  return NS_OK;
-}
-
-RefPtr<PushHandledPromise> ServiceWorkerPrivate::PendingPushEvent::Promise() {
-  return mPromiseHolder.Ensure(__func__);
+  return mOwner->SendPushEventInternal(std::move(mRegistration),
+                                       std::move(mArgs));
 }
 
 ServiceWorkerPrivate::PendingFetchEvent::PendingFetchEvent(
@@ -1073,7 +1064,7 @@ nsresult ServiceWorkerPrivate::SendCookieChangeEventInternal(
   return NS_OK;
 }
 
-RefPtr<PushHandledPromise> ServiceWorkerPrivate::SendPushEvent(
+nsresult ServiceWorkerPrivate::SendPushEvent(
     const nsAString& aMessageId, const Maybe<nsTArray<uint8_t>>& aData,
     RefPtr<ServiceWorkerRegistrationInfo> aRegistration) {
   AssertIsOnMainThread();
@@ -1083,8 +1074,7 @@ RefPtr<PushHandledPromise> ServiceWorkerPrivate::SendPushEvent(
   // failed, and unlike the ops below we dereference it before delegating to
   // SpawnWorkerIfNeeded(), which is where that is normally caught.
   if (NS_WARN_IF(!mInfo)) {
-    return PushHandledPromise::CreateAndReject(NS_ERROR_DOM_INVALID_STATE_ERR,
-                                               __func__);
+    return NS_ERROR_DOM_INVALID_STATE_ERR;
   }
 
   ServiceWorkerPushEventOpArgs args;
@@ -1097,13 +1087,13 @@ RefPtr<PushHandledPromise> ServiceWorkerPrivate::SendPushEvent(
   }
 
   if (mInfo->State() == ServiceWorkerState::Activating) {
-    UniquePtr<PendingPushEvent> pendingEvent = MakeUnique<PendingPushEvent>(
-        this, std::move(aRegistration), std::move(args));
-    RefPtr<PushHandledPromise> promise = pendingEvent->Promise();
+    UniquePtr<PendingFunctionalEvent> pendingEvent =
+        MakeUnique<PendingPushEvent>(this, std::move(aRegistration),
+                                     std::move(args));
 
     mPendingFunctionalEvents.AppendElement(std::move(pendingEvent));
 
-    return promise;
+    return NS_OK;
   }
 
   MOZ_ASSERT(mInfo->State() == ServiceWorkerState::Activated);
@@ -1111,7 +1101,7 @@ RefPtr<PushHandledPromise> ServiceWorkerPrivate::SendPushEvent(
   return SendPushEventInternal(std::move(aRegistration), std::move(args));
 }
 
-RefPtr<PushHandledPromise> ServiceWorkerPrivate::SendPushEventInternal(
+nsresult ServiceWorkerPrivate::SendPushEventInternal(
     RefPtr<ServiceWorkerRegistrationInfo>&& aRegistration,
     ServiceWorkerPushEventOpArgs&& aArgs) {
   MOZ_ASSERT(aRegistration);
@@ -1119,24 +1109,18 @@ RefPtr<PushHandledPromise> ServiceWorkerPrivate::SendPushEventInternal(
   RefPtr<ServiceWorkerOpPromise> opPromise = ExecServiceWorkerOp(
       std::move(aArgs),
       ServiceWorkerLifetimeExtension(FullLifetimeExtension{}));
-
-  return opPromise->Then(
+  opPromise->Then(
       GetCurrentSerialEventTarget(), __func__,
-      [registration = std::move(aRegistration)](
-          ServiceWorkerOpPromise::ResolveOrRejectValue&& aResult)
-          -> RefPtr<PushHandledPromise> {
+      [registration = aRegistration](ServiceWorkerOpResult&& aResult) {
+        MOZ_ASSERT(aResult.type() == ServiceWorkerOpResult::Tnsresult);
+
         registration->MaybeScheduleTimeCheckAndUpdate();
-
-        if (aResult.IsReject()) {
-          return PushHandledPromise::CreateAndReject(aResult.RejectValue(),
-                                                     __func__);
-        }
-
-        MOZ_ASSERT(aResult.ResolveValue().type() ==
-                   ServiceWorkerOpResult::Tnsresult);
-
-        return PushHandledPromise::CreateAndResolve(Ok(), __func__);
+      },
+      [registration = aRegistration]() {
+        registration->MaybeScheduleTimeCheckAndUpdate();
       });
+
+  return NS_OK;
 }
 
 nsresult ServiceWorkerPrivate::SendPushSubscriptionChangeEvent(
