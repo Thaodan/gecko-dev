@@ -779,6 +779,8 @@
     <string name="preferences_override_sync_tokenserver">Custom Sync server</string>
     <!-- Preference category for account information -->
     <string name="preferences_category_account">Account</string>
+    <!-- Preference category for sync controls. Sync can be translated, it's just short for ”Synchronization” in English. -->
+    <string name="preferences_category_sync_controls">Sync</string>
     <!-- Preference for changing where the AddressBar is positioned -->
     <string name="preferences_toolbar_2">Address bar location</string>
     <!-- Preference for changing toolbar layout -->
