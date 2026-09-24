@@ -503,13 +503,8 @@ add_task(
   }
 );
 
-// The abandoned run still completes in the child and still records
-// run_inference_success_flow with full metrics, but recordEngineRun sits after
-// the yield loop in runWithGenerator with no try/finally, so the generator's
-// return() skips it. That leaves an engine_run event missing for a run that
-// otherwise reports success -- an asymmetry downstream analysis cannot see.
-// Unlike the guard above, this needs no race to reproduce. Marked todo until
-// bug 2066288 records the run on the abandonment path.
+// An abandoned run is still recorded as run_inference_success_flow, so
+// engine_run has to report it too.
 add_task(
   async function test_ml_smoke_test_llama_abandoned_records_engine_run() {
     const { cleanup } = await setup();
@@ -543,10 +538,16 @@ add_task(
         "Waiting for the abandoned run to complete in the child."
       );
 
-      const engineRun = Glean.firefoxAiRuntime.engineRun.testGetValue();
-      todo(
-        !!engineRun?.length,
-        "engine_run should be recorded for an abandoned run, alongside the run_inference_success_flow it already reports"
+      await waitForCondition(
+        () => Glean.firefoxAiRuntime.engineRun.testGetValue()?.length,
+        "Waiting for engine_run to be recorded for the abandoned run."
+      );
+
+      const [engineRun] = Glean.firefoxAiRuntime.engineRun.testGetValue();
+      Assert.equal(
+        engineRun.extra.backend,
+        "llama.cpp",
+        "The recorded run reports the backend that generated it"
       );
     } finally {
       await EngineProcess.destroyMLEngine();
