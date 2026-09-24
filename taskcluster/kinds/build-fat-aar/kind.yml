@@ -79,8 +79,6 @@ task-defaults:
                 release: release-fat-aar
                 esr.*: release-fat-aar
                 default: nightly-fat-aar
-        extra-config:
-            mozconfig_platform: android-arm
         tooltool-downloads: internal
         # Note: These settings are only honored by nightly (i.e. shipping) builds
         update-channel:

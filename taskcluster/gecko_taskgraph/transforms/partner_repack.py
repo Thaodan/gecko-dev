@@ -93,6 +93,7 @@ def add_command_arguments(config, tasks):
             all_locales.update(sub_partner.get("locales", []))
 
     for task in tasks:
+        # add the MOZHARNESS_OPTIONS, eg version=61.0, build-number=1, platform=win64
         if not task["attributes"]["build_platform"].endswith("-shippable"):
             raise Exception(
                 "Unexpected partner repack platform: {}".format(
@@ -100,18 +101,22 @@ def add_command_arguments(config, tasks):
                 ),
             )
         platform = task["attributes"]["build_platform"].partition("-shippable")[0]
-        env = task["worker"]["env"]
-        env["REPACK_VERSION"] = release_config["version"]
-        env["REPACK_BUILD_NUMBER"] = str(release_config["build_number"])
-        env["REPACK_PLATFORM"] = platform
+        task["run"]["options"] = [
+            "version={}".format(release_config["version"]),
+            "build-number={}".format(release_config["build_number"]),
+            f"platform={platform}",
+        ]
         if task["extra"]["limit-locales"]:
-            env["REPACK_LIMIT_LOCALES"] = " ".join(sorted(all_locales))
+            for locale in all_locales:
+                task["run"]["options"].append(f"limit-locale={locale}")
         if "partner" in config.kind and config.params["release_partners"]:
-            env["REPACK_PARTNERS"] = " ".join(config.params["release_partners"])
+            for partner in config.params["release_partners"]:
+                task["run"]["options"].append(f"partner={partner}")
 
-        # The upstream taskIds are a space-separated string of task-reference's
-        # so that they resolve to the dependencies' ids.
-        env["UPSTREAM_TASKIDS"] = {
+        # The upstream taskIds are stored a special environment variable, because we want to use
+        # task-reference's to resolve dependencies, but the string handling of MOZHARNESS_OPTIONS
+        # blocks that. It's space-separated string of ids in the end.
+        task["worker"]["env"]["UPSTREAM_TASKIDS"] = {
             # We only want signing related tasks here, not build (used by mac builds for signing artifact resolution)
             "task-reference": " ".join([
                 f"<{dep}>"
@@ -121,7 +126,7 @@ def add_command_arguments(config, tasks):
         }
 
         # Forward the release type for bouncer product construction
-        env["RELEASE_TYPE"] = config.params["release_type"]
+        task["worker"]["env"]["RELEASE_TYPE"] = config.params["release_type"]
 
         yield task
 

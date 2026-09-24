@@ -32,8 +32,6 @@ task-defaults:
         script: "mozharness/scripts/fx_desktop_build.py"
         config:
             - builds/releng_sub_linux_configs/64_source.py
-        extra-config:
-            src_mozconfig: browser/config/mozconfigs/linux64/source
         options: []
         tooltool-downloads: public
     run-on-projects: []

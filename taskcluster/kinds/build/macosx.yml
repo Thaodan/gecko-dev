@@ -92,7 +92,6 @@ macosx64-aarch64/debug:
         custom-build-variant-cfg: cross-debug
         mozconfig-variant: debug
         extra-config:
-            mozconfig_platform: macosx64
             extra_mozconfig_content:
                 - ac_add_options --target=aarch64-apple-darwin
     use-sccache: true
@@ -125,7 +124,6 @@ macosx64-aarch64/opt:
             - builds/releng_base_firefox.py
             - builds/releng_base_mac_64_cross_builds.py
         extra-config:
-            mozconfig_platform: macosx64
             extra_mozconfig_content:
                 - ac_add_options --target=aarch64-apple-darwin
     run-on-projects: ['integration']

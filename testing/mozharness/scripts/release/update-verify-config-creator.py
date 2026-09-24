@@ -2,20 +2,15 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import argparse
 import asyncio
-import http.client
 import json
-import logging
 import math
+import os
 import pprint
 import re
-import socket
 import sys
 from collections import namedtuple
-from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin
-from urllib.request import urlopen
 
 import aiohttp
 import hglib
@@ -23,19 +18,11 @@ from hglib.util import cmdbuilder
 from looseversion import LooseVersion
 from mozilla_version.gecko import GeckoVersion
 from mozilla_version.version import VersionType
-from redo import retry
 
-from mozrelease.l10n import getPlatformLocales
-from mozrelease.paths import (
-    getCandidatesDir,
-    getReleaseInstallerPath,
-    getReleasesDir,
-)
-from mozrelease.platforms import ftp2infoFile, ftp2updatePlatforms
-from mozrelease.update_verify import UpdateVerifyConfig
-from mozrelease.versions import MozillaVersion, getPrettyVersion
+sys.path.insert(1, os.path.dirname(os.path.dirname(sys.path[0])))
 
-log = logging.getLogger(__name__)
+from mozharness.base.log import DEBUG, FATAL, INFO, WARNING
+from mozharness.base.script import BaseScript, PostScriptRun, PreScriptRun
 
 
 # ensure all versions are 3 part (i.e. 99.1.0)
@@ -51,7 +38,7 @@ class CompareVersion(LooseVersion):
             match = intre.match(parts[-1])
             if match:
                 parts[-1] = match.group(1)
-                parts.append(f"0{match.group(2)}")
+                parts.append("0%s" % match.group(2))
         else:
             parts.append("0")
         self.version = ".".join(parts)
@@ -91,210 +78,254 @@ def is_triangular(x):
     return n == int(n)
 
 
-def retry_download(url, sleeptime=60, max_sleeptime=5 * 60, attempts=5):
-    """Fetch url with retries, returning the response or None on failure."""
-    try:
-        return retry(
-            urlopen,
-            args=(url,),
-            attempts=attempts,
-            sleeptime=sleeptime,
-            max_sleeptime=max_sleeptime,
-            retry_exceptions=(
-                HTTPError,
-                URLError,
-                http.client.HTTPException,
-                socket.timeout,
-                OSError,
-            ),
+class UpdateVerifyConfigCreator(BaseScript):
+    config_options = [
+        [
+            ["--product"],
+            {
+                "dest": "product",
+                "help": "Product being tested, as used in the update URL and filenames. Eg: firefox",  # NOQA: E501
+            },
+        ],
+        [
+            ["--stage-product"],
+            {
+                "dest": "stage_product",
+                "help": "Product being tested, as used in stage directories and ship it"
+                "If not passed this is assumed to be the same as product.",
+            },
+        ],
+        [
+            ["--app-name"],
+            {
+                "dest": "app_name",
+                "help": "App name being tested. Eg: browser",
+            },
+        ],
+        [
+            ["--branch-prefix"],
+            {
+                "dest": "branch_prefix",
+                "help": "Prefix of release branch names. Eg: mozilla, comm",
+            },
+        ],
+        [
+            ["--channel"],
+            {
+                "dest": "channel",
+                "help": "Channel to run update verify against",
+            },
+        ],
+        [
+            ["--aus-server"],
+            {
+                "dest": "aus_server",
+                "default": "https://aus5.mozilla.org",
+                "help": "AUS server to run update verify against",
+            },
+        ],
+        [
+            ["--to-version"],
+            {
+                "dest": "to_version",
+                "help": "The version of the release being updated to. Eg: 59.0b5",
+            },
+        ],
+        [
+            ["--to-app-version"],
+            {
+                "dest": "to_app_version",
+                "help": "The in-app version of the release being updated to. Eg: 59.0",
+            },
+        ],
+        [
+            ["--to-display-version"],
+            {
+                "dest": "to_display_version",
+                "help": "The human-readable version of the release being updated to. Eg: 59.0 Beta 9",  # NOQA: E501
+            },
+        ],
+        [
+            ["--to-build-number"],
+            {
+                "dest": "to_build_number",
+                "help": "The build number of the release being updated to",
+            },
+        ],
+        [
+            ["--to-buildid"],
+            {
+                "dest": "to_buildid",
+                "help": "The buildid of the release being updated to",
+            },
+        ],
+        [
+            ["--to-revision"],
+            {
+                "dest": "to_revision",
+                "help": "The revision that the release being updated to was built against",
+            },
+        ],
+        [
+            ["--partial-version"],
+            {
+                "dest": "partial_versions",
+                "default": [],
+                "action": "append",
+                "help": "A previous release version that is expected to receive a partial update. "
+                "Eg: 59.0b4. May be specified multiple times.",
+            },
+        ],
+        [
+            ["--last-watershed"],
+            {
+                "dest": "last_watershed",
+                "help": "The earliest version to include in the update verify config. Eg: 57.0b10",
+            },
+        ],
+        [
+            ["--include-version"],
+            {
+                "dest": "include_versions",
+                "default": [],
+                "action": "append",
+                "help": "Only include versions that match one of these regexes. "
+                "May be passed multiple times",
+            },
+        ],
+        [
+            ["--mar-channel-id-override"],
+            {
+                "dest": "mar_channel_id_options",
+                "default": [],
+                "action": "append",
+                "help": "A version regex and channel id string to override those versions with."
+                "Eg: ^\\d+\\.\\d+(\\.\\d+)?$,firefox-mozilla-beta,firefox-mozilla-release "
+                "will set accepted mar channel ids to 'firefox-mozilla-beta' and "
+                "'firefox-mozilla-release for x.y and x.y.z versions. "
+                "May be passed multiple times",
+            },
+        ],
+        [
+            ["--override-certs"],
+            {
+                "dest": "override_certs",
+                "default": None,
+                "help": "Certs to override the updater with prior to running update verify."
+                "If passed, should be one of: dep, nightly, release"
+                "If not passed, no certificate overriding will be configured",
+            },
+        ],
+        [
+            ["--platform"],
+            {
+                "dest": "platform",
+                "help": "The platform to generate the update verify config for, in FTP-style",
+            },
+        ],
+        [
+            ["--updater-platform"],
+            {
+                "dest": "updater_platform",
+                "help": "The platform to run the updater on, in FTP-style."
+                "If not specified, this is assumed to be the same as platform",
+            },
+        ],
+        [
+            ["--archive-prefix"],
+            {
+                "dest": "archive_prefix",
+                "help": "The server/path to pull the current release from. "
+                "Eg: https://archive.mozilla.org/pub",
+            },
+        ],
+        [
+            ["--previous-archive-prefix"],
+            {
+                "dest": "previous_archive_prefix",
+                "help": "The server/path to pull the previous releases from"
+                "If not specified, this is assumed to be the same as --archive-prefix",
+            },
+        ],
+        [
+            ["--repo-path"],
+            {
+                "dest": "repo_path",
+                "help": (
+                    "The repository (relative to the hg server root) that the current "
+                    "release was built from Eg: releases/mozilla-beta"
+                ),
+            },
+        ],
+        [
+            ["--output-file"],
+            {
+                "dest": "output_file",
+                "help": "Where to write the update verify config to",
+            },
+        ],
+        [
+            ["--product-details-server"],
+            {
+                "dest": "product_details_server",
+                "default": "https://product-details.mozilla.org",
+                "help": "Product Details server to pull previous release info from. "
+                "Using anything other than the production server is likely to "
+                "cause issues with update verify.",
+            },
+        ],
+        [
+            ["--last-linux-bz2-version"],
+            {
+                "dest": "last_linux_bz2_version",
+                "help": "Last linux build version with bz2 compression.",
+            },
+        ],
+        [
+            ["--hg-server"],
+            {
+                "dest": "hg_server",
+                "default": "https://hg.mozilla.org",
+                "help": "Mercurial server to pull various previous and current version info from",
+            },
+        ],
+        [
+            ["--full-check-locale"],
+            {
+                "dest": "full_check_locales",
+                "default": ["de", "en-US", "ru"],
+                "action": "append",
+                "help": "A list of locales to generate full update verify checks for",
+            },
+        ],
+        [
+            ["--local-repo"],
+            {
+                "dest": "local_repo",
+                "help": "Path to local clone of the repository",
+            },
+        ],
+    ]
+
+    def __init__(self):
+        BaseScript.__init__(
+            self,
+            config_options=self.config_options,
+            config={},
+            all_actions=[
+                "gather-info",
+                "create-config",
+                "write-config",
+            ],
+            default_actions=[
+                "gather-info",
+                "create-config",
+                "write-config",
+            ],
         )
-    except Exception as e:
-        log.warning(f"Can't download from {url}: {e}")
-        return None
-
-
-def parse_args(argv):
-    parser = argparse.ArgumentParser(
-        description="Generate an update verify config for a release."
-    )
-    parser.add_argument(
-        "--product",
-        required=True,
-        help="Product being tested, as used in the update URL and filenames. Eg: firefox",
-    )
-    parser.add_argument(
-        "--stage-product",
-        help="Product being tested, as used in stage directories and ship it. "
-        "If not passed this is assumed to be the same as product.",
-    )
-    parser.add_argument(
-        "--app-name", required=True, help="App name being tested. Eg: browser"
-    )
-    parser.add_argument(
-        "--branch-prefix",
-        required=True,
-        help="Prefix of release branch names. Eg: mozilla, comm",
-    )
-    parser.add_argument(
-        "--channel", required=True, help="Channel to run update verify against"
-    )
-    parser.add_argument(
-        "--aus-server",
-        default="https://aus5.mozilla.org",
-        help="AUS server to run update verify against",
-    )
-    parser.add_argument(
-        "--to-version",
-        required=True,
-        help="The version of the release being updated to. Eg: 59.0b5",
-    )
-    parser.add_argument(
-        "--to-app-version",
-        required=True,
-        help="The in-app version of the release being updated to. Eg: 59.0",
-    )
-    parser.add_argument(
-        "--to-display-version",
-        help="The human-readable version of the release being updated to. Eg: 59.0 Beta 9",
-    )
-    parser.add_argument(
-        "--to-build-number",
-        required=True,
-        help="The build number of the release being updated to",
-    )
-    parser.add_argument(
-        "--to-buildid",
-        required=True,
-        help="The buildid of the release being updated to",
-    )
-    parser.add_argument(
-        "--to-revision",
-        required=True,
-        help="The revision that the release being updated to was built against",
-    )
-    parser.add_argument(
-        "--partial-version",
-        dest="partial_versions",
-        default=[],
-        action="append",
-        help="A previous release version that is expected to receive a partial update. "
-        "Eg: 59.0b4. May be specified multiple times.",
-    )
-    parser.add_argument(
-        "--last-watershed",
-        required=True,
-        help="The earliest version to include in the update verify config. Eg: 57.0b10",
-    )
-    parser.add_argument(
-        "--include-version",
-        dest="include_versions",
-        default=[],
-        action="append",
-        help="Only include versions that match one of these regexes. "
-        "May be passed multiple times",
-    )
-    parser.add_argument(
-        "--mar-channel-id-override",
-        dest="mar_channel_id_options",
-        default=[],
-        action="append",
-        help="A version regex and channel id string to override those versions with."
-        "Eg: ^\\d+\\.\\d+(\\.\\d+)?$,firefox-mozilla-beta,firefox-mozilla-release "
-        "will set accepted mar channel ids to 'firefox-mozilla-beta' and "
-        "'firefox-mozilla-release for x.y and x.y.z versions. "
-        "May be passed multiple times",
-    )
-    parser.add_argument(
-        "--override-certs",
-        default=None,
-        help="Certs to override the updater with prior to running update verify. "
-        "If passed, should be one of: dep, nightly, release. "
-        "If not passed, no certificate overriding will be configured",
-    )
-    parser.add_argument(
-        "--platform",
-        required=True,
-        help="The platform to generate the update verify config for, in FTP-style",
-    )
-    parser.add_argument(
-        "--updater-platform",
-        help="The platform to run the updater on, in FTP-style. "
-        "If not specified, this is assumed to be the same as platform",
-    )
-    parser.add_argument(
-        "--archive-prefix",
-        required=True,
-        help="The server/path to pull the current release from. "
-        "Eg: https://archive.mozilla.org/pub",
-    )
-    parser.add_argument(
-        "--previous-archive-prefix",
-        help="The server/path to pull the previous releases from. "
-        "If not specified, this is assumed to be the same as --archive-prefix",
-    )
-    parser.add_argument(
-        "--repo-path",
-        required=True,
-        help="The repository (relative to the hg server root) that the current "
-        "release was built from Eg: releases/mozilla-beta",
-    )
-    parser.add_argument(
-        "--output-file",
-        required=True,
-        help="Where to write the update verify config to",
-    )
-    parser.add_argument(
-        "--product-details-server",
-        default="https://product-details.mozilla.org",
-        help="Product Details server to pull previous release info from. "
-        "Using anything other than the production server is likely to "
-        "cause issues with update verify.",
-    )
-    parser.add_argument(
-        "--last-linux-bz2-version",
-        help="Last linux build version with bz2 compression.",
-    )
-    parser.add_argument(
-        "--hg-server",
-        default="https://hg.mozilla.org",
-        help="Mercurial server to pull various previous and current version info from",
-    )
-    parser.add_argument(
-        "--full-check-locale",
-        dest="full_check_locales",
-        default=["de", "en-US", "ru"],
-        action="append",
-        help="A list of locales to generate full update verify checks for",
-    )
-    parser.add_argument(
-        "--local-repo",
-        help="Path to local clone of the repository",
-    )
-    args = parser.parse_args(argv)
-
-    if not args.updater_platform:
-        args.updater_platform = args.platform
-    if not args.stage_product:
-        args.stage_product = args.product
-    if not args.previous_archive_prefix:
-        args.previous_archive_prefix = args.archive_prefix
-    args.archive_prefix = args.archive_prefix.rstrip("/")
-    args.previous_archive_prefix = args.previous_archive_prefix.rstrip("/")
-    args.mar_channel_id_overrides = {}
-    for override in args.mar_channel_id_options:
-        pattern, override_str = override.split(",", 1)
-        args.mar_channel_id_overrides[pattern] = override_str
-    return args
-
-
-class UpdateVerifyConfigCreator:
-    def __init__(self, config):
-        self.config = config
         self.hgclient = None
-        self.hg_tags = set()
-        self.update_paths = {}
-        self.update_verify_config = None
 
+    @PreScriptRun
     def _setup_hgclient(self):
         if not self.config.get("local_repo"):
             return
@@ -302,15 +333,32 @@ class UpdateVerifyConfigCreator:
         self.hgclient = hglib.open(self.config["local_repo"])
         try:
             self.hg_tags = set(t[0].decode("utf-8") for t in self.hgclient.tags())
-            log.info(f"Loaded tags from local hg repo. {len(self.hg_tags)} tags found.")
+            self.log(f"Loaded tags from local hg repo. {len(self.hg_tags)} tags found.")
         except Exception as e:
-            log.info(f"Error loading tags from local hg repo: {e}")
+            self.log(f"Error loading tags from local hg repo: {e}")
             self.hg_tags = set()
 
+    @PostScriptRun
     def _close_hg_client(self):
-        if self.hgclient:
+        if hasattr(self, "hgclient"):
             self.hgclient.close()
-            log.info("Closed HG client.")
+            self.log("Closed HG client.")
+
+    def _pre_config_lock(self, rw_config):
+        super()._pre_config_lock(rw_config)
+
+        if "updater_platform" not in self.config:
+            self.config["updater_platform"] = self.config["platform"]
+        if "stage_product" not in self.config:
+            self.config["stage_product"] = self.config["product"]
+        if "previous_archive_prefix" not in self.config:
+            self.config["previous_archive_prefix"] = self.config["archive_prefix"]
+        self.config["archive_prefix"].rstrip("/")
+        self.config["previous_archive_prefix"].rstrip("/")
+        self.config["mar_channel_id_overrides"] = {}
+        for override in self.config["mar_channel_id_options"]:
+            pattern, override_str = override.split(",", 1)
+            self.config["mar_channel_id_overrides"][pattern] = override_str
 
     def _get_branch_url(self, branch_prefix, version):
         version = GeckoVersion.parse(version)
@@ -354,13 +402,14 @@ class UpdateVerifyConfigCreator:
         async with semaphore:
             attempt = 1
             while attempt <= RETRIES:
-                log.info(
-                    f"Retrieving buildid from info file: {info_file_url} - attempt: #{attempt}"
+                self.log(
+                    f"Retrieving buildid from info file: {info_file_url} - attempt: #{attempt}",
+                    level=INFO,
                 )
                 status, text = await _get()
                 if status < 400:
                     return BuildInfo(product, version, text.split("=")[1].strip())
-                log.warning(
+                self.log(
                     f"Error retrieving buildid {info_file_url} - Status: {status} - Reason: {text}"
                 )
                 if status == 404:
@@ -378,10 +427,12 @@ class UpdateVerifyConfigCreator:
             List of BuildInfo tuples (product, version, buildID)
         """
         CONCURRENCY = 15
+        # TODO: We need to rewrite mozharness.BaseScript to be async before we can properly handle async coroutines.
+        loop = asyncio.get_event_loop()
 
         async def _run_semaphore():
             async with aiohttp.ClientSession() as session:
-                log.info(
+                self.log(
                     f"Starting async download. Semaphore with {CONCURRENCY} concurrencies."
                 )
                 semaphore = asyncio.Semaphore(CONCURRENCY)
@@ -391,13 +442,22 @@ class UpdateVerifyConfigCreator:
                 ]
                 return await asyncio.gather(*tasks)
 
-        return asyncio.run(_run_semaphore())
+        return loop.run_until_complete(_run_semaphore())
 
     def _get_update_paths(self):
+        from mozrelease.l10n import getPlatformLocales
+        from mozrelease.paths import getCandidatesDir
+        from mozrelease.platforms import ftp2infoFile
+        from mozrelease.versions import MozillaVersion
+
         self.update_paths = {}
 
-        ret = retry_download(
-            f"{self.config['product_details_server']}/1.0/{self.config['stage_product']}.json"
+        ret = self._retry_download(
+            "{}/1.0/{}.json".format(
+                self.config["product_details_server"],
+                self.config["stage_product"],
+            ),
+            "WARNING",
         )
         releases = json.load(ret)["releases"]
         info_file_urls = []
@@ -416,51 +476,63 @@ class UpdateVerifyConfigCreator:
                 if re.match(v, version):
                     break
             else:
-                log.info(
+                self.log(
                     "Skipping release whose version doesn't match any "
-                    f"include_version pattern: {release_name}"
+                    "include_version pattern: %s" % release_name,
+                    level=INFO,
                 )
                 continue
 
             # We also have to trim out previous releases that aren't in the same
             # product line, too old, etc.
             if self.config["stage_product"] != product:
-                log.info(
-                    f"Skipping release that doesn't match product name: {release_name}"
+                self.log(
+                    "Skipping release that doesn't match product name: %s"
+                    % release_name,
+                    level=INFO,
                 )
                 continue
             if MozillaVersion(version) < MozillaVersion(self.config["last_watershed"]):
-                log.info(
-                    f"Skipping release that's behind the last watershed: {release_name}"
+                self.log(
+                    "Skipping release that's behind the last watershed: %s"
+                    % release_name,
+                    level=INFO,
                 )
                 continue
             if version == self.config["to_version"]:
-                log.info(
-                    f"Skipping release that is the same as to version: {release_name}"
+                self.log(
+                    "Skipping release that is the same as to version: %s"
+                    % release_name,
+                    level=INFO,
                 )
                 continue
             if MozillaVersion(version) > MozillaVersion(self.config["to_version"]):
-                log.info(
-                    f"Skipping release that's newer than to version: {release_name}"
+                self.log(
+                    "Skipping release that's newer than to version: %s" % release_name,
+                    level=INFO,
                 )
                 continue
 
             # This is a crappy place to get buildids from, but we don't have a better one.
             # This will start to fail if old info files are deleted.
-            candidates_dir = getCandidatesDir(
-                self.config["stage_product"],
-                version,
-                release_info["build_number"],
+            info_file_source = "{}{}/{}_info.txt".format(
+                self.config["previous_archive_prefix"],
+                getCandidatesDir(
+                    self.config["stage_product"],
+                    version,
+                    release_info["build_number"],
+                ),
+                ftp2infoFile(self.config["platform"]),
             )
-            info_file = ftp2infoFile(self.config["platform"])
-            info_file_source = f"{self.config['previous_archive_prefix']}{candidates_dir}/{info_file}_info.txt"
             info_file_urls.append((product, version, info_file_source))
 
         build_info_list = self._async_download_build_ids(info_file_urls)
 
         for build in build_info_list:
             if build.version in self.update_paths:
-                raise Exception(f"Found duplicate release for version: {build.version}")
+                raise Exception(
+                    "Found duplicate release for version: %s", build.version
+                )
 
             shipped_locales, app_version = self._get_files_from_repo_tag(
                 build.product,
@@ -468,7 +540,7 @@ class UpdateVerifyConfigCreator:
                 f"{self.config['app_name']}/locales/shipped-locales",
                 f"{self.config['app_name']}/config/version.txt",
             )
-            log.info(f"Adding {build.version} to update paths")
+            self.log(f"Adding {build.version} to update paths", level=INFO)
             self.update_paths[build.version] = {
                 "appVersion": app_version,
                 "locales": getPlatformLocales(shipped_locales, self.config["platform"]),
@@ -485,13 +557,13 @@ class UpdateVerifyConfigCreator:
             try:
                 return self._get_files_from_local_repo(rev, path)[0]
             except Exception:
-                log.info(
+                self.log(
                     "Unable to get file from local repo, trying from remote instead."
                 )
         return self._get_files_from_remote_repo(rev, branch, path)[0]
 
     def _get_files_from_repo_tag(self, product, version, *paths):
-        tag = f"{product.upper()}_{version.replace('.', '_')}_RELEASE"
+        tag = "{}_{}_RELEASE".format(product.upper(), version.replace(".", "_"))
         if self.config.get("local_repo") and tag in self.hg_tags:
             return self._get_files_from_local_repo(tag, *paths)
         branch = self._get_branch_url(self.config["branch_prefix"], version)
@@ -512,7 +584,7 @@ class UpdateVerifyConfigCreator:
         try:
             raw = self.hgclient.rawcommand(args).strip().decode("utf-8")
         except Exception as e:
-            log.info("Error retrieving file from local repository.")
+            self.log("Error retrieving file from local repository.")
             raise e
 
         # The separator is added after every file data - so we need to remove the last one
@@ -543,37 +615,54 @@ class UpdateVerifyConfigCreator:
             )
             # we're going to waste time retrying on 404s here...meh
             # at least we can lower sleep time to minimize that
-            ret = retry_download(hg_url, sleeptime=5, max_sleeptime=5)
+            ret = self._retry_download(
+                hg_url, "WARNING", retry_config={"sleeptime": 5, "max_sleeptime": 5}
+            )
             # yep...errors are not raised! they're indicated by a `None`
             if ret is None:
-                log.info("couldn't fetch file from hg; trying github")
+                self.log("couldn't fetch file from hg; trying github")
                 # this won't work for try most likely; that's okay, it's a short term hack!
                 # possible problems:
                 # - we get a non tag rev
                 # - we get rate limited
                 git_url = f"https://raw.githubusercontent.com/mozilla-firefox/firefox/refs/tags/{rev}/{path}"
-                ret = retry_download(git_url)
+                ret = self._retry_download(git_url, "WARNING")
 
             files.append(ret.read().strip().decode("utf-8"))
         return files
 
     def gather_info(self):
+        from mozilla_version.gecko import GeckoVersion
+
         self._get_update_paths()
         if self.update_paths:
-            log.debug("Found update paths:")
-            log.debug(pprint.pformat(self.update_paths))
+            self.log("Found update paths:", level=DEBUG)
+            self.log(pprint.pformat(self.update_paths), level=DEBUG)
         elif GeckoVersion.parse(self.config["to_version"]) <= GeckoVersion.parse(
             self.config["last_watershed"]
         ):
-            log.warning(
-                f"Didn't find any update paths, but to_version {self.config['to_version']} "
-                f"is before the last_watershed {self.config['last_watershed']}, "
-                "generating empty config"
+            self.log(
+                "Didn't find any update paths, but to_version {} is before the last_"
+                "watershed {}, generating empty config".format(
+                    self.config["to_version"],
+                    self.config["last_watershed"],
+                ),
+                level=WARNING,
             )
         else:
-            raise SystemExit("Didn't find any update paths, cannot continue")
+            self.log("Didn't find any update paths, cannot continue", level=FATAL)
 
     def create_config(self):
+        from mozrelease.l10n import getPlatformLocales
+        from mozrelease.paths import (
+            getCandidatesDir,
+            getReleaseInstallerPath,
+            getReleasesDir,
+        )
+        from mozrelease.platforms import ftp2updatePlatforms
+        from mozrelease.update_verify import UpdateVerifyConfig
+        from mozrelease.versions import getPrettyVersion
+
         candidates_dir = getCandidatesDir(
             self.config["stage_product"],
             self.config["to_version"],
@@ -607,7 +696,7 @@ class UpdateVerifyConfigCreator:
         to_shipped_locales = self._get_file_from_repo(
             self.config["to_revision"],
             self.config["repo_path"],
-            f"{self.config['app_name']}/locales/shipped-locales",
+            "{}/locales/shipped-locales".format(self.config["app_name"]),
         )
         to_locales = set(
             getPlatformLocales(to_shipped_locales, self.config["platform"])
@@ -641,15 +730,17 @@ class UpdateVerifyConfigCreator:
             )
             from_path = f"{release_dir}/{path_}"
 
-            updater_path = getReleaseInstallerPath(
-                self.config["product"],
-                self.config["product"].title(),
-                fromVersion,
-                self.config["updater_platform"],
-                locale="%locale%",
-                last_linux_bz2_version=self.config.get("last_linux_bz2_version"),
+            updater_package = "{}/{}".format(
+                release_dir,
+                getReleaseInstallerPath(
+                    self.config["product"],
+                    self.config["product"].title(),
+                    fromVersion,
+                    self.config["updater_platform"],
+                    locale="%locale%",
+                    last_linux_bz2_version=self.config.get("last_linux_bz2_version"),
+                ),
             )
-            updater_package = f"{release_dir}/{updater_path}"
 
             # Exclude locales being full checked
             quick_check_locales = [
@@ -661,8 +752,8 @@ class UpdateVerifyConfigCreator:
             ]
 
             if fromVersion in self.config["partial_versions"]:
-                log.info(
-                    f"Generating configs for partial update checks for {fromVersion}"
+                self.info(
+                    "Generating configs for partial update checks for %s" % fromVersion
                 )
                 self.update_verify_config.addRelease(
                     release=appVersion,
@@ -678,7 +769,7 @@ class UpdateVerifyConfigCreator:
                 )
             else:
                 if this_full_check_locales and is_triangular(completes_only_index):
-                    log.info(f"Generating full check configs for {fromVersion}")
+                    self.info("Generating full check configs for %s" % fromVersion)
                     self.update_verify_config.addRelease(
                         release=appVersion,
                         build_id=build_id,
@@ -692,7 +783,7 @@ class UpdateVerifyConfigCreator:
                     )
                 # Quick test for other locales, no download
                 if len(quick_check_locales) > 0:
-                    log.info(f"Generating quick check configs for {fromVersion}")
+                    self.info("Generating quick check configs for %s" % fromVersion)
                     if not is_triangular(completes_only_index):
                         # Assuming we skipped full check locales, using all locales
                         _locales = locales
@@ -712,22 +803,6 @@ class UpdateVerifyConfigCreator:
         with open(self.config["output_file"], "wb+") as fh:
             self.update_verify_config.write(fh)
 
-    def run(self):
-        self._setup_hgclient()
-        try:
-            self.gather_info()
-            self.create_config()
-            self.write_config()
-        finally:
-            self._close_hg_client()
-
-
-def main(argv=None):
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
-    args = parse_args(argv)
-    UpdateVerifyConfigCreator(vars(args)).run()
-    return 0
-
 
 if __name__ == "__main__":
-    sys.exit(main())
+    UpdateVerifyConfigCreator().run_and_exit()

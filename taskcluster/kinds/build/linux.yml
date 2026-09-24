@@ -1338,8 +1338,6 @@ linux64-rusttests/opt:
         secrets: true
         custom-build-variant-cfg: rusttests
         mozconfig-variant: rusttests
-        extra-config:
-            app_name: tools/rusttests
         tooltool-downloads: public
         keep-artifacts: false
     run-on-projects: ['mozilla-central']
@@ -1381,8 +1379,6 @@ linux64-rusttests/debug:
         secrets: true
         custom-build-variant-cfg: rusttests-debug
         mozconfig-variant: rusttests-debug
-        extra-config:
-            app_name: tools/rusttests
         tooltool-downloads: public
         keep-artifacts: false
     run-on-projects: ['trunk']

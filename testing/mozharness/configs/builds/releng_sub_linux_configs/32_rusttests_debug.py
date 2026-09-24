@@ -19,6 +19,7 @@ config = {
         "XPCOM_DEBUG_BREAK": "stack-and-abort",
         "TINDERBOX_OUTPUT": "1",
     },
+    "app_name": "tools/rusttests",
     "disable_package_metrics": True,
     #######################
 }

@@ -3,5 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 config = {
+    "mozconfig_platform": "android-x86_64",
+    "mozconfig_variant": "debug-fuzzing",
     "debug_build": True,
 }
