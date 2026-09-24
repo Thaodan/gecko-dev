@@ -8,6 +8,7 @@
 
 #include "mozilla/EventQueue.h"
 #include "mozilla/StaticPrefs_privacy.h"
+#include "mozilla/net/ChannelClassifierUtils.h"
 #include "mozilla/SourceLocation.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/BrowsingContext.h"
@@ -18,6 +19,7 @@
 #include "nsIRunnable.h"
 #include "nsIScriptError.h"
 #include "nsIURI.h"
+#include "nsNetUtil.h"
 #include "nsIOService.h"
 #include "nsGlobalWindowOuter.h"
 #include "mozIThirdPartyUtil.h"
@@ -297,20 +299,18 @@ void NotifyBlockingDecision(nsIChannel* aTrackingChannel,
     return;
   }
 
+  // Nothing more to notify for partitioned tracker cookies: they are not
+  // allowed tracker cookies, and the STATE_COOKIES_PARTITIONED_TRACKER
+  // event has already been sent above when this is a block decision.
   if (aRejectedReason ==
       nsIWebProgressListener::STATE_COOKIES_PARTITIONED_TRACKER) {
-    ContentBlockingNotifier::OnEvent(
-        aTrackingChannel, true,
-        nsIWebProgressListener::STATE_COOKIES_PARTITIONED_TRACKER,
-        trackingOrigin);
-    // Stop notifying the tracker cookie loaded events if they are partitioned.
     return;
   }
 
   uint32_t classificationFlags =
       classifiedChannel->GetThirdPartyClassificationFlags();
-  if (classificationFlags &
-      nsIClassifiedChannel::ClassificationFlags::CLASSIFIED_TRACKING) {
+  if (net::ChannelClassifierUtils::IsTrackingClassificationFlag(
+          classificationFlags, NS_UsePrivateBrowsing(aTrackingChannel))) {
     ContentBlockingNotifier::OnEvent(
         aTrackingChannel, false,
         nsIWebProgressListener::STATE_COOKIES_LOADED_TRACKER, trackingOrigin);
