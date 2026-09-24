@@ -265,7 +265,7 @@ def make_add_instruction(filename, manifest):
 def check_for_add_if_not_update(filename):
     basename = os.path.basename(filename)
     return (
-        basename in {"channel-prefs.js", "update-settings.ini"}
+        basename in {"channel-prefs.js", "update-settings.ini", "distribution.ini"}
         or re.search(r"(^|/)ChannelPrefs\.framework/", filename)
         or re.search(r"(^|/)UpdateSettings\.framework/", filename)
     )
@@ -510,7 +510,10 @@ def make_partial(
         new_file_abs = os.path.join(to_mar_dir, newfile_rel)
         if newfile_rel not in oldfiles:
             patch_file = os.path.join(partials_dir, newfile_rel)
-            make_add_instruction(newfile_rel, manifest_file)
+            if check_for_add_if_not_update(newfile_rel):
+                make_add_if_not_instruction(newfile_rel, manifest_file)
+            else:
+                make_add_instruction(newfile_rel, manifest_file)
             archivefiles.append(newfile_rel)
             shutil.copy2(new_file_abs, patch_file)
 
