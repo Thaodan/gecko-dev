@@ -10237,7 +10237,11 @@ Maybe<BigBuffer> nsContentUtils::GetSurfaceData(DataSourceSurface& aSurface,
     return Nothing();
   }
 
-  BigBuffer surfaceData(maxBufLen);
+  BigBuffer surfaceData = BigBuffer::TryAlloc(maxBufLen);
+  if (surfaceData.Size() != maxBufLen) {
+    aSurface.Unmap();
+    return Nothing();
+  }
   memcpy(surfaceData.Data(), map.mData, bufLen);
   memset(surfaceData.Data() + bufLen, 0, maxBufLen - bufLen);
 
