@@ -323,7 +323,6 @@ tasks:
             config:
                 - builds/releng_base_android_64_builds.py
             custom-build-variant-cfg: x86_64-profile-generate
-            mozconfig-variant: profile-generate
             tooltool-downloads: internal
         fetches:
             toolchain:
@@ -380,7 +379,6 @@ tasks:
             config:
                 - builds/releng_base_android_64_builds.py
             custom-build-variant-cfg: aarch64-profile-generate
-            mozconfig-variant: profile-generate
             tooltool-downloads: internal
         fetches:
             toolchain:
@@ -437,7 +435,6 @@ tasks:
             config:
                 - builds/releng_base_android_64_builds.py
             custom-build-variant-cfg: aarch64-profile-generate
-            mozconfig-variant: profile-generate
             tooltool-downloads: internal
             extra-config:
                 extra_mozconfig_content:
@@ -497,7 +494,6 @@ tasks:
             config:
                 - builds/releng_base_android_64_builds.py
             custom-build-variant-cfg: arm-profile-generate
-            mozconfig-variant: profile-generate
             tooltool-downloads: internal
         fetches:
             toolchain:

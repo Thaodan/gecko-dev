@@ -559,9 +559,6 @@ items from that key's value."
         # let's evoke the base query_env and make a copy of it
         # as we don't always want every key below added to the same dict
         env = copy.deepcopy(super().query_env(**kwargs))
-        env["MOZCONFIG"] = os.path.join(
-            self.query_abs_dirs()["abs_src_dir"], ".mozconfig"
-        )
 
         if self.query_is_nightly():
             # taskcluster sets the update channel for shipping builds
@@ -595,10 +592,12 @@ items from that key's value."
         """assign mozconfig."""
         dirs = self.query_abs_dirs()
 
-        src_mozconfig = os.environ.get("MOZCONFIG")
-        if not src_mozconfig:
-            self.fatal("MOZCONFIG is not set in the environment")
-        abs_mozconfig_path = os.path.join(dirs["abs_src_dir"], src_mozconfig)
+        try:
+            abs_mozconfig_path = get_mozconfig_path(
+                script=self, config=self.config, dirs=dirs
+            )
+        except MozconfigPathError as e:
+            self.fatal(e.msg)
 
         self.info(f"Use mozconfig: {abs_mozconfig_path}")
 

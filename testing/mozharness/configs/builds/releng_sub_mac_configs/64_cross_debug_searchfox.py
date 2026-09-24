@@ -24,4 +24,5 @@ config = {
         "PATH": "/tools/python/bin:/opt/local/bin:/usr/bin:"
         "/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/X11/bin",
     },
+    "mozconfig_variant": "debug-searchfox",
 }

@@ -3,5 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 config = {
+    "mozconfig_platform": "android-aarch64",
+    "mozconfig_variant": "debug-searchfox",
     "debug_build": True,
 }

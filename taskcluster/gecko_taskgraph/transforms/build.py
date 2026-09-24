@@ -22,22 +22,6 @@ logger = logging.getLogger(__name__)
 
 transforms = TransformSequence()
 
-FX_DESKTOP_BUILD_SCRIPT = "mozharness/scripts/fx_desktop_build.py"
-UNIFY_JOB_SCRIPT = "taskcluster/scripts/misc/unify.sh"
-MOZCONFIG_PLATFORMS = (
-    "android-aarch64",
-    "android-arm",
-    "android-x86_64",
-    "ios",
-    "ios-sim",
-    "linux64",
-    "macosx64",
-    "macosx64-aarch64",
-    "win32",
-    "win64",
-    "win64-aarch64",
-)
-
 
 @transforms.add
 def set_ccov_attribute(config, jobs):
@@ -133,15 +117,6 @@ def update_channel(config, jobs):
         yield job
 
 
-def mozconfig_platform(build_platform):
-    matches = [
-        platform
-        for platform in MOZCONFIG_PLATFORMS
-        if build_platform == platform or build_platform.startswith(platform + "-")
-    ]
-    return max(matches, key=len, default=None)
-
-
 @transforms.add
 def mozconfig(config, jobs):
     for job in jobs:
@@ -153,41 +128,15 @@ def mozconfig(config, jobs):
                 "release-type": config.params["release_type"],
             },
         )
-        run = job["run"]
-        variant = run.pop("mozconfig-variant", None)
-        if (
-            run.get("script") != FX_DESKTOP_BUILD_SCRIPT
-            or run.get("job-script") == UNIFY_JOB_SCRIPT
-        ):
-            yield job
-            continue
-
-        extra_config = run.get("extra-config", {})
-        src_mozconfig = extra_config.pop("src_mozconfig", None)
-        platform = extra_config.pop("mozconfig_platform", None)
-        app_name = extra_config.pop("app_name", None)
-        if src_mozconfig is None:
-            if platform is None:
-                platform = mozconfig_platform(job["name"].split("/")[0])
-            if platform is None:
-                raise Exception(
-                    f"{job['name']} needs mozconfig_platform in run.extra-config, "
-                    f"its platform is not one of {MOZCONFIG_PLATFORMS}"
-                )
-            if variant is None:
-                raise Exception(f"{job['name']} needs run.mozconfig-variant")
-            if app_name is None and run.get("config-paths"):
-                raise Exception(
-                    f"{job['name']} needs app_name in run.extra-config, "
-                    "the browser default does not apply with config-paths"
-                )
-            if app_name is None:
-                app_name = (
-                    "mobile/android" if platform.startswith("android-") else "browser"
-                )
-            src_mozconfig = f"{app_name}/config/mozconfigs/{platform}/{variant}"
-        job["worker"]["env"]["MOZCONFIG"] = src_mozconfig
+        mozconfig_variant = job["run"].pop("mozconfig-variant", None)
+        if mozconfig_variant:
+            job["run"].setdefault("extra-config", {})["mozconfig_variant"] = (
+                mozconfig_variant
+            )
         yield job
+
+
+UNIFY_JOB_SCRIPT = "taskcluster/scripts/misc/unify.sh"
 
 
 def _use_artifact(config):

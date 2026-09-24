@@ -57,7 +57,6 @@ tasks:
             script: "mozharness/scripts/fx_desktop_build.py"
             tooltool-downloads: public
             keep-artifacts: false
-            mozconfig-variant: opt-searchfox-clang
         fetches:
             toolchain:
                 - linux64-clang
@@ -89,7 +88,6 @@ tasks:
             script: "mozharness/scripts/fx_desktop_build.py"
             tooltool-downloads: public
             keep-artifacts: false
-            mozconfig-variant: debug-searchfox-clang
         fetches:
             toolchain:
                 - linux64-clang
@@ -119,7 +117,6 @@ tasks:
                 - builds/releng_base_mac_64_cross_builds.py
             script: "mozharness/scripts/fx_desktop_build.py"
             custom-build-variant-cfg: cross-debug-searchfox
-            mozconfig-variant: debug-searchfox
             keep-artifacts: false
         fetches:
             toolchain:
@@ -151,12 +148,10 @@ tasks:
                 - builds/releng_base_firefox.py
                 - builds/releng_base_mac_64_cross_builds.py
             extra-config:
-                mozconfig_platform: macosx64
                 extra_mozconfig_content:
                     - ac_add_options --target=aarch64-apple-darwin
             script: "mozharness/scripts/fx_desktop_build.py"
             custom-build-variant-cfg: cross-opt-searchfox
-            mozconfig-variant: opt-searchfox
             keep-artifacts: false
         fetches:
             toolchain:
@@ -189,12 +184,10 @@ tasks:
                 - builds/releng_base_firefox.py
                 - builds/releng_base_mac_64_cross_builds.py
             extra-config:
-                mozconfig_platform: macosx64
                 extra_mozconfig_content:
                     - ac_add_options --target=aarch64-apple-darwin
             script: "mozharness/scripts/fx_desktop_build.py"
             custom-build-variant-cfg: cross-debug-searchfox
-            mozconfig-variant: debug-searchfox
             keep-artifacts: false
         fetches:
             toolchain:
@@ -266,7 +259,6 @@ tasks:
                 - builds/taskcluster_sub_win64/searchfox_opt.py
             extra-config:
                 mozconfig_platform: win64
-            mozconfig-variant: opt-searchfox
         fetches:
             toolchain:
                 - linux64-7zz
@@ -310,7 +302,6 @@ tasks:
                 - builds/taskcluster_sub_win64/searchfox_debug.py
             extra-config:
                 mozconfig_platform: win64
-            mozconfig-variant: debug-searchfox
         fetches:
             toolchain:
                 - linux64-7zz
@@ -352,7 +343,6 @@ tasks:
                 - builds/releng_base_android_64_builds.py
             script: "mozharness/scripts/fx_desktop_build.py"
             custom-build-variant-cfg: aarch64-debug-searchfox
-            mozconfig-variant: debug-searchfox
             tooltool-downloads: internal
         fetches:
             toolchain:
