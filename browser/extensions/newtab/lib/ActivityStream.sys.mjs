@@ -1911,8 +1911,7 @@ export const PREFS_CONFIG = new Map([
     "widgets.recentSearches.enabled",
     {
       title: "Enables the recent searches widget",
-      // Off everywhere. To release organically: add locale-config to firefox.js, switch to marketGate.
-      value: false,
+      value: true,
     },
   ],
   [
@@ -1950,7 +1949,6 @@ export const PREFS_CONFIG = new Map([
     "widgets.system.recentSearches.enabled",
     {
       title: "Enables the recent searches widget experiment in Nimbus",
-      // Off everywhere. To release organically: add locale-config to firefox.js, switch to marketGate.
       value: false,
     },
   ],
