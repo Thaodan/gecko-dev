@@ -31,64 +31,17 @@ pub struct PreflightResponse {
     pub normalized_ua: String,
 }
 
-impl TryFrom<PreflightResponse> for Headers {
-    type Error = viaduct::ViaductError;
-
-    fn try_from(preflight: PreflightResponse) -> Result<Self, Self::Error> {
+impl From<PreflightResponse> for Headers {
+    fn from(preflight: PreflightResponse) -> Self {
         let mut headers = Headers::new();
-        headers.insert("X-Geo-Location", preflight.geo_location)?;
+        headers
+            .insert("X-Geo-Location", preflight.geo_location)
+            .expect("valid header");
         if !preflight.normalized_ua.is_empty() {
-            headers.insert("X-User-Agent", preflight.normalized_ua)?;
+            headers
+                .insert("X-User-Agent", preflight.normalized_ua)
+                .expect("valid header");
         }
-        Ok(headers)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn headers_carry_geo_location_and_normalized_ua() {
-        let headers = Headers::try_from(PreflightResponse {
-            geo_location: "US-CA".to_string(),
-            normalized_ua: "Firefox/140.0".to_string(),
-        })
-        .unwrap();
-
-        assert_eq!(headers.get("X-Geo-Location"), Some("US-CA"));
-        assert_eq!(headers.get("X-User-Agent"), Some("Firefox/140.0"));
-    }
-
-    #[test]
-    fn empty_normalized_ua_is_omitted() {
-        let headers = Headers::try_from(PreflightResponse {
-            geo_location: "US-CA".to_string(),
-            normalized_ua: String::new(),
-        })
-        .unwrap();
-
-        assert_eq!(headers.get("X-Geo-Location"), Some("US-CA"));
-        assert_eq!(headers.get("X-User-Agent"), None);
-    }
-
-    #[test]
-    fn non_ascii_geo_location_is_an_error_not_a_panic() {
-        let result = Headers::try_from(PreflightResponse {
-            geo_location: "Zürich".to_string(),
-            normalized_ua: String::new(),
-        });
-
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn header_injection_in_normalized_ua_is_an_error_not_a_panic() {
-        let result = Headers::try_from(PreflightResponse {
-            geo_location: "US-CA".to_string(),
-            normalized_ua: "Firefox/140.0\r\nX-Injected: yes".to_string(),
-        });
-
-        assert!(result.is_err());
+        headers
     }
 }

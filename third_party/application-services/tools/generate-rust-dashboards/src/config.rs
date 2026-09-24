@@ -69,12 +69,6 @@ pub struct CounterMetric {
     pub metric: &'static str,
     // Which applications report this metric
     pub applications: Vec<Application>,
-    pub options: CounterOptions,
-}
-
-#[derive(Default)]
-pub struct CounterOptions {
-    pub unique_user_counts: bool,
 }
 
 /// Glean labeled counter
@@ -91,15 +85,6 @@ pub struct LabeledCounterMetric {
     pub metric: &'static str,
     // Which applications report this metric
     pub applications: Vec<Application>,
-    pub options: LabeledCounterOptions,
-}
-
-#[derive(Default)]
-pub struct LabeledCounterOptions {
-    pub unique_user_counts: bool,
-    // List of all possible labels.  Listing these can result in a nicer color scheme, especially
-    // when `unique_user_counts` is set.
-    pub labels: Option<Vec<String>>,
 }
 
 /// Glean timing/memory distribution
@@ -184,12 +169,6 @@ pub struct EventsMetric {
     pub metrics: Vec<&'static str>,
     // Which applications report this metric
     pub applications: Vec<Application>,
-    pub options: EventsOptions,
-}
-
-#[derive(Default)]
-pub struct EventsOptions {
-    pub unique_user_counts: bool,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]

@@ -27,24 +27,15 @@ pub fn add_to_dashboard(
 }
 
 fn count_panel(application: Application, channel: ReleaseChannel, metric: &CounterMetric) -> Panel {
-    // Note: some of this code is untested since we've never had any counter metrics used in
-    // practice
-
     let CounterMetric {
         ping,
         category,
         metric,
-        options,
         ..
-    } = metric;
-
-    let mut select = vec!["TIMESTAMP(submission_date) as time".into(), "count".into()];
-    if options.unique_user_counts {
-        select.push("client_count".into());
-    }
+    } = *metric;
 
     let query = Query {
-        select,
+        select: vec!["TIMESTAMP(submission_date) as time".into(), "count".into()],
         from: format!("`mozdata.rust_components.{ping}_{category}_{metric}`"),
         where_: vec![
             "$__timeFilter(TIMESTAMP(submission_date))".into(),
@@ -70,7 +61,6 @@ fn count_panel(application: Application, channel: ReleaseChannel, metric: &Count
                 },
                 unit: None,
             },
-            ..FieldConfig::default()
         },
         transformations: vec![],
         ..TimeSeriesPanel::default()

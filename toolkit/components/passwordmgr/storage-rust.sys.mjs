@@ -27,16 +27,10 @@ import {
   LoginMeta,
   LoginEntryWithMeta,
   BulkResultEntry,
-  createLoginStoreWithNssKeymanager,
-} from "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustLogins.sys.mjs";
-
-// AuthenticationCanceled must come from db_crypto, not logins: it is the error
-// PrimaryPasswordAuthenticator declares, and the two namespaces export unrelated
-// classes under that name.
-import {
   PrimaryPasswordAuthenticator,
+  createLoginStoreWithNssKeymanager,
   AuthenticationCanceled,
-} from "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustDbCrypto.sys.mjs";
+} from "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustLogins.sys.mjs";
 
 const LoginInfo = Components.Constructor(
   "@mozilla.org/login-manager/loginInfo;1",

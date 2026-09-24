@@ -5,12 +5,10 @@
 use crate::{
     config::{Application, EventsMetric, ReleaseChannel, TeamConfig},
     schema::{
-        DashboardBuilder, Datasource, FieldConfig, FieldConfigCustom, FieldConfigDefaults,
-        FieldConfigOverride, FieldConfigOverrideMatcher, GridPos, Panel, Target, TimeSeriesPanel,
-        Transformation,
+        DashboardBuilder, Datasource, FieldConfig, FieldConfigCustom, FieldConfigDefaults, GridPos,
+        Panel, Target, TimeSeriesPanel, Transformation,
     },
     sql::{Query, Union},
-    util::dashboard_count_color,
     Result,
 };
 
@@ -33,13 +31,17 @@ fn count_panel(application: Application, channel: ReleaseChannel, metric: &Event
         ping,
         category,
         metrics,
-        options,
         ..
     } = metric;
 
     let mut query = Union::default();
     for metric in metrics {
-        let base_query = Query {
+        query.queries.push(Query {
+            select: vec![
+                "TIMESTAMP(submission_date) as time".into(),
+                format!("'{metric}' as label"),
+                "SUM(count) as count".into(),
+            ],
             from: format!("`mozdata.rust_components.{ping}_{category}_{metric}`"),
             where_: vec![
                 "$__timeFilter(TIMESTAMP(submission_date))".into(),
@@ -48,48 +50,9 @@ fn count_panel(application: Application, channel: ReleaseChannel, metric: &Event
             ],
             group_by: Some("1, 2".into()),
             ..Query::default()
-        };
-
-        query.queries.push(Query {
-            select: vec![
-                "TIMESTAMP(submission_date) as time".into(),
-                format!("'{metric}' as label"),
-                "SUM(count) as count".into(),
-            ],
-            ..base_query.clone()
         });
-        if options.unique_user_counts {
-            query.queries.push(Query {
-                select: vec![
-                    "TIMESTAMP(submission_date) as time".into(),
-                    format!("'{metric} (daily unique users)' as label"),
-                    "SUM(client_count) as client_count".into(),
-                ],
-                ..base_query.clone()
-            });
-        }
     }
     query.order_by = Some("submission_date asc".into());
-
-    let mut color_overrides = vec![];
-    for (i, metric) in metrics.iter().enumerate() {
-        color_overrides.push(FieldConfigOverride {
-            matcher: FieldConfigOverrideMatcher {
-                id: "byName".into(),
-                options: metric.to_string(),
-            },
-            properties: vec![dashboard_count_color(i, false)],
-        });
-        if options.unique_user_counts {
-            color_overrides.push(FieldConfigOverride {
-                matcher: FieldConfigOverrideMatcher {
-                    id: "byName".into(),
-                    options: format!("{metric} (daily unique users)"),
-                },
-                properties: vec![dashboard_count_color(i, true)],
-            });
-        }
-    }
 
     TimeSeriesPanel {
         title: application.display_name(channel),
@@ -106,7 +69,6 @@ fn count_panel(application: Application, channel: ReleaseChannel, metric: &Event
                 },
                 unit: None,
             },
-            overrides: color_overrides,
         },
         transformations: vec![
             Transformation::PartitionByValues {

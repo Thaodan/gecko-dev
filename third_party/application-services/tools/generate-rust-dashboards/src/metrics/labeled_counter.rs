@@ -5,12 +5,10 @@
 use crate::{
     config::{Application, LabeledCounterMetric, ReleaseChannel, TeamConfig},
     schema::{
-        DashboardBuilder, Datasource, FieldConfig, FieldConfigCustom, FieldConfigDefaults,
-        FieldConfigOverride, FieldConfigOverrideMatcher, GridPos, Panel, Target, TimeSeriesPanel,
-        Transformation,
+        DashboardBuilder, Datasource, FieldConfig, FieldConfigCustom, FieldConfigDefaults, GridPos,
+        Panel, Target, TimeSeriesPanel, Transformation,
     },
-    sql::{Query, Union},
-    util::dashboard_count_color,
+    sql::Query,
     Result,
 };
 
@@ -33,18 +31,14 @@ fn count_panel(
     channel: ReleaseChannel,
     metric: &LabeledCounterMetric,
 ) -> Panel {
-    // Note: some of this code is untested since we don't have any counters in use right now
-
     let LabeledCounterMetric {
         ping,
         category,
         metric,
-        options,
         ..
-    } = metric;
+    } = *metric;
 
-    let mut union = Union::default();
-    let base_query = Query {
+    let query = Query {
         select: vec![
             "TIMESTAMP(submission_date) as time".into(),
             "label".into(),
@@ -61,55 +55,12 @@ fn count_panel(
         ..Query::default()
     };
 
-    union.queries.push(Query {
-        select: vec![
-            "TIMESTAMP(submission_date) as time".into(),
-            "label".into(),
-            "count".into(),
-        ],
-        ..base_query.clone()
-    });
-
-    if options.unique_user_counts {
-        union.queries.push(Query {
-            select: vec![
-                "TIMESTAMP(submission_date) as time".into(),
-                "CONCAT(label, ' (daily unique users)')".into(),
-                "client_count AS count".into(),
-            ],
-            ..base_query.clone()
-        });
-    }
-
-    let mut color_overrides = vec![];
-
-    if let Some(labels) = options.labels.as_ref() {
-        for (i, label) in labels.iter().enumerate() {
-            color_overrides.push(FieldConfigOverride {
-                matcher: FieldConfigOverrideMatcher {
-                    id: "byName".into(),
-                    options: label.to_string(),
-                },
-                properties: vec![dashboard_count_color(i, false)],
-            });
-            if options.unique_user_counts {
-                color_overrides.push(FieldConfigOverride {
-                    matcher: FieldConfigOverrideMatcher {
-                        id: "byName".into(),
-                        options: format!("{label} (daily unique users)"),
-                    },
-                    properties: vec![dashboard_count_color(i, true)],
-                });
-            }
-        }
-    }
-
     TimeSeriesPanel {
         title: application.display_name(channel),
         grid_pos: GridPos::height(8),
         datasource: Datasource::bigquery(),
         interval: "1d".into(),
-        targets: vec![Target::table(union.sql())],
+        targets: vec![Target::table(query.sql())],
         field_config: FieldConfig {
             defaults: FieldConfigDefaults {
                 links: vec![],
@@ -119,19 +70,11 @@ fn count_panel(
                 },
                 unit: None,
             },
-            ..FieldConfig::default()
         },
-        transformations: vec![
-            Transformation::PartitionByValues {
-                fields: vec!["label".into()],
-                keep_fields: true,
-            },
-            // Fixup the field names for better legend labels
-            Transformation::RenameByRegex {
-                regex: "count (.*)".into(),
-                rename_pattern: "$1".into(),
-            },
-        ],
+        transformations: vec![Transformation::PartitionByValues {
+            fields: vec!["label".into()],
+            keep_fields: true,
+        }],
         ..TimeSeriesPanel::default()
     }
     .into()

@@ -7,9 +7,7 @@ mod send_tab;
 
 use clap::{Parser, Subcommand, ValueEnum};
 use cli_support::fxa_creds::{self, CliFxa, WELL_KNOWN_SCOPES};
-use fxa_client::{
-    DeviceCapability, DeviceConfig, DeviceType, FxaConfig, FxaEvent, FxaServer, FxaState,
-};
+use fxa_client::{FxaConfig, FxaServer};
 
 static CLIENT_ID: &str = "a2270f727f45f648";
 
@@ -77,8 +75,6 @@ enum Command {
     /// List the clients attached to the account (uses session-token auth).
     AttachedClients,
     Disconnect,
-    /// Force the user into the FxaState::AuthIssues state
-    ForceAuthIssues,
 }
 
 fn main() -> Result<()> {
@@ -96,12 +92,7 @@ fn main() -> Result<()> {
             println!("The account state managed by this utility can be used by many app-services demos and examples.");
             println!("Run with `help` or `--help` for more");
             print_status(&fxa);
-
-            // Even though we are ostensibly just printing the status, sometimes the process of just
-            // initializing can change the state. This happens, for example, if we are in the
-            // `AuthIssues` state and the timer has expired to re-check the auth, which is
-            // successful this time.
-            return fxa.persist();
+            return Ok(());
         }
         Some(Command::Login { scopes }) => {
             let scope_refs: Vec<&str> = if scopes.is_empty() {
@@ -143,10 +134,6 @@ fn main() -> Result<()> {
                     account.disconnect();
                 }
                 Command::Login { .. } => unreachable!(),
-                Command::ForceAuthIssues => {
-                    account.reset_auth_recheck_timer();
-                    account.on_auth_issues();
-                }
             }
         }
     }
@@ -177,29 +164,13 @@ impl Cli {
 fn print_status(fxa: &CliFxa) {
     match fxa.account() {
         None => println!("Not logged in"),
-        Some(account) => {
-            let mut state: FxaState = account.get_state();
-            if state == FxaState::Uninitialized {
-                state = account
-                    .process_event(FxaEvent::Initialize {
-                        device_config: DeviceConfig {
-                            name: "test-device".to_owned(),
-                            device_type: DeviceType::Mobile,
-                            capabilities: vec![DeviceCapability::SendTab],
-                        },
-                    })
-                    .unwrap();
+        Some(account) => match account.check_authorization_status() {
+            Ok(status) if status.active => {
+                println!("Account is logged in and authorized by the server")
             }
-            println!("Account currently in state: {state}");
-
-            match account.check_authorization_status() {
-                Ok(status) if status.active => {
-                    println!("Account is logged in and authorized by the server")
-                }
-                Ok(_) => println!("Account is logged in but not authorized by the server"),
-                Err(e) => println!("Account logged in but account status failed: {e}"),
-            }
-        }
+            Ok(_) => println!("Account is logged in but not authorized by the server"),
+            Err(e) => println!("Account logged in but account status failed: {e}"),
+        },
     }
 }
 

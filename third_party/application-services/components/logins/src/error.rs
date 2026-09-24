@@ -10,7 +10,6 @@ pub type ApiResult<T> = std::result::Result<T, LoginsApiError>;
 pub use error_support::{breadcrumb, handle_error, report_error};
 pub use error_support::{debug, error, info, trace, warn};
 
-use db_crypto::DbCryptoApiError;
 use error_support::{ErrorHandling, GetErrorHandling};
 use jwcrypto::JwCryptoError;
 
@@ -97,10 +96,7 @@ pub enum Error {
     InvalidPath(OsString),
 
     #[error("CryptoError({0})")]
-    CryptoError(#[from] DbCryptoApiError),
-
-    #[error("JwCryptoError({0})")]
-    JwCryptoError(#[from] JwCryptoError),
+    CryptoError(#[from] JwCryptoError),
 
     #[error("{0}")]
     Interrupted(#[from] interrupt_support::Interrupted),

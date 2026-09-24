@@ -10,7 +10,6 @@ pub use as_ohttp_client;
 pub use autofill;
 pub use context_id;
 pub use crashtest;
-pub use db_crypto;
 pub use error_support;
 pub use fxa_client;
 pub use init_rust_components;

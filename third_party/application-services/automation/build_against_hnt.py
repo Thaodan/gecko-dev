@@ -4,29 +4,29 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 # Purpose: Run Firefox desktop / HNT (Home & New Tab) tests against this application-services working tree.
-# https://mozilla.github.io/application-services/book/howtos/vendoring-into-mozilla-central.html
+# https://github.com/mozilla/application-services/blob/main/docs/howtos/locally-published-components-in-hnt.md
 #
 # Requirements:
 # - python
 # - application-services built and working.
 # - a `firefox`/`mozilla-central` repository set up and working to use.
 #               - See: https://firefox-source-docs.mozilla.org/contributing/contribution_quickref.html
-# Example: ./automation/build_against_desktop.py --action build-without-testing --firefox-dir ../firefox --verbose --as-commit [COMMIT-HASH]
+# Usage: ./automation/build_against_hnt.py --action build-without-testing --firefox-dir ../firefox --verbose
 # and arg to clean up only?
 # Arguments:
 #       --action            => Can be either `run-tests` (default) or `build-without-testing`, or `run` (which runs it locally with `./mach run`)
 #       --firefox-dir       => Working mozilla-central directory
 #                              https://firefox-source-docs.mozilla.org/contributing/contribution_quickref.html
-#       --as-commit         => Commit to the `application-services` repository.
 #       --mozconfig         => Absolute path to the mozconfig file to be used.
 #       --verbose           => Includes the stdout of subprocesses (like the xcodebuild output, or other bootstrapping scripts)
 #       --clean-up          => Whether to perform the on-success cleanup step at the end of a successful build (default is True). This clean-up step happens either way on an error or graceful exit (such as with `--action run`).
-#       --test-name         => Test name to run with `./mach test`. If `run-tests` is attached, but no `--test-name` is provided, the default command will be `./mach test --auto` where appropriate tests will be guessed.
-#       --ignore-modified   => Whether to run the vendoring step with `--ignore-modified` (eg: to allow running the command multiple times, vendoring multiple times, etc.) 
+#       --hnt-test          => Test name to run with `./mach test`. If `run-tests` is attached, but no `--test` is provided, the default command will be `./mach test --auto` where appropriate tests will be guessed.
 import argparse
 import subprocess
 import os
+import signal
 import tempfile
+import sys
 from pathlib import Path
 from shared import (
     find_app_services_root,
@@ -43,13 +43,83 @@ ac_add_options --enable-project=browser
 MOZILLA_FF_GRADLE_PROPERTIES_PATH = "gradle.properties"
 COMPONENTS_FOLDER_AS_SUBPATH = "components"
 COMPONENTS_FOLDER_MC_SUBPATH = "third_party/application-services/components"
+COMPONENTS_FOLDER_MC_SUBPATH_TMP = "third_party/application-services/components_tmp"
 
-def build_against_desktop(
+
+# Catch sigint escape (for example, for long running tests) to still safely clean up the m-z directory
+def safe_exit(firefox_repo_path):
+    step_msg("Exit signal caught, gracefully exiting...")
+    clean_up_func(firefox_repo_path)
+    step_msg("Exiting...")
+    sys.exit(0)
+
+
+# Clean up symlinks/modified files that need to revert to their previous state
+# Running this doesn't indicate something went wrong
+def clean_up_func(firefox_repo_path):
+    symlink_src = firefox_repo_path / COMPONENTS_FOLDER_MC_SUBPATH
+    components_tmp_dir = firefox_repo_path / COMPONENTS_FOLDER_MC_SUBPATH_TMP
+    step_msg("Cleaning up, restoring symlinks...")
+
+    # Test to see if we were interrupted/ended after making the symlink
+    try:
+        if os.path.islink(symlink_src) and os.path.isdir(components_tmp_dir):
+            os.unlink(symlink_src)
+        # if symlink does not exist (or no longer does) but components was moved, move it back
+        if os.path.isdir(components_tmp_dir):
+            os.rename(components_tmp_dir, symlink_src)
+    except OSError:
+        err_msg(
+            "Failed to restore the m-c state. Please remove the symlink and return the 'components' directory to it's intended spot."
+        )
+        return False
+    return True
+
+
+# External function handle cleanup on failure
+def build_against_hnt(
     firefox_dir,
-    as_commit,
     moz_config_location,
-    test_name,
-    ignore_modified,
+    clean_up,
+    hnt_test,
+    verbose,
+    action,
+):
+    # Run cleanup at start
+    firefox_repo_path = Path(firefox_dir)
+    clean_up_func(firefox_repo_path)
+
+    # Catch sigint for graceful exit
+    signal.signal(signal.SIGINT, lambda _s, _h: safe_exit(firefox_repo_path))
+    step_msg("Registered sigint trap...")
+
+    success = build_against_hnt_inner(
+        firefox_dir,
+        moz_config_location,
+        hnt_test,
+        verbose,
+        action,
+    )
+    
+    if success:
+        step_msg("Finished running against HNT.")
+    else:
+        err_msg("Building against HNT failed.")
+
+    if clean_up:
+        step_msg("Cleaning up...")
+        clean_up_func(firefox_repo_path)
+    else:
+        step_msg(
+            "Skipping cleanup step. Rerunning the command will cleanup before recompiling."
+        )
+
+    return success
+
+def build_against_hnt_inner(
+    firefox_dir,
+    moz_config_location,
+    hnt_test,
     verbose,
     action,
 ):
@@ -60,7 +130,7 @@ def build_against_desktop(
         action = "run-tests"
 
     firefox_repo_path = Path(firefox_dir)
-    tmp_dir_path = Path(tempfile.mkdtemp(suffix="-test-desktop"))
+    tmp_dir_path = Path(tempfile.mkdtemp(suffix="-test-hnt"))
 
     app_services_path = find_app_services_root()
 
@@ -115,28 +185,17 @@ def build_against_desktop(
         )
         return False
 
-    # The vendoring step
-    step_msg("Vendoring commit: `{as_commit}`...")
-    ignore_modified_str = "--ignore-modified" if ignore_modified else ""
-    if not run_cmd_is_successful(
-        f"./mach vendor third_party/application-services/moz.yaml --force {ignore_modified_str} -r {as_commit}",
-        cwd=firefox_repo_path,
-        shell=True,
-        stdout=subprocess_stdout,
-    ):
-        err_msg("Failed to vendor commit `{as_commit} with `./mach vendor third_party/application-services/moz.yaml --force -r {as_commit}`")
-        err_msg("If this is because of uncommitted changes, either revert the vendor or pass `--ignore-modified`.")
-        return False
+    # The following steps *modify* a couple key parts of the m-c directory.
+    symlink_dest = app_services_path / COMPONENTS_FOLDER_AS_SUBPATH
+    symlink_src = firefox_repo_path / COMPONENTS_FOLDER_MC_SUBPATH
+    components_tmp_dir = firefox_repo_path / COMPONENTS_FOLDER_MC_SUBPATH_TMP
+    step_msg(f"Creating symlink in {firefox_repo_path} to link to local appservices")
 
-    step_msg("Updating vendored dependencies rust...")
-    if not run_cmd_is_successful(
-        "./mach vendor rust --ignore-modified",
-        cwd=firefox_repo_path,
-        shell=True,
-        stdout=subprocess_stdout,
-    ):
-        err_msg("Failed to vendor dependencies with `./mach vendor rust`")
-        return False
+    # First, move /components folder in m-c to a temporary backup.
+    os.rename(symlink_src, components_tmp_dir)
+
+    # Then, create a symlink between the app-services/components and m-c/third_party/app-services folder.
+    os.symlink(symlink_dest, symlink_src)
 
     # We are pointing to a new area as if we vendored, so we regenerate.
     step_msg("Regenerating uniffi bindings (mozconfig=`{moz_config_location}`)...")
@@ -165,7 +224,7 @@ def build_against_desktop(
         step_msg(
             f"Compiling firefox with mozconfig with `./mach test` (mozconfig=`{moz_config_location}`)..."
         )
-        test_string = test_name if test_name is not None else "--auto"
+        test_string = hnt_test if hnt_test is not None else "--auto"
         step_msg(f"Running test command `./mach test {test_string}`")
         if not run_cmd_is_successful(
             f"MOZCONFIG={moz_config_location} ./mach test {test_string}",
@@ -213,32 +272,26 @@ if __name__ == "__main__":
         help="Path to existing bootstrapped `mozilla-central` directory.",
     )
     parser.add_argument(
-        "--as-commit",
-        required=True,
-        help="`application-services` commit to vendor into firefox.",
-    )
-    parser.add_argument(
         "--mozconfig",
         help="Absolute path to the desired mozconfig file. This affects the build destination, ensure it specifies android if you override it.",
     )
     parser.add_argument(
-        "--test-name",
+        "--hnt-test",
         help="Name of the test file to run, as if you were running `./mach test ARG`.",
     )
 
     parser.add_argument(
-        "--ignore-modified",
-        help="Whether to run the vendoring step with `--ignore-modified` (eg: to allow running the command multiple times, vendoring multiple times, etc.)",
+        "--clean-up",
+        help="Skip the on-success cleanup step done at the end of a successful build. This does not skip the cleanup step if there is an error or graceful exit (such as with `--action run`).",
         action=argparse.BooleanOptionalAction,
         default=True,
     )
 
     args = parser.parse_args()
     firefox_dir = args.firefox_dir
-    as_commit = args.as_commit
     verbose = args.verbose
     moz_config_location = args.mozconfig
     action = args.action
-    test_name = args.test_name
-    ignore_modified = args.ignore_modified
-    build_against_desktop(firefox_dir, as_commit, moz_config_location, test_name, ignore_modified, verbose, action)
+    clean_up = args.clean_up
+    hnt_test = args.hnt_test
+    build_against_hnt(firefox_dir, moz_config_location, clean_up, hnt_test, verbose, action)

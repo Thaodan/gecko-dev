@@ -2,13 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::fmt;
-
-use crate::{
-    config::Application::{self, *},
-    schema::FieldConfigOverrideProperty,
-    util::dashboard_count_color,
-};
+use crate::config::{Application, Application::*};
 
 /// Enumeration containing all Rust components.
 /// When adding new variants, make sure to also update the impl block below
@@ -20,17 +14,6 @@ pub enum Component {
     Places,
     RemoteSettings,
     Suggest,
-    Tabs,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum SyncEngine {
-    Addresses,
-    Bookmarks,
-    CreditCards,
-    History,
-    Logins,
-    RustLogins,
     Tabs,
 }
 
@@ -82,46 +65,15 @@ impl Component {
     /// These represent 2 things:
     ///   - The Glean pings for the component without the `-sync` suffix.
     ///   - The `engine.name` value for the legacy `telemetry.sync` table.
-    pub fn sync_engines(&self) -> &[SyncEngine] {
+    pub fn sync_engines(&self) -> &[&'static str] {
         match self {
-            Self::Autofill => &[SyncEngine::Addresses, SyncEngine::CreditCards],
+            Self::Autofill => &["addresses", "creditcards"],
             Self::Fxa => &[],
-            Self::Logins => &[SyncEngine::Logins, SyncEngine::RustLogins],
-            Self::Places => &[SyncEngine::Bookmarks, SyncEngine::History],
+            Self::Logins => &["logins", "rust-logins"],
+            Self::Places => &["bookmarks", "history"],
             Self::RemoteSettings => &[],
             Self::Suggest => &[],
-            Self::Tabs => &[SyncEngine::Tabs],
-        }
-    }
-}
-
-impl SyncEngine {
-    pub fn dashboard_color(&self) -> FieldConfigOverrideProperty {
-        // Dashboard color for this engine.
-        //
-        // This method helps keep colors consistent across all panels (SYNC-5459)
-        match self {
-            Self::Addresses => dashboard_count_color(0, false),
-            Self::Bookmarks => dashboard_count_color(1, false),
-            Self::CreditCards => dashboard_count_color(2, false),
-            Self::History => dashboard_count_color(3, false),
-            Self::Logins => dashboard_count_color(4, false),
-            Self::RustLogins => dashboard_count_color(5, false),
-            Self::Tabs => dashboard_count_color(6, false),
-        }
-    }
-}
-
-impl fmt::Display for SyncEngine {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Addresses => write!(f, "addresses"),
-            Self::Bookmarks => write!(f, "bookmarks"),
-            Self::CreditCards => write!(f, "creditcards"),
-            Self::History => write!(f, "history"),
-            Self::Logins => write!(f, "logins"),
-            Self::RustLogins => write!(f, "rust-logins"),
-            Self::Tabs => write!(f, "tabs"),
+            Self::Tabs => &["tabs"],
         }
     }
 }

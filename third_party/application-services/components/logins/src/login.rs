@@ -281,8 +281,7 @@
 //! - `Login::fixup()`:   Returns either the existing login if it is valid, a clone with invalid fields
 //!   fixed up if it was safe to do so, or an error if the login is irreparably invalid.
 
-use crate::{error::*, util::sanitize_timestamp};
-use db_crypto::EncryptorDecryptor;
+use crate::{encryption::EncryptorDecryptor, error::*, util::sanitize_timestamp};
 use rusqlite::Row;
 use serde_derive::*;
 use sync_guid::Guid;
@@ -987,11 +986,10 @@ impl ValidateAndFixup for LoginEntry {
     }
 }
 
-#[cfg(not(feature = "keydb"))]
 #[cfg(test)]
 pub mod test_utils {
     use super::*;
-    use crate::test_utils::encrypt_struct;
+    use crate::encryption::test_utils::encrypt_struct;
 
     // Factory function to make a new login
     //

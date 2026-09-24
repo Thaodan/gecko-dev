@@ -22,7 +22,7 @@
 import argparse
 import time
 from shared import err_msg, step_msg
-from build_against_desktop import build_against_desktop
+from build_against_hnt import build_against_hnt
 from build_against_fenix import build_against_fenix
 from build_against_ios import build_against_ios
 
@@ -76,22 +76,12 @@ parser.add_argument(
     default="Smoketest",
 )
 
-# Desktop argument to pass down
+# HNT argument to pass down
 parser.add_argument(
-    "--desktop-test",
+    "--hnt-test",
     help="Name of the test file to run, as if you were running `./mach test ARG`.",
 )
-parser.add_argument(
-    "--as-commit",
-    required=True,
-    help="`application-services` commit to vendor into firefox.",
-)
-parser.add_argument(
-    "--ignore-modified",
-    help="Whether to run the vendoring step with `--ignore-modified` (eg: to allow running the command multiple times, vendoring multiple times, etc.)",
-    action=argparse.BooleanOptionalAction,
-    default=True,
-)
+
 
 # Fenix arguments to pass down
 parser.add_argument(
@@ -99,6 +89,7 @@ parser.add_argument(
     help="Prefix name to pass to mozilla-central gradlew compilation to reduce the amount needing to build or test. For example: `geckoview`, `fenix`, `focus`.",
     default="fenix",
 )
+
 
 args = parser.parse_args()
 firefox_dir = args.firefox_dir
@@ -111,9 +102,7 @@ remote_ios_repo_url = args.remote_ios_repo_url
 ios_scheme = args.ios_scheme
 ios_test_plan = args.ios_test_plan
 
-as_commit = args.as_commit
-desktop_test = args.desktop_test
-ignore_modified = args.ignore_modified
+hnt_test = args.hnt_test
 
 prefix_ff = args.prefix_ff
 
@@ -145,9 +134,9 @@ success_fenix = build_against_fenix(
 time_diff_fenix = time.time() - start_time_fenix
 
 # Build against Desktop
-start_time_desktop = time.time()
-success_desktop = build_against_desktop(firefox_dir, as_commit=as_commit, moz_config_location=None, test_name=desktop_test, ignore_modified=ignore_modified, verbose=verbose, action=action)
-time_diff_desktop = time.time() - start_time_desktop
+start_time_hnt = time.time()
+success_hnt = build_against_hnt(firefox_dir, None, True, hnt_test=hnt_test, verbose=verbose, action=action)
+time_diff_hnt = time.time() - start_time_hnt
 
 did_tests_string = "" if action != "run-tests" else " (and tested)"
 do_tests_string = "" if action != "run-tests" else " (and test)"
@@ -168,11 +157,11 @@ else:
     err_msg(
         f"Failed to build{do_tests_string} against Fenix (elapsed {time_diff_fenix:.2f}s)"
     )
-if success_desktop:
+if success_hnt:
     step_msg(
-        f"Successfully built{did_tests_string} against HNT (elapsed {time_diff_desktop:.2f}s)"
+        f"Successfully built{did_tests_string} against HNT (elapsed {time_diff_hnt:.2f}s)"
     )
 else:
     err_msg(
-        f"Failed to build{do_tests_string} against HNT (elapsed {time_diff_desktop:.2f}s)"
+        f"Failed to build{do_tests_string} against HNT (elapsed {time_diff_hnt:.2f}s)"
     )

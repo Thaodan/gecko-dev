@@ -758,7 +758,13 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_places_checksum_method_placesconnection_query_history_metadata(
     ): Int
-    external fun uniffi_places_checksum_method_placesconnection_run_maintenance(
+    external fun uniffi_places_checksum_method_placesconnection_run_maintenance_checkpoint(
+    ): Int
+    external fun uniffi_places_checksum_method_placesconnection_run_maintenance_optimize(
+    ): Int
+    external fun uniffi_places_checksum_method_placesconnection_run_maintenance_prune(
+    ): Int
+    external fun uniffi_places_checksum_method_placesconnection_run_maintenance_vacuum(
     ): Int
     external fun uniffi_places_checksum_method_sqlinterrupthandle_interrupt(
     ): Int
@@ -872,7 +878,13 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_places_fn_method_placesconnection_query_history_metadata(`ptr`: Long,`query`: RustBuffer.ByValue,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    external fun uniffi_places_fn_method_placesconnection_run_maintenance(`ptr`: Long,`options`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    external fun uniffi_places_fn_method_placesconnection_run_maintenance_checkpoint(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_places_fn_method_placesconnection_run_maintenance_optimize(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_places_fn_method_placesconnection_run_maintenance_prune(`ptr`: Long,`dbSizeLimit`: Int,`pruneLimit`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_places_fn_method_placesconnection_run_maintenance_vacuum(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_places_fn_clone_sqlinterrupthandle(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
@@ -1809,7 +1821,50 @@ public interface PlacesConnectionInterface {
     
     fun `queryHistoryMetadata`(`query`: kotlin.String, `limit`: kotlin.Int): List<HistoryMetadata>
     
-    fun `runMaintenance`(`options`: PlacesRunMaintenanceOptions)
+    /**
+     * Run maintenance on the places DB (checkpoint step)
+     *
+     * The `run_maintenance_*()` functions are intended to be run during idle time and will take steps
+     * to clean up / shrink the database.  They're split up so that we can time each one in the
+     * Kotlin wrapper code (This is needed because we only have access to the Glean API in Kotlin and
+     * it supports a stop-watch style API, not recording specific values).
+     */
+    fun `runMaintenanceCheckpoint`()
+    
+    /**
+     * Run maintenance on the places DB (optimize step)
+     *
+     * The `run_maintenance_*()` functions are intended to be run during idle time and will take steps
+     * to clean up / shrink the database.  They're split up so that we can time each one in the
+     * Kotlin wrapper code (This is needed because we only have access to the Glean API in Kotlin and
+     * it supports a stop-watch style API, not recording specific values).
+     */
+    fun `runMaintenanceOptimize`()
+    
+    /**
+     * Run maintenance on the places DB (prune step)
+     *
+     * The `run_maintenance_*()` functions are intended to be run during idle time and will take steps
+     * to clean up / shrink the database.  They're split up so that we can time each one in the
+     * Kotlin wrapper code (This is needed because we only have access to the Glean API in Kotlin and
+     * it supports a stop-watch style API, not recording specific values).
+     *
+     * db_size_limit is the approximate storage limit in bytes.  If the database is using more space
+     * than this, some older visits will be deleted to free up space.  Pass in a 0 to skip this.
+     *
+     * prune_limit is the maximum number of visits to prune if the database is over db_size_limit
+     */
+    fun `runMaintenancePrune`(`dbSizeLimit`: kotlin.UInt, `pruneLimit`: kotlin.UInt): RunMaintenanceMetrics
+    
+    /**
+     * Run maintenance on the places DB (vacuum step)
+     *
+     * The `run_maintenance_*()` functions are intended to be run during idle time and will take steps
+     * to clean up / shrink the database.  They're split up so that we can time each one in the
+     * Kotlin wrapper code (This is needed because we only have access to the Glean API in Kotlin and
+     * it supports a stop-watch style API, not recording specific values).
+     */
+    fun `runMaintenanceVacuum`()
     
     companion object
 }
@@ -2534,14 +2589,92 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     
 
     
-    @Throws(PlacesApiException::class)override fun `runMaintenance`(`options`: PlacesRunMaintenanceOptions)
+    /**
+     * Run maintenance on the places DB (checkpoint step)
+     *
+     * The `run_maintenance_*()` functions are intended to be run during idle time and will take steps
+     * to clean up / shrink the database.  They're split up so that we can time each one in the
+     * Kotlin wrapper code (This is needed because we only have access to the Glean API in Kotlin and
+     * it supports a stop-watch style API, not recording specific values).
+     */
+    @Throws(PlacesApiException::class)override fun `runMaintenanceCheckpoint`()
         = 
     callWithHandle {
     uniffiRustCallWithError(PlacesApiException) { _status ->
-    UniffiLib.uniffi_places_fn_method_placesconnection_run_maintenance(
+    UniffiLib.uniffi_places_fn_method_placesconnection_run_maintenance_checkpoint(
+        it,
+        _status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Run maintenance on the places DB (optimize step)
+     *
+     * The `run_maintenance_*()` functions are intended to be run during idle time and will take steps
+     * to clean up / shrink the database.  They're split up so that we can time each one in the
+     * Kotlin wrapper code (This is needed because we only have access to the Glean API in Kotlin and
+     * it supports a stop-watch style API, not recording specific values).
+     */
+    @Throws(PlacesApiException::class)override fun `runMaintenanceOptimize`()
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(PlacesApiException) { _status ->
+    UniffiLib.uniffi_places_fn_method_placesconnection_run_maintenance_optimize(
+        it,
+        _status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Run maintenance on the places DB (prune step)
+     *
+     * The `run_maintenance_*()` functions are intended to be run during idle time and will take steps
+     * to clean up / shrink the database.  They're split up so that we can time each one in the
+     * Kotlin wrapper code (This is needed because we only have access to the Glean API in Kotlin and
+     * it supports a stop-watch style API, not recording specific values).
+     *
+     * db_size_limit is the approximate storage limit in bytes.  If the database is using more space
+     * than this, some older visits will be deleted to free up space.  Pass in a 0 to skip this.
+     *
+     * prune_limit is the maximum number of visits to prune if the database is over db_size_limit
+     */
+    @Throws(PlacesApiException::class)override fun `runMaintenancePrune`(`dbSizeLimit`: kotlin.UInt, `pruneLimit`: kotlin.UInt): RunMaintenanceMetrics {
+            return FfiConverterTypeRunMaintenanceMetrics.lift(
+    callWithHandle {
+    uniffiRustCallWithError(PlacesApiException) { _status ->
+    UniffiLib.uniffi_places_fn_method_placesconnection_run_maintenance_prune(
         it,
         
-        FfiConverterTypePlacesRunMaintenanceOptions.lower(`options`),_status)
+        FfiConverterUInt.lower(`dbSizeLimit`),
+        FfiConverterUInt.lower(`pruneLimit`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Run maintenance on the places DB (vacuum step)
+     *
+     * The `run_maintenance_*()` functions are intended to be run during idle time and will take steps
+     * to clean up / shrink the database.  They're split up so that we can time each one in the
+     * Kotlin wrapper code (This is needed because we only have access to the Glean API in Kotlin and
+     * it supports a stop-watch style API, not recording specific values).
+     */
+    @Throws(PlacesApiException::class)override fun `runMaintenanceVacuum`()
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(PlacesApiException) { _status ->
+    UniffiLib.uniffi_places_fn_method_placesconnection_run_maintenance_vacuum(
+        it,
+        _status)
 }
     }
     
@@ -3711,17 +3844,12 @@ public object FfiConverterTypeNoteHistoryMetadataObservationOptions: FfiConverte
 
 
 
-data class PlacesRunMaintenanceOptions (
-    /**
-     * db_size_limit is the approximate storage limit in bytes.  If the database is using more space
-     * than this, some older visits will be deleted to free up space.  Pass in a 0 to skip this.
-     */
-    var `dbSizeLimit`: kotlin.UInt
+data class RunMaintenanceMetrics (
+    var `prunedVisits`: kotlin.Boolean
     , 
-    /**
-     * Maximum number of visits to prune in one pass
-     */
-    var `pruneLimit`: kotlin.UInt = 12u 
+    var `dbSizeBefore`: kotlin.UInt
+    , 
+    var `dbSizeAfter`: kotlin.UInt
     
 ){
     
@@ -3735,22 +3863,25 @@ data class PlacesRunMaintenanceOptions (
 /**
  * @suppress
  */
-public object FfiConverterTypePlacesRunMaintenanceOptions: FfiConverterRustBuffer<PlacesRunMaintenanceOptions> {
-    override fun read(buf: ByteBuffer): PlacesRunMaintenanceOptions {
-        return PlacesRunMaintenanceOptions(
+public object FfiConverterTypeRunMaintenanceMetrics: FfiConverterRustBuffer<RunMaintenanceMetrics> {
+    override fun read(buf: ByteBuffer): RunMaintenanceMetrics {
+        return RunMaintenanceMetrics(
+            FfiConverterBoolean.read(buf),
             FfiConverterUInt.read(buf),
             FfiConverterUInt.read(buf),
         )
     }
 
-    override fun allocationSize(value: PlacesRunMaintenanceOptions) = (
-            FfiConverterUInt.allocationSize(value.`dbSizeLimit`) +
-            FfiConverterUInt.allocationSize(value.`pruneLimit`)
+    override fun allocationSize(value: RunMaintenanceMetrics) = (
+            FfiConverterBoolean.allocationSize(value.`prunedVisits`) +
+            FfiConverterUInt.allocationSize(value.`dbSizeBefore`) +
+            FfiConverterUInt.allocationSize(value.`dbSizeAfter`)
     )
 
-    override fun write(value: PlacesRunMaintenanceOptions, buf: ByteBuffer) {
-            FfiConverterUInt.write(value.`dbSizeLimit`, buf)
-            FfiConverterUInt.write(value.`pruneLimit`, buf)
+    override fun write(value: RunMaintenanceMetrics, buf: ByteBuffer) {
+            FfiConverterBoolean.write(value.`prunedVisits`, buf)
+            FfiConverterUInt.write(value.`dbSizeBefore`, buf)
+            FfiConverterUInt.write(value.`dbSizeAfter`, buf)
     }
 }
 
