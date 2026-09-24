@@ -245,16 +245,18 @@ def list_files_and_dirs(dir_path):
     return files, dirs
 
 
+def extension_root_dir(filename):
+    match = re.match(r"(.*distribution/extensions/[^/]*)/", filename)
+    return match.group(1) if match else None
+
+
 def make_add_instruction(filename, manifest):
     """Adds an instruction to the update manifest file."""
-    # Check if the path is an extension directory
-    is_extension = re.search(r"distribution/extensions/.*/", filename) is not None
+    extension_dir = extension_root_dir(filename)
 
-    if is_extension:
-        # Extract the subdirectory to test before adding
-        testdir = re.sub(r"(.*distribution/extensions/[^/]*)/.*", r"\1", filename)
+    if extension_dir is not None:
         with open(manifest, "a") as file:
-            file.write(f'add-if "{testdir}" "{filename}"\n')
+            file.write(f'add-if "{extension_dir}" "{filename}"\n')
     else:
         with open(manifest, "a") as file:
             file.write(f'add "{filename}"\n')
@@ -270,8 +272,14 @@ def check_for_add_if_not_update(filename):
 
 
 def make_patch_instruction(filename, manifest):
+    extension_dir = extension_root_dir(filename)
     with open(manifest, "a") as manifest_file:
-        manifest_file.write(f'patch "{filename}.patch" "{filename}"\n')
+        if extension_dir is not None:
+            manifest_file.write(
+                f'patch-if "{extension_dir}" "{filename}.patch" "{filename}"\n'
+            )
+        else:
+            manifest_file.write(f'patch "{filename}.patch" "{filename}"\n')
 
 
 def add_remove_instructions(remove_array, manifest):
