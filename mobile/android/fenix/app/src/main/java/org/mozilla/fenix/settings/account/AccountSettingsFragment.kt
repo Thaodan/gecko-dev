@@ -175,7 +175,14 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
 
     @Suppress("LongMethod", "CyclomaticComplexMethod")
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-        setPreferencesFromResource(R.xml.account_settings_preferences, rootKey)
+        val isNewUiEnabled = requireComponents.settings.accountSettingsNewUi
+        val layout =
+            if (isNewUiEnabled) {
+                R.xml.account_settings_preferences
+            } else {
+                R.xml.account_settings_preferences_old_ui
+            }
+        setPreferencesFromResource(layout, rootKey)
     }
 
     override fun onDisplayPreferenceDialog(preference: Preference) {
