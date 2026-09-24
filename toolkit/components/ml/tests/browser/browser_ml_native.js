@@ -445,12 +445,8 @@ add_task(async function test_ml_smoke_test_llama_overlap_guard() {
   }
 });
 
-// Abandoning a generator should not prevent the next request: `break` in a
-// `for await` calls the generator's return(), and the port protocol has no
-// cancel message, so nothing ends the underlying run. The next *sequential*
-// request is rejected by the LlamaRunner concurrency guard even though
-// test_ml_smoke_test_llama_sequential_runs shows back-to-back runs are
-// supported. Marked todo until bug 2066288 makes abandonment cancel the run.
+// Abandoning a generator has to end the underlying run, otherwise the
+// LlamaRunner concurrency guard rejects the next request.
 add_task(
   async function test_ml_smoke_test_llama_abandoned_generator_allows_next() {
     const { cleanup } = await setup();
@@ -481,20 +477,11 @@ add_task(
       }
       Assert.equal(chunks, 1, "Abandoned the generator after one chunk");
 
-      // Issued via run() rather than runWithGenerator() only because the
-      // generator form rejects with a bare object that does not stringify;
-      // both forms hit the same LlamaRunner guard.
-      let blocked = false;
-      try {
-        await engine.run(request);
-      } catch (error) {
-        blocked = String(error?.message ?? error).includes(
-          "A generation is already in progress"
-        );
-      }
-      todo(
-        !blocked,
-        "sequential request after an abandoned generator should not be blocked by the LlamaRunner guard"
+      // Both forms hit the same LlamaRunner guard.
+      const result = await engine.run(request);
+      Assert.ok(
+        result.finalOutput.length,
+        "The request after an abandoned generator generated text"
       );
     } finally {
       await EngineProcess.destroyMLEngine();

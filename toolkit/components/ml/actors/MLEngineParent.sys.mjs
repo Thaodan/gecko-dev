@@ -1805,6 +1805,8 @@ export class MLEngine {
       loopEnded = true;
     } finally {
       if (!loopEnded) {
+        this.#port?.postMessage({ type: "EnginePort:Cancel", requestId });
+
         // The engine settles the run either way and records its own success
         // metrics for it, so report it from there.
         completionPromise.then(recordRun, () => {});
