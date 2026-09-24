@@ -135,8 +135,6 @@ browser.jar:
   content/browser/aiwindow/components/aitab-page-actions.css        (components/aitab-page/aitab-page-actions/aitab-page-actions.css)
   content/browser/aiwindow/components/aitab-table.mjs               (components/aitab-table/aitab-table.mjs)
   content/browser/aiwindow/components/aitab-table.css               (components/aitab-table/aitab-table.css)
-  content/browser/aiwindow/components/aitab-highlights.mjs          (components/aitab-highlights/aitab-highlights.mjs)
-  content/browser/aiwindow/components/aitab-highlights.css          (components/aitab-highlights/aitab-highlights.css)
   content/browser/aiwindow/components/agent-monitor-item.mjs        (components/agent-monitor-item/agent-monitor-item.mjs)
   content/browser/aiwindow/components/agent-monitor-item.css        (components/agent-monitor-item/agent-monitor-item.css)
   content/browser/aiwindow/components/agent-monitor-panel.mjs       (components/agent-monitor-panel/agent-monitor-panel.mjs)
