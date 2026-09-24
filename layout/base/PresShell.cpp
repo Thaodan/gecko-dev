@@ -1844,6 +1844,10 @@ void PresShell::FlushDelayedResize() {
 }
 
 void PresShell::SetLayoutViewportSize(const nsSize& aSize, bool aDelay) {
+  if (mPresContext && aSize == mPresContext->GetVisibleArea().Size()) {
+    mPendingLayoutViewportSize.reset();
+    return;
+  }
   mPendingLayoutViewportSize = Some(aSize);
   if (aDelay || ShouldDelayResize()) {
     SetNeedStyleFlush();
