@@ -126,7 +126,7 @@
         "panelWidth": {
           "type": ["null", "number"]
         },
-        "userLauncherVisible": {
+        "launcherVisible": {
           "type": "boolean"
         },
         "launcherExpanded": {
