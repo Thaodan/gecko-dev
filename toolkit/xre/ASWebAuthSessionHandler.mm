@@ -230,8 +230,15 @@ ASWebAuthSessionRequestWrapper::Cancel() {
   mozilla::CopyNSStringToXPCOMString(request.UUID.UUIDString, uuidXPCOM);
   NS_DispatchToMainThread(NS_NewRunnableFunction(
       "ASWebAuthSessionHandler::cancelHandling",
-      [request = [request retain], uuidXPCOM = nsString(uuidXPCOM)]() {
+      [uuidXPCOM = nsString(uuidXPCOM)]() {
+        // A request queued here never reached the browser UI, so nothing else
+        // will answer it.
+        nsCOMPtr<nsIASWebAuthSessionRequest> queued =
+            sPendingBeginRequests.GetWeak(uuidXPCOM);
         sPendingBeginRequests.Remove(uuidXPCOM);
+        if (queued) {
+          queued->Cancel();
+        }
 
         nsCOMPtr<nsIObserverService> obsServ =
             mozilla::services::GetObserverService();
@@ -239,12 +246,6 @@ ASWebAuthSessionRequestWrapper::Cancel() {
           obsServ->NotifyObservers(nullptr, "aswebauthsession-request-cancel",
                                    uuidXPCOM.get());
         }
-
-        // AuthenticationServices requires -cancelWithError: once teardown is
-        // done, even when the app is the one that asked for the cancellation.
-        // Without it the app cannot start another session.
-        CancelRequestObject(request);
-        [request release];
       }));
 }
 
