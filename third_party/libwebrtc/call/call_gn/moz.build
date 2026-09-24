@@ -36,8 +36,7 @@ LOCAL_INCLUDES += [
 
 UNIFIED_SOURCES += [
     "/third_party/libwebrtc/call/call.cc",
-    "/third_party/libwebrtc/call/flexfec_receive_stream_impl.cc",
-    "/third_party/libwebrtc/call/receive_time_calculator.cc"
+    "/third_party/libwebrtc/call/flexfec_receive_stream_impl.cc"
 ]
 
 if not CONFIG["MOZ_DEBUG"]:
