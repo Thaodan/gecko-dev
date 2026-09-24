@@ -9,6 +9,8 @@ subsuite = "mozrelease"
 
 ["test_buglist_creator.py"]
 
+["test_generate_checksums.py"]
+
 ["test_merkle.py"]
 
 ["test_update_verify.py"]
