@@ -1,8 +1,4 @@
-"use strict";
-
-const { sinon } = ChromeUtils.importESModule(
-  "resource://testing-common/Sinon.sys.mjs"
-);
+"user strict";
 
 const PREF_GETADDONS_CACHE_ENABLED = "extensions.getAddons.cache.enabled";
 const PREF_METADATA_LASTUPDATE = "extensions.getAddons.cache.lastUpdate";
@@ -25,7 +21,6 @@ Services.prefs.setStringPref(
 );
 
 const TEST_ADDON_ID = "test_AddonRepository_1@tests.mozilla.org";
-const TEST_LANGPACK_UND_ID = "langpack-und@test.mozilla.org";
 
 const repositoryAddons = {
   "test_AddonRepository_1@tests.mozilla.org": {
@@ -47,7 +42,7 @@ const repositoryAddons = {
     // included only to avoid exceptions in AddonRepository
     name: "und langpack",
     type: "language",
-    guid: TEST_LANGPACK_UND_ID,
+    guid: "langpack-und@test.mozilla.org",
     current_version: {
       version: "1.1",
       files: [
@@ -121,7 +116,7 @@ const ADDONS = [
       manifest_version: 2,
       browser_specific_settings: {
         gecko: {
-          id: TEST_LANGPACK_UND_ID,
+          id: "langpack-und@test.mozilla.org",
         },
       },
       sources: {
@@ -147,32 +142,31 @@ const ADDON_FILES = ADDONS.map(addon =>
   AddonTestUtils.createTempWebExtensionFile(addon)
 );
 
-const INTL_LOCALES_CHANGED = "intl:app-locales-changed";
+const REQ_LOC_CHANGE_EVENT = "intl:requested-locales-changed";
 
 function promiseLocaleChanged(requestedLocale) {
+  if (Services.locale.appLocaleAsBCP47 == requestedLocale) {
+    return Promise.resolve();
+  }
   return new Promise(resolve => {
     let localeObserver = {
       observe(aSubject, aTopic) {
         switch (aTopic) {
-          case INTL_LOCALES_CHANGED: {
+          case REQ_LOC_CHANGE_EVENT: {
             let reqLocs = Services.locale.requestedLocales;
             equal(reqLocs[0], requestedLocale);
-            equal(Services.locale.appLocaleAsBCP47, requestedLocale);
-            Services.obs.removeObserver(localeObserver, INTL_LOCALES_CHANGED);
+            Services.obs.removeObserver(localeObserver, REQ_LOC_CHANGE_EVENT);
             resolve();
           }
         }
       },
     };
-    Services.obs.addObserver(localeObserver, INTL_LOCALES_CHANGED);
+    Services.obs.addObserver(localeObserver, REQ_LOC_CHANGE_EVENT);
     Services.locale.requestedLocales = [requestedLocale];
   });
 }
 
 function promiseMetaDataUpdate() {
-  // This pref is a 1s resolution, set it to zero so the
-  // next test can wait on it being updated again.
-  Services.prefs.setIntPref(PREF_METADATA_LASTUPDATE, 0);
   return new Promise(resolve => {
     let listener = () => {
       Services.prefs.removeObserver(PREF_METADATA_LASTUPDATE, listener);
@@ -187,49 +181,15 @@ function promiseLocale(locale) {
   return Promise.all([promiseLocaleChanged(locale), promiseMetaDataUpdate()]);
 }
 
-let AddonRepositoryUpdateSpy;
-
-add_setup(async function setup() {
-  const { AddonRepository } = ChromeUtils.importESModule(
-    "resource://gre/modules/addons/AddonRepository.sys.mjs"
-  );
-  AddonRepositoryUpdateSpy = sinon.spy(
-    AddonRepository,
-    "backgroundUpdateCheck"
-  );
-  registerCleanupFunction(() => AddonRepositoryUpdateSpy.restore());
-
+add_task(async function setup() {
   await promiseStartupManager();
-
-  const promisedMetadataUpdate = promiseMetaDataUpdate();
-
   for (let xpi of ADDON_FILES) {
     await promiseInstallFile(xpi);
   }
-
-  // When a langpack is started up, it triggers locale negotiation and ends up
-  // triggering "intl:app-locales-changed" that triggers an update check.
-  // This assertion checks current behavior, it does not necessarily show that
-  // the behavior makes sense; in fact I question whether it makes sense to
-  // force an update check of addon metadata during browser startup.
-  equal(
-    AddonRepositoryUpdateSpy.callCount,
-    1,
-    "Starting up a langpack triggers a metadata update check"
-  );
-  AddonRepositoryUpdateSpy.resetHistory();
-  await promisedMetadataUpdate;
-  equal(
-    AddonRepositoryUpdateSpy.callCount,
-    0,
-    "No other unexpected metadata update checks"
-  );
 });
 
 add_task(async function test_locale_change() {
-  // In tests we default to en-US; The install of the langpack in setup already
-  // triggered an update check that ought have cached the add-on data.
-  equal(Services.locale.appLocaleAsBCP47, "en-US", "Locale is en-US");
+  await promiseLocale("en-US");
   let addon = await AddonRepository.getCachedAddonByID(TEST_ADDON_ID);
   Assert.ok(addon.description.includes("en-US"), "description is en-us");
   Assert.ok(
@@ -237,6 +197,9 @@ add_task(async function test_locale_change() {
     "fullDescription is en-us"
   );
 
+  // This pref is a 1s resolution, set it to zero so the
+  // next test can wait on it being updated again.
+  Services.prefs.setIntPref(PREF_METADATA_LASTUPDATE, 0);
   // Wait for the last update timestamp to be updated.
   await promiseLocale("und");
 
@@ -250,51 +213,4 @@ add_task(async function test_locale_change() {
     addon.fullDescription.includes("und"),
     `fullDescription is ${addon.fullDescription}`
   );
-  equal(AddonRepositoryUpdateSpy.callCount, 1, "updated after change to und");
-
-  await promiseLocale("en-US");
-  equal(AddonRepositoryUpdateSpy.callCount, 2, "updated after change to en-US");
-  addon = await AddonRepository.getCachedAddonByID(TEST_ADDON_ID);
-  Assert.ok(addon.description.includes("en-US"), "description is en-us");
-
-  AddonRepositoryUpdateSpy.resetHistory();
-});
-
-// Regression test for bug 2052032: Previously the logic eagerly performed an
-// update check whenever the set of available locales changed (i.e. when a
-// langpack was registered at startup or update), which caused performance
-// issues. This check verifies that there is no update check when the primary
-// language is unchanged.
-add_task(async function no_update_check_when_primary_language_is_unchanged() {
-  const langpackUnd = await AddonManager.getAddonByID(TEST_LANGPACK_UND_ID);
-  Assert.deepEqual(
-    Services.locale.availableLocales.toSorted(),
-    ["en-US", "und"],
-    "Initially has default en-US locale and und from langpack"
-  );
-  let updated = TestUtils.topicObserved(INTL_LOCALES_CHANGED);
-  await langpackUnd.disable();
-  await updated;
-  Assert.deepEqual(
-    Services.locale.availableLocales.toSorted(),
-    ["en-US"],
-    "After disabling und langpack, it is gone from availableLocales"
-  );
-
-  updated = TestUtils.topicObserved(INTL_LOCALES_CHANGED);
-  await langpackUnd.enable();
-  await updated;
-  Assert.deepEqual(
-    Services.locale.availableLocales.toSorted(),
-    ["en-US", "und"],
-    "After enabling und langpack, it is back in availableLocales"
-  );
-  equal(Services.locale.appLocaleAsBCP47, "en-US", "Locale is still en-US");
-
-  equal(
-    AddonRepositoryUpdateSpy.callCount,
-    0,
-    "When the primary language is unchanged, no update check is forced"
-  );
-  AddonRepositoryUpdateSpy.resetHistory();
 });
