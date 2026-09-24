@@ -264,9 +264,7 @@ BrowserParent::LayerToBrowserParentTable*
     BrowserParent::sLayerToBrowserParentTable = nullptr;
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(BrowserParent)
-  NS_INTERFACE_MAP_ENTRY_CONCRETE(BrowserParent)
   NS_INTERFACE_MAP_ENTRY(nsIAuthPromptProvider)
-  NS_INTERFACE_MAP_ENTRY(nsISupportsWeakReference)
   NS_INTERFACE_MAP_ENTRY(nsIDOMEventListener)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIDOMEventListener)
 NS_INTERFACE_MAP_END
@@ -280,7 +278,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(BrowserParent)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mBrowserDOMWindow)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mBrowserHost)
   tmp->UnlinkManager();
-  NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_REFERENCE
+  NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_PTR
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(BrowserParent)
@@ -399,11 +397,8 @@ already_AddRefed<BrowserParent> BrowserParent::GetBrowserParentFromLayersId(
   if (!sLayerToBrowserParentTable) {
     return nullptr;
   }
-  nsWeakPtr weak = sLayerToBrowserParentTable->Get(uint64_t(aLayersId));
-  if (!weak) {
-    return nullptr;
-  }
-  RefPtr<BrowserParent> browserParent = do_QueryReferent(weak);
+  RefPtr<BrowserParent> browserParent =
+      sLayerToBrowserParentTable->Get(uint64_t(aLayersId)).get();
   return browserParent.forget();
 }
 
@@ -425,8 +420,8 @@ void BrowserParent::AddBrowserParentToTable(layers::LayersId aLayersId,
   if (!sLayerToBrowserParentTable) {
     sLayerToBrowserParentTable = new LayerToBrowserParentTable();
   }
-  sLayerToBrowserParentTable->InsertOrUpdate(
-      uint64_t(aLayersId), do_GetWeakReference(aBrowserParent));
+  sLayerToBrowserParentTable->InsertOrUpdate(uint64_t(aLayersId),
+                                             aBrowserParent);
 }
 
 void BrowserParent::RemoveBrowserParentFromTable(layers::LayersId aLayersId) {
