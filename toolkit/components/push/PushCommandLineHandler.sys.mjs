@@ -50,6 +50,8 @@ export class CommandLineHandler {
       return;
     }
 
+    Glean.backgroundNotificationHelper.wake.add(1);
+
     // Keep Firefox alive while receiving push messages
     Services.startup.enterLastWindowClosingSurvivalArea();
 
@@ -108,9 +110,15 @@ export class CommandLineHandler {
     await new Promise(resolve => {
       let receiving = true;
       let pushTopicObserver = null;
+      let notificationShownObserver = null;
       const pushTopic = lazy.PushService.pushTopic;
+      // Fired by nsAlertsService for every web content alert shown, private
+      // browsing aside. Gated by browser.alerts.capture.enabled, a kill switch.
+      const notificationShownTopic = "web-notification-shown";
       let perMessageTimer = null;
       let totalTimer = null;
+      let totalMessages = 0;
+      let totalNotifications = 0;
 
       const stopReceiving = () => {
         if (!receiving) {
@@ -118,8 +126,18 @@ export class CommandLineHandler {
         }
         receiving = false;
         Services.obs.removeObserver(pushTopicObserver, pushTopic);
+        Services.obs.removeObserver(
+          notificationShownObserver,
+          notificationShownTopic
+        );
         lazy.Timer.clearTimeout(perMessageTimer);
         lazy.Timer.clearTimeout(totalTimer);
+        Glean.backgroundNotificationHelper.wakeMessages.accumulateSingleSample(
+          totalMessages
+        );
+        Glean.backgroundNotificationHelper.wakeNotifications.accumulateSingleSample(
+          totalNotifications
+        );
         resolve();
       };
 
@@ -145,9 +163,18 @@ export class CommandLineHandler {
         totalTimer = lazy.Timer.setTimeout(stopReceiving, totalTimeoutMs);
       };
 
-      pushTopicObserver = () => startPerMessageTimer();
+      pushTopicObserver = () => {
+        totalMessages++;
+        startPerMessageTimer();
+      };
+
+      notificationShownObserver = () => totalNotifications++;
 
       Services.obs.addObserver(pushTopicObserver, pushTopic);
+      Services.obs.addObserver(
+        notificationShownObserver,
+        notificationShownTopic
+      );
       startPerMessageTimer();
       startTotalTimer();
     });
