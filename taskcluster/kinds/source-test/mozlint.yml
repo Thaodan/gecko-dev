@@ -658,6 +658,7 @@ clippy:
             - '**/*.rs'
             - '**/Cargo.toml'
             - 'tools/lint/clippy.yml'
+            - 'build/cargo/cargo-clippy.yaml'
     fetches:
         toolchain:
             - linux64-clang
