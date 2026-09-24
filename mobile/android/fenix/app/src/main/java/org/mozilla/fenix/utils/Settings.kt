@@ -3454,4 +3454,10 @@ class Settings(
             key = appContext.getPreferenceKey(R.string.pref_key_enable_pdf_tools),
             default = { FxNimbus.features.pdfViewer.value().androidUiTools },
         )
+
+    var accountSettingsNewUi by
+        booleanPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_enable_account_settings_new_ui),
+            default = { FxNimbus.features.accountSyncDecoupleM1.value().enabled },
+        )
 }
