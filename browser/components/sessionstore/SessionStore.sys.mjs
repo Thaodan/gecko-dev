@@ -985,10 +985,12 @@ class _SessionStore {
   observe(aSubject, aTopic, aData) {
     switch (aTopic) {
       case "browser-window-before-show": // catch new windows
-        this.#onBeforeBrowserWindowShown(aSubject);
+        this.#onBeforeBrowserWindowShown(
+          /** @type {ChromeWindow} */ (aSubject)
+        );
         break;
       case "domwindowclosed": // catch closed windows
-        this.#onClose(aSubject).then(() => {
+        this.#onClose(/** @type {ChromeWindow} */ (aSubject)).then(() => {
           this.#notifyOfClosedObjectsChange();
         });
         if (gDebuggingEnabled) {
@@ -1032,23 +1034,39 @@ class _SessionStore {
         }
         break;
       }
-      case "browsing-context-did-set-embedder":
-        if (aSubject === aSubject.top && aSubject.isContent) {
-          const permanentKey = aSubject.embedderElement?.permanentKey;
+      case "browsing-context-did-set-embedder": {
+        let browsingContext = /** @type {CanonicalBrowsingContext} */ (
+          aSubject
+        );
+        if (
+          browsingContext === browsingContext.top &&
+          browsingContext.isContent
+        ) {
+          const permanentKey = /** @type {MozBrowser} */ (
+            browsingContext.embedderElement
+          )?.permanentKey;
           if (permanentKey) {
-            this.#maybeRecreateSHistoryListener(permanentKey, aSubject);
+            this.#maybeRecreateSHistoryListener(permanentKey, browsingContext);
           }
         }
         break;
+      }
       case "browsing-context-discarded": {
-        let permanentKey = aSubject?.embedderElement?.permanentKey;
+        let browsingContext = /** @type {CanonicalBrowsingContext} */ (
+          aSubject
+        );
+        let permanentKey = /** @type {MozBrowser} */ (
+          browsingContext?.embedderElement
+        )?.permanentKey;
         if (permanentKey) {
           this.#browserSHistoryListener.get(permanentKey)?.unregister();
         }
         break;
       }
       case "browser-shutdown-tabstate-updated":
-        this.#onFinalTabStateUpdateComplete(aSubject);
+        this.#onFinalTabStateUpdateComplete(
+          /** @type {MozBrowser} */ (aSubject)
+        );
         this.#notifyOfClosedObjectsChange();
         break;
     }
@@ -1067,6 +1085,10 @@ class _SessionStore {
     return this.#createSHistoryListener(permanentKey, browsingContext, false);
   }
 
+  /**
+   * @param {object} permanentKey
+   * @param {CanonicalBrowsingContext} browsingContext
+   */
   #maybeRecreateSHistoryListener(permanentKey, browsingContext) {
     const listener = this.#browserSHistoryListener.get(permanentKey);
     if (!listener || listener._browserId != browsingContext.browserId) {
@@ -1217,6 +1239,9 @@ class _SessionStore {
     }
   }
 
+  /**
+   * @param {MozBrowser} browser
+   */
   #onFinalTabStateUpdateComplete(browser) {
     let permanentKey = browser.permanentKey;
     if (
@@ -1261,7 +1286,10 @@ class _SessionStore {
     this.#browserSHistoryListener.get(permanentKey)?.unregister();
     this.#restoreListeners.get(permanentKey)?.unregister();
 
-    Services.obs.notifyObservers(browser, NOTIFY_BROWSER_SHUTDOWN_FLUSH);
+    Services.obs.notifyObservers(
+      /** @type {nsISupports} */ (browser),
+      NOTIFY_BROWSER_SHUTDOWN_FLUSH
+    );
   }
 
   /**
@@ -1340,43 +1368,54 @@ class _SessionStore {
    *        The event to handle.
    */
   handleEvent(aEvent) {
-    let win = aEvent.currentTarget.documentGlobal;
+    let win = /** @type {ChromeWindow} */ (
+      /** @type {Element} */ (aEvent.currentTarget).documentGlobal
+    );
     let target = aEvent.originalTarget;
     switch (aEvent.type) {
-      case "TabOpen":
+      case "TabOpen": {
+        let tab = /** @type {MozTabbrowserTab} */ (target);
+        let { detail } = /** @type {CustomEvent} */ (aEvent);
         this.#onTabAdd(win);
-        if (aEvent.detail.adoptedTab) {
-          this.#moveCustomTabValue(aEvent.detail.adoptedTab, target);
+        if (detail.adoptedTab) {
+          this.#moveCustomTabValue(detail.adoptedTab, tab);
         }
         break;
+      }
       case "TabBrowserInserted":
-        this.#onTabBrowserInserted(win, target);
+        this.#onTabBrowserInserted(
+          win,
+          /** @type {MozTabbrowserTab} */ (target)
+        );
         break;
-      case "TabClose":
+      case "TabClose": {
+        let tab = /** @type {MozTabbrowserTab} */ (target);
+        let { detail } = /** @type {CustomEvent} */ (aEvent);
         // `adoptedBy` will be set if the tab was closed because it is being
         // moved to a new window.
-        if (aEvent.detail.adoptedBy) {
-          this.#moveCustomTabValue(target, aEvent.detail.adoptedBy);
+        if (detail.adoptedBy) {
+          this.#moveCustomTabValue(tab, detail.adoptedBy);
           this.#onMoveToNewWindow(
-            target.linkedBrowser,
-            aEvent.detail.adoptedBy.linkedBrowser
+            tab.linkedBrowser,
+            detail.adoptedBy.linkedBrowser
           );
-        } else if (!aEvent.detail.skipSessionStore) {
+        } else if (!detail.skipSessionStore) {
           // `skipSessionStore` is set by tab close callers to indicate that we
           // shouldn't record the closed tab.
-          this.#onTabClose(win, target);
+          this.#onTabClose(win, tab);
         }
-        this.#onTabRemove(win, target);
+        this.#onTabRemove(win, tab);
         this.#notifyOfClosedObjectsChange();
         break;
+      }
       case "TabSelect":
         this.#onTabSelect(win);
         break;
       case "TabShow":
-        this.#onTabShow(win, target);
+        this.#onTabShow(win, /** @type {MozTabbrowserTab} */ (target));
         break;
       case "TabHide":
-        this.#onTabHide(win, target);
+        this.#onTabHide(win, /** @type {MozTabbrowserTab} */ (target));
         break;
       case "TabPinned":
       case "TabUnpinned":
@@ -1394,33 +1433,38 @@ class _SessionStore {
         this.#saveStateDelayed(win);
         break;
       case "TabGroupRemoveRequested":
-        if (!aEvent.detail?.skipSessionStore) {
-          this.#onTabGroupRemoveRequested(win, target);
+        if (!(/** @type {CustomEvent} */ (aEvent).detail?.skipSessionStore)) {
+          this.#onTabGroupRemoveRequested(
+            win,
+            /** @type {MozTabbrowserTabGroup} */ (target)
+          );
           this.#notifyOfClosedObjectsChange();
         }
         break;
       case "TabSplitViewActivate":
-        for (const tab of aEvent.detail.tabs) {
+        for (const tab of /** @type {CustomEvent} */ (aEvent).detail.tabs) {
           this.#maybeRestoreTabContent(tab);
         }
         this.#saveStateDelayed(win);
         break;
       case "oop-browser-crashed":
       case "oop-browser-buildid-mismatch":
-        if (aEvent.isTopFrame) {
-          this.#onBrowserCrashed(target);
+        if (/** @type {FrameCrashedEvent} */ (aEvent).isTopFrame) {
+          this.#onBrowserCrashed(/** @type {MozBrowser} */ (target));
         }
         break;
-      case "XULFrameLoaderCreated":
+      case "XULFrameLoaderCreated": {
+        let browser = /** @type {MozBrowser} */ (target);
         if (
-          target.namespaceURI == XUL_NS &&
-          target.localName == "browser" &&
-          target.frameLoader &&
-          target.permanentKey
+          browser.namespaceURI == XUL_NS &&
+          browser.localName == "browser" &&
+          browser.frameLoader &&
+          browser.permanentKey
         ) {
-          this.#resetEpoch(target.permanentKey, target.frameLoader);
+          this.#resetEpoch(browser.permanentKey, browser.frameLoader);
         }
         break;
+      }
       default:
         throw new Error(`unhandled event ${aEvent.type}?`);
     }
@@ -2825,6 +2869,10 @@ class _SessionStore {
     this.#maybeSaveClosedTab(aWindow, aTab, tabState);
   }
 
+  /**
+   * @param {ChromeWindow} win
+   * @param {MozTabbrowserTabGroup} tabGroup
+   */
   #onTabGroupRemoveRequested(win, tabGroup) {
     // don't update our internal state if we don't have to
     if (this.#max_tabs_undo == 0) {
@@ -3235,6 +3283,9 @@ class _SessionStore {
     }
   }
 
+  /**
+   * @param {MozTabbrowserTab} tab
+   */
   #maybeRestoreTabContent(tab) {
     let browser = tab.linkedBrowser;
 
@@ -3256,6 +3307,10 @@ class _SessionStore {
     }
   }
 
+  /**
+   * @param {ChromeWindow} aWindow
+   * @param {MozTabbrowserTab} aTab
+   */
   #onTabShow(aWindow, aTab) {
     // If the tab hasn't been restored yet, move it into the right bucket
     if (
@@ -3274,6 +3329,10 @@ class _SessionStore {
     this.#saveStateDelayed(aWindow);
   }
 
+  /**
+   * @param {ChromeWindow} aWindow
+   * @param {MozTabbrowserTab} aTab
+   */
   #onTabHide(aWindow, aTab) {
     // If the tab hasn't been restored yet, move it into the right bucket
     if (
@@ -4876,6 +4935,10 @@ class _SessionStore {
     }
   }
 
+  /**
+   * @param {MozTabbrowserTab} aFromTab
+   * @param {MozTabbrowserTab} aToTab
+   */
   #moveCustomTabValue(aFromTab, aToTab) {
     let state = TAB_CUSTOM_VALUES.get(aFromTab);
     if (state) {
