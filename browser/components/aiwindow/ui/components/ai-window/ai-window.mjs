@@ -1640,6 +1640,29 @@ export class AIWindow extends MozLitElement {
   };
 
   /**
+   * Handles a resume card's "More" menu selection. Snoozing dismisses the
+   * card for the rest of the session; the X button is left unwired until
+   * hard delete is available in the journey store.
+   *
+   * @param {CustomEvent} event - The menu-item-selected event
+   * @private
+   */
+  #handleResumeCardMenuItemSelected = event => {
+    const { journeyId, itemId } = event.detail;
+    if (itemId !== "snooze") {
+      return;
+    }
+
+    lazy.ResumeActivity.dismissMemory(journeyId);
+    this.resumeCards = this.resumeCards.filter(
+      ({ memory }) => memory.id !== journeyId
+    );
+    if (!this.resumeCards.length) {
+      this.resumeCardsEmptyReason = RESUME_SECTION_EMPTY_REASON.ALL_DISMISSED;
+    }
+  };
+
+  /**
    * Helper method to get or create the smartbar element
    *
    * @param {Document} doc - The document
@@ -3710,6 +3733,8 @@ export class AIWindow extends MozLitElement {
                     .cards=${this.resumeCards}
                     .emptyReason=${this.resumeCardsEmptyReason}
                     .loading=${this.resumeCardsLoading}
+                    @smartwindow-resume-card:menu-item-selected=${this
+                      .#handleResumeCardMenuItemSelected}
                     @smartwindow-resume-section:hide=${this
                       .#handleResumeSectionHide}
                   ></smartwindow-resume-section>
