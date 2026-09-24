@@ -288,12 +288,18 @@ def make_add_if_not_instruction(filename, manifest):
 def append_remove_instructions(newdir, manifest):
     removed_files_path = os.path.join(newdir, "removed-files")
     if os.path.exists(removed_files_path):
-        with NamedTemporaryFile() as rmv, open(rmv.name) as f:
-            xz_cmd(("--decompress",), removed_files_path, rmv.name)
-            removed_files = f.readlines()
+        removed_files = get_text_from_compressed(removed_files_path).splitlines()
         with open(manifest, "a") as manifest_file:
-            for file in removed_files:
-                manifest_file.write(f'remove "{file.strip()}"\n')
+            for line in removed_files:
+                entry = line.strip()
+                if not entry or entry.startswith("#"):
+                    continue
+                if entry.endswith("/"):
+                    manifest_file.write(f'rmdir "{entry}"\n')
+                elif entry.endswith("/*"):
+                    manifest_file.write(f'rmrfdir "{entry[:-1]}"\n')
+                else:
+                    manifest_file.write(f'remove "{entry}"\n')
 
 
 def validate_mar_channel_id(mar_path, mar_channel_id):
