@@ -52,22 +52,20 @@ export const MiniWindowManager = new (class {
    *
    * @param {MozTabbrowserTab} tab - the tab to move.
    * @param {object} cropInfo - see MiniWindow.
-   * @param {string} entryPoint - where the pop was initiated.
    * @returns {Promise<object|null>} the MiniWindow, or null.
    */
-  async popRegion(tab, cropInfo, entryPoint) {
-    return this.#pop(tab, cropInfo, entryPoint);
+  async popRegion(tab, cropInfo) {
+    return this.#pop(tab, cropInfo);
   }
 
   /**
    * Pop the whole `tab` into a new always-on-top window.
    *
    * @param {MozTabbrowserTab} tab - the tab to move.
-   * @param {string} entryPoint - where the pop was initiated.
    * @returns {Promise<object|null>} the MiniWindow, or null.
    */
-  async popTab(tab, entryPoint) {
-    return this.#pop(tab, null, entryPoint);
+  async popTab(tab) {
+    return this.#pop(tab, null);
   }
 
   /**
@@ -77,10 +75,9 @@ export const MiniWindowManager = new (class {
    * @param {MozTabbrowserTab} tab - the tab to move.
    * @param {object|null} cropInfo - the region to frame (see MiniWindow),
    *   or null for a full-tab mini window.
-   * @param {string} entryPoint - where the pop was initiated.
    * @returns {Promise<object|null>} the MiniWindow, or null.
    */
-  async #pop(tab, cropInfo, entryPoint) {
+  async #pop(tab, cropInfo) {
     let browser = tab.linkedBrowser;
     this._log.debug("pop: We're about to pop a mini window out: ", {
       url: browser.currentURI?.spec,
@@ -94,7 +91,6 @@ export const MiniWindowManager = new (class {
     this.#ensureObservers();
 
     let originWin = browser.documentGlobal;
-    let wasLastTab = originWin.gBrowser.tabs.length === 1;
 
     // Instantiate the per-window controller
     let miniwindow = new lazy.MiniWindow(this, originWin, tab, cropInfo);
@@ -125,12 +121,6 @@ export const MiniWindowManager = new (class {
     }
 
     this._log.debug("pop: mini window opened");
-    Glean.miniWindow.created.record({
-      type: cropInfo ? "fragment" : "full_tab",
-      entry_point: entryPoint,
-      was_last_tab: wasLastTab,
-      concurrent_open: this._miniwindows.size,
-    });
     return miniwindow;
   }
 
@@ -182,7 +172,7 @@ export const MiniWindowManager = new (class {
       );
       // Preserve the popped tabs by putting them back in their origin window.
       for (let mini of [...this._miniwindows]) {
-        mini.returnToOriginWin(false, "origin_window_closed");
+        mini.returnToOriginWin(false);
       }
     }
   }
@@ -237,7 +227,7 @@ export const MiniWindowManager = new (class {
       // Looks like there's no more to put back.
       return false;
     }
-    oldest.returnToOriginWin(true, "auto_return_guardrail");
+    oldest.returnToOriginWin(true);
     return true;
   }
 
@@ -246,7 +236,7 @@ export const MiniWindowManager = new (class {
     this._log.debug("#putBackMinisForOriginWins", { count: minis.length });
 
     for (let miniWin of minis) {
-      miniWin.returnToOriginWin(false, "origin_window_closed");
+      miniWin.returnToOriginWin(false);
     }
   }
 
