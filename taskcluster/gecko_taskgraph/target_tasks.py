@@ -979,10 +979,7 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                 return True
             if "chrome-m" in try_name and (
                 ("ebay" in try_name and "live" not in try_name)
-                or (
-                    "live" in try_name
-                    and ("facebook" in try_name or "dailymail" in try_name)
-                )
+                or ("live" in try_name and "dailymail" in try_name)
             ):
                 return False
             # Ignore all fennec tests here, we run those weekly
