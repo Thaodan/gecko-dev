@@ -690,7 +690,9 @@ class Talos(TestingMixin, MercurialScript, TooltoolMixin, CodeCoverageMixin):
                         output_dir=artifact["dest"],
                         cache=self.config.get("tooltool_cache"),
                     )
-                    shutil.unpack_archive(archive, artifact["dest"])
+                    unzip = self.query_exe("unzip")
+                    unzip_cmd = [unzip, "-q", "-o", archive, "-d", artifact["dest"]]
+                    self.run_command(unzip_cmd, halt_on_failure=True)
 
                     if "postprocess" in artifact:
                         for subdir, dirs, files in os.walk(output_dir_path):
