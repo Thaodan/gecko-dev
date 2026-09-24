@@ -607,6 +607,13 @@ def download_file(url, save_path, allow_staging, signing_cert=None):
         verify_signature(save_path, signing_cert)
 
 
+def cleanup_workdir(workdir):
+    try:
+        shutil.rmtree(workdir)
+    except OSError as e:
+        log(f"Could not remove work directory {workdir}: {e}", "cleanup_workdir")
+
+
 def process_single(
     update_number,
     from_mar_url,
@@ -645,6 +652,10 @@ def process_single(
             mar_manifest["previousVersion"] = previousVersion
         # Validate the created mar has valid channel id
         if validate_mar_channel_id(target_mar, mar_channel_id):
+            # The scratch tree is only kept when something went wrong, for
+            # debuggability. Peak disk would otherwise grow with the number of
+            # partials.
+            cleanup_workdir(workdir)
             return None, mar_manifest, from_hashes
         else:
             # Since we still want to capture the manifest, we return the exception without raising it
