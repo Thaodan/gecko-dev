@@ -977,15 +977,46 @@ export class CreditCardSaveDoorhanger extends AutofillDoorhanger {
     lineTwo.className = "line-two";
 
     lineOne.textContent = lazy.CreditCard.getMaskedNumber(number);
-    lineTwo.textContent = name || "";
+    this.appendCardDetails(lineTwo, name);
 
     description.appendChild(lineOne);
     description.appendChild(lineTwo);
-    description.appendChild(this.createPrivacyPanelLink());
     descriptionWrapper.appendChild(description);
+    descriptionWrapper.appendChild(this.createPrivacyPanelButton());
     docFragment.appendChild(descriptionWrapper);
 
     this.content.appendChild(docFragment);
+  }
+
+  appendCardDetails(line, name) {
+    const parts = [];
+    const args = {};
+    if (name) {
+      parts.push("name");
+      args.name = name;
+    }
+
+    const month = this.newRecord["cc-exp-month"];
+    const year = this.newRecord["cc-exp-year"];
+    if (month && year) {
+      parts.push("expiration");
+      args.month = String(month).padStart(2, "0");
+      args.year = String(year).slice(-2);
+    }
+
+    if (this.hasSubmittedSecurityCode) {
+      parts.push("cvv");
+    }
+
+    if (!parts.length) {
+      return;
+    }
+
+    this.doc.l10n.setAttributes(
+      line,
+      `credit-card-doorhanger-details-${parts.join("-")}`,
+      args
+    );
   }
 
   appendSecurityCodeCheckbox() {
@@ -1005,20 +1036,22 @@ export class CreditCardSaveDoorhanger extends AutofillDoorhanger {
     this.content.appendChild(checkbox);
   }
 
-  createPrivacyPanelLink() {
-    const privacyLinkElement = this.doc.createXULElement("label", {
-      is: "text-link",
-    });
-    privacyLinkElement.setAttribute("useoriginprincipal", true);
-    privacyLinkElement.setAttribute(
-      "href",
-      CreditCardSaveDoorhanger.spotlightURL ||
-        "about:preferences#privacy-payment-methods-autofill"
+  createPrivacyPanelButton() {
+    const button = this.doc.createElement("moz-button");
+    button.className = "payments-doorhanger-options-button";
+    button.setAttribute("type", "icon");
+    button.setAttribute("iconsrc", "chrome://global/skin/icons/edit.svg");
+    this.doc.l10n.setAttributes(
+      button,
+      "credit-card-doorhanger-options-button"
     );
-
-    this.doc.l10n.setAttributes(privacyLinkElement, "autofill-options-link");
-
-    return privacyLinkElement;
+    button.addEventListener("click", () => {
+      this.chromeWin.openTrustedLinkIn(
+        CreditCardSaveDoorhanger.spotlightURL,
+        "tab"
+      );
+    });
+    return button;
   }
 
   // TODO: Currently, the header and description are unused. Align
@@ -1431,6 +1464,7 @@ CONTENT = {
     options: {
       persistWhileVisible: true,
       hideClose: true,
+      popupIconURL: "chrome://global/skin/icons/security.svg",
 
       checkbox: {
         get checked() {
@@ -1489,6 +1523,7 @@ CONTENT = {
     options: {
       persistWhileVisible: true,
       hideClose: true,
+      popupIconURL: "chrome://global/skin/icons/security.svg",
     },
   },
 
