@@ -41,7 +41,7 @@ static void CancelRequestObject(id requestObject) {
 // The wrapped object is the real request in production or a mock in tests.
 class ASWebAuthSessionRequestWrapper final : public nsIASWebAuthSessionRequest {
  public:
-  NS_DECL_ISUPPORTS
+  NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIASWEBAUTHSESSIONREQUEST
 
   ASWebAuthSessionRequestWrapper(id aRequestObject, NSString* aUuid,
@@ -174,7 +174,8 @@ ASWebAuthSessionRequestWrapper::Cancel() {
 
 - (void)beginHandlingWebAuthenticationSessionRequest:
     (ASWebAuthenticationSessionRequest*)request {
-  MOZ_ASSERT(NS_IsMainThread());
+  // AuthenticationServices calls this on one of its own threads, so everything
+  // that touches Gecko state runs in the runnable below.
   MOZ_LOG(gASWebAuthLog, mozilla::LogLevel::Info,
           ("beginHandlingWebAuthenticationSessionRequest"));
 
@@ -222,7 +223,7 @@ ASWebAuthSessionRequestWrapper::Cancel() {
 
 - (void)cancelWebAuthenticationSessionRequest:
     (ASWebAuthenticationSessionRequest*)request {
-  MOZ_ASSERT(NS_IsMainThread());
+  // Called on an AuthenticationServices thread, same as the begin callback.
   MOZ_LOG(gASWebAuthLog, mozilla::LogLevel::Info,
           ("cancelWebAuthenticationSessionRequest"));
 
