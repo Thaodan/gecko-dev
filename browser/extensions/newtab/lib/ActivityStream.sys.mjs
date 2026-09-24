@@ -1745,16 +1745,14 @@ export const PREFS_CONFIG = new Map([
     "widgets.clocks.enabled",
     {
       title: "Enables the clock widget",
-      // pref is dynamic
-      getValue: marketGate("widgets.clocks.enabled"),
+      value: true,
     },
   ],
   [
     "widgets.system.clocks.enabled",
     {
-      title: "Makes the clock widget available",
-      // pref is dynamic
-      getValue: marketGate("widgets.system.clocks.enabled"),
+      title: "Enables the clock widget experiment in Nimbus",
+      value: false,
     },
   ],
   [
