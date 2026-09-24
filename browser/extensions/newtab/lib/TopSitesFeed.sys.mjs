@@ -1120,7 +1120,6 @@ export class TopSitesFeed {
         isDefault: true,
         url: site.url,
         hostname,
-        sendAttributionRequest: false,
         label: site.name,
         show_sponsored_label: hostname !== "yandex",
         sponsored_position: contilePositions[contilePositionIndex++],
@@ -1223,7 +1222,6 @@ export class TopSitesFeed {
         isDefault: true,
         url: siteData.url,
         hostname,
-        sendAttributionRequest: !!siteData.send_attribution_request,
       };
       if (siteData.url_urlbar_override) {
         link.url_urlbar = siteData.url_urlbar_override;
