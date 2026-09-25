@@ -420,7 +420,6 @@ void PrototypeDocumentContentSink::CloseElement(Element* aElement) {
   if (nsIContent::RequiresDoneAddingChildren(
           aElement->NodeInfo()->NamespaceID(),
           aElement->NodeInfo()->NameAtom())) {
-    nsAutoScriptBlocker scriptBlocker;
     aElement->DoneAddingChildren(false);
   }
 
