@@ -13,7 +13,6 @@ import org.junit.Test
 import org.mozilla.fenix.FenixApplication
 import org.mozilla.fenix.R
 import org.mozilla.fenix.customannotations.Converted
-import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.registerAndCleanupIdlingResources
 import org.mozilla.fenix.helpers.AppAndSystemHelper.runWithSystemLocaleChanged
@@ -47,12 +46,6 @@ class SettingsGeneralTest {
     @get:Rule(order = 2) val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2092697
-    @Converted(
-        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.SettingsGeneralTest#verifyGeneralSettingsItemsTest"],
-        bug = 2075192,
-        since = "2026-09",
-    )
-    @Critical
     @Test
     fun verifyGeneralSettingsItemsTest() {
         homeScreen(composeTestRule) {}
