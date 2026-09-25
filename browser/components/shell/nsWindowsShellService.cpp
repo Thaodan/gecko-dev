@@ -109,8 +109,8 @@ struct SysFreeStringDeleter {
 };
 using BStrPtr = mozilla::UniquePtr<OLECHAR, SysFreeStringDeleter>;
 
-NS_IMPL_ISUPPORTS(nsWindowsShellService, nsIToolkitShellService,
-                  nsIShellService, nsIWindowsShellService)
+NS_IMPL_ISUPPORTS_INHERITED(nsWindowsShellService, nsShellService,
+                            nsIShellService, nsIWindowsShellService)
 
 /* Enable logging by setting MOZ_LOG to "nsWindowsShellService:5" for debugging
  * purposes. */

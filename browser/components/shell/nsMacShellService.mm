@@ -49,8 +49,8 @@ using mozilla::widget::SetDesktopImage;
 
 #define SAFARI_BUNDLE_IDENTIFIER "com.apple.Safari"
 
-NS_IMPL_ISUPPORTS(nsMacShellService, nsIMacShellService, nsIShellService,
-                  nsIToolkitShellService, nsIWebProgressListener)
+NS_IMPL_ISUPPORTS_INHERITED(nsMacShellService, nsShellService, nsIShellService,
+                            nsIMacShellService, nsIWebProgressListener)
 
 NS_IMETHODIMP
 nsMacShellService::IsDefaultBrowser(bool aForAllTypes,
