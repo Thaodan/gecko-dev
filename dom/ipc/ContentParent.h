@@ -1473,9 +1473,7 @@ class ContentParent final : public PContentParent,
  private:
   // Return an existing ContentParent if possible. Otherwise, `nullptr`.
   static UniqueContentParentKeepAlive GetUsedBrowserProcess(
-      const RemoteType& aRemoteType, nsTArray<ContentParent*>& aContentParents,
-      uint32_t aMaxContentParents, bool aPreferUsed, ProcessPriority aPriority,
-      uint64_t aBrowserId);
+      const RemoteType& aRemoteType, bool aPreferUsed, uint64_t aBrowserId);
 
   void AddToPool(nsTArray<ContentParent*>&);
   void RemoveFromPool(nsTArray<ContentParent*>&);
