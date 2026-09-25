@@ -8,6 +8,7 @@
 #include "mozilla/Attributes.h"
 
 #include <cstddef>
+#include <cstdint>
 
 namespace mozilla::htmlaccel {
 // True iff the buffer contains less-than, ampersand, carriage return,
