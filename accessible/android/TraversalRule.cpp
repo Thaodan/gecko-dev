@@ -211,17 +211,15 @@ uint16_t TraversalRule::DefaultMatch(Accessible* aAccessible) {
       }
       break;
     case roles::TEXT_LEAF:
-    case roles::GRAPHIC:
-      {
-        nsAutoString name;
-        aAccessible->Name(name);
-        name.CompressWhitespace();
-        if (!name.IsEmpty()) {
-          // Nameless text leaves are boring, skip them.
-          return nsIAccessibleTraversalRule::FILTER_MATCH;
-        }
+    case roles::GRAPHIC: {
+      nsAutoString name;
+      aAccessible->Name(name);
+      name.CompressWhitespace();
+      if (!name.IsEmpty()) {
+        // Nameless text leaves are boring, skip them.
+        return nsIAccessibleTraversalRule::FILTER_MATCH;
       }
-      break;
+    } break;
     case roles::STATICTEXT:
       // Ignore list bullets
       if (!IsListItemBullet(aAccessible)) {
