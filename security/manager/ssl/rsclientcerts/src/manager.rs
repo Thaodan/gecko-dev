@@ -5,7 +5,7 @@
 use pkcs11_bindings::*;
 use rsclientcerts_util::error::{Error, ErrorType};
 use rsclientcerts_util::error_here;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::convert::TryInto;
 use std::ffi::c_void;
 
@@ -50,11 +50,13 @@ pub trait Sign {
 pub trait ClientCertsBackend {
     type Key: CryptokiObject + Sign;
 
+    // Potentially search for CryptokiObjects and return them. If no search was performed,
+    // the backend should return `Ok(None)`.
     #[allow(clippy::type_complexity)]
     fn find_objects(
         &mut self,
         slot_id: CK_SLOT_ID,
-    ) -> Result<(Vec<CryptokiCert>, Vec<Self::Key>, Vec<CryptokiTrust>), Error>;
+    ) -> Result<Option<(Vec<CryptokiCert>, Vec<Self::Key>, Vec<CryptokiTrust>)>, Error>;
     fn get_slot_info(&self) -> CK_SLOT_INFO;
     fn get_token_info(&self) -> CK_TOKEN_INFO;
     fn get_mechanism_list(&self) -> Vec<CK_MECHANISM_TYPE>;
@@ -91,33 +93,33 @@ const SUPPORTED_ATTRIBUTES: &[CK_ATTRIBUTE_TYPE] = &[
     nss::CKA_PKCS_TRUST_SERVER_AUTH,
 ];
 
-enum Object<B: ClientCertsBackend> {
+enum Cryptoki<B: ClientCertsBackend> {
     Cert(CryptokiCert),
     Key(B::Key),
     Trust(CryptokiTrust),
 }
 
-impl<B: ClientCertsBackend> Object<B> {
+impl<B: ClientCertsBackend> Cryptoki<B> {
     fn matches(&self, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool {
         match self {
-            Object::Cert(cert) => cert.matches(attrs),
-            Object::Key(key) => key.matches(attrs),
-            Object::Trust(key) => key.matches(attrs),
+            Cryptoki::Cert(cert) => cert.matches(attrs),
+            Cryptoki::Key(key) => key.matches(attrs),
+            Cryptoki::Trust(key) => key.matches(attrs),
         }
     }
 
     fn get_attribute(&self, attribute: CK_ATTRIBUTE_TYPE) -> Option<&[u8]> {
         match self {
-            Object::Cert(cert) => cert.get_attribute(attribute),
-            Object::Key(key) => key.get_attribute(attribute),
-            Object::Trust(trust) => trust.get_attribute(attribute),
+            Cryptoki::Cert(cert) => cert.get_attribute(attribute),
+            Cryptoki::Key(key) => key.get_attribute(attribute),
+            Cryptoki::Trust(trust) => trust.get_attribute(attribute),
         }
     }
 
     fn id(&self) -> Result<&[u8], Error> {
         let attribute = match self {
-            Object::Cert(_) | Object::Key(_) => CKA_ID,
-            Object::Trust(_) => CKA_HASH_OF_CERTIFICATE,
+            Cryptoki::Cert(_) | Cryptoki::Key(_) => CKA_ID,
+            Cryptoki::Trust(_) => CKA_HASH_OF_CERTIFICATE,
         };
         self.get_attribute(attribute)
             .ok_or_else(|| error_here!(ErrorType::LibraryFailure))
@@ -129,9 +131,9 @@ impl<B: ClientCertsBackend> Object<B> {
         params: &Option<CK_RSA_PKCS_PSS_PARAMS>,
     ) -> Result<usize, Error> {
         match self {
-            Object::Cert(_) => Err(error_here!(ErrorType::InvalidArgument)),
-            Object::Key(key) => key.get_signature_length(&data, params),
-            Object::Trust(_) => Err(error_here!(ErrorType::InvalidArgument)),
+            Cryptoki::Cert(_) => Err(error_here!(ErrorType::InvalidArgument)),
+            Cryptoki::Key(key) => key.get_signature_length(&data, params),
+            Cryptoki::Trust(_) => Err(error_here!(ErrorType::InvalidArgument)),
         }
     }
 
@@ -141,10 +143,55 @@ impl<B: ClientCertsBackend> Object<B> {
         params: &Option<CK_RSA_PKCS_PSS_PARAMS>,
     ) -> Result<Vec<u8>, Error> {
         match self {
-            Object::Cert(_) => Err(error_here!(ErrorType::InvalidArgument)),
-            Object::Key(key) => key.sign(&data, params),
-            Object::Trust(_) => Err(error_here!(ErrorType::InvalidArgument)),
+            Cryptoki::Cert(_) => Err(error_here!(ErrorType::InvalidArgument)),
+            Cryptoki::Key(key) => key.sign(&data, params),
+            Cryptoki::Trust(_) => Err(error_here!(ErrorType::InvalidArgument)),
         }
+    }
+}
+
+struct Object<B: ClientCertsBackend> {
+    cryptoki_object: Cryptoki<B>,
+    active: bool,
+}
+
+impl<B: ClientCertsBackend> Object<B> {
+    fn new(cryptoki_object: Cryptoki<B>) -> Object<B> {
+        Object {
+            cryptoki_object,
+            active: true,
+        }
+    }
+
+    fn matches(&self, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool {
+        if !self.active {
+            return false;
+        }
+        self.cryptoki_object.matches(attrs)
+    }
+
+    fn get_attribute(&self, attribute: CK_ATTRIBUTE_TYPE) -> Option<&[u8]> {
+        self.cryptoki_object.get_attribute(attribute)
+    }
+
+    fn get_signature_length(
+        &mut self,
+        data: Vec<u8>,
+        params: &Option<CK_RSA_PKCS_PSS_PARAMS>,
+    ) -> Result<usize, Error> {
+        self.cryptoki_object.get_signature_length(data, params)
+    }
+
+    fn sign(
+        &mut self,
+        data: Vec<u8>,
+        params: &Option<CK_RSA_PKCS_PSS_PARAMS>,
+    ) -> Result<Vec<u8>, Error> {
+        self.cryptoki_object.sign(data, params)
+    }
+
+    fn mark_active(&mut self, active: bool) {
+        self.active = active;
     }
 }
 
@@ -152,14 +199,14 @@ impl<B: ClientCertsBackend> Object<B> {
 struct Slot<B: ClientCertsBackend> {
     /// A map of object handles to the underlying objects.
     objects: BTreeMap<CK_OBJECT_HANDLE, Object<B>>,
-    /// A set of certificate identifiers (not the same as handles).
-    cert_ids: BTreeSet<Vec<u8>>,
-    /// A set of key identifiers (not the same as handles). For each id in this set, there should be
-    /// a corresponding identical id in the `cert_ids` set.
-    key_ids: BTreeSet<Vec<u8>>,
-    /// A set of trust identifiers (not the same as handles). For each id in this set, there should
-    /// be a corresponding identical id in the `cert_ids` set.
-    trust_ids: BTreeSet<Vec<u8>>,
+    /// A map of certificate identifiers to object handles.
+    cert_ids: BTreeMap<Vec<u8>, CK_OBJECT_HANDLE>,
+    /// A map of key identifiers to object handles. For each id in this map, there should be a
+    /// corresponding identical id in the `cert_ids` map.
+    key_ids: BTreeMap<Vec<u8>, CK_OBJECT_HANDLE>,
+    /// A map of trust identifiers to object handles. For each id in this map, there should be a
+    /// corresponding identical id in the `cert_ids` map.
+    trust_ids: BTreeMap<Vec<u8>, CK_OBJECT_HANDLE>,
     /// The next object handle to hand out.
     next_handle: CK_OBJECT_HANDLE,
     /// The backend that provides objects, signing, etc.
@@ -170,9 +217,9 @@ impl<B: ClientCertsBackend> Slot<B> {
     fn new(backend: B) -> Slot<B> {
         Slot {
             objects: BTreeMap::new(),
-            cert_ids: BTreeSet::new(),
-            key_ids: BTreeSet::new(),
-            trust_ids: BTreeSet::new(),
+            cert_ids: BTreeMap::new(),
+            key_ids: BTreeMap::new(),
+            trust_ids: BTreeMap::new(),
             next_handle: 1,
             backend,
         }
@@ -184,36 +231,61 @@ impl<B: ClientCertsBackend> Slot<B> {
         next_handle
     }
 
-    /// When a new search session is opened, this searches for certificates and keys to expose. We
-    /// de-duplicate previously-found certificates and keys by keeping track of their IDs.
+    // When a new search session is opened, potentially search for certificates and keys to expose.
+    // De-duplicate previously-found certificates and keys by keeping track of their IDs.
     fn maybe_find_new_objects(&mut self, slot_id: CK_SLOT_ID) -> Result<(), Error> {
-        let (certs, keys, trusts) = self.backend.find_objects(slot_id)?;
+        let Some((certs, keys, trusts)) = self.backend.find_objects(slot_id)? else {
+            // If no search was performed, return early and use the already-known objects.
+            return Ok(());
+        };
+        // Otherwise, a search was performed. Mark all already-known objects as inactive, and then
+        // go through the returned objects, marking any already-known objects as active, as well as
+        // adding new objects.
+        self.objects
+            .values_mut()
+            .for_each(|object| object.mark_active(false));
         for cert in certs {
-            let object = Object::Cert(cert);
-            if self.cert_ids.contains(object.id()?) {
+            let cryptoki_object = Cryptoki::Cert(cert);
+            if let Some(handle) = self.cert_ids.get(cryptoki_object.id()?) {
+                let known_object = self
+                    .objects
+                    .get_mut(handle)
+                    .ok_or(error_here!(ErrorType::LibraryFailure))?;
+                known_object.mark_active(true);
                 continue;
             }
-            self.cert_ids.insert(object.id()?.to_vec());
             let handle = self.get_next_handle();
-            self.objects.insert(handle, object);
+            self.cert_ids.insert(cryptoki_object.id()?.to_vec(), handle);
+            self.objects.insert(handle, Object::new(cryptoki_object));
         }
         for key in keys {
-            let object = Object::Key(key);
-            if self.key_ids.contains(object.id()?) {
+            let cryptoki_object = Cryptoki::Key(key);
+            if let Some(handle) = self.key_ids.get(cryptoki_object.id()?) {
+                let known_object = self
+                    .objects
+                    .get_mut(handle)
+                    .ok_or(error_here!(ErrorType::LibraryFailure))?;
+                known_object.mark_active(true);
                 continue;
             }
-            self.key_ids.insert(object.id()?.to_vec());
             let handle = self.get_next_handle();
-            self.objects.insert(handle, object);
+            self.key_ids.insert(cryptoki_object.id()?.to_vec(), handle);
+            self.objects.insert(handle, Object::new(cryptoki_object));
         }
         for trust in trusts {
-            let object = Object::Trust(trust);
-            if self.trust_ids.contains(object.id()?) {
+            let cryptoki_object = Cryptoki::Trust(trust);
+            if let Some(handle) = self.trust_ids.get(cryptoki_object.id()?) {
+                let known_object = self
+                    .objects
+                    .get_mut(handle)
+                    .ok_or(error_here!(ErrorType::LibraryFailure))?;
+                known_object.mark_active(true);
                 continue;
             }
-            self.trust_ids.insert(object.id()?.to_vec());
             let handle = self.get_next_handle();
-            self.objects.insert(handle, object);
+            self.trust_ids
+                .insert(cryptoki_object.id()?.to_vec(), handle);
+            self.objects.insert(handle, Object::new(cryptoki_object));
         }
         Ok(())
     }

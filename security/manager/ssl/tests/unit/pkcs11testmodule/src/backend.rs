@@ -246,12 +246,16 @@ impl ClientCertsBackend for Backend {
     fn find_objects(
         &mut self,
         _slot_id: CK_SLOT_ID,
-    ) -> Result<(Vec<CryptokiCert>, Vec<Key>, Vec<CryptokiTrust>), Error> {
+    ) -> Result<Option<(Vec<CryptokiCert>, Vec<Key>, Vec<CryptokiTrust>)>, Error> {
         if self.found_objects {
-            return Ok((Vec::new(), Vec::new(), Vec::new()));
+            return Ok(None);
         }
         self.found_objects = true;
-        Ok((self.certs.clone(), self.keys.clone(), self.trusts.clone()))
+        Ok(Some((
+            self.certs.clone(),
+            self.keys.clone(),
+            self.trusts.clone(),
+        )))
     }
 
     fn get_slot_info(&self) -> CK_SLOT_INFO {
