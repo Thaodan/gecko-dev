@@ -1390,7 +1390,7 @@ tab-group > tab-split-view-wrapper {
         inset-block-end: calc(var(--space-xsmall) * -1);
       }
 
-      &:last-child {
+      :root:not([sidebar-expand-on-hover]) &:last-child {
         .tab-group-line {
           display: none;
 
@@ -1742,31 +1742,13 @@ tab-group > tab-split-view-wrapper {
     border-radius: var(--border-radius-large);
   }
 
-  &:not([hasactivetab]) .tabbrowser-tab {
-    &:first-child > .tab-stack {
-      border-block-end: 1px solid var(--toolbarbutton-icon-fill);
-      border-inline-end: transparent;
-    }
-
-    &:last-child > .tab-stack {
-      border-inline-start: transparent !important;
-    }
+  &:not([hasactivetab]) .tabbrowser-tab:first-child > .tab-stack {
+    border-block-end: 1px solid var(--toolbarbutton-icon-fill);
+    border-inline-end: none;
   }
-}
 
-/* When expand-on-hover is enabled, always stack split-view tabs in a single column */
-:root[sidebar-expand-on-hover] #tabbrowser-tabs[orient="vertical"][expanded] tab-split-view-wrapper {
-  grid-template-columns: 1fr;
-
-  &:not([hasactivetab]) .tabbrowser-tab {
-    &:first-child > .tab-stack {
-      border-block-end: 1px solid var(--toolbarbutton-icon-fill);
-      border-inline-end: transparent;
-    }
-
-    &:last-child > .tab-stack {
-      border-inline-start: transparent !important;
-    }
+  .tabbrowser-tab:last-child > .tab-stack {
+    border-inline-start: none !important;
   }
 }
 
