@@ -98,15 +98,17 @@ static CellISizeInfo GetISizeInfo(gfxContext* aRenderingContext,
     // specified block size. See nsTableFrame::Reflow() and
     // ReflowInput::Flags::mSpecialBSizeReflow.
     const nscoord cbBSize = NS_UNCONSTRAINEDSIZE;
+    const auto bSizeOffsets = aFrame->IntrinsicBSizeOffsets();
     const nscoord contentEdgeToBoxSizingBSize =
         stylePos->mBoxSizing == StyleBoxSizing::BorderBox
-            ? aFrame->IntrinsicBSizeOffsets().BorderPadding()
+            ? bSizeOffsets.BorderPadding()
             : 0;
     const nscoord cellBSize = nsIFrame::ComputeBSizeValueAsPercentageBasis(
         *stylePos->BSize(aWM, anchorResolutionParams),
         *stylePos->MinBSize(aWM, anchorResolutionParams),
         *stylePos->MaxBSize(aWM, anchorResolutionParams), cbBSize,
-        contentEdgeToBoxSizingBSize);
+        contentEdgeToBoxSizingBSize, bSizeOffsets.margin,
+        bSizeOffsets.BorderPadding());
 
     const IntrinsicSizeInput input(
         aRenderingContext, Nothing(),

@@ -7029,7 +7029,8 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
 
   const nscoord bSizeAsPercentageBasis = ComputeBSizeValueAsPercentageBasis(
       *styleBSize, *minBSizeCoord, *maxBSizeCoord, aCBSize.BSize(aWM),
-      boxSizingAdjust.BSize(aWM));
+      boxSizingAdjust.BSize(aWM), aMargin.BSize(aWM),
+      aBorderPadding.BSize(aWM));
   const IntrinsicSizeInput input(
       aSizingInput.mRenderingContext,
       Some(aCBSize.ConvertTo(GetWritingMode(), aWM)),
@@ -7222,15 +7223,15 @@ nscoord nsIFrame::ComputeBSizeValueAsPercentageBasis(
       nsLayoutUtils::IsAutoBSize(aStyleMinBSize, aCBBSize)
           ? 0
           : nsLayoutUtils::ComputeBSizeValueHandlingStretch(
-                aCBBSize, aMargin, aBorderPadding,
-                aContentEdgeToBoxSizingBSize, aStyleMinBSize);
+                aCBBSize, aMargin, aBorderPadding, aContentEdgeToBoxSizingBSize,
+                aStyleMinBSize);
 
   const nscoord maxBSize =
       nsLayoutUtils::IsAutoBSize(aStyleMaxBSize, aCBBSize)
           ? NS_UNCONSTRAINEDSIZE
           : nsLayoutUtils::ComputeBSizeValueHandlingStretch(
-                aCBBSize, aMargin, aBorderPadding,
-                aContentEdgeToBoxSizingBSize, aStyleMaxBSize);
+                aCBBSize, aMargin, aBorderPadding, aContentEdgeToBoxSizingBSize,
+                aStyleMaxBSize);
 
   return CSSMinMax(bSize, minBSize, maxBSize);
 }
@@ -7281,7 +7282,8 @@ LogicalSize nsIFrame::ComputeAutoSize(
     const nscoord bSize = ComputeBSizeValueAsPercentageBasis(
         *styleBSize, *stylePos->MinBSize(aWM, anchorResolutionParams),
         *stylePos->MaxBSize(aWM, anchorResolutionParams), aCBSize.BSize(aWM),
-        contentEdgeToBoxSizing.BSize(aWM));
+        contentEdgeToBoxSizing.BSize(aWM), aMargin.BSize(aWM),
+        aBorderPadding.BSize(aWM));
     const IntrinsicSizeInput input(
         aSizingInput.mRenderingContext,
         Some(aCBSize.ConvertTo(GetWritingMode(), aWM)),
@@ -7433,7 +7435,8 @@ LogicalSize nsIFrame::ComputeAbsolutePosAutoSize(
               : *styleBSize,
           *stylePos->MinBSize(aWM, anchorResolutionParams.mBaseParams),
           *stylePos->MaxBSize(aWM, anchorResolutionParams.mBaseParams),
-          aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM));
+          aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM), aMargin.BSize(aWM),
+          aBorderPadding.BSize(aWM));
 
       const IntrinsicSizeInput input(
           aSizingInput.mRenderingContext,
@@ -7607,10 +7610,13 @@ nsIFrame::ISizeComputationResult nsIFrame::ComputeISizeValue(
 
   const auto* stylePos = StylePosition();
   const auto anchorResolutionParams = AnchorPosResolutionParams::From(this);
+  // FIXME(dholbert, emilio): The 0 margin / border-padding here is
+  // wrong, we should either get proper values from the caller here, or
+  // alternatively resolve stretch earlier, see bug 2000035.
   const nscoord bSize = ComputeBSizeValueAsPercentageBasis(
       aStyleBSize, *stylePos->MinBSize(aWM, anchorResolutionParams),
       *stylePos->MaxBSize(aWM, anchorResolutionParams), aCBSize.BSize(aWM),
-      aContentEdgeToBoxSizing.BSize(aWM));
+      aContentEdgeToBoxSizing.BSize(aWM), /* margin = */ 0, /* bp = */ 0);
   const IntrinsicSizeInput input(
       aRenderingContext, Some(aCBSize.ConvertTo(GetWritingMode(), aWM)),
       Some(LogicalSize(aWM, NS_UNCONSTRAINEDSIZE, bSize)
