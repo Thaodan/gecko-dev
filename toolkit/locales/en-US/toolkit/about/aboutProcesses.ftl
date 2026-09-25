@@ -17,6 +17,10 @@ about-processes-kill-process =
     .title = Kill process
 about-processes-shutdown-tab =
     .title = Close tab
+about-processes-unload-tab =
+    .title = Unload tab
+about-processes-go-to-tab =
+    .title = Go to tab
 
 # Profiler icons
 # Variables:

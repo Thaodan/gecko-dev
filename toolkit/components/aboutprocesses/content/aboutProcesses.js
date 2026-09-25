@@ -1912,22 +1912,42 @@ class ProcessesTabView extends RowSet {
       row.appendChild(document.createElement("td"));
     }
 
-    // The close button, not the row, is the Tab stop -- same as the
+    // The unload button, not the row, is the Tab stop -- same as the
     // default view's kill button; rows here don't carry their own
     // tabindex.
     let actionCell = row.children[3];
-    let closeButton = document.createElement("span");
-    closeButton.className = "action-icon close-icon";
-    closeButton.setAttribute("role", "button");
-    closeButton.setAttribute("tabindex", "0");
-    document.l10n.setAttributes(closeButton, "about-processes-shutdown-tab");
-    actionCell.appendChild(closeButton);
+    let unloadButton = document.createElement("span");
+    unloadButton.className = "action-icon unload-icon";
+    unloadButton.setAttribute("role", "button");
+    unloadButton.setAttribute("tabindex", "0");
+    document.l10n.setAttributes(unloadButton, "about-processes-unload-tab");
+    actionCell.appendChild(unloadButton);
+    row.unloadButton = unloadButton;
 
     return row;
   }
 
   _updateRow(row, tabData) {
     row.tabData = tabData;
+
+    // Keep discarded tabs in the list, shown asleep rather than removed.
+    row.classList.toggle("killed", !!tabData.discarded);
+    if (tabData.discarded) {
+      row.classList.remove("killing");
+      row.removeAttribute("aria-busy");
+    }
+    // Kept visible and focusable rather than hidden, so a discarded row
+    // still has a keyboard-reachable way back. Selecting a discarded tab
+    // already triggers Firefox's own restore-on-select, so this navigates
+    // there rather than claiming to reload in place.
+    row.unloadButton.classList.toggle("unload-icon", !tabData.discarded);
+    row.unloadButton.classList.toggle("go-to-tab-icon", !!tabData.discarded);
+    document.l10n.setAttributes(
+      row.unloadButton,
+      tabData.discarded
+        ? "about-processes-go-to-tab"
+        : "about-processes-unload-tab"
+    );
 
     let [nameCell, memoryCell, cpuCell] = row.children;
     nameCell.className = "name favicon";
@@ -2102,8 +2122,16 @@ class ProcessesTabController {
   }
 
   _handleActivate(target) {
-    if (target.classList.contains("close-icon")) {
-      this._closeRow(target.closest("tr.tab-row"));
+    // Not .unload-icon: that class is swapped for .go-to-tab-icon once
+    // discarded, but the button itself is still the only activation target.
+    if (!target.classList.contains("action-icon")) {
+      return;
+    }
+    let row = target.closest("tr.tab-row");
+    if (row.tabData.discarded) {
+      this._navigateToTab(row);
+    } else {
+      this._unloadRow(row);
     }
   }
 
@@ -2113,17 +2141,20 @@ class ProcessesTabController {
     tabbrowser.documentGlobal.focus();
   }
 
-  // Closes the tab outright; graceful unload is a later addition.
-  _closeRow(row) {
+  // Unloads rather than closes, then dims the row for feedback until the
+  // next poll confirms the discard. Not removeTab(): the tab stays open,
+  // just asleep, and reload-on-reselect brings it back.
+  async _unloadRow(row) {
+    row.classList.add("killing");
+    row.setAttribute("aria-busy", "true");
     let { tab, tabbrowser } = row.tabData;
-    tabbrowser.removeTab(tab, { skipPermitUnload: true, animate: false });
-    // Removed immediately, rather than left to the eager update() below: the
-    // mouse-freeze it triggers would otherwise leave this row's now-stale
-    // DOM node in place (and its button acting on an already-removed tab)
-    // for the whole freeze window. Other rows still freeze in place as
-    // normal.
-    this._view._removeRow(row);
-    this.update();
+    await tabbrowser.explicitUnloadTabs([tab]);
+    if (!tab.hasAttribute("discarded")) {
+      // The tab was ineligible for unload (e.g. a non-remote tab) -- don't
+      // leave it looking busy forever.
+      row.classList.remove("killing");
+      row.removeAttribute("aria-busy");
+    }
   }
 
   // Re-sorts/re-renders from the last sample rather than update(): resampling
@@ -2161,7 +2192,7 @@ class ProcessesTabController {
   _commitView(tabCounters, { force = false } = {}) {
     // If there's been a recent mouse event, don't reorder or remove rows,
     // so the row under the cursor doesn't shift right as the user is about
-    // to click its close button. Matches ProcessesController._updateDisplay.
+    // to click its unload button. Matches ProcessesController._updateDisplay.
     let reorder =
       force || Date.now() - this._lastMouseEvent >= TIME_BEFORE_SORTING_AGAIN;
     this._view.commit(tabCounters, { reorder });

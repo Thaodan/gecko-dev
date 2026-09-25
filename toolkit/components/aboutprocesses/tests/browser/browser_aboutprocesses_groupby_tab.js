@@ -273,10 +273,9 @@ add_task(async function testDoubleClickNavigatesToTab() {
 
 add_task(async function testDoubleClickOnActionButtonDoesNotAlsoNavigate() {
   // Regression test: the dblclick listener used to navigate regardless of
-  // what was clicked, so double-clicking the action button both acted on
-  // the tab and navigated to it -- actively harmful once a later patch
-  // swaps this button to unload, since the "navigate" reloads the tab
-  // right back and undoes the unload.
+  // what was clicked, so double-clicking the unload button both unloaded
+  // the tab and navigated to it -- the navigate reloads the tab right back,
+  // undoing the unload.
   let tabOne = await setupTabWithOriginAndTitle(
     "https://example.org",
     "Double-click action button"
@@ -286,7 +285,7 @@ add_task(async function testDoubleClickOnActionButtonDoesNotAlsoNavigate() {
   let row = findTabRow(doc, "Double-click action button");
 
   row
-    .querySelector(".close-icon")
+    .querySelector(".unload-icon")
     .dispatchEvent(
       new doc.defaultView.MouseEvent("dblclick", { bubbles: true })
     );
@@ -300,79 +299,137 @@ add_task(async function testDoubleClickOnActionButtonDoesNotAlsoNavigate() {
   BrowserTestUtils.removeTab(tabOne);
 });
 
-add_task(async function testCloseButtonAndKeyboardActivation() {
+add_task(async function testUnloadButtonAndKeyboardActivation() {
   let tabOne = await setupTabWithOriginAndTitle(
     "https://example.org",
-    "Close via button"
+    "Unload via button"
   );
   let tabTwo = await setupTabWithOriginAndTitle(
     "https://example.net",
-    "Close via keyboard"
+    "Unload via keyboard"
   );
 
   let { tabAboutProcesses, doc } = await openTabView();
 
-  let rowOne = findTabRow(doc, "Close via button");
-  Assert.ok(!!rowOne, "Found the row for the tab we're about to close");
+  let rowOne = findTabRow(doc, "Unload via button");
+  Assert.ok(!!rowOne, "Found the row for the tab we're about to unload");
   Assert.equal(
     rowOne.tabIndex,
     -1,
-    "The row itself isn't a Tab stop -- only its close button is"
+    "The row itself isn't a Tab stop -- only its unload button is"
   );
 
-  let closeButtonOne = rowOne.querySelector(".close-icon");
+  let unloadButtonOne = rowOne.querySelector(".unload-icon");
   Assert.equal(
-    closeButtonOne.tabIndex,
+    unloadButtonOne.tabIndex,
     0,
-    "The close button is a real Tab stop, matching the default view's kill button"
-  );
-
-  info("Clicking the row's close button");
-  closeButtonOne.click();
-  await TestUtils.waitForCondition(
-    () => !tabOne.parentNode,
-    "Waiting for the clicked tab to actually close"
+    "The unload button is a real Tab stop, matching the default view's kill button"
   );
 
   info(
-    "Confirming Enter on the focused close button also closes its tab, " +
+    "Confirming Enter on the focused unload button also unloads its tab, " +
       "matching the default view's own Enter/Space-activates-a-focused-" +
       "button behavior"
   );
-  let rowTwo = findTabRow(doc, "Close via keyboard");
-  let closeButtonTwo = rowTwo.querySelector(".close-icon");
-  closeButtonTwo.focus();
+  let rowTwo = findTabRow(doc, "Unload via keyboard");
+  let unloadButtonTwo = rowTwo.querySelector(".unload-icon");
+  unloadButtonTwo.focus();
   EventUtils.synthesizeKey("KEY_Enter", {}, doc.defaultView);
   await TestUtils.waitForCondition(
-    () => !tabTwo.parentNode,
-    "Waiting for the Enter-activated tab to actually close"
+    () => tabTwo.hasAttribute("discarded"),
+    "Waiting for the Enter-activated tab to be discarded"
+  );
+  Assert.ok(rowTwo.isConnected, "Enter-unloaded row also stays in the list");
+  await forceTabViewUpdate(tabAboutProcesses);
+
+  info(
+    "Regression test: a discarded row's button used to be hidden, leaving " +
+      "keyboard users with no way to reach it at all -- unlike a mouse " +
+      "user, who could still double-click the row to get there. Confirming " +
+      "the still-focused button now relabels to go-to-tab and Enter reaches it."
+  );
+  Assert.ok(
+    !unloadButtonTwo.hidden,
+    "The button stays visible and focusable once discarded"
+  );
+  Assert.ok(
+    !unloadButtonTwo.classList.contains("unload-icon") &&
+      unloadButtonTwo.classList.contains("go-to-tab-icon"),
+    "The button's icon swaps once the tab is discarded"
+  );
+  Assert.equal(
+    unloadButtonTwo.getAttribute("data-l10n-id"),
+    "about-processes-go-to-tab",
+    "The same button relabels itself to go-to-tab once the tab is discarded"
+  );
+  Assert.ok(!tabTwo.selected, "The discarded tab isn't selected yet");
+  EventUtils.synthesizeKey("KEY_Enter", {}, doc.defaultView);
+  Assert.ok(
+    tabTwo.selected,
+    "Enter on the relabeled button navigates to (and so reloads) the discarded tab -- keyboard parity with double-click"
+  );
+
+  // The reload above backgrounded tabAboutProcesses, and its poll loop
+  // deliberately stops updating while hidden (matching the default view) --
+  // switch back so the rest of this test can keep polling it.
+  await BrowserTestUtils.switchTab(gBrowser, tabAboutProcesses);
+
+  info("Clicking the row's unload button");
+  unloadButtonOne.click();
+  await TestUtils.waitForCondition(
+    () => tabOne.hasAttribute("discarded"),
+    "Waiting for the clicked tab to be discarded"
+  );
+  Assert.ok(rowOne.isConnected, "Unloading a tab keeps its row in the list");
+
+  info(
+    "Confirming a poll after the discard settles the row into the static killed look, not removal"
+  );
+  await forceTabViewUpdate(tabAboutProcesses);
+  Assert.ok(rowOne.isConnected, "Row is still in the list after a poll tick");
+  Assert.ok(
+    rowOne.classList.contains("killed"),
+    "Discarded tab's row shows the static dimmed state"
+  );
+  Assert.ok(
+    !rowOne.classList.contains("killing"),
+    "Transient fade-out class is cleared once the discard is confirmed"
+  );
+
+  info("Clicking the button on a discarded row navigates to the tab instead");
+  unloadButtonOne.click();
+  Assert.ok(
+    tabOne.selected,
+    "Clicking the relabeled button selects (and so reloads) the discarded tab"
   );
 
   BrowserTestUtils.removeTab(tabAboutProcesses);
+  BrowserTestUtils.removeTab(tabOne);
+  BrowserTestUtils.removeTab(tabTwo);
 });
 
-add_task(async function testCloseRemovesRowImmediately() {
-  // Regression test: a click's own mouse-freeze used to leave the closed
-  // tab's row in place (with its button still able to act on the
-  // already-closed tab) for the whole freeze window.
-  let tabOne = await setupTabWithOriginAndTitle(
-    "https://example.org",
-    "Close removes row"
-  );
+add_task(async function testUnloadButtonDoesNotLeaveIneligibleTabBusy() {
+  let tab = BrowserTestUtils.addTab(gBrowser, "about:robots", {
+    forceNotRemote: true,
+  });
+  await BrowserTestUtils.browserLoaded(tab.linkedBrowser, true, "about:robots");
 
   let { tabAboutProcesses, doc } = await openTabView();
-  let row = findTabRow(doc, "Close removes row");
-  Assert.ok(!!row, "Found the row for the tab we're about to close");
+  let row = findTabRow(doc, tab.label);
+  Assert.ok(!!row, "Found the non-remote tab in the tab view");
 
-  info("Clicking the row's close button");
-  row.querySelector(".close-icon").click();
-
+  row.querySelector(".unload-icon").click();
+  await TestUtils.waitForCondition(
+    () => !row.classList.contains("killing") && !row.hasAttribute("aria-busy"),
+    "A tab that cannot be unloaded is not left in a fake busy state"
+  );
   Assert.ok(
-    !row.isConnected,
-    "The row is removed immediately, not left frozen in place"
+    !tab.hasAttribute("discarded"),
+    "The ineligible tab remains loaded"
   );
 
   BrowserTestUtils.removeTab(tabAboutProcesses);
+  BrowserTestUtils.removeTab(tab);
 });
 
 add_task(async function testPrivateWindowTabsExcludedFromNonPrivateView() {
