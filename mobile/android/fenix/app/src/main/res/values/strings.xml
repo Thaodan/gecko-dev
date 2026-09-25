@@ -2429,6 +2429,12 @@
     <string name="sign_in_create_account_text" tools:ignore="BrandUsage"><![CDATA[No account? <u>Create one</u> to sync Firefox between devices.]]></string>
     <!-- Text shown in confirmation dialog to sign out of account. %s is the name of the app (for example "Firefox"). -->
     <string name="sign_out_confirmation_message_2">%s will stop syncing with your account, but won’t delete any of your browsing data on this device.</string>
+    <!-- Title of the confirmation dialog shown when the user signs out of their account -->
+    <string name="sign_out_dialog_title">Sign out of your account?</string>
+    <!-- Body of the confirmation dialog shown when the user signs out of their account -->
+    <string name="sign_out_dialog_message">Synced data stays saved in your account.</string>
+    <!-- Text for the primary action button of the confirmation dialog shown when the user signs out of their account -->
+    <string name="sign_out_dialog_confirm_button">Sign out</string>
     <!-- Option to continue signing out of account shown in confirmation dialog to sign out of account -->
     <string name="sign_out_disconnect">Disconnect</string>
     <!-- Option to cancel signing out shown in confirmation dialog to sign out of account -->
