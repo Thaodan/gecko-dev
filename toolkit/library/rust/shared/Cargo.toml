@@ -95,6 +95,7 @@ mls_gk = { path = "../../../../security/mls/mls_gk" }
 noise = { path = "../../../../security/manager/ssl/noise" }
 pdf-trust-anchors = { path = "../../../../security/manager/ssl/pdf_trust_anchors" }
 qwac-trust-anchors = { path = "../../../../security/manager/ssl/qwac_trust_anchors" }
+remotecerts = {  path = "../../../../security/manager/ssl/remotecerts" }
 trust-anchors = { path = "../../../../security/manager/ssl/trust_anchors" }
 signature_cache = { path = "../../../../security/certverifier/signature_cache" }
 

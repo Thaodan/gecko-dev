@@ -498,6 +498,16 @@ LoadLoadableCertsTask::Run() {
              success ? "succeeded" : "failed"));
   }
 
+#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+  if (StaticPrefs::security_utility_pkcs11_module_process_enabled() &&
+      !GetInSafeMode()) {
+    bool success = LoadRemoteCertsModule();
+    MOZ_LOG(
+        gPIPNSSLog, LogLevel::Debug,
+        ("loading remote certs module %s", success ? "succeeded" : "failed"));
+  }
+#endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS
+
   {
     MonitorAutoLock rootsLoadedLock(mNSSComponent->mLoadableCertsLoadedMonitor);
     mNSSComponent->mLoadableCertsLoaded = true;
@@ -1918,38 +1928,69 @@ struct SearchState {
   bool IsForCurrentThread() { return mCurrentThread == PR_GetCurrentThread(); }
 };
 
+MOZ_RUNINIT StaticDataMutex<Maybe<SearchState>> sCertificateSearchState(
+    "sCertificateSearchState");
 MOZ_RUNINIT StaticDataMutex<Maybe<SearchState>> sClientCertificateSearchState(
     "sClientCertificateSearchState");
 
-extern "C" {
-// Returns true once for any given slot if gecko is searching for client
-// authentication certificates on the current thread (i.e., if this thread has
-// an AutoSearchingForClientAuthCertificates on the stack).
-// The idea is when gecko instantiates an
-// AutoSearchingForClientAuthCertificates, sClientCertificateSearchState will
-// be initialized with an empty set of slots that have searched on that thread.
-// NSS code running on that thread may result in a call to
-// IsGeckoSearchingForClientAuthCertificates() for a number of slots on
-// internal PKCS#11 modules. The first time any particular slot makes the call,
-// it will be informed that gecko is in fact searching for client certificates.
-// Subsequent calls for that particular slot will return false, but other slots
-// will each get their opportunity to search.
-bool IsGeckoSearchingForClientAuthCertificates(uint64_t uniqueSlotID) {
-  auto clientCertificateSearchState = sClientCertificateSearchState.Lock();
-  if (clientCertificateSearchState.ref().isNothing()) {
+bool IsGeckoSearchingForCertificatesWithState(
+    StaticDataMutex<Maybe<SearchState>>& searchStateMutex,
+    uint64_t uniqueSlotID) {
+  auto searchState = searchStateMutex.Lock();
+  if (searchState.ref().isNothing()) {
     return false;
   }
-  if (!clientCertificateSearchState.ref()->IsForCurrentThread()) {
+  if (!searchState.ref()->IsForCurrentThread()) {
     return false;
   }
-  if (clientCertificateSearchState.ref()->mSlotsThatHaveSearched.Contains(
-          uniqueSlotID)) {
+  if (searchState.ref()->mSlotsThatHaveSearched.Contains(uniqueSlotID)) {
     return false;
   }
-  clientCertificateSearchState.ref()->mSlotsThatHaveSearched.AppendElement(
-      uniqueSlotID);
+  searchState.ref()->mSlotsThatHaveSearched.AppendElement(uniqueSlotID);
   return true;
 }
+
+extern "C" {
+// Returns true once for any given slot if gecko is searching for certificates
+// on the current thread (i.e., if this thread has an
+// AutoSearchingForCertificates on the stack). The idea is when gecko
+// instantiates an AutoSearchingForCertificates, sCertificateSearchState will
+// be initialized with an empty set of slots that have searched on that thread.
+// NSS code running on that thread may result in a call to
+// IsGeckoSearchingForCertificates() for a number of slots on internal PKCS#11
+// modules (in particular, the remote certs module). The first time any
+// particular slot makes the call, it will be informed that gecko is in fact
+// searching for client certificates.
+// Subsequent calls for that particular slot will return false, but other slots
+// will each get their opportunity to search.
+bool IsGeckoSearchingForCertificates(uint64_t uniqueSlotID) {
+  return IsGeckoSearchingForCertificatesWithState(sCertificateSearchState,
+                                                  uniqueSlotID);
+}
+
+// Similarly, but just for client authentication certificates.
+bool IsGeckoSearchingForClientAuthCertificates(uint64_t uniqueSlotID) {
+  return IsGeckoSearchingForCertificatesWithState(sClientCertificateSearchState,
+                                                  uniqueSlotID);
+}
+}
+
+AutoSearchingForCertificates::AutoSearchingForCertificates() {
+  auto certificateSearchState = sCertificateSearchState.Lock();
+  // If some other thread is already searching, there's no point in updating
+  // any state here.
+  if (certificateSearchState.ref().isSome()) {
+    return;
+  }
+  certificateSearchState.ref() = Some(SearchState{PR_GetCurrentThread()});
+}
+
+AutoSearchingForCertificates::~AutoSearchingForCertificates() {
+  auto certificateSearchState = sCertificateSearchState.Lock();
+  if (certificateSearchState.ref().isSome() &&
+      certificateSearchState.ref()->IsForCurrentThread()) {
+    certificateSearchState.ref().reset();
+  }
 }
 
 AutoSearchingForClientAuthCertificates::
