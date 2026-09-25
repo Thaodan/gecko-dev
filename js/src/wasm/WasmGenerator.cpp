@@ -339,6 +339,7 @@ void ModuleGenerator::noteCodeRange(uint32_t codeRangeIndex,
       break;
     case CodeRange::FarJumpIsland:
     case CodeRange::BuiltinThunk:
+    case CodeRange::ReturnCallTrampoline:
       MOZ_CRASH("Unexpected CodeRange kind");
   }
 }
