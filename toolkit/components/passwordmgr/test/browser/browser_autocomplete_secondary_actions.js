@@ -496,22 +496,31 @@ add_task(async function test_secondary_action_menu_semantics() {
       await openACPopup(popup, browser, "#form-basic-username");
 
       const { item, rowItem, button } = getSecondaryAction(popup, 0);
-      const { label } = rowItem.actions.secondary;
+      const { label, tooltip } = rowItem.actions.secondary;
 
       Assert.ok(
         label.includes("user1"),
         `The button is named after the row it belongs to, got "${label}"`
       );
+      Assert.ok(
+        !tooltip.includes("user1"),
+        `The tooltip stays short and omits the row, got "${tooltip}"`
+      );
+      Assert.ok(
+        label.startsWith(tooltip),
+        "The accessible name starts with the tooltip text"
+      );
 
       const innerButton = button.shadowRoot.querySelector("#main-button");
       Assert.equal(
-        innerButton.getAttribute("title"),
+        innerButton.getAttribute("aria-label"),
         label,
-        "The button's accessible name comes from its title"
+        "The button's accessible name names the row"
       );
-      Assert.ok(
-        !innerButton.hasAttribute("aria-label"),
-        "The name is not duplicated across title and aria-label"
+      Assert.equal(
+        innerButton.getAttribute("title"),
+        tooltip,
+        "The tooltip is the short string, not the accessible name"
       );
       Assert.equal(
         innerButton.getAttribute("aria-haspopup"),

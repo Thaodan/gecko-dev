@@ -42,7 +42,10 @@ function moreActionsSecondaryAction(
 ) {
   return {
     type: "menupopup",
-    label: lazy.l10n.formatValueSync("autocomplete-more-actions2", { entry }),
+    label: lazy.l10n.formatValueSync("autocomplete-more-options-for-entry", {
+      entry,
+    }),
+    tooltip: lazy.l10n.formatValueSync("autocomplete-more-options"),
     actions: [
       { label: lazy.l10n.formatValueSync(editLabelId) },
       {
