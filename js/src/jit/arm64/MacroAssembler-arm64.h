@@ -1633,7 +1633,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     //                   = Reg + (-Tag)
     //                   = CMN32(Reg, -Tag)
     //
-    // Note: testGCThing, testPrimitive and testNumber which are checking for
+    // Note: testGCThing and testNumber which are checking for
     // inequalities should use unsigned comparisons (as done by default) in
     // order to keep the same relation order after the sign extension, i.e.
     // using Above or Below which are based on the carry flag.
@@ -1713,9 +1713,8 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   }
   Condition testPrimitive(Condition cond, Register tag) {
     MOZ_ASSERT(cond == Equal || cond == NotEqual);
-    cmpTag(tag, ImmTag(JS::detail::ValueUpperExclPrimitiveTag));
-    // Requires unsigned comparison due to cmpTag internals.
-    return (cond == Equal) ? Below : AboveOrEqual;
+    cmpTag(tag, ImmTag(JSVAL_TAG_OBJECT));
+    return (cond == Equal) ? NotEqual : Equal;
   }
   Condition testError(Condition cond, Register tag) {
     return testMagic(cond, tag);
