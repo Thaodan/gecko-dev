@@ -93,6 +93,12 @@ class InteractiveWidgetTest : BaseSessionTest() {
         )
     }
 
+    private fun surfaceHeight(): Double {
+        val rect = Rect()
+        mainSession.getSurfaceBounds(rect)
+        return rect.height().toDouble()
+    }
+
     /**
      * A white reference image [height] device pixels tall and as wide as the
      * surface, with a [barColor] bar spanning from [barTop] to [barBottom].
@@ -121,6 +127,52 @@ class InteractiveWidgetTest : BaseSessionTest() {
             paint,
         )
         return bitmap
+    }
+
+    @GeckoSessionTestRule.NullDelegate(Autofill.Delegate::class)
+    @Test
+    fun fixedElementWithHalfVisibleDynamicToolbarOnResizesVisual() {
+        mainSession.setActive(true)
+
+        mainSession.loadTestPath(BaseSessionTest.BUG2028072_HTML_PATH)
+        mainSession.waitForPageStop()
+        mainSession.promiseAllPaintsDone()
+        mainSession.flushApzRepaints()
+
+        ensureKeyboardOpen()
+
+        // Bring the position:fixed element into the visual viewport.
+        mainSession.evaluateJS("document.querySelector('#fixed').scrollIntoView()")
+        mainSession.flushApzRepaints()
+        mainSession.promiseAllPaintsDone()
+
+        // Leave the dynamic toolbar half visible. The main thread doesn't move
+        // position:fixed content until the toolbar is fully collapsed, so the
+        // compositor has to shift it over the area the toolbar vacated.
+        view.setVerticalClipping(-dynamicToolbarMaxHeight / 2)
+        mainSession.flushApzRepaints()
+        mainSession.promiseAllPaintsDone()
+
+        val visualViewportHeight = mainSession.evaluateJS("window.visualViewport.height") as Double
+        val fixedHeight =
+            mainSession.evaluateJS("document.querySelector('#fixed').getBoundingClientRect().height") as Double
+        val pixelRatio = mainSession.evaluateJS("window.devicePixelRatio") as Double
+
+        // The fixed element is flush with the bottom of the area the
+        // half-visible toolbar leaves, i.e. the visual viewport.
+        val reference =
+            createReferenceImage(
+                surfaceHeight(),
+                (visualViewportHeight - fixedHeight) * pixelRatio,
+                Color.rgb(0, 0, 255),
+                visualViewportHeight * pixelRatio,
+            )
+
+        val result = sessionRule.waitForResult(view.capturePixels())
+        AssertUtils.assertScreenshotResult(result, reference)
+
+        // Close the software keyboard.
+        imm.hideSoftInputFromWindow(view.getWindowToken(), 0)
     }
 
     @GeckoSessionTestRule.NullDelegate(Autofill.Delegate::class)
@@ -161,7 +213,7 @@ class InteractiveWidgetTest : BaseSessionTest() {
 
     @GeckoSessionTestRule.NullDelegate(Autofill.Delegate::class)
     @Test
-    fun stickyElementWithDynamicToolbarOnResizesVisual() {
+    fun fixedElementWithDynamicToolbarOnResizesVisual() {
         mainSession.setActive(true)
 
         mainSession.loadTestPath(BaseSessionTest.INTERACTIVE_WIDGET_HTML_PATH)
