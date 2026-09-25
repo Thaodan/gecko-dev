@@ -4776,6 +4776,27 @@ class ProtonScreen extends (external_React_default()).PureComponent {
       className: "noodle yellow-circle"
     }));
   }
+  renderLastCardImage(content) {
+    const {
+      width,
+      height,
+      marginBlock,
+      marginInline,
+      ...image
+    } = content.center_image ?? {};
+    return /*#__PURE__*/external_React_default().createElement("div", {
+      className: "last-card-image",
+      style: {
+        "--last-card-image-width": width,
+        "--last-card-image-height": height,
+        "--last-card-picture-margin-block": marginBlock,
+        "--last-card-picture-margin-inline": marginInline
+      }
+    }, content.center_image ? this.renderPicture({
+      ...image,
+      className: "center-image"
+    }) : null);
+  }
   renderCornerImage(anchor) {
     const cornerImage = this.props.content.corner_image;
     const position = resolveCornerImagePosition(cornerImage.position);
@@ -5131,7 +5152,7 @@ class ProtonScreen extends (external_React_default()).PureComponent {
     }, content.logo && content.fullscreen ? this.renderPicture(content.logo) : null, isRtamo && content.fullscreen ? this.renderRTAMOIcon(addonType, this.props.themeScreenshots, this.props.addonIconURL) : null, content.title || content.subtitle ? /*#__PURE__*/external_React_default().createElement("div", {
       id: "multi-stage-message-welcome-text",
       className: `welcome-text ${content.title_style || ""}`
-    }, content.title ? this.renderTitle(content) : null, content.subtitle ? /*#__PURE__*/external_React_default().createElement(Localized, {
+    }, content.title ? this.renderTitle(content) : null, content.layout === "last-card" ? this.renderLastCardImage(content) : null, content.subtitle ? /*#__PURE__*/external_React_default().createElement(Localized, {
       text: content.subtitle
     }, /*#__PURE__*/external_React_default().createElement("h2", {
       "data-l10n-args": JSON.stringify({
@@ -5325,8 +5346,9 @@ const screenContentShape = {
   width: (prop_types_default()).string,
   // The callout card padding as a CSS value.
   padding: prop_types_default().oneOfType([(prop_types_default()).string, (prop_types_default()).number]),
-  // Used when a single row with a more inline layout is desired. Works well in
-  // tandem with title_logo.
+  // A layout variant for the screen. 'inline' is a single row layout that
+  // works well in tandem with title_logo. 'last-card' is the final card-stack
+  // screen, with the title and subtitle split around a centered image slot.
   layout: (prop_types_default()).string,
   // If true, adds a colorful gradient border to the screen. This is only
   // supported for screens with 'hide_arrow' set to true. There is no effect
@@ -5424,6 +5446,40 @@ const screenContentShape = {
       // against the screen's other content.
       delay: (prop_types_default()).string
     })
+  }),
+  // An optional image shown in the center image slot of the 'last-card'
+  // layout, revealed once the text split animation completes.
+  center_image: prop_types_default().shape({
+    // The image URL.
+    imageURL: (prop_types_default()).string,
+    // The dark mode image URL.
+    darkModeImageURL: (prop_types_default()).string,
+    // The reduced motion image URL.
+    reducedMotionImageURL: (prop_types_default()).string,
+    // The dark mode reduced motion image URL.
+    darkModeReducedMotionImageURL: (prop_types_default()).string,
+    // Right-to-left replacements for any of the URLs above, applied over them
+    // when the document is RTL. Any keys ommitted keep their base values.
+    rtl: prop_types_default().shape({
+      imageURL: (prop_types_default()).string,
+      darkModeImageURL: (prop_types_default()).string,
+      reducedMotionImageURL: (prop_types_default()).string,
+      darkModeReducedMotionImageURL: (prop_types_default()).string
+    }),
+    // The <img> alt text.
+    alt: prop_types_default().oneOfType([(prop_types_default()).string, (prop_types_default()).object]),
+    // The CSS width of the image slot. The split animation and margins adapt
+    // to it. Defaults to 120px.
+    width: (prop_types_default()).string,
+    // The CSS height of the image slot. Defaults to 120px.
+    height: (prop_types_default()).string,
+    // The CSS style overriding the marginBlock property. Useful for aligning
+    // the image's focal point with the text. Only applies when the text is
+    // split around the image, not when stacked at narrow breakpoints.
+    marginBlock: (prop_types_default()).string,
+    // The CSS style overriding the marginInline property. Only applies when
+    // the text is split around the image, not when stacked at narrow breakpoints.
+    marginInline: (prop_types_default()).string
   }),
   // The text for the headline.
   title: localizableThingPropTypes,

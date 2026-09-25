@@ -2958,11 +2958,28 @@ const MESSAGES = () => [
             },
             primary_button: {
               label: { raw: "Primary action" },
-              action: { dismiss: true },
+              action: { navigate: true },
             },
             secondary_button: {
               label: { raw: "Dismiss" },
               action: { dismiss: true },
+            },
+          },
+        },
+        // The unique "last card" layout (bug 2069997).
+        {
+          id: "CARD_STACK_SCREEN_3",
+          force_hide_steps_indicator: true,
+          content: {
+            position: "card-stack",
+            layout: "last-card",
+            title: { raw: "Tracking protection is on." },
+            subtitle: { raw: "Say hello to a better web." },
+            center_image: {
+              imageURL:
+                "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260923193621--fox-peeking--a7cb53ba-228f-4b81-a92f-6ad34474872b.svg",
+              alt: "",
+              marginBlock: "40px 0",
             },
           },
         },
