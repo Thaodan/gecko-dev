@@ -753,8 +753,9 @@ class ContentParent final : public PContentParent,
    * removed from this list, but will still be in the sContentParents list for
    * the GetAll/GetAllEvenIfDead APIs.
    */
-  static nsClassHashtable<nsGenericHashKey<RemoteType>,
-                          nsTArray<ContentParent*>>* sBrowserContentParents;
+  static mozilla::StaticAutoPtr<
+      nsClassHashtable<nsGenericHashKey<RemoteType>, nsTArray<ContentParent*>>>
+      sBrowserContentParents;
   static mozilla::StaticAutoPtr<LinkedList<ContentParent>> sContentParents;
 
   void AddShutdownBlockers();
