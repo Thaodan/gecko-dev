@@ -212,6 +212,7 @@ android-aarch64/opt:
         job-name: android-aarch64-opt
     attributes:
         enable-full-crashsymbols: true
+        code-review-build-test: true
     treeherder:
         platform: android-5-0-aarch64/opt
         symbol: B

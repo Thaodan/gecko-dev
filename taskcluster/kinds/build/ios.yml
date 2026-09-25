@@ -58,6 +58,8 @@ ios/debug:
 
 ios/opt:
     description: "ios opt"
+    attributes:
+        code-review-build-test: true
     index:
         job-name: ios-opt
     treeherder:

@@ -373,6 +373,7 @@ win64/opt:
     attributes:
         enable-build-signing: true
         enable-full-crashsymbols: true
+        code-review-build-test: true
     treeherder:
         platform: windows2012-64/opt
         symbol: B

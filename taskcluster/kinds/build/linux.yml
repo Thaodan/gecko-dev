@@ -13,6 +13,7 @@ linux64/opt:
     attributes:
         enable-build-signing: true
         enable-full-crashsymbols: true
+        code-review-build-test: true
     treeherder:
         platform: linux64/opt
         symbol: B
@@ -357,6 +358,7 @@ linux64/debug:
         job-name: linux64-debug
     attributes:
         enable-full-crashsymbols: true
+        code-review-build-test: true
     treeherder:
         platform: linux64/debug
         symbol: B

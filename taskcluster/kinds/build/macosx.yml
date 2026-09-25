@@ -110,6 +110,7 @@ macosx64-aarch64/opt:
     attributes:
         enable-build-signing: true
         enable-full-crashsymbols: true
+        code-review-build-test: true
     treeherder:
         platform: osx-cross-aarch64/opt
         symbol: B
