@@ -306,3 +306,9 @@ tr.separate-from-previous-process-group {
 .cpu:dir(rtl) {
   background: linear-gradient(to right, var(--bar-color) calc(var(--bar-width) * 1%), transparent calc(var(--bar-width) * 1%));
 }
+
+/* No CPU bar in the tab view -- --bar-width's default of 0 still leaves a
+   rounding sliver of the gradient visible. */
+.tab-row > .cpu {
+  background: none;
+}
