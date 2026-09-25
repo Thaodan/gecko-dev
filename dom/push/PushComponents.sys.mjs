@@ -32,6 +32,7 @@ ChromeUtils.defineLazyGetter(lazy, "PushService", function () {
 // changes. These are duplicated and used in `nsIPushNotifier`. They're exposed
 // on `nsIPushService` so that JS callers only need to import this service.
 const OBSERVER_TOPIC_PUSH = "push-message";
+const OBSERVER_TOPIC_PUSH_MESSAGE_HANDLED = "push-message-handled";
 const OBSERVER_TOPIC_SUBSCRIPTION_CHANGE = "push-subscription-change";
 const OBSERVER_TOPIC_SUBSCRIPTION_MODIFIED = "push-subscription-modified";
 
@@ -64,6 +65,7 @@ PushServiceBase.prototype = {
   ]),
 
   pushTopic: OBSERVER_TOPIC_PUSH,
+  pushMessageHandledTopic: OBSERVER_TOPIC_PUSH_MESSAGE_HANDLED,
   subscriptionChangeTopic: OBSERVER_TOPIC_SUBSCRIPTION_CHANGE,
   subscriptionModifiedTopic: OBSERVER_TOPIC_SUBSCRIPTION_MODIFIED,
 
