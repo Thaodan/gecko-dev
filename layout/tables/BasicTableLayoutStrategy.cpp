@@ -197,8 +197,8 @@ static CellISizeInfo GetISizeInfo(gfxContext* aRenderingContext,
   if (maxISize->ConvertsToLength() || nsIFrame::ToExtremumLength(*maxISize)) {
     nscoord c =
         aFrame
-            ->ComputeISizeValue(aRenderingContext, aWM, zeroSize, zeroSize, 0,
-                                *maxISize,
+            ->ComputeISizeValue(aRenderingContext, aWM, zeroSize, zeroSize,
+                                zeroSize, *maxISize,
                                 *stylePos->BSize(aWM, anchorResolutionParams),
                                 aFrame->GetAspectRatio())
             .mISize;
@@ -225,8 +225,8 @@ static CellISizeInfo GetISizeInfo(gfxContext* aRenderingContext,
   if (minISize->ConvertsToLength() || nsIFrame::ToExtremumLength(*minISize)) {
     nscoord c =
         aFrame
-            ->ComputeISizeValue(aRenderingContext, aWM, zeroSize, zeroSize, 0,
-                                *minISize,
+            ->ComputeISizeValue(aRenderingContext, aWM, zeroSize, zeroSize,
+                                zeroSize, *minISize,
                                 *stylePos->BSize(aWM, anchorResolutionParams),
                                 aFrame->GetAspectRatio())
             .mISize;
