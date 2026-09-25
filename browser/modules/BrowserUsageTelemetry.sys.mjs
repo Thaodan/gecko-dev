@@ -849,8 +849,8 @@ export let BrowserUsageTelemetry = {
       return "microsoft-system-share";
     }
 
-    if (node.classList?.contains("share-mac-picker-item")) {
-      return "macos-share-picker";
+    if (node.hasAttribute("data-share-name")) {
+      return "share-macos-provider";
     }
 
     // See if this is a customizable widget.
