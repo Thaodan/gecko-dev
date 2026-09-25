@@ -336,17 +336,34 @@ var State = {
   },
 };
 
-class ProcessesView {
-  // Processes, tabs and subframes that we killed during the previous iteration.
-  // Array<{pid:Number} | {windowId:Number}>
-  _killedRecently = [];
+/**
+ * Row-reuse bookkeeping shared by both view/controller pairs in this file
+ * (see ProcessesTabView below): rows are keyed by id and diff-inserted into
+ * `tbody` in commitOrder() so unrelated rows aren't recreated -- and don't
+ * lose scroll/focus state -- just because their position in the list moved.
+ */
+class RowSet {
   _rowsById = new Map();
   _orderedRows = [];
 
-  commit() {
-    this._killedRecently.length = 0;
-    let tbody = document.getElementById("process-tbody");
+  _getOrCreateRow(rowId, createRow) {
+    let row = this._rowsById.get(rowId);
+    if (!row) {
+      row = createRow();
+      row.rowId = rowId;
+      this._rowsById.set(rowId, row);
+    }
+    this._orderedRows.push(row);
+    return row;
+  }
 
+  _removeRow(row) {
+    this._rowsById.delete(row.rowId);
+    row.remove();
+  }
+
+  _commitOrder() {
+    let tbody = document.getElementById("process-tbody");
     let insertPoint = tbody.firstChild;
     let nextRow;
     while ((nextRow = this._orderedRows.shift())) {
@@ -356,7 +373,6 @@ class ProcessesView {
         tbody.insertBefore(nextRow, insertPoint);
       }
     }
-
     if (insertPoint) {
       while ((nextRow = insertPoint.nextSibling)) {
         this._removeRow(nextRow);
@@ -364,8 +380,20 @@ class ProcessesView {
       this._removeRow(insertPoint);
     }
   }
-  // If we are not going to display the updated list of rows, drop references
-  // to rows that haven't been inserted in the DOM tree.
+}
+
+class ProcessesView extends RowSet {
+  // Processes, tabs and subframes that we killed during the previous iteration.
+  // Array<{pid:Number} | {windowId:Number}>
+  _killedRecently = [];
+
+  commit() {
+    this._killedRecently.length = 0;
+    this._commitOrder();
+  }
+  // Drops not-yet-inserted rows entirely, unlike ProcessesTabView's
+  // _discardOrder() (which appends new rows immediately) -- this isn't a
+  // persistently-visible panel, so a briefly-invisible new row doesn't matter.
   discardUpdate() {
     for (let row of this._orderedRows) {
       if (!row.parentNode) {
@@ -381,23 +409,14 @@ class ProcessesView {
       tbody.insertBefore(nextRow, row.nextSibling);
     }
   }
-  _removeRow(row) {
-    this._rowsById.delete(row.rowId);
-
-    row.remove();
-  }
   _getOrCreateRow(rowId, cellCount) {
-    let row = this._rowsById.get(rowId);
-    if (!row) {
-      row = document.createElement("tr");
+    return super._getOrCreateRow(rowId, () => {
+      let row = document.createElement("tr");
       while (cellCount--) {
         row.appendChild(document.createElement("td"));
       }
-      row.rowId = rowId;
-      this._rowsById.set(rowId, row);
-    }
-    this._orderedRows.push(row);
-    return row;
+      return row;
+    });
   }
 
   displayCpu(data, cpuCell, maxSlopeCpu) {
@@ -406,7 +425,7 @@ class ProcessesView {
     // don't have an integer number of pixels.
     let barWidth = -0.5;
     if (data.slopeCpu == null) {
-      this._fillCell(cpuCell, {
+      fillCell(cpuCell, {
         fluentName: "about-processes-cpu-user-and-kernel-not-ready",
         classes: ["cpu"],
       });
@@ -426,7 +445,7 @@ class ProcessesView {
         let fluentName = data.active
           ? "about-processes-cpu-almost-idle"
           : "about-processes-cpu-fully-idle";
-        this._fillCell(cpuCell, {
+        fillCell(cpuCell, {
           fluentName,
           fluentArgs: {
             total: duration,
@@ -435,7 +454,7 @@ class ProcessesView {
           classes: ["cpu"],
         });
       } else {
-        this._fillCell(cpuCell, {
+        fillCell(cpuCell, {
           fluentName: "about-processes-cpu",
           fluentArgs: {
             percent: data.slopeCpu,
@@ -674,10 +693,10 @@ class ProcessesView {
     // Column: Memory
     let memoryCell = nameCell.nextSibling;
     {
-      let formattedTotal = this._formatMemory(data.totalRamSize);
+      let formattedTotal = formatMemory(data.totalRamSize);
       if (data.deltaRamSize) {
-        let formattedDelta = this._formatMemory(data.deltaRamSize);
-        this._fillCell(memoryCell, {
+        let formattedDelta = formatMemory(data.deltaRamSize);
+        fillCell(memoryCell, {
           fluentName: "about-processes-total-memory-size-changed",
           fluentArgs: {
             total: formattedTotal.amount,
@@ -689,7 +708,7 @@ class ProcessesView {
           classes: ["memory"],
         });
       } else {
-        this._fillCell(memoryCell, {
+        fillCell(memoryCell, {
           fluentName: "about-processes-total-memory-size-no-change",
           fluentArgs: {
             total: formattedTotal.amount,
@@ -879,7 +898,7 @@ class ProcessesView {
           : data.documentURI.prePath;
       className = "frame-many";
     }
-    this._fillCell(nameCell, {
+    fillCell(nameCell, {
       fluentName,
       fluentArgs,
       classes: ["name", "indent", "favicon", className],
@@ -986,7 +1005,7 @@ class ProcessesView {
     let nameCell = row.firstChild;
     let fluentName = this.utilityActorNameToFluentName(data.actorName);
     let fluentArgs = {};
-    this._fillCell(nameCell, {
+    fillCell(nameCell, {
       fluentName,
       fluentArgs,
       classes: ["name", "indent", "favicon"],
@@ -1008,7 +1027,7 @@ class ProcessesView {
 
     // Column: name
     let nameCell = row.firstChild;
-    this._fillCell(nameCell, {
+    fillCell(nameCell, {
       fluentName: "about-processes-thread-name-and-id",
       fluentArgs: {
         name: data.name,
@@ -1021,11 +1040,6 @@ class ProcessesView {
     this.displayCpu(data, nameCell.nextSibling, maxSlopeCpu);
 
     // Third column (Buttons) is empty, nothing to do.
-  }
-
-  _fillCell(elt, { classes, fluentName, fluentArgs }) {
-    document.l10n.setAttributes(elt, fluentName, fluentArgs);
-    elt.className = classes.join(" ");
   }
 
   _getDuration(rawDurationNS) {
@@ -1049,48 +1063,108 @@ class ProcessesView {
     }
     return { duration: rawDurationNS / NS_PER_DAY, unit: "d" };
   }
+}
 
-  /**
-   * Format a value representing an amount of memory.
-   *
-   * As a special case, we also handle `null`, which represents the case in which we do
-   * not have sufficient information to compute an amount of memory.
-   *
-   * @param {number?} value The value to format. Must be either `null` or a non-negative number.
-   * @return { {unit: "GB" | "MB" | "KB" | B" | "?"}, amount: Number } The formated amount and its
-   *  unit, which may be used for e.g. additional CSS formating.
-   */
-  _formatMemory(value) {
-    if (value == null) {
-      return { unit: "?", amount: 0 };
-    }
-    if (typeof value != "number") {
-      throw new Error(`Invalid memory value ${value}`);
-    }
-    let abs = Math.abs(value);
-    if (abs >= ONE_GIGA) {
-      return {
-        unit: "GB",
-        amount: value / ONE_GIGA,
-      };
-    }
-    if (abs >= ONE_MEGA) {
-      return {
-        unit: "MB",
-        amount: value / ONE_MEGA,
-      };
-    }
-    if (abs >= ONE_KILO) {
-      return {
-        unit: "KB",
-        amount: value / ONE_KILO,
-      };
-    }
+// Shared by both view/controller pairs below (ProcessesView and
+// ProcessesTabView), so neither needs to reach into the other's instance.
+function fillCell(elt, { classes, fluentName, fluentArgs }) {
+  document.l10n.setAttributes(elt, fluentName, fluentArgs);
+  elt.className = classes.join(" ");
+}
+
+/**
+ * Format a value representing an amount of memory.
+ *
+ * As a special case, we also handle `null`, which represents the case in which we do
+ * not have sufficient information to compute an amount of memory.
+ *
+ * @param {number?} value The value to format. Must be either `null` or a non-negative number.
+ * @return { {unit: "GB" | "MB" | "KB" | B" | "?"}, amount: Number } The formated amount and its
+ *  unit, which may be used for e.g. additional CSS formating.
+ */
+function formatMemory(value) {
+  if (value == null) {
+    return { unit: "?", amount: 0 };
+  }
+  if (typeof value != "number") {
+    throw new Error(`Invalid memory value ${value}`);
+  }
+  let abs = Math.abs(value);
+  if (abs >= ONE_GIGA) {
     return {
-      unit: "B",
-      amount: value,
+      unit: "GB",
+      amount: value / ONE_GIGA,
     };
   }
+  if (abs >= ONE_MEGA) {
+    return {
+      unit: "MB",
+      amount: value / ONE_MEGA,
+    };
+  }
+  if (abs >= ONE_KILO) {
+    return {
+      unit: "KB",
+      amount: value / ONE_KILO,
+    };
+  }
+  return {
+    unit: "B",
+    amount: value,
+  };
+}
+
+// Shared by both view/controller pairs (see the bottom of this file) so
+// gLocalizedUnits/gLocalizedProcessProperties get populated regardless of
+// which one is entered first.
+async function promiseLocalizations() {
+  let [
+    ns,
+    us,
+    ms,
+    s,
+    m,
+    h,
+    d,
+    B,
+    KB,
+    MB,
+    GB,
+    TB,
+    PB,
+    EB,
+    privateWindow,
+    serviceWorker,
+    jitDisabled,
+    withCoopCoep,
+  ] = await document.l10n.formatValues([
+    "duration-unit-ns",
+    "duration-unit-us",
+    "duration-unit-ms",
+    "duration-unit-s",
+    "duration-unit-m",
+    "duration-unit-h",
+    "duration-unit-d",
+    "memory-unit-B",
+    "memory-unit-KB",
+    "memory-unit-MB",
+    "memory-unit-GB",
+    "memory-unit-TB",
+    "memory-unit-PB",
+    "memory-unit-EB",
+    "about-processes-web-isolated-property-private",
+    "about-processes-web-isolated-property-serviceworker",
+    "about-processes-web-isolated-property-jit-disabled",
+    "about-processes-web-isolated-property-with-coop-coep",
+  ]);
+
+  return {
+    units: {
+      duration: { ns, us, ms, s, m, h, d },
+      memory: { B, KB, MB, GB, TB, PB, EB },
+    },
+    properties: { privateWindow, serviceWorker, jitDisabled, withCoopCoep },
+  };
 }
 
 class ProcessesController {
@@ -1120,55 +1194,7 @@ class ProcessesController {
     this._initHangReports();
 
     // Start prefetching localizations.
-    this._promiseLocalizations = (async function () {
-      let [
-        ns,
-        us,
-        ms,
-        s,
-        m,
-        h,
-        d,
-        B,
-        KB,
-        MB,
-        GB,
-        TB,
-        PB,
-        EB,
-        privateWindow,
-        serviceWorker,
-        jitDisabled,
-        withCoopCoep,
-      ] = await document.l10n.formatValues([
-        "duration-unit-ns",
-        "duration-unit-us",
-        "duration-unit-ms",
-        "duration-unit-s",
-        "duration-unit-m",
-        "duration-unit-h",
-        "duration-unit-d",
-        "memory-unit-B",
-        "memory-unit-KB",
-        "memory-unit-MB",
-        "memory-unit-GB",
-        "memory-unit-TB",
-        "memory-unit-PB",
-        "memory-unit-EB",
-        "about-processes-web-isolated-property-private",
-        "about-processes-web-isolated-property-serviceworker",
-        "about-processes-web-isolated-property-jit-disabled",
-        "about-processes-web-isolated-property-with-coop-coep",
-      ]);
-
-      return {
-        units: {
-          duration: { ns, us, ms, s, m, h, d },
-          memory: { B, KB, MB, GB, TB, PB, EB },
-        },
-        properties: { privateWindow, serviceWorker, jitDisabled, withCoopCoep },
-      };
-    })();
+    this._promiseLocalizations = promiseLocalizations();
 
     let tbody = document.getElementById("process-tbody");
 
