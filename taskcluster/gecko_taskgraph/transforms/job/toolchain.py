@@ -6,6 +6,7 @@ Support for running toolchain-building jobs via dedicated scripts
 """
 
 import os
+from pathlib import Path
 from typing import Literal, Optional, Union
 
 import taskgraph
@@ -22,6 +23,8 @@ from gecko_taskgraph.util.attributes import RELEASE_PROJECTS
 from gecko_taskgraph.util.hash import hash_paths
 
 CACHE_TYPE = "toolchains.v3"
+
+MACOS_SETUP = "taskcluster/scripts/misc/macos-setup.sh"
 
 
 class ToolchainRunSchema(Schema, kw_only=True):
@@ -72,11 +75,18 @@ class ToolchainRunSchema(Schema, kw_only=True):
             )
 
 
-def get_digest_data(config, run, taskdesc):
+def get_digest_data(config, run, taskdesc, fetches):
     files = list(run.pop("resources", []))
     # The script
     files.append("taskcluster/scripts/misc/{}".format(run["script"]))
     env = taskdesc["worker"].get("env", {})
+    # Scripts shared with other platforms source macos-setup.sh; only tasks that
+    # fetch the macOS SDK run it.
+    if any(t.startswith("macosx64-sdk") for t in fetches.get("toolchain", [])) and any(
+        f.endswith(".sh") and "macos-setup.sh" in Path(GECKO, f).read_text()
+        for f in files
+    ):
+        files.append(MACOS_SETUP)
     # Tooltool manifest if any is defined:
     tooltool_manifest = env.get("TOOLTOOL_MANIFEST")
     if tooltool_manifest:
@@ -147,7 +157,7 @@ def common_toolchain(config, job, taskdesc, is_docker):
         attributes["artifact_prefix"] = os.path.dirname(toolchain_artifact)
 
     # Note: this must be called before altering `env`.
-    digest_data = get_digest_data(config, run, taskdesc)
+    digest_data = get_digest_data(config, run, taskdesc, job.get("fetches", {}))
 
     env = worker.setdefault("env", {})
     env.update({

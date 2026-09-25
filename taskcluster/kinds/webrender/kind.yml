@@ -115,6 +115,7 @@ tasks:
         when:
             files-changed:
                 - 'gfx/wr/**'
+                - 'taskcluster/scripts/misc/macos-setup.sh'
                 - 'taskcluster/scripts/misc/wr-macos-cross-build-setup.sh'
                 - 'taskcluster/scripts/misc/wrench-macos-build.sh'
 
@@ -173,6 +174,7 @@ tasks:
         when:
             files-changed:
                 - 'gfx/wr/**'
+                - 'taskcluster/scripts/misc/macos-setup.sh'
                 - 'taskcluster/scripts/misc/wr-cargotest-macos-build.sh'
                 - 'taskcluster/scripts/misc/wr-macos-cross-build-setup.sh'
 

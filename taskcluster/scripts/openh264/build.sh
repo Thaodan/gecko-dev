@@ -42,6 +42,9 @@ case "$TARGET" in
         export PATH="$MOZ_FETCHES_DIR/clang/bin:$MOZ_FETCHES_DIR/binutils/bin:$PATH"
         CC=clang; CXX=clang++
         ;;
+    # The mac targets deliberately don't use macos-setup.sh: new builds of the plugin are also
+    # shipped to older supported ESR releases with lower macOS minimums than the other toolchains
+    # target.
     x86_64-apple-darwin)
         PLATFORM=macosx64
         MAKE_OS=darwin
