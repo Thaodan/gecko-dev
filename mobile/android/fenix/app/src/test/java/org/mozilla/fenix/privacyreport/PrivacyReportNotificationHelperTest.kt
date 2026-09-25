@@ -21,8 +21,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.GleanMetrics.TrackingProtection
-import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.FenixGleanTestRule
+import org.mozilla.fenix.privacyreport.PrivacyReportNotificationAvailability.APP_NOTIFICATIONS_DISABLED
+import org.mozilla.fenix.privacyreport.PrivacyReportNotificationAvailability.AVAILABLE
+import org.mozilla.fenix.privacyreport.PrivacyReportNotificationAvailability.CHANNEL_MISSING
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 
@@ -117,5 +119,25 @@ class PrivacyReportNotificationHelperTest {
 
         assertEquals(0, shadowOf(notificationManager).allNotifications.size)
         assertNull(TrackingProtection.privacyReportNotificationSent.testGetValue())
+    }
+
+    @Test
+    fun `GIVEN the channel exists WHEN privacyReportNotificationAvailability is called THEN it is available`() {
+        ensurePrivacyReportNotificationChannelExists(testContext)
+
+        assertEquals(AVAILABLE, privacyReportNotificationAvailability(testContext))
+    }
+
+    @Test
+    fun `GIVEN the channel was never created WHEN privacyReportNotificationAvailability is called THEN the channel is missing`() {
+        assertEquals(CHANNEL_MISSING, privacyReportNotificationAvailability(testContext))
+    }
+
+    @Test
+    fun `GIVEN app notifications are disabled and the channel was never created WHEN privacyReportNotificationAvailability is called THEN app notifications are disabled`() {
+        val notificationManager = testContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        shadowOf(notificationManager).setNotificationsEnabled(false)
+
+        assertEquals(APP_NOTIFICATIONS_DISABLED, privacyReportNotificationAvailability(testContext))
     }
 }
