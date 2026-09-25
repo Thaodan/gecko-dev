@@ -8318,10 +8318,6 @@ bool nsLayoutUtils::UpdateCompositionBoundsForRCDRSF(
           ? SubtractDynamicToolbar::Yes
           : SubtractDynamicToolbar::No;
 
-  const bool isKeyboardVisibleOnOverlaysContent =
-      aPresContext->GetKeyboardHeight() &&
-      aPresContext->Document()->InteractiveWidget() ==
-          InteractiveWidget::OverlaysContent;
   if (shouldSubtractDynamicToolbar == SubtractDynamicToolbar::Yes &&
       // In `overlays-content` mode with the software keyboard visible, avoid
       // flipping `shouldSubtractDynamicToolbar` below. We want to exclude
@@ -8330,7 +8326,7 @@ bool nsLayoutUtils::UpdateCompositionBoundsForRCDRSF(
       // layout viewport height in ExpandHeightForDynamicToolbar(). Otherwise,
       // the visual viewport will be taller than the layout viewport which can
       // lead to rendering problems.
-      !isKeyboardVisibleOnOverlaysContent) {
+      !aPresContext->IsKeyboardVisibleOnOverlaysContent()) {
     if (RefPtr<MobileViewportManager> MVM =
             aPresContext->PresShell()->GetMobileViewportManager()) {
       // Convert the intrinsic composition size to app units here since
@@ -8363,7 +8359,7 @@ bool nsLayoutUtils::UpdateCompositionBoundsForRCDRSF(
   // Add the keyboard height in the case of
   // `interactive-widget=overlays-content` so that contents being overlaid by
   // the keyboard can NOT be reachable by scrolling.
-  if (isKeyboardVisibleOnOverlaysContent) {
+  if (aPresContext->IsKeyboardVisibleOnOverlaysContent()) {
     contentSize.height += ViewAs<LayoutDevicePixel>(
         aPresContext->GetKeyboardHeight(),
         PixelCastJustification::LayoutDeviceIsScreenForBounds);
@@ -10167,11 +10163,11 @@ template <typename SizeType>
     const nsPresContext* aPresContext, const SizeType& aSize) {
   MOZ_ASSERT(aPresContext);
 
-  // This expansion is applicable only for cases where the software keyboard is
-  // hidden or the document is `interactive-widget=resizes-content` mode
-  // because in other cases the visual viewport size is always smaller than
-  // the layout viewport so that there should be room to scroll.
-  if (!aPresContext->IsKeyboardHiddenOrResizesContentMode()) {
+  // In `overlays-content` mode with the software keyboard visible the dynamic
+  // toolbar never changes viewport related metrics
+  // (see nsPresContext::UpdateDynamicToolbarOffset), so there is no area for it
+  // to expand.
+  if (aPresContext->IsKeyboardVisibleOnOverlaysContent()) {
     return aSize;
   }
 
