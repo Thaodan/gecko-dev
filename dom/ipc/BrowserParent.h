@@ -12,6 +12,7 @@
 #include "mozilla/ContentCache.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/BrowserBridgeParent.h"
 #include "mozilla/dom/PBrowserParent.h"
@@ -811,7 +812,7 @@ class BrowserParent final : public PBrowserParent,
   // layer to dispatch events.
   typedef nsTHashMap<nsUint64HashKey, WeakPtr<BrowserParent>>
       LayerToBrowserParentTable;
-  static LayerToBrowserParentTable* sLayerToBrowserParentTable;
+  static StaticAutoPtr<LayerToBrowserParentTable> sLayerToBrowserParentTable;
 
   static void AddBrowserParentToTable(layers::LayersId aLayersId,
                                       BrowserParent* aBrowserParent);

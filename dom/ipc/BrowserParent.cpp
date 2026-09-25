@@ -254,8 +254,8 @@ constinit Maybe<RequestingAccessKeyEventData::Data>
 
 namespace dom {
 
-BrowserParent::LayerToBrowserParentTable*
-    BrowserParent::sLayerToBrowserParentTable = nullptr;
+StaticAutoPtr<BrowserParent::LayerToBrowserParentTable>
+    BrowserParent::sLayerToBrowserParentTable;
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(BrowserParent)
   NS_INTERFACE_MAP_ENTRY(nsIAuthPromptProvider)
@@ -444,7 +444,6 @@ void BrowserParent::RemoveBrowserParentFromTable(layers::LayersId aLayersId) {
   }
   sLayerToBrowserParentTable->Remove(uint64_t(aLayersId));
   if (sLayerToBrowserParentTable->Count() == 0) {
-    delete sLayerToBrowserParentTable;
     sLayerToBrowserParentTable = nullptr;
   }
 }
