@@ -2154,6 +2154,28 @@ export class AIWindow extends MozLitElement {
   }
 
   /**
+   * Handles a resume card's click (whether on the card itself or its
+   * Resume button): resumes the chat conversation the card belongs to and
+   * attaches an open-tabs confirmation card built from its preview tabs.
+   *
+   * @param {CustomEvent} event - The resume event
+   * @private
+   */
+  #handleResumeCardResume = event => {
+    const { journeyId } = event.detail;
+    const card = this.resumeCards.find(({ memory }) => memory.id === journeyId);
+    if (!card) {
+      return;
+    }
+
+    this.#handleResumePromptSelected({
+      memory: card.memory,
+      content: card.content,
+      text: card.content.headline,
+    });
+  };
+
+  /**
    * Dismisses the memory for the session and removes its pill from this tab.
    *
    * @param {CustomEvent} event - The prompt-dismissed event
@@ -3735,6 +3757,8 @@ export class AIWindow extends MozLitElement {
                     .cards=${this.resumeCards}
                     .emptyReason=${this.resumeCardsEmptyReason}
                     .loading=${this.resumeCardsLoading}
+                    @smartwindow-resume-card:resume=${this
+                      .#handleResumeCardResume}
                     @smartwindow-resume-card:menu-item-selected=${this
                       .#handleResumeCardMenuItemSelected}
                     @smartwindow-resume-section:hide=${this
