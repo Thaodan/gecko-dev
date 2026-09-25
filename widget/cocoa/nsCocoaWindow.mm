@@ -1500,7 +1500,7 @@ void nsCocoaWindow::DispatchAPZWheelInputEvent(InputData& aEvent) {
           return;
         }
 
-        event = MayStartSwipeForAPZ(aEvent.AsPanGestureInput(), result);
+        event = MayStartSwipe(aEvent.AsPanGestureInput(), result);
         break;
       }
       case SCROLLWHEEL_INPUT: {
@@ -1529,9 +1529,6 @@ void nsCocoaWindow::DispatchAPZWheelInputEvent(InputData& aEvent) {
 
   switch (aEvent.mInputType) {
     case PANGESTURE_INPUT: {
-      if (MayStartSwipeForNonAPZ(aEvent.AsPanGestureInput())) {
-        return;
-      }
       event = aEvent.AsPanGestureInput().ToWidgetEvent(this);
       break;
     }
