@@ -12557,7 +12557,7 @@ nsSize PresShell::GetVisualViewportSizeUpdatedByDynamicToolbar() const {
 
 nsSize PresShell::GetFixedViewportSize() const {
   nsSize layoutViewportSize = GetLayoutViewportSize();
-  if (mPresContext->IsKeyboardVisibleOnOverlaysContent()) {
+  if (!mPresContext->IsKeyboardHiddenOrResizesContentMode()) {
     return layoutViewportSize;
   }
   layoutViewportSize.height +=
