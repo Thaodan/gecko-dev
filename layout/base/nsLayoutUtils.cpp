@@ -4383,8 +4383,8 @@ static nscoord GetDefiniteSizeTakenByBoxSizing(
     bool aIgnorePadding, const Maybe<LogicalSize>& aPercentageBasis) {
   nscoord sizeTakenByBoxSizing = 0;
   if (MOZ_UNLIKELY(aBoxSizing == StyleBoxSizing::BorderBox)) {
-    const bool isHorizontalAxis =
-        aAxis == LogicalAxis::Inline == !aFrame->GetWritingMode().IsVertical();
+    const bool isHorizontalAxis = (aAxis == LogicalAxis::Inline) ==
+                                  !aFrame->GetWritingMode().IsVertical();
     const nsStyleBorder* styleBorder = aFrame->StyleBorder();
     sizeTakenByBoxSizing = isHorizontalAxis
                                ? styleBorder->GetComputedBorder().LeftRight()
