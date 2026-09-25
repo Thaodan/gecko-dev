@@ -680,9 +680,9 @@
     "forcedColors": "{Theme$button/background/color/active}"
   },
   "page-nav/button/background/color/selected": {
-    "light": "{Theme$color/accent/primary}",
-    "dark": "{Theme$color/accent/primary}",
-    "forcedColors": "{Theme$color/accent/primary}"
+    "light": "{Theme$button/background/color/primary}",
+    "dark": "{Theme$button/background/color/primary}",
+    "forcedColors": "{Theme$button/background/color/selected}"
   },
   "page-nav/button/border/color": {
     "light": "{Theme$border/color/transparent}",
@@ -692,7 +692,7 @@
   "page-nav/button/text/color/selected": {
     "light": "{Theme$button/text/color/primary}",
     "dark": "{Theme$button/text/color/primary}",
-    "forcedColors": "{Theme$button/text/color/primary}"
+    "forcedColors": "{Theme$button/text/color/selected}"
   },
   "page-nav/hr/background/color": {
     "light": "{Theme$border/color/deemphasized}",
