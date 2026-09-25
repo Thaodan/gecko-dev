@@ -14,6 +14,7 @@ import androidx.core.net.toUri
 import mozilla.components.support.base.android.NotificationsDelegate
 import mozilla.components.support.base.ids.SharedIdsHelper
 import org.mozilla.fenix.BuildConfig
+import org.mozilla.fenix.GleanMetrics.TrackingProtection
 import org.mozilla.fenix.R
 import org.mozilla.fenix.utils.IntentUtils
 import org.mozilla.fenix.utils.createBaseNotification
@@ -76,6 +77,7 @@ fun showPrivacyReportNotification(
         PRIVACY_REPORT_NOTIFICATION_TAG,
         SharedIdsHelper.getIdForTag(context, PRIVACY_REPORT_NOTIFICATION_TAG),
         buildPrivacyReportNotification(context, content),
+        onPermissionGranted = { TrackingProtection.privacyReportNotificationSent.record() },
     )
 }
 
