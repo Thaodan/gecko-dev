@@ -911,7 +911,6 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
         }
       }
 
-      OverflowAreas kidOverflowAreas;
       nsReflowStatus kidStatus;
       if (!kidFrameNeedsPush) {
         ReflowAbsoluteFrame(aDelegatingFrame, aPresContext, aReflowInput,

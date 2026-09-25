@@ -11289,8 +11289,6 @@ void nsIFrame::ComputePreserve3DChildrenOverflow(
   // included in the normal overflow calculation. Any children that don't
   // participate have normal overflow, so will have been included already.
 
-  nsRect childVisual;
-  nsRect childScrollable;
   for (const auto& childList : ChildLists()) {
     for (nsIFrame* child : childList.mList) {
       // If this child participates in the 3d context, then take the
