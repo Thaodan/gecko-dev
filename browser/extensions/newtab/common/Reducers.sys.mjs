@@ -162,6 +162,9 @@ export const INITIAL_STATE = {
     uploadResult: null,
     // The images someone has saved, newest first. Shown as "Your images".
     customWallpapers: [],
+    // Picker thumbnails, one { filename, file } per saved image. The library
+    // is not reachable by URL, so the bytes come over when the picker opens.
+    customWallpaperThumbnails: [],
   },
   SectionsLayout: {
     configs: {},
@@ -1144,6 +1147,8 @@ function Wallpapers(prevState = INITIAL_STATE.Wallpapers, action) {
       return { ...prevState, uploadedWallpaper: action.data };
     case at.WALLPAPERS_CUSTOM_LIBRARY_SET:
       return { ...prevState, customWallpapers: action.data };
+    case at.WALLPAPERS_CUSTOM_THUMBNAILS_SET:
+      return { ...prevState, customWallpaperThumbnails: action.data };
     case at.WALLPAPER_UPLOAD_RESULT:
       return { ...prevState, uploadResult: action.data };
     default:
