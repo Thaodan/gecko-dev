@@ -1475,7 +1475,7 @@ class ContentParent final : public PContentParent,
   static UniqueContentParentKeepAlive GetUsedBrowserProcess(
       const RemoteType& aRemoteType, bool aPreferUsed, uint64_t aBrowserId);
 
-  void AddToPool(nsTArray<ContentParent*>&);
+  void AddToPool();
   void RemoveFromPool(nsTArray<ContentParent*>&);
   void AssertNotInPool();
 
