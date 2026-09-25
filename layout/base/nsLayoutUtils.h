@@ -1749,8 +1749,7 @@ class nsLayoutUtils {
    *   StyleBoxSizing::ContentBox to this function, or to just use the
    *   convenience-wrapper that has "ContentBox" in the function name.
    */
-  static inline nscoord ComputeStretchSize(nscoord aSizeToFill,
-                                           nscoord aMargin,
+  static inline nscoord ComputeStretchSize(nscoord aSizeToFill, nscoord aMargin,
                                            nscoord aBorderPadding,
                                            mozilla::StyleBoxSizing aBoxSizing) {
     NS_ASSERTION(aSizeToFill != NS_UNCONSTRAINEDSIZE,
