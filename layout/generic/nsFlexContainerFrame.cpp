@@ -6599,7 +6599,7 @@ nscoord nsFlexContainerFrame::ComputeIntrinsicISize(
       // eventually simplify this to look more like GenerateFlexItemForChild(),
       // once that works.
       const auto stretchedStyleCrossSize =
-          StyleSize::FromAppUnits(nsLayoutUtils::ComputeStretchBSize(
+          StyleSize::FromAppUnits(nsLayoutUtils::ComputeStretchSize(
               aInput.mPercentageBasisForChildren->BSize(flexWM), offsets.margin,
               offsets.BorderPadding(), childStylePos->mBoxSizing));
       // The size override is in the child's own writing mode.

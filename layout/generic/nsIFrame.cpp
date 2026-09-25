@@ -6830,7 +6830,7 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
     if (styleBSizeConsideringOverrides->BehavesLikeStretchOnBlockAxis() &&
         aCBSize.BSize(aWM) != NS_UNCONSTRAINEDSIZE) {
       // We've got a 'stretch' BSize; resolve it to a length:
-      nscoord stretchBSize = nsLayoutUtils::ComputeStretchBSize(
+      nscoord stretchBSize = nsLayoutUtils::ComputeStretchSize(
           aCBSize.BSize(aWM), aMargin.BSize(aWM), aBorderPadding.BSize(aWM),
           stylePos->mBoxSizing);
       // Note(dshin): This allocates.
@@ -7208,36 +7208,28 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
 nscoord nsIFrame::ComputeBSizeValueAsPercentageBasis(
     const StyleSize& aStyleBSize, const StyleSize& aStyleMinBSize,
     const StyleMaxSize& aStyleMaxBSize, nscoord aCBBSize,
-    nscoord aContentEdgeToBoxSizingBSize) {
+    nscoord aContentEdgeToBoxSizingBSize, nscoord aMargin,
+    nscoord aBorderPadding) {
   if (nsLayoutUtils::IsAutoBSize(aStyleBSize, aCBBSize)) {
     return NS_UNCONSTRAINEDSIZE;
   }
 
-  // TODO(dholbert): This is a temporary hack, to be fixed up in bug 1933604.
-  // We don't know have aMargin or aBorderPadding args available,
-  // so we use these dummy zero-valued variables as placeholders in
-  // our call to ComputeBSizeValueHandlingStretch. (This might mean we
-  // end up resolving 'stretch' to something slighlty-too-large for the
-  // purposes of this call, if there's actually nonzero margin/border/padding).
-  const nscoord dummyMargin = 0;
-  const nscoord dummyBorderPadding = 0;
-
   const nscoord bSize = nsLayoutUtils::ComputeBSizeValueHandlingStretch(
-      aCBBSize, dummyMargin, dummyBorderPadding, aContentEdgeToBoxSizingBSize,
+      aCBBSize, aMargin, aBorderPadding, aContentEdgeToBoxSizingBSize,
       aStyleBSize);
 
   const nscoord minBSize =
       nsLayoutUtils::IsAutoBSize(aStyleMinBSize, aCBBSize)
           ? 0
           : nsLayoutUtils::ComputeBSizeValueHandlingStretch(
-                aCBBSize, dummyMargin, dummyBorderPadding,
+                aCBBSize, aMargin, aBorderPadding,
                 aContentEdgeToBoxSizingBSize, aStyleMinBSize);
 
   const nscoord maxBSize =
       nsLayoutUtils::IsAutoBSize(aStyleMaxBSize, aCBBSize)
           ? NS_UNCONSTRAINEDSIZE
           : nsLayoutUtils::ComputeBSizeValueHandlingStretch(
-                aCBBSize, dummyMargin, dummyBorderPadding,
+                aCBBSize, aMargin, aBorderPadding,
                 aContentEdgeToBoxSizingBSize, aStyleMaxBSize);
 
   return CSSMinMax(bSize, minBSize, maxBSize);

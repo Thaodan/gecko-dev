@@ -1967,7 +1967,7 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
     if (styleBSizeConsideringOverrides->BehavesLikeStretchOnBlockAxis() &&
         aCBSize.BSize(aWM) != NS_UNCONSTRAINEDSIZE) {
       // We've got a 'stretch' BSize; resolve it to a length:
-      nscoord stretchBSize = nsLayoutUtils::ComputeStretchBSize(
+      nscoord stretchBSize = nsLayoutUtils::ComputeStretchSize(
           aCBSize.BSize(aWM), aMargin.BSize(aWM), aBorderPadding.BSize(aWM),
           stylePos->mBoxSizing);
       // Note(dshin): This allocates.

@@ -3049,11 +3049,16 @@ class nsIFrame : public nsQueryFrame {
       const mozilla::StyleSizeOverrides& aSizeOverrides,
       mozilla::ComputeSizeFlags aFlags);
 
+
+  // TODO(dholbert): Callers without aMargin/aBorderPadding at hand pass zero,
+  // which resolves 'stretch' to something slightly too large if there's
+  // actually nonzero margin/border/padding.
   static nscoord ComputeBSizeValueAsPercentageBasis(
       const mozilla::StyleSize& aStyleBSize,
       const mozilla::StyleSize& aStyleMinBSize,
       const mozilla::StyleMaxSize& aStyleMaxBSize, nscoord aCBBSize,
-      nscoord aContentEdgeToBoxSizingBSize);
+      nscoord aContentEdgeToBoxSizingBSize, nscoord aMargin = 0,
+      nscoord aBorderPadding = 0);
 
  protected:
   /**
