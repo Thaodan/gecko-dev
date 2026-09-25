@@ -19728,6 +19728,12 @@
   value: false
   mirror: always
 
+- name: telemetry.fog.test.decelerate_early_events
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+  rust: true
+
 #---------------------------------------------------------------------------
 # Prefs starting with "test."
 #---------------------------------------------------------------------------
