@@ -663,6 +663,7 @@ urlbar:
           `not_now`,
           `opt_in`,
           `paste_go`,
+          `remove_history`,
           `search_button`,
           `show_less_frequently`
         type: string
