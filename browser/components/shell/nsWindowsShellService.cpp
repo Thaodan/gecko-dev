@@ -279,6 +279,13 @@ nsWindowsShellService::IsDefaultBrowser(bool aForAllTypes,
 }
 
 NS_IMETHODIMP
+nsWindowsShellService::IsDefaultBrowserAsync(bool aForAllTypes,
+                                             JSContext* aContext,
+                                             mozilla::dom::Promise** _retval) {
+  return nsShellService::IsDefaultBrowserAsync(aForAllTypes, aContext, _retval);
+}
+
+NS_IMETHODIMP
 nsWindowsShellService::IsDefaultHandlerFor(
     const nsAString& aFileExtensionOrProtocol, bool* aIsDefaultHandlerFor) {
   *aIsDefaultHandlerFor = false;

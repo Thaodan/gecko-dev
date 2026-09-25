@@ -79,6 +79,12 @@ nsMacShellService::IsDefaultBrowser(bool aForAllTypes,
 }
 
 NS_IMETHODIMP
+nsMacShellService::IsDefaultBrowserAsync(bool aForAllTypes, JSContext* aContext,
+                                         mozilla::dom::Promise** _retval) {
+  return nsShellService::IsDefaultBrowserAsync(aForAllTypes, aContext, _retval);
+}
+
+NS_IMETHODIMP
 nsMacShellService::SetDefaultBrowser(bool aForAllUsers) {
   // Note: We don't support aForAllUsers on Mac OS X.
 

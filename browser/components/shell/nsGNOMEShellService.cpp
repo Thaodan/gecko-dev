@@ -217,6 +217,13 @@ nsGNOMEShellService::IsDefaultBrowser(bool aForAllTypes,
   return NS_OK;
 }
 
+NS_IMETHODIMP
+nsGNOMEShellService::IsDefaultBrowserAsync(bool aForAllTypes,
+                                           JSContext* aContext,
+                                           mozilla::dom::Promise** _retval) {
+  return nsShellService::IsDefaultBrowserAsync(aForAllTypes, aContext, _retval);
+}
+
 bool nsGNOMEShellService::IsDefaultForSchemeHelper(
     const nsACString& aScheme, nsIGIOService* giovfs) const {
   nsCOMPtr<nsIGIOService> gioService;
