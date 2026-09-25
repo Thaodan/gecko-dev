@@ -71,6 +71,8 @@ PushServiceBase.prototype = {
 
   ensureReady() {},
 
+  ignoreNewMessages() {},
+
   _addListeners() {
     for (let message of this._messages) {
       this._mm.addMessageListener(message, this);
@@ -273,6 +275,13 @@ Object.assign(PushServiceParent.prototype, {
    */
   ensureReady() {
     return this.service.init();
+  },
+
+  /**
+   * Stop handling new push messages. See PushService.ignoreNewMessages.
+   */
+  ignoreNewMessages() {
+    this.service.ignoreNewMessages();
   },
 
   _toPageRecord(principal, data) {
