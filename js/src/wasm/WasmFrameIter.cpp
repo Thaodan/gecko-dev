@@ -152,17 +152,7 @@ WasmFrameIter::WasmFrameIter(JitActivation* activation, wasm::Frame* fp)
 
     // The debugEnabled() relies on valid value of resumePCinCurrentFrame_
     // to identify DebugFrame. Normally this field is updated at popFrame().
-    // The only case when this can happend is during IndirectCallBadSig
-    // trapping and stack unwinding. The top frame will never be at ReturnStub
-    // callsite, except during IndirectCallBadSig unwinding.
-    CallSite site;
-    if (code_->lookupCallSite(unwoundPC, &site) &&
-        site.kind() == CallSiteKind::ReturnStub) {
-      MOZ_ASSERT(trapData.trap == Trap::IndirectCallBadSig);
-      resumePCinCurrentFrame_ = (uint8_t*)unwoundPC;
-    } else {
-      resumePCinCurrentFrame_ = (uint8_t*)trapData.resumePC;
-    }
+    resumePCinCurrentFrame_ = (uint8_t*)trapData.resumePC;
 
     MOZ_ASSERT(!done());
     return;
@@ -596,10 +586,7 @@ bool WasmFrameIter::debugEnabled() const {
     return false;
   }
 
-  // Debug frame is not present at the return stub.
-  CallSite site;
-  return !(code_->lookupCallSite((void*)resumePCinCurrentFrame_, &site) &&
-           site.kind() == CallSiteKind::ReturnStub);
+  return true;
 }
 
 DebugFrame* WasmFrameIter::debugFrame() const {
