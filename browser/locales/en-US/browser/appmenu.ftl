@@ -323,7 +323,7 @@ profiler-popup-presets-custom-label =
 ## History panel
 
 appmenu-manage-history =
-    .label = Manage History
+    .label = Manage history
 
 ## Sync promo shown at the bottom of the History and Bookmarks panels. Its
 ## variant depends on the user's account and Sync state. The sign-in heading and
@@ -351,15 +351,15 @@ appmenu-bookmarks-sync-promo-connectdevice =
 appmenu-restore-session =
     .label = Restore previous session
 appmenu-clear-history =
-    .label = Clear Recent History…
+    .label = Clear recent history…
 appmenu-recent-history-subheader = Recent history
 appmenu-recently-closed-tabs =
-    .label = Recently Closed Tabs
+    .label = Recently closed tabs
 appmenu-recently-closed-windows =
-    .label = Recently Closed Windows
+    .label = Recently closed windows
 # This allows to search through the browser's history.
 appmenu-search-history =
-    .label = Search History
+    .label = Search history
 
 ## Help panel
 
@@ -375,13 +375,13 @@ appmenu-referrals2 =
     .label = Share { -brand-product-name }
     .accesskey = r
 appmenu-get-help =
-    .label = Get Help
+    .label = Get help
     .accesskey = h
 appmenu-help-more-troubleshooting-info =
-    .label = More Troubleshooting Information
+    .label = More troubleshooting information
     .accesskey = t
 appmenu-help-share-ideas =
-    .label = Share Ideas and Feedback…
+    .label = Share ideas and feedback…
     .accesskey = S
 appmenu-help-switch-device =
     .label = Switching to a new device
@@ -400,7 +400,7 @@ appmenu-help-exit-troubleshoot-mode =
 ## are mutually exclusive, so it's possible to use the same accesskey for both.
 
 appmenu-help-report-deceptive-site =
-    .label = Report Deceptive Site…
+    .label = Report deceptive site…
     .accesskey = d
 appmenu-help-not-deceptive =
     .label = This isn’t a deceptive site…
@@ -409,7 +409,7 @@ appmenu-help-not-deceptive =
 ## More Tools
 
 appmenu-customizetoolbar =
-    .label = Customize Toolbar…
+    .label = Customize toolbar…
 appmenu-abouttranslations =
     .label = Translate…
 appmenu-edit-pdf =
@@ -417,7 +417,7 @@ appmenu-edit-pdf =
 
 appmenu-developer-tools-subheader = Browser tools
 appmenu-developer-tools-extensions =
-    .label = Extensions for Developers
+    .label = Extensions for developers
 appmenuitem-report-broken-site =
   .label = Report Broken Site
 
