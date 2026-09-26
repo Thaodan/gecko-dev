@@ -11,7 +11,6 @@ transforms:
     - gecko_taskgraph.transforms.build:transforms
     - gecko_taskgraph.transforms.build_attrs:transforms
     - gecko_taskgraph.transforms.build_lints:transforms
-    - gecko_taskgraph.transforms.mozconfig:transforms
     - gecko_taskgraph.transforms.job:transforms
     - gecko_taskgraph.transforms.task:transforms
 
@@ -26,9 +25,6 @@ task-defaults:
         max-run-time: 3600
     attributes:
         shippable: true
-    mozconfig:
-        variant: source
-        platform: linux64
     run:
         clone-with: hg
         using: mozharness

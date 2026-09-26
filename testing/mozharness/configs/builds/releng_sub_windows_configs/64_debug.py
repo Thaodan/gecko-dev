@@ -20,5 +20,6 @@ config = {
         "TOOLTOOL_CACHE": "c:/builds/tooltool_cache",
         "TOOLTOOL_HOME": "/c/builds",
     },
+    "mozconfig_variant": "debug",
     #######################
 }

@@ -25,5 +25,6 @@ config = {
         "/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/X11/bin",
         ##
     },
+    "mozconfig_variant": "debug",
     #######################
 }
