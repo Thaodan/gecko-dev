@@ -7,7 +7,6 @@
 #include "CertVerifier.h"
 #include "PKCS11Module.h"
 #include "ScopedNSSTypes.h"
-#include "mozilla/AppShutdown.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/StaticPrefs_security.h"
@@ -72,8 +71,7 @@ StaticRefPtr<PKCS11ModuleDB> sPKCS11ModuleDB;
 
 already_AddRefed<PKCS11ModuleDB> PKCS11ModuleDB::GetSingleton() {
   MOZ_ASSERT(NS_IsMainThread());
-  if (!NS_IsMainThread() ||
-      AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdown)) {
+  if (!NS_IsMainThread()) {
     return nullptr;
   }
 
@@ -674,8 +672,10 @@ PKCS11ModuleDB::ListModules(JSContext* aCx, Promise** aPromise) {
 }
 
 const nsLiteralCString kBuiltInModuleNames[] = {
-    kIPCClientCertsModuleName, kNSSInternalModuleName, kOSClientCertsModuleName,
-    kRemoteCertsModuleName,    kRootModuleName,
+    kNSSInternalModuleName,
+    kRootModuleName,
+    kOSClientCertsModuleName,
+    kIPCClientCertsModuleName,
 };
 
 void CollectThirdPartyPKCS11ModuleTelemetry(bool aIsInitialization) {
@@ -783,38 +783,6 @@ RefPtr<PKCS11ModuleDB::TokenInfoPromise> PKCS11ModuleDB::ChangeTokenPassword(
       },
       [](nsresult rv) {
         return TokenInfoPromise::CreateAndReject(rv, __func__);
-      });
-}
-
-RefPtr<PKCS11ModuleDB::FindCertificatesPromise>
-PKCS11ModuleDB::FindCertificatesGivenParent(
-    const RefPtr<PKCS11ModuleParent>& parent) {
-  return parent->SendFindCertificates()->Then(
-      GetCurrentSerialEventTarget(), __func__,
-      [](nsTArray<Certificate>&& certificates) {
-        return FindCertificatesPromise::CreateAndResolve(
-            std::move(certificates), __func__);
-      },
-      [](ipc::ResponseRejectReason reason) {
-        return FindCertificatesPromise::CreateAndReject(NS_ERROR_FAILURE,
-                                                        __func__);
-      });
-}
-
-RefPtr<PKCS11ModuleDB::FindCertificatesPromise>
-PKCS11ModuleDB::FindCertificates() {
-  if (!mPKCS11ModuleProcessPromise) {
-    return FindCertificatesPromise::CreateAndReject(NS_ERROR_NOT_AVAILABLE,
-                                                    __func__);
-  }
-  return mPKCS11ModuleProcessPromise->Then(
-      GetCurrentSerialEventTarget(), __func__,
-      [](const RefPtr<PKCS11ModuleParent>& parent) {
-        MOZ_RELEASE_ASSERT(parent);
-        return FindCertificatesGivenParent(parent);
-      },
-      [](nsresult rv) {
-        return FindCertificatesPromise::CreateAndReject(rv, __func__);
       });
 }
 #endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS

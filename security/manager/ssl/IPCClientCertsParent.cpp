@@ -63,7 +63,7 @@ mozilla::ipc::IPCResult IPCClientCertsParent::RecvFindObjects(
         n = CERT_LIST_NEXT(n);
         continue;
     }
-    Certificate cert(certDER, false);
+    Certificate cert(certDER);
     aObjects->AppendElement(std::move(cert));
 
     n = CERT_LIST_NEXT(n);
