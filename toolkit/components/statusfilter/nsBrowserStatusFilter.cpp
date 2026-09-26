@@ -61,7 +61,9 @@ nsBrowserStatusFilter::AddProgressListener(nsIWebProgressListener* aListener,
 NS_IMETHODIMP
 nsBrowserStatusFilter::RemoveProgressListener(
     nsIWebProgressListener* aListener) {
-  if (aListener == mListener) mListener = nullptr;
+  if (aListener == mListener) {
+    mListener = nullptr;
+  }
   return NS_OK;
 }
 
@@ -124,7 +126,9 @@ NS_IMETHODIMP
 nsBrowserStatusFilter::OnStateChange(nsIWebProgress* aWebProgress,
                                      nsIRequest* aRequest, uint32_t aStateFlags,
                                      nsresult aStatus) {
-  if (!mListener) return NS_OK;
+  if (!mListener) {
+    return NS_OK;
+  }
 
   if (aStateFlags & STATE_START) {
     // Reset members on beginning of document loading, but we don't want
@@ -182,7 +186,9 @@ nsBrowserStatusFilter::OnProgressChange(nsIWebProgress* aWebProgress,
                                         int32_t aMaxSelfProgress,
                                         int32_t aCurTotalProgress,
                                         int32_t aMaxTotalProgress) {
-  if (!mListener) return NS_OK;
+  if (!mListener) {
+    return NS_OK;
+  }
 
   //
   // limit frequency of calls to OnProgressChange
@@ -191,7 +197,9 @@ nsBrowserStatusFilter::OnProgressChange(nsIWebProgress* aWebProgress,
   mCurProgress = (int64_t)aCurTotalProgress;
   mMaxProgress = (int64_t)aMaxTotalProgress;
 
-  if (mDelayedProgress) return NS_OK;
+  if (mDelayedProgress) {
+    return NS_OK;
+  }
 
   if (!mDelayedStatus) {
     MaybeSendProgress();
@@ -207,7 +215,9 @@ NS_IMETHODIMP
 nsBrowserStatusFilter::OnLocationChange(nsIWebProgress* aWebProgress,
                                         nsIRequest* aRequest, nsIURI* aLocation,
                                         uint32_t aFlags) {
-  if (!mListener) return NS_OK;
+  if (!mListener) {
+    return NS_OK;
+  }
 
   nsCOMPtr<nsIWebProgressListener> listener = mListener;
   return listener->OnLocationChange(aWebProgress, aRequest, aLocation, aFlags);
@@ -217,7 +227,9 @@ NS_IMETHODIMP
 nsBrowserStatusFilter::OnStatusChange(nsIWebProgress* aWebProgress,
                                       nsIRequest* aRequest, nsresult aStatus,
                                       const char16_t* aMessage) {
-  if (!mListener) return NS_OK;
+  if (!mListener) {
+    return NS_OK;
+  }
 
   //
   // limit frequency of calls to OnStatusChange
@@ -227,7 +239,9 @@ nsBrowserStatusFilter::OnStatusChange(nsIWebProgress* aWebProgress,
     mStatusMsg = aMessage;
   }
 
-  if (mDelayedStatus) return NS_OK;
+  if (mDelayedStatus) {
+    return NS_OK;
+  }
 
   if (!mDelayedProgress) {
     MaybeSendStatus();
@@ -242,7 +256,9 @@ nsBrowserStatusFilter::OnStatusChange(nsIWebProgress* aWebProgress,
 NS_IMETHODIMP
 nsBrowserStatusFilter::OnSecurityChange(nsIWebProgress* aWebProgress,
                                         nsIRequest* aRequest, uint32_t aState) {
-  if (!mListener) return NS_OK;
+  if (!mListener) {
+    return NS_OK;
+  }
 
   nsCOMPtr<nsIWebProgressListener> listener = mListener;
   return listener->OnSecurityChange(aWebProgress, aRequest, aState);
@@ -252,7 +268,9 @@ NS_IMETHODIMP
 nsBrowserStatusFilter::OnContentBlockingEvent(nsIWebProgress* aWebProgress,
                                               nsIRequest* aRequest,
                                               uint32_t aEvent) {
-  if (!mListener) return NS_OK;
+  if (!mListener) {
+    return NS_OK;
+  }
 
   nsCOMPtr<nsIWebProgressListener> listener = mListener;
   return listener->OnContentBlockingEvent(aWebProgress, aRequest, aEvent);
@@ -302,7 +320,9 @@ void nsBrowserStatusFilter::ResetMembers() {
 }
 
 void nsBrowserStatusFilter::MaybeSendProgress() {
-  if (mCurProgress > mMaxProgress || mCurProgress <= 0) return;
+  if (mCurProgress > mMaxProgress || mCurProgress <= 0) {
+    return;
+  }
 
   // check our percentage
   int32_t percentage = (int32_t)double(mCurProgress) * 100 / mMaxProgress;
@@ -338,7 +358,9 @@ nsresult nsBrowserStatusFilter::StartDelayTimer() {
 void nsBrowserStatusFilter::CallDelayedProgressListeners() {
   mTimer = nullptr;
 
-  if (!mListener) return;
+  if (!mListener) {
+    return;
+  }
 
   if (mDelayedStatus) {
     mDelayedStatus = false;
