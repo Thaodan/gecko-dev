@@ -693,8 +693,6 @@ internal object IntegrityCheckingUniffiLib {
         Native.register(IntegrityCheckingUniffiLib::class.java, findLibraryName(componentName = "rust_log_forwarder"))
         uniffiCheckContractApiVersion(this)
     }
-
-    internal fun ensureInitialized() = Unit
     external fun uniffi_rust_log_forwarder_checksum_func_set_logger(
     ): Int
     external fun uniffi_rust_log_forwarder_checksum_func_set_max_level(
@@ -715,8 +713,6 @@ internal object UniffiLib {
         uniffiCallbackInterfaceAppServicesLogger.register(this)
         
     }
-
-    internal fun ensureInitialized() = Unit
     external fun uniffi_rust_log_forwarder_fn_init_callback_vtable_appserviceslogger(`vtable`: UniffiVTableCallbackInterfaceAppServicesLogger,
     ): Unit
     external fun uniffi_rust_log_forwarder_fn_func_set_logger(`logger`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -845,10 +841,10 @@ private fun uniffiCheckContractApiVersion(lib: IntegrityCheckingUniffiLib) {
  * @suppress
  */
 public fun uniffiEnsureInitialized() {
-    // Call arbitrary methods on IntegrityCheckingUniffiLib and UniffiLib to ensure that
-    // their init blocks run. This ensures initialization across crates works as expected.
-    IntegrityCheckingUniffiLib.ensureInitialized()
-    UniffiLib.ensureInitialized()
+    IntegrityCheckingUniffiLib
+    // UniffiLib() initialized as objects are used, but we still need to explicitly
+    // reference it so initialization across crates works as expected.
+    UniffiLib
 }
 
 // Async support

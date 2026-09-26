@@ -672,8 +672,6 @@ internal object IntegrityCheckingUniffiLib {
         Native.register(IntegrityCheckingUniffiLib::class.java, findLibraryName(componentName = "push"))
         uniffiCheckContractApiVersion(this)
     }
-
-    internal fun ensureInitialized() = Unit
     external fun uniffi_push_checksum_method_pushmanager_decrypt(
     ): Int
     external fun uniffi_push_checksum_method_pushmanager_get_subscription(
@@ -708,8 +706,6 @@ internal object UniffiLib {
         Native.register(UniffiLib::class.java, findLibraryName(componentName = "push"))
         
     }
-
-    internal fun ensureInitialized() = Unit
     external fun uniffi_push_fn_clone_pushmanager(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
     external fun uniffi_push_fn_free_pushmanager(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -852,10 +848,10 @@ private fun uniffiCheckContractApiVersion(lib: IntegrityCheckingUniffiLib) {
  * @suppress
  */
 public fun uniffiEnsureInitialized() {
-    // Call arbitrary methods on IntegrityCheckingUniffiLib and UniffiLib to ensure that
-    // their init blocks run. This ensures initialization across crates works as expected.
-    IntegrityCheckingUniffiLib.ensureInitialized()
-    UniffiLib.ensureInitialized()
+    IntegrityCheckingUniffiLib
+    // UniffiLib() initialized as objects are used, but we still need to explicitly
+    // reference it so initialization across crates works as expected.
+    UniffiLib
 }
 
 // Async support

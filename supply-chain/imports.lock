@@ -815,64 +815,74 @@ user-login = "Manishearth"
 user-name = "Manish Goregaokar"
 
 [[publisher.uniffi]]
-version = "0.32.2"
-when = "2026-09-23"
-user-id = 127697
-user-login = "bendk"
+version = "0.32.0"
+when = "2026-06-30"
+user-id = 111105
+user-login = "mhammond"
+user-name = "Mark Hammond"
 
 [[publisher.uniffi_bindgen]]
-version = "0.32.2"
-when = "2026-09-23"
-user-id = 127697
-user-login = "bendk"
+version = "0.32.0"
+when = "2026-06-30"
+user-id = 111105
+user-login = "mhammond"
+user-name = "Mark Hammond"
 
 [[publisher.uniffi_build]]
-version = "0.32.2"
-when = "2026-09-23"
-user-id = 127697
-user-login = "bendk"
+version = "0.32.0"
+when = "2026-06-30"
+user-id = 111105
+user-login = "mhammond"
+user-name = "Mark Hammond"
 
 [[publisher.uniffi_core]]
-version = "0.32.2"
-when = "2026-09-23"
-user-id = 127697
-user-login = "bendk"
+version = "0.32.0"
+when = "2026-06-30"
+user-id = 111105
+user-login = "mhammond"
+user-name = "Mark Hammond"
 
 [[publisher.uniffi_internal_macros]]
-version = "0.32.2"
-when = "2026-09-23"
-user-id = 127697
-user-login = "bendk"
+version = "0.32.0"
+when = "2026-06-30"
+user-id = 111105
+user-login = "mhammond"
+user-name = "Mark Hammond"
 
 [[publisher.uniffi_macros]]
-version = "0.32.2"
-when = "2026-09-23"
-user-id = 127697
-user-login = "bendk"
+version = "0.32.0"
+when = "2026-06-30"
+user-id = 111105
+user-login = "mhammond"
+user-name = "Mark Hammond"
 
 [[publisher.uniffi_meta]]
-version = "0.32.2"
-when = "2026-09-23"
-user-id = 127697
-user-login = "bendk"
+version = "0.32.0"
+when = "2026-06-30"
+user-id = 111105
+user-login = "mhammond"
+user-name = "Mark Hammond"
 
 [[publisher.uniffi_pipeline]]
-version = "0.32.2"
-when = "2026-09-23"
-user-id = 127697
-user-login = "bendk"
+version = "0.32.0"
+when = "2026-06-30"
+user-id = 111105
+user-login = "mhammond"
+user-name = "Mark Hammond"
 
 [[publisher.uniffi_testing]]
-version = "0.32.2"
-when = "2026-09-23"
-user-id = 127697
-user-login = "bendk"
+version = "0.32.0"
+when = "2026-06-30"
+user-id = 111105
+user-login = "mhammond"
+user-name = "Mark Hammond"
 
 [[publisher.uniffi_udl]]
-version = "0.32.2"
-when = "2026-09-23"
-user-id = 127697
-user-login = "bendk"
+version = "0.32.0"
+when = "2026-06-30"
+user-id = 111105
+user-login = "mhammond"
+user-name = "Mark Hammond"
 
 [[publisher.unsafe-libyaml]]
 version = "0.2.11"
@@ -3796,12 +3806,12 @@ who = "Ameer Ghani <inahga@letsencrypt.org>"
 criteria = "safe-to-deploy"
 delta = "0.5.1 -> 0.5.2"
 
-[[audits.mozilla.wildcard-audits.uniffi_internal_macros]]
+[[audits.mozilla.wildcard-audits.uniffi_testing]]
 who = "Jan-Erik Rediger <jrediger@mozilla.com>"
 criteria = "safe-to-deploy"
-user-id = 127697 # bendk
-start = "2025-02-06"
-end = "2027-02-20"
+user-id = 111105 # Mark Hammond (mhammond)
+start = "2023-11-20"
+end = "2027-01-08"
 aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"
 
 [[audits.mozilla.wildcard-audits.weedle2]]

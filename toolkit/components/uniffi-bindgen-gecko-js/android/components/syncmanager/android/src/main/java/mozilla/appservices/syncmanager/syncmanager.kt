@@ -675,8 +675,6 @@ internal object IntegrityCheckingUniffiLib {
         Native.register(IntegrityCheckingUniffiLib::class.java, findLibraryName(componentName = "syncmanager"))
         uniffiCheckContractApiVersion(this)
     }
-
-    internal fun ensureInitialized() = Unit
     external fun uniffi_sync_manager_checksum_method_syncmanager_disconnect(
     ): Int
     external fun uniffi_sync_manager_checksum_method_syncmanager_get_available_engines(
@@ -704,8 +702,6 @@ internal object UniffiLib {
         mozilla.appservices.sync15.uniffiEnsureInitialized()
         
     }
-
-    internal fun ensureInitialized() = Unit
     external fun uniffi_sync_manager_fn_clone_syncmanager(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
     external fun uniffi_sync_manager_fn_free_syncmanager(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -840,10 +836,10 @@ private fun uniffiCheckContractApiVersion(lib: IntegrityCheckingUniffiLib) {
  * @suppress
  */
 public fun uniffiEnsureInitialized() {
-    // Call arbitrary methods on IntegrityCheckingUniffiLib and UniffiLib to ensure that
-    // their init blocks run. This ensures initialization across crates works as expected.
-    IntegrityCheckingUniffiLib.ensureInitialized()
-    UniffiLib.ensureInitialized()
+    IntegrityCheckingUniffiLib
+    // UniffiLib() initialized as objects are used, but we still need to explicitly
+    // reference it so initialization across crates works as expected.
+    UniffiLib
 }
 
 // Async support

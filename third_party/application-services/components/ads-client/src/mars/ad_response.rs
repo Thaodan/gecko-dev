@@ -190,14 +190,6 @@ impl AdResponseValue for AdTile {
     }
 }
 
-#[cfg(feature = "stateful")]
-#[derive(Clone, Debug, PartialEq, Serialize)]
-pub enum Ads {
-    Images(Vec<AdImage>),
-    Spocs(Vec<AdSpoc>),
-    Tiles(Vec<AdTile>),
-}
-
 #[cfg(test)]
 mod tests {
     use crate::ffi::telemetry::MozAdsTelemetryWrapper;

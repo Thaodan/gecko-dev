@@ -672,8 +672,6 @@ internal object IntegrityCheckingUniffiLib {
         Native.register(IntegrityCheckingUniffiLib::class.java, findLibraryName(componentName = "autofill"))
         uniffiCheckContractApiVersion(this)
     }
-
-    internal fun ensureInitialized() = Unit
     external fun uniffi_autofill_checksum_func_create_autofill_key(
     ): Int
     external fun uniffi_autofill_checksum_func_decrypt_string(
@@ -796,8 +794,6 @@ internal object UniffiLib {
         Native.register(UniffiLib::class.java, findLibraryName(componentName = "autofill"))
         
     }
-
-    internal fun ensureInitialized() = Unit
     external fun uniffi_autofill_fn_clone_addressesbridgedengine(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
     external fun uniffi_autofill_fn_free_addressesbridgedengine(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -1032,10 +1028,10 @@ private fun uniffiCheckContractApiVersion(lib: IntegrityCheckingUniffiLib) {
  * @suppress
  */
 public fun uniffiEnsureInitialized() {
-    // Call arbitrary methods on IntegrityCheckingUniffiLib and UniffiLib to ensure that
-    // their init blocks run. This ensures initialization across crates works as expected.
-    IntegrityCheckingUniffiLib.ensureInitialized()
-    UniffiLib.ensureInitialized()
+    IntegrityCheckingUniffiLib
+    // UniffiLib() initialized as objects are used, but we still need to explicitly
+    // reference it so initialization across crates works as expected.
+    UniffiLib
 }
 
 // Async support

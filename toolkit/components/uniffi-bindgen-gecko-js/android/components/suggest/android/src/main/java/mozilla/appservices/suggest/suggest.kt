@@ -678,8 +678,6 @@ internal object IntegrityCheckingUniffiLib {
         Native.register(IntegrityCheckingUniffiLib::class.java, findLibraryName(componentName = "suggest"))
         uniffiCheckContractApiVersion(this)
     }
-
-    internal fun ensureInitialized() = Unit
     external fun uniffi_suggest_checksum_func_raw_suggestion_url_matches(
     ): Int
     external fun uniffi_suggest_checksum_method_suggeststore_any_dismissed_suggestions(
@@ -751,8 +749,6 @@ internal object UniffiLib {
         mozilla.appservices.remotesettings.uniffiEnsureInitialized()
         
     }
-
-    internal fun ensureInitialized() = Unit
     external fun uniffi_suggest_fn_clone_suggeststore(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
     external fun uniffi_suggest_fn_free_suggeststore(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -935,10 +931,10 @@ private fun uniffiCheckContractApiVersion(lib: IntegrityCheckingUniffiLib) {
  * @suppress
  */
 public fun uniffiEnsureInitialized() {
-    // Call arbitrary methods on IntegrityCheckingUniffiLib and UniffiLib to ensure that
-    // their init blocks run. This ensures initialization across crates works as expected.
-    IntegrityCheckingUniffiLib.ensureInitialized()
-    UniffiLib.ensureInitialized()
+    IntegrityCheckingUniffiLib
+    // UniffiLib() initialized as objects are used, but we still need to explicitly
+    // reference it so initialization across crates works as expected.
+    UniffiLib
 }
 
 // Async support

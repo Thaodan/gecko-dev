@@ -1228,9 +1228,7 @@ class TaskCache(CacheManager):
         # per-push opt builds. The shippable index is still tried first, so
         # branches that only publish shippable builds (central, beta, release,
         # esr) are unaffected. See bug 1768186 for lifting this more generally.
-        # The app-services duplicates are not shippable builds, so they
-        # publish the plain namespace rather than the shippable one.
-        if job.endswith("-opt") and "-appservices-" not in job:
+        if job.endswith("-opt"):
             if os.environ.get("MOZ_ARTIFACT_ALLOW_NON_SHIPPABLE"):
                 trees = [f"{tree}.shippable", tree]
             else:
@@ -1440,8 +1438,6 @@ class Artifacts:
             target_suffix = "-opt"
 
         if self._substs.get("MOZ_BUILD_APP", "") == "mobile/android":
-            if self._substs.get("MOZ_APPSERVICES_IN_TREE"):
-                target_suffix = "-appservices" + target_suffix
             if self._substs["ANDROID_CPU_ARCH"] == "x86_64":
                 return "android-x86_64" + target_suffix
             if self._substs["ANDROID_CPU_ARCH"] == "arm64-v8a":

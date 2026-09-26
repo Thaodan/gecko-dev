@@ -718,8 +718,6 @@ internal object IntegrityCheckingUniffiLib {
         Native.register(IntegrityCheckingUniffiLib::class.java, findLibraryName(componentName = "ads_client"))
         uniffiCheckContractApiVersion(this)
     }
-
-    internal fun ensureInitialized() = Unit
     external fun uniffi_ads_client_checksum_method_mozadsclient_clear_cache(
     ): Int
     external fun uniffi_ads_client_checksum_method_mozadsclient_record_click(
@@ -777,8 +775,6 @@ internal object UniffiLib {
         uniffiCallbackInterfaceMozAdsTelemetry.register(this)
         
     }
-
-    internal fun ensureInitialized() = Unit
     external fun uniffi_ads_client_fn_clone_mozadsclient(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
     external fun uniffi_ads_client_fn_free_mozadsclient(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -939,10 +935,10 @@ private fun uniffiCheckContractApiVersion(lib: IntegrityCheckingUniffiLib) {
  * @suppress
  */
 public fun uniffiEnsureInitialized() {
-    // Call arbitrary methods on IntegrityCheckingUniffiLib and UniffiLib to ensure that
-    // their init blocks run. This ensures initialization across crates works as expected.
-    IntegrityCheckingUniffiLib.ensureInitialized()
-    UniffiLib.ensureInitialized()
+    IntegrityCheckingUniffiLib
+    // UniffiLib() initialized as objects are used, but we still need to explicitly
+    // reference it so initialization across crates works as expected.
+    UniffiLib
 }
 
 // Async support
