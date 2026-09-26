@@ -655,6 +655,11 @@ def handle_tier(config, tasks):
     """Set the tier based on policy for all test descriptions that do not
     specify a tier otherwise."""
     for task in tasks:
+        if "-appservices/" in task["test-platform"]:
+            task["tier"] = 3
+            yield task
+            continue
+
         if "tier" in task:
             resolve_keyed_by(
                 task,
