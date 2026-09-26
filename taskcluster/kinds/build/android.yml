@@ -81,10 +81,11 @@ android-arm/debug:
         env:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
+    mozconfig:
+        variant: debug
     run:
         actions: [get-secrets, build]
         custom-build-variant-cfg: arm-debug
-        mozconfig-variant: debug
     use-sccache: true
     fetches:
         toolchain:
@@ -163,6 +164,8 @@ android-arm-lite/opt:
         env:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
             PERFHERDER_EXTRA_OPTIONS: lite
+    mozconfig:
+        platform: android-arm-lite
     run:
         actions: [get-secrets, build]
         custom-build-variant-cfg: arm-lite
@@ -227,6 +230,8 @@ android-arm-shippable-lite/opt:
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
             MOZ_GENERATE_SBOM: "1"
             PERFHERDER_EXTRA_OPTIONS: lite
+    mozconfig:
+        platform: android-arm-lite
     run:
         actions: [get-secrets, build, multi-l10n]
         config: [taskcluster_nightly.py]
@@ -305,6 +310,8 @@ android-aarch64-lite/opt:
         env:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
             PERFHERDER_EXTRA_OPTIONS: lite
+    mozconfig:
+        platform: android-aarch64-lite
     run:
         actions: [get-secrets, build]
         custom-build-variant-cfg: aarch64-lite
@@ -330,10 +337,11 @@ android-aarch64-non-unified/opt:
             MOZ_AUTOMATION_BUILD_SYMBOLS: '0'
             PERFHERDER_EXTRA_OPTIONS: non-unified
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
+    mozconfig:
+        variant: non-unified
     run:
         actions: [get-secrets, build]
         custom-build-variant-cfg: aarch64
-        mozconfig-variant: non-unified
     use-sccache: true
     use-python: "3.11"
     fetches:
@@ -356,10 +364,11 @@ android-aarch64/debug:
         env:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
+    mozconfig:
+        variant: debug
     run:
         actions: [get-secrets, build]
         custom-build-variant-cfg: aarch64-debug
-        mozconfig-variant: debug
     use-sccache: true
     fetches:
         toolchain:
@@ -421,6 +430,8 @@ android-aarch64-shippable-lite/opt:
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
             MOZ_GENERATE_SBOM: "1"
             PERFHERDER_EXTRA_OPTIONS: lite
+    mozconfig:
+        platform: android-aarch64-lite
     run:
         actions: [get-secrets, build, multi-l10n]
         config: [taskcluster_nightly.py]
@@ -474,10 +485,11 @@ android-x86_64-ccov/opt:
         env:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android-x86/releng.manifest"
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
+    mozconfig:
+        variant: code-coverage-opt
     run:
         actions: [get-secrets, build]
         custom-build-variant-cfg: x86_64-ccov
-        mozconfig-variant: code-coverage-opt
     use-sccache: false
     fetches:
         toolchain:
@@ -530,6 +542,8 @@ android-x86_64-lite/opt:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android-x86/releng.manifest"
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
             PERFHERDER_EXTRA_OPTIONS: lite
+    mozconfig:
+        platform: android-x86_64-lite
     run:
         actions: [get-secrets, build]
         custom-build-variant-cfg: x86_64-lite
@@ -552,10 +566,11 @@ android-x86_64-fuzzing/debug:
         env:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android-x86/releng.manifest"
             PERFHERDER_EXTRA_OPTIONS: fuzzing
+    mozconfig:
+        variant: debug-fuzzing
     run:
         actions: [get-secrets, build]
         custom-build-variant-cfg: fuzzing-debug
-        mozconfig-variant: debug-fuzzing
     use-sccache: true
     fetches:
         toolchain:
@@ -580,10 +595,11 @@ android-x86_64-non-unified/opt:
             MOZ_AUTOMATION_BUILD_SYMBOLS: '0'
             PERFHERDER_EXTRA_OPTIONS: non-unified
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android-x86/releng.manifest"
+    mozconfig:
+        variant: non-unified
     run:
         actions: [get-secrets, build]
         custom-build-variant-cfg: x86_64
-        mozconfig-variant: non-unified
     use-sccache: true
     use-python: "3.11"
     fetches:
@@ -646,6 +662,8 @@ android-x86_64-shippable-lite/opt:
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
             MOZ_GENERATE_SBOM: "1"
             PERFHERDER_EXTRA_OPTIONS: lite
+    mozconfig:
+        platform: android-x86_64-lite
     run:
         actions: [get-secrets, build, multi-l10n]
         config: [taskcluster_nightly.py]
@@ -669,10 +687,11 @@ android-x86_64/debug:
         env:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android-x86/releng.manifest"
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
+    mozconfig:
+        variant: debug
     run:
         actions: [get-secrets, build]
         custom-build-variant-cfg: x86_64-debug
-        mozconfig-variant: debug
     use-sccache: true
     fetches:
         toolchain:
@@ -695,10 +714,11 @@ android-x86_64/debug-isolated-process:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android-x86/releng.manifest"
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
             PERFHERDER_EXTRA_OPTIONS: isolated-process
+    mozconfig:
+        variant: debug-isolated-process
     run:
         actions: [get-secrets, build]
         custom-build-variant-cfg: x86_64-debug-isolated-process
-        mozconfig-variant: debug-isolated-process
     use-sccache: true
     fetches:
         toolchain:
