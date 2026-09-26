@@ -2073,6 +2073,12 @@ run-sequentially = ["true"] # node server exceptions dont replay well
 ["test_websocket_fails_2.js"]
 run-sequentially = ["true"] # node server exceptions dont replay well
 
+["test_websocket_ipv6_fallback.js"]
+run-sequentially = ["true"] # node server exceptions dont replay well
+skip-if = [
+  "os == 'android'",
+]
+
 ["test_websocket_offline.js"]
 
 ["test_websocket_protocol_handler.js"]

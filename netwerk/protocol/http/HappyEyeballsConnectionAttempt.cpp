@@ -293,6 +293,21 @@ static happy_eyeballs::IpAddr ToIpAddrV6(const NetAddr& aAddr) {
   return ip;
 }
 
+// NSPR errors (e.g. PR_END_OF_FILE_ERROR from a reset mid-handshake) arrive
+// tagged with the security module when NSS is driving the socket.  They're
+// per-endpoint, not per-server, so map them back to the network-module code
+// nsSocketTransport would have produced.
+static nsresult NormalizeConnectionResult(nsresult aStatus) {
+  if (NS_ERROR_GET_MODULE(aStatus) != NS_ERROR_MODULE_SECURITY) {
+    return aStatus;
+  }
+  PRErrorCode prCode = -static_cast<PRErrorCode>(NS_ERROR_GET_CODE(aStatus));
+  if (mozilla::psm::IsNSSErrorCode(prCode)) {
+    return aStatus;
+  }
+  return ErrorAccordingToNSPR(prCode);
+}
+
 HappyEyeballsConnectionAttempt::ConnResultOutcome
 HappyEyeballsConnectionAttempt::ClassifyConnectionResult(
     nsresult aStatus) const {
@@ -315,6 +330,8 @@ HappyEyeballsConnectionAttempt::ClassifyConnectionResult(
   // NSS / TLS errors are server-state-specific (cert verification, PSK
   // resumption alert, transport-level alert during handshake, ...).
   // Trying another resolved address won't help — they'll all fail the same way.
+  // NSPR errors that merely surfaced through NSS were already mapped out of
+  // this module by NormalizeConnectionResult.
   if (NS_ERROR_GET_MODULE(aStatus) == NS_ERROR_MODULE_SECURITY) {
     return ConnResultOutcome::AbortTransaction;
   }
@@ -373,6 +390,8 @@ nsresult HappyEyeballsConnectionAttempt::ProcessConnectionResult(
     return NS_OK;
   }
 
+  aStatus = NormalizeConnectionResult(aStatus);
+
   if (mPausedForClientAuth && aId == mClientAuthHolderId) {
     mPausedForClientAuth = false;
     mClientAuthHolderId = 0;
@@ -391,19 +410,8 @@ nsresult HappyEyeballsConnectionAttempt::ProcessConnectionResult(
       return NS_OK;
     }
     case ConnResultOutcome::AbortTransaction: {
-      nsresult closeReason = aStatus;
-      if (NS_ERROR_GET_MODULE(aStatus) == NS_ERROR_MODULE_SECURITY) {
-        PRErrorCode prCode =
-            -static_cast<PRErrorCode>(NS_ERROR_GET_CODE(aStatus));
-        if (!mozilla::psm::IsNSSErrorCode(prCode)) {
-          // NSPR-base error (e.g. PR_END_OF_FILE_ERROR): translate to the
-          // network-module nsresult that nsSocketTransport would have
-          // produced.
-          closeReason = ErrorAccordingToNSPR(prCode);
-        }
-      }
       TransitionPayload payload;
-      payload.mCloseReason = closeReason;
+      payload.mCloseReason = aStatus;
       Transition(State::AbortTransaction, std::move(payload));
       return NS_OK;
     }
@@ -1218,10 +1226,13 @@ void HappyEyeballsConnectionAttempt::CloseHttpTransaction(
       reason = NS_FAILED(mLastDnsError) ? mLastDnsError : NS_ERROR_UNKNOWN_HOST;
       break;
     case happy_eyeballs::FailureReason::Connection:
-      reason = (NS_FAILED(mLastConnectionError) &&
-                mLastConnectionError != NS_ERROR_NET_RESET)
-                   ? mLastConnectionError
-                   : NS_ERROR_CONNECTION_REFUSED;
+      // Keep NS_ERROR_NET_RESET: a reset (including a handshake that died on
+      // PR_END_OF_FILE_ERROR) is what tells nsHttpTransaction::Close to retry
+      // on a fresh connection, which is how bug 2001565 recovers from a
+      // half-closed server.  Reporting NS_ERROR_CONNECTION_REFUSED instead
+      // would both suppress that retry and describe the wrong failure.
+      reason = NS_FAILED(mLastConnectionError) ? mLastConnectionError
+                                               : NS_ERROR_CONNECTION_REFUSED;
       break;
     default:
       MOZ_ASSERT_UNREACHABLE("Unknown FailureReason");
