@@ -1620,8 +1620,7 @@ void nsHttpTransaction::Close(nsresult reason) {
        shouldRestartTransactionForHTTPSRR) &&
       (!(mCaps & NS_HTTP_STICKY_CONNECTION) ||
        (mCaps & NS_HTTP_CONNECTION_RESTARTABLE) ||
-       (mEarlyDataDisposition == EARLY_425) ||
-       CanRestartUpgradeBeforeResponse())) {
+       (mEarlyDataDisposition == EARLY_425))) {
     if (mForceRestart) {
       SetRestartReason(TRANSACTION_RESTART_FORCED);
       if (NS_SUCCEEDED(Restart())) {
@@ -3619,17 +3618,6 @@ void nsHttpTransaction::SetHttpTrailers(nsCString& aTrailers) {
 
   MutexAutoLock lock(mLock);
   std::swap(mForTakeResponseTrailers, httpTrailers);
-}
-
-bool nsHttpTransaction::CanRestartUpgradeBeforeResponse() {
-  // Upgrades set NS_HTTP_STICKY_CONNECTION to keep the upgraded connection
-  // bound to this transaction, not for connection-based auth (the reason the
-  // flag blocks restarts at the call site).  Nothing is bound until the server
-  // answers, so a restart on a fresh connection is safe before then; a dead
-  // endpoint otherwise fails the upgrade where an ordinary request would
-  // retry.  Once any response data arrived (the 101 and what's tunnelled after
-  // it) the connection really is bound.
-  return !mReceivedData && (IsWebsocketUpgrade() || IsForWebTransport());
 }
 
 bool nsHttpTransaction::IsWebsocketUpgrade() {
