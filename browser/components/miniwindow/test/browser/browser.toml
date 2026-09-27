@@ -21,6 +21,8 @@ prefs = [
 
 ["browser_origin_close.js"]
 
+["browser_overlap.js"]
+
 ["browser_placement.js"]
 
 ["browser_region_entry.js"]

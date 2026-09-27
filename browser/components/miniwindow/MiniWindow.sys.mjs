@@ -254,7 +254,8 @@ export class MiniWindow {
     let gBrowser = this.originWin.gBrowser;
     let rect = lazy.MiniWindowUtils.computeWindowRect(
       this.originWin,
-      this._cropInfo
+      this._cropInfo,
+      this.manager.windowsToAvoid()
     );
 
     // Pop the tab out like a normal move-to-window.
