@@ -698,9 +698,9 @@ static void FinishAsyncMemoryReport() {
 // Follower stores for types interned by the content display list builder
 // rather than by a scene builder interner. See
 // gfx/wr/webrender/doc/dl-builder-interning.md.
-#define REPORT_DL_STORE(id)                     \
-  helper.Report(aReport.interning.dl_stores.id, \
-                "interning/" #id "/dl-stores");
+#define REPORT_DL_STORE(id)                                             \
+  helper.Report(aReport.interning.dl_stores.id, "interning/" #id "/dl-" \
+                                                                 "stores");
 
 NS_IMPL_ISUPPORTS(WebRenderMemoryReporter, nsIMemoryReporter)
 
