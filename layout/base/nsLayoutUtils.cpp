@@ -3116,10 +3116,9 @@ void nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
   // In the case where we use APZ for the given popup frame, we need to set the
   // displayport base.
   if (aFrame->IsMenuPopupFrame() &&
-      nsLayoutUtils::AsyncPanZoomEnabled(aFrame) &&
-      !DisplayPortUtils::HasDisplayPort(aFrame->GetContent())) {
+      nsLayoutUtils::AsyncPanZoomEnabled(aFrame)) {
     MOZ_ASSERT(XRE_IsParentProcess());
-    APZCCallbackHelper::InitializeRootDisplayport(aFrame);
+    APZCCallbackHelper::EnsureDisplayportSizeOnPopupRoot(aFrame);
   }
 
   nsRegion visibleRegion;
