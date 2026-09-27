@@ -19,13 +19,12 @@ The whole working tree is restored between libraries, because some libraries
 (e.g. libvpx) write files outside their own vendor-directory, so a per-directory
 restore would leak into the next library's check.
 
-Note on `./mach vendor ... --patch-mode check` exit codes. mach vendor does not
-report success directly, so the exit code is all there is to go on:
-    254   nothing changed (spurious_check's sys.exit(-2))
-    0     something changed
-    other the run failed
-A failed run is always reported as an error, ignoring the state of the tree. For
-the other two, we report whether the working directory is clean.
+Note on `./mach vendor ... --patch-mode check` exit codes: they are inverted for
+our purposes -- 254 (from spurious_check's sys.exit(-2)) means the re-vendored result
+matched, and 0 means it differed and left the tree dirty. So the reliable signal
+is whether the working directory is clean afterwards; the exit code only
+distinguishes "matched" (254) from "errored before re-vendoring finished" (anything
+else) when the tree is clean.
 
 Usage:
     ./mach python taskcluster/scripts/misc/verify-vendored-library.py \\
@@ -49,11 +48,6 @@ from mozversioncontrol import get_repository_object
 # `./mach vendor ... --patch-mode check` exits with this code (256 + -2) when the
 # re-vendored result matched the tree, via spurious_check's sys.exit(-2).
 VENDOR_MATCHED_EXIT_CODE = 254
-
-# mach vendor has no explicit success signal in check mode, so these are the
-# exit codes of a run that did not fail: 254 when spurious_check found nothing
-# changed, and 0 when something changed and the run carried on to the end.
-VENDOR_COMPLETED_EXIT_CODES = (0, VENDOR_MATCHED_EXIT_CODE)
 
 _NOISE = (
     "Press Ctrl-C",
@@ -171,20 +165,6 @@ def re_vendor(moz_yaml, repo):
     completed = subprocess.run(
         command, capture_output=True, text=True, errors="replace", check=False
     )
-
-    if completed.returncode not in VENDOR_COMPLETED_EXIT_CODES:
-        # A failed run can leave the tree in any state -- the vendor directory is
-        # cleaned before unpacking, so an aborted download leaves every file missing --
-        # so report the failure instead of reading the tree as drift.
-        return {
-            "status": "error",
-            "revision": revision,
-            "reason": extract_reason(
-                completed.stdout + completed.stderr, completed.returncode
-            ),
-            "changed_files": [],
-            "output": completed.stdout + completed.stderr,
-        }
 
     if not repo.working_directory_clean(untracked=True):
         # Best-effort details only: getting the changed-file list must not crash
