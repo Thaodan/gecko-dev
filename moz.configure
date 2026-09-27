@@ -114,9 +114,9 @@ set_config(
 
 
 option(
-    "--enable-legacy-cargo-invocation",
+    "--disable-legacy-cargo-invocation",
     env="MOZ_USE_LEGACY_CARGO_INVOCATION",
-    help="Enable the legacy (recursive-make) Rust cargo invocation",
+    help="Disable the legacy (recursive-make) Rust cargo invocation",
 )
 
 
