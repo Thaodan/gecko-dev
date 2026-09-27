@@ -123,8 +123,6 @@ export class ScreenshotsOverlay {
       popAttributes,
       reselectAttributes,
       miniWindowCancelAttributes,
-      miniWindowOverlayHeader,
-      miniWindowOverlayInstructions,
     ] = lazy.overlayLocalization.formatMessagesSync([
       { id: "screenshots-cancel-button" },
       { id: "screenshots-component-cancel-button" },
@@ -141,15 +139,7 @@ export class ScreenshotsOverlay {
       { id: "screenshots-component-mini-window-button" },
       { id: "screenshots-component-reselect-button" },
       { id: "screenshots-component-mini-window-cancel-button" },
-      { id: "mini-window-overlay-header" },
-      { id: "mini-window-overlay-instructions" },
     ]);
-
-    let instructionsMarkup =
-      this.mode === SELECTION_MODES.MINI_WINDOW
-        ? `<h1 class="preview-header">${miniWindowOverlayHeader.value}</h1>
-            <div class="preview-instructions">${miniWindowOverlayInstructions.value}</div>`
-        : `<div class="preview-instructions">${instructions.value}</div>`;
 
     let buttonsContainerMarkup =
       this.mode === SELECTION_MODES.MINI_WINDOW
@@ -183,7 +173,7 @@ export class ScreenshotsOverlay {
               </svg>
 
             </div>
-            ${instructionsMarkup}
+            <div class="preview-instructions">${instructions.value}</div>
             <button class="screenshots-button ghost-button" id="screenshots-cancel-button" title="${cancelAttributes.attributes[0].value}" aria-label="${cancelAttributes.attributes[1].value}">${cancelLabel.value}</button>
           </div>
           <div id="hover-highlight" hidden></div>
@@ -488,7 +478,7 @@ export class ScreenshotsOverlay {
       case "mini-window-cancel-button":
         this.cancelOverlay();
         break;
-      case "reselect-button":
+      case "reselect":
         this.reselectRegion();
         break;
     }

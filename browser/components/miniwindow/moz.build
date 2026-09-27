@@ -5,8 +5,6 @@
 with Files("**"):
     BUG_COMPONENT = ("Toolkit", "Picture-in-Picture")
 
-JAR_MANIFESTS += ["jar.mn"]
-
 MOZ_SRC_FILES += [
     "MiniWindow.sys.mjs",
     "MiniWindowChild.sys.mjs",

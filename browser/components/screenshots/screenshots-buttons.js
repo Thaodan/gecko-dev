@@ -12,16 +12,8 @@
       "moz-src:///browser/components/screenshots/ScreenshotsUtils.sys.mjs",
   });
 
-  const { SELECTION_MODES } = ChromeUtils.importESModule(
-    "moz-src:///browser/components/screenshots/ScreenshotsSelectionModes.sys.mjs"
-  );
-
   class ScreenshotsButtons extends MozXULElement {
-    static #templates = {};
-
-    static observedAttributes = ["mode"];
-
-    #renderedMode = null;
+    static #template = null;
 
     static get markup() {
       return `
@@ -34,47 +26,17 @@
       `;
     }
 
-    static get miniWindowMarkup() {
-      return `
-        <html:link rel="stylesheet" href="chrome://global/skin/global.css" />
-        <html:link rel="stylesheet" href="chrome://browser/content/screenshots/screenshots-buttons.css" />
-        <html:div class="mini-window-chooser">
-          <html:h1 class="mini-window-title" data-l10n-id="mini-window-panel-header"></html:h1>
-          <html:p class="mini-window-description" data-l10n-id="mini-window-panel-description"></html:p>
-          <html:div class="mini-window-options">
-            <html:button id="move-selection" class="mini-window-option" data-default="">
-              <html:img class="mini-window-option-icon" src="chrome://browser/content/screenshots/menu-visible.svg" role="presentation"/>
-              <html:span data-l10n-id="mini-window-panel-move-selection"></html:span>
-            </html:button>
-            <html:button id="move-full-tab" class="mini-window-option">
-              <html:img class="mini-window-option-icon" src="chrome://browser/content/screenshots/menu-fullpage.svg" role="presentation"/>
-              <html:span data-l10n-id="mini-window-panel-move-full-tab"></html:span>
-            </html:button>
-          </html:div>
-        </html:div>
-      `;
-    }
-
-    static fragmentFor(mode) {
-      if (!ScreenshotsButtons.#templates[mode]) {
-        ScreenshotsButtons.#templates[mode] = MozXULElement.parseXULToFragment(
-          mode === SELECTION_MODES.MINI_WINDOW
-            ? ScreenshotsButtons.miniWindowMarkup
-            : ScreenshotsButtons.markup
+    static get fragment() {
+      if (!ScreenshotsButtons.#template) {
+        ScreenshotsButtons.#template = MozXULElement.parseXULToFragment(
+          ScreenshotsButtons.markup
         );
       }
-      return ScreenshotsButtons.#templates[mode];
+      return ScreenshotsButtons.#template;
     }
 
-    get isMiniWindow() {
-      return this.#renderedMode === SELECTION_MODES.MINI_WINDOW;
-    }
-
-    /** The element that click events bubble to, whichever mode is rendered. */
-    get clickTarget() {
-      return this.isMiniWindow
-        ? this.shadowRoot?.querySelector(".mini-window-options")
-        : this.shadowRoot?.querySelector("moz-button-group");
+    get buttonGroup() {
+      return this.shadowRoot?.querySelector("moz-button-group");
     }
     get visibleButton() {
       return this.shadowRoot?.getElementById("visible-page");
@@ -82,96 +44,48 @@
     get fullpageButton() {
       return this.shadowRoot?.getElementById("full-page");
     }
-    get moveSelectionButton() {
-      return this.shadowRoot?.getElementById("move-selection");
-    }
-    get moveFullTabButton() {
-      return this.shadowRoot?.getElementById("move-full-tab");
-    }
-
-    #render() {
-      let mode = this.getAttribute("mode");
-      if (this.shadowRoot && this.#renderedMode === mode) {
-        return;
-      }
-      let shadowRoot = this.shadowRoot ?? this.attachShadow({ mode: "open" });
-      this.clickTarget?.removeEventListener("click", this);
-      shadowRoot.replaceChildren();
-      shadowRoot.append(ScreenshotsButtons.fragmentFor(mode).cloneNode(true));
-      this.#renderedMode = mode;
-      this.clickTarget.addEventListener("click", this);
-    }
-
-    attributeChangedCallback() {
-      if (this.isConnected) {
-        this.#render();
-      }
-    }
 
     connectedCallback() {
-      let alreadyRendered = !!this.shadowRoot;
-      this.#render();
-      this.ownerDocument.l10n.connectRoot(this.shadowRoot);
-      if (alreadyRendered) {
-        // #render only rewires listeners when the markup changed.
-        this.clickTarget.removeEventListener("click", this);
-        this.clickTarget.addEventListener("click", this);
+      if (this.shadowRoot) {
+        this.ownerDocument.l10n.connectRoot(this.shadowRoot);
+      } else {
+        const shadowRoot = this.attachShadow({ mode: "open" });
+        this.ownerDocument.l10n.connectRoot(shadowRoot);
+        shadowRoot.append(ScreenshotsButtons.fragment.cloneNode(true));
       }
+      this.buttonGroup.addEventListener("click", this);
     }
 
     disconnectedCallback() {
       this.ownerDocument.l10n.disconnectRoot(this.shadowRoot);
-      this.clickTarget?.removeEventListener("click", this);
+      this.buttonGroup.removeEventListener("click", this);
     }
 
     handleEvent(event) {
-      // Clicks on the container itself (the gap between options) resolve to
-      // no button, and the getters for whichever mode is not rendered are
-      // also null - without this they would match each other.
-      let button = event.target.closest("button");
-      if (!button) {
-        return;
-      }
-      let browser = gBrowser.selectedBrowser;
-      switch (button) {
+      switch (event.target) {
         case this.visibleButton:
-          ScreenshotsUtils.takeScreenshot(browser, "Visible");
+          ScreenshotsUtils.takeScreenshot(gBrowser.selectedBrowser, "Visible");
           break;
         case this.fullpageButton:
-          ScreenshotsUtils.takeScreenshot(browser, "FullPage");
-          break;
-        case this.moveSelectionButton:
-          // The overlay is already up; get out of its way so the user can
-          // drag a region. Focus has to follow or it dies with the panel.
-          ScreenshotsUtils.closePanel(browser);
-          ScreenshotsUtils.moveFocusToContent(browser);
-          break;
-        case this.moveFullTabButton:
-          ScreenshotsUtils.miniWindowFullTab(browser).catch(console.error);
+          ScreenshotsUtils.takeScreenshot(gBrowser.selectedBrowser, "FullPage");
           break;
       }
     }
 
     /**
-     * Focus a button in the panel. "first"/"last" pick the edge button in
-     * either mode, so tab focus can wrap between the panel and the overlay.
-     * Otherwise the default is Move selection in mini-window mode and the
-     * last-used save button in Screenshots mode.
+     * Focus the last used button.
+     * This will default to the visible page button.
      *
      * @param {string} buttonToFocus
      */
     async focusButton(buttonToFocus) {
-      await this.clickTarget.updateComplete;
-      if (buttonToFocus === "first") {
-        this.clickTarget.firstElementChild.focus({ focusVisible: true });
-      } else if (buttonToFocus === "last") {
-        this.clickTarget.lastElementChild.focus({ focusVisible: true });
-      } else if (this.isMiniWindow) {
-        // Moving the selection is the default, so it takes focus and Enter
-        // does what dragging would have done.
-        this.moveSelectionButton.focus({ focusVisible: true });
-      } else if (buttonToFocus === "fullpage") {
+      await this.buttonGroup.updateComplete;
+      if (buttonToFocus === "fullpage") {
         this.fullpageButton.focus({ focusVisible: true });
+      } else if (buttonToFocus === "first") {
+        this.buttonGroup.firstElementChild.focus({ focusVisible: true });
+      } else if (buttonToFocus === "last") {
+        this.buttonGroup.lastElementChild.focus({ focusVisible: true });
       } else {
         this.visibleButton.focus({ focusVisible: true });
       }
