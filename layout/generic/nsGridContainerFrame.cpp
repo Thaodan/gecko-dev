@@ -5312,7 +5312,7 @@ void nsGridContainerFrame::Grid::PlaceGridItems(
   bool needToRecordAutoFlowCounter =
       gridStyle->mGridTemplateColumns.IsNone() &&
       !gridStyle->mGridTemplateRows.IsNone() &&
-      !aGridRI.mFrame->Style()->HasAuthorSpecifiedGridAutoFlow();
+      !aGridRI.mFrame->Style()->HasAuthorOrUserSpecifiedGridAutoFlow();
 
   for (; !aGridRI.mIter.AtEnd(); aGridRI.mIter.Next()) {
     nsIFrame* child = *aGridRI.mIter;
