@@ -790,7 +790,7 @@ export class Tabbrowser {
       }
     }
 
-    let uniqueId = this.#generateUniquePanelID();
+    let uniqueId = Tabbrowser.#generateUniquePanelID();
     let panel = this.getPanel(browser);
     panel.id = uniqueId;
     this.tabpanels.appendChild(panel);
@@ -3262,7 +3262,7 @@ export class Tabbrowser {
     delete browser._cachedCurrentURI;
 
     let panel = this.getPanel(browser);
-    let uniqueId = this.#generateUniquePanelID();
+    let uniqueId = Tabbrowser.#generateUniquePanelID();
     panel.id = uniqueId;
     aTab.linkedPanel = uniqueId;
 
@@ -9641,14 +9641,11 @@ export class Tabbrowser {
     }
   }
 
-  #uniquePanelIDCounter = 0;
-  #generateUniquePanelID() {
-    let outerID = this.documentGlobal.docShell.outerWindowID;
-
-    // We want panel IDs to be globally unique, that's why we include the
-    // window ID. We switched to a monotonic counter as Date.now() lead
-    // to random failures because of colliding IDs.
-    return "panel-" + outerID + "-" + ++this.#uniquePanelIDCounter;
+  static #uniquePanelIDCounter = 0;
+  static #generateUniquePanelID() {
+    // One process-wide monotonic counter keeps panel IDs globally unique.
+    // The prefix keeps them apart from other elements' "panel-N" IDs.
+    return "tabpanel-" + ++Tabbrowser.#uniquePanelIDCounter;
   }
 
   destroy() {
