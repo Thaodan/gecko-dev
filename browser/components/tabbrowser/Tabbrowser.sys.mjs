@@ -335,18 +335,18 @@ export class Tabbrowser {
     ALL_DUPLICATES: 7,
   };
 
+  /** @type {WeakMap<MozTabbrowserTab, TabProgressListener>} */
+  static #tabListeners = new WeakMap();
+
+  /** @type {WeakMap<MozTabbrowserTab, BrowserStatusFilter>} */
+  static #tabFilters = new WeakMap();
+
   /** @type {WeakMap<MozTabbrowserTab, MozTabbrowserTab>} */
   #lastRelatedTabMap = new WeakMap();
 
   #progressListeners = [];
 
   #tabsProgressListeners = [];
-
-  /** @type {Map<MozTabbrowserTab, TabProgressListener>} */
-  #tabListeners = new Map();
-
-  /** @type {Map<MozTabbrowserTab, BrowserStatusFilter>} */
-  #tabFilters = new Map();
 
   _isBusy = false;
 
@@ -826,8 +826,8 @@ export class Tabbrowser {
       ].createInstance(Ci.nsIWebProgress)
     );
     filter.addProgressListener(tabListener, Ci.nsIWebProgress.NOTIFY_ALL);
-    this.#tabListeners.set(tab, tabListener);
-    this.#tabFilters.set(tab, filter);
+    Tabbrowser.#tabListeners.set(tab, tabListener);
+    Tabbrowser.#tabFilters.set(tab, filter);
     browser.webProgress.addProgressListener(
       filter,
       Ci.nsIWebProgress.NOTIFY_ALL
@@ -1917,7 +1917,7 @@ export class Tabbrowser {
       );
     }
 
-    let listener = this.#tabListeners.get(newTab);
+    let listener = Tabbrowser.#tabListeners.get(newTab);
     if (listener && listener._stateFlags) {
       this._callProgressListeners(
         null,
@@ -2840,8 +2840,8 @@ export class Tabbrowser {
     tab.dispatchEvent(evt);
 
     // Unhook our progress listener.
-    let filter = this.#tabFilters.get(tab);
-    let listener = this.#tabListeners.get(tab);
+    let filter = Tabbrowser.#tabFilters.get(tab);
+    let listener = Tabbrowser.#tabListeners.get(tab);
     // We should always have a filter, but if we fail to create a content
     // process when creating a new tab, we can end up here trying to switch
     // remoteness to load about:tabcrashed, without a filter/listener.
@@ -2888,14 +2888,14 @@ export class Tabbrowser {
     // since tab progress listeners have logic for handling the initial about:blank
     // load
     listener = new TabProgressListener(tab, aBrowser, true, false);
-    this.#tabListeners.set(tab, listener);
+    Tabbrowser.#tabListeners.set(tab, listener);
     if (!filter) {
       filter = /** @type {BrowserStatusFilter} */ (
         Cc[
           "@mozilla.org/appshell/component/browser-status-filter;1"
         ].createInstance(Ci.nsIWebProgress)
       );
-      this.#tabFilters.set(tab, filter);
+      Tabbrowser.#tabFilters.set(tab, filter);
     }
     filter.addProgressListener(listener, Ci.nsIWebProgress.NOTIFY_ALL);
 
@@ -3294,8 +3294,8 @@ export class Tabbrowser {
       filter,
       Ci.nsIWebProgress.NOTIFY_ALL
     );
-    this.#tabListeners.set(aTab, tabListener);
-    this.#tabFilters.set(aTab, filter);
+    Tabbrowser.#tabListeners.set(aTab, tabListener);
+    Tabbrowser.#tabFilters.set(aTab, filter);
 
     browser.droppedLinkHandler = this.#defaultDropLinkHandler;
     browser.loadURI = URILoadingWrapper.loadURI.bind(
@@ -3426,14 +3426,14 @@ export class Tabbrowser {
     }
 
     // Remove the tab's filter and progress listener.
-    let filter = this.#tabFilters.get(aTab);
-    let listener = this.#tabListeners.get(aTab);
+    let filter = Tabbrowser.#tabFilters.get(aTab);
+    let listener = Tabbrowser.#tabListeners.get(aTab);
     browser.webProgress.removeProgressListener(filter);
     filter.removeProgressListener(listener);
     listener.destroy();
 
-    this.#tabListeners.delete(aTab);
-    this.#tabFilters.delete(aTab);
+    Tabbrowser.#tabListeners.delete(aTab);
+    Tabbrowser.#tabFilters.delete(aTab);
 
     // Reset the findbar and remove it if it is attached to the tab.
     if (aTab._findBar) {
@@ -3880,8 +3880,8 @@ export class Tabbrowser {
       console.error(e);
       t?.remove();
       if (t?.linkedBrowser) {
-        this.#tabFilters.delete(t);
-        this.#tabListeners.delete(t);
+        Tabbrowser.#tabFilters.delete(t);
+        Tabbrowser.#tabListeners.delete(t);
         this.getPanel(t.linkedBrowser).remove();
       }
       return null;
@@ -6624,13 +6624,13 @@ export class Tabbrowser {
     if (closeWindow && adoptedByTab) {
       // Remove the tab's filter and progress listener to avoid leaking.
       if (aTab.linkedPanel) {
-        const filter = this.#tabFilters.get(aTab);
+        const filter = Tabbrowser.#tabFilters.get(aTab);
         browser.webProgress.removeProgressListener(filter);
-        const listener = this.#tabListeners.get(aTab);
+        const listener = Tabbrowser.#tabListeners.get(aTab);
         filter.removeProgressListener(listener);
         listener.destroy();
-        this.#tabListeners.delete(aTab);
-        this.#tabFilters.delete(aTab);
+        Tabbrowser.#tabListeners.delete(aTab);
+        Tabbrowser.#tabFilters.delete(aTab);
       }
       return true;
     }
@@ -6727,11 +6727,11 @@ export class Tabbrowser {
       }
 
       // Remove the tab's filter and progress listener.
-      const filter = this.#tabFilters.get(aTab);
+      const filter = Tabbrowser.#tabFilters.get(aTab);
 
       browser.webProgress.removeProgressListener(filter);
 
-      const listener = this.#tabListeners.get(aTab);
+      const listener = Tabbrowser.#tabListeners.get(aTab);
       filter.removeProgressListener(listener);
       listener.destroy();
     }
@@ -6805,8 +6805,8 @@ export class Tabbrowser {
     }
 
     // We're going to remove the tab and the browser now.
-    this.#tabFilters.delete(aTab);
-    this.#tabListeners.delete(aTab);
+    Tabbrowser.#tabFilters.delete(aTab);
+    Tabbrowser.#tabListeners.delete(aTab);
 
     var browser = this.getBrowserForTab(aTab);
 
@@ -7200,7 +7200,7 @@ export class Tabbrowser {
     var remoteBrowser = aOtherTab.documentGlobal.gBrowser;
     var isPending = aOtherTab.hasAttribute("pending");
 
-    let otherTabListener = remoteBrowser.#tabListeners.get(aOtherTab);
+    let otherTabListener = Tabbrowser.#tabListeners.get(aOtherTab);
     let stateFlags = 0;
     if (otherTabListener) {
       stateFlags = otherTabListener._stateFlags;
@@ -7390,11 +7390,10 @@ export class Tabbrowser {
 
   swapBrowsers(aOurTab, aOtherTab) {
     let otherBrowser = aOtherTab.linkedBrowser;
-    let otherTabBrowser = otherBrowser.getTabBrowser();
 
     // We aren't closing the other tab so, we also need to swap its tablisteners.
-    let filter = otherTabBrowser.#tabFilters.get(aOtherTab);
-    let tabListener = otherTabBrowser.#tabListeners.get(aOtherTab);
+    let filter = Tabbrowser.#tabFilters.get(aOtherTab);
+    let tabListener = Tabbrowser.#tabListeners.get(aOtherTab);
     otherBrowser.webProgress.removeProgressListener(filter);
     filter.removeProgressListener(tabListener);
 
@@ -7408,7 +7407,7 @@ export class Tabbrowser {
       false,
       false
     );
-    otherTabBrowser.#tabListeners.set(aOtherTab, tabListener);
+    Tabbrowser.#tabListeners.set(aOtherTab, tabListener);
 
     const notifyAll = Ci.nsIWebProgress.NOTIFY_ALL;
     filter.addProgressListener(tabListener, notifyAll);
@@ -7420,8 +7419,8 @@ export class Tabbrowser {
     this.#insertBrowser(aOurTab);
 
     // Unhook our progress listener
-    const filter = this.#tabFilters.get(aOurTab);
-    let tabListener = this.#tabListeners.get(aOurTab);
+    const filter = Tabbrowser.#tabFilters.get(aOurTab);
+    let tabListener = Tabbrowser.#tabListeners.get(aOurTab);
     let ourBrowser = this.getBrowserForTab(aOurTab);
     ourBrowser.webProgress.removeProgressListener(filter);
     filter.removeProgressListener(tabListener);
@@ -7474,7 +7473,7 @@ export class Tabbrowser {
       false,
       aStateFlags
     );
-    this.#tabListeners.set(aOurTab, tabListener);
+    Tabbrowser.#tabListeners.set(aOurTab, tabListener);
 
     const notifyAll = Ci.nsIWebProgress.NOTIFY_ALL;
     filter.addProgressListener(tabListener, notifyAll);
@@ -9680,18 +9679,18 @@ export class Tabbrowser {
         delete browser.registeredOpenURI;
       }
 
-      let filter = this.#tabFilters.get(tab);
+      let filter = Tabbrowser.#tabFilters.get(tab);
       if (filter) {
         browser.webProgress.removeProgressListener(filter);
 
-        let listener = this.#tabListeners.get(tab);
+        let listener = Tabbrowser.#tabListeners.get(tab);
         if (listener) {
           filter.removeProgressListener(listener);
           listener.destroy();
         }
 
-        this.#tabFilters.delete(tab);
-        this.#tabListeners.delete(tab);
+        Tabbrowser.#tabFilters.delete(tab);
+        Tabbrowser.#tabListeners.delete(tab);
       }
     }
 
@@ -10051,8 +10050,8 @@ export class Tabbrowser {
       tab.dispatchEvent(evt);
 
       // Unhook our progress listener.
-      let filter = this.#tabFilters.get(tab);
-      let oldListener = this.#tabListeners.get(tab);
+      let filter = Tabbrowser.#tabFilters.get(tab);
+      let oldListener = Tabbrowser.#tabListeners.get(tab);
       browser.webProgress.removeProgressListener(filter);
       filter.removeProgressListener(oldListener);
       let stateFlags = oldListener._stateFlags;
@@ -10081,7 +10080,7 @@ export class Tabbrowser {
           stateFlags,
           requestCount
         );
-        this.#tabListeners.set(tab, listener);
+        Tabbrowser.#tabListeners.set(tab, listener);
         filter.addProgressListener(listener, Ci.nsIWebProgress.NOTIFY_ALL);
 
         // Restore the progress listener.
