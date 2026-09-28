@@ -73,8 +73,7 @@
     } else if ((rootOverscrollBehavior == "auto" && subOverscrollBehavior == "contain") ||
                (rootOverscrollBehavior == "none" && subOverscrollBehavior == "auto") ||
                (rootOverscrollBehavior == "none" && subOverscrollBehavior == "contain")) {
-      // FIXME
-      todo(subOverscrolled,
+      ok(subOverscrolled,
            `The sub scroll container should be overscrolled ${combination}`);
       ok(!rootOverscrolled,
          `The root scroll container should not be overscrolled ${combination}`);

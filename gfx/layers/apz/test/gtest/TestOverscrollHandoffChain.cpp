@@ -54,28 +54,27 @@ constexpr Outcome kInner{ExpectedTarget::Inner, EitherScrollDirection};
 constexpr Outcome kMiddle{ExpectedTarget::Middle, EitherScrollDirection};
 constexpr Outcome kRoot{ExpectedTarget::Root, EitherScrollDirection};
 constexpr Outcome kNone{ExpectedTarget::NoApzc, EitherScrollDirection};
-constexpr Outcome kRootVertical{ExpectedTarget::Root, VerticalScrollDirection};
-constexpr Outcome kNoneBlocked{ExpectedTarget::NoApzc, ScrollDirections()};
 
 // Each test case has FrameState as input and Outcome as output.
 struct TestCase {
   FrameState mInner;
   FrameState mMiddle;
   FrameState mRoot;
-  // FindFirstScrollable() take a flag, |IncludeOverscroll|. Each case checks
+  // FindScrollTarget() take a flag, |IncludeOverscroll|. Each case checks
   // the effect of that flag.
   Outcome mWithOverscroll;
   Outcome mWithoutOverscroll;
 };
 
-// FindFirstScrollable() has three exits, referred to throughout this file as
-// (a), (b) and (c):
-//   (a) the APZC can be scrolled by the event, so it is returned;
-//   (b) the APZC is the root content one and, although it cannot scroll, it can
-//       show an overscroll effect, so it is returned along with the directions
-//       it can overscroll in;
-//   (c) the APZC's overscroll-behavior blocks handoff in every direction, so
-//       nullptr is returned.
+// FindScrollTarget() has three outcomes, referred to throughout this file
+// as (a), (b) and (c):
+//   (a) the scroll pass (inner to outer) returns a frame it can scroll;
+//   (b) the overscroll pass (outer to inner) returns a frame that can only
+//       overscroll;
+//   (c) neither pass finds a frame, so nullptr is returned.
+//
+// The reported allowed scroll directions are the directions handoff still
+// allowed on entry to the returned frame.
 //
 // A frame's state is only observable if the scan actually reaches it, which
 // collapses the 12^3 combinations of (overscroll-behavior, scrollability)
@@ -96,21 +95,22 @@ static const TestCase kTestCases[] = {
      kInner,         kInner},
 
     // The innermost frame cannot scroll and blocks handoff, so the scan stops
-    // there via exit (c).
+    // there. The possibility of overscroll is checked.
     {ObContain(kAtEnd),   kUnreached,          kUnreached,
-      // FIXME: should be kInner with overscroll
-     kNoneBlocked,   kNoneBlocked},
+     kInner,       kNone},
     {ObNone(kAtEnd),      kUnreached,          kUnreached,
-     kNoneBlocked,   kNoneBlocked},
+     kNone,        kNone},
     {ObContain(kNoRange), kUnreached,          kUnreached,
-     kNoneBlocked,   kNoneBlocked},
+     kNone,        kNone},
     {ObNone(kNoRange),    kUnreached,          kUnreached,
-     kNoneBlocked,   kNoneBlocked},
+     kNone,        kNone},
 
     ////// The search ends at the middle frame //////
 
-    // Handoff reaches the middle frame, which then terminates the scan itself.
-    // Its behavior mirrors the innermost frame's.
+    // Handoff reaches the middle frame, which then terminates the scroll pass
+    // itself. The result now depends on the overscroll pass, which prefers the
+    // outermost candidate: the middle frame if it can overscroll, otherwise
+    // the innermost frame.
     {ObAuto(kAtEnd),      ObAuto(kRoom),       kUnreached,
      kMiddle,        kMiddle},
     {ObAuto(kAtEnd),      ObContain(kRoom),    kUnreached,
@@ -120,20 +120,16 @@ static const TestCase kTestCases[] = {
     {ObAuto(kAtEnd),      ObNone(kRoom),       kUnreached,
      kMiddle,        kMiddle},
     {ObAuto(kAtEnd),      ObContain(kAtEnd),   kUnreached,
-      // FIXME: should be kMiddle with overscroll
-     kNoneBlocked,   kNoneBlocked},
+     kMiddle,        kNone},
     {ObAuto(kAtEnd),      ObNone(kAtEnd),      kUnreached,
-      // FIXME: should be kInner with overscroll
-     kNoneBlocked,   kNoneBlocked},
+     kInner,         kNone},
     {ObAuto(kAtEnd),      ObContain(kNoRange), kUnreached,
-      // FIXME: should be kInner with overscroll
-     kNoneBlocked,   kNoneBlocked},
+     kInner,         kNone},
     {ObAuto(kAtEnd),      ObNone(kNoRange),    kUnreached,
-      // FIXME: should be kInner with overscroll
-     kNoneBlocked,   kNoneBlocked},
+     kInner,         kNone},
 
     // The cases where the innermost frames has no range.
-    // These are the same as above.
+    // Note that kInner is no longer returned this time, because it can't scroll.
     {ObAuto(kNoRange),    ObAuto(kRoom),       kUnreached,
      kMiddle,        kMiddle},
     {ObAuto(kNoRange),    ObContain(kRoom),    kUnreached,
@@ -143,14 +139,13 @@ static const TestCase kTestCases[] = {
     {ObAuto(kNoRange),    ObNone(kRoom),       kUnreached,
      kMiddle,        kMiddle},
     {ObAuto(kNoRange),    ObContain(kAtEnd),   kUnreached,
-      // FIXME: should be kMiddle with overscroll
-     kNoneBlocked,   kNoneBlocked},
+     kMiddle,        kNone},
     {ObAuto(kNoRange),    ObNone(kAtEnd),      kUnreached,
-     kNoneBlocked,   kNoneBlocked},
+     kNone,          kNone},
     {ObAuto(kNoRange),    ObContain(kNoRange), kUnreached,
-     kNoneBlocked,   kNoneBlocked},
+     kNone,          kNone},
     {ObAuto(kNoRange),    ObNone(kNoRange),    kUnreached,
-     kNoneBlocked,   kNoneBlocked},
+     kNone,          kNone},
 
     // Check `chain` on the innermost frame permits handoff just like `auto`.
     {ObChain(kAtEnd),     ObAuto(kRoom),       kUnreached,
@@ -172,27 +167,21 @@ static const TestCase kTestCases[] = {
     {ObAuto(kAtEnd),      ObAuto(kAtEnd),      ObNone(kRoom),
      kRoot,          kRoot},
     {ObAuto(kAtEnd),      ObAuto(kAtEnd),      ObAuto(kAtEnd),
-     kRootVertical,  kNone},
+     kRoot,          kNone},
     {ObAuto(kAtEnd),      ObAuto(kAtEnd),      ObContain(kAtEnd),
-     kRootVertical,  kNoneBlocked},
+     kRoot,          kNone},
     {ObAuto(kAtEnd),      ObAuto(kAtEnd),      ObChain(kAtEnd),
-      // FIXME: should be kMiddle with overscroll
-     kNone,          kNone},
+     kMiddle,        kNone},
     {ObAuto(kAtEnd),      ObAuto(kAtEnd),      ObNone(kAtEnd),
-      // FIXME: should be kMiddle with overscroll
-     kNoneBlocked,   kNoneBlocked},
+     kMiddle,        kNone},
     {ObAuto(kAtEnd),      ObAuto(kAtEnd),      ObAuto(kNoRange),
-      // FIXME: should be kMiddle with overscroll
-     kNone,          kNone},
+     kMiddle,        kNone},
     {ObAuto(kAtEnd),      ObAuto(kAtEnd),      ObContain(kNoRange),
-      // FIXME: should be kMiddle with overscroll
-     kNoneBlocked,   kNoneBlocked},
+     kMiddle,        kNone},
     {ObAuto(kAtEnd),      ObAuto(kAtEnd),      ObChain(kNoRange),
-      // FIXME: should be kMiddle with overscroll
-     kNone,          kNone},
+     kMiddle,        kNone},
     {ObAuto(kAtEnd),      ObAuto(kAtEnd),      ObNone(kNoRange),
-      // FIXME: should be kMiddle with overscroll
-     kNoneBlocked,   kNoneBlocked},
+     kMiddle,        kNone},
 };
 // clang-format on
 
@@ -244,7 +233,7 @@ static std::string Describe(ScrollDirections aDirections) {
   return result + "}";
 }
 
-class APZFindFirstScrollableTester : public APZCTreeManagerTester {
+class APZFindScrollTargetTester : public APZCTreeManagerTester {
  protected:
   UniquePtr<ScopedLayerTreeRegistration> registration;
 
@@ -370,7 +359,7 @@ class APZFindFirstScrollableTester : public APZCTreeManagerTester {
                     const Outcome& aExpected) {
     ScrollDirections directions;
     RefPtr<AsyncPanZoomController> target =
-        aChain->FindFirstScrollable(aInput, &directions, aInclude);
+        aChain->FindScrollTarget(aInput, &directions, aInclude);
     EXPECT_EQ(ApzcForTarget(aExpected.mTarget), target.get())
         << "unexpected target APZC";
     EXPECT_EQ(aExpected.mDirections, directions)
@@ -379,8 +368,8 @@ class APZFindFirstScrollableTester : public APZCTreeManagerTester {
   }
 };
 
-class APZFindFirstScrollableTableTester
-    : public APZFindFirstScrollableTester,
+class APZFindScrollTargetTableTester
+    : public APZFindScrollTargetTester,
       public testing::WithParamInterface<TestCase> {
  public:
   static std::string PrintFromParam(
@@ -391,7 +380,7 @@ class APZFindFirstScrollableTableTester
   }
 };
 
-TEST_P(APZFindFirstScrollableTableTester, AllReachableChainStates) {
+TEST_P(APZFindScrollTargetTableTester, AllReachableChainStates) {
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
   CreateThreeLevelChain();
 
@@ -416,24 +405,23 @@ TEST_P(APZFindFirstScrollableTableTester, AllReachableChainStates) {
   }
 }
 
-INSTANTIATE_TEST_SUITE_P(ReachableChainStates,
-                         APZFindFirstScrollableTableTester,
+INSTANTIATE_TEST_SUITE_P(ReachableChainStates, APZFindScrollTargetTableTester,
                          testing::ValuesIn(kTestCases),
-                         APZFindFirstScrollableTableTester::PrintFromParam);
+                         APZFindScrollTargetTableTester::PrintFromParam);
 
 ////////////////////////////////////////////////
 
 // The table holds overscroll-behavior uniform across the two axes, so it never
 // produces a partially narrowed aOutAllowedScrollDirections. The tests below
 // cover the axes independently.
-// FindFirstScrollable() treats an axis individually in six places, and there is
+// FindScrollTarget() treats an axis individually in six places, and there is
 // one test per place.
 // One test per place is enough because the two axes are symmetric here.
 
 // CanScroll(aInput) tests each axis against the event delta. Here, range
 // on an axis the event does not move contributes nothing.
 // (i.e. Axis::CanScroll(0) is false even with range)
-TEST_F(APZFindFirstScrollableTester, ScrollableOnTheOtherAxisIsSkipped) {
+TEST_F(APZFindScrollTargetTester, ScrollableOnTheOtherAxisIsSkipped) {
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
   CreateThreeLevelChain();
 
@@ -454,7 +442,7 @@ TEST_F(APZFindFirstScrollableTester, ScrollableOnTheOtherAxisIsSkipped) {
 }
 
 // GetOverscrollableDirections() is per axis: has range && o.b. != none
-TEST_F(APZFindFirstScrollableTester, ContainVsNoneAtRoot) {
+TEST_F(APZFindScrollTargetTester, ContainVsNoneAtRoot) {
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
   CreateThreeLevelChain();
 
@@ -468,16 +456,16 @@ TEST_F(APZFindFirstScrollableTester, ContainVsNoneAtRoot) {
   SetOverscrollBehavior(mRoot, StyleOverscrollBehavior::Auto,
                         StyleOverscrollBehavior::Contain);
   CheckOutcome(chain, input, OverscrollHandoffChain::IncludeOverscroll::Yes,
-               kRootVertical);
+               kRoot);
 
   SetOverscrollBehavior(mRoot, StyleOverscrollBehavior::Auto,
                         StyleOverscrollBehavior::None);
   CheckOutcome(chain, input, OverscrollHandoffChain::IncludeOverscroll::Yes,
-               Outcome{ExpectedTarget::NoApzc, HorizontalScrollDirection});
+               kNone);
 }
 
-// IsZero(delta) drops the axes the event has no delta on.
-TEST_F(APZFindFirstScrollableTester, RootOverscrollStripsZeroDeltaAxis) {
+// IsZero(delta) doesn't drop the axes the event has no delta on.
+TEST_F(APZFindScrollTargetTester, ReportedDirectionsKeepZeroDeltaAxis) {
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
   CreateThreeLevelChain();
 
@@ -491,19 +479,19 @@ TEST_F(APZFindFirstScrollableTester, RootOverscrollStripsZeroDeltaAxis) {
 
   ASSERT_EQ(EitherScrollDirection, mRoot->GetOverscrollableDirections());
 
-  // With a delta only on vertical direction, horizontal direction is stripped.
+  // Regardless of the direction with delta, the root frame is returned with
+  // both directions.
   PanGestureInput verticalPan = DownwardPan();
   CheckOutcome(chain, verticalPan,
-               OverscrollHandoffChain::IncludeOverscroll::Yes, kRootVertical);
+               OverscrollHandoffChain::IncludeOverscroll::Yes, kRoot);
 
-  // With a delta on both axes, neither direction is stripped.
   PanGestureInput diagonalPan = DiagonalPan();
   CheckOutcome(chain, diagonalPan,
                OverscrollHandoffChain::IncludeOverscroll::Yes, kRoot);
 }
 
 // The overscrollable set is intersected with what handoff still allows.
-TEST_F(APZFindFirstScrollableTester, RootOverscrollCannotRestoreBlockedAxis) {
+TEST_F(APZFindScrollTargetTester, RootOverscrollCannotRestoreBlockedAxis) {
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
   CreateThreeLevelChain();
 
@@ -528,7 +516,7 @@ TEST_F(APZFindFirstScrollableTester, RootOverscrollCannotRestoreBlockedAxis) {
 }
 
 // GetAllowedHandoffDirections() is per axis: o.b. == auto
-TEST_F(APZFindFirstScrollableTester, HandoffNarrowsToSingleDirection) {
+TEST_F(APZFindScrollTargetTester, HandoffNarrowsToSingleDirection) {
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
   CreateThreeLevelChain();
 
@@ -545,8 +533,8 @@ TEST_F(APZFindFirstScrollableTester, HandoffNarrowsToSingleDirection) {
                Outcome{ExpectedTarget::Middle, VerticalScrollDirection});
 }
 
-// The direction set becoming empty ends the scan
-TEST_F(APZFindFirstScrollableTester, ProgressiveNarrowingEmptiesDirections) {
+// The direction set becoming empty ends the scroll pass
+TEST_F(APZFindScrollTargetTester, ProgressiveNarrowingEndsScrollPass) {
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
   CreateThreeLevelChain();
 
@@ -564,9 +552,9 @@ TEST_F(APZFindFirstScrollableTester, ProgressiveNarrowingEmptiesDirections) {
   // The root content is scrollable...
   ASSERT_TRUE(mRoot->CanScroll(input));
 
-  // ...but the scan doesn't reach to the root and it ends with kNoneBlocked.
+  // ...but the scan doesn't reach to the root and it ends with kNone.
   CheckOutcome(chain, input, OverscrollHandoffChain::IncludeOverscroll::Yes,
-               kNoneBlocked);
+               kNone);
 }
 
 ////////////////////////////////////////////////
@@ -575,7 +563,7 @@ TEST_F(APZFindFirstScrollableTester, ProgressiveNarrowingEmptiesDirections) {
 
 // A zero-delta pan gesture cannot scroll anything either, so an innermost frame
 // with overscroll-behavior: none ends the scan even though it has room.
-TEST_F(APZFindFirstScrollableTester, ZeroDeltaPanIsNotScrollable) {
+TEST_F(APZFindScrollTargetTester, ZeroDeltaPanIsNotScrollable) {
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
   CreateThreeLevelChain();
 
@@ -589,7 +577,7 @@ TEST_F(APZFindFirstScrollableTester, ZeroDeltaPanIsNotScrollable) {
                            ScreenPoint(50, 50), ScreenPoint(0, 0),
                            MODIFIER_NONE);
   CheckOutcome(chain, mayStart, OverscrollHandoffChain::IncludeOverscroll::Yes,
-               kNoneBlocked);
+               kNone);
 
   // The frame is returned when the gesture has a delta.
   PanGestureInput pan = DownwardPan();
@@ -599,7 +587,7 @@ TEST_F(APZFindFirstScrollableTester, ZeroDeltaPanIsNotScrollable) {
 
 // Exit (b) is gated on the input being a pan gesture, so a wheel event with the
 // same delta on the same chain does not get the root's overscroll treatment.
-TEST_F(APZFindFirstScrollableTester, WheelInputSkipsOverscrollBranch) {
+TEST_F(APZFindScrollTargetTester, WheelInputSkipsOverscrollBranch) {
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
   CreateThreeLevelChain();
 
@@ -619,7 +607,7 @@ TEST_F(APZFindFirstScrollableTester, WheelInputSkipsOverscrollBranch) {
   // The identical chain does return the root for a pan gesture.
   PanGestureInput pan = DownwardPan();
   CheckOutcome(chain, pan, OverscrollHandoffChain::IncludeOverscroll::Yes,
-               kRootVertical);
+               kRoot);
 }
 
 }  // namespace
