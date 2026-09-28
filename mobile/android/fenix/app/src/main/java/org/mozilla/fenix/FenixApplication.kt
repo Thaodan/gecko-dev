@@ -124,6 +124,7 @@ import org.mozilla.fenix.ext.isKnownSearchDomain
 import org.mozilla.fenix.home.collections.migration.CollectionsToTabGroupsMigrationWorker
 import org.mozilla.fenix.home.topsites.TopSitesConfigConstants.TOP_SITES_PROVIDER_LIMIT
 import org.mozilla.fenix.home.topsites.TopSitesConfigConstants.TOP_SITES_PROVIDER_MAX_THRESHOLD
+import org.mozilla.fenix.lifecycle.PowerSaveModeFeature
 import org.mozilla.fenix.lifecycle.StoreLifecycleObserver
 import org.mozilla.fenix.lifecycle.VisibilityLifecycleObserver
 import org.mozilla.fenix.nimbus.FxNimbus
@@ -449,6 +450,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
                     browserStore = components.core.store,
                 ),
                 VisibilityLifecycleObserver(),
+                PowerSaveModeFeature(applicationContext, components.settings),
             )
 
         components.analytics.metricsStorage.tryRegisterAsUsageRecorder(this)

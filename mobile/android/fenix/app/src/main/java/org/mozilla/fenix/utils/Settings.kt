@@ -1528,6 +1528,25 @@ class Settings(
             field = value
         }
 
+    /**
+     * The state of the OS power saving (battery saver) mode the last time it was observed, or `null` if it has never
+     * been observed. Persisted so that a change made while the app process was not running is still detected the next
+     * time the app starts.
+     */
+    var lastKnownPowerSaveMode: Boolean?
+        get() {
+            val key = appContext.getPreferenceKey(R.string.pref_key_last_known_power_save_mode)
+
+            return if (preferences.contains(key)) preferences.getBoolean(key, false) else null
+        }
+        set(value) {
+            val key = appContext.getPreferenceKey(R.string.pref_key_last_known_power_save_mode)
+
+            preferences.edit {
+                if (value == null) remove(key) else putBoolean(key, value)
+            }
+        }
+
     var shouldDeleteBrowsingDataOnQuit by
         booleanPreference(
             appContext.getPreferenceKey(R.string.pref_key_delete_browsing_data_on_quit),

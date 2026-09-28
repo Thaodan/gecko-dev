@@ -657,4 +657,7 @@
     <string name="pref_key_webcompat_reporter_enhancements" translatable="false">pref_key_webcompat_reporter_enhancements</string>
 
     <string name="pref_key_deleted_report_site_domains_datastore" translatable="false">pref_key_deleted_report_site_domains_datastore</string>
+
+    <!--  Power Saving Mode  -->
+    <string name="pref_key_last_known_power_save_mode" translatable="false">pref_key_last_known_power_save_mode</string>
 </resources>
