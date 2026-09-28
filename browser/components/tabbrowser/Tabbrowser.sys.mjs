@@ -2697,7 +2697,7 @@ export class Tabbrowser {
     }
 
     if (replace) {
-      if (this.isTabGroupLabel(targetTab)) {
+      if (Tabbrowser.isTabGroupLabel(targetTab)) {
         throw new Error(
           "Replacing a tab group label with a tab is not supported"
         );
@@ -3970,10 +3970,10 @@ export class Tabbrowser {
       return this.tabs.length;
     }
     let element = this.tabContainer.dragAndDropElements[elementIndex];
-    if (this.isTabGroupLabel(element)) {
+    if (Tabbrowser.isTabGroupLabel(element)) {
       element = element.group.tabs[0];
     }
-    if (this.isSplitViewWrapper(element)) {
+    if (Tabbrowser.isSplitViewWrapper(element)) {
       element = element.tabs[0];
     }
     return element.index;
@@ -4186,8 +4186,8 @@ export class Tabbrowser {
       !tabsAndSplitViews?.length ||
       tabsAndSplitViews.some(
         tabOrSplitView =>
-          !this.isTab(tabOrSplitView) &&
-          !this.isSplitViewWrapper(tabOrSplitView)
+          !Tabbrowser.isTab(tabOrSplitView) &&
+          !Tabbrowser.isSplitViewWrapper(tabOrSplitView)
       )
     ) {
       throw new Error("Cannot create tab group with zero tabs or split views");
@@ -4319,7 +4319,7 @@ export class Tabbrowser {
   }
 
   ungroupSplitView(splitView) {
-    if (!this.isSplitViewWrapper(splitView)) {
+    if (!Tabbrowser.isSplitViewWrapper(splitView)) {
       return;
     }
 
@@ -4372,7 +4372,7 @@ export class Tabbrowser {
     }
 
     for (let element of group.tabsAndSplitViews) {
-      if (this.isSplitViewWrapper(element)) {
+      if (Tabbrowser.isSplitViewWrapper(element)) {
         splitview = this.adoptSplitView(element, {
           elementIndex,
           tabIndex,
@@ -5470,8 +5470,8 @@ export class Tabbrowser {
 
     if (tabGroup) {
       if (
-        (this.isTab(itemAfter) && itemAfter.group == tabGroup) ||
-        this.isSplitViewWrapper(itemAfter)
+        (Tabbrowser.isTab(itemAfter) && itemAfter.group == tabGroup) ||
+        Tabbrowser.isSplitViewWrapper(itemAfter)
       ) {
         // Place at the front of, or between tabs in, the same tab group
         this.tabContainer.insertBefore(tab, itemAfter);
@@ -5482,8 +5482,8 @@ export class Tabbrowser {
         tabGroup.appendChild(tab);
       }
     } else if (
-      (this.isTab(itemAfter) && itemAfter.group?.tabs[0] == itemAfter) ||
-      this.isTabGroupLabel(itemAfter)
+      (Tabbrowser.isTab(itemAfter) && itemAfter.group?.tabs[0] == itemAfter) ||
+      Tabbrowser.isTabGroupLabel(itemAfter)
     ) {
       // If there is ambiguity around whether or not a tab should be inserted
       // into a group (i.e. because the new tab is being inserted on the
@@ -6767,7 +6767,7 @@ export class Tabbrowser {
         closingTab.compareDocumentPosition(candidate) &
         Node.DOCUMENT_POSITION_FOLLOWING
     );
-    return this.isTab(item) ? item : null;
+    return Tabbrowser.isTab(item) ? item : null;
   }
 
   _endRemoveTab(aTab) {
@@ -7727,7 +7727,7 @@ export class Tabbrowser {
 
     // Play the tab closing animation to give immediate feedback while
     // waiting for the new window to appear.
-    if (!this.documentGlobal.gReduceMotion && this.isTab(aTab)) {
+    if (!this.documentGlobal.gReduceMotion && Tabbrowser.isTab(aTab)) {
       aTab.style.maxWidth = ""; // ensure that fade-out transition happens
       aTab.removeAttribute("fadein");
     }
@@ -7756,7 +7756,7 @@ export class Tabbrowser {
    *   Key-value pairs that will be serialized into the features string.
    */
   replaceTabsWithWindow(contextTab, options = {}) {
-    if (this.isTabGroupLabel(contextTab)) {
+    if (Tabbrowser.isTabGroupLabel(contextTab)) {
       // TODO bug 1967937: Pass contextTab.group instead.
       return this.replaceTabWithWindow(contextTab, options);
     }
@@ -7802,7 +7802,7 @@ export class Tabbrowser {
       !elements.includes(selectedTab) &&
       !elements.includes(selectedTab.splitview)
     ) {
-      selectedTab = this.isSplitViewWrapper(elements[0])
+      selectedTab = Tabbrowser.isSplitViewWrapper(elements[0])
         ? elements[0].tabs[0]
         : elements[0];
     }
@@ -7814,7 +7814,7 @@ export class Tabbrowser {
         let tabIndex = 0;
         for (let element of elements) {
           if (element !== selectedTab && element !== selectedTab.splitview) {
-            const newTab = win.gBrowser.isSplitViewWrapper(element)
+            const newTab = Tabbrowser.isSplitViewWrapper(element)
               ? win.gBrowser.adoptSplitView(element, {
                   elementIndex: tabIndex,
                 })
@@ -7865,7 +7865,7 @@ export class Tabbrowser {
    * @param {Element} element
    * @returns {element is MozTabbrowserTab}
    */
-  isTab(element) {
+  static isTab(element) {
     return !!(element?.tagName == "tab");
   }
 
@@ -7875,7 +7875,7 @@ export class Tabbrowser {
    * @param {Element} element
    * @returns {element is MozTabbrowserTabGroup}
    */
-  isTabGroup(element) {
+  static isTabGroup(element) {
     return !!(element?.tagName == "tab-group");
   }
 
@@ -7885,7 +7885,7 @@ export class Tabbrowser {
    * @param {Element} element
    * @returns {element is MozTabbrowserTabGroupLabel}
    */
-  isTabGroupLabel(element) {
+  static isTabGroupLabel(element) {
     return !!element?.classList?.contains("tab-group-label");
   }
 
@@ -7895,7 +7895,7 @@ export class Tabbrowser {
    * @param {Element} element
    * @returns {element is MozTabSplitViewWrapper}
    */
-  isSplitViewWrapper(element) {
+  static isSplitViewWrapper(element) {
     return !!(element?.tagName == "tab-split-view-wrapper");
   }
 
@@ -7950,7 +7950,7 @@ export class Tabbrowser {
     }
 
     // Don't allow mixing pinned and unpinned tabs.
-    if (this.isTab(element) && element.pinned) {
+    if (Tabbrowser.isTab(element) && element.pinned) {
       tabIndex = Math.min(tabIndex, this.pinnedTabCount - 1);
     } else {
       tabIndex = Math.max(tabIndex, this.pinnedTabCount);
@@ -7958,7 +7958,7 @@ export class Tabbrowser {
 
     // Return early if the tab is already in the right spot.
     if (
-      this.isTab(element) &&
+      Tabbrowser.isTab(element) &&
       element.index == tabIndex &&
       !(element.group && forceUngrouped)
     ) {
@@ -7967,10 +7967,10 @@ export class Tabbrowser {
 
     // When asked to move a tab group label, we need to move the whole group
     // instead.
-    if (this.isTabGroupLabel(element)) {
+    if (Tabbrowser.isTabGroupLabel(element)) {
       element = element.group;
     }
-    if (this.isTabGroup(element)) {
+    if (Tabbrowser.isTabGroup(element)) {
       forceUngrouped = true;
     }
     // When asked to move a tab in a splitview, move the entire wrapper instead.
@@ -7982,7 +7982,7 @@ export class Tabbrowser {
     // index to account for the fact that the act of moving (multiple) tabs
     // causes all following tabs to have a decreased index.
     let movingForwards = false;
-    if (this.isTab(element)) {
+    if (Tabbrowser.isTab(element)) {
       movingForwards = tabIndex > element.index;
     } else {
       // tab group or split view (mutually exclusive with being pinned).
@@ -8080,7 +8080,7 @@ export class Tabbrowser {
     moveBefore = false,
     { metricsContext } = {}
   ) {
-    if (this.isTabGroupLabel(targetElement)) {
+    if (Tabbrowser.isTabGroupLabel(targetElement)) {
       targetElement = targetElement.group;
       if (!moveBefore && !targetElement.collapsed) {
         // Right after the tab group label = before the first tab in the tab group
@@ -8088,7 +8088,7 @@ export class Tabbrowser {
         moveBefore = true;
       }
     }
-    if (this.isTabGroupLabel(element)) {
+    if (Tabbrowser.isTabGroupLabel(element)) {
       element = element.group;
       if (targetElement?.group) {
         targetElement = targetElement.group;
@@ -8179,7 +8179,7 @@ export class Tabbrowser {
    * @param {number} [insertAtIndex=-1] An optional index for a tab to insert into the split view
    */
   moveTabToSplitView(aTab, aSplitViewWrapper, insertAtIndex = -1) {
-    if (!this.isTab(aTab)) {
+    if (!Tabbrowser.isTab(aTab)) {
       throw new Error("Can only move a tab into a split view wrapper");
     }
     if (aTab.pinned) {
@@ -8213,7 +8213,7 @@ export class Tabbrowser {
    *   The context for the operation for telemetry purposes.
    */
   moveTabToExistingGroup(aTab, aGroup, { metricsContext } = {}) {
-    if (!this.isTab(aTab)) {
+    if (!Tabbrowser.isTab(aTab)) {
       throw new Error("Can only move a tab into a tab group");
     }
     if (aTab.pinned) {
@@ -8255,7 +8255,7 @@ export class Tabbrowser {
     aGroup,
     { metricsContext = null } = {}
   ) {
-    if (!this.isSplitViewWrapper(aSplitView)) {
+    if (!Tabbrowser.isSplitViewWrapper(aSplitView)) {
       throw new Error("Can only move a split view into a tab group");
     }
     if (aSplitView.group && aSplitView.group.id === aGroup.id) {
@@ -8290,7 +8290,7 @@ export class Tabbrowser {
    * @returns {TabMoveState|undefined}
    */
   #getTabMoveState(tab) {
-    if (!this.isTab(tab)) {
+    if (!Tabbrowser.isTab(tab)) {
       return undefined;
     }
 
@@ -8323,7 +8323,7 @@ export class Tabbrowser {
     currentTabState,
     { metricsContext } = {}
   ) {
-    if (!this.isTab(tab) || !previousTabState || !currentTabState) {
+    if (!Tabbrowser.isTab(tab) || !previousTabState || !currentTabState) {
       return;
     }
 
@@ -8374,11 +8374,17 @@ export class Tabbrowser {
   #handleTabMove(element, moveActionCallback, { metricsContext } = {}) {
     let tabs;
     // TODO bug 2024173: consider removing element.splitview check.
-    if (this.isTab(element) && element.splitview?.shouldMoveAllTabsAtOnce) {
+    if (
+      Tabbrowser.isTab(element) &&
+      element.splitview?.shouldMoveAllTabsAtOnce
+    ) {
       tabs = element.splitview.tabs;
-    } else if (this.isTab(element)) {
+    } else if (Tabbrowser.isTab(element)) {
       tabs = [element];
-    } else if (this.isTabGroup(element) || this.isSplitViewWrapper(element)) {
+    } else if (
+      Tabbrowser.isTabGroup(element) ||
+      Tabbrowser.isSplitViewWrapper(element)
+    ) {
       tabs = element.tabs;
     } else {
       throw new Error(
@@ -8424,7 +8430,7 @@ export class Tabbrowser {
 
     let currentFirst = this.#getTabMoveState(tabs[0]);
     if (
-      this.isTabGroup(element) &&
+      Tabbrowser.isTabGroup(element) &&
       previousTabStates[0].tabIndex != currentFirst.tabIndex
     ) {
       let event = new this.documentGlobal.CustomEvent("TabGroupMoved", {
@@ -8475,7 +8481,7 @@ export class Tabbrowser {
       skipAnimation: true,
       elementIndex,
       tabIndex,
-      tabGroup: this.isTab(nextElement) && nextElement.group,
+      tabGroup: Tabbrowser.isTab(nextElement) && nextElement.group,
       createLazyBrowser,
     };
 
@@ -8708,7 +8714,7 @@ export class Tabbrowser {
    * @param {MozTabbrowserTab} aTab
    */
   addToMultiSelectedTabs(aTab) {
-    if (this.isSplitViewWrapper(aTab)) {
+    if (Tabbrowser.isSplitViewWrapper(aTab)) {
       for (let tab of aTab.tabs) {
         this.addToMultiSelectedTabs(tab);
       }
