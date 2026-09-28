@@ -37,6 +37,11 @@ class PrintHelper {
       }
     );
 
+    await SpecialPowers.popPrefEnv();
+    if (isPdf) {
+      await SpecialPowers.popPrefEnv();
+    }
+
     // Reset all of the other printing prefs to their default.
     this.resetPrintPrefs();
     return taskReturn;
