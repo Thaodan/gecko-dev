@@ -4,23 +4,14 @@
 
 use pkcs11_bindings::*;
 use rsclientcerts::cryptoki::*;
-use rsclientcerts::manager::{ClientCertsBackend, CryptokiObject, Sign};
+use rsclientcerts::manager::{
+    ClientCertsBackend, CryptokiObject, FindObjectsCallback, Sign, SignCallback,
+};
 use rsclientcerts_util::error::{Error, ErrorType};
 use rsclientcerts_util::*;
 use std::ffi::c_void;
 
-type FindObjectsCallback = Option<
-    unsafe extern "C" fn(
-        typ: u8,
-        data_len: usize,
-        data: *const u8,
-        extra_len: usize,
-        extra: *const u8,
-        ctx: *mut c_void,
-    ),
->;
-
-// Wrapper of C DoFindObject function implemented in nsNSSIOLayer.h
+// Wrapper of C DoFindObjects function implemented in nsNSSIOLayer.h
 fn DoFindObjectsWrapper(callback: FindObjectsCallback, ctx: &mut FindObjectsContext) {
     // The function makes the parent process to find certificates and keys and send identifying
     // information about them over IPC.
@@ -32,9 +23,6 @@ fn DoFindObjectsWrapper(callback: FindObjectsCallback, ctx: &mut FindObjectsCont
         DoFindObjects(callback, ctx as *mut _ as *mut c_void);
     }
 }
-
-type SignCallback =
-    Option<unsafe extern "C" fn(data_len: usize, data: *const u8, ctx: *mut c_void)>;
 
 // Wrapper of C DoSign function implemented in nsNSSIOLayer.h
 fn DoSignWrapper(
@@ -188,13 +176,13 @@ unsafe extern "C" fn find_objects_callback(
     extra: *const u8,
     ctx: *mut c_void,
 ) {
-    let data = if data_len == 0 {
+    let data = if data_len == 0 || data.is_null() {
         &[]
     } else {
         std::slice::from_raw_parts(data, data_len)
     }
     .to_vec();
-    let extra = if extra_len == 0 {
+    let extra = if extra_len == 0 || extra.is_null() {
         &[]
     } else {
         std::slice::from_raw_parts(extra, extra_len)

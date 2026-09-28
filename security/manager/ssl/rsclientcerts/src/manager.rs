@@ -7,8 +7,27 @@ use rsclientcerts_util::error::{Error, ErrorType};
 use rsclientcerts_util::error_here;
 use std::collections::{BTreeMap, BTreeSet};
 use std::convert::TryInto;
+use std::ffi::c_void;
 
 use crate::cryptoki::{CryptokiCert, CryptokiTrust};
+
+/// Helper type for DoFindObjects-type functions where a rust `ClientCertsBackend` implementation
+/// calls a C function to search for certificates and keys.
+pub type FindObjectsCallback = Option<
+    unsafe extern "C" fn(
+        typ: u8,
+        data_len: usize,
+        data: *const u8,
+        extra_len: usize,
+        extra: *const u8,
+        ctx: *mut c_void,
+    ),
+>;
+
+/// Helper type for DoSign-type functions where a rust `ClientCertsBackend` implementation calls a C
+/// function to sign some data.
+pub type SignCallback =
+    Option<unsafe extern "C" fn(data_len: usize, data: *const u8, ctx: *mut c_void)>;
 
 pub trait CryptokiObject {
     fn matches(&self, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool;

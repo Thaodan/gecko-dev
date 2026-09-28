@@ -35,6 +35,12 @@ var gWindowWatcher = installWindowWatcherForProtectedAuth(gPrompt);
 do_get_profile();
 
 add_task(async function test_pkcs11_remote_process() {
+  let testClientCertificate = await findCertByCommonName("client cert rsa");
+  ok(
+    !testClientCertificate,
+    "shouldn't be able to find the test client certificate before loading the module"
+  );
+
   let libraryFile = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
   libraryFile.append("pkcs11testmodule");
   libraryFile.append(ctypes.libraryName("pkcs11testmodule"));
@@ -202,6 +208,29 @@ add_task(async function test_pkcs11_remote_process() {
     1,
     "should have seen one protected auth prompt"
   );
+
+  testClientCertificate = await findCertByCommonName("client cert rsa");
+  ok(
+    testClientCertificate,
+    "test module (loaded remotely) should expose rsa client certificate"
+  );
+
+  let testServerCertificate = await findCertByCommonName(
+    "EE issued by intermediate"
+  );
+  ok(
+    testServerCertificate,
+    "test module (loaded remotely) should expose server certificate"
+  );
+  let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
+    Ci.nsIX509CertDB
+  );
+  // If the server certificate verifies as a server certificate without having
+  // explicitly loaded any CAs, CAs (and trust information) are being exposed
+  // remotely.
+  await asyncTestCertificateUsages(certdb, testServerCertificate, [
+    Ci.nsIX509CertDB.verifyUsageTLSServer,
+  ]);
 
   await moduleDB.deleteModule("PKCS11 Test Module");
   testModule = await findModuleByName(moduleDB, "PKCS11 Test Module");
