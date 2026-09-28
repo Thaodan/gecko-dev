@@ -736,15 +736,15 @@ impl ClientCertsBackend for Backend {
     fn find_objects(
         &mut self,
         slot_id: CK_SLOT_ID,
-    ) -> Result<(Vec<CryptokiCert>, Vec<Key>, Vec<CryptokiTrust>), Error> {
+    ) -> Result<Option<(Vec<CryptokiCert>, Vec<Key>, Vec<CryptokiTrust>)>, Error> {
         if !crate::should_search_for_objects(slot_id) {
-            return Ok((Vec::new(), Vec::new(), Vec::new()));
+            return Ok(None);
         }
 
         match self.last_scan_finished {
             Some(last_scan_finished) => {
                 if Instant::now().duration_since(last_scan_finished) < Duration::new(3, 0) {
-                    return Ok((Vec::new(), Vec::new(), Vec::new()));
+                    return Ok(None);
                 }
             }
             None => {}
@@ -756,7 +756,7 @@ impl ClientCertsBackend for Backend {
         });
         let result = futures_executor::block_on(task);
         self.last_scan_finished = Some(Instant::now());
-        result
+        result.map(|objects| Some(objects))
     }
 
     fn get_slot_info(&self) -> CK_SLOT_INFO {

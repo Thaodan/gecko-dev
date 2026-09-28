@@ -246,20 +246,20 @@ impl ClientCertsBackend for Backend {
     fn find_objects(
         &mut self,
         slot_id: CK_SLOT_ID,
-    ) -> Result<(Vec<CryptokiCert>, Vec<Key>, Vec<CryptokiTrust>), Error> {
+    ) -> Result<Option<(Vec<CryptokiCert>, Vec<Key>, Vec<CryptokiTrust>)>, Error> {
         if !unsafe {
             IsGeckoSearchingForClientAuthCertificates(UNIQUE_MODULE_ID | (slot_id as u64))
         } {
-            return Ok((Vec::new(), Vec::new(), Vec::new()));
+            return Ok(None);
         }
 
         let mut find_objects_context = FindObjectsContext::new();
         DoFindObjectsWrapper(Some(find_objects_callback), &mut find_objects_context);
-        Ok((
+        Ok(Some((
             find_objects_context.certs,
             find_objects_context.keys,
             Vec::new(),
-        ))
+        )))
     }
 
     fn get_slot_info(&self) -> CK_SLOT_INFO {
