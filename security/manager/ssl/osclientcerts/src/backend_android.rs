@@ -254,7 +254,14 @@ const TOKEN_SERIAL_NUMBER_BYTES: &[u8; 16] = b"0000000000000000";
 impl ClientCertsBackend for Backend {
     type Key = Key;
 
-    fn find_objects(&mut self) -> Result<(Vec<CryptokiCert>, Vec<Key>, Vec<CryptokiTrust>), Error> {
+    fn find_objects(
+        &mut self,
+        slot_id: CK_SLOT_ID,
+    ) -> Result<(Vec<CryptokiCert>, Vec<Key>, Vec<CryptokiTrust>), Error> {
+        if !crate::should_search_for_objects(slot_id) {
+            return Ok((Vec::new(), Vec::new(), Vec::new()));
+        }
+
         let mut find_objects_context = FindObjectsContext::new();
         AndroidDoFindObjectsWrapper(Some(find_objects_callback), &mut find_objects_context);
         Ok((

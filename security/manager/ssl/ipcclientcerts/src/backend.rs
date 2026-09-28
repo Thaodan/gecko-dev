@@ -246,10 +246,25 @@ const TOKEN_LABEL_BYTES: &[u8; 32] = b"IPC Client Cert Token           ";
 const TOKEN_MODEL_BYTES: &[u8; 16] = b"ipcclientcerts  ";
 const TOKEN_SERIAL_NUMBER_BYTES: &[u8; 16] = b"0000000000000000";
 
+extern "C" {
+    fn IsGeckoSearchingForClientAuthCertificates(unique_slot_id: u64) -> bool;
+}
+
+const UNIQUE_MODULE_ID: u64 = (u32::from_be_bytes(*b"IPCC") as u64) << 32;
+
 impl ClientCertsBackend for Backend {
     type Key = Key;
 
-    fn find_objects(&mut self) -> Result<(Vec<CryptokiCert>, Vec<Key>, Vec<CryptokiTrust>), Error> {
+    fn find_objects(
+        &mut self,
+        slot_id: CK_SLOT_ID,
+    ) -> Result<(Vec<CryptokiCert>, Vec<Key>, Vec<CryptokiTrust>), Error> {
+        if !unsafe {
+            IsGeckoSearchingForClientAuthCertificates(UNIQUE_MODULE_ID | (slot_id as u64))
+        } {
+            return Ok((Vec::new(), Vec::new(), Vec::new()));
+        }
+
         let mut find_objects_context = FindObjectsContext::new();
         DoFindObjectsWrapper(Some(find_objects_callback), &mut find_objects_context);
         Ok((
