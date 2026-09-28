@@ -95,14 +95,12 @@
     } else if (rootOverscrollBehavior == "none" && middleOverscrollBehavior == "auto" && innermostOverscrollBehavior == "auto") {
       ok(!innerOverscrolled,
          `The innermost scroll container should not be overscrolled ${combination}`);
-      // FIXME
-      todo(middleOverscrolled,
+      ok(middleOverscrolled,
            `The middle scroll container should be overscrolled ${combination}`);
       ok(!rootOverscrolled,
          `The root scroll container should not be overscrolled ${combination}`);
     } else if (rootOverscrollBehavior == "none" && middleOverscrollBehavior == "none" && innermostOverscrollBehavior == "auto") {
-      // FIXME
-      todo(innerOverscrolled,
+      ok(innerOverscrolled,
            `The innermost scroll container should be overscrolled ${combination}`);
       ok(!middleOverscrolled,
          `The middle scroll container should not be overscrolled ${combination}`);

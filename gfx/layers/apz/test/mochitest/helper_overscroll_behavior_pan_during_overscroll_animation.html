@@ -76,8 +76,7 @@
     }
     await promiseApzFlushedRepaints();
 
-    // FIXME
-    todo(subScroller.scrollTop < subScroller.scrollTopMax,
+    ok(subScroller.scrollTop < subScroller.scrollTopMax,
          "The second pan gesture should scroll the sub scroll container");
 
     await NativePanHandler.promiseNativePanEvent(
