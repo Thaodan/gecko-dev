@@ -758,11 +758,7 @@ class nsBlockFrame : public nsContainerFrame {
       if (aThisFrame != aRootFrame) {
         return false;
       }
-      if (clampedBSize == 0) {
-        MOZ_ASSERT(targetFrame == nullptr && targetLine == nullptr);
-        return true;
-      }
-      return false;
+      return !clampedBSize && !targetFrame && !targetLine;
     }
   };
   nsBlockFrame* GetLineClampRoot() const;
