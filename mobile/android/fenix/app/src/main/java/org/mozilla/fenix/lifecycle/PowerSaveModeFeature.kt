@@ -8,6 +8,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.os.PowerManager
 import androidx.annotation.VisibleForTesting
 import androidx.core.content.ContextCompat
@@ -16,22 +17,29 @@ import mozilla.components.support.base.android.PowerManagerInfoProvider
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.utils.ext.registerReceiverCompat
 import org.mozilla.fenix.GleanMetrics.PowerSavingMode
+import org.mozilla.fenix.R
+import org.mozilla.fenix.components.AppStore
+import org.mozilla.fenix.components.appstate.AppAction
+import org.mozilla.fenix.components.appstate.AppState
+import org.mozilla.fenix.ext.getPreferenceKey
 import org.mozilla.fenix.utils.Settings
 
 /**
- * [LifecycleAwareFeature] that records a [PowerSavingMode.changed] event whenever the OS power saving (battery saver)
- * mode is turned on or off while the app is in the foreground.
+ * [LifecycleAwareFeature] that keeps [AppState.isPowerSavingModeActive] in sync while the app is in the foreground, and
+ * records a [PowerSavingMode.changed] event whenever the OS power saving (battery saver) mode is turned on or off.
  *
  * Listening is scoped to the foreground, so a change made while the app is backgrounded is instead detected by
  * comparing against [Settings.lastKnownPowerSaveMode] when the app next starts. That value is persisted, so a change
  * made while the app process was not running is detected the same way.
  *
  * @param context [Context] used to register the power save mode broadcast receiver.
- * @param settings [Settings] used to persist the last observed power save mode state.
+ * @param appStore [AppStore] holding the Power Saving Mode state the rest of the app observes.
+ * @param settings Holds the two Power Saving Mode preferences and the last observed power save mode state.
  * @param powerManagerInfoProvider Provides the current power save mode state.
  */
 class PowerSaveModeFeature(
     private val context: Context,
+    private val appStore: AppStore,
     private val settings: Settings,
     private val powerManagerInfoProvider: PowerManagerInfoProvider = DefaultPowerManagerInfoProvider(context),
 ) : LifecycleAwareFeature {
@@ -42,7 +50,30 @@ class PowerSaveModeFeature(
         object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 maybeRecordPowerSaveModeChange()
+                updatePowerSavingModeState()
             }
+        }
+    }
+
+    /**
+     * Whether Power Saving Mode is currently active, either because it was turned on manually or because it follows the
+     * OS power save (battery saver) mode, which is on.
+     */
+    private val isPowerSavingModeActive: Boolean
+        get() =
+            settings.powerSavingModeManuallyEnabled ||
+                (settings.powerSavingModeAutoEnabled && powerManagerInfoProvider.isPowerSaveMode())
+
+    private val powerSavingModePreferenceKeys by lazy {
+        setOf(
+            context.getPreferenceKey(R.string.pref_key_power_saving_mode_auto_enabled),
+            context.getPreferenceKey(R.string.pref_key_power_saving_mode_manually_enabled),
+        )
+    }
+
+    private val preferenceChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key in powerSavingModePreferenceKeys) {
+            updatePowerSavingModeState()
         }
     }
 
@@ -53,16 +84,21 @@ class PowerSaveModeFeature(
                 IntentFilter(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED),
                 ContextCompat.RECEIVER_NOT_EXPORTED,
             )
+            // Shared preferences only hold a weak reference to their listeners, so this is registered on every
+            // foreground rather than once.
+            settings.preferences.registerOnSharedPreferenceChangeListener(preferenceChangeListener)
             isRegistered = true
         }
 
-        // Catches a change that happened while no receiver was registered.
+        // Catches a change that happened while nothing was registered.
         maybeRecordPowerSaveModeChange()
+        updatePowerSavingModeState()
     }
 
     override fun stop() {
         if (isRegistered) {
             context.unregisterReceiver(powerSaveModeChangedReceiver)
+            settings.preferences.unregisterOnSharedPreferenceChangeListener(preferenceChangeListener)
             isRegistered = false
         }
     }
@@ -77,5 +113,12 @@ class PowerSaveModeFeature(
         if (previous == null || previous == isPowerSaveMode) return
 
         PowerSavingMode.changed.record(PowerSavingMode.ChangedExtra(enabled = isPowerSaveMode))
+    }
+
+    private fun updatePowerSavingModeState() {
+        val isActive = isPowerSavingModeActive
+        if (appStore.state.isPowerSavingModeActive != isActive) {
+            appStore.dispatch(AppAction.PowerSavingModeAction.Changed(isActive))
+        }
     }
 }

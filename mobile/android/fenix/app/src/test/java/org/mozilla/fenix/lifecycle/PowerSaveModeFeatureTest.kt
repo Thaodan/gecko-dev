@@ -19,6 +19,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.GleanMetrics.PowerSavingMode
+import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
@@ -28,6 +29,8 @@ import org.robolectric.Shadows.shadowOf
 class PowerSaveModeFeatureTest {
 
     @get:Rule val gleanRule = FenixGleanTestRule(ApplicationProvider.getApplicationContext())
+
+    private val appStore = AppStore()
 
     private lateinit var settings: Settings
 
@@ -42,7 +45,8 @@ class PowerSaveModeFeatureTest {
         settings = Settings(testContext)
     }
 
-    private fun feature(provider: PowerManagerInfoProvider) = PowerSaveModeFeature(testContext, settings, provider)
+    private fun feature(provider: PowerManagerInfoProvider) =
+        PowerSaveModeFeature(testContext, appStore, settings, provider)
 
     private fun sendPowerSaveModeChanged() {
         testContext.sendBroadcast(Intent(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED))
@@ -117,7 +121,7 @@ class PowerSaveModeFeatureTest {
 
         provider.powerSaveMode = true
         // A new feature reading a new Settings stands in for a restarted app process.
-        PowerSaveModeFeature(testContext, Settings(testContext), provider).start()
+        PowerSaveModeFeature(testContext, appStore, Settings(testContext), provider).start()
 
         val events = PowerSavingMode.changed.testGetValue()!!
         assertEquals(1, events.size)
@@ -148,5 +152,61 @@ class PowerSaveModeFeatureTest {
 
         feature.stop()
         assertFalse(feature.isRegistered)
+    }
+
+    @Test
+    fun `GIVEN neither preference is enabled WHEN the app starts THEN Power Saving Mode is not active`() {
+        feature(FakePowerManagerInfoProvider(powerSaveMode = true)).start()
+
+        assertFalse(appStore.state.isPowerSavingModeActive)
+    }
+
+    @Test
+    fun `GIVEN Power Saving Mode is enabled manually WHEN the app starts THEN it is active`() {
+        settings.powerSavingModeManuallyEnabled = true
+
+        feature(FakePowerManagerInfoProvider(powerSaveMode = false)).start()
+
+        assertTrue(appStore.state.isPowerSavingModeActive)
+    }
+
+    @Test
+    fun `GIVEN Power Saving Mode follows the OS WHEN power save mode is off THEN it is not active`() {
+        settings.powerSavingModeAutoEnabled = true
+
+        feature(FakePowerManagerInfoProvider(powerSaveMode = false)).start()
+
+        assertFalse(appStore.state.isPowerSavingModeActive)
+    }
+
+    @Test
+    fun `GIVEN Power Saving Mode follows the OS WHEN power save mode turns on THEN it becomes active`() {
+        settings.powerSavingModeAutoEnabled = true
+        val provider = FakePowerManagerInfoProvider(powerSaveMode = false)
+        feature(provider).start()
+
+        provider.powerSaveMode = true
+        sendPowerSaveModeChanged()
+
+        assertTrue(appStore.state.isPowerSavingModeActive)
+    }
+
+    @Test
+    fun `GIVEN the app is started WHEN the manual preference is turned on THEN Power Saving Mode becomes active`() {
+        feature(FakePowerManagerInfoProvider(powerSaveMode = false)).start()
+
+        settings.powerSavingModeManuallyEnabled = true
+
+        assertTrue(appStore.state.isPowerSavingModeActive)
+    }
+
+    @Test
+    fun `GIVEN Power Saving Mode is active WHEN the manual preference is turned off THEN it becomes inactive`() {
+        settings.powerSavingModeManuallyEnabled = true
+        feature(FakePowerManagerInfoProvider(powerSaveMode = false)).start()
+
+        settings.powerSavingModeManuallyEnabled = false
+
+        assertFalse(appStore.state.isPowerSavingModeActive)
     }
 }

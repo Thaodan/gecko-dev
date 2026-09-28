@@ -450,7 +450,11 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
                     browserStore = components.core.store,
                 ),
                 VisibilityLifecycleObserver(),
-                PowerSaveModeFeature(applicationContext, components.settings),
+                PowerSaveModeFeature(
+                    context = applicationContext,
+                    appStore = components.appStore,
+                    settings = components.settings,
+                ),
             )
 
         components.analytics.metricsStorage.tryRegisterAsUsageRecorder(this)
