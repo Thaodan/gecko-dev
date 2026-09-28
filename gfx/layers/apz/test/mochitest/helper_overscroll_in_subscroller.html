@@ -44,6 +44,14 @@
   // has been informed into APZ before starting this test.
   subScroller.scrollTop = 1;
 
+  // A utility function to collect overscrolled scroll container information.
+  function collectOverscrolledData() {
+    const apzData = SpecialPowers.DOMWindowUtils.getCompositorAPZTestData().additionalData;
+    return apzData.filter(data => {
+      return SpecialPowers.wrap(data).value.split(",").includes("overscrolled");
+    });
+  }
+
   async function test() {
     const oneScrollPromise = new Promise(resolve => {
       subScroller.addEventListener("scroll", () => {
@@ -70,10 +78,10 @@
     await promiseApzFlushedRepaints();
     await oneScrollPromise;
 
-    let overscrolledIds = collectOverscrolledIds();
-    ok(overscrolledIds.length >= 1,
+    let overscrolledData = collectOverscrolledData();
+    ok(overscrolledData.length >= 1,
        "There should be at least one overscrolled scroll container");
-    ok(overscrolledIds.every(data => data == subScrollId),
+    ok(overscrolledData.every(data => SpecialPowers.wrap(data).key == subScrollId),
        "The overscrolled scroll container should be the sub scroll container");
 
     let oneScrollEndPromise = new Promise(resolve => {
@@ -110,12 +118,12 @@
     await promiseApzFlushedRepaints();
     await promiseApzFlushedRepaints();
 
-    overscrolledIds = collectOverscrolledIds();
-    ok(overscrolledIds.length >= 2,
+    overscrolledData = collectOverscrolledData();
+    ok(overscrolledData.length >= 2,
        "There should be at least two overscrolled scroll containers");
-    ok(isOverscrolled(overscrolledIds, rootScrollId),
+    ok(overscrolledData.some(data => SpecialPowers.wrap(data).key == rootScrollId),
        "The root scroll container should be overscrolled");
-    ok(isOverscrolled(overscrolledIds, subScrollId),
+    ok(overscrolledData.some(data => SpecialPowers.wrap(data).key == subScrollId),
        "The sub scroll container should also be overscrolled");
 
     // While the root scroll container is still being overscrolled because the
@@ -128,10 +136,10 @@
 
     await promiseApzFlushedRepaints();
 
-    overscrolledIds = collectOverscrolledIds();
-    ok(overscrolledIds.length >= 1,
+    overscrolledData = collectOverscrolledData();
+    ok(overscrolledData.length >= 1,
        "There should be at least one overscrolled scroll container");
-    ok(overscrolledIds.every(data => data == rootScrollId),
+    ok(overscrolledData.every(data => SpecialPowers.wrap(data).key == rootScrollId),
        "The root scroll container should still be overscrolled");
 
     // Finish the pan upward gesture.

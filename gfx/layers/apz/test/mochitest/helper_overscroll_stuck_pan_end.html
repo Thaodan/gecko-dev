@@ -50,6 +50,15 @@
   // informed into APZ before starting the test.
   subScroller.scrollTop = 1;
 
+  // A utility function to collect overscrolled scroll container information.
+  function collectOverscrolledData() {
+    const apzData =
+      SpecialPowers.DOMWindowUtils.getCompositorAPZTestData().additionalData;
+    return apzData.filter(data => {
+      return SpecialPowers.wrap(data).value.split(",").includes("overscrolled");
+    });
+  }
+
   async function test() {
     const subScrollId = SpecialPowers.DOMWindowUtils.getViewId(subScroller);
 
@@ -63,8 +72,8 @@
     await promiseApzFlushedRepaints();
     await oneScrollPromise;
 
-    let overscrolledIds = collectOverscrolledIds();
-    ok(isOverscrolled(overscrolledIds, subScrollId),
+    let overscrolledData = collectOverscrolledData();
+    ok(overscrolledData.some(data => SpecialPowers.wrap(data).key == subScrollId),
        "The sub scroll container should be overscrolled after the first pan");
 
     // End gesture 1 so the sub scroll container starts its overscroll snap-back
@@ -98,8 +107,8 @@
     await transformEndPromise;
     await promiseApzFlushedRepaints();
 
-    overscrolledIds = collectOverscrolledIds();
-    ok(!isOverscrolled(overscrolledIds, subScrollId),
+    overscrolledData = collectOverscrolledData();
+    ok(!overscrolledData.some(data => SpecialPowers.wrap(data).key == subScrollId),
        "The sub scroll container's overscroll should be restored, not stuck");
   }
 
