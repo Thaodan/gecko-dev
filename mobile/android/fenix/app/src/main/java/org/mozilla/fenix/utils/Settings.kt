@@ -3479,4 +3479,43 @@ class Settings(
             key = appContext.getPreferenceKey(R.string.pref_key_enable_account_settings_new_ui),
             default = { FxNimbus.features.accountSyncDecoupleM1.value().enabled },
         )
+
+    private var powerSavingModeAutoPreference by
+        booleanPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_power_saving_mode_auto_enabled),
+            default = false,
+        )
+
+    private var powerSavingModeManuallyPreference by
+        booleanPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_power_saving_mode_manually_enabled),
+            default = false,
+        )
+
+    /**
+     * Indicates if Power Saving Mode should turn on automatically whenever the OS reports that power save (battery
+     * saver) mode is active. Mutually exclusive with [powerSavingModeManuallyEnabled], which is turned off whenever
+     * this is turned on.
+     */
+    var powerSavingModeAutoEnabled: Boolean
+        get() = powerSavingModeAutoPreference
+        set(value) {
+            powerSavingModeAutoPreference = value
+            if (value) {
+                powerSavingModeManuallyPreference = false
+            }
+        }
+
+    /**
+     * Indicates if Power Saving Mode is enabled manually, regardless of the OS power save (battery saver) mode.
+     * Mutually exclusive with [powerSavingModeAutoEnabled], which is turned off whenever this is turned on.
+     */
+    var powerSavingModeManuallyEnabled: Boolean
+        get() = powerSavingModeManuallyPreference
+        set(value) {
+            powerSavingModeManuallyPreference = value
+            if (value) {
+                powerSavingModeAutoPreference = false
+            }
+        }
 }
