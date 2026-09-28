@@ -57,11 +57,11 @@ add_task(async function test_get_page_content_basic() {
     { url_list },
     conversation
   );
-  const result = result_array[0].content;
+  const result = result_array[0];
 
-  info("Extraction result: " + JSON.stringify(result_array[0]));
+  info("Extraction result: " + JSON.stringify(result));
 
-  ok(result_array[0].ok, "The read succeeded");
+  ok(result, "Result should be a string");
   ok(result.includes("Sample Article Title"), "Text should contain the title");
   ok(
     result.includes("first paragraph"),

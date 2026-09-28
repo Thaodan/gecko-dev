@@ -697,16 +697,12 @@ add_task(
           const secProps = conversation.securityProperties;
           if (secProps.untrustedInput && secProps.privateData) {
             return [
-              {
-                url: _params?.url,
-                ok: false,
-                content: `get_page_content is not available for ${_params?.url} when the conversation involves both untrusted input and private data.`,
-              },
+              `get_page_content is not available for ${_params?.url} when the conversation involves both untrusted input and private data.`,
             ];
           }
           secProps.setUntrustedInput();
           secProps.setPrivateData();
-          return [{ url: _params?.url, ok: true, content: "page content" }];
+          return ["page content"];
         });
       sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
 
