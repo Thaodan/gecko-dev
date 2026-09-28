@@ -2366,7 +2366,7 @@ export class Tabbrowser {
     }
   }
 
-  getTabSharingState(aTab) {
+  static getTabSharingState(aTab) {
     // Normalize the state object for consumers (ie.extensions).
     let browser = aTab.linkedBrowser;
     let state = Object.assign(

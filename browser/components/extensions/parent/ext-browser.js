@@ -12,6 +12,7 @@ ChromeUtils.defineESModuleGetters(this, {
   AboutReaderParent: "resource:///actors/AboutReaderParent.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  Tabbrowser: "moz-src:///browser/components/tabbrowser/Tabbrowser.sys.mjs",
 });
 
 var { ExtensionError } = ExtensionUtils;
@@ -822,7 +823,7 @@ class Tab extends TabBase {
   }
 
   get sharingState() {
-    return this.window.gBrowser.getTabSharingState(this.nativeTab);
+    return Tabbrowser.getTabSharingState(this.nativeTab);
   }
 
   get cookieStoreId() {
