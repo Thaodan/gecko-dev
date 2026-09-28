@@ -2680,6 +2680,11 @@ export const tokensTable = {
       },
       name: "--panel-text-color",
     },
+    { value: "var(--panel-text-color)", name: "--panel-text-color-dimmed" },
+    {
+      value: "var(--panel-text-color)",
+      name: "--panel-text-color-dimmed-further",
+    },
     {
       value: {
         light: "rgb(21, 20, 26)",
@@ -2840,6 +2845,18 @@ export const tokensTable = {
     },
     { value: "var(--text-color)", name: "--message-bar-text-color" },
     {
+      value: "var(--message-bar-text-color)",
+      name: "--message-bar-text-color-warning",
+    },
+    {
+      value: "var(--message-bar-text-color)",
+      name: "--message-bar-text-color-success",
+    },
+    {
+      value: "var(--message-bar-text-color)",
+      name: "--message-bar-text-color-critical",
+    },
+    {
       value: "var(--button-text-color-ghost)",
       name: "--page-nav-button-text-color",
     },
@@ -2923,6 +2940,10 @@ export const tokensTable = {
     {
       value: "var(--urlbar-box-text-color)",
       name: "--urlbar-box-text-color-active",
+    },
+    {
+      value: "var(--urlbar-box-text-color)",
+      name: "--urlbar-box-text-color-focus",
     },
     {
       value: {
@@ -4702,6 +4723,8 @@ export const variableLookupTable = {
       },
     },
   },
+  "panel-text-color-dimmed": "var(--panel-text-color)",
+  "panel-text-color-dimmed-further": "var(--panel-text-color)",
   "panel-width": "initial",
   "popup-background-color": "var(--background-color-box)",
   "popup-border-color": {
@@ -5201,6 +5224,9 @@ export const variableLookupTable = {
   "message-bar-icon-size": "var(--icon-size)",
   "message-bar-message-margin-inline-end": "var(--space-xsmall)",
   "message-bar-text-color": "var(--text-color)",
+  "message-bar-text-color-warning": "var(--message-bar-text-color)",
+  "message-bar-text-color-success": "var(--message-bar-text-color)",
+  "message-bar-text-color-critical": "var(--message-bar-text-color)",
   "message-bar-text-container-gap": "var(--space-xsmall) var(--space-small)",
   "message-bar-text-container-padding-block": {
     default:
@@ -5734,6 +5760,7 @@ export const variableLookupTable = {
   "urlbar-box-text-color": "inherit",
   "urlbar-box-text-color-hover": "var(--urlbar-box-text-color)",
   "urlbar-box-text-color-active": "var(--urlbar-box-text-color)",
+  "urlbar-box-text-color-focus": "var(--urlbar-box-text-color)",
   "urlbar-icon-fill-opacity": {
     default: "0.72",
     nativeTheme: "0.9",
