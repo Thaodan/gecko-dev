@@ -379,7 +379,7 @@ export class Tabbrowser {
    * provides the names of properties that may be called while the browser
    * is in its unbound (lazy) state.
    */
-  #browserBindingProperties = [
+  static #browserBindingProperties = [
     "canGoBack",
     "canGoForward",
     "goBack",
@@ -2423,9 +2423,9 @@ export class Tabbrowser {
     }
   }
 
-  #dataURLRegEx = /^data:[^,]+;base64,/i;
+  static #dataURLRegEx = /^data:[^,]+;base64,/i;
 
-  #shortenURLRegEx = /^[^:]+:\/\/(?:www\.)?/;
+  static #shortenURLRegEx = /^[^:]+:\/\/(?:www\.)?/;
 
   // Regex to test if a string (potential tab label) consists of only non-
   // printable characters. We consider Unicode categories Separator
@@ -2440,7 +2440,7 @@ export class Tabbrowser {
   // We also ignore combining marks, as in the absence of a printable base
   // character they are unlikely to be usefully rendered, and may well be
   // clipped away entirely.
-  #nonPrintingRegEx =
+  static #nonPrintingRegEx =
     /^[\p{Z}\p{C}\p{M}\u{115f}\u{1160}\u{2800}\u{3164}\u{ffa0}]*$/u;
 
   setTabTitle(aTab) {
@@ -2469,7 +2469,7 @@ export class Tabbrowser {
 
     // If the title contains only non-printing characters (or only combining
     // marks, but no base character for them), we won't use it.
-    if (this.#nonPrintingRegEx.test(title)) {
+    if (Tabbrowser.#nonPrintingRegEx.test(title)) {
       title = "";
     }
 
@@ -2488,7 +2488,7 @@ export class Tabbrowser {
 
       if (title && !this.documentGlobal.isBlankPageURL(title)) {
         isURL = true;
-        if (title.length <= 500 || !this.#dataURLRegEx.test(title)) {
+        if (title.length <= 500 || !Tabbrowser.#dataURLRegEx.test(title)) {
           // Try to unescape not-ASCII URIs using the current character set.
           try {
             let characterSet = browser.characterSet;
@@ -2549,7 +2549,7 @@ export class Tabbrowser {
     // we need the trailing characters for display. But a base64-encoded
     // data-URI is plain ASCII, so this is OK for tab-title display.
     // (See bug 1408854.)
-    if (isURL && aLabel.length > 500 && this.#dataURLRegEx.test(aLabel)) {
+    if (isURL && aLabel.length > 500 && Tabbrowser.#dataURLRegEx.test(aLabel)) {
       aLabel = aLabel.substring(0, 500) + "\u2026";
     }
 
@@ -2557,7 +2557,7 @@ export class Tabbrowser {
 
     if (!isContentTitle) {
       // Remove protocol and "www."
-      aLabel = aLabel.replace(this.#shortenURLRegEx, "");
+      aLabel = aLabel.replace(Tabbrowser.#shortenURLRegEx, "");
     }
 
     if (aLabel.length > TAB_LABEL_MAX_LENGTH) {
@@ -3132,7 +3132,7 @@ export class Tabbrowser {
   #createLazyBrowser(aTab) {
     let browser = aTab.linkedBrowser;
 
-    let names = this.#browserBindingProperties;
+    let names = Tabbrowser.#browserBindingProperties;
 
     for (let i = 0; i < names.length; i++) {
       let name = names[i];
@@ -3251,8 +3251,8 @@ export class Tabbrowser {
     let browser = aTab.linkedBrowser;
 
     // If browser is a lazy browser, delete the substitute properties.
-    if (this.#browserBindingProperties[0] in browser) {
-      for (let name of this.#browserBindingProperties) {
+    if (Tabbrowser.#browserBindingProperties[0] in browser) {
+      for (let name of Tabbrowser.#browserBindingProperties) {
         delete browser[name];
       }
     }
@@ -5596,7 +5596,7 @@ export class Tabbrowser {
    * @param {MozTabbrowserTab} tab
    * @returns {nsIURI|null}
    */
-  #uriForDuplicateCheck(tab) {
+  static #uriForDuplicateCheck(tab) {
     let uri = tab.linkedBrowser?.currentURI;
     if (!uri) {
       return null;
@@ -5613,7 +5613,7 @@ export class Tabbrowser {
     // and the array is presumed to be small anyways.
     let keys = [];
     let keyForTab = tab => {
-      let uri = this.#uriForDuplicateCheck(tab);
+      let uri = Tabbrowser.#uriForDuplicateCheck(tab);
       if (!uri) {
         return null;
       }
@@ -5673,7 +5673,7 @@ export class Tabbrowser {
     /** @type {Map<string, Set<number>>} */
     let userContextIdsPerUri = new Map();
     for (let tab of lastSeenTabs) {
-      const uri = this.#uriForDuplicateCheck(tab);
+      const uri = Tabbrowser.#uriForDuplicateCheck(tab);
       if (!uri) {
         // Can't tell if it's a duplicate without a URI.
         // Safest to leave it be.
@@ -5935,7 +5935,7 @@ export class Tabbrowser {
         if (toBlurTo) {
           this._getSwitcher().warmupTab(toBlurTo);
         }
-      } else if (!skipPermitUnload && this.#hasBeforeUnload(tab)) {
+      } else if (!skipPermitUnload && Tabbrowser.#hasBeforeUnload(tab)) {
         let timerId = Glean.browserTabclose.permitUnloadTime.start();
         // We need to block while calling permitUnload() because it
         // processes the event queue and may lead to another removeTab()
@@ -6056,7 +6056,7 @@ export class Tabbrowser {
    * @returns {Array} a tuple where the first element is an array of groups
    *                  and the second is an array of tabs
    */
-  #separateWholeGroups(tabs) {
+  static #separateWholeGroups(tabs) {
     /**
      * Map of tab group to surviving tabs in the group.
      * If any of the `tabs` to be removed belong to a tab group, keep track
@@ -6157,7 +6157,7 @@ export class Tabbrowser {
     try {
       // If selection includes entire groups, we might want to save them
       if (!skipGroupCheck) {
-        let [groups, leftoverTabs] = this.#separateWholeGroups(tabs);
+        let [groups, leftoverTabs] = Tabbrowser.#separateWholeGroups(tabs);
         groupRemovalPromises = groups.map(group => {
           groupTabsToClose.push(...group.tabs);
           if (!skipSessionStore) {
@@ -6475,7 +6475,7 @@ export class Tabbrowser {
     return true;
   }
 
-  #hasBeforeUnload(aTab) {
+  static #hasBeforeUnload(aTab) {
     let browser = aTab.linkedBrowser;
     if (browser.isRemoteBrowser && browser.frameLoader) {
       return browser.hasBeforeUnload;
@@ -6536,7 +6536,7 @@ export class Tabbrowser {
       !adoptedByTab &&
       aTab.linkedPanel &&
       !aTab._pendingPermitUnload &&
-      (!browser.isRemoteBrowser || this.#hasBeforeUnload(aTab))
+      (!browser.isRemoteBrowser || Tabbrowser.#hasBeforeUnload(aTab))
     ) {
       if (!prewarmed) {
         let blurTab = this._findTabToBlurTo(aTab);
@@ -7304,7 +7304,7 @@ export class Tabbrowser {
       delete aOurTab.initializingTab;
 
       // Make sure to unregister any open URIs.
-      this.#swapRegisteredOpenURIs(ourBrowser, otherBrowser);
+      Tabbrowser.#swapRegisteredOpenURIs(ourBrowser, otherBrowser);
     } else {
       // Workarounds for bug 458697
       // Icon might have been set on DOMLinkAdded, don't override that.
@@ -7419,7 +7419,7 @@ export class Tabbrowser {
     filter.removeProgressListener(tabListener);
 
     // Make sure to unregister any open URIs.
-    this.#swapRegisteredOpenURIs(ourBrowser, aOtherBrowser);
+    Tabbrowser.#swapRegisteredOpenURIs(ourBrowser, aOtherBrowser);
 
     let remoteBrowser = aOtherBrowser.documentGlobal.gBrowser;
 
@@ -7477,7 +7477,7 @@ export class Tabbrowser {
     aOurTab.registerAudibleChangeHandler();
   }
 
-  #swapRegisteredOpenURIs(aOurBrowser, aOtherBrowser) {
+  static #swapRegisteredOpenURIs(aOurBrowser, aOtherBrowser) {
     // Swap the registeredOpenURI properties of the two browsers
     let tmp = aOurBrowser.registeredOpenURI;
     delete aOurBrowser.registeredOpenURI;
@@ -8864,7 +8864,7 @@ export class Tabbrowser {
       } else {
         let selectedTabs = ChromeUtils.nondeterministicGetWeakSetKeys(
           this.#multiSelectedTabsSet
-        ).filter(this.#mayTabBeMultiselected);
+        ).filter(Tabbrowser.#mayTabBeMultiselected);
         this.selectedTab = selectedTabs.at(-1);
       }
     } catch (e) {
@@ -8888,10 +8888,10 @@ export class Tabbrowser {
     let { selectedTab } = this;
     let tabs = ChromeUtils.nondeterministicGetWeakSetKeys(
       this.#multiSelectedTabsSet
-    ).filter(this.#mayTabBeMultiselected);
+    ).filter(Tabbrowser.#mayTabBeMultiselected);
     if (
       (!this.#multiSelectedTabsSet.has(selectedTab) &&
-        this.#mayTabBeMultiselected(selectedTab)) ||
+        Tabbrowser.#mayTabBeMultiselected(selectedTab)) ||
       !tabs.length
     ) {
       tabs.push(selectedTab);
@@ -8918,7 +8918,7 @@ export class Tabbrowser {
   get multiSelectedTabsCount() {
     return ChromeUtils.nondeterministicGetWeakSetKeys(
       this.#multiSelectedTabsSet
-    ).filter(this.#mayTabBeMultiselected).length;
+    ).filter(Tabbrowser.#mayTabBeMultiselected).length;
   }
 
   get lastMultiSelectedTab() {
@@ -8937,7 +8937,7 @@ export class Tabbrowser {
     this.#lastMultiSelectedTabRef = Cu.getWeakReference(aTab);
   }
 
-  #mayTabBeMultiselected(aTab) {
+  static #mayTabBeMultiselected(aTab) {
     return aTab.visible;
   }
 
@@ -9096,7 +9096,7 @@ export class Tabbrowser {
    * @return          true if the handler should wait a reply event.
    *                  false if the handle can handle the immediately.
    */
-  #maybeRequestReplyFromRemoteContent(aEvent) {
+  static #maybeRequestReplyFromRemoteContent(aEvent) {
     if (aEvent.defaultPrevented) {
       return false;
     }
@@ -9145,7 +9145,7 @@ export class Tabbrowser {
     // navigation should always work for better user experience.
     switch (action) {
       case lazy.ShortcutUtils.TOGGLE_CARET_BROWSING:
-        this.#maybeRequestReplyFromRemoteContent(aEvent);
+        Tabbrowser.#maybeRequestReplyFromRemoteContent(aEvent);
         return;
       case lazy.ShortcutUtils.MOVE_TAB_BACKWARD:
         this.moveTabBackward({
@@ -9273,7 +9273,7 @@ export class Tabbrowser {
       case lazy.ShortcutUtils.TOGGLE_CARET_BROWSING:
         if (
           aEvent.defaultPrevented ||
-          this.#maybeRequestReplyFromRemoteContent(aEvent)
+          Tabbrowser.#maybeRequestReplyFromRemoteContent(aEvent)
         ) {
           break;
         }
@@ -9418,7 +9418,7 @@ export class Tabbrowser {
    *
    * @param {MozTabbrowserTab} tab
    */
-  #isFirstOrLastInTabGroup(tab) {
+  static #isFirstOrLastInTabGroup(tab) {
     if (tab.group) {
       let groupTabs = tab.group.tabs;
       if (groupTabs.at(0) == tab || groupTabs.at(-1) == tab) {
@@ -9481,7 +9481,7 @@ export class Tabbrowser {
     let containerName = tab.userContextId
       ? lazy.ContextualIdentityService.getUserContextLabel(tab.userContextId)
       : "";
-    let tabGroupName = this.#isFirstOrLastInTabGroup(tab)
+    let tabGroupName = Tabbrowser.#isFirstOrLastInTabGroup(tab)
       ? tab.group.name ||
         this.tabLocalization.formatValueSync("tab-group-name-default")
       : "";
@@ -10194,21 +10194,6 @@ export class Tabbrowser {
     }
   }
 
-  /**
-   * Get the triggering principal for the last navigation in the session history.
-   *
-   * @param {MozBrowser} aBrowser
-   */
-  _getTriggeringPrincipalFromHistory(aBrowser) {
-    let sessionHistory = aBrowser?.browsingContext?.sessionHistory;
-    if (!sessionHistory || !sessionHistory.index || sessionHistory.count == 0) {
-      return undefined;
-    }
-    let currentEntry = sessionHistory.getEntryAtIndex(sessionHistory.index);
-    let triggeringPrincipal = currentEntry?.triggeringPrincipal;
-    return triggeringPrincipal;
-  }
-
   clearRelatedTabs() {
     this.#lastRelatedTabMap = new WeakMap();
   }
@@ -10700,9 +10685,10 @@ class TabProgressListener {
         }
 
         if (!isReload && aWebProgress.isLoadingDocument) {
-          let triggerer = this.#tabbrowser._getTriggeringPrincipalFromHistory(
-            this._browser
-          );
+          let triggerer =
+            TabProgressListener.#getTriggeringPrincipalFromHistory(
+              this._browser
+            );
           // Typing a url, searching or clicking a bookmark will load a new
           // document that is no longer tied to a navigation from the previous
           // content and will have a system principal as the triggerer.
@@ -10829,6 +10815,21 @@ class TabProgressListener {
       aDelay,
       aSameURI,
     ]);
+  }
+
+  /**
+   * Get the triggering principal for the last navigation in the session history.
+   *
+   * @param {MozBrowser} aBrowser
+   */
+  static #getTriggeringPrincipalFromHistory(aBrowser) {
+    let sessionHistory = aBrowser?.browsingContext?.sessionHistory;
+    if (!sessionHistory || !sessionHistory.index || sessionHistory.count == 0) {
+      return undefined;
+    }
+    let currentEntry = sessionHistory.getEntryAtIndex(sessionHistory.index);
+    let triggeringPrincipal = currentEntry?.triggeringPrincipal;
+    return triggeringPrincipal;
   }
 }
 TabProgressListener.prototype.QueryInterface = ChromeUtils.generateQI([
