@@ -325,7 +325,7 @@ export class Tabbrowser {
     this.document = window.document;
   }
 
-  closingTabsEnum = {
+  static closingTabsEnum = {
     ALL: 0,
     OTHER: 1,
     TO_START: 2,
@@ -5230,7 +5230,7 @@ export class Tabbrowser {
       "browser.tabs.haveShownCloseAllDuplicateTabsWarning";
     var ps = Services.prompt;
     if (
-      aCloseTabs == this.closingTabsEnum.ALL_DUPLICATES &&
+      aCloseTabs == Tabbrowser.closingTabsEnum.ALL_DUPLICATES &&
       !Services.prefs.getBoolPref(shownDupeDialogPref, false)
     ) {
       // The first time a user closes all duplicate tabs, tell them what will
@@ -5271,7 +5271,7 @@ export class Tabbrowser {
     }
 
     const pref =
-      aCloseTabs == this.closingTabsEnum.ALL
+      aCloseTabs == Tabbrowser.closingTabsEnum.ALL
         ? "browser.tabs.warnOnClose"
         : "browser.tabs.warnOnCloseOtherTabs";
     var shouldPrompt = Services.prefs.getBoolPref(pref);
@@ -5282,7 +5282,10 @@ export class Tabbrowser {
     const maxTabsUndo = Services.prefs.getIntPref(
       "browser.sessionstore.max_tabs_undo"
     );
-    if (aCloseTabs != this.closingTabsEnum.ALL && tabsToClose <= maxTabsUndo) {
+    if (
+      aCloseTabs != Tabbrowser.closingTabsEnum.ALL &&
+      tabsToClose <= maxTabsUndo
+    ) {
       return true;
     }
 
@@ -5310,7 +5313,7 @@ export class Tabbrowser {
       ps.BUTTON_TITLE_IS_STRING * ps.BUTTON_POS_0 +
       ps.BUTTON_TITLE_CANCEL * ps.BUTTON_POS_1;
     let checkboxLabel =
-      aCloseTabs == this.closingTabsEnum.ALL ? checkbox : null;
+      aCloseTabs == Tabbrowser.closingTabsEnum.ALL ? checkbox : null;
     var buttonPressed = ps.confirmEx(
       this.documentGlobal,
       title,
@@ -5327,7 +5330,7 @@ export class Tabbrowser {
 
     // don't set the pref unless they press OK and it's false
     if (
-      aCloseTabs == this.closingTabsEnum.ALL &&
+      aCloseTabs == Tabbrowser.closingTabsEnum.ALL &&
       reallyClose &&
       !warnOnClose.value
     ) {
@@ -5699,7 +5702,7 @@ export class Tabbrowser {
     this.#removeDuplicateTabs(
       aTab,
       this.getDuplicateTabsToClose(aTab),
-      this.closingTabsEnum.DUPLICATES,
+      Tabbrowser.closingTabsEnum.DUPLICATES,
       options
     );
   }
@@ -5735,7 +5738,7 @@ export class Tabbrowser {
     this.#removeDuplicateTabs(
       confirmationAnchor,
       this.getAllDuplicateTabsToClose(),
-      this.closingTabsEnum.ALL_DUPLICATES
+      Tabbrowser.closingTabsEnum.ALL_DUPLICATES
     );
   }
 
@@ -5750,7 +5753,10 @@ export class Tabbrowser {
   removeTabsToTheStartFrom(aTab, options) {
     let tabs = this._getTabsToTheStartFrom(aTab);
     if (
-      !this.warnAboutClosingTabs(tabs.length, this.closingTabsEnum.TO_START)
+      !this.warnAboutClosingTabs(
+        tabs.length,
+        Tabbrowser.closingTabsEnum.TO_START
+      )
     ) {
       return;
     }
@@ -5768,7 +5774,9 @@ export class Tabbrowser {
    */
   removeTabsToTheEndFrom(aTab, options) {
     let tabs = this._getTabsToTheEndFrom(aTab);
-    if (!this.warnAboutClosingTabs(tabs.length, this.closingTabsEnum.TO_END)) {
+    if (
+      !this.warnAboutClosingTabs(tabs.length, Tabbrowser.closingTabsEnum.TO_END)
+    ) {
       return;
     }
 
@@ -5821,7 +5829,7 @@ export class Tabbrowser {
       !skipWarnAboutClosingTabs &&
       !this.warnAboutClosingTabs(
         tabsToRemove.length,
-        this.closingTabsEnum.OTHER
+        Tabbrowser.closingTabsEnum.OTHER
       )
     ) {
       return;
@@ -5845,7 +5853,7 @@ export class Tabbrowser {
     if (
       !this.warnAboutClosingTabs(
         selectedTabs.length,
-        this.closingTabsEnum.MULTI_SELECTED
+        Tabbrowser.closingTabsEnum.MULTI_SELECTED
       )
     ) {
       return;

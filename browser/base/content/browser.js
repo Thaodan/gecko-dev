@@ -99,6 +99,7 @@ ChromeUtils.defineESModuleGetters(this, {
   SubDialog: "resource://gre/modules/SubDialog.sys.mjs",
   SubDialogManager: "resource://gre/modules/SubDialog.sys.mjs",
   TabCrashHandler: "resource:///modules/ContentCrashHandlers.sys.mjs",
+  Tabbrowser: "moz-src:///browser/components/tabbrowser/Tabbrowser.sys.mjs",
   TabsSetupFlowManager:
     "resource:///modules/firefox-view-tabs-setup-manager.sys.mjs",
   TaskbarTabsChrome:
@@ -4031,7 +4032,7 @@ function warnAboutClosingWindow() {
   if (!isPBWindow && !toolbar.visible) {
     return gBrowser.warnAboutClosingTabs(
       gBrowser.openTabs.length,
-      gBrowser.closingTabsEnum.ALL
+      Tabbrowser.closingTabsEnum.ALL
     );
   }
 
@@ -4071,7 +4072,7 @@ function warnAboutClosingWindow() {
       isPBWindow ||
       gBrowser.warnAboutClosingTabs(
         gBrowser.openTabs.length,
-        gBrowser.closingTabsEnum.ALL
+        Tabbrowser.closingTabsEnum.ALL
       )
     );
   }
@@ -4096,7 +4097,7 @@ function warnAboutClosingWindow() {
     isPBWindow ||
     gBrowser.warnAboutClosingTabs(
       gBrowser.openTabs.length,
-      gBrowser.closingTabsEnum.ALL
+      Tabbrowser.closingTabsEnum.ALL
     )
   );
 }
