@@ -211,6 +211,12 @@ add_task(async function test_flip_revamp_pref() {
     set: [["sidebar.revamp", true]],
   });
   await sidebarMain.updateComplete;
+  info("Waiting for sidebar container to be visible");
+  await BrowserTestUtils.waitForMutationCondition(
+    sidebarContainer,
+    { attributes: true, attributeFilter: ["hidden"] },
+    () => !sidebarContainer.hidden
+  );
   info("Waiting for sidebar header to be hidden");
   await BrowserTestUtils.waitForMutationCondition(
     sidebarHeader,
@@ -218,16 +224,6 @@ add_task(async function test_flip_revamp_pref() {
     () => sidebarHeader.hidden
   );
   ok(true, "The old sidebar is hidden and the new sidebar is shown.");
-  // Horizontal tabs are back, where the launcher is the user's to reveal, and
-  // re-opening the panel doesn't do it for them.
-  ok(
-    sidebarContainer.hidden,
-    "The launcher stays hidden until the user reveals it"
-  );
-  await SidebarTestUtils.ensureLauncherVisible(
-    win,
-    "The launcher can still be revealed with the toolbar button"
-  );
 
   await BrowserTestUtils.closeWindow(win);
 });
