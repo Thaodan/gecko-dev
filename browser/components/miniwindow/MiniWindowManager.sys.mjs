@@ -225,28 +225,6 @@ export const MiniWindowManager = new (class {
   }
 
   /**
-   * Windows we should try not to cover.
-   *
-   * @returns {Window[]}
-   */
-  windowsToAvoid() {
-    let wins = [];
-    for (let mini of this._miniwindows) {
-      if (mini.miniWin && !mini.miniWin.closed) {
-        wins.push(mini.miniWin);
-      }
-    }
-    for (let player of Services.wm.getEnumerator("Toolkit:PictureInPicture")) {
-      if (player.closed) {
-        continue;
-      }
-
-      wins.push(player);
-    }
-    return wins;
-  }
-
-  /**
    * Moves the oldest popped tab back to the origin window.
    *
    * @param {Window} originWin
