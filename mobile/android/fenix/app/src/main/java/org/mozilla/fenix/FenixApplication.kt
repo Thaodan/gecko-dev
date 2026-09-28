@@ -72,6 +72,8 @@ import mozilla.components.service.sync.logins.GlobalLoginsDependencyProvider
 import mozilla.components.service.sync.logins.LoginsApiException
 import mozilla.components.support.AppServicesInitializer
 import mozilla.components.support.AppServicesInitializer.Config as AppServicesConfig
+import mozilla.components.support.base.android.DefaultPowerManagerInfoProvider
+import mozilla.components.support.base.android.PowerManagerInfoProvider
 import mozilla.components.support.base.ext.areNotificationsEnabledSafe
 import mozilla.components.support.base.ext.isNotificationChannelEnabled
 import mozilla.components.support.base.facts.register
@@ -100,6 +102,7 @@ import org.mozilla.fenix.GleanMetrics.GenaiAiControls
 import org.mozilla.fenix.GleanMetrics.Logins
 import org.mozilla.fenix.GleanMetrics.Metrics
 import org.mozilla.fenix.GleanMetrics.PerfStartup
+import org.mozilla.fenix.GleanMetrics.PowerSavingMode
 import org.mozilla.fenix.GleanMetrics.Preferences
 import org.mozilla.fenix.GleanMetrics.SearchDefaultEngine
 import org.mozilla.fenix.GleanMetrics.SearchDefaultEngineForPrivate
@@ -915,6 +918,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
                 settings,
             ),
         mozillaProductDetector: MozillaProductDetector = MozillaProductDetector,
+        powerManagerInfoProvider: PowerManagerInfoProvider = DefaultPowerManagerInfoProvider(applicationContext),
     ) {
         setPreferenceMetrics(settings, dohSettingsProvider)
         with(Metrics) {
@@ -999,6 +1003,8 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
 
             isLargeDevice.set(isLargeScreenSize())
         }
+
+        PowerSavingMode.activeAtStartup.set(powerManagerInfoProvider.isPowerSaveMode())
 
         with(AndroidAutofill) {
             val autofillUseCases = AutofillUseCases()
