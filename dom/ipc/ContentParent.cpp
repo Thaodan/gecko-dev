@@ -2004,7 +2004,7 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Verbose,
           ("destroying Subprocess in ActorDestroy: ContentParent id=%p "
            "mSubprocess id=%p handle %" PRIuPTR,
-           this, mSubprocess.get(),
+           this, mSubprocess,
            mSubprocess ? (uintptr_t)mSubprocess->GetChildProcessHandle() : -1));
   // FIXME (bug 1520997): does this really need an additional dispatch?
   if (GetCurrentSerialEventTarget()) {
@@ -2014,9 +2014,10 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
               ContentParent::GetLog(), LogLevel::Debug,
               ("destroyed Subprocess in ActorDestroy: Subprocess id=%p handle "
                "%" PRIuPTR,
-               subprocess.get(),
+               subprocess,
                subprocess ? (uintptr_t)subprocess->GetChildProcessHandle()
                           : -1));
+          subprocess->Destroy();
         }));
   }
   mSubprocess = nullptr;
@@ -2609,7 +2610,7 @@ ContentParent::ContentParent(const RemoteType& aRemoteType)
 
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Verbose,
           ("CreateSubprocess: ContentParent id=%p mSubprocess id=%p childID=%d",
-           this, mSubprocess.get(), mSubprocess->GetChildID()));
+           this, mSubprocess, mSubprocess->GetChildID()));
 }
 
 ContentParent::~ContentParent() {
@@ -2645,9 +2646,9 @@ ContentParent::~ContentParent() {
         ("DestroySubprocess: ContentParent id=%p childID=%" PRIu64
          " mSubprocess id=%p handle "
          "%" PRIuPTR,
-         this, (uint64_t)this->ChildID(), mSubprocess.get(),
+         this, (uint64_t)this->ChildID(), mSubprocess,
          mSubprocess ? (uintptr_t)mSubprocess->GetChildProcessHandle() : -1));
-    mSubprocess = nullptr;
+    mSubprocess->Destroy();
   }
 }
 
@@ -4465,7 +4466,7 @@ void ContentParent::KillHard(const char* aReason) {
         ("KillHard Subprocess(%s): ContentParent id=%p mSubprocess id=%p "
          "handle "
          "%" PRIuPTR,
-         aReason, this, mSubprocess.get(),
+         aReason, this, mSubprocess,
          mSubprocess ? (uintptr_t)mSubprocess->GetChildProcessHandle() : -1));
     mSubprocess->SetAlreadyDead();
   }

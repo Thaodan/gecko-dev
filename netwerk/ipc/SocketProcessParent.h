@@ -112,7 +112,7 @@ class SocketProcessParent final
  private:
   ~SocketProcessParent();
 
-  RefPtr<SocketProcessHost> mHost;
+  SocketProcessHost* mHost;
   UniquePtr<dom::MemoryReportRequestHost> mMemoryReportRequest;
 
   static void Destroy(RefPtr<SocketProcessParent>&& aParent);

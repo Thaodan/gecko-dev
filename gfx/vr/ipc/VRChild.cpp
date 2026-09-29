@@ -93,7 +93,6 @@ void VRChild::ActorDestroy(ActorDestroyReason aWhy) {
   }
   gfxVars::RemoveReceiver(this);
   mHost->OnChannelClosed();
-  mHost = nullptr;
 }
 
 void VRChild::Init() {

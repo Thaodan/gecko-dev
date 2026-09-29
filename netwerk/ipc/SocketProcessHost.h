@@ -91,6 +91,8 @@ class SocketProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   // Called on the main thread when the mSocketParent actor is shutting down.
   void OnChannelClosed();
 
+  void DestroyProcess();
+
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
   static bool sLaunchWithMacSandbox;
 
@@ -104,6 +106,7 @@ class SocketProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   DISALLOW_COPY_AND_ASSIGN(SocketProcessHost);
 
   RefPtr<Listener> mListener;
+  mozilla::Maybe<mozilla::ipc::TaskFactory<SocketProcessHost>> mTaskFactory;
 
   enum class LaunchPhase { Unlaunched, Waiting, Complete };
   LaunchPhase mLaunchPhase;

@@ -74,7 +74,7 @@ class RDDChild final : public PRDDChild,
  private:
   ~RDDChild();
 
-  RefPtr<RDDProcessHost> mHost;
+  RDDProcessHost* mHost;
   UniquePtr<MemoryReportRequestHost> mMemoryReportRequest;
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
   RefPtr<SandboxBroker> mSandboxBroker;

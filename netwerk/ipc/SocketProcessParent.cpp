@@ -95,7 +95,6 @@ void SocketProcessParent::ActorDestroy(ActorDestroyReason aWhy) {
 
   if (mHost) {
     mHost->OnChannelClosed();
-    mHost = nullptr;
   }
 }
 

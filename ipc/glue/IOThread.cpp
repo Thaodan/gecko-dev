@@ -64,10 +64,6 @@ void IOThread::StartThread() {
   }
 }
 
-void IOThread::Init() {
-  mEventTarget = base::Thread::message_loop()->SerialEventTarget();
-}
-
 void IOThread::StopThread() {
   // This will block until CleanUp() has been called, and the IPC I/O thread has
   // been joined.
@@ -101,8 +97,6 @@ IOThreadParent::IOThreadParent() : IOThread("IPC I/O Parent") {
 IOThreadParent::~IOThreadParent() { StopThread(); }
 
 void IOThreadParent::Init() {
-  IOThread::Init();
-
 #if defined(XP_WIN)
   // Initializes the COM library on the current thread.
   CoInitialize(nullptr);
@@ -137,8 +131,6 @@ IOThreadChild::IOThreadChild(IPC::Channel::ChannelHandle aClientHandle,
 IOThreadChild::~IOThreadChild() { StopThread(); }
 
 void IOThreadChild::Init() {
-  IOThread::Init();
-
   mInitialPort =
       NodeController::InitChildProcess(std::move(mClientHandle), mParentPid);
 }

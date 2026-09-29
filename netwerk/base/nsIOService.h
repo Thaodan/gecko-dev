@@ -257,7 +257,7 @@ class nsIOService final : public nsIIOService,
   // Time a network tearing down started.
   mozilla::Atomic<PRIntervalTime> mNetTearingDownStarted{0};
 
-  RefPtr<SocketProcessHost> mSocketProcess;
+  SocketProcessHost* mSocketProcess{nullptr};
 
   // Events should be executed after the socket process is launched. Will
   // dispatch these events while socket process fires OnProcessLaunchComplete.

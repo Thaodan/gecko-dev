@@ -274,9 +274,8 @@ void NodeChannel::OnChannelConnected(base::ProcessId aPeerPid) {
 
   // We may need to tell the GeckoChildProcessHost which we were created by that
   // the channel has been connected to unblock completing the process launch.
-  RefPtr<GeckoChildProcessHost> host(mChildProcessHost);
-  if (host) {
-    host->OnChannelConnected(aPeerPid);
+  if (mChildProcessHost) {
+    mChildProcessHost->OnChannelConnected(aPeerPid);
   }
 }
 

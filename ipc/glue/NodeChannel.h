@@ -16,6 +16,7 @@
 #include "mozilla/Queue.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/WeakPtr.h"
 
 #ifdef FUZZING_SNAPSHOT
 #  include "mozilla/fuzzing/IPCFuzzController.h"
@@ -167,7 +168,7 @@ class NodeChannel final : public IPC::Channel::Listener {
 #endif
 
   // WARNING: Must only be accessed on the IO thread.
-  ThreadSafeWeakPtr<mozilla::ipc::GeckoChildProcessHost> mChildProcessHost;
+  WeakPtr<mozilla::ipc::GeckoChildProcessHost> mChildProcessHost;
 };
 
 }  // namespace mozilla::ipc

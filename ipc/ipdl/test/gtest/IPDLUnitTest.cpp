@@ -87,7 +87,10 @@ already_AddRefed<IPDLUnitTestParent> IPDLUnitTestParent::CreateCrossThread() {
 }
 
 IPDLUnitTestParent::~IPDLUnitTestParent() {
-  mSubprocess = nullptr;
+  if (mSubprocess) {
+    mSubprocess->Destroy();
+    mSubprocess = nullptr;
+  }
   if (mOtherThread) {
     mOtherThread->Shutdown();
   }

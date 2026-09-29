@@ -272,7 +272,9 @@ void RDDProcessManager::DestroyProcess() {
 
   // Move onto the stack to ensure we don't re-enter from a chained promise
   // rejection on the process shutdown.
-  RefPtr<RDDProcessHost> process = mProcess.forget();
+  RDDProcessHost* process = mProcess;
+  mProcess = nullptr;
+
   process->Shutdown();
   mProcessToken = 0;
   mRDDChild = nullptr;

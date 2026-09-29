@@ -245,7 +245,7 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
     RefPtr<SharedLaunchPromise<Ok>> mLaunchPromise;
 
     // Fields that are associated with the current Utility process.
-    RefPtr<UtilityProcessHost> mProcess = nullptr;
+    UtilityProcessHost* mProcess = nullptr;
     RefPtr<UtilityProcessParent> mProcessParent = nullptr;
 
     // Collects any pref changes that occur during process launch (after

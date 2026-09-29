@@ -214,7 +214,6 @@ void RDDChild::ActorDestroy(ActorDestroyReason aWhy) {
 
   gfxVars::RemoveReceiver(this);
   mHost->OnChannelClosed();
-  mHost = nullptr;
 }
 
 class DeferredDeleteRDDChild : public Runnable {

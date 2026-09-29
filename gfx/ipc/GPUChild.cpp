@@ -352,7 +352,6 @@ void GPUChild::ActorDestroy(ActorDestroyReason aWhy) {
 
   gfxVars::RemoveReceiver(this);
   mHost->OnChannelClosed();
-  mHost = nullptr;
 }
 
 mozilla::ipc::IPCResult GPUChild::RecvUpdateFeature(

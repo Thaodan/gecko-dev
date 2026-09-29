@@ -32,6 +32,7 @@ namespace gfx {
 
 VRProcessParent::VRProcessParent(Listener* aListener)
     : GeckoChildProcessHost(GeckoProcessType_VR),
+      mTaskFactory(this),
       mListener(aListener),
       mLaunchPhase(LaunchPhase::Unlaunched),
       mChannelClosed(false),
@@ -91,19 +92,45 @@ bool VRProcessParent::WaitForLaunch() {
 void VRProcessParent::Shutdown() {
   MOZ_ASSERT(!mShutdownRequested);
   mListener = nullptr;
-  mShutdownRequested = true;
 
   if (mVRChild) {
     // The channel might already be closed if we got here unexpectedly.
     if (!mChannelClosed) {
       mVRChild->Close();
-      MOZ_ASSERT(!mVRChild);
     }
+    // OnChannelClosed uses this to check if the shutdown was expected or
+    // unexpected.
+    mShutdownRequested = true;
+
 #ifndef NS_FREE_PERMANENT_DATA
     // No need to communicate shutdown, the VR process doesn't need to
     // communicate anything back.
     KillHard("NormalShutdown");
 #endif
+
+    // If we're shutting down unexpectedly, we're in the middle of handling an
+    // ActorDestroy for PVRChild, which is still on the stack. We'll return
+    // back to OnChannelClosed.
+    //
+    // Otherwise, we'll wait for OnChannelClose to be called whenever PVRChild
+    // acknowledges shutdown.
+    return;
+  }
+
+  DestroyProcess();
+}
+
+void VRProcessParent::DestroyProcess() {
+  if (mLaunchThread) {
+    // Cancel all tasks. We don't want anything triggering after our caller
+    // expects this to go away.
+    {
+      MonitorAutoLock lock(mMonitor);
+      mTaskFactory.RevokeAll();
+    }
+
+    mLaunchThread->Dispatch(NS_NewRunnableFunction("DestroyProcessRunnable",
+                                                   [this] { Destroy(); }));
   }
 }
 
@@ -167,19 +194,25 @@ void VRProcessParent::OnChannelConnected(base::ProcessId peer_pid) {
 
   GeckoChildProcessHost::OnChannelConnected(peer_pid);
 
-  NS_DispatchToMainThread(
-      NewRunnableMethod("VRProcessParent::OnChannelConnectedTask", this,
-                        &VRProcessParent::OnChannelConnectedTask));
+  // Post a task to the main thread. Take the lock because mTaskFactory is not
+  // thread-safe.
+  RefPtr<Runnable> runnable;
+  {
+    MonitorAutoLock lock(mMonitor);
+    runnable = mTaskFactory.NewRunnableMethod(
+        &VRProcessParent::OnChannelConnectedTask);
+  }
+  NS_DispatchToMainThread(runnable);
 }
 
 void VRProcessParent::OnChannelConnectedTask() {
-  if (!mShutdownRequested && mLaunchPhase == LaunchPhase::Waiting) {
+  if (mLaunchPhase == LaunchPhase::Waiting) {
     InitAfterConnect(true);
   }
 }
 
 void VRProcessParent::OnChannelErrorTask() {
-  if (!mShutdownRequested && mLaunchPhase == LaunchPhase::Waiting) {
+  if (mLaunchPhase == LaunchPhase::Waiting) {
     InitAfterConnect(false);
   }
 }
@@ -189,6 +222,8 @@ void VRProcessParent::OnChannelClosed() {
   if (!mShutdownRequested && mListener) {
     // This is an unclean shutdown. Notify we're going away.
     mListener->OnProcessUnexpectedShutdown(this);
+  } else {
+    DestroyProcess();
   }
 
   // Release the actor.
