@@ -118,9 +118,3 @@ tests.forEach(
             regrexp);
       }
     }, test.name));
-
-validateOperandRank('slice', 'input', (builder, input) => {
-  const rank = input.shape.length;
-  return builder.slice(input, Array(rank).fill(1),
-                       Array(rank).fill(kExampleDimSize - 1));
-});

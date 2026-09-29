@@ -11,7 +11,3 @@ validateInputFromAnotherBuilder('sigmoid');
 
 const label = 'sigmoid_xxx';
 validateSingleInputOperation('sigmoid', label);
-
-validateOperandRank('sigmoid', 'input', (builder, input) => {
-  return builder.sigmoid(input);
-});

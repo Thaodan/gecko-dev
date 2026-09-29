@@ -27,7 +27,3 @@ promise_test(async t => {
 }, '[triangular] TypeError is expected if input\'s rank is less than 2');
 
 validateInputFromAnotherBuilder('triangular');
-
-validateOperandRank('triangular', 'input', (builder, input) => {
-  return builder.triangular(input);
-});

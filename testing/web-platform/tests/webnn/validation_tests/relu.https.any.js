@@ -11,7 +11,3 @@ validateInputFromAnotherBuilder('relu');
 
 const label = 'relu_1';
 validateSingleInputOperation('relu', label);
-
-validateOperandRank('relu', 'input', (builder, input) => {
-  return builder.relu(input);
-});

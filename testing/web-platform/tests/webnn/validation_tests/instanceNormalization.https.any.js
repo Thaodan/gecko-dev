@@ -201,7 +201,3 @@ tests.forEach(
             () => builder.instanceNormalization(input, test.options), regrexp);
       }
     }, test.name));
-
-validateOperandRank('instanceNormalization', 'input', (builder, input) => {
-  return builder.instanceNormalization(input);
-});

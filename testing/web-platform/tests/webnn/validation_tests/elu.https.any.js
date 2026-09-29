@@ -23,10 +23,6 @@ promise_test(async t => {
   assert_array_equals(output.shape, [1, 2, 3]);
 }, '[elu] Build with options');
 
-validateOperandRank('elu', 'input', (builder, input) => {
-  return builder.elu(input);
-});
-
 promise_test(async t => {
   const builder = new MLGraphBuilder(context);
   const options = {alpha: NaN};

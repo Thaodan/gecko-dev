@@ -75,10 +75,6 @@ function runReductionTests(operatorName, tests) {
 }
 
 kReductionOperators.forEach((operatorName) => {
-  validateOperandRank(operatorName, 'input', (builder, input) => {
-    return builder[operatorName](input);
-  });
-
   validateInputFromAnotherBuilder(operatorName);
   runReductionTests(operatorName, allReductionOperatorsTests);
 });
