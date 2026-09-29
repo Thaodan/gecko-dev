@@ -3111,10 +3111,6 @@ pref("app.normandy.onsync_skew_sec", 600);
   pref("intl.multilingual.aboutWelcome.languageMismatchEnabled", false);
 #endif
 
-// Coverage ping is disabled by default.
-pref("toolkit.coverage.enabled", false);
-pref("toolkit.coverage.endpoint.base", "https://coverage.mozilla.org");
-
 // Enable personalized extension recommendations
 pref("browser.discovery.enabled", true);
 
