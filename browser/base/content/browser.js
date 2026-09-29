@@ -5155,9 +5155,13 @@ var FirefoxViewHandler = {
     if (section) {
       viewURL = `${viewURL}#${section}`;
     }
-    // Need to account for navigation to Firefox View pages
+    // Need to account for navigation to Firefox View pages, but keep a tab
+    // that hasn't committed its first load yet, e.g. when a click follows the
+    // mousedown that opened it.
     if (
       this.tab &&
+      !this.tab.linkedBrowser.browsingContext.currentWindowGlobal
+        .isInitialDocument &&
       this.tab.linkedBrowser.currentURI.spec.split("#")[0] != viewURL
     ) {
       gBrowser.removeTab(this.tab);
