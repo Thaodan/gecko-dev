@@ -145,8 +145,9 @@ Result<Usage, QMResult> GetFileSize(const nsCOMPtr<nsIFile>& aFileObject) {
 
 Result<nsCOMPtr<nsIFile>, QMResult> GetFileSystemDirectory(
     const quota::OriginMetadata& aOriginMetadata) {
-  MOZ_ASSERT(aOriginMetadata.mPersistenceType ==
-             quota::PERSISTENCE_TYPE_DEFAULT);
+  MOZ_ASSERT(
+      aOriginMetadata.mPersistenceType == quota::PERSISTENCE_TYPE_DEFAULT ||
+      aOriginMetadata.mPersistenceType == quota::PERSISTENCE_TYPE_PRIVATE);
 
   quota::QuotaManager* quotaManager = quota::QuotaManager::Get();
   MOZ_ASSERT(quotaManager);

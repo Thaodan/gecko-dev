@@ -109,8 +109,8 @@ Result<quota::UsageInfo, nsresult> FileSystemQuotaClient::GetUsageForOrigin(
     const AtomicBool& /* aCanceled */) {
   quota::AssertIsOnIOThread();
 
-  MOZ_ASSERT(aPersistenceType ==
-             quota::PersistenceType::PERSISTENCE_TYPE_DEFAULT);
+  MOZ_ASSERT(aPersistenceType == quota::PERSISTENCE_TYPE_DEFAULT ||
+             aPersistenceType == quota::PERSISTENCE_TYPE_PRIVATE);
 
   quota::QuotaManager* quotaManager = quota::QuotaManager::Get();
   MOZ_ASSERT(quotaManager);
