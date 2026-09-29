@@ -2076,8 +2076,8 @@ void Document::ConstructUbiNode(void* storage) {
 }
 
 void Document::LoadEventFired() {
-  // Collect page load timings. The pageload event itself is now submitted from
-  // Document::Destroy() so it can include the final LCP value and any other
+  // Collect page load timings. The pageload telemetry itself is submitted once
+  // the page is hidden so it can include the final LCP value and any other
   // metrics that aren't stable at load time.
   AccumulatePageLoadTelemetry();
 
@@ -2086,6 +2086,18 @@ void Document::LoadEventFired() {
   if (mScriptLoader) {
     mScriptLoader->LoadEventFired();
   }
+}
+
+void Document::ReportPageLoadTelemetry() {
+  // Page hide can fire more than once per document, but the sampling roll in
+  // ReportPageLoadEvent must only happen once.
+  if (mPageLoadTelemetryReported) {
+    return;
+  }
+  mPageLoadTelemetryReported = true;
+
+  ReportPageLoadEvent();
+  ReportLCP();
 }
 
 void Document::ReportPageLoadEvent() {
@@ -2122,9 +2134,9 @@ void Document::ReportPageLoadEvent() {
     return;
   }
 
-  // Refresh metrics that can change between the load event and document
-  // destruction. LCP in particular keeps updating until first user interaction
-  // or page teardown, so the value captured in AccumulatePageLoadTelemetry is
+  // Refresh metrics that can change between the load event and the page being
+  // hidden. LCP in particular keeps updating until first user interaction or
+  // the page is hidden, so the value captured in AccumulatePageLoadTelemetry is
   // not necessarily final.
   if (const nsDOMNavigationTiming* timing = GetNavigationTiming()) {
     if (TimeStamp navigationStart = timing->GetNavigationStartTimeStamp()) {
@@ -12655,11 +12667,9 @@ void Document::Destroy() {
   RemoveCustomContentContainer();
 
   ReportDocumentUseCounters();
-  // ReportPageLoadEvent must run before ReportLCP: ReportLCP skips submitting
-  // its histogram when mPageloadEventData.HasDomain() is true, and HasDomain()
-  // is set inside ReportPageLoadEvent.
-  ReportPageLoadEvent();
-  ReportLCP();
+  // Normally already done from OnPageHide; covers documents destroyed without
+  // ever being hidden.
+  ReportPageLoadTelemetry();
   SetDevToolsWatchingDOMMutations(false);
 
   mIsGoingAway = true;
@@ -13098,6 +13108,12 @@ void Document::OnPageHide(bool aPersisted, EventTarget* aDispatchStartTarget,
 
   if (!inFrameLoaderSwap) {
     UpdateVisibilityState();
+
+    // Submitted here rather than from Destroy(): by teardown the parent process
+    // often sees this document's BrowsingContext as discarded and cannot
+    // resolve is_first_daily_load. Being hidden is also where LCP stops
+    // updating.
+    ReportPageLoadTelemetry();
   }
 
   EnumerateExternalResources([aPersisted](Document& aExternalResource)

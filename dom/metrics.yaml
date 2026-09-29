@@ -57,6 +57,7 @@ perf:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1949038
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2063750
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2064052
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2064064
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1759744#c5
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1799727#c4
@@ -95,7 +96,10 @@ perf:
         unit: ms
       lcp_time:
         description: |
-          Time between largestContentfulPaint and navigationStart, at the point of onLoad firing, in ms. This may differ from the final LCP value as reported through the LCP histogram.
+          Time between largestContentfulPaint and navigationStart, in ms.
+          Recorded when the document is hidden, at which point the largest
+          contentful paint is final, so it matches the value reported through
+          the LCP histogram.
         type: quantity
         unit: ms
       js_exec_time:
@@ -287,6 +291,7 @@ perf:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1967780
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2063750
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2064052
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2064064
     data_reviews:
       - https://phabricator.services.mozilla.com/D250521
     notification_emails:
@@ -296,7 +301,9 @@ perf:
     extra_keys:
       lcp_time:
         description: |
-          Time between largestContentfulPaint and navigationStart, at the point of onLoad firing, in ms. This may differ from the final LCP value as reported through the LCP histogram.
+          Time between largestContentfulPaint and navigationStart, in ms.
+          Recorded when the document is hidden, at which point the largest
+          contentful paint is final.
         type: quantity
         unit: ms
       load_type:
