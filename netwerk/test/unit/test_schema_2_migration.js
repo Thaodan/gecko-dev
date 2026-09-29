@@ -156,8 +156,8 @@ function* do_run_test() {
   // 1) All unexpired, unique cookies exist.
   Assert.equal(Services.cookies.countCookiesFromHost("foo.com", {}), 20);
 
-  // 2) All expired, unique cookies exist.
-  Assert.equal(Services.cookies.countCookiesFromHost("bar.com", {}), 20);
+  // 2) Expired cookies are not exposed.
+  Assert.equal(Services.cookies.countCookiesFromHost("bar.com", {}), 0);
 
   // 3) Only one cookie remains, and it's the one with the highest expiration
   // time.
@@ -245,7 +245,7 @@ function* do_run_test() {
 
   // Test the expected set of cookies.
   Assert.equal(Services.cookies.countCookiesFromHost("foo.com", {}), 40);
-  Assert.equal(Services.cookies.countCookiesFromHost("bar.com", {}), 20);
+  Assert.equal(Services.cookies.countCookiesFromHost("bar.com", {}), 0);
   Assert.equal(Services.cookies.countCookiesFromHost("baz.com", {}), 1);
   Assert.equal(Services.cookies.countCookiesFromHost("cat.com", {}), 20);
 
@@ -261,7 +261,7 @@ function* do_run_test() {
 
   // Test the expected set of cookies.
   Assert.equal(Services.cookies.countCookiesFromHost("foo.com", {}), 40);
-  Assert.equal(Services.cookies.countCookiesFromHost("bar.com", {}), 20);
+  Assert.equal(Services.cookies.countCookiesFromHost("bar.com", {}), 0);
   Assert.equal(Services.cookies.countCookiesFromHost("baz.com", {}), 1);
   Assert.equal(Services.cookies.countCookiesFromHost("cat.com", {}), 20);
 
@@ -281,11 +281,11 @@ function* do_run_test() {
 
   // Load the database synchronously, in its entirety.
   do_load_profile();
-  Assert.equal(do_count_cookies(), 81);
+  Assert.equal(do_count_cookies(), 61);
 
   // Test the expected set of cookies.
   Assert.equal(Services.cookies.countCookiesFromHost("foo.com", {}), 40);
-  Assert.equal(Services.cookies.countCookiesFromHost("bar.com", {}), 20);
+  Assert.equal(Services.cookies.countCookiesFromHost("bar.com", {}), 0);
   Assert.equal(Services.cookies.countCookiesFromHost("baz.com", {}), 1);
   Assert.equal(Services.cookies.countCookiesFromHost("cat.com", {}), 20);
 

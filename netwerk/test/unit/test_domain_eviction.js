@@ -85,7 +85,8 @@ function* do_run_test() {
   do_timeout(2100, continue_test);
   yield;
 
-  Assert.equal(countCookies("captchart.com", "captchart.com"), 50);
+  // The expired cookie is still stored, but it is not exposed anymore.
+  Assert.equal(countCookies("captchart.com", "captchart.com"), 49);
   cv = Services.cookies.add(
     "captchart.com",
     "",

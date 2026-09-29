@@ -156,8 +156,8 @@ function* do_run_test() {
   // 1) All unexpired, unique cookies exist.
   Assert.equal(Services.cookies.countCookiesFromHost("foo.com", {}), 20);
 
-  // 2) All expired, unique cookies exist.
-  Assert.equal(Services.cookies.countCookiesFromHost("bar.com", {}), 20);
+  // 2) Expired cookies are not exposed.
+  Assert.equal(Services.cookies.countCookiesFromHost("bar.com", {}), 0);
 
   // 3) Only one cookie remains, and it's the one with the highest expiration
   // time.

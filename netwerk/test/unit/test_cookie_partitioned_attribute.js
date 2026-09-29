@@ -67,11 +67,11 @@ add_task(async function test_IsPartitioned() {
   let cookieCountNonPart = Services.cookies.countCookiesFromHost(
     hostNonPartitioned,
     {}
-  ); // includes expired cookies
+  );
   Assert.equal(cookieCountNonPart, nUnpartitioned);
   let cookieCountPart = Services.cookies.getCookiesFromHost(hostPartitioned, {
     partitionKey: "(https,example.com)",
-  }).length; // includes expired cookies
+  }).length;
   Assert.equal(cookieCountPart, nPartitioned);
 
   // Startup the cookie service and check the cookie counts by isPartitioned (IsPartitioned())
