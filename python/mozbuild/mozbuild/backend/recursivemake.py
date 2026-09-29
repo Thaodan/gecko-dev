@@ -947,7 +947,6 @@ class RecursiveMakeBackend(MakeBackend):
         test_files = root_deps_mk.create_rule(["install-test-files"])
         test_files.add_commands([
             "$(call py_action,process_install_manifest test/files,"
-            "$(if $(filter copy,$(NSDISTMODE)),--no-symlinks )"
             "--track install__test_files.track _tests "
             "_build_manifests/install/_test_files)"
         ])
@@ -977,7 +976,6 @@ class RecursiveMakeBackend(MakeBackend):
                 f"$(foreach manifest,"
                 f"$(wildcard _build_manifests/install/{underscored}),"
                 f"$(call py_action,process_install_manifest {manifest},"
-                f"$(if $(filter copy,$(NSDISTMODE)),--no-symlinks )"
                 f"--track install_{underscored}.track "
                 f"{manifest} $(manifest)))"
             )
@@ -1729,7 +1727,6 @@ class RecursiveMakeBackend(MakeBackend):
     def _built_install_command(self, name):
         return (
             f"$(call py_action,process_install_manifest {name},"
-            f"$(if $(filter copy,$(NSDISTMODE)),--no-symlinks )"
             f"--track {self._built_install_track(name)} $(topobjdir) "
             f"{self._built_install_manifest_path(name)})"
         )

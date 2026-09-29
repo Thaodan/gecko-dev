@@ -725,7 +725,6 @@ class TestRecursiveMakeBackend(BackendTester):
         self.assertEqual(
             lines.count(
                 f"\t$(call py_action,process_install_manifest misc,"
-                f"$(if $(filter copy,$(NSDISTMODE)),--no-symlinks )"
                 f"--track {manifest}.track $(topobjdir) {manifest})"
             ),
             1,
