@@ -60,6 +60,10 @@ if (AppConstants.platform != "macosx") {
     errorMessage: /Unknown property.*-moz-osx-font-smoothing/i,
     isFromDevTools: false,
   });
+  ignoreList.push({
+    errorMessage: /Unknown property.*-moz-scrollbar-inset-(block|inline)/i,
+    isFromDevTools: false,
+  });
 }
 
 if (!Services.prefs.getBoolPref("dom.select.customizable_select.enabled")) {
