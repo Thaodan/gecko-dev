@@ -126,12 +126,6 @@ mozilla::ipc::IPCResult FileSystemManagerParent::RecvGetAccessHandle(
   AssertIsOnIOTarget();
   MOZ_ASSERT(mDataManager);
 
-  // TODO: The implementation should support PBM.
-  if (mDataManager->OriginMetadataRef().mIsPrivate) {
-    aResolver(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
-    return IPC_OK();
-  }
-
   EntryId entryId = aRequest.entryId();
 
   FileSystemAccessHandle::Create(mDataManager, entryId)
