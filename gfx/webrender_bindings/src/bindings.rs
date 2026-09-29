@@ -42,11 +42,11 @@ use webrender::{
     api::units::*, api::*, create_webrender_instance, render_api::*, set_profiler_hooks, AsyncPropertySampler,
     AsyncScreenshotHandle, ClipRadius, Compositor, CompositorCapabilities, CompositorConfig, CompositorInputConfig,
     CompositorKind, CompositorSurfaceTransform, CompositorSurfaceUsage, Device, DeviceOptions, FrameBuilderConfig,
-    GpuBackendConfig, LayerCompositor, MappableCompositor, MappedTileInfo, NativeSurfaceHandle, NativeSurfaceId,
-    NativeSurfaceInfo, NativeTileId, PartialPresentCompositor, PendingShadersToPrecache, PipelineInfo, ProfilerHooks,
-    RecordedFrameHandle, RenderBackendHooks, Renderer, RendererStats, SWGLCompositeSurfaceInfo, SceneBuilderHooks,
-    ShaderPrecacheFlags, Shaders, SharedShaders, TextureCacheConfig, UploadMethod, WebRenderOptions, WindowProperties,
-    WindowVisibility, ONE_TIME_USAGE_HINT,
+    GlBackendConfig, GpuBackendConfig, LayerCompositor, MappableCompositor, MappedTileInfo, NativeSurfaceHandle,
+    NativeSurfaceId, NativeSurfaceInfo, NativeTileId, PartialPresentCompositor, PendingShadersToPrecache, PipelineInfo,
+    ProfilerHooks, RecordedFrameHandle, RenderBackendHooks, Renderer, RendererStats, SWGLCompositeSurfaceInfo,
+    SceneBuilderHooks, ShaderPrecacheFlags, Shaders, SharedShaders, TextureCacheConfig, UploadMethod, WebRenderOptions,
+    WindowProperties, WindowVisibility, ONE_TIME_USAGE_HINT,
 };
 use wr_malloc_size_of::MallocSizeOfOps;
 
@@ -1427,7 +1427,7 @@ fn wr_device_new(gl_context: *mut c_void, pc: Option<&mut WrProgramCache>) -> De
     let cached_programs = pc.map(|cached_programs| Rc::clone(cached_programs.rc_get()));
 
     Device::new(
-        GpuBackendConfig::Gl(gl),
+        GpuBackendConfig::Gl(GlBackendConfig::new(gl)),
         DeviceOptions {
             crash_annotator: Some(Box::new(MozCrashAnnotator)),
             resource_override_path,
@@ -1435,11 +1435,9 @@ fn wr_device_new(gl_context: *mut c_void, pc: Option<&mut WrProgramCache>) -> De
             upload_method,
             batched_upload_threshold: 512 * 512,
             cached_programs,
-            allow_texture_storage_support: true,
             allow_texture_swizzling: true,
             dump_shader_source: None,
             surface_origin_is_top_left: false,
-            panic_on_gl_error: false,
         },
     )
 }
@@ -2336,7 +2334,6 @@ pub extern "C" fn wr_window_new(
         surface_origin_is_top_left,
         compositor_config,
         enable_gpu_markers,
-        panic_on_gl_error,
         picture_tile_size,
         texture_cache_config,
         reject_software_rasterizer,
@@ -2350,19 +2347,22 @@ pub extern "C" fn wr_window_new(
 
     let window_size = DeviceIntSize::new(window_width, window_height);
     let notifier = Box::new(CppNotifier { window_id });
-    let (renderer, sender) =
-        match create_webrender_instance(GpuBackendConfig::Gl(gl), notifier, opts, shaders.map(|sh| &sh.shaders)) {
-            Ok((renderer, sender)) => (renderer, sender),
-            Err(e) => {
-                warn!(" Failed to create a Renderer: {:?}", e);
-                let msg = CString::new(format!("wr_window_new: {:?}", e)).unwrap();
-                unsafe {
-                    gfx_critical_note(msg.as_ptr());
-                }
-                *out_err = msg.into_raw();
-                return false;
-            },
-        };
+    let backend = GpuBackendConfig::Gl(GlBackendConfig {
+        panic_on_error: panic_on_gl_error,
+        ..GlBackendConfig::new(gl)
+    });
+    let (renderer, sender) = match create_webrender_instance(backend, notifier, opts, shaders.map(|sh| &sh.shaders)) {
+        Ok((renderer, sender)) => (renderer, sender),
+        Err(e) => {
+            warn!(" Failed to create a Renderer: {:?}", e);
+            let msg = CString::new(format!("wr_window_new: {:?}", e)).unwrap();
+            unsafe {
+                gfx_critical_note(msg.as_ptr());
+            }
+            *out_err = msg.into_raw();
+            return false;
+        },
+    };
 
     unsafe {
         *out_max_texture_size = renderer.get_max_texture_size();
