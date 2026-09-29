@@ -39,14 +39,15 @@ use tracy_rs::register_thread_with_profiler;
 use webrender::render_backend_pool::{PoolMemberSetup, RenderBackendPool};
 use webrender::sw_compositor::SwCompositor;
 use webrender::{
-    api::units::*, api::*, create_webrender_instance, render_api::*, set_profiler_hooks, AsyncPropertySampler,
+    api::units::*, api::*, create_webrender_instance, render_api::*, set_profiler_hooks, AsyncPropertySampler, GpuBackendConfig,
     AsyncScreenshotHandle, ClipRadius, Compositor, CompositorCapabilities, CompositorConfig, CompositorInputConfig,
     CompositorKind, CompositorSurfaceTransform, CompositorSurfaceUsage, Device, DeviceOptions, FrameBuilderConfig,
-    GpuBackendConfig, LayerCompositor, MappableCompositor, MappedTileInfo, NativeSurfaceHandle, NativeSurfaceId,
-    NativeSurfaceInfo, NativeTileId, PartialPresentCompositor, PendingShadersToPrecache, PipelineInfo, ProfilerHooks,
-    RecordedFrameHandle, RenderBackendHooks, Renderer, RendererStats, SWGLCompositeSurfaceInfo, SceneBuilderHooks,
-    ShaderPrecacheFlags, Shaders, SharedShaders, TextureCacheConfig, UploadMethod, WebRenderOptions, WindowProperties,
-    WindowVisibility, ONE_TIME_USAGE_HINT,
+    LayerCompositor,
+    MappableCompositor, MappedTileInfo, NativeSurfaceHandle, NativeSurfaceId, NativeSurfaceInfo, NativeTileId,
+    PartialPresentCompositor,
+    PendingShadersToPrecache, PipelineInfo, ProfilerHooks, RecordedFrameHandle, RenderBackendHooks, Renderer,
+    RendererStats, SWGLCompositeSurfaceInfo, SceneBuilderHooks, ShaderPrecacheFlags, Shaders, SharedShaders,
+    TextureCacheConfig, UploadMethod, WebRenderOptions, WindowProperties, WindowVisibility, ONE_TIME_USAGE_HINT,
 };
 use wr_malloc_size_of::MallocSizeOfOps;
 
@@ -437,9 +438,7 @@ impl ExternalImageHandler for WrExternalImageHandler {
         ExternalImage {
             uv: TexelRect::new(image.u0, image.v0, image.u1, image.v1),
             source: match image.image_type {
-                WrExternalImageType::NativeTexture => {
-                    ExternalImageSource::NativeTexture(ExternalTextureHandle(image.handle))
-                },
+                WrExternalImageType::NativeTexture => ExternalImageSource::NativeTexture(ExternalTextureHandle(image.handle)),
                 WrExternalImageType::RawData => {
                     ExternalImageSource::RawData(unsafe { make_slice(image.buff, image.size) })
                 },
@@ -1298,7 +1297,6 @@ fn placeholder_frame_builder_config() -> FrameBuilderConfig {
         low_quality_pinch_zoom: false,
         max_shared_surface_size: 4096,
         enable_dithering: false,
-        enable_yuv_overlay_stability: false,
     }
 }
 
@@ -1582,7 +1580,12 @@ impl Compositor for WrCompositor {
         }
     }
 
-    fn bind(&mut self, id: NativeTileId, dirty_rect: DeviceIntRect, valid_rect: DeviceIntRect) -> NativeSurfaceInfo {
+    fn bind(
+        &mut self,
+        id: NativeTileId,
+        dirty_rect: DeviceIntRect,
+        valid_rect: DeviceIntRect,
+    ) -> NativeSurfaceInfo {
         let mut surface_info = NativeSurfaceInfo {
             origin: DeviceIntPoint::zero(),
             handle: NativeSurfaceHandle::DEFAULT,
@@ -2271,9 +2274,8 @@ pub extern "C" fn wr_window_new(
         false
     };
 
-    let enable_yuv_overlay_stability = cfg!(target_os = "windows");
-
-    let enable_shared_instance_buffer = static_prefs::pref!("gfx.webrender.shared-instance-buffer");
+    let enable_shared_instance_buffer =
+        static_prefs::pref!("gfx.webrender.shared-instance-buffer");
 
     let opts = WebRenderOptions {
         enable_aa: true,
@@ -2343,26 +2345,24 @@ pub extern "C" fn wr_window_new(
         low_quality_pinch_zoom,
         max_shared_surface_size,
         enable_dithering,
-        enable_yuv_overlay_stability,
         enable_shared_instance_buffer,
         ..Default::default()
     };
 
     let window_size = DeviceIntSize::new(window_width, window_height);
     let notifier = Box::new(CppNotifier { window_id });
-    let (renderer, sender) =
-        match create_webrender_instance(GpuBackendConfig::Gl(gl), notifier, opts, shaders.map(|sh| &sh.shaders)) {
-            Ok((renderer, sender)) => (renderer, sender),
-            Err(e) => {
-                warn!(" Failed to create a Renderer: {:?}", e);
-                let msg = CString::new(format!("wr_window_new: {:?}", e)).unwrap();
-                unsafe {
-                    gfx_critical_note(msg.as_ptr());
-                }
-                *out_err = msg.into_raw();
-                return false;
-            },
-        };
+    let (renderer, sender) = match create_webrender_instance(GpuBackendConfig::Gl(gl), notifier, opts, shaders.map(|sh| &sh.shaders)) {
+        Ok((renderer, sender)) => (renderer, sender),
+        Err(e) => {
+            warn!(" Failed to create a Renderer: {:?}", e);
+            let msg = CString::new(format!("wr_window_new: {:?}", e)).unwrap();
+            unsafe {
+                gfx_critical_note(msg.as_ptr());
+            }
+            *out_err = msg.into_raw();
+            return false;
+        },
+    };
 
     unsafe {
         *out_max_texture_size = renderer.get_max_texture_size();
