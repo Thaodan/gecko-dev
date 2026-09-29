@@ -603,7 +603,6 @@ def load_wpt_tests(xul_tester, requested_paths, excluded_paths, update_manifest=
     )
     subsuites = testloader.load_subsuites(logger, run_info, None, set())
     loader = testloader.TestLoader(
-        logger=logger,
         test_manifests,
         ["testharness"],
         run_info,
