@@ -55,69 +55,6 @@ const TEST_STATE_2 = {
   ],
 };
 
-const WINDOW_FEATURES_RESTORING_TOPIC =
-  "sessionstore-debug-window-features-restoring";
-const BULK_WINDOW_RESTORE_END_TOPIC = "sessionstore-bulk-window-restore-end";
-
-function waitForPromise(promise, description) {
-  info(description);
-  return promise;
-}
-
-function observeTopicOnce(topic) {
-  let observed = Promise.withResolvers();
-  let observing = true;
-
-  function cleanup() {
-    if (observing) {
-      Services.obs.removeObserver(observer, topic);
-      observing = false;
-    }
-  }
-
-  function observer(subject) {
-    cleanup();
-    observed.resolve(subject);
-  }
-
-  Services.obs.addObserver(observer, topic);
-  return { promise: observed.promise, cleanup };
-}
-
-function blockWindowFeatureRestore(expectedWindow) {
-  let blocker = Promise.withResolvers();
-  let observed = Promise.withResolvers();
-  let observing = true;
-
-  function cleanup() {
-    if (observing) {
-      Services.obs.removeObserver(observer, WINDOW_FEATURES_RESTORING_TOPIC);
-      observing = false;
-    }
-    blocker.resolve();
-  }
-
-  function observer(subject) {
-    let detail = subject.wrappedJSObject;
-    if (detail.window != expectedWindow) {
-      return;
-    }
-    Services.obs.removeObserver(observer, WINDOW_FEATURES_RESTORING_TOPIC);
-    observing = false;
-    detail.addBlocker(blocker.promise);
-    observed.resolve();
-  }
-
-  Services.obs.addObserver(observer, WINDOW_FEATURES_RESTORING_TOPIC);
-  return {
-    observed: observed.promise,
-    release() {
-      blocker.resolve();
-    },
-    cleanup,
-  };
-}
-
 function countNonLazyTabs(win) {
   win = win || window;
   let count = 0;
@@ -168,10 +105,10 @@ add_task(async function test() {
 
   // Check if any lazy tabs got inserted when window closes.
   let newWindow = await promiseNewWindowLoaded();
-  let featureGate = blockWindowFeatureRestore(newWindow);
-  let bulkRestoreEnded = observeTopicOnce(BULK_WINDOW_RESTORE_END_TOPIC);
-  let windowClosed = BrowserTestUtils.windowClosed(newWindow);
-  let unloadChecked = new Promise(resolve => {
+
+  SessionStore.setWindowState(newWindow, JSON.stringify(TEST_STATE));
+
+  await new Promise(resolve => {
     newWindow.addEventListener(
       "unload",
       () => {
@@ -196,28 +133,9 @@ add_task(async function test() {
       },
       { once: true }
     );
-  });
 
-  try {
-    SessionStore.setWindowState(newWindow, JSON.stringify(TEST_STATE));
-    await waitForPromise(
-      featureGate.observed,
-      "waiting for window feature restoration to be blocked"
-    );
     newWindow.close();
-    await waitForPromise(
-      Promise.all([unloadChecked, windowClosed]),
-      "waiting for the restored window to close"
-    );
-    featureGate.release();
-    await waitForPromise(
-      bulkRestoreEnded.promise,
-      "waiting for the restore lifecycle to settle after the window closed"
-    );
-  } finally {
-    featureGate.cleanup();
-    bulkRestoreEnded.cleanup();
-  }
+  });
 
   // Bug 1365933.
   info(

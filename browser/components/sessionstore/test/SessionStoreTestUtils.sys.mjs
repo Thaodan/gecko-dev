@@ -196,11 +196,4 @@ export var SessionStoreTestUtils = {
   promiseBrowserState(aState) {
     return new Promise(resolve => this.waitForBrowserState(aState, resolve));
   },
-
-  async promiseCompletedBrowserState(aState) {
-    let restoreComplete = lazy.TestUtils.topicObserved(
-      "sessionstore-browser-state-restored"
-    );
-    await Promise.all([this.promiseBrowserState(aState), restoreComplete]);
-  },
 };

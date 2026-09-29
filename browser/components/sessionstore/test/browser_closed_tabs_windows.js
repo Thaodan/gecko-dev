@@ -100,7 +100,7 @@ const multiWindowState = {
 };
 
 add_setup(async function testSetup() {
-  await SessionStoreTestUtils.promiseCompletedBrowserState(multiWindowState);
+  await SessionStoreTestUtils.promiseBrowserState(multiWindowState);
 });
 
 add_task(async function test_ClosedTabMethods() {

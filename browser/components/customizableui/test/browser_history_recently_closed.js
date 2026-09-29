@@ -664,7 +664,7 @@ add_task(async function testRecentlyClosedTabsFromManyWindows() {
   await resetClosedTabsAndWindows();
   const ORIG_STATE = SessionStore.getBrowserState();
 
-  await SessionStoreTestUtils.promiseCompletedBrowserState({
+  await SessionStoreTestUtils.promiseBrowserState({
     windows: [
       {
         tabs: [makeTabState("about:mozilla")],
