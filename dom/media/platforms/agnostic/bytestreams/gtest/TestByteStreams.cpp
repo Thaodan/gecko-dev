@@ -1655,6 +1655,24 @@ TEST(H265, SPSIteratorAndCreateNewExtraData)
   EXPECT_EQ(hvcc.NumSPS(), hvcc2.NumSPS());
 }
 
+TEST(H265, ComputeMaxReorderPics)
+{
+  // sSps carries sps_max_num_reorder_pics[0] == 2 (see
+  // DecodeSPSFromSPSNALU above), so the reorder count comes straight out of
+  // the SPS.
+  RefPtr<MediaRawData> rawData{GetHVCCSample(sSps, std::size(sSps))};
+  RefPtr<MediaByteBuffer> extradata = H265::ExtractHVCCExtraData(rawData);
+  ASSERT_TRUE(extradata);
+  EXPECT_EQ(H265::ComputeMaxReorderPics(extradata.get()), 2u);
+  // Unparseable extradata signals no reordering rather than guessing.
+  auto empty = MakeRefPtr<MediaByteBuffer>();
+  EXPECT_EQ(H265::ComputeMaxReorderPics(empty.get()), 0u);
+  static const uint8_t junk[] = {0x01, 0x02, 0x03, 0x04};
+  auto garbage = MakeRefPtr<MediaByteBuffer>();
+  garbage->AppendElements(junk, std::size(junk));
+  EXPECT_EQ(H265::ComputeMaxReorderPics(garbage.get()), 0u);
+}
+
 TEST(H265, ConfWindowTest)
 {
   // This sps contains some cropping information, which will crop video from the
