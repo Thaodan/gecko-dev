@@ -11,6 +11,7 @@
 #include "FileSystemFileManager.h"
 #include "FileSystemHashSource.h"
 #include "FileSystemParentTypes.h"
+#include "FileSystemQuotaClient.h"
 #include "NotifyUtils.h"
 #include "ResultStatement.h"
 #include "SchemaVersion001.h"
@@ -657,6 +658,11 @@ RefPtr<BoolPromise> FileSystemDataManager::BeginOpen() {
             QM_TRY(
                 MOZ_TO_RESULT(EnsureFileSystemDirectory(self->mOriginMetadata)),
                 CreateAndRejectBoolPromise);
+
+            auto* const quotaClient = static_cast<FileSystemQuotaClient*>(
+                self->mQuotaManager->GetClient(quota::Client::FILESYSTEM));
+            self->mCipherKeyManager =
+                quotaClient->GetOrCreateCipherKeyManager(self->mOriginMetadata);
 
             quota::SleepIfEnabled(
                 StaticPrefs::dom_fs_databaseInitialization_pauseOnIOThreadMs());
