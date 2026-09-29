@@ -86,10 +86,7 @@
     "parser": "get_parser",
     "parse_known": true,
     "help": "Run command in Taskcluster CI environment (for use in Docker image)",
-    "virtualenv": true,
-    "requirements": [
-      "requirements_tc.txt"
-    ]
+    "virtualenv": false
   },
   "update-codeowners": {
     "path": "update_codeowners.py",

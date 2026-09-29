@@ -18,7 +18,7 @@ from . import manifestinclude
 from . import manifestexpected
 from . import manifestupdate
 from . import wpttest
-from mozlog.structuredlog import StructuredLogger
+from mozlog import structured
 
 manifest = None
 manifest_update = None
@@ -66,7 +66,7 @@ class ReadQueue:
 
 
 class TestGroups:
-    def __init__(self, logger: StructuredLogger, path: str, subsuites: Mapping[str, Subsuite]):
+    def __init__(self, logger, path, subsuites):
         try:
             with open(path) as f:
                 data = json.load(f)
@@ -90,7 +90,7 @@ class TestGroups:
                 self.tests_by_group[group_name].add(test_id)
 
 
-def load_subsuites(logger: StructuredLogger,
+def load_subsuites(logger: Any,
                    base_run_info: wpttest.RunInfo,
                    path: Optional[str],
                    include_subsuites: Set[str]) -> Dict[str, Subsuite]:
@@ -197,11 +197,12 @@ def update_include_for_groups(test_groups, include):
 
 
 class TestChunker(abc.ABC):
-    def __init__(self, logger: StructuredLogger, total_chunks: int, chunk_number: int, **kwargs: Any):
+    def __init__(self, total_chunks: int, chunk_number: int, **kwargs: Any):
         self.total_chunks = total_chunks
         self.chunk_number = chunk_number
         assert self.chunk_number <= self.total_chunks
-        self.logger = logger
+        self.logger = structured.get_default_logger()
+        assert self.logger
         self.kwargs = kwargs
 
     @abstractmethod
@@ -313,14 +314,16 @@ class TagFilter:
 
 
 class ManifestLoader:
-    def __init__(self, logger, test_paths, force_manifest_update=False, manifest_download=False,
+    def __init__(self, test_paths, force_manifest_update=False, manifest_download=False,
                  types=None):
         do_delayed_imports()
-        self.logger = logger
         self.test_paths = test_paths
         self.force_manifest_update = force_manifest_update
         self.manifest_download = manifest_download
         self.types = types
+        self.logger = structured.get_default_logger()
+        if self.logger is None:
+            self.logger = structured.structuredlog.StructuredLogger("ManifestLoader")
 
     def load(self):
         rv = {}
@@ -351,7 +354,6 @@ def iterfilter(filters, iter):
 class TestLoader:
     """Loads tests according to a WPT manifest and any associated expectation files"""
     def __init__(self,
-                 logger,
                  test_manifests,
                  test_types,
                  base_run_info,
@@ -387,15 +389,13 @@ class TestLoader:
         self.chunk_type = chunk_type
         self.total_chunks = total_chunks
         self.chunk_number = chunk_number
-        self.logger = logger
 
         if chunker_kwargs is None:
             chunker_kwargs = {}
         self.chunker = {"none": Unchunked,
                         "hash": PathHashChunker,
                         "id_hash": IDHashChunker,
-                        "dir_hash": DirectoryHashChunker}[chunk_type](self.logger,
-                                                                      total_chunks,
+                        "dir_hash": DirectoryHashChunker}[chunk_type](total_chunks,
                                                                       chunk_number,
                                                                       **chunker_kwargs)
 
@@ -498,9 +498,9 @@ class TestLoader:
 
 
 
-def get_test_queue_builder(logger: StructuredLogger, **kwargs: Any) -> Tuple[TestQueueBuilder, Mapping[str, Any]]:
+def get_test_queue_builder(**kwargs: Any) -> Tuple[TestQueueBuilder, Mapping[str, Any]]:
     builder_kwargs = {"processes": kwargs["processes"],
-                      "logger": logger}
+                      "logger": kwargs["logger"]}
     chunker_kwargs = {}
     builder_cls: Type[TestQueueBuilder]
     if kwargs["fully_parallel"]:
@@ -515,7 +515,6 @@ def get_test_queue_builder(logger: StructuredLogger, **kwargs: Any) -> Tuple[Tes
         builder_kwargs["test_groups"] = kwargs["test_groups"]
     else:
         builder_cls = SingleTestSource
-    logger.debug(f"Using {builder_cls.__name__} test queue builder with kwargs {builder_kwargs}")
     return builder_cls(**builder_kwargs), chunker_kwargs
 
 
@@ -544,7 +543,7 @@ class TestGroup:
 class TestQueueBuilder:
     __metaclass__ = ABCMeta
 
-    def __init__(self, logger: StructuredLogger, **kwargs: Any):
+    def __init__(self, **kwargs: Any):
         """Class for building a queue of groups of tests to run.
 
         Each item in the queue is a TestGroup, which consists of an iterable of
@@ -553,13 +552,11 @@ class TestQueueBuilder:
 
         Tests in the same group are run in the same TestRunner in the
         provided order."""
-        self.logger = logger
         self.kwargs = kwargs
 
     def make_queue(self, tests_by_type: TestsByType) -> Tuple[ReadQueue, int]:
         test_queue = WriteQueue()
         groups = self.make_groups(tests_by_type)
-        self.logger.debug(f"Grouped tests into {len(groups)} groups")
         processes = self.process_count(self.kwargs["processes"], len(groups))
         if processes > 1:
             groups.sort(key=lambda group: (
@@ -643,10 +640,7 @@ class PathGroupedSource(TestQueueBuilder):
                      subsuite: str,
                      tests: List[wpttest.Test]) -> bool:
         small_subsuite_size = self.kwargs.get("small_subsuite_size", 0)
-        rv = len(subsuite) > 0 and len(tests) <= small_subsuite_size
-        if rv:
-            self.logger.debug(f"Putting tests in subsuite {subsuite} in a single group")
-        return rv
+        return len(subsuite) > 0 and len(tests) <= small_subsuite_size
 
     def make_groups(self, tests_by_type: TestsByType) -> List[TestGroup]:
         groups = []

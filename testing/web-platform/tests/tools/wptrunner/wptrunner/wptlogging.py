@@ -1,27 +1,23 @@
 # mypy: allow-untyped-defs
 
 import logging
-from collections.abc import Iterable, Mapping, MutableMapping, Callable
 from threading import Thread
 from types import TracebackType
-from typing import Any, Optional, Type
+from typing import Optional, Type
 
 from mozlog import commandline, stdadapter, set_default_logger
 from mozlog.structuredlog import StructuredLogger, log_levels
 
 
 class LoggerManager:
-    def __init__(self,
-                 args: MutableMapping[str, Any],
-                 defaults: Mapping[str, Any],
-                 formatter_defaults: Optional[Mapping[str, Any]] = None):
-        self._logger: Optional[StructuredLogger] = None
+    def __init__(self, args, defaults, formatter_defaults=None):
+        self._logger = None
         self._owns_logger = False
         self._args = args
         self._defaults = defaults
         self._formatter_defaults = formatter_defaults
 
-    def __enter__(self) -> StructuredLogger:
+    def __enter__(self):
         self._logger = self._args.pop('log', None)
         if self._logger is not None:
             set_default_logger(self._logger)
@@ -38,7 +34,7 @@ class LoggerManager:
 
         return self._logger
 
-    def __exit__(self, *args: Any, **kwargs: Any) -> None:
+    def __exit__(self, *args, **kwargs):
         if self._logger is None:
             return
 
@@ -52,7 +48,7 @@ def setup(args, defaults, formatter_defaults=None):
     return LoggerManager(args, defaults, formatter_defaults).__enter__()
 
 
-def setup_stdlib_logger() -> None:
+def setup_stdlib_logger():
     logging.root.handlers = []
     logging.root = stdadapter.std_logging_adapter(logging.root)
 
@@ -68,15 +64,12 @@ class LogLevelRewriter:
     :param from_levels: List of levels which should be affected
     :param to_level: Log level to set for the affected messages
     """
-    def __init__(self,
-                 inner: Callable[[dict[str, Any]], Any],
-                 from_levels: Iterable[str],
-                 to_level: str):
+    def __init__(self, inner, from_levels, to_level):
         self.inner = inner
         self.from_levels = [item.upper() for item in from_levels]
         self.to_level = to_level.upper()
 
-    def __call__(self, data: dict[str, Any]) -> Any:
+    def __call__(self, data):
         if data["action"] == "log" and data["level"].upper() in self.from_levels:
             data = data.copy()
             data["level"] = self.to_level

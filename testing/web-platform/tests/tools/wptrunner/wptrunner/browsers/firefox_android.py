@@ -366,10 +366,7 @@ class FirefoxAndroidBrowser(Browser):
                     self.logger.warning("Failed to remove forwarded or reversed ports: %s" % e)
             # We assume that stopping the runner prompts the
             # browser to shut down.
-            try:
-                self.runner.cleanup()
-            except Exception as e:
-                self.logger.warning(f"Failed to cleanup runner: {e}")
+            self.runner.cleanup()
         self.logger.debug("stopped")
 
     @property

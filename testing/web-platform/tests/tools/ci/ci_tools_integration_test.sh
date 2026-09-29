@@ -7,16 +7,17 @@ cd $WPT_ROOT
 
 main() {
     git fetch --quiet --unshallow https://github.com/web-platform-tests/wpt.git +refs/heads/*:refs/remotes/origin/*
+    pip install --user -U tox
 
     # wpt commands integration tests
-    cd $WPT_ROOT/tools/wpt
-    pip install -U tox
+    cd tools/wpt
     tox
+    cd $WPT_ROOT
 
     # WMAS test runner integration tests
-    cd $WPT_ROOT/tools/wave
-    pip install -U tox
+    cd tools/wave
     tox
+    cd $WPT_ROOT
 }
 
 main

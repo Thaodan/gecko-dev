@@ -47,7 +47,7 @@ import tempfile
 import zipfile
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from tools.wpt.httputils import get_download_to_descriptor
+from tools.wpt.utils import get_download_to_descriptor
 
 root = os.path.abspath(
     os.path.join(os.path.dirname(__file__),
@@ -123,13 +123,10 @@ def get_parser():
     return p
 
 
-def start_userspace_oom_killer(log_only=False):
+def start_userspace_oom_killer():
     # Start userspace OOM killer: https://github.com/rfjakob/earlyoom
     # It will report memory usage every minute and prefer to kill browsers.
-    cmd = ["sudo", "earlyoom", "-p", "-r", "60", "--prefer=(chrome|firefox)", "--avoid=python"]
-    if log_only:
-        cmd.append("--dryrun")
-    start(cmd)
+    start(["sudo", "earlyoom", "-p", "-r", "60", "--prefer=(chrome|firefox)", "--avoid=python"])
 
 
 def make_hosts_file():
@@ -287,8 +284,7 @@ def setup_environment(**kwargs):
         start_xvfb()
 
     if kwargs["oom_killer"]:
-        log_only = "firefox_android" in kwargs["browser"]
-        start_userspace_oom_killer(log_only)
+        start_userspace_oom_killer()
 
 
 def setup_repository(**kwargs):
@@ -449,11 +445,7 @@ def run_tc(*args, **kwargs):
         sys.exit(subprocess.call(cmd))
     finally:
         for process in started_processes:
-            process.terminate()
-            try:
-                process.wait(30)
-            except subprocess.TimeoutExpired:
-                process.kill()
+            process.kill()
 
 
 def main():
