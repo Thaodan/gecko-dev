@@ -116,6 +116,7 @@ interface nsILoadGroup : nsIRequest
      * flags (again, courtesy of setting nsIDocShell::defaultLoadFlags before
      * the docShell has created the default request.)
      */
+    [infallible]
     attribute nsLoadFlags defaultLoadFlags;
 
     /**
