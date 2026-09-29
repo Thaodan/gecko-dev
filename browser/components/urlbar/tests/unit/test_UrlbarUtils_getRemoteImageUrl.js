@@ -1,7 +1,7 @@
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
-// Tests which icon URLs UrlbarUtils.getRemoteIconUrl hands on as they are and
+// Tests which icon URLs UrlbarUtils.getRemoteImageUrl hands on as they are and
 // which it wraps in `moz-remote-image:` so the image decodes outside the
 // parent process (bug 2012436).
 
@@ -46,7 +46,7 @@ add_task(function trustedSchemesPassThrough() {
     "resource://content-accessible/moz.png",
   ]) {
     Assert.equal(
-      UrlbarUtils.getRemoteIconUrl(iconUrl, SIZE),
+      UrlbarUtils.getRemoteImageUrl({ url: iconUrl, size: SIZE }),
       iconUrl,
       `${iconUrl} is used as it is`
     );
@@ -59,7 +59,10 @@ add_task(function untrustedSchemesAreWrapped() {
     "https://example.com/favicon.ico",
     "http://example.com/favicon.ico",
   ]) {
-    assertWrapped(iconUrl, UrlbarUtils.getRemoteIconUrl(iconUrl, SIZE));
+    assertWrapped(
+      iconUrl,
+      UrlbarUtils.getRemoteImageUrl({ url: iconUrl, size: SIZE })
+    );
   }
 });
 
@@ -73,7 +76,10 @@ add_task(function unexpectedSchemesAreWrapped() {
     "blob:https://example.com/6a1b2c3d",
     "moz-remote-image://?url=https%3A%2F%2Fexample.com%2Ffavicon.ico",
   ]) {
-    assertWrapped(iconUrl, UrlbarUtils.getRemoteIconUrl(iconUrl, SIZE));
+    assertWrapped(
+      iconUrl,
+      UrlbarUtils.getRemoteImageUrl({ url: iconUrl, size: SIZE })
+    );
   }
 });
 
@@ -85,7 +91,7 @@ add_task(function nonUrlsYieldNull() {
     "//host/x",
   ]) {
     Assert.equal(
-      UrlbarUtils.getRemoteIconUrl(iconUrl, SIZE),
+      UrlbarUtils.getRemoteImageUrl({ url: iconUrl, size: SIZE }),
       null,
       `${iconUrl} is not a URL`
     );
@@ -99,7 +105,11 @@ add_task(function contentProcessViewTakesTheIconAsItIs() {
     "chrome://global/skin/icons/search-glass.svg",
   ]) {
     Assert.equal(
-      UrlbarUtils.getRemoteIconUrl(iconUrl, SIZE, CONTENT_CONTROLLER),
+      UrlbarUtils.getRemoteImageUrl({
+        url: iconUrl,
+        size: SIZE,
+        controller: CONTENT_CONTROLLER,
+      }),
       iconUrl,
       `${iconUrl} is used as it is`
     );
@@ -114,14 +124,22 @@ add_task(function contentProcessViewTakesTheIconAsItIs() {
     "http://example.com/favicon.ico",
   ]) {
     Assert.equal(
-      UrlbarUtils.getRemoteIconUrl(iconUrl, SIZE, CONTENT_CONTROLLER),
+      UrlbarUtils.getRemoteImageUrl({
+        url: iconUrl,
+        size: SIZE,
+        controller: CONTENT_CONTROLLER,
+      }),
       iconUrl,
       `${iconUrl} is used as it is`
     );
   }
 
   Assert.equal(
-    UrlbarUtils.getRemoteIconUrl("not a url", SIZE, CONTENT_CONTROLLER),
+    UrlbarUtils.getRemoteImageUrl({
+      url: "not a url",
+      size: SIZE,
+      controller: CONTENT_CONTROLLER,
+    }),
     null,
     "A string that isn't a URL is still rejected"
   );
@@ -129,7 +147,7 @@ add_task(function contentProcessViewTakesTheIconAsItIs() {
 
 add_task(function noSize() {
   let bareUrl = "https://example.com/no-size";
-  let wrappedUrl = UrlbarUtils.getRemoteIconUrl(bareUrl);
+  let wrappedUrl = UrlbarUtils.getRemoteImageUrl({ url: bareUrl });
   let parsedUrl = assertWrapped(bareUrl, wrappedUrl);
   Assert.ok(
     !parsedUrl.searchParams.has("size"),
