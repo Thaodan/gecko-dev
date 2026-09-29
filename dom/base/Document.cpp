@@ -2265,11 +2265,9 @@ void Document::ReportPageLoadEvent() {
 }
 
 void Document::AccumulatePageLoadTelemetry() {
-  // Interested only in top level documents for real websites that are in the
-  // foreground.
+  // Interested only in top level documents for real websites.
   if (!ShouldIncludeInTelemetry() || !IsTopLevelContentDocument() ||
-      !GetNavigationTiming() ||
-      !GetNavigationTiming()->DocShellHasBeenActiveSinceNavigationStart()) {
+      !GetNavigationTiming()) {
     return;
   }
 
@@ -2281,6 +2279,19 @@ void Document::AccumulatePageLoadTelemetry() {
   if (!timedChannel) {
     return;
   }
+
+  mPageLoadMetricsAccumulated = true;
+
+  // Whether the tab was foreground when the load event started. A background
+  // load is still reported, but its timings are inflated by throttling and
+  // deferred painting, so the histograms skip it and the event records the
+  // flag. A load that never reached its load event leaves the flag off the
+  // event, rather than claiming either way.
+  Maybe<bool> loadedInForeground = GetNavigationTiming()->LoadedInForeground();
+  if (loadedInForeground) {
+    mPageloadEventData.set_loadedInForeground(*loadedInForeground);
+  }
+  mPageLoadWasForeground = loadedInForeground.valueOr(false);
 
   bool isCacheHit = false;
   if (nsCOMPtr<nsICacheInfoChannel> cacheInfoChannel =
@@ -2395,22 +2406,9 @@ void Document::AccumulatePageLoadTelemetry() {
     }
   }
 
-  TimeStamp asyncOpen;
-  timedChannel->GetAsyncOpen(&asyncOpen);
-  if (asyncOpen) {
-    glean::perf::dns_first_byte.Get(dnsKey).AccumulateRawDuration(
-        responseStart - asyncOpen);
-  }
-
   // First Contentful Composite
   if (TimeStamp firstContentfulComposite =
           GetNavigationTiming()->GetFirstContentfulCompositeTimeStamp()) {
-    glean::performance_pageload::fcp.AccumulateRawDuration(
-        firstContentfulComposite - navigationStart);
-
-    glean::performance_pageload::fcp_responsestart.AccumulateRawDuration(
-        firstContentfulComposite - responseStart);
-
     TimeDuration fcpTime = firstContentfulComposite - navigationStart;
     if (fcpTime > zeroDuration) {
       mPageloadEventData.set_fcpTime(
@@ -2421,12 +2419,6 @@ void Document::AccumulatePageLoadTelemetry() {
   // Load event
   if (TimeStamp loadEventStart =
           GetNavigationTiming()->GetLoadEventStartTimeStamp()) {
-    glean::performance_pageload::load_time.AccumulateRawDuration(
-        loadEventStart - navigationStart);
-
-    glean::performance_pageload::load_time_responsestart.AccumulateRawDuration(
-        loadEventStart - responseStart);
-
     TimeDuration responseTime = responseStart - navigationStart;
     if (responseTime > zeroDuration) {
       mPageloadEventData.set_responseTime(
@@ -2466,6 +2458,36 @@ void Document::AccumulatePageLoadTelemetry() {
             static_cast<uint32_t>(tlsHandshakeTime.ToMilliseconds()));
       }
     }
+  }
+
+  // Our histograms remain gated on the page having loaded in the foreground.
+  if (!mPageLoadWasForeground) {
+    return;
+  }
+
+  TimeStamp asyncOpen;
+  timedChannel->GetAsyncOpen(&asyncOpen);
+  if (asyncOpen) {
+    glean::perf::dns_first_byte.Get(dnsKey).AccumulateRawDuration(
+        responseStart - asyncOpen);
+  }
+
+  if (TimeStamp firstContentfulComposite =
+          GetNavigationTiming()->GetFirstContentfulCompositeTimeStamp()) {
+    glean::performance_pageload::fcp.AccumulateRawDuration(
+        firstContentfulComposite - navigationStart);
+
+    glean::performance_pageload::fcp_responsestart.AccumulateRawDuration(
+        firstContentfulComposite - responseStart);
+  }
+
+  if (TimeStamp loadEventStart =
+          GetNavigationTiming()->GetLoadEventStartTimeStamp()) {
+    glean::performance_pageload::load_time.AccumulateRawDuration(
+        loadEventStart - navigationStart);
+
+    glean::performance_pageload::load_time_responsestart.AccumulateRawDuration(
+        loadEventStart - responseStart);
   }
 }
 
@@ -18173,10 +18195,14 @@ void Document::ReportLCP() {
     return;
   }
 
-  const nsDOMNavigationTiming* timing = GetNavigationTiming();
+  // These histograms cover foreground loads only, matching the ones recorded in
+  // AccumulatePageLoadTelemetry, which is where that was determined.
+  if (!mPageLoadMetricsAccumulated || !mPageLoadWasForeground) {
+    return;
+  }
 
-  if (!ShouldIncludeInTelemetry() || !IsTopLevelContentDocument() || !timing ||
-      !timing->DocShellHasBeenActiveSinceNavigationStart()) {
+  const nsDOMNavigationTiming* timing = GetNavigationTiming();
+  if (!timing) {
     return;
   }
 

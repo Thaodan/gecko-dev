@@ -5966,6 +5966,13 @@ class Document : public nsINode,
   // Collection of data used by the pageload event.
   PageloadEventData mPageloadEventData;
 
+  // Whether AccumulatePageLoadTelemetry() collected metrics, and whether the
+  // tab was foreground when the load event started. Background loads are still
+  // reported, but are left out of the paint and load timing histograms, as is
+  // a load whose load event never fired.
+  bool mPageLoadMetricsAccumulated = false;
+  bool mPageLoadWasForeground = false;
+
   // Submit the page load event at the end of the document's lifetime.
   void ReportPageLoadEvent();
 
