@@ -108,12 +108,6 @@
  */
 
 /**
- * @typedef {Window|ClosedTabsOptions} ClosedTabsScope
- *   The windows to include closed tabs from: a `ClosedTabsOptions` object, or
- *   a window as shorthand for `{ sourceWindow: window }`.
- */
-
-/**
  * @typedef {object} ClosedDataSourceOptions
  *   Identifies the window a closed tab or tab group was closed in.
  * @property {Window} [sourceWindow]
@@ -4033,7 +4027,7 @@ class _SessionStore {
   }
 
   /**
-   * @param {ClosedTabsScope} [aOptions]
+   * @param {ClosedTabsOptions} [aOptions]
    * @returns {ClosedTabsOptions}
    *   The options with every property filled in.
    */
@@ -4044,9 +4038,7 @@ class _SessionStore {
         closedTabsFromClosedWindows: this.#closedTabsFromClosedWindowsEnabled,
         sourceWindow: null,
       },
-      aOptions instanceof Ci.nsIDOMWindow
-        ? { sourceWindow: aOptions }
-        : aOptions
+      aOptions
     );
     if (!sourceOptions.sourceWindow) {
       sourceOptions.sourceWindow = this.#getTopWindow(sourceOptions.private);
@@ -4070,9 +4062,8 @@ class _SessionStore {
   /**
    * Get the number of closed tabs associated with all matching windows
    *
-   * @param {ClosedTabsScope} [aOptions]
-   *   A window, standing for `{ sourceWindow }`, or options selecting the
-   *   windows to count closed tabs from.
+   * @param {ClosedTabsOptions} [aOptions]
+   *   Options selecting the windows to count closed tabs from.
    */
   getClosedTabCount(aOptions) {
     const sourceOptions = this.#prepareClosedTabOptions(aOptions);
@@ -4125,9 +4116,8 @@ class _SessionStore {
   /**
    * Get the closed tab data associated with all matching windows
    *
-   * @param {ClosedTabsScope} [aOptions]
-   *   A window, standing for `{ sourceWindow }`, or options selecting the
-   *   windows to include closed tabs from.
+   * @param {ClosedTabsOptions} [aOptions]
+   *   Options selecting the windows to include closed tabs from.
    */
   getClosedTabData(aOptions) {
     const sourceOptions = this.#prepareClosedTabOptions(aOptions);
@@ -4171,9 +4161,8 @@ class _SessionStore {
   /**
    * Get the closed tab group data associated with all matching windows
    *
-   * @param {ClosedTabsScope} [aOptions]
-   *   A window, standing for `{ sourceWindow }`, or options selecting the
-   *   windows to include closed tab groups from.
+   * @param {ClosedTabsOptions} [aOptions]
+   *   Options selecting the windows to include closed tab groups from.
    * @returns {ClosedTabGroupStateData[]}
    */
   getClosedTabGroups(aOptions) {
