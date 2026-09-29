@@ -878,9 +878,6 @@ support-files = ["mediacapabilities_drm_utils.js"]
 ["test_mediatrack_consuming_mediastream.html"]
 scheme = "https"
 tags = "mtg"
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug", # TIMEOUT
-]
 
 ["test_mediatrack_replay_from_end.html"]
 
@@ -889,7 +886,6 @@ skip-if = [
 ["test_mixed_principals.html"]
 skip-if = [
   "os == 'android'", # bug 1309814, android(bug 1232305)
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # bug 1707737
 ]
 
 ["test_mkv_playback.html"]
@@ -906,9 +902,6 @@ skip-if = [
 ["test_mp4a_32bit_samplesize.html"] # bug 1924052
 
 ["test_multiple_mediastreamtracks.html"]
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # TIMEOUT
-]
 scheme = "https"
 
 ["test_networkconnection_spoofing.html"]
@@ -991,7 +984,6 @@ skip-if = [
 scheme = "https"
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && !fission",
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug", # Bug 1961557
 ]
 
 ["test_blob_from_arraybuffer_video_plays.html"]
