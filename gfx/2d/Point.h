@@ -15,6 +15,7 @@
 #include "BaseSize.h"
 #include "Coord.h"
 #include "Types.h"
+#include "fmt/ostream.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/gfx/NumericTools.h"
 
@@ -415,5 +416,18 @@ IntSizeTyped<Units> IntSizeTyped<Units>::Truncate(
 
 }  // namespace gfx
 }  // namespace mozilla
+
+template <class Units>
+struct fmt::formatter<mozilla::gfx::IntPointTyped<Units>>
+    : fmt::ostream_formatter {};
+template <class Units, class F>
+struct fmt::formatter<mozilla::gfx::PointTyped<Units, F>>
+    : fmt::ostream_formatter {};
+template <class Units>
+struct fmt::formatter<mozilla::gfx::IntSizeTyped<Units>>
+    : fmt::ostream_formatter {};
+template <class Units, class F>
+struct fmt::formatter<mozilla::gfx::SizeTyped<Units, F>>
+    : fmt::ostream_formatter {};
 
 #endif /* MOZILLA_GFX_POINT_H_ */
