@@ -23,6 +23,7 @@ support-files = [
   "file_bug2034329.html",
   "file_messagemanager_unload.html",
   "file_set_focus_after_reuse_bcg_1.html",
+  "file_redirect_before_load.html",
   "file_set_focus_after_reuse_bcg_2.html",
   "file_slow_document.sjs",
   "file_use_counter_bfcache.html",

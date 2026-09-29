@@ -5973,6 +5973,10 @@ class Document : public nsINode,
   bool mPageLoadMetricsAccumulated = false;
   bool mPageLoadWasForeground = false;
 
+  // Whether the load event fired. Tracked separately from loadTime, which is
+  // only set for a strictly positive duration.
+  bool mPageLoadCompleted = false;
+
   // Whether ReportPageLoadTelemetry() has already run for this document.
   bool mPageLoadTelemetryReported = false;
 

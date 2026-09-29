@@ -2096,14 +2096,18 @@ void Document::ReportPageLoadTelemetry() {
   }
   mPageLoadTelemetryReported = true;
 
+  // Catches documents never collected from: those whose load event never
+  // fired, and those hidden before LoadEventFired ran.
+  AccumulatePageLoadTelemetry();
+
   ReportPageLoadEvent();
   ReportLCP();
 }
 
 void Document::ReportPageLoadEvent() {
-  // If the page load time is empty, then the content wasn't something we want
-  // to report (i.e. not a top level document, or load never completed).
-  if (!mPageloadEventData.HasLoadTime()) {
+  // If we never collected any metrics, the content wasn't something we want to
+  // report (i.e. not a top level document).
+  if (!mPageLoadMetricsAccumulated) {
     return;
   }
   MOZ_ASSERT(IsTopLevelContentDocument());
@@ -2138,7 +2142,11 @@ void Document::ReportPageLoadEvent() {
   // hidden. LCP in particular keeps updating until first user interaction or
   // the page is hidden, so the value captured in AccumulatePageLoadTelemetry is
   // not necessarily final.
-  if (const nsDOMNavigationTiming* timing = GetNavigationTiming()) {
+  //
+  // A document replaced before its load event fired has an LCP that reads low,
+  // so report none for those.
+  if (const nsDOMNavigationTiming* timing =
+          mPageLoadCompleted ? GetNavigationTiming() : nullptr) {
     if (TimeStamp navigationStart = timing->GetNavigationStartTimeStamp()) {
       if (TimeStamp lcpTime = timing->GetLargestContentfulRenderTimeStamp()) {
         mPageloadEventData.set_lcpTime(static_cast<uint32_t>(
@@ -2277,6 +2285,12 @@ void Document::ReportPageLoadEvent() {
 }
 
 void Document::AccumulatePageLoadTelemetry() {
+  // Runs from the load event, and again at page hide for documents whose load
+  // event never fired. Only collect once.
+  if (mPageLoadMetricsAccumulated) {
+    return;
+  }
+
   // Interested only in top level documents for real websites.
   if (!ShouldIncludeInTelemetry() || !IsTopLevelContentDocument() ||
       !GetNavigationTiming()) {
@@ -2428,47 +2442,53 @@ void Document::AccumulatePageLoadTelemetry() {
     }
   }
 
-  // Load event
-  if (TimeStamp loadEventStart =
-          GetNavigationTiming()->GetLoadEventStartTimeStamp()) {
+  // These need only the response, so they remain valid for a document replaced
+  // before its load event fired.
+  if (responseStart) {
     TimeDuration responseTime = responseStart - navigationStart;
     if (responseTime > zeroDuration) {
       mPageloadEventData.set_responseTime(
           static_cast<uint32_t>(responseTime.ToMilliseconds()));
     }
+  }
+
+  TimeStamp requestStart;
+  timedChannel->GetRequestStart(&requestStart);
+  if (requestStart) {
+    TimeDuration timeToRequestStart = requestStart - navigationStart;
+    if (timeToRequestStart > zeroDuration) {
+      mPageloadEventData.set_timeToRequestStart(
+          static_cast<uint32_t>(timeToRequestStart.ToMilliseconds()));
+    } else {
+      // Speculative and pre-established connections may yield zero or
+      // slightly negative timeToRequestStart timings. We record these as zero
+      // to maintain consistent, non-negative timing data, while still
+      // capturing the impact of early connection establishment.
+      mPageloadEventData.set_timeToRequestStart(0);
+    }
+  }
+
+  TimeStamp secureConnectStart;
+  TimeStamp connectEnd;
+  timedChannel->GetSecureConnectionStart(&secureConnectStart);
+  timedChannel->GetConnectEnd(&connectEnd);
+  if (secureConnectStart && connectEnd) {
+    TimeDuration tlsHandshakeTime = connectEnd - secureConnectStart;
+    if (tlsHandshakeTime > zeroDuration) {
+      mPageloadEventData.set_tlsHandshakeTime(
+          static_cast<uint32_t>(tlsHandshakeTime.ToMilliseconds()));
+    }
+  }
+
+  // Load event. Absent when the document was replaced before it fired.
+  if (TimeStamp loadEventStart =
+          GetNavigationTiming()->GetLoadEventStartTimeStamp()) {
+    mPageLoadCompleted = true;
 
     TimeDuration loadTime = loadEventStart - navigationStart;
     if (loadTime > zeroDuration) {
       mPageloadEventData.set_loadTime(
           static_cast<uint32_t>(loadTime.ToMilliseconds()));
-    }
-
-    TimeStamp requestStart;
-    timedChannel->GetRequestStart(&requestStart);
-    if (requestStart) {
-      TimeDuration timeToRequestStart = requestStart - navigationStart;
-      if (timeToRequestStart > zeroDuration) {
-        mPageloadEventData.set_timeToRequestStart(
-            static_cast<uint32_t>(timeToRequestStart.ToMilliseconds()));
-      } else {
-        // Speculative and pre-established connections may yield zero or
-        // slightly negative timeToRequestStart timings. We record these as zero
-        // to maintain consistent, non-negative timing data, while still
-        // capturing the impact of early connection establishment.
-        mPageloadEventData.set_timeToRequestStart(0);
-      }
-    }
-
-    TimeStamp secureConnectStart;
-    TimeStamp connectEnd;
-    timedChannel->GetSecureConnectionStart(&secureConnectStart);
-    timedChannel->GetConnectEnd(&connectEnd);
-    if (secureConnectStart && connectEnd) {
-      TimeDuration tlsHandshakeTime = connectEnd - secureConnectStart;
-      if (tlsHandshakeTime > zeroDuration) {
-        mPageloadEventData.set_tlsHandshakeTime(
-            static_cast<uint32_t>(tlsHandshakeTime.ToMilliseconds()));
-      }
     }
   }
 
@@ -18212,8 +18232,10 @@ void Document::ReportLCP() {
   }
 
   // These histograms cover foreground loads only, matching the ones recorded in
-  // AccumulatePageLoadTelemetry, which is where that was determined.
-  if (!mPageLoadMetricsAccumulated || !mPageLoadWasForeground) {
+  // AccumulatePageLoadTelemetry, which is where that was determined. A load
+  // that never finished is left out too, since its LCP reads low.
+  if (!mPageLoadMetricsAccumulated || !mPageLoadWasForeground ||
+      !mPageLoadCompleted) {
     return;
   }
 

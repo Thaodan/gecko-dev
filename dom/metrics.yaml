@@ -58,6 +58,7 @@ perf:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2063750
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2064052
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2064064
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2064072
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1759744#c5
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1799727#c4
@@ -71,7 +72,8 @@ perf:
     extra_keys:
       load_time:
         description: |
-          Time between loadEventStart and navigationStart, in ms.
+          Time between loadEventStart and navigationStart, in ms. Absent when
+          the document was replaced before its load event fired.
         type: quantity
         unit: ms
       dns_lookup_time:
@@ -99,7 +101,8 @@ perf:
           Time between largestContentfulPaint and navigationStart, in ms.
           Recorded when the document is hidden, at which point the largest
           contentful paint is final, so it matches the value reported through
-          the LCP histogram.
+          the LCP histogram. Absent when the document was replaced before its
+          load event fired.
         type: quantity
         unit: ms
       js_exec_time:
@@ -292,6 +295,7 @@ perf:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2063750
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2064052
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2064064
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2064072
     data_reviews:
       - https://phabricator.services.mozilla.com/D250521
     notification_emails:
@@ -303,7 +307,8 @@ perf:
         description: |
           Time between largestContentfulPaint and navigationStart, in ms.
           Recorded when the document is hidden, at which point the largest
-          contentful paint is final.
+          contentful paint is final. Absent when the document was replaced
+          before its load event fired.
         type: quantity
         unit: ms
       load_type:
