@@ -105,8 +105,6 @@ ifdef XPI_NAME
 ACDEFINES += -DXPI_NAME=$(XPI_NAME)
 endif
 
-CC := $(CC_WRAPPER) $(CC)
-CXX := $(CXX_WRAPPER) $(CXX)
 MKDIR ?= mkdir
 SLEEP ?= sleep
 TOUCH ?= touch
