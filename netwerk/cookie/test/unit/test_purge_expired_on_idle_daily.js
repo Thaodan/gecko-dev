@@ -65,12 +65,11 @@ add_task(async function test_purge_expired_on_idle_daily() {
   );
 
   // The size-based purge in AddCookie() only runs once we are well over the
-  // cookie limit, so until idle-daily the expired cookie is still in the jar,
-  // but it is not exposed anymore.
+  // cookie limit, so until idle-daily the expired cookie is still in the jar.
   Assert.deepEqual(
     cookieNames(),
-    ["live"],
-    "The expired cookie is not exposed"
+    ["expiring", "live"],
+    "The expired cookie has not been purged yet"
   );
 
   const batchDeleted = waitForBatchDeleted();

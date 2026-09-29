@@ -60,7 +60,7 @@ class CookieStorage : public nsIObserver, public nsSupportsWeakReference {
 
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
-  enum class ExpiredCookies { Exclude, Include };
+  void GetCookies(nsTArray<RefPtr<nsICookie>>& aCookies) const;
 
   void GetSessionCookies(nsTArray<RefPtr<nsICookie>>& aCookies) const;
 
@@ -73,18 +73,19 @@ class CookieStorage : public nsIObserver, public nsSupportsWeakReference {
   uint32_t CountCookieBytesNotMatchingCookie(const Cookie& cookie,
                                              const nsACString& baseDomain);
 
-  void GetAll(nsTArray<RefPtr<nsICookie>>& aResult,
-              ExpiredCookies aExpired = ExpiredCookies::Exclude) const;
+  void GetAll(nsTArray<RefPtr<nsICookie>>& aResult) const;
 
   void GetCookiesFromHost(const nsACString& aBaseDomain,
                           const OriginAttributes& aOriginAttributes,
                           nsTArray<RefPtr<Cookie>>& aCookies);
 
-  bool HasCookies(const nsACString& aBaseDomain,
-                  const OriginAttributes& aOriginAttributes);
+  void ForEachCookie(const nsACString& aBaseDomain,
+                     const OriginAttributes& aOriginAttributes,
+                     const std::function<bool(Cookie*)>& aCallback);
 
-  bool HasCookies(const nsACString& aBaseDomain,
-                  const OriginAttributesPattern& aPattern);
+  void ForEachCookie(const nsACString& aBaseDomain,
+                     const OriginAttributesPattern& aPattern,
+                     const std::function<bool(Cookie*)>& aCallback);
 
   void GetCookiesWithOriginAttributes(const OriginAttributesPattern& aPattern,
                                       const nsACString& aBaseDomain,
@@ -187,12 +188,10 @@ class CookieStorage : public nsIObserver, public nsSupportsWeakReference {
 
   void Init();
 
-  bool FindCookieIncludingExpired(const nsACString& aBaseDomain,
-                                  const OriginAttributes& aOriginAttributes,
-                                  const nsACString& aHost,
-                                  const nsACString& aName,
-                                  const nsACString& aPath,
-                                  CookieListIter& aIter);
+  bool FindCookie(const nsACString& aBaseDomain,
+                  const OriginAttributes& aOriginAttributes,
+                  const nsACString& aHost, const nsACString& aName,
+                  const nsACString& aPath, CookieListIter& aIter);
 
   void AddCookieToList(const nsACString& aBaseDomain,
                        const OriginAttributes& aOriginAttributes,

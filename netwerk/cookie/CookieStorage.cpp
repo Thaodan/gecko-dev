@@ -158,17 +158,25 @@ size_t CookieStorage::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
   return amount;
 }
 
+void CookieStorage::GetCookies(nsTArray<RefPtr<nsICookie>>& aCookies) const {
+  aCookies.SetCapacity(mCookieCount);
+  for (const auto& entry : mHostTable) {
+    const CookieEntry::ArrayType& cookies = entry.GetCookies();
+    for (CookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
+      aCookies.AppendElement(cookies[i]);
+    }
+  }
+}
+
 void CookieStorage::GetSessionCookies(
     nsTArray<RefPtr<nsICookie>>& aCookies) const {
-  int64_t currentTimeInMSec = PR_Now() / PR_USEC_PER_MSEC;
-
   aCookies.SetCapacity(mCookieCount);
   for (const auto& entry : mHostTable) {
     const CookieEntry::ArrayType& cookies = entry.GetCookies();
     for (CookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
       Cookie* cookie = cookies[i];
-      // Filter out non-session and expired cookies.
-      if (cookie->IsSession() && !cookie->IsExpired(currentTimeInMSec)) {
+      // Filter out non-session cookies.
+      if (cookie->IsSession()) {
         aCookies.AppendElement(cookie);
       }
     }
@@ -181,24 +189,19 @@ already_AddRefed<Cookie> CookieStorage::FindCookie(
     const nsACString& aHost, const nsACString& aName, const nsACString& aPath) {
   CookieListIter iter{};
 
-  if (!FindCookieIncludingExpired(aBaseDomain, aOriginAttributes, aHost, aName,
-                                  aPath, iter)) {
+  if (!FindCookie(aBaseDomain, aOriginAttributes, aHost, aName, aPath, iter)) {
     return nullptr;
   }
 
   RefPtr<Cookie> cookie = iter.Cookie();
-  if (cookie->IsExpired()) {
-    return nullptr;
-  }
-
   return cookie.forget();
 }
 
-// find an exact cookie specified by host, name, and path, even if expired.
-bool CookieStorage::FindCookieIncludingExpired(
-    const nsACString& aBaseDomain, const OriginAttributes& aOriginAttributes,
-    const nsACString& aHost, const nsACString& aName, const nsACString& aPath,
-    CookieListIter& aIter) {
+// find an exact cookie specified by host, name, and path that hasn't expired.
+bool CookieStorage::FindCookie(const nsACString& aBaseDomain,
+                               const OriginAttributes& aOriginAttributes,
+                               const nsACString& aHost, const nsACString& aName,
+                               const nsACString& aPath, CookieListIter& aIter) {
   CookieEntry* entry =
       mHostTable.GetEntry(CookieKey(aBaseDomain, aOriginAttributes));
   if (!entry) {
@@ -254,10 +257,9 @@ bool CookieStorage::FindSecureCookie(const nsACString& aBaseDomain,
   return false;
 }
 
-bool CookieStorage::HasCookies(const nsACString& aBaseDomain,
-                               const OriginAttributesPattern& aPattern) {
-  int64_t currentTimeInMSec = PR_Now() / PR_USEC_PER_MSEC;
-
+void CookieStorage::ForEachCookie(
+    const nsACString& aBaseDomain, const OriginAttributesPattern& aPattern,
+    const std::function<bool(Cookie*)>& aCallback) {
   for (auto iter = mHostTable.Iter(); !iter.Done(); iter.Next()) {
     CookieEntry* entry = iter.Get();
 
@@ -270,47 +272,38 @@ bool CookieStorage::HasCookies(const nsACString& aBaseDomain,
     }
 
     for (Cookie* cookie : entry->GetCookies()) {
-      if (!cookie->IsExpired(currentTimeInMSec)) {
-        return true;
+      if (!aCallback(cookie)) {
+        return;
       }
     }
   }
-
-  return false;
 }
 
 uint32_t CookieStorage::CountCookieBytesNotMatchingCookie(
     const Cookie& cookie, const nsACString& baseDomain) {
-  CookieEntry* entry =
-      mHostTable.GetEntry(CookieKey(baseDomain, cookie.OriginAttributesRef()));
-  if (!entry) {
-    return 0;
-  }
+  nsTArray<RefPtr<Cookie>> cookies;
+  GetCookiesFromHost(baseDomain, cookie.OriginAttributesRef(), cookies);
 
   // count cookies with different name to the cookie being added
   uint32_t cookieBytes = 0;
-  for (Cookie* c : entry->GetCookies()) {
-    if (!cookie.Name().Equals(c->Name())) {
-      cookieBytes += c->NameAndValueBytes();
+  for (Cookie* c : cookies) {
+    nsAutoCString name;
+    nsAutoCString value;
+    c->GetName(name);
+    c->GetValue(value);
+    if (!cookie.Name().Equals(name)) {
+      cookieBytes += name.Length() + value.Length();
     }
   }
   return cookieBytes;
 }
 
-void CookieStorage::GetAll(nsTArray<RefPtr<nsICookie>>& aResult,
-                           ExpiredCookies aExpired) const {
-  int64_t currentTimeInMSec = PR_Now() / PR_USEC_PER_MSEC;
-
+void CookieStorage::GetAll(nsTArray<RefPtr<nsICookie>>& aResult) const {
   aResult.SetCapacity(mCookieCount);
 
   for (const auto& entry : mHostTable) {
     const CookieEntry::ArrayType& cookies = entry.GetCookies();
     for (CookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
-      if (aExpired == ExpiredCookies::Exclude &&
-          cookies[i]->IsExpired(currentTimeInMSec)) {
-        continue;
-      }
-
       aResult.AppendElement(cookies[i]);
     }
   }
@@ -326,37 +319,27 @@ void CookieStorage::GetCookiesFromHost(
   }
 
   aCookies = entry->GetCookies().Clone();
-
-  int64_t currentTimeInMSec = PR_Now() / PR_USEC_PER_MSEC;
-  aCookies.RemoveElementsBy([currentTimeInMSec](const RefPtr<Cookie>& aCookie) {
-    return aCookie->IsExpired(currentTimeInMSec);
-  });
 }
 
-bool CookieStorage::HasCookies(const nsACString& aBaseDomain,
-                               const OriginAttributes& aOriginAttributes) {
+void CookieStorage::ForEachCookie(
+    const nsACString& aBaseDomain, const OriginAttributes& aOriginAttributes,
+    const std::function<bool(Cookie*)>& aCallback) {
   CookieEntry* entry =
       mHostTable.GetEntry(CookieKey(aBaseDomain, aOriginAttributes));
   if (!entry) {
-    return false;
+    return;
   }
-
-  int64_t currentTimeInMSec = PR_Now() / PR_USEC_PER_MSEC;
 
   for (Cookie* cookie : entry->GetCookies()) {
-    if (!cookie->IsExpired(currentTimeInMSec)) {
-      return true;
+    if (!aCallback(cookie)) {
+      return;
     }
   }
-
-  return false;
 }
 
 void CookieStorage::GetCookiesWithOriginAttributes(
     const OriginAttributesPattern& aPattern, const nsACString& aBaseDomain,
     bool aSorted, nsTArray<RefPtr<nsICookie>>& aResult) {
-  int64_t currentTimeInMSec = PR_Now() / PR_USEC_PER_MSEC;
-
   for (auto iter = mHostTable.Iter(); !iter.Done(); iter.Next()) {
     CookieEntry* entry = iter.Get();
 
@@ -371,10 +354,6 @@ void CookieStorage::GetCookiesWithOriginAttributes(
     const CookieEntry::ArrayType& entryCookies = entry->GetCookies();
 
     for (CookieEntry::IndexType i = 0; i < entryCookies.Length(); ++i) {
-      if (entryCookies[i]->IsExpired(currentTimeInMSec)) {
-        continue;
-      }
-
       aResult.AppendElement(entryCookies[i]);
     }
   }
@@ -392,8 +371,8 @@ void CookieStorage::RemoveCookie(const nsACString& aBaseDomain,
                                  const nsID* aOperationID) {
   CookieListIter matchIter{};
   RefPtr<Cookie> cookie;
-  if (FindCookieIncludingExpired(aBaseDomain, aOriginAttributes, aHost, aName,
-                                 aPath, matchIter)) {
+  if (FindCookie(aBaseDomain, aOriginAttributes, aHost, aName, aPath,
+                 matchIter)) {
     cookie = matchIter.Cookie();
 
     // If the old cookie is httponly, make sure we're not coming from script.
@@ -727,9 +706,8 @@ void CookieStorage::AddCookie(CookieParser* aCookieParser,
 
   CookieListIter exactIter{};
   bool foundCookie = false;
-  foundCookie = FindCookieIncludingExpired(aBaseDomain, aOriginAttributes,
-                                           aCookie->Host(), aCookie->Name(),
-                                           aCookie->Path(), exactIter);
+  foundCookie = FindCookie(aBaseDomain, aOriginAttributes, aCookie->Host(),
+                           aCookie->Name(), aCookie->Path(), exactIter);
   bool foundSecureExact = foundCookie && exactIter.Cookie()->IsSecure();
   bool potentiallyTrustworthy = true;
   if (aHostURI) {

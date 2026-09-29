@@ -419,7 +419,7 @@ add_task(async function test_Cookies() {
 
     let uri = Services.io.newURI(TEST_ORIGIN);
     is(
-      Services.cookies.getCookiesFromHost(uri.host, {}).length,
+      Services.cookies.countCookiesFromHost(uri.host, {}),
       0,
       "Cookies from the base domain should be cleared"
     );

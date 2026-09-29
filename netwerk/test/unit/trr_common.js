@@ -819,12 +819,9 @@ async function test_builtin_excluded_domains_mode3() {
 
 async function count_cookies() {
   info("Check that none of the requests have set any cookies.");
+  Assert.equal(Services.cookies.countCookiesFromHost("example.com", {}), 0);
   Assert.equal(
-    Services.cookies.getCookiesFromHost("example.com", {}).length,
-    0
-  );
-  Assert.equal(
-    Services.cookies.getCookiesFromHost("foo.example.com.", {}).length,
+    Services.cookies.countCookiesFromHost("foo.example.com.", {}),
     0
   );
 }
