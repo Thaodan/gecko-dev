@@ -39,7 +39,7 @@ use tracy_rs::register_thread_with_profiler;
 use webrender::render_backend_pool::{PoolMemberSetup, RenderBackendPool};
 use webrender::sw_compositor::SwCompositor;
 use webrender::{
-    api::units::*, api::*, create_webrender_instance, render_api::*, set_profiler_hooks, AsyncPropertySampler, GlBackendConfig, GpuBackendConfig,
+    api::units::*, api::*, create_webrender_instance, render_api::*, set_profiler_hooks, AsyncPropertySampler, GpuBackendConfig,
     AsyncScreenshotHandle, ClipRadius, Compositor, CompositorCapabilities, CompositorConfig, CompositorInputConfig,
     CompositorKind, CompositorSurfaceTransform, CompositorSurfaceUsage, Device, DeviceOptions, FrameBuilderConfig,
     LayerCompositor,
@@ -1425,7 +1425,7 @@ fn wr_device_new(gl_context: *mut c_void, pc: Option<&mut WrProgramCache>) -> De
     let cached_programs = pc.map(|cached_programs| Rc::clone(cached_programs.rc_get()));
 
     Device::new(
-        GpuBackendConfig::Gl(GlBackendConfig::new(gl)),
+        GpuBackendConfig::Gl(gl),
         DeviceOptions {
             crash_annotator: Some(Box::new(MozCrashAnnotator)),
             resource_override_path,
@@ -1433,9 +1433,11 @@ fn wr_device_new(gl_context: *mut c_void, pc: Option<&mut WrProgramCache>) -> De
             upload_method,
             batched_upload_threshold: 512 * 512,
             cached_programs,
+            allow_texture_storage_support: true,
             allow_texture_swizzling: true,
             dump_shader_source: None,
             surface_origin_is_top_left: false,
+            panic_on_gl_error: false,
         },
     )
 }
@@ -2336,6 +2338,7 @@ pub extern "C" fn wr_window_new(
         surface_origin_is_top_left,
         compositor_config,
         enable_gpu_markers,
+        panic_on_gl_error,
         picture_tile_size,
         texture_cache_config,
         reject_software_rasterizer,
@@ -2348,11 +2351,7 @@ pub extern "C" fn wr_window_new(
 
     let window_size = DeviceIntSize::new(window_width, window_height);
     let notifier = Box::new(CppNotifier { window_id });
-    let backend = GpuBackendConfig::Gl(GlBackendConfig {
-        panic_on_error: panic_on_gl_error,
-        ..GlBackendConfig::new(gl)
-    });
-    let (renderer, sender) = match create_webrender_instance(backend, notifier, opts, shaders.map(|sh| &sh.shaders)) {
+    let (renderer, sender) = match create_webrender_instance(GpuBackendConfig::Gl(gl), notifier, opts, shaders.map(|sh| &sh.shaders)) {
         Ok((renderer, sender)) => (renderer, sender),
         Err(e) => {
             warn!(" Failed to create a Renderer: {:?}", e);
