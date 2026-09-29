@@ -166,6 +166,15 @@ const NOTIFY_SAVED_TAB_GROUPS_CHANGED = "sessionstore-saved-tab-groups-changed";
 const NOTIFY_TAB_RESTORED = "sessionstore-debug-tab-restored"; // WARNING: debug-only
 const NOTIFY_DOMWINDOWCLOSED_HANDLED =
   "sessionstore-debug-domwindowclosed-handled"; // WARNING: debug-only
+const NOTIFY_WINDOW_FEATURES_RESTORING =
+  "sessionstore-debug-window-features-restoring"; // WARNING: debug-only
+
+// These internal notifications let widget backends apply native policy while
+// SessionStore is opening the windows owned by a bulk restore. They are paired
+// per restore transaction and may be nested.
+const NOTIFY_BULK_WINDOW_RESTORE_START =
+  "sessionstore-bulk-window-restore-start";
+const NOTIFY_BULK_WINDOW_RESTORE_END = "sessionstore-bulk-window-restore-end";
 
 const NOTIFY_BROWSER_SHUTDOWN_FLUSH = "sessionstore-browser-shutdown-flush";
 
@@ -222,6 +231,167 @@ const CHROME_FLAGS_MAP = [
 const ARG_WEB_EXTENSION_POPUP_WINDOW = "web-extension-popup-window";
 /** Whether a window should be displayed with minimal chrome UI. */
 const ARG_CHROMELESS_WINDOW = "chromeless-window";
+
+// Opening hints must not become stable features of the restored window.
+const TRANSIENT_CHROME_FLAGS = Ci.nsIWebBrowserChrome.CHROME_SUPPRESS_ANIMATION;
+// `activate` is chrome-only. Capturing `focus` also covers top-level windows
+// whose document does not receive that event.
+const RESTORE_FOCUS_EVENTS = ["activate", "focus"];
+
+function canMoveFocusForRestore(
+  initialActiveWindow,
+  activeWindow,
+  restoreWindows
+) {
+  return (
+    activeWindow === initialActiveWindow || restoreWindows.has(activeWindow)
+  );
+}
+
+function didFocusMoveOutsideRestore(
+  previouslyMovedOutsideRestore,
+  initialActiveWindow,
+  activeWindow,
+  restoreWindows
+) {
+  return (
+    previouslyMovedOutsideRestore ||
+    !canMoveFocusForRestore(initialActiveWindow, activeWindow, restoreWindows)
+  );
+}
+
+function createWindowShowingAbortError() {
+  return new DOMException(
+    "The browser window closed before it was shown",
+    "AbortError"
+  );
+}
+
+function settleWindowShowingPromise(window, error = null) {
+  const deferred = WINDOW_SHOWING_PROMISES.get(window);
+  if (!deferred) {
+    return false;
+  }
+
+  // Delete first so that re-entrant observers cannot settle the same promise.
+  WINDOW_SHOWING_PROMISES.delete(window);
+  if (error) {
+    deferred.reject(error);
+  } else {
+    deferred.resolve(window);
+  }
+  return true;
+}
+
+function getWindowShowingPromise(window) {
+  return (
+    WINDOW_SHOWING_PROMISES.get(window)?.promise ??
+    Promise.reject(createWindowShowingAbortError())
+  );
+}
+
+class RestoreFocusTransaction {
+  constructor() {
+    this.initialActiveWindow = Services.focus.activeWindow;
+    this.targetWindow = null;
+    this.restoreWindows = null;
+    this.focusedWindows = new Set();
+    this.observedWindows = new Set();
+    this.focusMovedOutsideRestore = false;
+    this.restoreFailed = false;
+    this.finished = false;
+
+    for (let window of Services.wm.getEnumerator(null)) {
+      this.observeWindow(window);
+    }
+    Services.ww.registerNotification(this);
+    Services.obs.notifyObservers(null, NOTIFY_BULK_WINDOW_RESTORE_START);
+  }
+
+  handleEvent(event) {
+    const focusedWindow = event.currentTarget;
+    if (Services.focus.activeWindow != focusedWindow) {
+      return;
+    }
+    this.focusedWindows.add(focusedWindow);
+    if (this.restoreWindows) {
+      this.focusMovedOutsideRestore = didFocusMoveOutsideRestore(
+        this.focusMovedOutsideRestore,
+        this.initialActiveWindow,
+        focusedWindow,
+        this.restoreWindows
+      );
+    }
+  }
+
+  observe(window, topic) {
+    if (topic == "domwindowopened") {
+      this.observeWindow(window);
+    }
+  }
+
+  observeWindow(window) {
+    if (this.observedWindows.has(window)) {
+      return;
+    }
+    this.observedWindows.add(window);
+    for (let eventType of RESTORE_FOCUS_EVENTS) {
+      window.addEventListener(eventType, this, true);
+    }
+  }
+
+  sampleActiveWindow() {
+    if (this.restoreWindows) {
+      this.focusMovedOutsideRestore = didFocusMoveOutsideRestore(
+        this.focusMovedOutsideRestore,
+        this.initialActiveWindow,
+        Services.focus.activeWindow,
+        this.restoreWindows
+      );
+    }
+  }
+
+  setRestoreWindows(windows) {
+    this.restoreWindows = new Set(windows);
+    this.targetWindow = windows[0];
+    for (let focusedWindow of this.focusedWindows) {
+      this.focusMovedOutsideRestore = didFocusMoveOutsideRestore(
+        this.focusMovedOutsideRestore,
+        this.initialActiveWindow,
+        focusedWindow,
+        this.restoreWindows
+      );
+      if (this.focusMovedOutsideRestore) {
+        break;
+      }
+    }
+  }
+
+  markRestoreFailed() {
+    this.restoreFailed = true;
+  }
+
+  finish() {
+    if (this.finished) {
+      return;
+    }
+    this.finished = true;
+    try {
+      Services.ww.unregisterNotification(this);
+      for (let window of this.observedWindows) {
+        for (let eventType of RESTORE_FOCUS_EVENTS) {
+          window.removeEventListener(eventType, this, true);
+        }
+      }
+    } finally {
+      this.targetWindow = null;
+      this.restoreWindows = null;
+      this.focusedWindows.clear();
+      this.observedWindows.clear();
+      Services.obs.notifyObservers(null, NOTIFY_BULK_WINDOW_RESTORE_END);
+    }
+  }
+}
 
 /** @typedef {"web-extension-popup-window"|"chromeless-window"} WindowArgument */
 
@@ -1038,6 +1208,7 @@ class _SessionStore {
         );
         break;
       case "domwindowclosed": // catch closed windows
+        settleWindowShowingPromise(aSubject, createWindowShowingAbortError());
         this.#onClose(/** @type {ChromeWindow} */ (aSubject)).then(() => {
           this.#notifyOfClosedObjectsChange();
         });
@@ -1567,6 +1738,10 @@ class _SessionStore {
     // internal data about the window.
     aWindow.__SSi = this.#generateWindowID();
 
+    let chromeFlags = aWindow.docShell.treeOwner
+      .QueryInterface(Ci.nsIInterfaceRequestor)
+      .getInterface(Ci.nsIAppWindow).chromeFlags;
+
     // and create its data object
     this.#windows[aWindow.__SSi] = {
       tabs: [],
@@ -1581,9 +1756,7 @@ class _SessionStore {
       lastClosedTabGroupId: null,
       busy: false,
       /** @type {u32} */
-      chromeFlags: aWindow.docShell.treeOwner
-        .QueryInterface(Ci.nsIInterfaceRequestor)
-        .getInterface(Ci.nsIAppWindow).chromeFlags,
+      chromeFlags: (chromeFlags & ~TRANSIENT_CHROME_FLAGS) >>> 0,
       /** @type {WindowArgumentsState} */
       args: {},
     };
@@ -1868,16 +2041,12 @@ class _SessionStore {
       return;
     }
 
+    // Resolve before initialization work can throw. This promise represents
+    // the before-show notification itself, not successful initialization.
+    settleWindowShowingPromise(aWindow);
+
     // Register the window.
     this.#onLoad(aWindow);
-
-    // Some are waiting for this window to be shown, which is now, so let's resolve
-    // the deferred operation.
-    let deferred = WINDOW_SHOWING_PROMISES.get(aWindow);
-    if (deferred) {
-      deferred.resolve(aWindow);
-      WINDOW_SHOWING_PROMISES.delete(aWindow);
-    }
 
     // Just call #initializeWindow() directly if we're initialized already.
     if (this.#sessionInitialized) {
@@ -1967,15 +2136,33 @@ class _SessionStore {
     // this window was about to be restored - conserve its original data, if any
     let isFullyLoaded = this.#isWindowLoaded(aWindow);
     if (!isFullyLoaded) {
-      if (!aWindow.__SSi) {
-        aWindow.__SSi = this.#generateWindowID();
-      }
-
       let restoreID = WINDOW_RESTORE_IDS.get(aWindow);
-      this.#windows[aWindow.__SSi] =
-        this.#statesToRestore[restoreID].windows[0];
-      delete this.#statesToRestore[restoreID];
+      let restoreState = this.#statesToRestore[restoreID];
       WINDOW_RESTORE_IDS.delete(aWindow);
+      if (restoreID !== undefined) {
+        delete this.#statesToRestore[restoreID];
+      }
+      if (restoreState?.windows?.[0]) {
+        if (!aWindow.__SSi) {
+          aWindow.__SSi = this.#generateWindowID();
+        }
+        // #onLoad normally initializes the internal collections used by the
+        // close path. A raw restore state may omit empty collections, so merge
+        // it into any state #onLoad already created and supply the same defaults
+        // when the window closes before #restoreWindow() can consume it.
+        let windowData = Object.assign(
+          this.#windows[aWindow.__SSi] || {},
+          restoreState.windows[0]
+        );
+        windowData.groups ??= [];
+        windowData.closedGroups ??= [];
+        windowData._closedTabs ??= [];
+        windowData._lastClosedTabGroupCount ??= -1;
+        windowData.lastClosedTabGroupId ??= null;
+        // The close path owns the promoted data from here on.
+        delete windowData._restoring;
+        this.#windows[aWindow.__SSi] = windowData;
+      }
     }
 
     // ignore windows not tracked by SessionStore
@@ -3548,7 +3735,14 @@ class _SessionStore {
     var window = this.#getTopWindow();
     if (!window) {
       this.#restoreCount = 1;
-      this.#openWindowWithState(state);
+      let openedWindow = this.#openWindowWithState(state);
+      getWindowShowingPromise(openedWindow).catch(error => {
+        if (error.name == "AbortError") {
+          this.#sendRestoreCompletedNotifications();
+          return;
+        }
+        this.#log.error("Exception while opening a browser window:", error);
+      });
       return;
     }
 
@@ -4768,12 +4962,21 @@ class _SessionStore {
 
     let window = this.#openWindowWithState(state);
     this.#windowToFocus = window;
-    WINDOW_SHOWING_PROMISES.get(window).promise.then(win =>
-      this.#restoreWindows(win, state, {
-        overwriteTabs: true,
-        trigger: "undo_close",
-      })
-    );
+    getWindowShowingPromise(window)
+      .then(win =>
+        this.#restoreWindows(win, state, {
+          overwriteTabs: true,
+          trigger: "undo_close",
+        })
+      )
+      .catch(error => {
+        if (this.#windowToFocus == window) {
+          this.#windowToFocus = null;
+        }
+        if (error.name != "AbortError") {
+          this.#log.error("Exception while reopening a closed window:", error);
+        }
+      });
 
     // Notify of changes to closed objects.
     this.#notifyOfClosedObjectsChange();
@@ -5289,9 +5492,29 @@ class _SessionStore {
     }
 
     // Actually restore windows in reversed z-order.
-    this.#openWindows({ windows: windowsToOpen }).then(openedWindows =>
-      this.#restoreWindowsInReversedZOrder(openWindows.concat(openedWindows))
-    );
+    const focusTransaction = new RestoreFocusTransaction();
+    let openWindowsPromise;
+    try {
+      openWindowsPromise = this.#openWindows(
+        { windows: windowsToOpen },
+        focusTransaction
+      );
+    } catch (error) {
+      focusTransaction.finish();
+      throw error;
+    }
+    openWindowsPromise
+      .then(({ openedWindows, skippedWindowCount }) =>
+        this.#restoreWindowsInReversedZOrder(
+          openWindows.concat(openedWindows),
+          focusTransaction,
+          skippedWindowCount
+        )
+      )
+      .catch(error => {
+        focusTransaction.finish();
+        this.#log.error("Exception while restoring the last session:", error);
+      });
 
     if (this.#restoreWithoutRestart) {
       this.#removeDuplicateClosedWindows(lastSessionState);
@@ -5856,25 +6079,51 @@ class _SessionStore {
    *
    * @param {object} root
    *        Windows data
-   * @returns {Promise<Window[]>}
-   *          Resolved when all windows have been opened
+   * @param {RestoreFocusTransaction | null} [focusTransaction]
+   *        Transaction-local focus state, or null when opening a single window
+   *        that should be focused immediately
+   * @returns {Promise<{openedWindows: Window[], skippedWindowCount: number}>}
+   *          Opened windows and the number of skipped slots
    */
-  #openWindows(root) {
-    let windowsOpened = [];
+  #openWindows(root, focusTransaction = null) {
+    let windowOpenedPromises = [];
     for (let winData of root.windows) {
       if (!winData || !winData.tabs || !winData.tabs[0]) {
         this.#log.debug(`_openWindows, skipping window with no tabs data`);
-        this.#restoreCount--;
+        focusTransaction?.markRestoreFailed();
+        windowOpenedPromises.push(
+          Promise.reject(
+            new Error("Invalid session data for a window restore slot")
+          )
+        );
         continue;
       }
-      windowsOpened.push(this.#openWindowWithState({ windows: [winData] }));
+      try {
+        let openedWindow = this.#openWindowWithState({ windows: [winData] });
+        windowOpenedPromises.push(getWindowShowingPromise(openedWindow));
+      } catch (error) {
+        windowOpenedPromises.push(Promise.reject(error));
+      }
     }
-    let windowOpenedPromises = [];
-    for (const openedWindow of windowsOpened) {
-      let deferred = WINDOW_SHOWING_PROMISES.get(openedWindow);
-      windowOpenedPromises.push(deferred.promise);
-    }
-    return Promise.all(windowOpenedPromises);
+    // Do not reject while a previously opened window can still be waiting for
+    // its first show; keep the native restore lifecycle active until all work
+    // that was started by this transaction has settled.
+    return Promise.allSettled(windowOpenedPromises).then(results => {
+      let openedWindows = [];
+      let skippedWindowCount = 0;
+      for (let result of results) {
+        if (result.status == "fulfilled") {
+          openedWindows.push(result.value);
+        } else {
+          skippedWindowCount++;
+          focusTransaction?.markRestoreFailed();
+          if (result.reason?.name != "AbortError") {
+            this.#log.error("Exception while opening a window:", result.reason);
+          }
+        }
+      }
+      return { openedWindows, skippedWindowCount };
+    });
   }
 
   /**
@@ -6267,43 +6516,192 @@ class _SessionStore {
    *
    * @param {Window[]} windows
    *        ordered array of windows to restore
+   * @param focusTransaction
+   *        transaction-local focus state, or null when opening a single window
+   *        that should be focused immediately
+   * @param skippedWindowCount
+   *        number of requested windows that could not be opened
    */
-  #restoreWindowsFeaturesAndTabs(windows) {
+  #restoreWindowsFeaturesAndTabs(
+    windows,
+    focusTransaction,
+    skippedWindowCount = 0
+  ) {
     // First, we restore window features, so that when users start interacting
     // with a window, we don't steal the window focus.
-    let resizePromises = [];
-    for (let window of windows) {
-      let state = this.#statesToRestore[WINDOW_RESTORE_IDS.get(window)];
-      // Wait for these promises after we've restored data into them below.
-      resizePromises.push(
-        this.#restoreWindowFeatures(window, state.windows[0], state.options)
-      );
-    }
+    let restoreRecords = windows.map(window => {
+      let restoreID = WINDOW_RESTORE_IDS.get(window);
+      let state = this.#statesToRestore[restoreID];
+      let isLiveAndTracked =
+        !window.closed &&
+        !!window.__SSi &&
+        !!this.#windows[window.__SSi] &&
+        !!state?.windows?.[0];
+      if (!isLiveAndTracked) {
+        focusTransaction?.markRestoreFailed();
+        return {
+          window,
+          restoreID,
+          state: null,
+          featurePromise: Promise.resolve(window),
+          restoreSucceeded: false,
+        };
+      }
 
-    // Then we restore data into windows.
-    for (let window of windows) {
-      let state = this.#statesToRestore[WINDOW_RESTORE_IDS.get(window)];
-      this.#restoreWindow(
-        window,
-        state.windows[0],
-        state.options || { overwriteTabs: true }
-      );
-      WINDOW_RESTORE_ZINDICES.delete(window);
-    }
-    for (let resizePromise of resizePromises) {
-      resizePromise.then(resizedWindow => {
-        this.#setWindowStateReady(resizedWindow);
-
-        this.#sendWindowRestoredNotification(resizedWindow);
-
-        Services.obs.notifyObservers(
-          resizedWindow,
-          NOTIFY_SINGLE_WINDOW_RESTORED
+      let featurePromise;
+      try {
+        featurePromise = this.#restoreWindowFeatures(
+          window,
+          state.windows[0],
+          state.options,
+          focusTransaction
         );
+      } catch (error) {
+        featurePromise = Promise.reject(error);
+      }
+      return {
+        window,
+        restoreID,
+        state,
+        featurePromise,
+        restoreSucceeded: false,
+      };
+    });
 
-        this.#sendRestoreCompletedNotifications();
-      });
+    // Restore each live window independently. Losing or failing one window must
+    // neither make a later survivor look ready nor prevent restoring it.
+    for (let record of restoreRecords) {
+      let { window, restoreID, state } = record;
+      if (!state) {
+        continue;
+      }
+      if (
+        window.closed ||
+        !window.__SSi ||
+        !this.#windows[window.__SSi] ||
+        WINDOW_RESTORE_IDS.get(window) != restoreID ||
+        this.#statesToRestore[restoreID] != state
+      ) {
+        focusTransaction?.markRestoreFailed();
+        continue;
+      }
+
+      try {
+        this.#restoreWindow(
+          window,
+          state.windows[0],
+          state.options || { overwriteTabs: true }
+        );
+        WINDOW_RESTORE_ZINDICES.delete(window);
+        record.restoreSucceeded = true;
+      } catch (error) {
+        focusTransaction?.markRestoreFailed();
+        this.#log.error("Exception while restoring window data:", error);
+      }
     }
+
+    // A window becomes ready after its data restoration and after its own
+    // feature promise settles. Feature failures remain non-fatal for a live
+    // restored window, but they suppress the bulk transaction's final focus.
+    let notifyWindowRestored = (record, restoredWindow, canMoveFocus) => {
+      if (!record.restoreSucceeded) {
+        return;
+      }
+      if (
+        restoredWindow.closed ||
+        !restoredWindow.__SSi ||
+        !this.#windows[restoredWindow.__SSi]
+      ) {
+        focusTransaction?.markRestoreFailed();
+        return;
+      }
+
+      if (canMoveFocus && !focusTransaction && this.#windowToFocus) {
+        this.#windowToFocus.focus();
+      }
+      this.#setWindowStateReady(restoredWindow);
+      this.#sendWindowRestoredNotification(restoredWindow);
+      Services.obs.notifyObservers(
+        restoredWindow,
+        NOTIFY_SINGLE_WINDOW_RESTORED
+      );
+    };
+
+    let featurePromises = restoreRecords.map(record =>
+      record.featurePromise.then(
+        resizedWindow => {
+          notifyWindowRestored(record, resizedWindow, true);
+          return resizedWindow;
+        },
+        error => {
+          this.#log.error("Exception while restoring window features:", error);
+          focusTransaction?.markRestoreFailed();
+          notifyWindowRestored(record, record.window, true);
+          throw error;
+        }
+      )
+    );
+
+    let featureResultsPromise = Promise.allSettled(featurePromises);
+    let focusPromise = featureResultsPromise.then(async results => {
+      const failedRestore = results.find(result => result.status == "rejected");
+      if (failedRestore) {
+        this.#log.error(
+          "Exception while restoring a window before focusing:",
+          failedRestore.reason
+        );
+        return;
+      }
+      if (focusTransaction?.restoreFailed) {
+        return;
+      }
+      if (!focusTransaction) {
+        return;
+      }
+
+      // Window managers can deliver activation changes caused by the final
+      // geometry restore after its promise resolves. Give the native event
+      // loop a turn before deciding whether the restore still owns focus.
+      await new Promise(resolve => Services.tm.dispatchToMainThread(resolve));
+      if (focusTransaction.restoreFailed) {
+        return;
+      }
+
+      const { initialActiveWindow, targetWindow, restoreWindows } =
+        focusTransaction;
+      const activeWindow = Services.focus.activeWindow;
+      // Native window management can temporarily activate one of the windows
+      // being restored. Move focus to the restore target unless an unrelated
+      // window has become active in the meantime.
+      const focusCanMoveWithinRestore = canMoveFocusForRestore(
+        initialActiveWindow,
+        activeWindow,
+        restoreWindows
+      );
+      const canFinalizeTargetFocus =
+        !focusTransaction.focusMovedOutsideRestore &&
+        focusCanMoveWithinRestore &&
+        targetWindow &&
+        !targetWindow.closed;
+      if (canFinalizeTargetFocus) {
+        if (activeWindow != targetWindow) {
+          targetWindow.focus();
+        }
+        lazy.BrowserWindowTracker.recordWindowActivation(targetWindow);
+      }
+    });
+    let lifecyclePromise = Promise.allSettled([focusPromise]).finally(() => {
+      try {
+        focusTransaction?.finish();
+      } finally {
+        let completedWindowCount = featurePromises.length + skippedWindowCount;
+        for (let i = 0; i < completedWindowCount; ++i) {
+          this.#sendRestoreCompletedNotifications();
+        }
+      }
+    });
+
+    return lifecyclePromise;
   }
 
   /**
@@ -6312,16 +6710,33 @@ class _SessionStore {
    *
    * @param {Window[]} windows
    *        unordered array of windows to restore
+   * @param focusTransaction
+   *        transaction-local focus state, or null when opening a single window
+   *        that should be focused immediately
+   * @param skippedWindowCount
+   *        number of requested windows that could not be opened
    */
-  #restoreWindowsInReversedZOrder(windows) {
+  #restoreWindowsInReversedZOrder(
+    windows,
+    focusTransaction,
+    skippedWindowCount = 0
+  ) {
     windows.sort(
       (a, b) =>
         (WINDOW_RESTORE_ZINDICES.get(a) || 0) -
         (WINDOW_RESTORE_ZINDICES.get(b) || 0)
     );
 
-    this.#windowToFocus = windows[0];
-    this.#restoreWindowsFeaturesAndTabs(windows);
+    if (focusTransaction) {
+      focusTransaction.setRestoreWindows(windows);
+    } else {
+      this.#windowToFocus = windows[0];
+    }
+    return this.#restoreWindowsFeaturesAndTabs(
+      windows,
+      focusTransaction,
+      skippedWindowCount
+    );
   }
 
   /**
@@ -6420,14 +6835,32 @@ class _SessionStore {
 
     // Begin the restoration: First open all windows in creation order. After all
     // windows have opened, we restore states to windows in reversed z-order.
-    this.#openWindows(root).then(windows => {
-      // We want to add current window to opened window, so that this window will be
-      // restored in reversed z-order. (We add the window to first position, in case
-      // no z-indices are found, that window will be restored first.)
-      windows.unshift(aWindow);
+    const focusTransaction =
+      aOptions.trigger == "undo_close" ? null : new RestoreFocusTransaction();
+    let openWindowsPromise;
+    try {
+      openWindowsPromise = this.#openWindows(root, focusTransaction);
+    } catch (error) {
+      focusTransaction?.finish();
+      throw error;
+    }
+    openWindowsPromise
+      .then(({ openedWindows, skippedWindowCount }) => {
+        // We want to add current window to opened window, so that this window will be
+        // restored in reversed z-order. (We add the window to first position, in case
+        // no z-indices are found, that window will be restored first.)
+        openedWindows.unshift(aWindow);
 
-      this.#restoreWindowsInReversedZOrder(windows);
-    });
+        return this.#restoreWindowsInReversedZOrder(
+          openedWindows,
+          focusTransaction,
+          skippedWindowCount
+        );
+      })
+      .catch(error => {
+        focusTransaction?.finish();
+        this.#log.error("Exception while restoring windows:", error);
+      });
 
     lazy.DevToolsShim.restoreDevToolsSession(aState);
   }
@@ -6823,8 +7256,16 @@ class _SessionStore {
    *        Object containing session data for the window
    * @param {object} [aOptions]
    *        Options for the restoration
+   * @param {RestoreFocusTransaction | null} [focusTransaction]
+   *        Transaction-local focus state, or null when opening a single window
+   *        that should be focused immediately
    */
-  #restoreWindowFeatures(aWindow, aWinData, aOptions = {}) {
+  #restoreWindowFeatures(
+    aWindow,
+    aWinData,
+    aOptions = {},
+    focusTransaction = null
+  ) {
     // A restored window keeps its saved type: Classic stays Classic and Smart
     // stays Smart, for both automatic (startup.page=3 / crash) and manual
     // "Restore previous session" restores.
@@ -6852,28 +7293,62 @@ class _SessionStore {
 
     let promiseParts = Promise.withResolvers();
     const wasMinimized = aWindow.windowState == aWindow.STATE_MINIMIZED;
-    aWindow.setTimeout(() => {
-      // A minimization that happened while this callback was pending is
-      // newer than the saved window state. In particular, this avoids
-      // undoing a user-initiated "show desktop" operation.
-      const minimizedWhilePending =
-        !wasMinimized && aWindow.windowState == aWindow.STATE_MINIMIZED;
-      if (minimizedWhilePending) {
-        promiseParts.resolve(aWindow);
-        return;
-      }
+    Services.tm.dispatchToMainThread(async () => {
+      try {
+        if (gDebuggingEnabled) {
+          let blockers = [];
+          let subject = {
+            wrappedJSObject: {
+              window: aWindow,
+              addBlocker(promise) {
+                blockers.push(Promise.resolve(promise));
+              },
+            },
+          };
+          Services.obs.notifyObservers(
+            subject,
+            NOTIFY_WINDOW_FEATURES_RESTORING
+          );
+          await Promise.all(blockers);
+        }
 
-      this.#restoreDimensions(
-        aWindow,
-        +(aWinData.width || 0),
-        +(aWinData.height || 0),
-        "screenX" in aWinData ? +aWinData.screenX : NaN,
-        "screenY" in aWinData ? +aWinData.screenY : NaN,
-        aWinData.sizemode || "",
-        aWinData.sizemodeBeforeMinimized || ""
-      );
-      promiseParts.resolve(aWindow);
-    }, 0);
+        // The window can close while this task or a debug blocker is waiting.
+        // There is no native state left to update; resolve normally so the
+        // caller can account for the closed restore record without reporting a
+        // feature-restoration error.
+        if (aWindow.closed || !aWindow.__SSi || !this.#windows[aWindow.__SSi]) {
+          focusTransaction?.markRestoreFailed();
+          promiseParts.resolve(aWindow);
+          return;
+        }
+
+        // A minimization that happened while this callback was pending is
+        // newer than the saved window state. In particular, this avoids
+        // undoing a user-initiated "show desktop" operation.
+        const minimizedWhilePending =
+          !wasMinimized && aWindow.windowState == aWindow.STATE_MINIMIZED;
+        if (minimizedWhilePending) {
+          promiseParts.resolve(aWindow);
+          return;
+        }
+
+        // Remember focus moving to another application before native window
+        // management can activate one of the windows being restored.
+        focusTransaction?.sampleActiveWindow();
+        this.#restoreDimensions(
+          aWindow,
+          +(aWinData.width || 0),
+          +(aWinData.height || 0),
+          "screenX" in aWinData ? +aWinData.screenX : NaN,
+          "screenY" in aWinData ? +aWinData.screenY : NaN,
+          aWinData.sizemode || "",
+          aWinData.sizemodeBeforeMinimized || ""
+        );
+        promiseParts.resolve(aWindow);
+      } catch (error) {
+        promiseParts.reject(error);
+      }
+    });
     return promiseParts.promise;
   }
 
@@ -7061,11 +7536,6 @@ class _SessionStore {
             aWindow.restore();
             break;
         }
-      }
-      // since resizing/moving a window brings it to the foreground,
-      // we might want to re-focus the last focused window
-      if (this.#windowToFocus) {
-        this.#windowToFocus.focus();
       }
     } finally {
       // Enable animations.
@@ -7356,7 +7826,16 @@ class _SessionStore {
       args
     );
 
+    // openWindow() may synchronously return a window that has already closed.
+    // In that case there is no future before-show notification to wait for;
+    // callers turn the missing entry into a handled AbortError.
+    if (window.closed) {
+      return window;
+    }
     this.#updateWindowRestoreState(window, aState);
+    if (window.closed) {
+      return window;
+    }
     WINDOW_SHOWING_PROMISES.set(window, Promise.withResolvers());
 
     return window;
