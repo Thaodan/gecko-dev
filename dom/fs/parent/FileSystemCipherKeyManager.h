@@ -7,6 +7,8 @@
 
 #include "mozilla/dom/quota/CipherKeyManager.h"
 #include "mozilla/dom/quota/NSSRandomAccessCipherStrategy.h"
+#include "nsLiteralString.h"
+#include "nsStringFwd.h"
 
 namespace mozilla::dom::fs {
 
@@ -14,6 +16,11 @@ using FileSystemCipherStrategy = quota::NSSRandomAccessCipherStrategy;
 using FileSystemCipherKeyManager =
     quota::CipherKeyManager<FileSystemCipherStrategy>;
 using FileSystemCipherKey = FileSystemCipherStrategy::KeyType;
+
+/**
+ * Key id of the metadata database's key.
+ */
+constexpr nsLiteralCString kDatabaseCipherKeyId = "database"_ns;
 
 }  // namespace mozilla::dom::fs
 

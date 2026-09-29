@@ -68,9 +68,16 @@ Result<quota::UsageInfo, nsresult> FileSystemQuotaClient::InitOrigin(
     }
   }
 
+  Maybe<FileSystemCipherKey> maybeCipherKey;
+  if (const RefPtr<FileSystemCipherKeyManager> cipherKeyManager =
+          GetOrCreateCipherKeyManager(aOriginMetadata)) {
+    maybeCipherKey = Some(cipherKeyManager->Ensure(kDatabaseCipherKeyId));
+  }
+
   QM_TRY_INSPECT(
       const ResultConnection& conn,
-      data::GetStorageConnection(aOriginMetadata, /* aDirectoryLockId */ -1)
+      data::GetStorageConnection(aOriginMetadata,
+                                 /* aDirectoryLockId */ -1, maybeCipherKey)
           .mapErr(toNSResult));
 
   QM_TRY(MOZ_TO_RESULT(

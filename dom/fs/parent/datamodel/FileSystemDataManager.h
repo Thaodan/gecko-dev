@@ -54,7 +54,8 @@ Result<EntryId, QMResult> GetEntryHandle(
 
 Result<ResultConnection, QMResult> GetStorageConnection(
     const quota::OriginMetadata& aOriginMetadata,
-    const int64_t aDirectoryLockId);
+    const int64_t aDirectoryLockId,
+    const Maybe<FileSystemCipherKey>& aMaybeCipherKey);
 
 // The assertion type must be the same as the assertion type used for defining
 // FileSystemDataManagerHashKey in FileSystemDataManager.cpp!

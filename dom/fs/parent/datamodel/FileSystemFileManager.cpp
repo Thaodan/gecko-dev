@@ -207,7 +207,8 @@ Result<nsCOMPtr<nsIFile>, QMResult> GetDatabaseFile(
  */
 Result<nsCOMPtr<nsIFileURL>, QMResult> GetDatabaseFileURL(
     const quota::OriginMetadata& aOriginMetadata,
-    const int64_t aDirectoryLockId) {
+    const int64_t aDirectoryLockId,
+    const Maybe<FileSystemCipherKey>& aMaybeCipherKey) {
   MOZ_ASSERT(aDirectoryLockId >= -1);
 
   QM_TRY_UNWRAP(nsCOMPtr<nsIFile> databaseFile,
@@ -237,10 +238,25 @@ Result<nsCOMPtr<nsIFileURL>, QMResult> GetDatabaseFileURL(
   const nsCString directoryLockIdClause =
       "&directoryLockId="_ns + IntToCString(aDirectoryLockId);
 
+  // A key makes mozStorage open the database through mozilla::storage::obfsvfs.
+  // See ObfuscatingVFS.cpp for the details.
+  const auto keyClause = [&aMaybeCipherKey] {
+    nsAutoCString keyClause;
+    if (aMaybeCipherKey) {
+      keyClause.AssignLiteral("&key=");
+      for (uint8_t byte :
+           FileSystemCipherStrategy::SerializeKey(*aMaybeCipherKey)) {
+        keyClause.AppendPrintf("%02x", byte);
+      }
+    }
+    return keyClause;
+  }();
+
   nsCOMPtr<nsIFileURL> result;
-  QM_TRY(QM_TO_RESULT(NS_MutateURI(mutator)
-                          .SetQuery("cache=private"_ns + directoryLockIdClause)
-                          .Finalize(result)));
+  QM_TRY(QM_TO_RESULT(
+      NS_MutateURI(mutator)
+          .SetQuery("cache=private"_ns + directoryLockIdClause + keyClause)
+          .Finalize(result)));
 
   return result;
 }
