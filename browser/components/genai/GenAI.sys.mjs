@@ -431,7 +431,7 @@ export const GenAI = {
       ...extraContext,
       entry,
       provider: lazy.chatProvider,
-      tabTitle: (tab?._labelIsContentTitle && tab?.label) || "",
+      tabTitle: (tab?.labelIsContentTitle && tab.label) || "",
       url: uri?.asciiHost + uri?.filePath,
       window,
     };

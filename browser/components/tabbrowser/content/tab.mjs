@@ -67,6 +67,12 @@ export class MozTabbrowserTab extends MozElements.MozTab {
      */
     this.muteReason = undefined;
 
+    /**
+     * Whether the tab's label is the title of the page, as opposed to its URL
+     * or a placeholder.
+     */
+    this.labelIsContentTitle = false;
+
     this.closing = false;
 
     /**
@@ -97,12 +103,6 @@ export class MozTabbrowserTab extends MozElements.MozTab {
     this.predecessors;
     /** @type {boolean} */
     this.initializingTab;
-    /** @type {string} */
-    this._fullLabel;
-    /** @type {boolean} */
-    this._labelIsContentTitle;
-    /** @type {boolean} */
-    this._labelIsInitialTitle;
   }
 
   static get inheritedAttributes() {

@@ -372,6 +372,12 @@ export class Tabbrowser {
   /** @type {WeakSet<MozTabbrowserTab>} */
   static #tabsJoiningAdoptedSplitView = new WeakSet();
 
+  /** @type {WeakSet<MozTabbrowserTab>} */
+  static #tabsWithInitialTitle = new WeakSet();
+
+  /** @type {WeakMap<MozTabbrowserTab, string>} */
+  static #fullLabels = new WeakMap();
+
   /** @type {WeakMap<MozTabbrowserTab, MozTabbrowserTab>} */
   #lastRelatedTabMap = new WeakMap();
 
@@ -1784,7 +1790,7 @@ export class Tabbrowser {
     }
 
     let tab = this.getTabForBrowser(browser);
-    if (tab._labelIsContentTitle) {
+    if (tab.labelIsContentTitle) {
       // Strip out any null bytes in the content title, since the
       // underlying widget implementations of nsWindow::SetTitle pass
       // null-terminated strings to system APIs.
@@ -2442,7 +2448,7 @@ export class Tabbrowser {
 
     if (aTitle) {
       if (!aTab.getAttribute("label")) {
-        aTab._labelIsInitialTitle = true;
+        Tabbrowser.#tabsWithInitialTitle.add(aTab);
       }
 
       this.#setTabLabel(aTab, aTitle, {
@@ -2485,11 +2491,11 @@ export class Tabbrowser {
 
     // Don't replace an initially set label with the URL while the tab
     // is loading.
-    if (aTab._labelIsInitialTitle) {
+    if (Tabbrowser.#tabsWithInitialTitle.has(aTab)) {
       if (!title) {
         return false;
       }
-      delete aTab._labelIsInitialTitle;
+      Tabbrowser.#tabsWithInitialTitle.delete(aTab);
     }
 
     let isURL = false;
@@ -2583,7 +2589,7 @@ export class Tabbrowser {
       aLabel = aLabel.substring(0, 500) + "\u2026";
     }
 
-    aTab._fullLabel = aLabel;
+    Tabbrowser.#fullLabels.set(aTab, aLabel);
 
     if (!isContentTitle) {
       // Remove protocol and "www."
@@ -2595,7 +2601,7 @@ export class Tabbrowser {
       aLabel = aLabel.substring(0, TAB_LABEL_MAX_LENGTH);
     }
 
-    aTab._labelIsContentTitle = isContentTitle;
+    aTab.labelIsContentTitle = !!isContentTitle;
 
     if (aTab.getAttribute("label") == aLabel) {
       return false;
@@ -9507,7 +9513,9 @@ export class Tabbrowser {
   getTabTooltip(tab, includeLabel = true) {
     let labelArray = [];
     if (includeLabel) {
-      labelArray.push(tab._fullLabel || tab.getAttribute("label"));
+      labelArray.push(
+        Tabbrowser.#fullLabels.get(tab) || tab.getAttribute("label")
+      );
     }
     if (Tabbrowser.prefs.showPidAndActiveness) {
       const pids = this.getTabPids(tab);
