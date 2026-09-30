@@ -9,17 +9,19 @@ const AUTH_TYPE = {
 };
 
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
-import { MigrationUtils } from "resource:///modules/MigrationUtils.sys.mjs";
-import { MigratorBase } from "resource:///modules/MigratorBase.sys.mjs";
+import { MigrationUtils } from "moz-src:///browser/components/migration/MigrationUtils.sys.mjs";
+import { MigratorBase } from "moz-src:///browser/components/migration/MigratorBase.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  ChromeMigrationUtils: "resource:///modules/ChromeMigrationUtils.sys.mjs",
+  ChromeMigrationUtils:
+    "moz-src:///browser/components/migration/ChromeMigrationUtils.sys.mjs",
   FormHistory: "resource://gre/modules/FormHistory.sys.mjs",
   NetUtil: "resource://gre/modules/NetUtil.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
-  Qihoo360seMigrationUtils: "resource:///modules/360seMigrationUtils.sys.mjs",
+  Qihoo360seMigrationUtils:
+    "moz-src:///browser/components/migration/360seMigrationUtils.sys.mjs",
   MigrationWizardConstants:
     "chrome://browser/content/migration/migration-wizard-constants.mjs",
 });
@@ -477,14 +479,14 @@ export class ChromeProfileMigrator extends MigratorBase {
         try {
           if (AppConstants.platform == "win") {
             let { ChromeWindowsLoginCrypto } = ChromeUtils.importESModule(
-              "resource:///modules/ChromeWindowsLoginCrypto.sys.mjs"
+              "moz-src:///browser/components/migration/ChromeWindowsLoginCrypto.sys.mjs"
             );
             loginCrypto = new ChromeWindowsLoginCrypto(
               _chromeUserDataPathSuffix
             );
           } else if (AppConstants.platform == "macosx") {
             let { ChromeMacOSLoginCrypto } = ChromeUtils.importESModule(
-              "resource:///modules/ChromeMacOSLoginCrypto.sys.mjs"
+              "moz-src:///browser/components/migration/ChromeMacOSLoginCrypto.sys.mjs"
             );
             loginCrypto = new ChromeMacOSLoginCrypto(
               _keychainServiceName,
@@ -647,14 +649,14 @@ export class ChromeProfileMigrator extends MigratorBase {
         try {
           if (AppConstants.platform == "win") {
             let { ChromeWindowsLoginCrypto } = ChromeUtils.importESModule(
-              "resource:///modules/ChromeWindowsLoginCrypto.sys.mjs"
+              "moz-src:///browser/components/migration/ChromeWindowsLoginCrypto.sys.mjs"
             );
             loginCrypto = new ChromeWindowsLoginCrypto(
               _chromeUserDataPathSuffix
             );
           } else if (AppConstants.platform == "macosx") {
             let { ChromeMacOSLoginCrypto } = ChromeUtils.importESModule(
-              "resource:///modules/ChromeMacOSLoginCrypto.sys.mjs"
+              "moz-src:///browser/components/migration/ChromeMacOSLoginCrypto.sys.mjs"
             );
             loginCrypto = new ChromeMacOSLoginCrypto(
               _keychainServiceName,
