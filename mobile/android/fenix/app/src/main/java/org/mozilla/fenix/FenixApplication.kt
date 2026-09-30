@@ -6,8 +6,10 @@ package org.mozilla.fenix
 
 import android.app.ActivityManager
 import android.app.Application
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Build.VERSION.SDK_INT
 import android.os.StrictMode
@@ -109,6 +111,7 @@ import org.mozilla.fenix.GleanMetrics.SearchDefaultEngineForPrivate
 import org.mozilla.fenix.GleanMetrics.TabStrip
 import org.mozilla.fenix.GleanMetrics.TermsOfUse
 import org.mozilla.fenix.GleanMetrics.UserAiSummarize
+import org.mozilla.fenix.autofill.AutofillService
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.Core
 import org.mozilla.fenix.components.appstate.AppAction
@@ -499,6 +502,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         queueIntegrityClientWarmUp(queue)
         queueNimbusFetchInForeground(queue)
         queueDownloadWallpapers(queue)
+        queueUpdateAutofillServiceState(queue)
 
         if (components.settings.enableFxSuggest) {
             queueSuggestIngest(queue)
@@ -619,6 +623,13 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
             }
         }
 
+    private fun queueUpdateAutofillServiceState(queue: RunWhenReadyQueue) =
+        runOnVisualCompleteness(queue) {
+            applicationScope.launch(ioDispatcher) {
+                updateAutofillServiceState()
+            }
+        }
+
     private fun queueStorageMaintenance(queue: RunWhenReadyQueue) =
         runOnVisualCompleteness(queue) {
             // Make sure GlobalPlacesDependencyProvider.initialize(components.core.historyStorage)
@@ -717,6 +728,26 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
     private fun maybeSetupIPProtection() {
         components.ipProtection.feature.initialize()
         components.ipProtection.storageSynchronizer.initialize()
+    }
+
+    /**
+     * Registers or unregisters [AutofillService] so the application is only offered as an Android autofill service on
+     * devices where autofill is supported. The component enabled state is persisted by the system across application
+     * updates, so it has to be restored when autofill becomes supported again. Third party autofill services are
+     * unaffected.
+     */
+    private fun updateAutofillServiceState() {
+        val service = ComponentName(this, AutofillService::class.java)
+        val state =
+            if (components.settings.isAutofillSupported) {
+                PackageManager.COMPONENT_ENABLED_STATE_DEFAULT
+            } else {
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+            }
+
+        if (packageManager.getComponentEnabledSetting(service) != state) {
+            packageManager.setComponentEnabledSetting(service, state, PackageManager.DONT_KILL_APP)
+        }
     }
 
     private fun setupCrashReporting(): CrashReporter {
