@@ -637,11 +637,62 @@ void MacroAssemblerX64::boxValue(Register type, Register src, Register dest) {
   orq(src, dest);
 }
 
+void MacroAssemblerX64::unwindToShadowStackPtr(Register newShstkPtr,
+                                               Register scratch) {
+  MOZ_ASSERT(newShstkPtr != scratch);
+
+  Label done;
+  // Check that CET shadow stack is currently enabled before unwinding.
+  // On Linux, there is also the possibility that shadow stack has been disabled
+  // for the current thread between entering the failure handler tail and now.
+  // We skip the unwinding and continue executing in that case too.
+  moveShadowStackPtrTo(scratch);
+  asMasm().branchTestPtr(Assembler::Zero, scratch, scratch, &done);
+
+  asMasm().branchPtr(Assembler::Equal, newShstkPtr, scratch, &done);
+  Label unwind;
+  asMasm().branchPtr(Assembler::Above, newShstkPtr, scratch, &unwind);
+  asMasm().assumeUnreachable("Cannot unwind to a lower shadow stack pointer");
+
+  bind(&unwind);
+  // INCSSPQ increments the shadow stack pointer in units of 8-byte entries.
+  subq(scratch, newShstkPtr);
+  shrq(Imm32(3), newShstkPtr);
+  Register numShstkEntries = newShstkPtr;
+
+  // INCSSPQ uses only the low eight bits of its operand. So we pop up to 255
+  // shadow stack frames at a time.
+  Label loop;
+  Label last;
+  bind(&loop);
+
+  asMasm().branchPtr(Assembler::BelowOrEqual, numShstkEntries, ImmWord(255),
+                     &last);
+  move32(Imm32(255), scratch);
+  incsspq(scratch);
+  subq(scratch, numShstkEntries);
+  jump(&loop);
+
+  bind(&last);
+  incsspq(numShstkEntries);
+  bind(&done);
+}
+
 void MacroAssemblerX64::handleFailureWithHandlerTail(
     Label* profilerExitTail, Label* bailoutTail,
     uint32_t* returnValueCheckOffset) {
   // Reserve space for exception information.
   subq(Imm32(sizeof(ResumeFromException)), rsp);
+
+#ifdef JS_HW_SHADOW_STACK
+  // Read the shadow stack pointer on entry to the failure handler so
+  // that the exception handling logic knows the shadow stack entry
+  // corresponding to where JIT/WASM frame iteration begins.
+  moveShadowStackPtrTo(rax);
+  storePtr(rax,
+           Address(rsp, ResumeFromException::offsetOfShadowStackPointer()));
+#endif
+
   movq(rsp, rax);
 
   // Call the handler.
@@ -652,6 +703,13 @@ void MacroAssemblerX64::handleFailureWithHandlerTail(
       ABIType::General, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
 
   *returnValueCheckOffset = asMasm().currentOffset();
+
+#ifdef JS_HW_SHADOW_STACK
+  // HandleException replaces the shadow stack pointer read above on entry with
+  // the new shadow stack pointer corresponding to the target handler.
+  loadPtr(Address(rsp, ResumeFromException::offsetOfShadowStackPointer()), rax);
+  unwindToShadowStackPtr(rax, rcx);
+#endif
 
   Label entryFrame;
   Label catch_;
