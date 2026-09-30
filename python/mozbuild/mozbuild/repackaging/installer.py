@@ -10,6 +10,7 @@ import zipfile
 import mozpack.path as mozpath
 
 from mozbuild.action.exe_7z_archive import archive_exe
+from mozbuild.build_markers import build_marker
 from mozbuild.dirutils import ensureParentDir
 
 
@@ -30,13 +31,23 @@ def repackage_installer(
     output = mozpath.realpath(output)
     ensureParentDir(output)
 
+    with build_marker("InstallerRepackage", output):
+        _repackage_installer(
+            tag, setupexe, package, output, package_name, sfx_stub, use_upx, topsrcdir
+        )
+
+
+def _repackage_installer(
+    tag, setupexe, package, output, package_name, sfx_stub, use_upx, topsrcdir
+):
     tmpdir = tempfile.mkdtemp()
     old_cwd = os.getcwd()
     try:
         if package:
-            z = zipfile.ZipFile(package)
-            z.extractall(tmpdir)
-            z.close()
+            with build_marker("InstallerUnzip", package):
+                z = zipfile.ZipFile(package)
+                z.extractall(tmpdir)
+                z.close()
 
         # Copy setup.exe into the root of the install dir, alongside the
         # package.
