@@ -68,7 +68,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ToolUI: "moz-src:///browser/components/aiwindow/ui/modules/ToolUI.sys.mjs",
   CONFIRMATION_UI_TYPES:
     "moz-src:///browser/components/aiwindow/ui/modules/ToolUI.sys.mjs",
-  isTabGroupMember: "chrome://browser/content/urlbar/SmartbarMentionUtils.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "fluentStrings", () => {
@@ -1067,11 +1066,7 @@ export class ChatConversation extends Conversation {
     const lastUserMsg = this.messages.findLast(
       m => m?.role === MESSAGE_ROLE.USER
     );
-    return (
-      lastUserMsg?.content?.contextMentions?.filter(
-        m => !lazy.isTabGroupMember(m)
-      ).length ?? 0
-    );
+    return lastUserMsg?.content?.contextMentions?.length ?? 0;
   }
 
   /**

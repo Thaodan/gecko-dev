@@ -4,10 +4,6 @@
 
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import {
-  CONTEXT_MENTION_TYPE,
-  getTabGroupMentionId,
-} from "chrome://browser/content/urlbar/SmartbarMentionUtils.mjs";
-import {
   html,
   nothing,
   repeat,
@@ -88,10 +84,9 @@ export class WebsiteChipContainer extends SmartwindowOverflowRowMixin(
   }
 
   #onOverflowItemSelected(event) {
-    const { id: url, type } = event.detail ?? {};
+    const url = event.detail?.id;
     this.#panel()?.hide();
-    // A tab group row has an id so the panel can key it, but no page to open.
-    if (!url || type == CONTEXT_MENTION_TYPE.TAB_GROUP) {
+    if (!url) {
       return;
     }
     this.dispatchEvent(
@@ -109,11 +104,7 @@ export class WebsiteChipContainer extends SmartwindowOverflowRowMixin(
       new CustomEvent("ai-website-chip:remove", {
         bubbles: true,
         composed: true,
-        detail: {
-          url: website.url,
-          groupId: website.groupId,
-          label: website.label,
-        },
+        detail: { url: website.url, label: website.label },
       })
     );
   }
@@ -123,10 +114,8 @@ export class WebsiteChipContainer extends SmartwindowOverflowRowMixin(
       .type=${this.chipType}
       .size=${this.chipSize}
       .label=${website.label}
-      .href=${website.url ?? ""}
+      .href=${website.url}
       .iconSrc=${website.iconSrc ?? ""}
-      .isTabGroup=${website.type == CONTEXT_MENTION_TYPE.TAB_GROUP}
-      .tabGroupColor=${website.color ?? ""}
       .removable=${this.removable}
       @ai-website-chip:remove=${e => this.#onRemoveWebsite(website, e)}
     ></ai-website-chip>`;
@@ -183,11 +172,9 @@ export class WebsiteChipContainer extends SmartwindowOverflowRowMixin(
             .groups=${[
               {
                 items: overflow.map(website => ({
-                  id: website.url ?? getTabGroupMentionId(website.groupId),
-                  type: website.type,
+                  id: website.url,
                   label: website.label,
                   icon: website.iconSrc,
-                  color: website.color,
                 })),
               },
             ]}

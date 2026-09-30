@@ -14,15 +14,6 @@ import {
 import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
 import * as UrlbarContentUtils from "chrome://browser/content/urlbar/UrlbarContentUtils.mjs";
 import UrlbarPrefs from "chrome://browser/content/urlbar/UrlbarContentPrefs.mjs";
-import {
-  CONTEXT_MENTION_TYPE,
-  getContextMentionKey,
-} from "chrome://browser/content/urlbar/SmartbarMentionUtils.mjs";
-
-/**
- * @import {ContextMentionType} from "chrome://browser/content/urlbar/SmartbarMentionUtils.mjs"
- * @import {TabGroupColor} from "chrome://browser/content/tabbrowser/tabgroup.mjs"
- */
 
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/smartwindow-smartbar-glow.mjs";
@@ -108,11 +99,11 @@ let getBoundsWithoutFlushing = element =>
 let px = number => number.toFixed(2) + "px";
 
 /**
- * A tab used as chat context.
+ * A website context entry used to render website chips.
  *
- * @typedef {object} ContextWebsiteTab
- * @property {Exclude<ContextMentionType, "tabGroup">} type
- *   The source kind.
+ * @typedef {object} ContextWebsite
+ * @property {string} type
+ *   The source kind; tab|currentTab
  * @property {string} url
  *   URL of the website.
  * @property {string} label
@@ -122,27 +113,7 @@ let px = number => number.toFixed(2) + "px";
  *   via `getIconForUrl`.
  * @property {boolean} [historyDeleted]
  *   Whether the URL has been removed from browsing history.
- * @property {string} [groupId]
- *   Id of the tab group the tab was expanded from.
- * @property {string} [groupLabel]
- *   Label of that tab group.
  */
-
-/**
- * An open tab group used as chat context.
- *
- * @typedef {object} ContextTabGroup
- * @property {typeof CONTEXT_MENTION_TYPE.TAB_GROUP} type
- *   The source kind.
- * @property {string} groupId
- *   Id of the tab group.
- * @property {string} label
- *   Label of the tab group.
- * @property {TabGroupColor} [color]
- *   Unset once the group is closed.
- */
-
-/** @typedef {ContextWebsiteTab | ContextTabGroup} ContextWebsite */
 
 const MAX_CONTEXT_WEBSITES = 5;
 
@@ -1585,8 +1556,8 @@ ${
 
     // Handle website chip remove events.
     if (event.type === "ai-website-chip:remove") {
-      const { url, groupId } = /** @type {CustomEvent} */ (event).detail;
-      this.removeContextMention(groupId ?? url);
+      const { url } = /** @type {CustomEvent} */ (event).detail;
+      this.removeContextMention(url);
       const { chat_id, message_seq } = this.conversationTelemetryInfo;
       Glean.smartWindow.removeTab.record({
         chat_id,
@@ -7407,10 +7378,7 @@ ${
 
     const seen = new Set();
     return candidates
-      .filter(site => {
-        const key = getContextMentionKey(site);
-        return key && !seen.has(key) && seen.add(key);
-      })
+      .filter(site => site.url && !seen.has(site.url) && seen.add(site.url))
       .slice(0, MAX_CONTEXT_WEBSITES);
   }
 
@@ -7498,10 +7466,9 @@ ${
    * @param {ContextWebsite} site
    */
   #ensureWebsiteIcon(site) {
-    if (site.type == CONTEXT_MENTION_TYPE.TAB_GROUP || site.iconSrc) {
-      return;
+    if (!site.iconSrc) {
+      site.iconSrc = site.url ? UrlbarShared.getIconForUrl(site.url) : "";
     }
-    site.iconSrc = site.url ? UrlbarShared.getIconForUrl(site.url) : "";
   }
 
   // Cache the container reference to avoid repeated querySelector calls
@@ -7539,20 +7506,23 @@ ${
   }
 
   /**
-   * Add a tab or tab group to the context chips, once per mention key.
+   * Add a website to the context chips.
    *
-   * @param {ContextWebsite} mention
+   * @param {object} mention - The mention to add
+   * @param {string} mention.type - The type of context
+   * @param {string} mention.url - The mention URL
+   * @param {string} mention.label - The mention label
+   * @param {string} [mention.iconSrc] - The mention icon source
    */
   addContextMention(mention) {
-    const key = getContextMentionKey(mention);
-    if (
-      !key ||
-      this.#contextWebsites.some(site => getContextMentionKey(site) == key)
-    ) {
+    const hasMention = this.#contextWebsites.some(
+      site => site.url === mention.url
+    );
+    if (hasMention) {
       return;
     }
 
-    if (mention.url && this.#removedImplicitTabUrl == mention.url) {
+    if (this.#removedImplicitTabUrl == mention.url) {
       this.#removedImplicitTabUrl = null;
       this.#contextWebsites = [mention, ...this.#contextWebsites];
     } else {
@@ -7569,22 +7539,19 @@ ${
   /**
    * Remove a context mention.
    *
-   * @param {string} urlOrGroupId - Tab URL or tab group id
+   * @param {string} url - The URL of the mention
    */
-  removeContextMention(urlOrGroupId) {
+  removeContextMention(url) {
     const originalLength = this.#contextWebsites.length;
-    this.#contextWebsites = this.#contextWebsites.filter(site =>
-      site.type == CONTEXT_MENTION_TYPE.TAB_GROUP
-        ? site.groupId != urlOrGroupId
-        : site.url != urlOrGroupId
+    this.#contextWebsites = this.#contextWebsites.filter(
+      site => site.url !== url
     );
 
     const isCurrentTab =
       this.#isSidebarMode &&
-      this.window.gBrowser.selectedTab.linkedBrowser.currentURI?.spec ==
-        urlOrGroupId;
+      this.window.gBrowser.selectedTab.linkedBrowser.currentURI?.spec == url;
     if (isCurrentTab) {
-      this.#removedImplicitTabUrl = urlOrGroupId;
+      this.#removedImplicitTabUrl = url;
     }
 
     if (this.#contextWebsites.length !== originalLength || isCurrentTab) {

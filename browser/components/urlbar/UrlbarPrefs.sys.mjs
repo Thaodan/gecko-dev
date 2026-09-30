@@ -273,11 +273,6 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // The maximum number of tab mentions the Smartbar suggests.
   ["mentions.maxResults", 5],
 
-  // The maximum number of tab group mentions the Smartbar suggests. Capped
-  // separately from mentions.maxResults so groups and tabs are limited
-  // independently.
-  ["mentions.maxGroupResults", 5],
-
   // Comma-separated list of client variants to send to Merino
   ["merino.clientVariants", ""],
 

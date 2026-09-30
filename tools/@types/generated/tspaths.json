@@ -49,9 +49,6 @@
       "chrome://browser/content/aiwindow/components/ai-website-chip.mjs": [
         "../../../browser/components/aiwindow/ui/components/ai-website-chip/ai-website-chip.mjs"
       ],
-      "chrome://browser/content/aiwindow/components/tab-group-icon.mjs": [
-        "../../../browser/components/aiwindow/ui/components/tab-group-icon/tab-group-icon.mjs"
-      ],
       "chrome://browser/content/aiwindow/components/ai-website-confirmation.mjs": [
         "../../../browser/components/aiwindow/ui/components/ai-website-confirmation/ai-website-confirmation.mjs"
       ],
@@ -468,9 +465,6 @@
       ],
       "chrome://browser/content/urlbar/SmartbarInputUtils.mjs": [
         "../../../browser/components/urlbar/content/SmartbarInputUtils.mjs"
-      ],
-      "chrome://browser/content/urlbar/SmartbarMentionUtils.mjs": [
-        "../../../browser/components/urlbar/content/SmartbarMentionUtils.mjs"
       ],
       "chrome://browser/content/urlbar/UrlbarChildController.mjs": [
         "../../../browser/components/urlbar/content/UrlbarChildController.mjs"

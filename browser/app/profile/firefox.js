@@ -477,10 +477,6 @@ pref("browser.urlbar.loglevel", "Error");
 // The maximum number of mentions to show.
 pref("browser.urlbar.mentions.maxResults", 5);
 
-// The maximum number of tab groups to show in the mentions panel. Capped
-// separately from maxResults so groups and tabs are limited independently.
-pref("browser.urlbar.mentions.maxGroupResults", 5);
-
 // the maximum number of results to show in autocomplete when doing richResults
 pref("browser.urlbar.maxRichResults", 10);
 

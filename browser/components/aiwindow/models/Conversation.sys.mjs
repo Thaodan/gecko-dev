@@ -499,8 +499,6 @@ export class Conversation {
   /**
    * Gets any URL mentioned in the conversation. These URLs have heightened security
    * permissions as they have been explicitly added to the conversation by the user.
-   * Tabs mentioned as part of a tab group were not picked individually, so they
-   * are left out.
    *
    * @returns {Set<string>}
    */
@@ -510,10 +508,8 @@ export class Conversation {
     for (const message of this.messages) {
       const { contextMentions } = message.content;
       if (contextMentions) {
-        for (const { url, groupId } of contextMentions) {
-          if (url && !groupId) {
-            mentionUrls.add(url);
-          }
+        for (const { url } of contextMentions) {
+          mentionUrls.add(url);
         }
       }
     }
