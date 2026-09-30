@@ -84,6 +84,12 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UI_UPDATE_TYPES:
     "moz-src:///browser/components/aiwindow/ui/modules/ToolUI.sys.mjs",
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
+  CONTEXT_MENTION_TYPE:
+    "chrome://browser/content/urlbar/SmartbarMentionUtils.mjs",
+  getContextMentionKey:
+    "chrome://browser/content/urlbar/SmartbarMentionUtils.mjs",
+  parseTabGroupMentionId:
+    "chrome://browser/content/urlbar/SmartbarMentionUtils.mjs",
   SmartWindowTelemetry:
     "moz-src:///browser/components/aiwindow/ui/modules/SmartWindowTelemetry.sys.mjs",
   ResumeActivity:
@@ -100,6 +106,7 @@ ChromeUtils.defineLazyGetter(lazy, "log", function () {
 
 /**
  * @import { SmartbarAction } from "chrome://browser/content/aiwindow/components/input-cta/input-cta.mjs"
+ * @import { TabGroupColor } from "chrome://browser/content/tabbrowser/tabgroup.mjs"
  */
 
 /**
@@ -1989,36 +1996,64 @@ export class AIWindow extends MozLitElement {
 
   /**
    * Merges "+" button chip mentions with inline "@" mentions, deduplicating
-   * by URL, and returns the combined list plus the full set of URLs.
+   * by mention key and returns the combined list as well as the
+   * mentioned URLs.
    *
    * @param {ContextWebsite[]} contextMentions - Chip mentions from the smartbar
    * @returns {{mergedMentions: ContextWebsite[], allUrls: Set<string>, inlineMentions: Array}}
    */
   #calculateCurrentMentions(contextMentions) {
-    const contextUrls = new Set();
+    const seenKeys = new Set();
+    const allUrls = new Set();
     for (const mention of contextMentions) {
+      const key = lazy.getContextMentionKey(mention);
+      if (key) {
+        seenKeys.add(key);
+      }
       if (mention.url) {
-        contextUrls.add(mention.url);
+        allUrls.add(mention.url);
       }
     }
 
     const inlineMentions = this.#getInlineMentions();
     const atMentions = [];
     for (const mention of inlineMentions) {
-      if (mention.id && !contextUrls.has(mention.id)) {
-        atMentions.push({
-          type: mention.type,
-          url: mention.id,
-          label: mention.label,
-          iconSrc: lazy.UrlbarShared.getIconForUrl(mention.id),
-        });
-        contextUrls.add(mention.id);
+      if (!mention.id || seenKeys.has(mention.id)) {
+        continue;
       }
+      seenKeys.add(mention.id);
+
+      const groupId = lazy.parseTabGroupMentionId(mention.id);
+      if (groupId) {
+        atMentions.push({
+          type: lazy.CONTEXT_MENTION_TYPE.TAB_GROUP,
+          groupId,
+          label: mention.label,
+          color: this.#getTabGroupColor(groupId),
+        });
+        continue;
+      }
+
+      atMentions.push({
+        type: mention.type,
+        url: mention.id,
+        label: mention.label,
+        iconSrc: lazy.UrlbarShared.getIconForUrl(mention.id),
+      });
+      allUrls.add(mention.id);
     }
 
     const mergedMentions = [...contextMentions, ...atMentions];
 
-    return { mergedMentions, allUrls: contextUrls, inlineMentions };
+    return { mergedMentions, allUrls, inlineMentions };
+  }
+
+  /**
+   * @param {string} groupId
+   * @returns {TabGroupColor|undefined} Color of the open tab group
+   */
+  #getTabGroupColor(groupId) {
+    return this.#topChromeWindow.gBrowser.getTabGroupById(groupId)?.color;
   }
 
   /**

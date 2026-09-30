@@ -509,7 +509,9 @@ export class Conversation {
       const { contextMentions } = message.content;
       if (contextMentions) {
         for (const { url } of contextMentions) {
-          mentionUrls.add(url);
+          if (url) {
+            mentionUrls.add(url);
+          }
         }
       }
     }

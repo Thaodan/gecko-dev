@@ -2,6 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/**
+ * @import {TabGroupColor} from "chrome://browser/content/tabbrowser/tabgroup.mjs"
+ */
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -93,7 +97,7 @@ export class SmartbarMentionsPanelSearch {
    * filtered by TabManagementService using the same rules as the tab list, and
    * groups left with no visible tabs are omitted.
    *
-   * @returns {Array<{id: string, label: string, color: string}>}
+   * @returns {Array<{id: string, label: string, color: TabGroupColor}>}
    */
   getTabGroups() {
     return lazy.tabManagementService.getTabGroups({

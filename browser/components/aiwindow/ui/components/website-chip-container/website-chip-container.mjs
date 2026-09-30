@@ -104,7 +104,11 @@ export class WebsiteChipContainer extends SmartwindowOverflowRowMixin(
       new CustomEvent("ai-website-chip:remove", {
         bubbles: true,
         composed: true,
-        detail: { url: website.url, label: website.label },
+        detail: {
+          url: website.url,
+          groupId: website.groupId,
+          label: website.label,
+        },
       })
     );
   }
