@@ -109,7 +109,6 @@ class RenderCompositorANGLE final : public RenderCompositor {
                   wr::DeviceIntRect aRoundedClipRect,
                   wr::ClipRadius aClipRadius) override;
   bool EnableAsyncScreenshot() override;
-  void GetCompositorCapabilities(CompositorCapabilities* aCaps) override;
   void GetWindowProperties(WindowProperties* aProperties) override;
 
   // Interface for partial present
