@@ -73,8 +73,6 @@ export class MozTabbrowserTab extends MozElements.MozTab {
     // type checking only; these lines assign nothing.
     /** @type {MozBrowser} */
     this.linkedBrowser;
-    /** @type {object} */
-    this.permanentKey;
     /** @type {MozTabbrowserTab|null} */
     this.successor;
     /** @type {Set<MozTabbrowserTab>} */
@@ -280,6 +278,16 @@ export class MozTabbrowserTab extends MozElements.MozTab {
     return this.hasAttribute("usercontextid")
       ? parseInt(this.getAttribute("usercontextid"))
       : 0;
+  }
+
+  /**
+   * The permanent key of the tab's browser, or undefined once the tab has
+   * been closed.
+   *
+   * @type {object|undefined}
+   */
+  get permanentKey() {
+    return this.linkedBrowser?.permanentKey;
   }
 
   get soundPlaying() {

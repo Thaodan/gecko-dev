@@ -798,7 +798,6 @@ export class Tabbrowser {
     tab.linkedPanel = uniqueId;
     this.#selectedTab = tab;
     this.#selectedBrowser = browser;
-    tab.permanentKey = browser.permanentKey;
     tab._index = 0;
     tab.linkedBrowser = browser;
 
@@ -4724,7 +4723,6 @@ export class Tabbrowser {
     tab.linkedBrowser = b;
 
     this.#tabForBrowser.set(b, tab);
-    tab.permanentKey = b.permanentKey;
     tab._browserParams = {
       uriIsAboutBlank,
       remoteType,
@@ -7417,8 +7415,6 @@ export class Tabbrowser {
     // Make sure to unregister any open URIs.
     Tabbrowser.#swapRegisteredOpenURIs(ourBrowser, aOtherBrowser);
 
-    let remoteBrowser = aOtherBrowser.documentGlobal.gBrowser;
-
     // If switcher is active, it will intercept swap events and
     // react as needed.
     if (!this._switcher) {
@@ -7446,13 +7442,6 @@ export class Tabbrowser {
     let ourPermanentKey = ourBrowser.permanentKey;
     ourBrowser.permanentKey = aOtherBrowser.permanentKey;
     aOtherBrowser.permanentKey = ourPermanentKey;
-    aOurTab.permanentKey = ourBrowser.permanentKey;
-    if (remoteBrowser) {
-      let otherTab = remoteBrowser.getTabForBrowser(aOtherBrowser);
-      if (otherTab) {
-        otherTab.permanentKey = aOtherBrowser.permanentKey;
-      }
-    }
 
     // Restore the progress listener
     tabListener = new TabProgressListener(
