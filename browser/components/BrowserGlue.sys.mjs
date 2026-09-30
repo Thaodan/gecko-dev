@@ -30,7 +30,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/DefaultBrowserCheck.sys.mjs",
   DesktopActorRegistry:
     "moz-src:///browser/components/DesktopActorRegistry.sys.mjs",
-  DistributionManagement: "resource:///modules/distribution.sys.mjs",
+  DistributionManagement: "moz-src:///browser/components/distribution.sys.mjs",
   DownloadsViewableInternally:
     "moz-src:///browser/components/downloads/DownloadsViewableInternally.sys.mjs",
   ExtensionsUI: "resource:///modules/ExtensionsUI.sys.mjs",

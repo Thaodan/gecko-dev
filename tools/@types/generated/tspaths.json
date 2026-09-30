@@ -1504,15 +1504,6 @@
       "resource:///modules/AboutNewTabResourceMapping.sys.mjs": [
         "../../../browser/components/newtab/AboutNewTabResourceMapping.sys.mjs"
       ],
-      "resource:///modules/AccountsGlue.sys.mjs": [
-        "../../../browser/components/AccountsGlue.sys.mjs"
-      ],
-      "resource:///modules/BrowserContentHandler.sys.mjs": [
-        "../../../browser/components/BrowserContentHandler.sys.mjs"
-      ],
-      "resource:///modules/BrowserGlue.sys.mjs": [
-        "../../../browser/components/BrowserGlue.sys.mjs"
-      ],
       "resource:///modules/BrowserUIUtils.sys.mjs": [
         "../../../browser/modules/BrowserUIUtils.sys.mjs"
       ],
@@ -1587,9 +1578,6 @@
       ],
       "resource:///modules/FirefoxProfileMigrator.sys.mjs": [
         "../../../browser/components/migration/FirefoxProfileMigrator.sys.mjs"
-      ],
-      "resource:///modules/GenAI.sys.mjs": [
-        "../../../browser/components/genai/GenAI.sys.mjs"
       ],
       "resource:///modules/HistoryController.sys.mjs": [
         "../../../browser/components/firefoxview/HistoryController.sys.mjs"
@@ -1785,9 +1773,6 @@
       ],
       "resource:///modules/asrouter/ToolbarBadgeHub.sys.mjs": [
         "../../../browser/components/asrouter/modules/ToolbarBadgeHub.sys.mjs"
-      ],
-      "resource:///modules/distribution.sys.mjs": [
-        "../../../browser/components/distribution.sys.mjs"
       ],
       "resource:///modules/firefox-view-synced-tabs-error-handler.sys.mjs": [
         "../../../browser/components/firefoxview/firefox-view-synced-tabs-error-handler.sys.mjs"
@@ -7605,6 +7590,9 @@
       ],
       "resource://testing-common/BackgroundTasksTestUtils.sys.mjs": [
         "../../../toolkit/components/backgroundtasks/BackgroundTasksTestUtils.sys.mjs"
+      ],
+      "resource://testing-common/BookmarksSidebarTestUtils.sys.mjs": [
+        "../../../browser/components/sidebar/tests/BookmarksSidebarTestUtils.sys.mjs"
       ],
       "resource://testing-common/BrowserTestUtils.sys.mjs": [
         "../../../testing/mochitest/BrowserTestUtils/BrowserTestUtils.sys.mjs"
