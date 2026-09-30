@@ -2457,13 +2457,14 @@ networking:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1960582
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2010463
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2048459
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072832
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1960582
     notification_emails:
       - smayya@mozilla.com
       - vgosu@mozilla.com
       - necko@mozilla.com
-    expires: 160
+    expires: 166
     labels:
       - localhost
       - local_network
