@@ -30,6 +30,7 @@ import {
   sanitizeUntrustedContent,
   isNewPageUrl,
 } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
+import { isAllowedURLProtocol } from "moz-src:///browser/components/aiwindow/models/SecurityProperties.sys.mjs";
 
 import {
   CountVectorizer,
@@ -81,25 +82,9 @@ export const MAX_TABS = 30;
 // Max number of tabs to rank by semantic similarity to topic (safeguard to avoid embedding hundreds of tabs)
 export const MAX_RANK_TABS = 5 * MAX_TABS;
 
-// Allow list of URL protocols for tabs and pages exposed to the LLM. Only http/https are
-// permitted; internal (about:, chrome:, moz-extension:, file:, data:, etc.)
-const ALLOWED_URL_PROTOCOLS = new Set(["http:", "https:"]);
-
 const KEYWORD_WEIGHT = 0.3; // 0 = pure embedding, 1 = pure lexical
 
 const tokenizer = new CountVectorizer();
-
-/**
- * @param {string} url
- * @returns {boolean}
- */
-function isAllowedURL(url) {
-  try {
-    return ALLOWED_URL_PROTOCOLS.has(new URL(url).protocol);
-  } catch {
-    return false;
-  }
-}
 
 let _embeddingsGenerator = null;
 function getEmbeddingsGenerator() {
@@ -639,7 +624,7 @@ export function getTabList(amount = MAX_TABS) {
         const url = browser?.currentURI?.spec;
         const title = tab.label;
 
-        if (isAllowedURL(url) && !isNewPageUrl(url)) {
+        if (isAllowedURLProtocol(url) && !isNewPageUrl(url)) {
           tabs.push({
             url,
             title: sanitizeUntrustedContent(title),
@@ -1140,7 +1125,7 @@ export class GetPageContent {
 
     const results = await Promise.all(
       url_list.map(async (url, index) => {
-        if (!isAllowedURL(url)) {
+        if (!isAllowedURLProtocol(url)) {
           return { url, ok: false, content: "This URL is not allowed: " + url };
         }
         const startTime = ChromeUtils.now();
@@ -1206,7 +1191,7 @@ export class GetPageContent {
    * @returns {boolean}
    */
   static isContentAllowed(url, conversation) {
-    if (!isAllowedURL(url)) {
+    if (!isAllowedURLProtocol(url)) {
       // Only http/https pages may be exposed to the LLM at all; internal
       // schemes (about:, chrome:, file:, ...) stay out regardless of
       // conversation state.
@@ -1612,7 +1597,7 @@ function countOpenAIWindowTabs() {
     }
     for (const tab of win.gBrowser.tabs) {
       const url = tab.linkedBrowser?.currentURI?.spec;
-      if (isAllowedURL(url) && !isNewPageUrl(url)) {
+      if (isAllowedURLProtocol(url) && !isNewPageUrl(url)) {
         count += 1;
       }
     }
@@ -1714,7 +1699,7 @@ export async function manageTabs(
   }
 
   const validUrls = new Set(
-    url_tokens.filter(u => typeof u === "string" && isAllowedURL(u))
+    url_tokens.filter(u => typeof u === "string" && isAllowedURLProtocol(u))
   );
 
   if (!validUrls.size) {
