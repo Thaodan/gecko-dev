@@ -559,6 +559,11 @@ newtab-weather-see-forecast-description =
 # Variables:
 #   $provider (string) - Service provider for weather data
 newtab-weather-sponsored = { $provider } ∙ Sponsored
+# Tooltip and screen reader label for the icon-only button that opens the
+# widget's menu.
+newtab-weather-widget-open-menu-button =
+    .title = Open weather menu
+    .aria-label = Open weather menu
 newtab-weather-menu-change-location = Change location
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Search location
@@ -895,6 +900,12 @@ newtab-widget-lists-edit-clear =
 # Lists is a noun, as in "options for the lists"
 newtab-widget-lists-menu-button =
     .aria-label = Lists options
+# Tooltip and screen reader label for the icon-only button that opens the
+# widget's menu.
+# Lists is a noun, as in "the menu for your lists".
+newtab-widget-lists-open-menu-button =
+    .title = Open lists menu
+    .aria-label = Open lists menu
 
 # the + symbol emphasises the functionality of adding a new list
 newtab-widget-lists-dropdown-create =
@@ -922,6 +933,19 @@ newtab-widget-timer-menu-notifications-on = Turn on notifications
 newtab-widget-timer-menu-learn-more = Learn more
 newtab-widget-timer-menu-button =
     .aria-label = Timer options
+# Tooltip and screen reader label for the icon-only button that opens the
+# widget's menu.
+newtab-widget-timer-open-menu-button =
+    .title = Open timer menu
+    .aria-label = Open timer menu
+
+## Crossword widget
+
+# Tooltip and screen reader label for the icon-only button that opens the
+# widget's menu.
+newtab-crossword-widget-open-menu-button =
+    .title = Open crossword menu
+    .aria-label = Open crossword menu
 
 ## World Cup wallpaper OMC messages
 ## Shown as on-screen messages promoting the World Cup wallpapers.
@@ -1111,6 +1135,11 @@ newtab-clock-widget-custom-back = Back
 newtab-clock-widget-menu-button2 =
     .title = Clock options
     .aria-label = Clock options
+# Tooltip and screen reader label for the icon-only button that opens the
+# widget's menu.
+newtab-clock-widget-open-menu-button =
+    .title = Open clock menu
+    .aria-label = Open clock menu
 # $nickname (String) - The user-defined nickname for a saved clock location (e.g., "Home", "Office").
 newtab-clock-widget-label-nickname-with-value = Nickname: { $nickname }
 
@@ -1353,6 +1382,11 @@ newtab-privacy-menu-learn-more = Learn more
 newtab-privacy-widget-menu-button =
     .title = Privacy options
     .aria-label = Privacy options
+# Tooltip and screen reader label for the icon-only button that opens the
+# widget's menu.
+newtab-privacy-widget-open-menu-button =
+    .title = Open privacy menu
+    .aria-label = Open privacy menu
 
 ## Privacy widget — count readout
 
@@ -1543,6 +1577,11 @@ newtab-stocks-error-not-available = Stock data is not available.
 newtab-stocks-widget-menu-button =
     .title = Stocks widget options
     .aria-label = Stocks widget options
+# Tooltip and screen reader label for the icon-only button that opens the
+# widget's menu.
+newtab-stocks-widget-open-menu-button =
+    .title = Open stocks menu
+    .aria-label = Open stocks menu
 
 # Toolbar button that opens the stock search. It shows only the icon until it is
 # hovered or focused, then the .label as well; "Search" is a verb. .title and
@@ -1686,6 +1725,11 @@ newtab-picture-attribution-license =
 newtab-picture-widget-menu-button =
     .title = Picture of the day options
     .aria-label = Picture of the day options
+# Tooltip and screen reader label for the icon-only button that opens the
+# widget's menu.
+newtab-picture-widget-open-menu-button =
+    .title = Open picture of the day menu
+    .aria-label = Open picture of the day menu
 
 # Button that sets the current picture as the New Tab background wallpaper. The
 # button collapses to an icon when not hovered/focused, so .title is its tooltip.
@@ -1727,6 +1771,11 @@ newtab-search-widget-title = Search
 # Screen reader label for the widget's icon-only menu button.
 newtab-search-widget-menu-button =
     .aria-label = Search options
+# Tooltip and screen reader label for the icon-only button that opens the
+# widget's menu.
+newtab-search-widget-open-menu-button =
+    .title = Open search menu
+    .aria-label = Open search menu
 
 # Context menu item linking to more information about the widget.
 newtab-recent-searches-menu-learn-more = Learn more
