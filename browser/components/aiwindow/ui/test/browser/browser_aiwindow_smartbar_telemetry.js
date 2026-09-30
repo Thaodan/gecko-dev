@@ -687,6 +687,11 @@ add_task(async function test_smartbar_telemetry_mention_select_inline() {
     "mention_select has correct mentions_available"
   );
   Assert.equal(
+    extra.mention_type,
+    "tab",
+    "mention_select reports a tab selection"
+  );
+  Assert.equal(
     extra.message_seq,
     "0",
     "mention_select has correct message_seq"
@@ -1017,6 +1022,11 @@ add_task(async function test_smartbar_telemetry_add_tabs_selection() {
     extra.tabs_selected,
     "1",
     "add_tabs_selection has correct tabs_selected"
+  );
+  Assert.equal(
+    extra.mention_type,
+    "tab",
+    "add_tabs_selection reports a tab selection"
   );
 
   await BrowserTestUtils.closeWindow(win);

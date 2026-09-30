@@ -432,11 +432,26 @@ add_task(async function test_mentions_shows_tab_groups_section() {
     ).map(row => ({
       label: row.querySelector(".panel-tab-group-label")?.textContent.trim(),
       initial: row
-        .querySelector(".panel-tab-group-chicklet")
-        ?.textContent.trim(),
+        .querySelector(".panel-tab-group-icon")
+        ?.shadowRoot.textContent.trim(),
     }));
 
-    return { headers, groupRows };
+    const weightOf = item =>
+      content.getComputedStyle(item.shadowRoot.querySelector("[part=label]"))
+        .fontWeight;
+    const rows = Array.from(
+      shadow.querySelectorAll("panel-item:not(.panel-section-header)")
+    );
+    const weights = {
+      group: weightOf(
+        rows.find(item => item.classList.contains("panel-tab-group-label"))
+      ),
+      tab: weightOf(
+        rows.find(item => !item.classList.contains("panel-tab-group-label"))
+      ),
+    };
+
+    return { headers, groupRows, weights };
   });
 
   Assert.ok(
@@ -458,6 +473,11 @@ add_task(async function test_mentions_shows_tab_groups_section() {
     info.groupRows[0].initial,
     "T",
     "Chicklet shows the group's initial"
+  );
+  Assert.equal(
+    info.weights.group,
+    info.weights.tab,
+    "A group row's label is weighted like a tab row's, not like a title"
   );
 
   await BrowserTestUtils.closeWindow(win);
@@ -574,6 +594,93 @@ add_task(async function test_tab_group_inline_mention_renders_icon() {
   );
   Assert.ok(!chip.hasFavicon, "And no favicon");
   Assert.ok(!chip.isLink, "And no link, since a tab group has no URL");
+
+  await BrowserTestUtils.closeWindow(win);
+});
+
+add_task(async function test_selecting_tab_group_inserts_inline_mention() {
+  await Services.fog.testFlushAllChildren();
+  Services.fog.testResetFOG();
+
+  const win = await openAIWindow();
+  const browser = win.gBrowser.selectedBrowser;
+
+  const groupedTab = BrowserTestUtils.addTab(
+    win.gBrowser,
+    "https://example.com/grouped"
+  );
+  await BrowserTestUtils.browserLoaded(groupedTab.linkedBrowser);
+  const group = win.gBrowser.addTabGroup([groupedTab], {
+    label: "Trip planning",
+    color: "blue",
+  });
+
+  await typeInSmartbar(browser, "@");
+  await waitForMentionsOpen(browser);
+
+  const result = await SpecialPowers.spawn(
+    browser,
+    [group.id],
+    async groupId => {
+      const aiWindowElement = content.document.querySelector("ai-window");
+      const smartbar = aiWindowElement.shadowRoot.querySelector(
+        "#ai-window-smartbar"
+      );
+      const panelList = smartbar.querySelector("smartwindow-panel-list");
+      const shadow = panelList.shadowRoot;
+
+      await ContentTaskUtils.waitForMutationCondition(
+        shadow,
+        { childList: true, subtree: true },
+        () => shadow.querySelector(".panel-tab-group-item panel-item")
+      );
+      shadow.querySelector(".panel-tab-group-item panel-item").click();
+
+      const editor = smartbar.querySelector("moz-multiline-editor");
+      await ContentTaskUtils.waitForCondition(
+        () => editor.getAllMentions().length,
+        "the tab group mention is inserted"
+      );
+
+      const [mention] = editor.getAllMentions();
+      return {
+        mention: {
+          type: mention.type,
+          id: mention.id,
+          label: mention.label,
+          color: mention.color,
+        },
+        expectedId: `group:${groupId}`,
+        contextChipCount: smartbar.querySelector(
+          ".smartbar-context-chips-header"
+        ).websites.length,
+      };
+    }
+  );
+
+  Assert.deepEqual(
+    result.mention,
+    {
+      type: "tabGroup",
+      id: result.expectedId,
+      label: "Trip planning",
+      color: "blue",
+    },
+    "Selecting a tab group with the inline @ command inserts a tab group mention"
+  );
+  Assert.equal(
+    result.contextChipCount,
+    0,
+    "An inline mention does not also add a context chip"
+  );
+
+  await Services.fog.testFlushAllChildren();
+  const events = Glean.smartWindow.mentionSelect.testGetValue();
+  Assert.equal(
+    events.at(-1).extra.mention_type,
+    "tab_group",
+    "mention_select tells a tab group selection apart from a tab selection"
+  );
 
   await BrowserTestUtils.closeWindow(win);
 });

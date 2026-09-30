@@ -14,6 +14,7 @@ import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
 import {
   CONTEXT_MENTION_TYPE,
   getTabGroupMentionId,
+  parseTabGroupMentionId,
 } from "chrome://browser/content/urlbar/SmartbarMentionUtils.mjs";
 
 /**
@@ -435,7 +436,10 @@ function setupMentionsPlugin(editorElement, panelList) {
     if (panelList.getAttribute("data-triggered-by") === COMMAND_TRIGGER) {
       return;
     }
-    const { id, label, icon } = e.detail;
+    let { id, type, label, icon, color } = e.detail;
+    let isTabGroup = type == CONTEXT_MENTION_TYPE.TAB_GROUP;
+    // The labels match the mention_type metric.
+    let mentionType = isTabGroup ? "tab_group" : "tab";
 
     // TODO: Bug 2064550 - use dataset instead
     const isContextButtonTrigger =
@@ -447,15 +451,25 @@ function setupMentionsPlugin(editorElement, panelList) {
     // add the mention to the context header.
     if (isContextButtonTrigger) {
       const tabsPreselected = smartbarInput.contextWebsitesCount;
-      smartbarInput.addContextMention({
-        type: "tab",
-        url: id,
-        label,
-        iconSrc: icon,
-      });
+      smartbarInput.addContextMention(
+        isTabGroup
+          ? {
+              type: CONTEXT_MENTION_TYPE.TAB_GROUP,
+              groupId: parseTabGroupMentionId(id),
+              label,
+              color,
+            }
+          : {
+              type: CONTEXT_MENTION_TYPE.TAB,
+              url: id,
+              label,
+              iconSrc: icon,
+            }
+      );
       Glean.smartWindow.addTabsSelection.record({
         chat_id,
         location: smartbarInput.sapLocation,
+        mention_type: mentionType,
         message_seq: String(message_seq),
         tabs_available: String(
           panelList.groups.reduce((sum, group) => sum + group.items.length, 0)
@@ -470,6 +484,7 @@ function setupMentionsPlugin(editorElement, panelList) {
         chat_id,
         length: label.length,
         location: smartbarInput.sapLocation,
+        mention_type: mentionType,
         mentions_available: panelList.groups.reduce(
           (sum, group) => sum + group.items.length,
           0
@@ -478,9 +493,12 @@ function setupMentionsPlugin(editorElement, panelList) {
       });
       plugin.mentions.insert(
         {
-          type: "tab",
+          type: isTabGroup
+            ? CONTEXT_MENTION_TYPE.TAB_GROUP
+            : CONTEXT_MENTION_TYPE.TAB,
           id,
           label,
+          color,
         },
         latestMentionData?.range.from ?? 0,
         latestMentionData?.range.to ?? 1

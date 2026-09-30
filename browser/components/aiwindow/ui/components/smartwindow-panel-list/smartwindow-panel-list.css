@@ -128,38 +128,26 @@ panel-item::part(label) {
   white-space: nowrap;
 }
 
-/* Non-interactive tab group rows in the mentions panel. The chicklet mirrors
-   the tab group label: a colored square with the group's initial. */
+/* Laid out here rather than by .panel-item-container, whose grid is Nova only. */
 .panel-tab-group-item {
   align-items: center;
-  border-radius: var(--panel-item-button-border-radius);
-  display: flex;
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  gap: var(--panel-item-padding);
-  margin-inline: var(--space-small);
+  column-gap: var(--panel-item-padding);
+  display: grid;
+  grid-template-columns: max-content 1fr;
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   padding: var(--panel-item-padding);
 }
 
-.panel-tab-group-chicklet {
-  align-items: center;
+.panel-tab-group-icon {
+  /* The design draws the initial smaller on this surface. */
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  background-color: var(--tab-group-color);
-  border-radius: var(--border-radius-medium);
-  border-end-start-radius: var(--border-radius-xsmall);
-  box-sizing: border-box;
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  color: var(--tab-group-color-text);
-  display: flex;
-  flex-shrink: 0;
-  font-size: var(--font-size-small);
-  height: var(--panel-item-icon-size);
-  justify-content: center;
-  line-height: 1;
-  width: var(--panel-item-icon-size);
+  --tab-group-icon-font-size: 8.2px;
+  --tab-group-icon-notch-radius: var(--border-radius-xsmall);
+  --tab-group-icon-size: var(--panel-item-icon-size);
 }
 
-.panel-tab-group-label {
+.panel-tab-group-label::part(button) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -241,6 +229,13 @@ panel-list ai-website-chip::part(chip):focus-visible {
   panel-item::part(label) {
     font-size: var(--panel-section-header-font-size);
     font-weight: var(--font-weight-heading);
+  }
+
+  /* This row uses the container for layout; its label is a menu item, not the
+     title of a description row. */
+  &.panel-tab-group-item panel-item::part(label) {
+    font-size: inherit;
+    font-weight: inherit;
   }
 
   .panel-item-description {
