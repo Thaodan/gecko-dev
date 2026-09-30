@@ -2915,13 +2915,13 @@ export const tokensTable = {
       },
       name: "--tab-text-color-selected",
     },
-    { value: "inherit", name: "--urlbar-box-text-color" },
+    { value: { default: "inherit" }, name: "--urlbar-box-text-color" },
     {
-      value: "var(--urlbar-box-text-color)",
+      value: { default: "var(--urlbar-box-text-color)" },
       name: "--urlbar-box-text-color-hover",
     },
     {
-      value: "var(--urlbar-box-text-color)",
+      value: { default: "var(--urlbar-box-text-color)" },
       name: "--urlbar-box-text-color-active",
     },
     {
@@ -5783,9 +5783,9 @@ export const variableLookupTable = {
     default:
       "light-dark(var(--button-background-color), color-mix(in srgb, currentColor 16%, transparent))",
   },
-  "urlbar-box-text-color": "inherit",
-  "urlbar-box-text-color-hover": "var(--urlbar-box-text-color)",
-  "urlbar-box-text-color-active": "var(--urlbar-box-text-color)",
+  "urlbar-box-text-color": { default: "inherit" },
+  "urlbar-box-text-color-hover": { default: "var(--urlbar-box-text-color)" },
+  "urlbar-box-text-color-active": { default: "var(--urlbar-box-text-color)" },
   "urlbar-box-text-color-focus": "var(--urlbar-box-text-color)",
   "urlbar-icon-fill-opacity": {
     default: "0.72",

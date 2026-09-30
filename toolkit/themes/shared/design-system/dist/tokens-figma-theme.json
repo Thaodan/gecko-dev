@@ -2027,6 +2027,16 @@
     "dark": "color-mix(in srgb, currentColor 16%, transparent)",
     "forcedColors": "transparent"
   },
+  "urlbar/box/text/color/hover": {
+    "light": "{Primitives$urlbar/box/text/color}",
+    "dark": "{Primitives$urlbar/box/text/color}",
+    "forcedColors": "{Primitives$urlbar/box/text/color}"
+  },
+  "urlbar/box/text/color/active": {
+    "light": "{Primitives$urlbar/box/text/color}",
+    "dark": "{Primitives$urlbar/box/text/color}",
+    "forcedColors": "{Primitives$urlbar/box/text/color}"
+  },
   "urlbar/icon/fill/opacity": {
     "light": 0.72,
     "dark": 0.72,

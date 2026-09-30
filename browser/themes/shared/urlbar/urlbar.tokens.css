@@ -39,12 +39,26 @@
       --urlbar-box-background-color: color-mix(in srgb, currentColor 16%, transparent);
       --urlbar-box-background-color-hover: color-mix(in srgb, currentColor 22%, transparent);
       --urlbar-box-background-color-active: color-mix(in srgb, currentColor 30%, transparent);
+      --urlbar-box-text-color: inherit;
+      --urlbar-box-text-color-hover: var(--urlbar-box-text-color);
+      --urlbar-box-text-color-active: var(--urlbar-box-text-color);
       --urlbar-icon-fill-opacity: 0.9;
     }
 
     @layer tokens-prefers-contrast-nova {
       @media (prefers-contrast) {
         --urlbar-icon-fill-opacity: 1;
+      }
+    }
+
+    @layer tokens-forced-colors-nova {
+      @media (forced-colors) {
+        --urlbar-box-background-color: var(--button-background-color-ghost);
+        --urlbar-box-background-color-hover: var(--button-background-color-ghost-hover);
+        --urlbar-box-background-color-active: var(--button-background-color-ghost-active);
+        --urlbar-box-text-color: var(--button-text-color-ghost);
+        --urlbar-box-text-color-hover: var(--button-text-color-ghost-hover);
+        --urlbar-box-text-color-active: var(--button-text-color-ghost-active);
       }
     }
   }
