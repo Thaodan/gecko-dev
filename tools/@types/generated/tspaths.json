@@ -6124,9 +6124,6 @@
       "resource://gre/modules/IndexedDB.sys.mjs": [
         "../../../toolkit/modules/IndexedDB.sys.mjs"
       ],
-      "resource://gre/modules/IndexedDBHelper.sys.mjs": [
-        "../../../dom/base/IndexedDBHelper.sys.mjs"
-      ],
       "resource://gre/modules/InlineSpellChecker.sys.mjs": [
         "../../../toolkit/modules/InlineSpellChecker.sys.mjs"
       ],
@@ -6162,9 +6159,6 @@
       ],
       "resource://gre/modules/LoadURIDelegate.sys.mjs": [
         "../../../mobile/shared/modules/geckoview/LoadURIDelegate.sys.mjs"
-      ],
-      "resource://gre/modules/LocationHelper.sys.mjs": [
-        "../../../dom/base/LocationHelper.sys.mjs"
       ],
       "resource://gre/modules/Log.sys.mjs": [
         "../../../toolkit/modules/Log.sys.mjs"
