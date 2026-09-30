@@ -329,15 +329,19 @@ export async function buildBrowserContextPrompt(
     // m.url is intentionally not wrapped in sanitizeUntrustedContent — it's a
     // structured value the model uses to navigate/fetch, and the spotlighting
     // tokens would corrupt it. The user-controlled label is sanitized.
-    const contextUrls = contextMentions
+    // Tab group mentions have no URL
+    const urlMentions = contextMentions.filter(m => m.url);
+    const contextUrls = urlMentions
       .map(
         m => `- URL: ${m.url}\n  Title: ${sanitizeUntrustedContent(m.label)}`
       )
       .join("\n");
-    browserContextMapping.contextUrls = contextUrls;
-    const record = findFragment("mentions");
-    if (record?.prompts) {
-      fragments.push(record.prompts);
+    if (urlMentions.length) {
+      browserContextMapping.contextUrls = contextUrls;
+      const record = findFragment("mentions");
+      if (record?.prompts) {
+        fragments.push(record.prompts);
+      }
     }
   }
 

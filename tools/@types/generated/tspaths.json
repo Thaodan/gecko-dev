@@ -466,6 +466,9 @@
       "chrome://browser/content/urlbar/SmartbarInputUtils.mjs": [
         "../../../browser/components/urlbar/content/SmartbarInputUtils.mjs"
       ],
+      "chrome://browser/content/urlbar/SmartbarMentionUtils.mjs": [
+        "../../../browser/components/urlbar/content/SmartbarMentionUtils.mjs"
+      ],
       "chrome://browser/content/urlbar/UrlbarChildController.mjs": [
         "../../../browser/components/urlbar/content/UrlbarChildController.mjs"
       ],

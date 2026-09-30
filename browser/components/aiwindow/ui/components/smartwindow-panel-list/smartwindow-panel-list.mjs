@@ -20,7 +20,7 @@ import "chrome://global/content/elements/panel-list.mjs";
  * This component is agnostic to the data it displays - consumers control
  * all logic including filtering, truncation, and special item handling.
  *
- * @typedef {{id: string, label: string, icon?: string, l10nId?: string, description?: string, descriptionL10nId?: string, color?: string}} ListItem
+ * @typedef {{id: string, type?: string, label: string, icon?: string, l10nId?: string, description?: string, descriptionL10nId?: string, color?: string}} ListItem
  * @typedef {{items: ListItem[], headerL10nId?: string, header?: string}} ItemGroup
  * @property {ItemGroup[]} groups - Grouped list items to display
  * @property {string} placeholderL10nId - Fluent ID for empty state message

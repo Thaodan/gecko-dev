@@ -1384,7 +1384,15 @@ async function getSmartbarContextChips(browser) {
     const chipContainer = smartbar.querySelector(
       ".smartbar-context-chips-header"
     );
-    return chipContainer.websites.map(w => ({ url: w.url, label: w.label }));
+    return chipContainer.websites.map(
+      ({ type, url, groupId, label, color }) => ({
+        type,
+        url,
+        groupId,
+        label,
+        color,
+      })
+    );
   });
 }
 
