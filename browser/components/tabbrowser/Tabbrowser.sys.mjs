@@ -351,6 +351,9 @@ export class Tabbrowser {
   /** @type {WeakMap<MozTabbrowserTab, number>} */
   static #closeTimeNoAnimTimerIds = new WeakMap();
 
+  /** @type {WeakSet<MozTabbrowserTab>} */
+  static #tabsPendingPermitUnload = new WeakSet();
+
   /** @type {WeakMap<MozTabbrowserTab, MozTabbrowserTab>} */
   #lastRelatedTabMap = new WeakMap();
 
@@ -5952,14 +5955,14 @@ export class Tabbrowser {
         // We need to block while calling permitUnload() because it
         // processes the event queue and may lead to another removeTab()
         // call before permitUnload() returns.
-        tab._pendingPermitUnload = true;
+        Tabbrowser.#tabsPendingPermitUnload.add(tab);
         beforeUnloadPromises.push(
           // To save time, we first run the beforeunload event listeners in all
           // content processes in parallel. Tabs that would have shown a prompt
           // will be handled again later.
           tab.linkedBrowser.asyncPermitUnload("dontUnload").then(
             ({ permitUnload }) => {
-              tab._pendingPermitUnload = false;
+              Tabbrowser.#tabsPendingPermitUnload.delete(tab);
               Glean.browserTabclose.permitUnloadTime.stopAndAccumulate(timerId);
               if (tab.closing) {
                 // The tab was closed by the user while we were in permitUnload, don't
@@ -5981,7 +5984,7 @@ export class Tabbrowser {
             },
             err => {
               console.error("error while calling asyncPermitUnload", err);
-              tab._pendingPermitUnload = false;
+              Tabbrowser.#tabsPendingPermitUnload.delete(tab);
               Glean.browserTabclose.permitUnloadTime.stopAndAccumulate(timerId);
             }
           )
@@ -6046,9 +6049,9 @@ export class Tabbrowser {
 
       // Now run again sequentially the beforeunload listeners that will result in a prompt.
       for (let tab of tabsWithBeforeUnloadPrompt) {
-        tab._pendingPermitUnload = true;
+        Tabbrowser.#tabsPendingPermitUnload.add(tab);
         let { permitUnload } = this.getBrowserForTab(tab).permitUnload();
-        tab._pendingPermitUnload = false;
+        Tabbrowser.#tabsPendingPermitUnload.delete(tab);
         if (!permitUnload) {
           return true;
         }
@@ -6564,7 +6567,7 @@ export class Tabbrowser {
       !skipPermitUnload &&
       !adoptedByTab &&
       aTab.linkedPanel &&
-      !aTab._pendingPermitUnload &&
+      !Tabbrowser.#tabsPendingPermitUnload.has(aTab) &&
       (!browser.isRemoteBrowser || Tabbrowser.#hasBeforeUnload(aTab))
     ) {
       if (!prewarmed) {
@@ -6579,9 +6582,9 @@ export class Tabbrowser {
       // We need to block while calling permitUnload() because it
       // processes the event queue and may lead to another removeTab()
       // call before permitUnload() returns.
-      aTab._pendingPermitUnload = true;
+      Tabbrowser.#tabsPendingPermitUnload.add(aTab);
       let { permitUnload } = browser.permitUnload();
-      aTab._pendingPermitUnload = false;
+      Tabbrowser.#tabsPendingPermitUnload.delete(aTab);
 
       Glean.browserTabclose.permitUnloadTime.stopAndAccumulate(timerId);
 
