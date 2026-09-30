@@ -194,19 +194,32 @@ def artifact_install(
     unfiltered_project_package=False,
     artifact_filters=None,
 ):
+    from mozbuild.build_markers import build_marker
+
+    try:
+        import psutil
+
+        created = psutil.Process().create_time()
+    except Exception:
+        created = None
+    if created:
+        with build_marker("ArtifactStartup", "mach artifact install", created):
+            pass
+
     artifact_filters = artifact_filters or []
     command_context._set_log_level(verbose)
-    artifacts = _make_artifacts(
-        command_context,
-        tree=tree,
-        job=job,
-        skip_cache=skip_cache,
-        download_tests=not no_tests,
-        download_symbols=symbols,
-        artifact_filters=artifact_filters,
-        no_process=no_process,
-        unfiltered_project_package=unfiltered_project_package,
-    )
+    with build_marker("ArtifactSetup", "mach artifact install"):
+        artifacts = _make_artifacts(
+            command_context,
+            tree=tree,
+            job=job,
+            skip_cache=skip_cache,
+            download_tests=not no_tests,
+            download_symbols=symbols,
+            artifact_filters=artifact_filters,
+            no_process=no_process,
+            unfiltered_project_package=unfiltered_project_package,
+        )
 
     return artifacts.install_from(source, distdir or command_context.distdir)
 

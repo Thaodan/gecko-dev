@@ -29,6 +29,7 @@ import urllib.parse as urlparse
 import dlmanager
 import mozpack.path as mozpath
 
+from mozbuild.build_markers import build_marker
 from mozbuild.dirutils import mkdir
 
 # Using 'DownloadManager' through the provided interface we
@@ -234,7 +235,8 @@ class ArtifactCache:
                     "Downloading artifact to local cache: {path}",
                 )
                 dl.set_progress(download_progress)
-                dl.wait()
+                with build_marker("ArtifactDownload", url):
+                    dl.wait()
             else:
                 self.log(
                     logging.INFO,

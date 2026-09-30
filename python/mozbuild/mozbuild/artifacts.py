@@ -64,6 +64,7 @@ from mozpack.packager.unpack import UnpackFinder
 
 from mozbuild.artifact_builds import JOB_CHOICES
 from mozbuild.artifact_cache import ArtifactCache
+from mozbuild.build_markers import build_marker
 from mozbuild.dirutils import ensureParentDir, mkdir
 from mozbuild.util import FileAvoidWrite, get_root_url, get_taskcluster_client
 
@@ -1503,7 +1504,8 @@ class Artifacts:
                     "Attempting to find a pushhead containing {rev} on {tree}.",
                 )
                 try:
-                    pushid = pushhead_cache.parent_pushhead_id(tree, rev)
+                    with build_marker("ArtifactPushlog", f"{tree} push of {rev}"):
+                        pushid = pushhead_cache.parent_pushhead_id(tree, rev)
                     found_pushids[tree] = pushid
                 except ValueError:
                     continue
@@ -1524,7 +1526,9 @@ class Artifacts:
                     },
                     "Retrieving the last {num} pushheads starting with id {pushid} on {tree}",
                 )
-                for pushhead in pushhead_cache.pushid_range(tree, start, end):
+                with build_marker("ArtifactPushlog", f"{tree} pushes {start} to {end}"):
+                    pushheads = pushhead_cache.pushid_range(tree, start, end)
+                for pushhead in pushheads:
                     candidate_pushheads[pushhead].append(tree)
 
         return candidate_pushheads
@@ -1645,7 +1649,8 @@ https://firefox-source-docs.mozilla.org/contributing/vcs/mercurial_bundles.html
         working parent.
         """
 
-        last_revs = self._get_recent_public_revisions()
+        with build_marker("ArtifactVcs", "recent public revisions"):
+            last_revs = self._get_recent_public_revisions()
         candidate_pushheads = []
         if self._git and not self._is_git_cinnabar:
             candidate_pushheads = {
@@ -1677,9 +1682,10 @@ https://firefox-source-docs.mozilla.org/contributing/vcs/mercurial_bundles.html
 
     def find_pushhead_artifacts(self, task_cache, job, tree, pushhead):
         try:
-            taskId, artifacts = task_cache.artifacts(
-                tree, job, self._artifact_job.job_configuration, pushhead
-            )
+            with build_marker("ArtifactFind", f"{job} on {tree} at {pushhead}"):
+                taskId, artifacts = task_cache.artifacts(
+                    tree, job, self._artifact_job.job_configuration, pushhead
+                )
         except ValueError:
             return None
 
@@ -1740,7 +1746,8 @@ https://firefox-source-docs.mozilla.org/contributing/vcs/mercurial_bundles.html
                 "Writing processed {processed_filename}",
             )
             try:
-                self._artifact_job.process_artifact(filename, processed_filename)
+                with build_marker("ArtifactProcess", filename):
+                    self._artifact_job.process_artifact(filename, processed_filename)
             except Exception as e:
                 # Delete the partial output of failed processing.
                 try:
@@ -1759,7 +1766,9 @@ https://firefox-source-docs.mozilla.org/contributing/vcs/mercurial_bundles.html
         if processed_filename is None:
             orig_basename = self._artifact_job._get_orig_basename(filename)
             path = mozpath.join(distdir, orig_basename)
-            with FileAvoidWrite(path, readmode="rb") as fh:
+            with build_marker("ArtifactInstall", path), FileAvoidWrite(
+                path, readmode="rb"
+            ) as fh:
                 shutil.copyfileobj(open(filename, mode="rb"), fh)
             self.log(
                 logging.DEBUG,
@@ -1776,7 +1785,9 @@ https://firefox-source-docs.mozilla.org/contributing/vcs/mercurial_bundles.html
             "Installing from processed {processed_filename}",
         )
 
-        with zipfile.ZipFile(processed_filename) as zf:
+        with build_marker("ArtifactInstall", processed_filename), zipfile.ZipFile(
+            processed_filename
+        ) as zf:
             for info in zf.infolist():
                 n = mozpath.join(distdir, info.filename)
                 fh = FileAvoidWrite(n, readmode="rb")
