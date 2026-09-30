@@ -220,7 +220,7 @@ and exists for an ASRouter onboarding trigger.
 
 | Event | `detail` | Fires when |
 | --- | --- | --- |
-| `TabGroupCreate` | `isAdoptingGroup` when the group came from another window | The group element initialized. Once per element, so a group moved between windows produces a second one. |
+| `TabGroupCreate` | `adopting`, true when the group came from another window | The group element initialized. Once per element, so a group moved between windows produces a second one. |
 | `TabGrouped` / `TabUngrouped` | the tab | A tab joined or left the group. |
 | `TabGroupCollapse` / `TabGroupExpand` | — | The group's `collapsed` state changed, before the animation. |
 | `TabGroupUpdate` | — | The group's label or color changed to a different value. |

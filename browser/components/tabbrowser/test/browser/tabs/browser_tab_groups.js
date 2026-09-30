@@ -617,7 +617,7 @@ add_task(async function test_tabGroupMoveToNewWindow() {
     tabGroupCreate,
   ]);
   Assert.ok(
-    tabGroupCreateEvent.detail.isAdoptingGroup,
+    tabGroupCreateEvent.detail.adopting,
     "TabGroupCreate event should report that this tab group was creating by adoption"
   );
 
@@ -676,7 +676,7 @@ add_task(async function test_TabGroupEvents() {
     "TabGroupCreate"
   ).then(event => {
     Assert.ok(
-      !event.detail.isAdoptingGroup,
+      !event.detail.adopting,
       "a tab group being created from scratch should not be treated like it was adopted from another window"
     );
     createdGroupId = event.target.id;

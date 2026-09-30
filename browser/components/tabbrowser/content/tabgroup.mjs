@@ -148,13 +148,10 @@ export class MozTabbrowserTabGroup extends MozXULElement {
       ".tab-group-overflow-count"
     );
 
-    let tabGroupCreateDetail = this.#wasCreatedByAdoption
-      ? { isAdoptingGroup: true }
-      : {};
     this.dispatchEvent(
       new CustomEvent("TabGroupCreate", {
         bubbles: true,
-        detail: tabGroupCreateDetail,
+        detail: { adopting: this.#wasCreatedByAdoption },
       })
     );
     // Reset `wasCreatedByAdoption` to default of false so that we only

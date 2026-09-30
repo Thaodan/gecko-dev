@@ -4163,10 +4163,10 @@ export class Tabbrowser {
    * @param {string} color
    * @param {boolean} collapsed
    * @param {string} [label]
-   * @param {boolean} [isAdoptingGroup=false]
+   * @param {boolean} [adopting=false]
    * @returns {MozTabbrowserTabGroup}
    */
-  #createTabGroup(id, color, collapsed, label = "", isAdoptingGroup = false) {
+  #createTabGroup(id, color, collapsed, label = "", adopting = false) {
     let group = this.document.createXULElement("tab-group", {
       is: "tab-group",
     });
@@ -4174,7 +4174,7 @@ export class Tabbrowser {
     group.collapsed = collapsed;
     group.color = color;
     group.label = label;
-    group.wasCreatedByAdoption = isAdoptingGroup;
+    group.wasCreatedByAdoption = adopting;
     return group;
   }
 
@@ -4197,7 +4197,7 @@ export class Tabbrowser {
    *   An optional argument that accepts a single tab, which, if passed, will
    *   cause the group to be inserted just before this tab in the tab strip. By
    *   default, the group will be created at the end of the tab strip.
-   * @param {boolean} [options.isAdoptingGroup]
+   * @param {boolean} [options.adopting]
    *   Whether the tab group was created because a tab group with the same
    *   properties is being adopted from a different window.
    * @param {TabMetricsContext} [options.metricsContext]
@@ -4210,7 +4210,7 @@ export class Tabbrowser {
       color = null,
       label = "",
       insertBefore = null,
-      isAdoptingGroup = false,
+      adopting = false,
       metricsContext = this.TabMetrics.UNKNOWN_CONTEXT,
     } = {}
   ) {
@@ -4236,7 +4236,7 @@ export class Tabbrowser {
       // See: Bug 1960104 - Improve tab group ID generation in addTabGroup
       id = `${Date.now()}-${Math.round(Math.random() * 100)}`;
     }
-    let group = this.#createTabGroup(id, color, false, label, isAdoptingGroup);
+    let group = this.#createTabGroup(id, color, false, label, adopting);
     this.tabContainer.insertBefore(group, insertBefore?.group ?? insertBefore);
     group.addTabs(tabsAndSplitViews, metricsContext);
 
@@ -4429,7 +4429,7 @@ export class Tabbrowser {
       label: group.label,
       color: group.color,
       insertBefore: newTabs[0],
-      isAdoptingGroup: true,
+      adopting: true,
     });
   }
 
