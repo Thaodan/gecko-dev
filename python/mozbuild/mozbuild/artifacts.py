@@ -323,24 +323,33 @@ class ArtifactJob:
         if self._symbols_archive_suffix and filename.endswith(
             self._symbols_archive_suffix
         ):
-            # If UPLOAD_DIR is set, copy the symbol archive
-            # directly to the upload directory to avoid repackaging the symbols.
-            upload_dir = os.environ.get("UPLOAD_DIR")
-            if upload_dir:
-                dest_filename = self._get_orig_basename(filename)
-                dest_path = mozpath.join(upload_dir, dest_filename)
-                ensureParentDir(dest_path)
-                shutil.copy2(filename, dest_path)
-                self.log(
-                    logging.INFO,
-                    "artifact",
-                    {"src": filename, "dest": dest_path},
-                    "Copied symbols archive from {src} to {dest} for direct upload",
-                )
             return self.process_symbols_archive(filename, processed_filename)
         if filename.endswith(self._extra_archive_suffixes):
             return self.process_extra_archive(filename, processed_filename)
         return self.process_package_artifact(filename, processed_filename)
+
+    def upload_symbols_archive(self, filename):
+        """If UPLOAD_DIR is set and ``filename`` is a symbols archive, copy it
+        directly to the upload directory, and return True. Nothing in the
+        build uses the unpacked symbols in that case, so the caller doesn't
+        need to install them."""
+        upload_dir = os.environ.get("UPLOAD_DIR")
+        if not (
+            upload_dir
+            and self._symbols_archive_suffix
+            and filename.endswith(self._symbols_archive_suffix)
+        ):
+            return False
+        dest_path = mozpath.join(upload_dir, self._get_orig_basename(filename))
+        ensureParentDir(dest_path)
+        shutil.copy2(filename, dest_path)
+        self.log(
+            logging.INFO,
+            "artifact",
+            {"src": filename, "dest": dest_path},
+            "Copied symbols archive from {src} to {dest} for direct upload",
+        )
+        return True
 
     def process_package_artifact(self, filename, processed_filename):
         raise NotImplementedError(
@@ -1820,13 +1829,18 @@ https://firefox-source-docs.mozilla.org/contributing/vcs/mercurial_bundles.html
 
         def prepare(source):
             filename = fetch(source)
+            if not self._no_process and self._artifact_job.upload_symbols_archive(
+                filename
+            ):
+                return None
             return filename, self._process_file(filename)
 
         with ThreadPoolExecutor(max_workers=max(len(sources), 1)) as executor:
             futures = [executor.submit(prepare, source) for source in sources]
             try:
                 for future in futures:
-                    self._install_processed_file(*_future_result(future), distdir)
+                    if prepared := _future_result(future):
+                        self._install_processed_file(*prepared, distdir)
             except BaseException:
                 self._artifact_cache.cancel()
                 raise
