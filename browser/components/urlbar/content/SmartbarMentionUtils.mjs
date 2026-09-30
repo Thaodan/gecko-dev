@@ -44,3 +44,11 @@ export function getContextMentionKey(mention) {
   }
   return mention.url || null;
 }
+
+/**
+ * @param {{type?: ContextMentionType, groupId?: string}} mention
+ * @returns {boolean} Whether the mention is a tab expanded from a tab group.
+ */
+export function isTabGroupMember(mention) {
+  return mention.type != CONTEXT_MENTION_TYPE.TAB_GROUP && !!mention.groupId;
+}

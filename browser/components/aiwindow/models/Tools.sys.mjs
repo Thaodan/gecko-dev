@@ -81,6 +81,8 @@ ChromeUtils.defineLazyGetter(lazy, "console", () =>
 export const MAX_TABS = 30;
 // Max number of tabs to rank by semantic similarity to topic (safeguard to avoid embedding hundreds of tabs)
 export const MAX_RANK_TABS = 5 * MAX_TABS;
+// Max number of tabs the mentioned tab groups expand to in total.
+export const MAX_TAB_GROUP_MEMBERS = MAX_TABS;
 
 const KEYWORD_WEIGHT = 0.3; // 0 = pure embedding, 1 = pure lexical
 

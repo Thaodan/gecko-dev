@@ -122,6 +122,10 @@ let px = number => number.toFixed(2) + "px";
  *   via `getIconForUrl`.
  * @property {boolean} [historyDeleted]
  *   Whether the URL has been removed from browsing history.
+ * @property {string} [groupId]
+ *   Id of the tab group the tab was expanded from.
+ * @property {string} [groupLabel]
+ *   Label of that tab group.
  */
 
 /**

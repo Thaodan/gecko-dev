@@ -579,11 +579,11 @@ export class TabManagementService {
   /**
    * Returns the open tab groups in a window as read-only metadata.
    *
-   * Grouped tabs are filtered through the same rules as getTabList(),
-   * so internal (about:, chrome:, ...) and new-page URLs are never exposed and
-   * tab titles are sanitized as untrusted content. Groups left with no visible
-   * tabs after filtering are omitted, so every returned group has at least one
-   * tab and consumers never need to skip empty groups themselves.
+   * Grouped tabs are filtered through the same rules as getTabList(), so
+   * internal (about:, chrome:, ...) and new-page URLs and hidden tabs are never
+   * exposed and tab titles are sanitized as untrusted content. Groups left with
+   * no visible tabs after filtering are omitted, so every returned group has at
+   * least one tab and consumers never need to skip empty groups themselves.
    *
    * @param {object} options
    * @param {Window} options.window - Browser window to read tab groups from
@@ -645,7 +645,12 @@ export class TabManagementService {
     for (const tab of group.tabs) {
       const url = tab.linkedBrowser?.currentURI?.spec;
 
-      if (isAllowedURLProtocol(url) && !isNewPageUrl(url)) {
+      if (
+        !tab.hidden &&
+        !tab.closing &&
+        isAllowedURLProtocol(url) &&
+        !isNewPageUrl(url)
+      ) {
         tabs.push({
           url,
           title: sanitizeUntrustedContent(tab.label),
