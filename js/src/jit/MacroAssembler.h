@@ -3335,6 +3335,19 @@ class MacroAssembler : public MacroAssemblerSpecific {
                              const SimdConstant& rhs, FloatRegister dest)
       DEFINED_ON(arm64);
 
+  // Set each lane to all ones if lhs & rhs is nonzero in it, else to zero.
+  inline void testBitsInt8x16(FloatRegister lhs, FloatRegister rhs,
+                              FloatRegister dest) DEFINED_ON(arm64);
+
+  inline void testBitsInt16x8(FloatRegister lhs, FloatRegister rhs,
+                              FloatRegister dest) DEFINED_ON(arm64);
+
+  inline void testBitsInt32x4(FloatRegister lhs, FloatRegister rhs,
+                              FloatRegister dest) DEFINED_ON(arm64);
+
+  inline void testBitsInt64x2(FloatRegister lhs, FloatRegister rhs,
+                              FloatRegister dest) DEFINED_ON(arm64);
+
   inline void compareFloat32x4(Assembler::Condition cond, FloatRegister rhs,
                                FloatRegister lhsDest)
       DEFINED_ON(x86_shared, arm64, loong64);
