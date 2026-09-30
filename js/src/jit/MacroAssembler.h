@@ -3279,7 +3279,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   // On x86_shared, limited to !=, ==, <=, >
   inline void compareInt8x16(Assembler::Condition cond, FloatRegister lhs,
                              const SimdConstant& rhs, FloatRegister dest)
-      DEFINED_ON(x86_shared);
+      DEFINED_ON(x86_shared, arm64);
 
   // On arm64, use any integer comparison condition.
   inline void compareInt8x16(Assembler::Condition cond, FloatRegister lhs,
@@ -3297,7 +3297,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   // On x86_shared, limited to !=, ==, <=, >
   inline void compareInt16x8(Assembler::Condition cond, FloatRegister lhs,
                              const SimdConstant& rhs, FloatRegister dest)
-      DEFINED_ON(x86_shared);
+      DEFINED_ON(x86_shared, arm64);
 
   // On x86_shared, limited to !=, ==, <=, >
   inline void compareInt32x4(Assembler::Condition cond, FloatRegister rhs,
@@ -3306,7 +3306,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   inline void compareInt32x4(Assembler::Condition cond, FloatRegister lhs,
                              const SimdConstant& rhs, FloatRegister dest)
-      DEFINED_ON(x86_shared);
+      DEFINED_ON(x86_shared, arm64);
 
   // On arm64, use any integer comparison condition.
   inline void compareInt32x4(Assembler::Condition cond, FloatRegister lhs,
@@ -3331,6 +3331,10 @@ class MacroAssembler : public MacroAssemblerSpecific {
                              FloatRegister rhs, FloatRegister dest)
       DEFINED_ON(arm64, loong64);
 
+  inline void compareInt64x2(Assembler::Condition cond, FloatRegister lhs,
+                             const SimdConstant& rhs, FloatRegister dest)
+      DEFINED_ON(arm64);
+
   inline void compareFloat32x4(Assembler::Condition cond, FloatRegister rhs,
                                FloatRegister lhsDest)
       DEFINED_ON(x86_shared, arm64, loong64);
@@ -3338,7 +3342,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   // On x86_shared, limited to ==, !=, <, <=
   inline void compareFloat32x4(Assembler::Condition cond, FloatRegister lhs,
                                const SimdConstant& rhs, FloatRegister dest)
-      DEFINED_ON(x86_shared);
+      DEFINED_ON(x86_shared, arm64);
 
   // On x86_shared, limited to ==, !=, <, <=
   // On arm64, use any float-point comparison condition.
@@ -3353,7 +3357,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   // On x86_shared, limited to ==, !=, <, <=
   inline void compareFloat64x2(Assembler::Condition cond, FloatRegister lhs,
                                const SimdConstant& rhs, FloatRegister dest)
-      DEFINED_ON(x86_shared);
+      DEFINED_ON(x86_shared, arm64);
 
   // On x86_shared, limited to ==, !=, <, <=
   // On arm64, use any float-point comparison condition.
