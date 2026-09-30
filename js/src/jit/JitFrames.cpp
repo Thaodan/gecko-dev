@@ -776,6 +776,21 @@ void HandleException(ResumeFromException* rfe) {
   }
 
   JitFrameIter iter(activation, /* mustUnwindActivation = */ true);
+
+#ifdef JS_HW_SHADOW_STACK
+  if (rfe->shadowStackPointer && iter.isJSJit() &&
+      iter.asJSJit().isUnwoundJitExit()) {
+    uintptr_t returnAddress =
+        reinterpret_cast<uintptr_t>(iter.asJSJit().current()->returnAddress());
+    if (*rfe->shadowStackPointer != returnAddress) {
+      // An already-unwound frame can leave one extra shadow stack entry, for
+      // example when DebugEpilogue discards its VM exit frame.
+      MOZ_RELEASE_ASSERT(rfe->shadowStackPointer[1] == returnAddress);
+      rfe->shadowStackPointer++;
+    }
+  }
+#endif
+
   CommonFrameLayout* prevJitFrame = nullptr;
   while (!iter.done()) {
     if (iter.isWasm()) {
