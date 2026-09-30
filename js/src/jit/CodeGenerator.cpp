@@ -16906,29 +16906,25 @@ void CodeGenerator::visitRest(LRest* lir) {
   constexpr uint32_t arrayCapacity = 6;
   static_assert(GuessArrayGCKind(0) == GuessArrayGCKind(arrayCapacity));
 
-  if (Shape* shape = lir->mir()->shape()) {
-    uint32_t arrayLength = 0;
-    gc::AllocKind allocKind = GuessArrayGCKind(arrayCapacity);
-    MOZ_ASSERT(gc::GetObjectFinalizeKind(&ArrayObject::class_) ==
-               gc::FinalizeKind::None);
-    MOZ_ASSERT(!IsFinalizedKind(allocKind));
-    MOZ_ASSERT(GetGCKindSlots(allocKind) ==
-               arrayCapacity + ObjectElements::VALUES_PER_HEADER);
+  uint32_t arrayLength = 0;
+  gc::AllocKind allocKind = GuessArrayGCKind(arrayCapacity);
+  MOZ_ASSERT(gc::GetObjectFinalizeKind(&ArrayObject::class_) ==
+             gc::FinalizeKind::None);
+  MOZ_ASSERT(!IsFinalizedKind(allocKind));
+  MOZ_ASSERT(GetGCKindSlots(allocKind) ==
+             arrayCapacity + ObjectElements::VALUES_PER_HEADER);
 
-    Label joinAlloc, failAlloc;
-    masm.movePtr(ImmGCPtr(shape), temp0);
-    masm.createArrayWithFixedElements(temp2, temp0, temp1, InvalidReg,
-                                      arrayLength, arrayCapacity, 0, 0,
-                                      allocKind, gc::Heap::Default, &failAlloc);
-    masm.jump(&joinAlloc);
-    {
-      masm.bind(&failAlloc);
-      masm.movePtr(ImmPtr(nullptr), temp2);
-    }
-    masm.bind(&joinAlloc);
-  } else {
+  Label joinAlloc, failAlloc;
+  masm.movePtr(ImmGCPtr(lir->mir()->shape()), temp0);
+  masm.createArrayWithFixedElements(temp2, temp0, temp1, InvalidReg,
+                                    arrayLength, arrayCapacity, 0, 0, allocKind,
+                                    gc::Heap::Default, &failAlloc);
+  masm.jump(&joinAlloc);
+  {
+    masm.bind(&failAlloc);
     masm.movePtr(ImmPtr(nullptr), temp2);
   }
+  masm.bind(&joinAlloc);
 
   // Set temp1 to the address of the first actual argument.
   size_t actualsOffset = JitFrameLayout::offsetOfActualArgs();
@@ -16968,55 +16964,53 @@ void CodeGenerator::visitRest(LRest* lir) {
   }
 
   // Try to initialize the array elements.
+  //
+  // Call into C++ if we failed to allocate an array or if there are more than
+  // |arrayCapacity| elements.
   Label vmCall, done;
-  if (lir->mir()->shape()) {
-    // Call into C++ if we failed to allocate an array or there are more than
-    // |arrayCapacity| elements.
-    masm.branchTestPtr(Assembler::Zero, temp2, temp2, &vmCall);
-    masm.branch32(Assembler::Above, lengthReg, Imm32(arrayCapacity), &vmCall);
+  masm.branchTestPtr(Assembler::Zero, temp2, temp2, &vmCall);
+  masm.branch32(Assembler::Above, lengthReg, Imm32(arrayCapacity), &vmCall);
 
-    // The array must be nursery allocated so no post barrier is needed.
+  // The array must be nursery allocated so no post barrier is needed.
 #ifdef DEBUG
-    Label ok;
-    masm.branchPtrInNurseryChunk(Assembler::Equal, temp2, temp3, &ok);
-    masm.assumeUnreachable("Unexpected tenured object for LRest");
-    masm.bind(&ok);
+  Label ok;
+  masm.branchPtrInNurseryChunk(Assembler::Equal, temp2, temp3, &ok);
+  masm.assumeUnreachable("Unexpected tenured object for LRest");
+  masm.bind(&ok);
 #endif
 
-    Label nonZeroLength;
-    masm.branch32(Assembler::NotEqual, lengthReg, Imm32(0), &nonZeroLength);
-    masm.movePtr(temp2, ReturnReg);
-    masm.jump(&done);
-    masm.bind(&nonZeroLength);
+  Label nonZeroLength;
+  masm.branch32(Assembler::NotEqual, lengthReg, Imm32(0), &nonZeroLength);
+  masm.movePtr(temp2, ReturnReg);
+  masm.jump(&done);
+  masm.bind(&nonZeroLength);
 
-    // Store length and initializedLength.
-    Register elements = temp3;
-    masm.loadPtr(Address(temp2, NativeObject::offsetOfElements()), elements);
-    Address lengthAddr(elements, ObjectElements::offsetOfLength());
-    Address initLengthAddr(elements,
-                           ObjectElements::offsetOfInitializedLength());
-    masm.store32(lengthReg, lengthAddr);
-    masm.store32(lengthReg, initLengthAddr);
+  // Store length and initializedLength.
+  Register elements = temp3;
+  masm.loadPtr(Address(temp2, NativeObject::offsetOfElements()), elements);
+  Address lengthAddr(elements, ObjectElements::offsetOfLength());
+  Address initLengthAddr(elements, ObjectElements::offsetOfInitializedLength());
+  masm.store32(lengthReg, lengthAddr);
+  masm.store32(lengthReg, initLengthAddr);
 
-    masm.push(temp2);  // Spill result to free up register.
+  masm.push(temp2);  // Spill result to free up register.
 
-    Register end = temp0;
-    Register args = temp1;
-    Register scratch = temp2;
-    masm.computeEffectiveAddress(BaseObjectElementIndex(elements, lengthReg),
-                                 end);
+  Register end = temp0;
+  Register args = temp1;
+  Register scratch = temp2;
+  masm.computeEffectiveAddress(BaseObjectElementIndex(elements, lengthReg),
+                               end);
 
-    Label loop;
-    masm.bind(&loop);
-    masm.storeValue(Address(args, 0), Address(elements, 0), scratch);
-    masm.addPtr(Imm32(sizeof(Value)), args);
-    masm.addPtr(Imm32(sizeof(Value)), elements);
-    masm.branchPtr(Assembler::Below, elements, end, &loop);
+  Label loop;
+  masm.bind(&loop);
+  masm.storeValue(Address(args, 0), Address(elements, 0), scratch);
+  masm.addPtr(Imm32(sizeof(Value)), args);
+  masm.addPtr(Imm32(sizeof(Value)), elements);
+  masm.branchPtr(Assembler::Below, elements, end, &loop);
 
-    // Pop result
-    masm.pop(ReturnReg);
-    masm.jump(&done);
-  }
+  // Pop result
+  masm.pop(ReturnReg);
+  masm.jump(&done);
 
   masm.bind(&vmCall);
 
