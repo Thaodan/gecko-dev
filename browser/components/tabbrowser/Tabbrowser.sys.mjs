@@ -364,8 +364,6 @@ export class Tabbrowser {
 
   _tabLayerCache = [];
 
-  tabAnimationsInProgress = 0;
-
   /**
    * Binding from browser to tab
    */
@@ -802,7 +800,6 @@ export class Tabbrowser {
     this.#selectedBrowser = browser;
     tab.permanentKey = browser.permanentKey;
     tab._index = 0;
-    tab._fullyOpen = true;
     tab.linkedBrowser = browser;
 
     if (userContextId) {
@@ -3925,9 +3922,9 @@ export class Tabbrowser {
       });
     }
 
-    // This field is updated regardless if we actually animate
-    // since it's important that we keep this count correct in all cases.
-    this.tabAnimationsInProgress++;
+    // Mark the tab as opening regardless if we actually animate
+    // since it's important that we keep the animation count correct in all cases.
+    this.tabContainer.markTabOpening(t);
 
     if (animate) {
       // Kick the animation off.
@@ -6392,7 +6389,7 @@ export class Tabbrowser {
       !this.tabContainer.verticalMode &&
       !aTab.pinned &&
       isVisibleTab &&
-      aTab._fullyOpen &&
+      this.tabContainer.openAnimationFinished(aTab) &&
       triggeringEvent?.inputSource == MouseEvent.MOZ_SOURCE_MOUSE &&
       /** @type {Element} */ (triggeringEvent.target).closest(
         ".tabbrowser-tab"
@@ -6635,13 +6632,7 @@ export class Tabbrowser {
       return true;
     }
 
-    if (!aTab._fullyOpen) {
-      // If the opening tab animation hasn't finished before we start closing the
-      // tab, decrement the animation count since _handleNewTab will not get called.
-      this.tabAnimationsInProgress--;
-    }
-
-    this.tabAnimationsInProgress++;
+    this.tabContainer.cancelTabOpening(aTab);
 
     // Mute audio immediately to improve perceived speed of tab closure.
     if (!adoptedByTab && aTab.hasAttribute("soundplaying")) {
@@ -6782,8 +6773,6 @@ export class Tabbrowser {
       aCloseWindow = false;
       aNewTab = false;
     }
-
-    this.tabAnimationsInProgress--;
 
     this.#lastRelatedTabMap = new WeakMap();
 
@@ -10483,7 +10472,7 @@ class TabProgressListener {
           aWebProgress.isTopLevel &&
           !aWebProgress.isLoadingDocument &&
           Components.isSuccessCode(aStatus) &&
-          !this.#tabbrowser.tabAnimationsInProgress &&
+          !this.#tabbrowser.tabContainer.tabAnimationsInProgress &&
           !this.#documentGlobal.gReduceMotion
         ) {
           if (this._tab._notselectedsinceload) {
