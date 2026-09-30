@@ -980,13 +980,6 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
-    "telemetry.structuredIngestion.endpoint",
-    {
-      title: "Structured Ingestion telemetry server endpoint",
-      value: "https://incoming.telemetry.mozilla.org/submit",
-    },
-  ],
-  [
     "telemetry.privatePing.enabled",
     {
       title: "Enables the private ping sent over OHTTP through Glean",
