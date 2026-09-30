@@ -367,7 +367,7 @@ export const NimbusTestUtils = {
      * @param {string | undefined} options.featureId
      * The feature ID for the feature used by the branch.
      *
-     * Requires `value`. Mutually exclusive with `value`.
+     * Requires `value`. Mutually exclusive with `features`.
      *
      * @param {object | undefined} options.value
      * The feature value for the feature used by the branch.
