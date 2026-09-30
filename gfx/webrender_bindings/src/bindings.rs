@@ -1658,8 +1658,6 @@ impl Compositor for WrCompositor {
         }
     }
 
-    fn enable_native_compositor(&mut self, _enable: bool) {}
-
     fn deinit(&mut self) {
         unsafe {
             wr_compositor_deinit(self.0);
