@@ -986,10 +986,19 @@ export class LoginManagerRustStorage {
       return true;
     }
 
+    const fields = Object.keys(matchData);
     let candidateLogins;
     if (
-      Object.keys(matchData).every(field => CANDIDATE_MATCH_FIELDS.has(field))
+      fields.length == 1 &&
+      fields[0] == "guid" &&
+      typeof matchData.guid == "string"
     ) {
+      // searchLoginsAsync() drops every other field when given a guid, so a
+      // guid search arrives here alone. Other callers fall through, so that
+      // their other fields are matched before anything is decrypted.
+      // match() keeps a login on guid only on equality, and guid is unique.
+      candidateLogins = await this.#storageAdapter.getMany([matchData.guid]);
+    } else if (fields.every(field => CANDIDATE_MATCH_FIELDS.has(field))) {
       // Matching the cleartext fields first means that a search without a hit
       // never needs the encryption key, and so never prompts for the primary
       // password. Only the logins that are actually returned get decrypted.
