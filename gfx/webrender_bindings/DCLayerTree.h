@@ -71,10 +71,6 @@ class GLContext;
 
 namespace wr {
 
-// The size of the virtual surface. This is large enough such that we
-// will never render a surface larger than this.
-#define VIRTUAL_SURFACE_SIZE (1024 * 1024)
-
 class DCLayerSurface;
 class DCLayerDCompositionTexture;
 class DCSurface;

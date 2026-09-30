@@ -913,11 +913,6 @@ void RenderCompositorANGLE::GetCompositorCapabilities(
     CompositorCapabilities* aCaps) {
   RenderCompositor::GetCompositorCapabilities(aCaps);
 
-  if (StaticPrefs::gfx_webrender_dcomp_use_virtual_surfaces_AtStartup()) {
-    aCaps->virtual_surface_size = VIRTUAL_SURFACE_SIZE;
-  } else {
-    aCaps->virtual_surface_size = 0;
-  }
   // DComp video overlay does not support negative scaling. See Bug 1831820
   aCaps->supports_external_compositor_surface_negative_scaling = false;
 }
