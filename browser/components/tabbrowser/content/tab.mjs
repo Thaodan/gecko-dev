@@ -81,10 +81,16 @@ export class MozTabbrowserTab extends MozElements.MozTab {
     // TODO(bug 2076466): Either tab notes or tabbrowser should fully own this.
     this.canonicalUrl = null;
 
+    /**
+     * The tab's browser. Tabbrowser sets it while adding the tab and clears
+     * it when the tab is removed.
+     *
+     * @type {MozBrowser|null}
+     */
+    this.linkedBrowser = null;
+
     // Assigned by other modules, mostly Tabbrowser.sys.mjs. Declared here for
     // type checking only; these lines assign nothing.
-    /** @type {MozBrowser} */
-    this.linkedBrowser;
     /** @type {MozTabbrowserTab|null} */
     this.successor;
     /** @type {Set<MozTabbrowserTab>} */
