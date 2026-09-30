@@ -6,11 +6,13 @@ import { html, when } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import { escapeHtmlEntities } from "chrome://browser/content/firefoxview/helpers.mjs";
 
-const lazy = {};
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
 const BROWSER_NEW_TAB_URL = "about:newtab";
 const BROWSER_OPEN_TABS_URL = "about:opentabs";
 
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   OpenTabsController: "resource:///modules/OpenTabsController.sys.mjs",
   NonPrivateTabs: "resource:///modules/OpenTabs.sys.mjs",
   getTabsTargetForWindow: "resource:///modules/OpenTabs.sys.mjs",

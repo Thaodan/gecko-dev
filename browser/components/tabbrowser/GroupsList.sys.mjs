@@ -8,13 +8,12 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const MAX_INITIAL_ITEMS = 5;
 
-const lazy = {};
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "tabGroupsAlternateMenu",
-  "browser.tabs.groups.alternateMenu",
-  false
-);
+const lazy = XPCOMUtils.declareLazy({
+  tabGroupsAlternateMenu: {
+    pref: "browser.tabs.groups.alternateMenu",
+    default: false,
+  },
+});
 
 export class GroupsPanel {
   constructor({ view, containerNode, showAll = false }) {
