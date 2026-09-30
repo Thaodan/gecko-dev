@@ -733,25 +733,34 @@ class LinuxArtifactJob(ArtifactJob):
 
     def process_package_artifact(self, filename, processed_filename):
         added_entry = False
+        patterns = self.package_artifact_patterns
 
         with self.get_writer(file=processed_filename, compress=False) as writer:
-            with tarfile.open(filename) as reader:
-                for p, f in UnpackFinder(TarFinder(filename, reader)):
-                    if not any(
-                        mozpath.match(p, pat) for pat in self.package_artifact_patterns
+            # None of the files we want are inside jars, so read the archive
+            # sequentially, which only requires decompressing it once.
+            with tarfile.open(filename, mode="r|*", bufsize=1024 * 1024) as reader:
+                for info in reader:
+                    if not info.isfile() or not any(
+                        mozpath.match(info.name, pat) for pat in patterns
                     ):
                         continue
 
                     # We strip off the relative "firefox/" bit from the path,
                     # but otherwise preserve it.
-                    destpath = mozpath.join("bin", mozpath.relpath(p, self.product))
+                    destpath = mozpath.join(
+                        "bin", mozpath.relpath(info.name, self.product)
+                    )
                     self.log(
                         logging.DEBUG,
                         "artifact",
                         {"destpath": destpath},
                         "Adding {destpath} to processed archive",
                     )
-                    writer.add(destpath.encode("utf-8"), f.open(), mode=f.mode)
+                    writer.add(
+                        destpath.encode("utf-8"),
+                        reader.extractfile(info),
+                        mode=info.mode,
+                    )
                     added_entry = True
 
         if not added_entry:
