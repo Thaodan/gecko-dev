@@ -5,6 +5,11 @@
 tabbrowser-empty-tab-title = New Tab
 tabbrowser-empty-private-tab-title = New Private Tab
 
+tabbrowser-menuitem-close-tab =
+    .label = Close Tab
+tabbrowser-menuitem-close =
+    .label = Close
+
 # Displayed within the tooltip on tabs inside of a tab group.
 # Variables:
 #   $tabGroupName (String): the user-defined name of the current tab group.
