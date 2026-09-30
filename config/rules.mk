@@ -204,15 +204,6 @@ HOST_PROGRAM :=
 HOST_SIMPLE_PROGRAMS :=
 endif
 
-ifdef MACH
-ifndef NO_BUILDSTATUS_MESSAGES
-define BUILDSTATUS
-@echo 'BUILDSTATUS@$(relativesrcdir) $1'
-
-endef
-endif
-endif
-
 define SUBMAKE # $(call SUBMAKE,target,directory,static)
 +@$(MAKE) $(if $(2),-C $(2)) $(1)
 
