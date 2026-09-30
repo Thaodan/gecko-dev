@@ -1196,7 +1196,9 @@ class PushheadCache(CacheManager):
         )
 
     @cachedmethod(operator.attrgetter("_cache"))
-    def parent_pushhead_id(self, tree, revision):
+    def parent_push(self, tree, revision):
+        """Return the id and head revision of the push containing ``revision``
+        on ``tree``."""
         cset_url_tmpl = (
             "https://hg.mozilla.org/{tree}/json-pushes?"
             "changeset={changeset}&version=2&tipsonly=1"
@@ -1208,8 +1210,12 @@ class PushheadCache(CacheManager):
         if req.status_code not in range(200, 300):
             raise ValueError
         result = req.json()
-        [found_pushid] = result["pushes"].keys()
-        return int(found_pushid)
+        [(found_pushid, push)] = result["pushes"].items()
+        return int(found_pushid), push["changesets"][-1]
+
+    @cachedmethod(operator.attrgetter("_cache"))
+    def parent_pushhead_id(self, tree, revision):
+        return self.parent_push(tree, revision)[0]
 
     @cachedmethod(operator.attrgetter("_cache"))
     def pushid_range(self, tree, start, end):
@@ -1660,27 +1666,50 @@ https://firefox-source-docs.mozilla.org/contributing/vcs/mercurial_bundles.html
 
         with build_marker("ArtifactVcs", "recent public revisions"):
             last_revs = self._get_recent_public_revisions()
-        candidate_pushheads = []
+        count = 0
+        # (tree, revision) pairs that were already yielded.
+        yielded = set()
+        candidate_pushheads = {}
         if self._git and not self._is_git_cinnabar:
             candidate_pushheads = {
                 rev: self._artifact_job.candidate_trees for rev in last_revs
             }
         else:
+            # The most recent public revision is often itself a pushhead, in
+            # which case it's the first candidate, and there is no need to
+            # query the pushlog for more unless it doesn't have artifacts.
+            first = next((r.rstrip() for r in last_revs if r.rstrip()), None)
+            for tree in self._artifact_job.candidate_trees if first else ():
+                with self._pushhead_cache as pushhead_cache:
+                    try:
+                        with build_marker("ArtifactPushlog", f"{tree} push of {first}"):
+                            _, head = pushhead_cache.parent_push(tree, first)
+                    except ValueError:
+                        continue
+                if head == first:
+                    count += 1
+                    yielded.add((tree, first))
+                    yield [tree], first
+
             for rev in last_revs:
                 candidate_pushheads = self._pushheads_from_rev(
                     rev.rstrip(), NUM_PUSHHEADS_TO_QUERY_PER_PARENT
                 )
                 if candidate_pushheads:
                     break
-        count = 0
         for rev_unstripped in last_revs:
             rev = rev_unstripped.rstrip()
             if not rev:
                 continue
-            if rev not in candidate_pushheads:
+            trees = [
+                tree
+                for tree in candidate_pushheads.get(rev, [])
+                if (tree, rev) not in yielded
+            ]
+            if not trees:
                 continue
             count += 1
-            yield candidate_pushheads[rev], rev
+            yield trees, rev
 
         if not count:
             raise Exception(
