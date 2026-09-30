@@ -62,7 +62,7 @@
   @media -moz-pref("browser.nova.enabled") {
     @layer tokens-browser-theme-nova {
       @media not ((forced-colors) or (-moz-native-theme)) {
-        --urlbar-box-background-color: var(--urlbarview-background-color-hover);
+        --urlbar-box-background-color: light-dark(color-mix(in srgb, currentColor 17%, transparent), color-mix(in srgb, currentColor 20%, transparent));
         --urlbar-box-background-color-hover: var(--urlbarview-background-color-selected);
         --urlbar-box-background-color-active: light-dark(rgba(117, 102, 159, 0.6), rgba(176, 163, 210, 0.6));
         --urlbar-icon-fill-opacity: light-dark(0.7, 0.95);

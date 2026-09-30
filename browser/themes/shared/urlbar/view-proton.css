@@ -175,6 +175,7 @@
   &[menu-trigger],
   &[row-selectable]:not([selected]):hover {
     background-color: var(--urlbarview-background-color-hover);
+    color: var(--urlbarview-text-color-hover);
   }
 
   &[selected] {
@@ -1399,6 +1400,7 @@
 
     .urlbarView-realtime-root:not([selectable]) > &:not([selected]):hover {
       background-color: var(--urlbarview-background-color-hover);
+      color: var(--urlbarview-text-color-hover);
     }
 
     &[selected] {
