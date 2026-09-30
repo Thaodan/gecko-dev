@@ -81,7 +81,6 @@ class ContinuousOnboardingFeature(
     private val ipProtectionBinding =
         IPProtectionOnboardingPrompt(
             repository = ipProtectionOnboardingConfig.promptRepository,
-            timeProvider = dateTimeProvider,
             mainDispatcher = ipProtectionMainDispatcher,
             store = ipProtectionOnboardingConfig.store,
             onShowOnboarding = {

@@ -14,7 +14,6 @@ import mozilla.components.feature.ipprotection.store.state.AccountStatus
 import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
 import mozilla.components.feature.ipprotection.store.state.IPProtectionState
 import mozilla.components.lib.state.helpers.AbstractBinding
-import mozilla.components.support.utils.DateTimeProvider
 
 /**
  * Triggers the IP protection onboarding bottom sheet when the user first becomes eligible and meets our required
@@ -26,7 +25,6 @@ import mozilla.components.support.utils.DateTimeProvider
  * @param onIneligible Callback invoked when the user is not eligible for the IP Protection feature.
  * @param onAlreadySatisfied Callback invoked when the user is eligible but [repository] no longer allows the prompt,
  *   e.g. it was already shown or the user has already used the VPN.
- * @param timeProvider Supplies the current time.
  * @param mainDispatcher [CoroutineDispatcher] on which [onShowOnboarding] is invoked.
  * @param store the singleton instance of [IPProtectionStore].
  */
@@ -35,7 +33,6 @@ class IPProtectionOnboardingPrompt(
     private val onShowOnboarding: () -> Unit,
     private val onIneligible: () -> Unit = {},
     private val onAlreadySatisfied: () -> Unit = {},
-    private val timeProvider: DateTimeProvider,
     mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
     store: IPProtectionStore,
 ) : AbstractBinding<IPProtectionState>(store, mainDispatcher) {
@@ -58,7 +55,7 @@ class IPProtectionOnboardingPrompt(
                     return@collect
                 }
 
-                if (repository.canShowIPProtectionPrompt(timeProvider.currentTimeMillis())) {
+                if (repository.canShowIPProtectionPrompt()) {
                     onShowOnboarding()
                 } else {
                     onAlreadySatisfied()

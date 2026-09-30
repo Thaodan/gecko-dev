@@ -15,7 +15,6 @@ import mozilla.components.feature.ipprotection.store.state.AccountState
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
 import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
 import mozilla.components.feature.ipprotection.store.state.IPProtectionState
-import mozilla.components.support.utils.FakeDateTimeProvider
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.mozilla.fenix.ipprotection.FakeIPProtectionPromptRepository
@@ -285,7 +284,6 @@ class IPProtectionOnboardingPromptTest {
                 onShowOnboarding = onShowOnboarding,
                 onIneligible = onIneligible,
                 onAlreadySatisfied = onAlreadySatisfied,
-                timeProvider = FakeDateTimeProvider(),
                 mainDispatcher = testDispatcher,
                 store = store,
             )

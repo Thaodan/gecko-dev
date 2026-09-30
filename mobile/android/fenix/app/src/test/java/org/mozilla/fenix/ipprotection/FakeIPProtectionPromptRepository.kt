@@ -14,5 +14,5 @@ class FakeIPProtectionPromptRepository(
 ) : IPProtectionPromptRepository {
     override var isShowingPrompt = false
 
-    override fun canShowIPProtectionPrompt(currentTimeMillis: Long) = canShowIPProtectionPrompt
+    override fun canShowIPProtectionPrompt() = canShowIPProtectionPrompt
 }
