@@ -820,13 +820,6 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
-    "discoverystream.optIn-region-weather-config",
-    {
-      title: "Regions for weather opt-in.",
-      value: "DE,GB,FR,ES,IT,CH,AT,BE,IE,NL,PL,CZ,SE,SG,HU,SK,FI,DK,NO,PT",
-    },
-  ],
-  [
     "weather.optInDisplayed",
     {
       title:
