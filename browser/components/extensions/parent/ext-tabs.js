@@ -1602,7 +1602,10 @@ this.tabs = class extends ExtensionAPIPersistent {
           if (append) {
             previousTab = referenceTab;
             lastSuccessor =
-              (insert && referenceTab && referenceTab.successor) || null;
+              (insert &&
+                referenceTab &&
+                referenceWindow.gBrowser.getSuccessor(referenceTab)) ||
+              null;
           } else {
             lastSuccessor = referenceTab;
           }
@@ -1621,9 +1624,12 @@ this.tabs = class extends ExtensionAPIPersistent {
             } else if (tab.documentGlobal !== referenceWindow) {
               continue;
             }
-            referenceWindow.gBrowser.replaceInSuccession(tab, tab.successor);
+            referenceWindow.gBrowser.replaceInSuccession(
+              tab,
+              referenceWindow.gBrowser.getSuccessor(tab)
+            );
             if (append && tab === lastSuccessor) {
-              lastSuccessor = tab.successor;
+              lastSuccessor = referenceWindow.gBrowser.getSuccessor(tab);
             }
             if (previousTab) {
               referenceWindow.gBrowser.setSuccessor(previousTab, tab);

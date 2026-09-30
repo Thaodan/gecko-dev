@@ -379,6 +379,12 @@ export class Tabbrowser {
   static #fullLabels = new WeakMap();
 
   /** @type {WeakMap<MozTabbrowserTab, MozTabbrowserTab>} */
+  static #successors = new WeakMap();
+
+  /** @type {WeakMap<MozTabbrowserTab, Set<MozTabbrowserTab>>} */
+  static #predecessors = new WeakMap();
+
+  /** @type {WeakMap<MozTabbrowserTab, MozTabbrowserTab>} */
   #lastRelatedTabMap = new WeakMap();
 
   #progressListeners = [];
@@ -6731,7 +6737,7 @@ export class Tabbrowser {
 
     // Splice this tab out of any lines of succession before any events are
     // dispatched.
-    this.replaceInSuccession(aTab, aTab.successor);
+    this.replaceInSuccession(aTab, this.getSuccessor(aTab));
     this.setSuccessor(aTab, null);
 
     // We're committed to closing the tab now.
@@ -7115,8 +7121,9 @@ export class Tabbrowser {
 
     // If this tab has a successor, it should be selectable, since
     // hiding or closing a tab removes that tab as a successor.
-    if (aTab.successor && !excludeTabs.has(aTab.successor)) {
-      return aTab.successor;
+    let successor = this.getSuccessor(aTab);
+    if (successor && !excludeTabs.has(successor)) {
+      return successor;
     }
 
     if (
@@ -7679,7 +7686,7 @@ export class Tabbrowser {
 
     // Splice this tab out of any lines of succession before any events are
     // dispatched.
-    this.replaceInSuccession(aTab, aTab.successor);
+    this.replaceInSuccession(aTab, this.getSuccessor(aTab));
     this.setSuccessor(aTab, null);
 
     let event = this.document.createEvent("Events");
@@ -10223,16 +10230,31 @@ export class Tabbrowser {
     if (successorTab && successorTab.documentGlobal != this.documentGlobal) {
       throw new Error("Cannot set the successor to another window's tab");
     }
-    if (aTab.successor) {
-      aTab.successor.predecessors.delete(aTab);
+    let oldSuccessor = Tabbrowser.#successors.get(aTab);
+    if (oldSuccessor) {
+      Tabbrowser.#predecessors.get(oldSuccessor).delete(aTab);
     }
-    aTab.successor = successorTab;
-    if (successorTab) {
-      if (!successorTab.predecessors) {
-        successorTab.predecessors = new Set();
-      }
-      successorTab.predecessors.add(aTab);
+    if (!successorTab) {
+      Tabbrowser.#successors.delete(aTab);
+      return;
     }
+    Tabbrowser.#successors.set(aTab, successorTab);
+    let predecessors = Tabbrowser.#predecessors.get(successorTab);
+    if (!predecessors) {
+      predecessors = new Set();
+      Tabbrowser.#predecessors.set(successorTab, predecessors);
+    }
+    predecessors.add(aTab);
+  }
+
+  /**
+   * The tab to select when the given tab is closed or hidden while selected.
+   *
+   * @param {MozTabbrowserTab} aTab
+   * @returns {MozTabbrowserTab|null}
+   */
+  getSuccessor(aTab) {
+    return Tabbrowser.#successors.get(aTab) ?? null;
   }
 
   /**
@@ -10240,11 +10262,12 @@ export class Tabbrowser {
    * instead.
    *
    * @param {MozTabbrowserTab} aTab
-   * @param {MozTabbrowserTab} aOtherTab
+   * @param {MozTabbrowserTab|null} aOtherTab
    */
   replaceInSuccession(aTab, aOtherTab) {
-    if (aTab.predecessors) {
-      for (const predecessor of Array.from(aTab.predecessors)) {
+    let predecessors = Tabbrowser.#predecessors.get(aTab);
+    if (predecessors) {
+      for (const predecessor of Array.from(predecessors)) {
         this.setSuccessor(predecessor, aOtherTab);
       }
     }

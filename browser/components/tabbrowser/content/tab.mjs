@@ -103,13 +103,6 @@ export class MozTabbrowserTab extends MozElements.MozTab {
      * @type {MozBrowser|null}
      */
     this.linkedBrowser = null;
-
-    // Assigned by other modules, mostly Tabbrowser.sys.mjs. Declared here for
-    // type checking only; these lines assign nothing.
-    /** @type {MozTabbrowserTab|null} */
-    this.successor;
-    /** @type {Set<MozTabbrowserTab>} */
-    this.predecessors;
   }
 
   static get inheritedAttributes() {
