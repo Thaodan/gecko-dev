@@ -2477,13 +2477,14 @@ networking:
       Counts the number of times the channel was blocked because it's a LNA load triggered by a tracker
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1973500
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072834
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1973500
     data_sensitivity:
       - technical
     notification_emails:
       - necko@mozilla.com
-    expires: 160
+    expires: 166
 
   local_network_access_connection:
     type: event
