@@ -235,7 +235,7 @@ class ArtifactCache:
                     "Downloading artifact to local cache: {path}",
                 )
                 dl.set_progress(download_progress)
-                with build_marker("ArtifactDownload", url):
+                with build_marker("ArtifactDownload", url, log=self.log):
                     dl.wait()
             else:
                 self.log(

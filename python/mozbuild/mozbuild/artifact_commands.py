@@ -203,12 +203,16 @@ def artifact_install(
     except Exception:
         created = None
     if created:
-        with build_marker("ArtifactStartup", "mach artifact install", created):
+        with build_marker(
+            "ArtifactStartup", "mach artifact install", created, log=command_context.log
+        ):
             pass
 
     artifact_filters = artifact_filters or []
     command_context._set_log_level(verbose)
-    with build_marker("ArtifactSetup", "mach artifact install"):
+    with build_marker(
+        "ArtifactSetup", "mach artifact install", log=command_context.log
+    ):
         artifacts = _make_artifacts(
             command_context,
             tree=tree,

@@ -345,7 +345,8 @@ class ArtifactJob:
             return False
         dest_path = mozpath.join(upload_dir, self._get_orig_basename(filename))
         ensureParentDir(dest_path)
-        shutil.copy2(filename, dest_path)
+        with build_marker("ArtifactUpload", dest_path, log=self.log):
+            shutil.copy2(filename, dest_path)
         self.log(
             logging.INFO,
             "artifact",
@@ -756,11 +757,12 @@ class LinuxArtifactJob(ArtifactJob):
                         {"destpath": destpath},
                         "Adding {destpath} to processed archive",
                     )
-                    writer.add(
-                        destpath.encode("utf-8"),
-                        reader.extractfile(info),
-                        mode=info.mode,
-                    )
+                    with build_marker("ArtifactExtract", destpath, log=self.log):
+                        writer.add(
+                            destpath.encode("utf-8"),
+                            reader.extractfile(info),
+                            mode=info.mode,
+                        )
                     added_entry = True
 
         if not added_entry:
@@ -1531,7 +1533,9 @@ class Artifacts:
                     "Attempting to find a pushhead containing {rev} on {tree}.",
                 )
                 try:
-                    with build_marker("ArtifactPushlog", f"{tree} push of {rev}"):
+                    with build_marker(
+                        "ArtifactPushlog", f"{tree} push of {rev}", log=self.log
+                    ):
                         pushid = pushhead_cache.parent_pushhead_id(tree, rev)
                     found_pushids[tree] = pushid
                 except ValueError:
@@ -1553,7 +1557,9 @@ class Artifacts:
                     },
                     "Retrieving the last {num} pushheads starting with id {pushid} on {tree}",
                 )
-                with build_marker("ArtifactPushlog", f"{tree} pushes {start} to {end}"):
+                with build_marker(
+                    "ArtifactPushlog", f"{tree} pushes {start} to {end}", log=self.log
+                ):
                     pushheads = pushhead_cache.pushid_range(tree, start, end)
                 for pushhead in pushheads:
                     candidate_pushheads[pushhead].append(tree)
@@ -1676,7 +1682,7 @@ https://firefox-source-docs.mozilla.org/contributing/vcs/mercurial_bundles.html
         working parent.
         """
 
-        with build_marker("ArtifactVcs", "recent public revisions"):
+        with build_marker("ArtifactVcs", "recent public revisions", log=self.log):
             last_revs = self._get_recent_public_revisions()
         count = 0
         # (tree, revision) pairs that were already yielded.
@@ -1694,7 +1700,9 @@ https://firefox-source-docs.mozilla.org/contributing/vcs/mercurial_bundles.html
             for tree in self._artifact_job.candidate_trees if first else ():
                 with self._pushhead_cache as pushhead_cache:
                     try:
-                        with build_marker("ArtifactPushlog", f"{tree} push of {first}"):
+                        with build_marker(
+                            "ArtifactPushlog", f"{tree} push of {first}", log=self.log
+                        ):
                             _, head = pushhead_cache.parent_push(tree, first)
                     except ValueError:
                         continue
@@ -1732,7 +1740,9 @@ https://firefox-source-docs.mozilla.org/contributing/vcs/mercurial_bundles.html
 
     def find_pushhead_artifacts(self, task_cache, job, tree, pushhead):
         try:
-            with build_marker("ArtifactFind", f"{job} on {tree} at {pushhead}"):
+            with build_marker(
+                "ArtifactFind", f"{job} on {tree} at {pushhead}", log=self.log
+            ):
                 taskId, artifacts = task_cache.artifacts(
                     tree, job, self._artifact_job.job_configuration, pushhead
                 )
@@ -1796,7 +1806,7 @@ https://firefox-source-docs.mozilla.org/contributing/vcs/mercurial_bundles.html
                 "Writing processed {processed_filename}",
             )
             try:
-                with build_marker("ArtifactProcess", filename):
+                with build_marker("ArtifactProcess", filename, log=self.log):
                     self._artifact_job.process_artifact(filename, processed_filename)
             except Exception as e:
                 # Delete the partial output of failed processing.
@@ -1816,7 +1826,7 @@ https://firefox-source-docs.mozilla.org/contributing/vcs/mercurial_bundles.html
         if processed_filename is None:
             orig_basename = self._artifact_job._get_orig_basename(filename)
             path = mozpath.join(distdir, orig_basename)
-            with build_marker("ArtifactInstall", path), FileAvoidWrite(
+            with build_marker("ArtifactInstall", path, log=self.log), FileAvoidWrite(
                 path, readmode="rb"
             ) as fh:
                 shutil.copyfileobj(open(filename, mode="rb"), fh)
@@ -1835,9 +1845,9 @@ https://firefox-source-docs.mozilla.org/contributing/vcs/mercurial_bundles.html
             "Installing from processed {processed_filename}",
         )
 
-        with build_marker("ArtifactInstall", processed_filename), zipfile.ZipFile(
-            processed_filename
-        ) as zf:
+        with build_marker(
+            "ArtifactInstall", processed_filename, log=self.log
+        ), zipfile.ZipFile(processed_filename) as zf:
             for info in zf.infolist():
                 n = mozpath.join(distdir, info.filename)
                 fh = FileAvoidWrite(n, readmode="rb")
