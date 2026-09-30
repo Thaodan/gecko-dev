@@ -24,6 +24,10 @@ static const SEC_ASN1Template CERTSubjectKeyIDTemplate[] = {
     { SEC_ASN1_OCTET_STRING }
 };
 
+static const SEC_ASN1Template CERTIA5TypeTemplate[] = {
+    { SEC_ASN1_IA5_STRING }
+};
+
 SEC_ASN1_MKSUB(SEC_GeneralizedTimeTemplate)
 
 static const SEC_ASN1Template CERTPrivateKeyUsagePeriodTemplate[] = {
@@ -71,6 +75,20 @@ CERT_EncodeSubjectKeyID(PLArenaPool *arena, const SECItem *srcString,
     return (rv);
 }
 
+SECStatus
+CERT_EncodePrivateKeyUsagePeriod(PLArenaPool *arena,
+                                 CERTPrivKeyUsagePeriod *pkup,
+                                 SECItem *encodedValue)
+{
+    SECStatus rv = SECSuccess;
+
+    if (SEC_ASN1EncodeItem(arena, encodedValue, pkup,
+                           CERTPrivateKeyUsagePeriodTemplate) == NULL) {
+        rv = SECFailure;
+    }
+    return (rv);
+}
+
 CERTPrivKeyUsagePeriod *
 CERT_DecodePrivKeyUsagePeriodExtension(PLArenaPool *arena, SECItem *extnValue)
 {
@@ -102,6 +120,27 @@ CERT_DecodePrivKeyUsagePeriodExtension(PLArenaPool *arena, SECItem *extnValue)
 
 loser:
     return NULL;
+}
+
+SECStatus
+CERT_EncodeIA5TypeExtension(PLArenaPool *arena, char *value,
+                            SECItem *encodedValue)
+{
+    SECItem encodeContext;
+    SECStatus rv = SECSuccess;
+
+    PORT_Memset(&encodeContext, 0, sizeof(encodeContext));
+
+    if (value != NULL) {
+        encodeContext.data = (unsigned char *)value;
+        encodeContext.len = strlen(value);
+    }
+    if (SEC_ASN1EncodeItem(arena, encodedValue, &encodeContext,
+                           CERTIA5TypeTemplate) == NULL) {
+        rv = SECFailure;
+    }
+
+    return (rv);
 }
 
 SECStatus

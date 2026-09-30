@@ -1114,7 +1114,22 @@ int
 SECKEY_ECParamsToKeySize(const SECItem *encodedParams)
 {
     SECOidTag tag;
-    tag = SECKEY_GetECCOid(encodedParams);
+    SECItem oid = { siBuffer, NULL, 0 };
+
+    /* The encodedParams data contains 0x06 (SEC_ASN1_OBJECT_ID),
+     * followed by the length of the curve oid and the curve oid.
+     */
+    if (!encodedParams || !encodedParams->data ||
+        encodedParams->len < 2 ||
+        encodedParams->data[0] != SEC_ASN1_OBJECT_ID ||
+        (unsigned)encodedParams->data[1] > encodedParams->len - 2) {
+        PORT_SetError(SEC_ERROR_BAD_DER);
+        return 0;
+    }
+    oid.len = encodedParams->data[1];
+    oid.data = encodedParams->data + 2;
+    if ((tag = SECOID_FindOIDTag(&oid)) == SEC_OID_UNKNOWN)
+        return 0;
 
     switch (tag) {
         case SEC_OID_SECG_EC_SECP112R1:
@@ -1239,10 +1254,24 @@ SECKEY_ECParamsToKeySize(const SECItem *encodedParams)
 int
 SECKEY_ECParamsToBasePointOrderLen(const SECItem *encodedParams)
 {
-    SECOidTag tag = SECKEY_GetECCOid(encodedParams);
-    if (tag == SEC_OID_UNKNOWN) {
-        return 0; /* error set by SECKEY_GetECCOid */
+    SECOidTag tag;
+    SECItem oid = { siBuffer, NULL, 0 };
+
+    /* The encodedParams data contains 0x06 (SEC_ASN1_OBJECT_ID),
+     * followed by the length of the curve oid and the curve oid.
+     */
+    if (!encodedParams || !encodedParams->data ||
+        encodedParams->len < 2 ||
+        encodedParams->data[0] != SEC_ASN1_OBJECT_ID ||
+        (unsigned)encodedParams->data[1] > encodedParams->len - 2) {
+        PORT_SetError(SEC_ERROR_BAD_DER);
+        return 0;
     }
+    oid.len = encodedParams->data[1];
+    oid.data = encodedParams->data + 2;
+    if ((tag = SECOID_FindOIDTag(&oid)) == SEC_OID_UNKNOWN)
+        return 0;
+
     switch (tag) {
         case SEC_OID_SECG_EC_SECP112R1:
             return 112;
@@ -1514,8 +1543,6 @@ SECKEY_PrivateKeyStrengthInBits(const SECKEYPrivateKey *privk)
             PORT_Free(params.data);
             return bitSize;
         case ecKey:
-        case edKey:
-        case ecMontKey:
             rv = PK11_ReadAttribute(privk->pkcs11Slot, privk->pkcs11ID,
                                     CKA_EC_PARAMS, NULL, &params);
             if ((rv != SECSuccess) || (params.data == NULL)) {
@@ -1770,10 +1797,9 @@ SECKEY_EnforceKeySize(KeyType keyType, unsigned keyLength, SECErrorCodes error)
         case ecKey:
             opt = NSS_ECC_MIN_KEY_SIZE;
             break;
-        case edKey:
         case mldsaKey:
         case kyberKey:
-            return SECSuccess; /* mldsa, ed, and mlkem handles key size policy
+            return SECSuccess; /* mldsa and kyber handles key size policy
                                 * by having separate controls on
                                 * key params */
         case nullKey:
@@ -2804,12 +2830,8 @@ SECKEY_GetECCOid(const SECKEYECParams *params)
      * before the actual OID and use the OID to look up a named curve.
      */
     if (!params || !params->data || params->len < 2 ||
-        params->data[0] != SEC_ASN1_OBJECT_ID ||
-        (params->data[1] & 0x80) != 0 ||
-        params->data[1] != (params->len - 2)) {
-        PORT_SetError(SEC_ERROR_BAD_DER);
+        params->data[0] != SEC_ASN1_OBJECT_ID)
         return 0;
-    }
     oid.len = params->len - 2;
     oid.data = params->data + 2;
     if ((oidData = SECOID_FindOID(&oid)) == NULL)

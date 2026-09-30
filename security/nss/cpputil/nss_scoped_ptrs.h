@@ -52,9 +52,6 @@ struct ScopedDelete {
   void operator()(SECKEYPrivateKeyList* list) {
     SECKEY_DestroyPrivateKeyList(list);
   }
-  void operator()(SECKEYPrivateKeyInfo* pki) {
-    SECKEY_DestroyPrivateKeyInfo(pki, PR_TRUE);
-  }
   void operator()(SECMODModule* module) { SECMOD_DestroyModule(module); }
   void operator()(SEC_PKCS12DecoderContext* dcx) {
     SEC_PKCS12DecoderFinish(dcx);
@@ -105,7 +102,6 @@ SCOPED(SECItem);
 SCOPED(SECKEYEncryptedPrivateKeyInfo);
 SCOPED(SECKEYPrivateKey);
 SCOPED(SECKEYPrivateKeyList);
-SCOPED(SECKEYPrivateKeyInfo);
 SCOPED(SECKEYPublicKey);
 SCOPED(SECMODModule);
 SCOPED(SEC_PKCS12DecoderContext);

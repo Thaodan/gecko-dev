@@ -1028,9 +1028,7 @@ loser:
 NSS_IMPLEMENT NSSTrust *
 nssTrustDomain_FindTrustForCertificate(
     NSSTrustDomain *td,
-    NSSDER *encoding,
-    NSSDER *issuer,
-    NSSDER *serial)
+    NSSCertificate *c)
 {
     NSSSlot **slots;
     NSSSlot **slotp;
@@ -1047,9 +1045,9 @@ nssTrustDomain_FindTrustForCertificate(
 
         if (token) {
             to = nssToken_FindTrustForCertificate(token, NULL,
-                                                  encoding,
-                                                  issuer,
-                                                  serial,
+                                                  &c->encoding,
+                                                  &c->issuer,
+                                                  &c->serial,
                                                   nssTokenSearchType_TokenOnly);
             if (to) {
                 PRStatus status;
@@ -1067,7 +1065,7 @@ nssTrustDomain_FindTrustForCertificate(
         }
     }
     if (pkio) {
-        rvt = nssTrust_Create(pkio, encoding);
+        rvt = nssTrust_Create(pkio, &c->encoding);
         if (rvt) {
             pkio = NULL; /* rvt object now owns the pkio reference */
         }

@@ -398,6 +398,12 @@ CERT_DestroyUserNotice(CERTUserNotice *userNotice)
     return;
 }
 
+char *
+CERT_GetCertCommentString(CERTCertificate *cert)
+{
+    return NULL;
+}
+
 const SEC_ASN1Template CERT_OidSeqTemplate[] = {
     { SEC_ASN1_SEQUENCE_OF | SEC_ASN1_XTRN, offsetof(CERTOidSequence, oids),
       SEC_ASN1_SUB(SEC_ObjectIDTemplate) }
