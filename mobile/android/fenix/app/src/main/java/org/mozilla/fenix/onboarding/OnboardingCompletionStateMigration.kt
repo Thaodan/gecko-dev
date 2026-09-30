@@ -13,6 +13,11 @@ import org.mozilla.fenix.utils.Settings
 
 private const val UNSET_TIMESTAMP = -1L
 
+private const val DAY_2 = 2
+private const val DAY_3 = 3
+private const val DAY_5 = 5
+private const val DAY_7 = 7
+
 private val logger = Logger("OnboardingCompletionStateMigration")
 
 /**
@@ -144,10 +149,10 @@ private fun Settings.recordMigrationStarted(reason: MigrationReason) {
 /** Returns completed stages, as their day number, and their timestamps in day order. */
 private fun Settings.completedContinuousOnboardingStages(): List<Pair<Int, Long>> =
     listOf(
-            2 to secondDayOnboardingCompletedTimestamp,
-            3 to thirdDayOnboardingCompletedTimestamp,
-            5 to fifthDayOnboardingCompletedTimestamp,
-            7 to seventhDayOnboardingCompletedTimestamp,
+            DAY_2 to secondDayOnboardingCompletedTimestamp,
+            DAY_3 to thirdDayOnboardingCompletedTimestamp,
+            DAY_5 to fifthDayOnboardingCompletedTimestamp,
+            DAY_7 to seventhDayOnboardingCompletedTimestamp,
         )
         .filter { it.second != UNSET_TIMESTAMP }
 
