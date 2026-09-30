@@ -8066,8 +8066,9 @@ export class Tabbrowser {
   }
 
   /**
-   * @param {MozTabbrowserTab|MozTabbrowserTabGroup} element
-   * @param {MozTabbrowserTab|MozTabbrowserTabGroup} targetElement
+   * @param {MozTabbrowserTab|MozTabbrowserTabGroup|MozTabbrowserTabGroupLabel} element
+   *   A tab group label stands in for its group.
+   * @param {MozTabbrowserTab|MozTabbrowserTabGroup|MozTabbrowserTabGroupLabel} targetElement
    * @param {object} [options]
    * @param {TabMetricsContext} [options.metricsContext]
    *   The context for the operation for telemetry purposes.
@@ -8088,8 +8089,9 @@ export class Tabbrowser {
   }
 
   /**
-   * @param {MozTabbrowserTab|MozTabbrowserTabGroup} element
-   * @param {MozTabbrowserTab|MozTabbrowserTabGroup} targetElement
+   * @param {MozTabbrowserTab|MozTabbrowserTabGroup|MozTabbrowserTabGroupLabel} element
+   *   A tab group label stands in for its group.
+   * @param {MozTabbrowserTab|MozTabbrowserTabGroup|MozTabbrowserTabGroupLabel} targetElement
    * @param {object} [options]
    * @param {TabMetricsContext} [options.metricsContext]
    *   The context for the operation for telemetry purposes.
@@ -8110,10 +8112,11 @@ export class Tabbrowser {
   }
 
   /**
-   * @param {MozTabbrowserTab|MozTabbrowserTabGroup|MozTabSplitViewWrapper} element
+   * @param {MozTabbrowserTab|MozTabbrowserTabGroup|MozTabSplitViewWrapper|MozTabbrowserTabGroupLabel} element
    *   The tab, tab group or split view to move. Also accepts a tab group label
    *   as a stand-in for its group.
-   * @param {MozTabbrowserTab|MozTabbrowserTabGroup|MozTabSplitViewWrapper} targetElement
+   * @param {MozTabbrowserTab|MozTabbrowserTabGroup|MozTabSplitViewWrapper|MozTabbrowserTabGroupLabel} targetElement
+   *   Also accepts a tab group label as a stand-in for its group.
    * @param {boolean} [moveBefore=false]
    * @param {object} [options]
    * @param {TabMetricsContext} [options.metricsContext]
