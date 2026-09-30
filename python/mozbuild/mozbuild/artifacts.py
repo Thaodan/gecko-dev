@@ -302,6 +302,9 @@ class ArtifactJob:
                     f"Did not find expected artifacts {sorted(missing_artifacts)}. Did find artifacts: {sorted(found_artifact_filters)}"
                 )
 
+    # Processed archives are only a local cache of the files to install.
+    # Package and test files are stored uncompressed in them, because
+    # compressing them takes longer than extracting the originals.
     @contextmanager
     def get_writer(self, **kwargs):
         with JarWriter(**kwargs) as writer:
@@ -361,7 +364,7 @@ class ArtifactJob:
 
         added_entry = False
 
-        with self.get_writer(file=processed_filename, compress_level=5) as writer:
+        with self.get_writer(file=processed_filename, compress=False) as writer:
             reader = JarReader(filename)
             for entry_filename, entry in reader.entries.items():
                 for pattern, (src_prefix, dest_prefix) in self.test_artifact_patterns:
@@ -470,7 +473,7 @@ class ArtifactJob:
             )
 
     def process_tests_tar_artifact(self, filename, processed_filename):
-        with self.get_writer(file=processed_filename, compress_level=5) as writer:
+        with self.get_writer(file=processed_filename, compress=False) as writer:
             if filename.endswith(".zst"):
                 import zstandard
 
@@ -622,7 +625,7 @@ class AndroidArtifactJob(ArtifactJob):
 
     def process_package_artifact(self, filename, processed_filename):
         # Extract all libraries into the root, which will get copied into `dist/bin` and `dist/host/bin`.
-        with self.get_writer(file=processed_filename, compress_level=5) as writer:
+        with self.get_writer(file=processed_filename, compress=False) as writer:
             zip_path = filename
 
             for pattern, prefix in (
@@ -731,7 +734,7 @@ class LinuxArtifactJob(ArtifactJob):
     def process_package_artifact(self, filename, processed_filename):
         added_entry = False
 
-        with self.get_writer(file=processed_filename, compress_level=5) as writer:
+        with self.get_writer(file=processed_filename, compress=False) as writer:
             with tarfile.open(filename) as reader:
                 for p, f in UnpackFinder(TarFinder(filename, reader)):
                     if not any(
@@ -877,7 +880,7 @@ class MacArtifactJob(ArtifactJob):
                 )
             ]
 
-            with self.get_writer(file=processed_filename, compress_level=5) as writer:
+            with self.get_writer(file=processed_filename, compress=False) as writer:
                 for root, paths in self.paths_no_keep_path:
                     finder = UnpackFinder(mozpath.join(source, root))
                     for path in paths:
@@ -959,7 +962,7 @@ class WinArtifactJob(ArtifactJob):
 
     def process_package_artifact(self, filename, processed_filename):
         added_entry = False
-        with self.get_writer(file=processed_filename, compress_level=5) as writer:
+        with self.get_writer(file=processed_filename, compress=False) as writer:
             for p, f in UnpackFinder(JarFinder(filename, JarReader(filename))):
                 if not any(
                     mozpath.match(p, pat) for pat in self.package_artifact_patterns
@@ -1032,7 +1035,7 @@ class UnfilteredProjectPackageArtifactJob(ArtifactJob):
                 raise ValueError(f"Expected one source bundle, found: {bundle_dirs}")
             (source,) = bundle_dirs
 
-            with self.get_writer(file=processed_filename, compress_level=5) as writer:
+            with self.get_writer(file=processed_filename, compress=False) as writer:
                 finder = FileFinder(source)
                 for p, f in finder.find("*"):
                     q = p

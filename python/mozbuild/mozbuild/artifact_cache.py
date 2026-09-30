@@ -47,8 +47,8 @@ dl_init.__defaults__ = (
 # so don't make this to large!
 MIN_CACHED_ARTIFACTS = 12
 
-# Maximum size of the downloaded artifacts to keep in cache, in bytes (2GiB).
-MAX_CACHED_ARTIFACTS_SIZE = 2 * 1024 * 1024 * 1024
+# Maximum size of the downloaded artifacts to keep in cache, in bytes (4GiB).
+MAX_CACHED_ARTIFACTS_SIZE = 4 * 1024 * 1024 * 1024
 
 
 class ArtifactPersistLimit(dlmanager.PersistLimit):
