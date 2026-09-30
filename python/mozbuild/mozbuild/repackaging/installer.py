@@ -18,7 +18,7 @@ def repackage_installer(
     topsrcdir, tag, setupexe, package, output, package_name, sfx_stub, use_upx
 ):
     if package and not zipfile.is_zipfile(package):
-        raise Exception("Package file %s is not a valid .zip file." % package)
+        raise Exception(f"Package file {package} is not a valid .zip file.")
     if package is not None and package_name is None:
         raise Exception("Package name must be provided, if a package is provided.")
     if package is None and package_name is not None:

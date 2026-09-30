@@ -568,7 +568,7 @@ class ArtifactJob:
                         break
                     yield info.name, reader.extractfile(info)
         else:
-            raise RuntimeError("Unsupported archive type for %s" % filename)
+            raise RuntimeError(f"Unsupported archive type for {filename}")
 
     @property
     def product(self):
@@ -1955,7 +1955,7 @@ https://firefox-source-docs.mozilla.org/contributing/vcs/mercurial_bundles.html
                 ).strip()
             elif self._git:
                 revset = self.check_git_output(
-                    ["rev-parse", "%s^{commit}" % revset],
+                    ["rev-parse", f"{revset}^{{commit}}"],
                     stderr=open(os.devnull, "w"),
                     cwd=self._topsrcdir,
                 ).strip()
@@ -2035,7 +2035,7 @@ https://firefox-source-docs.mozilla.org/contributing/vcs/mercurial_bundles.html
             return self.install_from_revset(source, distdir)
 
         for var in (
-            "MOZ_ARTIFACT_TASK_%s" % self._job.upper().replace("-", "_"),
+            f"MOZ_ARTIFACT_TASK_{self._job.upper().replace('-', '_')}",
             "MOZ_ARTIFACT_TASK",
         ):
             if var in os.environ:

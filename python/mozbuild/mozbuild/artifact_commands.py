@@ -497,7 +497,7 @@ def artifact_toolchain(
                             "artifact",
                             {},
                             "Hint: consider reverting your local changes "
-                            "to the following files: %s" % sorted(changed_files),
+                            f"to the following files: {sorted(changed_files)}",
                         )
                 if "TASKCLUSTER_ROOT_URL" in os.environ:
                     command_context.log(
