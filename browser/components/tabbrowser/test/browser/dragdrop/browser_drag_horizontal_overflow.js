@@ -8,7 +8,10 @@ add_setup(async () => {
     overflowAtStart: false,
     overflowTabFactor: 3,
   });
-  await BrowserTestUtils.allTabOpenAnimationsFinished(window);
+  await TestUtils.waitForCondition(
+    () => Array.from(gBrowser.tabs).every(tab => tab._fullyOpen),
+    "Tabs are fully open"
+  );
 });
 
 registerCleanupFunction(() => {

@@ -401,7 +401,9 @@ async function createTabs(howMany) {
     triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
   });
 
-  await BrowserTestUtils.allTabOpenAnimationsFinished(window);
+  await TestUtils.waitForCondition(() => {
+    return Array.from(gBrowser.tabs).every(tab => tab._fullyOpen);
+  });
 }
 
 /**

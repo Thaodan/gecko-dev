@@ -470,7 +470,7 @@ class TabNotesControllerClass {
    * @param {MozTabbrowserTab} tab
    */
   #resetTab(tab) {
-    tab.canonicalUrl = null;
+    delete tab.canonicalUrl;
     tab.hasTabNote = false;
   }
 }

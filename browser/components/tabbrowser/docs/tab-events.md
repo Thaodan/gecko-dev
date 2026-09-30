@@ -228,7 +228,7 @@ and exists for an ASRouter onboarding trigger.
 | `TabGroupUngroup` | `metricsContext` | `ungroupTabs` is about to move every tab out of the group. |
 | `TabGroupSaved` | `metricsContext` | The group has been handed to session store as a saved group. |
 | `TabGroupRemoveRequested` | `skipSessionStore`, `metricsContext` | `removeTabGroup` is about to close the group's tabs, while they are still members, which is what lets session store record them. |
-| `TabGroupRemoved` | `adopting`, true when the group is moving to another window | The group's last tab left, just before the element removes itself. |
+| `TabGroupRemoved` | — | The group's last tab left, just before the element removes itself. |
 
 ## Events that are internal plumbing
 

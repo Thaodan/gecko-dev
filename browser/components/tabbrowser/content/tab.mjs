@@ -69,36 +69,32 @@ export class MozTabbrowserTab extends MozElements.MozTab {
 
     this.closing = false;
 
-    /**
-     * The canonical URL of the tab's page: the URL the page declares through
-     * `<link rel="canonical">`, `og:url` or JSON-LD, or else the page's own
-     * URL. It is detected once the page has loaded, or restored with the
-     * session, and is null before that, after the tab navigates, and while
-     * canonical URL detection is off.
-     *
-     * @type {string|null}
-     */
-    // TODO(bug 2076466): Either tab notes or tabbrowser should fully own this.
-    this.canonicalUrl = null;
-
     // Assigned by other modules, mostly Tabbrowser.sys.mjs. Declared here for
     // type checking only; these lines assign nothing.
     /** @type {MozBrowser} */
     this.linkedBrowser;
+    /** @type {object} */
+    this.permanentKey;
     /** @type {MozTabbrowserTab|null} */
     this.successor;
     /** @type {Set<MozTabbrowserTab>} */
     this.predecessors;
+    /** @type {string} */
+    this.canonicalUrl;
     /** @type {boolean} */
     this.initializingTab;
     /** @type {boolean} */
     this.removedByAdoption;
+    /** @type {boolean} */
+    this._fullyOpen;
     /** @type {string} */
     this._fullLabel;
     /** @type {boolean} */
     this._labelIsContentTitle;
     /** @type {boolean} */
     this._labelIsInitialTitle;
+    /** @type {boolean} */
+    this._pinnedUnscrollable;
     /** @type {boolean} */
     this._pendingPermitUnload;
     /** @type {number} */
@@ -288,16 +284,6 @@ export class MozTabbrowserTab extends MozElements.MozTab {
     return this.hasAttribute("usercontextid")
       ? parseInt(this.getAttribute("usercontextid"))
       : 0;
-  }
-
-  /**
-   * The permanent key of the tab's browser, or undefined once the tab has
-   * been closed.
-   *
-   * @type {object|undefined}
-   */
-  get permanentKey() {
-    return this.linkedBrowser?.permanentKey;
   }
 
   get soundPlaying() {

@@ -268,7 +268,9 @@ add_task(async function test_tabGroupPreventScrollOnUncollapse() {
   // create some more tabs after the group
   createManyTabs(4, win);
 
-  await BrowserTestUtils.allTabOpenAnimationsFinished(win);
+  await TestUtils.waitForCondition(() => {
+    return Array.from(win.gBrowser.tabs).every(tab => tab._fullyOpen);
+  });
 
   info("selecting the last tab");
   let tabSelected = BrowserTestUtils.waitForEvent(win, "TabSelect");

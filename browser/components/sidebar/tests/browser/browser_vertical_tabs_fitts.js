@@ -55,7 +55,10 @@ add_task(async function test_overflow_newtab_button_fitts_leading_edge() {
     overflowAtStart: false,
     overflowTabFactor: 3,
   });
-  await BrowserTestUtils.allTabOpenAnimationsFinished(window);
+  await TestUtils.waitForCondition(
+    () => Array.from(gBrowser.tabs).every(tab => tab._fullyOpen),
+    "Tabs are fully open"
+  );
   Assert.ok(
     gBrowser.tabContainer.arrowScrollbox.overflowing,
     "The vertical tab strip is overflowing"
