@@ -366,6 +366,12 @@ export class Tabbrowser {
   /** @type {WeakMap<MozTabbrowserTab, Promise<MozFindbar | null>>} */
   static #pendingFindBars = new WeakMap();
 
+  /** @type {WeakSet<MozTabbrowserTab>} */
+  static #tabsLeavingAdoptedSplitView = new WeakSet();
+
+  /** @type {WeakSet<MozTabbrowserTab>} */
+  static #tabsJoiningAdoptedSplitView = new WeakSet();
+
   /** @type {WeakMap<MozTabbrowserTab, MozTabbrowserTab>} */
   #lastRelatedTabMap = new WeakMap();
 
@@ -2033,6 +2039,8 @@ export class Tabbrowser {
         cancelable: false,
         detail: {
           previousTab: oldTab,
+          previousTabInAdoptedSplitView:
+            Tabbrowser.#tabsLeavingAdoptedSplitView.has(oldTab),
         },
       });
       newTab.dispatchEvent(event);
@@ -4449,13 +4457,13 @@ export class Tabbrowser {
     // To reduce noise in extension API events, we temporarily flag these
     // tabs to allow ext-tabs.js to filter out such TabMove events.
     for (let tab of container.tabs) {
-      tab.removedByAdoption = true;
+      Tabbrowser.#tabsLeavingAdoptedSplitView.add(tab);
       let adoptedTab = this.adoptTab(tab, {
         selectTab: tab === oldSelectedTab,
         tabIndex,
         elementIndex,
       });
-      adoptedTab.addedByAdoption = true;
+      Tabbrowser.#tabsJoiningAdoptedSplitView.add(adoptedTab);
       newTabs.push(adoptedTab);
       // Put next tab after current one.
       elementIndex = undefined;
@@ -4469,7 +4477,7 @@ export class Tabbrowser {
       });
     } finally {
       for (let tab of newTabs) {
-        delete tab.addedByAdoption;
+        Tabbrowser.#tabsJoiningAdoptedSplitView.delete(tab);
       }
     }
   }
@@ -8367,6 +8375,9 @@ export class Tabbrowser {
             previousTabState,
             currentTabState,
             metricsContext: metricsContext ?? this.TabMetrics.UNKNOWN_CONTEXT,
+            adoptingSplitView:
+              Tabbrowser.#tabsLeavingAdoptedSplitView.has(tab) ||
+              Tabbrowser.#tabsJoiningAdoptedSplitView.has(tab),
           },
         })
       );

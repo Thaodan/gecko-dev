@@ -425,7 +425,7 @@ this.tabs = class extends ExtensionAPIPersistent {
             // Ignore all TabMove events except when the splitViewId changes.
             return;
           }
-          if (updatedTab.removedByAdoption || updatedTab.addedByAdoption) {
+          if (event.detail.adoptingSplitView) {
             // Ignore TabMove events that were fired while adopting a split
             // view and its tabs across windows. When a split view is adopted,
             // it continues to exist in the new window, so despite the multiple

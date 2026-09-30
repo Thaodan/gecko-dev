@@ -97,8 +97,6 @@ export class MozTabbrowserTab extends MozElements.MozTab {
     this.predecessors;
     /** @type {boolean} */
     this.initializingTab;
-    /** @type {boolean} */
-    this.removedByAdoption;
     /** @type {string} */
     this._fullLabel;
     /** @type {boolean} */
