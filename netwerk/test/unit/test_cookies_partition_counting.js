@@ -106,21 +106,21 @@ add_task(async function test_purge_counting() {
   let cookieCountNonPart = Services.cookies.countCookiesFromHost(
     hostNonPartitioned,
     {}
-  ); // includes expired cookies
+  );
   Assert.equal(cookieCountNonPart, cookieNum1);
   let cookieCountNonPartOA = Services.cookies.getCookiesFromHost(
     hostNonPartitioned,
     { userContextId: 8 }
-  ).length; // includes expired cookies
+  ).length;
   Assert.equal(cookieCountNonPartOA, cookieNum2);
   let cookieCountPart = Services.cookies.getCookiesFromHost(hostPartitioned, {
     partitionKey: "(https,example.com)",
-  }).length; // includes expired cookies
+  }).length;
   Assert.equal(cookieCountPart, cookieNum3);
   let cookieCountPartOA = Services.cookies.getCookiesFromHost(hostPartitioned, {
     partitionKey: "(https,example.com)",
     userContextId: 7,
-  }).length; // includes expired cookies
+  }).length;
   Assert.equal(cookieCountPartOA, cookieNum4);
 
   // trigger the collection

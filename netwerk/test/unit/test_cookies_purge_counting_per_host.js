@@ -51,7 +51,7 @@ add_task(async function test_purge_counting_per_host() {
   );
 
   // startup the cookie service and check the cookie count
-  let validCookies = Services.cookies.countCookiesFromHost(host, {}); // includes expired cookies
+  let validCookies = Services.cookies.countCookiesFromHost(host, {});
   Assert.equal(validCookies, cookieCountMax);
 
   // add a cookie - this will trigger the purge
