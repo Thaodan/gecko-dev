@@ -62,7 +62,6 @@ pub struct DeclarativePushData {
     dir: DeclarativePushDir,
     silent: bool,
     require_interaction: bool,
-    mutable: bool,
 }
 
 #[derive(Deserialize)]
@@ -105,8 +104,6 @@ struct NotificationJSON {
     requireInteraction: bool,
     #[serde(default, deserialize_with = "forgiving_deserialize")]
     actions: Vec<Forgiving<ActionJSON>>,
-    #[serde(default, deserialize_with = "forgiving_deserialize")]
-    mutable: bool,
 }
 
 /// Declarative push message data. https://w3c.github.io/push-api/#members
@@ -161,7 +158,6 @@ fn parse_declarative_push_option(data: &[u8]) -> Option<DeclarativePushData> {
                 Forgiving::WrongType(_) => None,
             })
             .collect(),
-        mutable: notification.mutable,
     })
 }
 

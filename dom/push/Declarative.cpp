@@ -7,7 +7,6 @@
 #include "js/JSON.h"
 #include "mozilla/dom/dom_push_rust_generated.h"
 #include "mozilla/dom/notification/NotificationUtils.h"
-#include "mozilla/glean/DomPushMetrics.h"
 #include "nsNetUtil.h"
 
 namespace mozilla::dom {
@@ -49,13 +48,6 @@ class DWPNotificationCallbacks final : public NotificationCallbacksCommon {
  private:
   virtual ~DWPNotificationCallbacks() = default;
 };
-
-static void RecordTelemetry(const DeclarativePushData& aData) {
-  glean::web_push::declarative.Add();
-  if (aData.mutable_) {
-    glean::web_push::declarative_mutable.Add();
-  }
-}
 
 static NotificationDirection ConvertNotificationDirection(
     DeclarativePushDir aDir) {
@@ -159,7 +151,6 @@ bool ParseDeclarativePushAndShowNotification(Span<const uint8_t> aData,
   if (!options) {
     return false;
   }
-  RecordTelemetry(declarativePush);
   RefPtr permissionPromise = notification::EnsureValidNotificationPermission(
       aPrincipal, aPrincipal, aPrincipal->GetIsOriginPotentiallyTrustworthy());
   permissionPromise->Then(
