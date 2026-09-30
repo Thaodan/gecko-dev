@@ -1229,6 +1229,16 @@ class Preferences {
   }
 
   /**
+   * Flips `resultMenu.keyboardAccessible`.
+   */
+  toggleResultMenuKeyboardAccessible() {
+    this.set(
+      "resultMenu.keyboardAccessible",
+      !this.get("resultMenu.keyboardAccessible")
+    );
+  }
+
+  /**
    * Adds a value to a preference that handles multiple comma-separated values.
    * Throws an error if the preference does not have a comma-separated value.
    *
