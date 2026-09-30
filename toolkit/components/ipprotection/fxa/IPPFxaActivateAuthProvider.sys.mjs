@@ -8,12 +8,6 @@ import {
 } from "moz-src:///toolkit/components/ipprotection/IPPAuthProvider.sys.mjs";
 import { GuardianClient } from "moz-src:///toolkit/components/ipprotection/fxa/GuardianClient.sys.mjs";
 
-/**
- * Type Imports
- *
- * @typedef {import("../GuardianTypes.sys.mjs").TokenHandle} TokenHandle
- */
-
 const lazy = {};
 
 ChromeUtils.defineLazyGetter(lazy, "fxAccounts", () =>
@@ -131,7 +125,7 @@ class IPPFxaActivateAuthProviderSingleton extends IPPAuthProvider {
 
   async getEntitlement() {
     try {
-      const tokenHandle = await this.getToken();
+      using tokenHandle = await this.getToken();
       const { status, entitlement, error } =
         await this.guardian.fetchUserInfo(tokenHandle);
       if (error || status != 200) {
@@ -168,7 +162,7 @@ class IPPFxaActivateAuthProviderSingleton extends IPPAuthProvider {
   }
 
   async checkForUpgrade() {
-    const tokenHandle = await this.getToken();
+    using tokenHandle = await this.getToken();
     const { entitlement } = await this.guardian.fetchUserInfo(tokenHandle);
     if (entitlement) {
       this._setEntitlement(entitlement);
@@ -194,7 +188,7 @@ class IPPFxaActivateAuthProviderSingleton extends IPPAuthProvider {
     this.#isEnrolling = true;
     this.dispatchEvent(new CustomEvent("IPPAuthProvider:StateChanged"));
     try {
-      const tokenHandle = await this.getToken();
+      using tokenHandle = await this.getToken();
       const { ok, entitlement, error } =
         await this.guardian.activate(tokenHandle);
       if (!ok) {
@@ -216,11 +210,11 @@ class IPPFxaActivateAuthProviderSingleton extends IPPAuthProvider {
   }
 
   /**
-   * Retrieves an FxA OAuth token and returns a handle that revokes it if
-   * Guardian rejects it.
+   * Retrieves an FxA OAuth token and returns a disposable handle that revokes
+   * it on disposal.
    *
    * @param {AbortSignal} [abortSignal]
-   * @returns {Promise<TokenHandle|null>}
+   * @returns {Promise<{token: string} & Disposable>}
    */
   async getToken(abortSignal = null) {
     let tasks = [
@@ -246,18 +240,19 @@ class IPPFxaActivateAuthProviderSingleton extends IPPAuthProvider {
     }
     return {
       token,
-      // Evicts our cache entry and revokes the token server side.
-      onTokenRejected: () => lazy.fxAccounts.removeCachedOAuthToken({ token }),
+      [Symbol.dispose]: () => {
+        lazy.fxAccounts.removeCachedOAuthToken({ token });
+      },
     };
   }
 
   async fetchProxyPass(abortSignal = null) {
-    const tokenHandle = await this.getToken(abortSignal);
+    using tokenHandle = await this.getToken(abortSignal);
     return await this.#guardian.fetchProxyPass(tokenHandle, abortSignal);
   }
 
   async fetchProxyUsage(abortSignal = null) {
-    const tokenHandle = await this.getToken(abortSignal);
+    using tokenHandle = await this.getToken(abortSignal);
     return await this.#guardian.fetchProxyUsage(tokenHandle, abortSignal);
   }
 
