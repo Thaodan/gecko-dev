@@ -170,7 +170,7 @@ export class GroupsPanel {
   }
 
   /**
-   * @param {TabGroupStateData} group
+   * @param {MozTabbrowserTabGroup|SavedTabGroupStateData} group
    * @param {object} [options]
    * @param {boolean} [options.isOpen]
    *   Set to true if the group is currently open, and false if it's saved
@@ -218,7 +218,7 @@ export class GroupsPanel {
     button.setAttribute("crop", "end");
 
     let setName = tabGroupName => {
-      if (group.saved) {
+      if (!isOpen) {
         doc.l10n.setAttributes(button, "tabbrowser-manager-closed-tab-group", {
           tabGroupName,
         });

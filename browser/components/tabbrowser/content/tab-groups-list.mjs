@@ -65,7 +65,7 @@ class TabGroupsList extends MozLitElement {
   }
 
   #handleGroupClick(group, isOpen) {
-    this.closest("panel")?.hidePopup();
+    /** @type {XULPopupElement} */ (this.closest("panel"))?.hidePopup();
     if (isOpen) {
       group.select();
       group.documentGlobal.focus();
@@ -81,7 +81,9 @@ class TabGroupsList extends MozLitElement {
     const menuId = isOpen
       ? "open-tab-group-context-menu"
       : "saved-tab-group-context-menu";
-    const popup = this.ownerDocument.getElementById(menuId);
+    const popup = /** @type {XULPopupElement} */ (
+      this.ownerDocument.getElementById(menuId)
+    );
     popup.openPopupAtScreen(event.screenX, event.screenY, true, event);
   }
 
@@ -150,7 +152,7 @@ class TabGroupsList extends MozLitElement {
   }
 
   #handleCreateTabGroup() {
-    this.closest("panel")?.hidePopup();
+    /** @type {XULPopupElement} */ (this.closest("panel"))?.hidePopup();
     const win = this.#win;
     const newTab = win.gBrowser.addTrustedTab(win.BROWSER_NEW_TAB_URL);
     win.gBrowser.addTabGroup([newTab], {
