@@ -94,8 +94,6 @@ export class MozTabbrowserTab extends MozElements.MozTab {
     /** @type {boolean} */
     this._labelIsInitialTitle;
     /** @type {boolean} */
-    this._pinnedUnscrollable;
-    /** @type {boolean} */
     this._pendingPermitUnload;
     /** @type {number} */
     this._closeTimeAnimTimerId;

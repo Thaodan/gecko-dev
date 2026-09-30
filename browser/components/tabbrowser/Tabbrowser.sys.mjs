@@ -1290,7 +1290,6 @@ export class Tabbrowser {
     });
 
     aTab.style.marginInlineStart = "";
-    aTab._pinnedUnscrollable = false;
     this.#updateTabBarForPinnedTabs();
     this.#notifyPinnedStatus(aTab, { metricsContext });
   }
