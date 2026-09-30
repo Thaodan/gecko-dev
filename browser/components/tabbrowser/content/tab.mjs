@@ -69,6 +69,18 @@ export class MozTabbrowserTab extends MozElements.MozTab {
 
     this.closing = false;
 
+    /**
+     * The canonical URL of the tab's page: the URL the page declares through
+     * `<link rel="canonical">`, `og:url` or JSON-LD, or else the page's own
+     * URL. It is detected once the page has loaded, or restored with the
+     * session, and is null before that, after the tab navigates, and while
+     * canonical URL detection is off.
+     *
+     * @type {string|null}
+     */
+    // TODO(bug 2076466): Either tab notes or tabbrowser should fully own this.
+    this.canonicalUrl = null;
+
     // Assigned by other modules, mostly Tabbrowser.sys.mjs. Declared here for
     // type checking only; these lines assign nothing.
     /** @type {MozBrowser} */
@@ -77,8 +89,6 @@ export class MozTabbrowserTab extends MozElements.MozTab {
     this.successor;
     /** @type {Set<MozTabbrowserTab>} */
     this.predecessors;
-    /** @type {string} */
-    this.canonicalUrl;
     /** @type {boolean} */
     this.initializingTab;
     /** @type {boolean} */
