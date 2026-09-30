@@ -11,6 +11,7 @@
 #include <utility>
 
 #include "jit/CompactBuffer.h"
+#include "jit/IonTypes.h"
 #include "jit/JitCode.h"
 #include "jit/loong64/Architecture-loong64.h"
 #include "jit/shared/Assembler-shared.h"
@@ -2084,6 +2085,10 @@ class AssemblerLOONG64 : public AssemblerShared {
   BufferOffset as_vshuf4i_d(FloatRegister vd, FloatRegister vj, uint32_t imm8);
   BufferOffset as_vori_b(FloatRegister vd, FloatRegister vj, uint32_t imm8);
   BufferOffset as_vldi(FloatRegister vd, int32_t imm13);
+
+  // Try to encode |v| into the si13 field of vldi instruction. The result is
+  // returned as the lower 13 bits.
+  static std::optional<uint16_t> EncodeVldiImmediate(const SimdConstant& v);
 
   // label operations
   void bind(Label* label, BufferOffset boff = BufferOffset());
