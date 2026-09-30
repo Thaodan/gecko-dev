@@ -354,6 +354,9 @@ export class Tabbrowser {
   /** @type {WeakSet<MozTabbrowserTab>} */
   static #tabsPendingPermitUnload = new WeakSet();
 
+  /** @type {WeakMap<MozTabbrowserTab, {uriIsAboutBlank: boolean, remoteType: string, usingPreloadedContent: boolean}>} */
+  static #browserParams = new WeakMap();
+
   /** @type {WeakMap<MozTabbrowserTab, MozTabbrowserTab>} */
   #lastRelatedTabMap = new WeakMap();
 
@@ -3265,8 +3268,9 @@ export class Tabbrowser {
       }
     }
 
-    let { uriIsAboutBlank, usingPreloadedContent } = aTab._browserParams;
-    delete aTab._browserParams;
+    let { uriIsAboutBlank, usingPreloadedContent } =
+      Tabbrowser.#browserParams.get(aTab);
+    Tabbrowser.#browserParams.delete(aTab);
     delete browser._cachedCurrentURI;
 
     let panel = this.getPanel(browser);
@@ -3419,11 +3423,11 @@ export class Tabbrowser {
     // Set browser parameters for when browser is restored.  Also remove
     // listeners and set up lazy restore data in SessionStore. This must
     // be done before browser is destroyed and removed from the document.
-    aTab._browserParams = {
+    Tabbrowser.#browserParams.set(aTab, {
       uriIsAboutBlank: browser.currentURI.spec == "about:blank",
       remoteType: browser.remoteType,
       usingPreloadedContent: false,
-    };
+    });
 
     lazy.SessionStore.resetBrowserToLazyState(aTab);
     // Indicate that this tab was explicitly unloaded (i.e. not
@@ -4735,11 +4739,11 @@ export class Tabbrowser {
     tab.linkedBrowser = b;
 
     this.#tabForBrowser.set(b, tab);
-    tab._browserParams = {
+    Tabbrowser.#browserParams.set(tab, {
       uriIsAboutBlank,
       remoteType,
       usingPreloadedContent,
-    };
+    });
 
     // Hack to ensure that the about:newtab, and about:welcome favicon is loaded
     // instantaneously, to avoid flickering and improve perceived performance.
