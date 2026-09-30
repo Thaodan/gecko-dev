@@ -1210,12 +1210,17 @@ EnvironmentCache.prototype = {
     if (AppConstants.platform === "android") {
       return;
     }
+
+    if (!this._sessionWasRestored) {
+      this._log.trace("_updateDefaultBrowser - ignoring early call");
+      return;
+    }
+
     // Make sure to have a settings section.
     this._currentEnvironment.settings = this._currentEnvironment.settings || {};
-    this._currentEnvironment.settings.isDefaultBrowser = this
-      ._sessionWasRestored
-      ? this._isDefaultBrowser()
-      : null;
+
+    this._currentEnvironment.settings.isDefaultBrowser =
+      this._isDefaultBrowser();
   },
 
   /**
