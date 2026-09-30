@@ -30,7 +30,7 @@ index 32b3ca63d24a..7b83fd8521a1 100644
  
    if (!widget) {
 diff --git a/widget/nsIWidget.h b/widget/nsIWidget.h
-index 459b278379ee..3b6637046f90 100644
+index 3710ed9e8d00..086add102073 100644
 --- a/widget/nsIWidget.h
 +++ b/widget/nsIWidget.h
 @@ -2131,6 +2131,13 @@ class nsIWidget : public nsSupportsWeakReference {

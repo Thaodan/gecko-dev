@@ -1295,10 +1295,10 @@ index 392656638935..d9a5e291c6cb 100644
    void PrependSheetOfType(Origin, StyleSheet*);
    void AppendSheetOfType(Origin, StyleSheet*);
 diff --git a/modules/libpref/init/StaticPrefList.yaml b/modules/libpref/init/StaticPrefList.yaml
-index 473934ec0917..ba4708f88098 100644
+index 778ec68df690..1472edddfdce 100644
 --- a/modules/libpref/init/StaticPrefList.yaml
 +++ b/modules/libpref/init/StaticPrefList.yaml
-@@ -15108,7 +15108,7 @@
+@@ -15122,7 +15122,7 @@
  - name: network.process.enabled
    type: RelaxedAtomicBool
    mirror: always
@@ -1580,10 +1580,10 @@ index 2d14029f916b..b0294cfdc56f 100644
      pub fn is_supported_mime_type(&self, mime_type: &str) -> bool {
          match mime_type.parse::<Mime>() {
 diff --git a/servo/components/style/properties/mod.rs b/servo/components/style/properties/mod.rs
-index ea0e6f4f8abb..71050267b039 100644
+index dadb97703889..4c698664abc2 100644
 --- a/servo/components/style/properties/mod.rs
 +++ b/servo/components/style/properties/mod.rs
-@@ -1500,14 +1500,18 @@ impl UnparsedValue {
+@@ -1503,14 +1503,18 @@ impl UnparsedValue {
              }
          }
  
@@ -1604,7 +1604,7 @@ index ea0e6f4f8abb..71050267b039 100644
              Err(..) => return invalid_at_computed_value_time(),
          };
  
-@@ -1538,6 +1542,11 @@ impl UnparsedValue {
+@@ -1541,6 +1545,11 @@ impl UnparsedValue {
          input.skip_whitespace();
  
          if let Ok(keyword) = input.try_parse(CSSWideKeyword::parse) {
@@ -1616,7 +1616,7 @@ index ea0e6f4f8abb..71050267b039 100644
              return Cow::Owned(PropertyDeclaration::css_wide_keyword(longhand_id, keyword));
          }
  
-@@ -1545,7 +1554,14 @@ impl UnparsedValue {
+@@ -1548,7 +1557,14 @@ impl UnparsedValue {
              None => {
                  return match input.parse_entirely(|input| longhand_id.parse_value(&context, input))
                  {
@@ -1632,7 +1632,7 @@ index ea0e6f4f8abb..71050267b039 100644
                      Err(..) => invalid_at_computed_value_time(),
                  }
              },
-@@ -1575,7 +1591,14 @@ impl UnparsedValue {
+@@ -1578,7 +1594,14 @@ impl UnparsedValue {
  
          let key = (shorthand, longhand_id);
          match shorthand_cache.get(&key) {
@@ -1717,10 +1717,10 @@ index ac0fdd4ee019..bb5c3d9b5a2e 100644
          // Re-parse the result as a query-condition, and evaluate it.
          let parser_context = ParserContext::new(
 diff --git a/servo/ports/geckolib/glue.rs b/servo/ports/geckolib/glue.rs
-index dc845dd7ecfc..b5b2f909c336 100644
+index 61fe7d84441b..f15e18aa2db5 100644
 --- a/servo/ports/geckolib/glue.rs
 +++ b/servo/ports/geckolib/glue.rs
-@@ -2079,6 +2079,14 @@ pub extern "C" fn Servo_StyleSet_UsesRootFontMetrics(raw_data: &PerDocumentStyle
+@@ -2080,6 +2080,14 @@ pub extern "C" fn Servo_StyleSet_UsesRootFontMetrics(raw_data: &PerDocumentStyle
      doc_data.borrow().stylist.device().used_root_font_metrics()
  }
  

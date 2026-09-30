@@ -901,7 +901,7 @@ index 42055cfa0cf9..d918c8e47b3f 100644
  #  include "gfxWindowsPlatform.h"
  #  define gfxToolkitPlatform gfxWindowsPlatform
 diff --git a/gfx/thebes/gfxFcPlatformFontList.cpp b/gfx/thebes/gfxFcPlatformFontList.cpp
-index 4ac42437a043..5e3fda3b28ac 100644
+index cd5a7867e411..c2245eb9bc2c 100644
 --- a/gfx/thebes/gfxFcPlatformFontList.cpp
 +++ b/gfx/thebes/gfxFcPlatformFontList.cpp
 @@ -44,6 +44,8 @@
@@ -913,7 +913,7 @@ index 4ac42437a043..5e3fda3b28ac 100644
  #endif
  
  #ifdef MOZ_X11
-@@ -1683,7 +1685,9 @@ nsresult gfxFcPlatformFontList::InitFontListForPlatform() {
+@@ -1682,7 +1684,9 @@ nsresult gfxFcPlatformFontList::InitFontListForPlatform() {
    mLocalNames.Clear();
    mFcSubstituteCache.Clear();
  
@@ -923,7 +923,7 @@ index 4ac42437a043..5e3fda3b28ac 100644
  
    mAlwaysUseFontconfigGenerics = PrefFontListsUseOnlyGenerics();
    mOtherFamilyNamesInitialized = true;
-@@ -1752,7 +1756,9 @@ nsresult gfxFcPlatformFontList::InitFontListForPlatform() {
+@@ -1751,7 +1755,9 @@ nsresult gfxFcPlatformFontList::InitFontListForPlatform() {
      return NS_OK;
    }
  
@@ -934,7 +934,7 @@ index 4ac42437a043..5e3fda3b28ac 100644
    UniquePtr<SandboxPolicy> policy;
  
 diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
-index a68bdfce5f9e..135942959db0 100644
+index e932d8ccbe5a..cda7186bd9ff 100644
 --- a/gfx/thebes/gfxFont.h
 +++ b/gfx/thebes/gfxFont.h
 @@ -83,7 +83,7 @@ typedef struct _cairo_scaled_font cairo_scaled_font_t;
@@ -1515,7 +1515,7 @@ index 1f9613b8cd93..7661db0fd79e 100644
        return true;
  #elif defined(XP_MACOSX)
 diff --git a/modules/libpref/init/StaticPrefList.yaml b/modules/libpref/init/StaticPrefList.yaml
-index fd6076edbb0b..69dac4e6d808 100644
+index c00a539cb2f3..e242cd724d8c 100644
 --- a/modules/libpref/init/StaticPrefList.yaml
 +++ b/modules/libpref/init/StaticPrefList.yaml
 @@ -7768,7 +7768,7 @@

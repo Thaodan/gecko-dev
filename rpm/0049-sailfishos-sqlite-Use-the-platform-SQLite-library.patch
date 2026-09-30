@@ -57,10 +57,10 @@ index 04b2d57b4cf5..dccd55d14d80 100644
        this.logger.error("Error creating SuggestStoreBuilder", error);
        return null;
 diff --git a/browser/installer/package-manifest.in b/browser/installer/package-manifest.in
-index 203811a0fb98..047307a2151d 100644
+index 5936f8a8d9bd..8fae5f842615 100644
 --- a/browser/installer/package-manifest.in
 +++ b/browser/installer/package-manifest.in
-@@ -178,9 +178,11 @@
+@@ -180,9 +180,11 @@
  #endif
  #endif
  @RESPATH@/platform.ini
