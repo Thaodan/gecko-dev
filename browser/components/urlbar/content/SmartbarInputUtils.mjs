@@ -353,8 +353,12 @@ function setupMentionsPlugin(editorElement, panelList) {
     nodeView: node => [
       "ai-website-chip",
       {
-        href: node.attrs.id,
-        iconSrc: `page-icon:${node.attrs.id}`,
+        ...(node.attrs.type == CONTEXT_MENTION_TYPE.TAB_GROUP
+          ? { isTabGroup: true, tabGroupColor: node.attrs.color ?? "" }
+          : {
+              href: node.attrs.id,
+              iconSrc: `page-icon:${node.attrs.id}`,
+            }),
         label: node.attrs.label,
         type: "in-line",
       },
