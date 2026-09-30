@@ -80,9 +80,6 @@ class CookieStorage : public nsIObserver, public nsSupportsWeakReference {
                           const OriginAttributes& aOriginAttributes,
                           nsTArray<RefPtr<Cookie>>& aCookies);
 
-  uint32_t CountCookies(const nsACString& aBaseDomain,
-                        const OriginAttributes& aOriginAttributes);
-
   bool HasCookies(const nsACString& aBaseDomain,
                   const OriginAttributes& aOriginAttributes);
 

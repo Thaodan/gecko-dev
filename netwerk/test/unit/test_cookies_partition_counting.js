@@ -103,10 +103,10 @@ add_task(async function test_purge_counting() {
   Assert.equal(do_count_cookies_in_db(schema12db.db), allCookieCount);
 
   // startup the cookie service and check the cookie counts
-  let cookieCountNonPart = Services.cookies.countCookiesFromHost(
+  let cookieCountNonPart = Services.cookies.getCookiesFromHost(
     hostNonPartitioned,
     {}
-  );
+  ).length;
   Assert.equal(cookieCountNonPart, cookieNum1);
   let cookieCountNonPartOA = Services.cookies.getCookiesFromHost(
     hostNonPartitioned,
