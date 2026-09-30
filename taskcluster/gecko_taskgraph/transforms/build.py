@@ -198,6 +198,13 @@ def use_artifact(config, jobs):
             job["treeherder"]["symbol"] = add_suffix(job["treeherder"]["symbol"], "a")
             job["worker"]["env"]["USE_ARTIFACT"] = "1"
             job["attributes"]["artifact-build"] = True
+            # Artifact builds don't compile anything.
+            job["use-sccache"] = False
+            toolchains = job.get("fetches", {}).get("toolchain")
+            if toolchains:
+                job["fetches"]["toolchain"] = [
+                    t for t in toolchains if not t.endswith("-sccache")
+                ]
         yield job
 
 
