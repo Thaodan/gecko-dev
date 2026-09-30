@@ -149,7 +149,7 @@ add_task(async function test_multiple_groups() {
   BrowserTestUtils.removeTab(tab);
 });
 
-add_task(async function test_tab_group_items_render_chicklet() {
+add_task(async function test_tab_group_items_render_icon() {
   const { tab, browser } = await openTestPage(TEST_PAGE);
 
   await setPanelPropsInContent(browser, "test-panel", {
@@ -157,8 +157,13 @@ add_task(async function test_tab_group_items_render_chicklet() {
       {
         headerL10nId: "smartbar-mentions-list-tab-groups-label",
         items: [
-          { id: "group-1", label: "Trip planning", color: "blue" },
-          { id: "group-2", label: "work docs", color: "red" },
+          {
+            id: "group-1",
+            type: "tabGroup",
+            label: "Trip planning",
+            color: "blue",
+          },
+          { id: "group-2", type: "tabGroup", label: "work docs", color: "red" },
         ],
       },
       {
@@ -185,17 +190,17 @@ add_task(async function test_tab_group_items_render_chicklet() {
     Assert.equal(groupRows.length, 2, "Both tab group rows render");
 
     const [first] = groupRows;
-    const chicklet = first.querySelector(".panel-tab-group-chicklet");
-    Assert.ok(chicklet, "Group row has a color chicklet");
+    const icon = first.querySelector(".panel-tab-group-icon");
+    Assert.ok(icon, "Group row has a colored tab group icon");
     Assert.equal(
-      chicklet.textContent.trim(),
+      icon.shadowRoot.textContent.trim(),
       "T",
-      "Chicklet shows the group label's initial"
+      "The icon shows the group label's initial"
     );
     Assert.equal(
-      first.style.getPropertyValue("--tab-group-color"),
-      "var(--tab-group-blue)",
-      "Chicklet is tinted with the group color"
+      icon.getAttribute("color"),
+      "blue",
+      "The icon takes the group color, which it maps to the palette itself"
     );
     Assert.equal(
       first.querySelector(".panel-tab-group-label").textContent.trim(),
@@ -203,16 +208,11 @@ add_task(async function test_tab_group_items_render_chicklet() {
       "Group label renders"
     );
 
-    // Render-only: group rows are not selectable panel-items yet.
-    Assert.ok(
-      !shadow.querySelector("panel-item.panel-tab-group-item"),
-      "Group rows are not selectable panel-items"
+    Assert.equal(
+      shadow.querySelectorAll("panel-item:not(.panel-section-header)").length,
+      3,
+      "Both groups and the tab render a selectable panel-item"
     );
-
-    const tabItems = Array.from(
-      shadow.querySelectorAll("panel-item:not(.panel-section-header)")
-    );
-    Assert.equal(tabItems.length, 1, "The tab still renders as a panel-item");
   });
 
   BrowserTestUtils.removeTab(tab);
@@ -523,6 +523,52 @@ add_task(async function test_keyboard_events() {
       "Original event key should match"
     );
   });
+
+  BrowserTestUtils.removeTab(tab);
+});
+
+add_task(async function test_tab_group_item_selection() {
+  const { tab, browser } = await openTestPage(TEST_PAGE);
+
+  await setPanelPropsInContent(browser, "test-panel", {
+    groups: [
+      {
+        headerL10nId: "smartbar-mentions-list-tab-groups-label",
+        items: [
+          {
+            id: "group:group-1",
+            type: "tabGroup",
+            label: "Trip planning",
+            color: "blue",
+          },
+        ],
+      },
+    ],
+    alwaysOpen: true,
+  });
+
+  const detail = await SpecialPowers.spawn(browser, [], async () => {
+    const panel = content.document.getElementById("test-panel");
+    const selected = new Promise(resolve => {
+      panel.addEventListener("item-selected", event => resolve(event.detail));
+    });
+
+    panel.shadowRoot.querySelector(".panel-tab-group-item panel-item").click();
+
+    const { id, type, label, color } = await selected;
+    return { id, type, label, color };
+  });
+
+  Assert.deepEqual(
+    detail,
+    {
+      id: "group:group-1",
+      type: "tabGroup",
+      label: "Trip planning",
+      color: "blue",
+    },
+    "Selecting a tab group row reports its mention ID, type, label and color"
+  );
 
   BrowserTestUtils.removeTab(tab);
 });

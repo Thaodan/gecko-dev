@@ -11,8 +11,11 @@ import {
   styleMap,
 } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
+import { CONTEXT_MENTION_TYPE } from "chrome://browser/content/urlbar/SmartbarMentionUtils.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/panel-list.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://browser/content/aiwindow/components/tab-group-icon.mjs";
 
 /**
  * A generic panel list component for displaying grouped items in a popup.
@@ -101,8 +104,7 @@ export class SmartwindowPanelList extends MozLitElement {
     return [...itemsHost.children].some(
       element =>
         element.localName !== "panel-item" &&
-        !element.classList.contains("panel-item-container") &&
-        !element.classList.contains("panel-tab-group-item")
+        !element.classList.contains("panel-item-container")
     );
   }
 
@@ -230,8 +232,10 @@ export class SmartwindowPanelList extends MozLitElement {
       const event = new CustomEvent("item-selected", {
         detail: {
           id: panelItem.itemId,
+          type: panelItem.itemType,
           label: panelItem.itemLabel || panelItem.textContent.trim(),
           icon: panelItem.itemIcon,
+          color: panelItem.itemColor,
         },
         bubbles: true,
         composed: true,
@@ -315,29 +319,36 @@ export class SmartwindowPanelList extends MozLitElement {
     return styles;
   }
 
-  #renderTabGroupItem(item) {
-    const initial = (
-      Array.from(item.label?.trim() ?? "")[0] ?? ""
-    ).toUpperCase();
-    const styles = {
-      "--tab-group-color": `var(--tab-group-${item.color})`,
-      "--tab-group-color-text": `var(--tab-group-${item.color}-text)`,
-    };
-
-    // Rendered as a non-interactive row for now; selecting a group to mention
-    // is handled by a follow-up (bug 2059787). The colored chicklet mirrors the
-    // tab group label: the group color with the label's initial.
-    return html`<div class="panel-tab-group-item" style=${styleMap(styles)}>
-      <span class="panel-tab-group-chicklet" aria-hidden="true"
-        >${initial}</span
+  // Wraps a panel-item so the row is selectable and keyboard reachable, with
+  // the icon beside it the way description rows put their icon.
+  #renderTabGroupItem(item, isSelected) {
+    return html`<div
+      class=${classMap({
+        "panel-item-container": true,
+        "panel-tab-group-item": true,
+        selected: isSelected,
+      })}
+    >
+      <tab-group-icon
+        class="panel-tab-group-icon"
+        .label=${item.label}
+        .color=${item.color}
+      ></tab-group-icon>
+      <panel-item
+        class="panel-tab-group-label"
+        .itemId=${item.id}
+        .itemType=${item.type}
+        .itemLabel=${item.label ?? ""}
+        .itemColor=${item.color}
       >
-      <span class="panel-tab-group-label">${item.label}</span>
+        ${item.label}
+      </panel-item>
     </div>`;
   }
 
   #renderItem(item, isSelected = false) {
-    if (item.color) {
-      return this.#renderTabGroupItem(item);
+    if (item.type == CONTEXT_MENTION_TYPE.TAB_GROUP) {
+      return this.#renderTabGroupItem(item, isSelected);
     }
 
     const hasDescription = !!item.description || !!item.descriptionL10nId;
