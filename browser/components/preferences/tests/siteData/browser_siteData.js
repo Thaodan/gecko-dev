@@ -338,7 +338,7 @@ add_task(async function test_manage_sites_with_cookies() {
   await removeDialogOpenPromise;
 
   await TestUtils.waitForCondition(
-    () => Services.cookies.getCookiesFromHost(uri2.host, {}).length == 0,
+    () => !Services.cookies.getCookiesFromHost(uri2.host, {}).length,
     "Cookies from the first host should be cleared"
   );
   is(
@@ -387,7 +387,7 @@ add_task(async function test_manage_sites_with_cookies() {
   await acceptRemovePromise;
 
   await TestUtils.waitForCondition(
-    () => Services.cookies.getCookiesFromHost(uri.host, {}).length == 0,
+    () => !Services.cookies.getCookiesFromHost(uri.host, {}).length,
     "Cookies from the second host should be cleared"
   );
 

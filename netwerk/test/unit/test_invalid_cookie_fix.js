@@ -54,7 +54,7 @@ add_task(async function test_invalid_cookie_fix() {
     17
   );
 
-  const nowInMSec = Date.now();
+  const nowInMSec = Date.now() - 60 * 1000;
   const farFarInThePastInMSec = nowInMSec - 60 * 60 * 24 * 1000 * 1000;
   const farFarInTheFutureInMSec = nowInMSec + 60 * 60 * 24 * 1000 * 1000;
   const nearFutureInMSec = nowInMSec + 60 * 60 * 24 * 1000;

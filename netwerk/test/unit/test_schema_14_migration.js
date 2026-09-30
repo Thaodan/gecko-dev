@@ -33,7 +33,7 @@ add_task(async function test_schema_14_migration() {
       "Some data",
       "foo.com",
       "/",
-      now + (i % 2 ? 34560000 * 2 : 0),
+      now + (i % 2 ? 34560000 * 2 : 3600),
       now,
       now,
       false,
