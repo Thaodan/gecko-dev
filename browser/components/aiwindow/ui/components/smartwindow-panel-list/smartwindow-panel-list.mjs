@@ -20,7 +20,7 @@ import "chrome://global/content/elements/panel-list.mjs";
  * This component is agnostic to the data it displays - consumers control
  * all logic including filtering, truncation, and special item handling.
  *
- * @typedef {{id: string, label: string, icon?: string, l10nId?: string, description?: string, descriptionL10nId?: string}} ListItem
+ * @typedef {{id: string, label: string, icon?: string, l10nId?: string, description?: string, descriptionL10nId?: string, color?: string}} ListItem
  * @typedef {{items: ListItem[], headerL10nId?: string, header?: string}} ItemGroup
  * @property {ItemGroup[]} groups - Grouped list items to display
  * @property {string} placeholderL10nId - Fluent ID for empty state message
@@ -101,7 +101,8 @@ export class SmartwindowPanelList extends MozLitElement {
     return [...itemsHost.children].some(
       element =>
         element.localName !== "panel-item" &&
-        !element.classList.contains("panel-item-container")
+        !element.classList.contains("panel-item-container") &&
+        !element.classList.contains("panel-tab-group-item")
     );
   }
 
@@ -314,7 +315,31 @@ export class SmartwindowPanelList extends MozLitElement {
     return styles;
   }
 
+  #renderTabGroupItem(item) {
+    const initial = (
+      Array.from(item.label?.trim() ?? "")[0] ?? ""
+    ).toUpperCase();
+    const styles = {
+      "--tab-group-color": `var(--tab-group-${item.color})`,
+      "--tab-group-color-text": `var(--tab-group-${item.color}-text)`,
+    };
+
+    // Rendered as a non-interactive row for now; selecting a group to mention
+    // is handled by a follow-up (bug 2059787). The colored chicklet mirrors the
+    // tab group label: the group color with the label's initial.
+    return html`<div class="panel-tab-group-item" style=${styleMap(styles)}>
+      <span class="panel-tab-group-chicklet" aria-hidden="true"
+        >${initial}</span
+      >
+      <span class="panel-tab-group-label">${item.label}</span>
+    </div>`;
+  }
+
   #renderItem(item, isSelected = false) {
+    if (item.color) {
+      return this.#renderTabGroupItem(item);
+    }
+
     const hasDescription = !!item.description || !!item.descriptionL10nId;
     const panelItem = html`<panel-item
       .itemId=${item.id}
