@@ -115,8 +115,6 @@ export class MozTabbrowserTab extends MozElements.MozTab {
     this._findBar;
     /** @type {Promise<MozFindbar | null>} */
     this._pendingFindBar;
-    /** @type {[boolean, boolean]} */
-    this._endRemoveArgs;
     /** @type {{uriIsAboutBlank: boolean, remoteType: string, usingPreloadedContent: boolean}} */
     this._browserParams;
     /** @type {nsIURI} */

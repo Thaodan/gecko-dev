@@ -342,6 +342,9 @@ export class Tabbrowser {
   /** @type {WeakMap<MozTabbrowserTab, BrowserStatusFilter>} */
   static #tabFilters = new WeakMap();
 
+  /** @type {WeakMap<MozTabbrowserTab, [boolean, boolean]>} */
+  static #endRemoveArgs = new WeakMap();
+
   /** @type {WeakMap<MozTabbrowserTab, MozTabbrowserTab>} */
   #lastRelatedTabMap = new WeakMap();
 
@@ -6613,7 +6616,7 @@ export class Tabbrowser {
 
       newTab = true;
     }
-    aTab._endRemoveArgs = [closeWindow, newTab];
+    Tabbrowser.#endRemoveArgs.set(aTab, [closeWindow, newTab]);
 
     // swapBrowsersAndCloseOther will take care of closing the window without animation.
     if (closeWindow && adoptedByTab) {
@@ -6760,12 +6763,13 @@ export class Tabbrowser {
   }
 
   _endRemoveTab(aTab) {
-    if (!aTab || !aTab._endRemoveArgs) {
+    let endRemoveArgs = Tabbrowser.#endRemoveArgs.get(aTab);
+    if (!endRemoveArgs) {
       return;
     }
 
-    var [aCloseWindow, aNewTab] = aTab._endRemoveArgs;
-    aTab._endRemoveArgs = null;
+    var [aCloseWindow, aNewTab] = endRemoveArgs;
+    Tabbrowser.#endRemoveArgs.delete(aTab);
 
     if (this.#windowIsClosing) {
       aCloseWindow = false;
@@ -7218,7 +7222,7 @@ export class Tabbrowser {
     // If this is the last tab of the window, hide the window
     // immediately without animation before the docshell swap, to avoid
     // about:blank being painted.
-    let [closeWindow] = aOtherTab._endRemoveArgs;
+    let [closeWindow] = Tabbrowser.#endRemoveArgs.get(aOtherTab);
     if (closeWindow) {
       let win = aOtherTab.documentGlobal;
       win.windowUtils.suppressAnimation(true);
