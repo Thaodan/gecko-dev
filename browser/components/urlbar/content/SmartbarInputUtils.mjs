@@ -117,6 +117,7 @@ const PLACEHOLDER_HINT_L10N_IDS = [
  * @property {string} [icon] - Tab icon
  * @property {string} [l10nId] - Fluent l10n ID for localized items
  * @property {object} [l10nArgs] - Arguments for l10n
+ * @property {string} [color] - Tab group color, set on tab group mentions only
  */
 
 /**
@@ -166,13 +167,26 @@ function getMentionSuggestions(mentionSearch, searchString) {
         icon,
       }));
 
+    let tabGroupItems = mentionSearch
+      .getTabGroups()
+      .slice(0, UrlbarPrefs.get("mentions.maxGroupResults"))
+      .map(({ id, label, color }) => ({ id, label, color }));
+
+    /** @type {TabMentionGroup[]} */
+    let groups = [];
+    if (tabGroupItems.length) {
+      groups.push({
+        headerL10nId: "smartbar-mentions-list-tab-groups-label",
+        items: tabGroupItems,
+      });
+    }
+    groups.push({
+      headerL10nId: "smartbar-mentions-list-recent-tabs-label",
+      items: deduplicated,
+    });
+
     return {
-      groups: [
-        {
-          headerL10nId: "smartbar-mentions-list-recent-tabs-label",
-          items: deduplicated,
-        },
-      ],
+      groups,
       totalCount: deduplicated.length,
     };
   } catch (e) {
