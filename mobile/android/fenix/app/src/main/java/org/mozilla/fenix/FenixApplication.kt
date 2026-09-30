@@ -132,6 +132,7 @@ import org.mozilla.fenix.lifecycle.StoreLifecycleObserver
 import org.mozilla.fenix.lifecycle.VisibilityLifecycleObserver
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.onboarding.MARKETING_CHANNEL_ID
+import org.mozilla.fenix.onboarding.reconcileOnboardingCompletionState
 import org.mozilla.fenix.perf.ApplicationExitInfoMetrics
 import org.mozilla.fenix.perf.MarkersActivityLifecycleCallbacks
 import org.mozilla.fenix.perf.ProfilerMarkerFactProcessor
@@ -399,6 +400,8 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         restoreBrowserState()
         restoreDownloads()
         restoreMessaging()
+
+        maybeReconcileOnboardingCompletionState()
 
         // [IMPORTANT] Don't progress further until application-services is actually ready to go.
         // This makes it easier to reason about behaviour and avoids issues in the Rust code.
@@ -801,6 +804,26 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
     internal fun restoreMessaging() {
         if (components.settings.isExperimentationEnabled) {
             components.appStore.dispatch(AppAction.MessagingAction.Restore)
+        }
+    }
+
+    /**
+     * Reconciles onboarding completion state for users who have already completed initial onboarding.
+     *
+     * This is temporarily gated by build variant to prevent the change from reaching non-Nightly builds before QA. See
+     * [Bug 2074040](https://bugzilla.mozilla.org/show_bug.cgi?id=2074040).
+     *
+     * The userHasBeenOnboarded check remains outside [reconcileOnboardingCompletionState] for now. Follow-up work will
+     * consolidate onboarding-completion checks into a single API.
+     *
+     * This must run on the main thread to preserve deterministic ordering. Dispatching it to `ioDispatcher` could race
+     * with timestamp reads and writes performed by `ContinuousOnboardingFeature` and the review prompt's
+     * `continuousOnboardingInProgress` gate. See
+     * [the Phabricator discussion](https://phabricator.services.mozilla.com/D326554#inline-1746839) for details.
+     */
+    fun maybeReconcileOnboardingCompletionState() {
+        if (components.fenixOnboarding.userHasBeenOnboarded() && Config.channel.isNightlyOrDebug) {
+            components.settings.reconcileOnboardingCompletionState()
         }
     }
 
