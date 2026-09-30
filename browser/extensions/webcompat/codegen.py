@@ -24,6 +24,14 @@ def interventions_schema():
         return json.load(schema_fd)
 
 
+@cache
+def interventions_validator():
+    schema = interventions_schema()
+    cls = jsonschema.validators.validator_for(schema)
+    cls.check_schema(schema)
+    return cls(schema)
+
+
 def load_intervention_json(json_fd):
     try:
         config = json.load(json_fd)
@@ -31,7 +39,11 @@ def load_intervention_json(json_fd):
         raise ValueError(f"{mozpath.basename(json_fd.path)} is invalid JSON: {e}")
 
     try:
-        jsonschema.validate(instance=config, schema=interventions_schema())
+        error = jsonschema.exceptions.best_match(
+            interventions_validator().iter_errors(config)
+        )
+        if error is not None:
+            raise error
     except jsonschema.exceptions.ValidationError as e:
         raise ValueError(
             f"{mozpath.basename(json_fd.path)} is invalid intervention JSON: {e}"
