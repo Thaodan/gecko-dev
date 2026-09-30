@@ -84,12 +84,23 @@ def linux_build():
         "treeherder": {"symbol": "B"},
         "worker": {"env": {"MOZ_AUTOMATION_PACKAGE_TESTS": "1"}},
         "use-sccache": True,
-        "fetches": {"toolchain": ["linux64-clang", "linux64-sccache"]},
+        "fetches": {
+            "toolchain": [
+                "linux64-clang",
+                "linux64-rust",
+                "linux64-rust-size",
+                "linux64-node",
+                "linux64-sccache",
+                "sysroot-x86_64-linux-gnu",
+                "onnxruntime-x86_64-linux-gnu",
+            ],
+            "fetch": ["windows-rs"],
+        },
     }
 
 
 @pytest.mark.parametrize("use_artifact", (True, False))
-def test_use_artifact_sccache(run_transform, use_artifact):
+def test_use_artifact_toolchains(run_transform, use_artifact):
     params = FakeParameters({
         "try_task_config": {"use-artifact-builds": use_artifact},
     })
@@ -98,7 +109,8 @@ def test_use_artifact_sccache(run_transform, use_artifact):
     )
     if use_artifact:
         assert job["use-sccache"] is False
-        assert job["fetches"]["toolchain"] == ["linux64-clang"]
+        assert job["fetches"]["toolchain"] == ["linux64-node"]
+        assert job["fetches"]["fetch"] == []
         assert job["worker"]["env"]["USE_ARTIFACT"] == "1"
     else:
         assert job == linux_build()
