@@ -76,6 +76,15 @@ export class MozTabbrowserTab extends MozElements.MozTab {
     this.closing = false;
 
     /**
+     * Whether the tab has yet to dispatch TabOpen, or is having another
+     * window's tab state restored into it by `swapBrowsersAndCloseOther`.
+     * Extension code ignores the tab's events while this is true. The
+     * window's first tab never dispatches TabOpen; Tabbrowser clears the flag
+     * for it when setting it up.
+     */
+    this.initializing = true;
+
+    /**
      * The canonical URL of the tab's page: the URL the page declares through
      * `<link rel="canonical">`, `og:url` or JSON-LD, or else the page's own
      * URL. It is detected once the page has loaded, or restored with the
@@ -101,8 +110,6 @@ export class MozTabbrowserTab extends MozElements.MozTab {
     this.successor;
     /** @type {Set<MozTabbrowserTab>} */
     this.predecessors;
-    /** @type {boolean} */
-    this.initializingTab;
   }
 
   static get inheritedAttributes() {

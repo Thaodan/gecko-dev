@@ -835,6 +835,7 @@ export class Tabbrowser {
     this.#selectedTab = tab;
     this.#selectedBrowser = browser;
     tab._index = 0;
+    tab.initializing = false;
     tab.linkedBrowser = browser;
 
     if (userContextId) {
@@ -4579,9 +4580,6 @@ export class Tabbrowser {
     var t = this.document.createXULElement("tab", {
       is: "tabbrowser-tab",
     });
-    // Tag the tab as being created so extension code can ignore events
-    // prior to TabOpen.
-    t.initializingTab = true;
     t.openerTab = openerTab;
 
     // Related tab inherits current tab's user context unless a different
@@ -5565,7 +5563,7 @@ export class Tabbrowser {
    *   Additional information to include in the event's `detail`.
    */
   #fireTabOpen(tab, eventDetail) {
-    delete tab.initializingTab;
+    tab.initializing = false;
     let evt = new this.documentGlobal.CustomEvent("TabOpen", {
       bubbles: true,
       detail: eventDetail || {},
@@ -7353,13 +7351,13 @@ export class Tabbrowser {
       // Tag tab so that the extension framework can ignore tab events that
       // are triggered amidst the tab/browser restoration process
       // (TabHide, TabPinned, TabUnpinned, "muted" attribute changes, etc.).
-      aOurTab.initializingTab = true;
+      aOurTab.initializing = true;
       delete ourBrowser._cachedCurrentURI;
       lazy.SessionStore.setTabState(
         aOurTab,
         lazy.SessionStore.getTabState(aOtherTab)
       );
-      delete aOurTab.initializingTab;
+      aOurTab.initializing = false;
 
       // Make sure to unregister any open URIs.
       Tabbrowser.#swapRegisteredOpenURIs(ourBrowser, otherBrowser);
