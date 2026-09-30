@@ -4,14 +4,36 @@
 
 package org.mozilla.fenix.onboarding
 
+import androidx.annotation.MainThread
 import java.time.LocalDate
 import java.time.ZoneOffset
 import mozilla.components.support.base.log.logger.Logger
+import org.mozilla.fenix.GleanMetrics.Onboarding
 import org.mozilla.fenix.utils.Settings
 
 private const val UNSET_TIMESTAMP = -1L
 
 private val logger = Logger("OnboardingCompletionStateMigration")
+
+/**
+ * Enum representing why a user's onboarding completion state needs migration.
+ *
+ * @see [Onboarding.CompletionStateMigrationStartedExtra.migrationReason]
+ */
+private enum class MigrationReason(val telemetryId: String) {
+    /**
+     * The initial onboarding completion timestamp is missing. This can happen when a user onboarded before version 150
+     * or bypassed the onboarding UI; the stored state cannot distinguish between these cases.
+     */
+    UNSET_TIMESTAMP("unset_timestamp"),
+
+    /**
+     * The user completed initial onboarding before continuous onboarding rolled out in Firefox 155, but has not
+     * completed day 7. This includes users who never received the follow-up prompts and early users who started them
+     * before launch. The `progress_predates_cutoff` extra records whether any stage was completed before launch.
+     */
+    PREDATES_ROLLOUT("predates_rollout"),
+}
 
 /**
  * Release-channel cutoff for continuous onboarding (version 155, 2026-09-01).
@@ -20,10 +42,9 @@ private val logger = Logger("OnboardingCompletionStateMigration")
  * who completed it on or after this date remain eligible for those stages, even if they have not opened the app for
  * some time.
  *
- * Some users had continuous onboarding enabled before this date: Nightly builds since version 150, Beta 155, and
- * release users enrolled in the `android-second-and-seven-day-onboarding` experiment (2026-04-15 to 2026-05-29). This
- * release cutoff is intentionally applied to those installations as well, since their stored state is indistinguishable
- * from cohort 2's.
+ * Some users had continuous onboarding enabled before this date; see the Overview in
+ * `Onboarding-state-migration-and-reconciliation.md` for which. This release cutoff is intentionally applied to those
+ * installations as well, since their stored state is indistinguishable from cohort 2's.
  */
 private val CONTINUOUS_ONBOARDING_RELEASE_CUTOFF_MILLIS =
     LocalDate.of(2026, 9, 1).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
@@ -51,11 +72,12 @@ private val ONBOARDING_COMPLETION_BACKFILL_TIMESTAMP_MILLIS =
  * Callers should only invoke this for users who have actually been onboarded according to
  * [FenixOnboarding.userHasBeenOnboarded]
  */
+@MainThread
 fun Settings.reconcileOnboardingCompletionState() {
     val backfillTimestamp = ONBOARDING_COMPLETION_BACKFILL_TIMESTAMP_MILLIS
 
     if (onboardingCompletedTimestamp == UNSET_TIMESTAMP) {
-        backfillOnboardingCompletionState(backfillTimestamp)
+        backfillOnboardingCompletionState(MigrationReason.UNSET_TIMESTAMP, backfillTimestamp)
     } else {
         backfillPreCutoffOnboardingCompletionIfNeeded(backfillTimestamp)
     }
@@ -85,14 +107,49 @@ private fun Settings.backfillPreCutoffOnboardingCompletionIfNeeded(backfillTimes
 
     logger.info("Onboarding predates the release cutoff; marking onboarding completion as fully backfilled.")
 
-    backfillOnboardingCompletionState(backfillTimestamp)
+    backfillOnboardingCompletionState(MigrationReason.PREDATES_ROLLOUT, backfillTimestamp)
 }
 
-/** Backfills the initial onboarding timestamp and all day-N stages with the given [timestamp]. */
-private fun Settings.backfillOnboardingCompletionState(timestamp: Long) {
+/**
+ * Records the state about to be migrated, backfills the initial onboarding timestamp and all day-N stages with the
+ * given [timestamp], then records that the migration completed.
+ *
+ * The started event carries the pre-migration state, so it must be recorded before any preference updates.
+ */
+private fun Settings.backfillOnboardingCompletionState(reason: MigrationReason, timestamp: Long) {
+    recordMigrationStarted(reason)
+
     migrateOnboardingCompletedTimestamp(timestamp)
     markAllContinuousOnboardingStagesComplete(timestamp)
+
+    Onboarding.completionStateMigrationCompleted.record()
 }
+
+/** Records the user's onboarding completion state before the migration overwrites it. */
+private fun Settings.recordMigrationStarted(reason: MigrationReason) {
+    val completedStageTimestamps = completedContinuousOnboardingStages()
+    val progressPredatesCutoff = completedStageTimestamps.any { (_, timestamp) ->
+        timestamp < CONTINUOUS_ONBOARDING_RELEASE_CUTOFF_MILLIS
+    }
+
+    Onboarding.completionStateMigrationStarted.record(
+        Onboarding.CompletionStateMigrationStartedExtra(
+            migrationReason = reason.telemetryId,
+            lastCompletedStage = completedStageTimestamps.lastOrNull()?.first,
+            progressPredatesCutoff = progressPredatesCutoff,
+        )
+    )
+}
+
+/** Returns completed stages, as their day number, and their timestamps in day order. */
+private fun Settings.completedContinuousOnboardingStages(): List<Pair<Int, Long>> =
+    listOf(
+            2 to secondDayOnboardingCompletedTimestamp,
+            3 to thirdDayOnboardingCompletedTimestamp,
+            5 to fifthDayOnboardingCompletedTimestamp,
+            7 to seventhDayOnboardingCompletedTimestamp,
+        )
+        .filter { it.second != UNSET_TIMESTAMP }
 
 private fun Settings.migrateOnboardingCompletedTimestamp(backfilledTimestamp: Long) {
     if (onboardingCompletedTimestamp != UNSET_TIMESTAMP) {

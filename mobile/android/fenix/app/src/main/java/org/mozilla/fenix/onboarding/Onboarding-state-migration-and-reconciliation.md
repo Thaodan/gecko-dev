@@ -9,7 +9,10 @@
 ## Overview
 
 **Version 150** introduced the following preferences for continuous onboarding, but the feature
-itself was not enabled until **version 155**.
+itself was not enabled by default on all channels until **version 155**. Before the Release app
+shipped 155, it was enabled for Nightly users from version 151, Beta users from version 155, and
+Release users enrolled in the `android-second-and-seven-day-onboarding` experiment (2026-04-15 to
+2026-05-29).
 
 | Preference                                        | Purpose                                                       |
 |---------------------------------------------------|---------------------------------------------------------------|
@@ -80,11 +83,38 @@ still incorrectly block the review prompt when `continuousOnboardingFeatureEnabl
 Cohort 2 is currently incorrectly eligible for continuous onboarding but should be treated as complete.
 Cohort 3 should continue through its remaining stages normally.
 
+Users who had continuous onboarding enabled ahead of the version 155 release (see
+[Overview](#overview)) are cohort 3 by definition, but their initial completion timestamp predates the
+release cutoff, so their stored state cannot be distinguished from cohort 2's. The migration treats them
+as cohort 2: those who already completed the day-7 stage are left alone, and those with partial progress
+are marked fully complete, discarding the remaining stages.
+
 Eligibility does not guarantee that a stage will be shown. Displaying a stage also depends on
 the user's progress and the conditions for that stage.
 
 Unset stage timestamps are not inherently incorrect: they can represent normal progress. The issue
 is distinguishing that state from missing records or stages that were unavailable at onboarding.
+
+## Telemetry
+
+The migration records two Glean events in the `events` ping, only for users who need migrating.
+`onboarding.completion_state_migration_started` is recorded just before any stored state changes,
+and its extras describe the state about to be overwritten.
+`onboarding.completion_state_migration_completed` is recorded once the backfilled state has been
+written and has no extras. Comparing the two counts shows how often the migration is interrupted
+between them, and a repeat started event from the same client means an earlier migration did not
+persist. See the Glean Dictionary for the full definitions of
+[started](https://dictionary.telemetry.mozilla.org/apps/fenix/metrics/onboarding_completion_state_migration_started)
+and
+[completed](https://dictionary.telemetry.mozilla.org/apps/fenix/metrics/onboarding_completion_state_migration_completed).
+The started event's extras map to the cohorts above as follows:
+
+| Cohort                          | `migration_reason` | `progress_predates_cutoff` |
+|---------------------------------|--------------------|----------------------------|
+| 1.a and 1.b                     | `unset_timestamp`  | `false`                    |
+| 2                               | `predates_rollout` | `false`                    |
+| Early access, partial progress  | `predates_rollout` | `true`                     |
+| 3, and anyone already at day 7  | no event           | no event                   |
 
 ## Paths that bypass initial onboarding
 
