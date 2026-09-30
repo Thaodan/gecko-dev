@@ -1446,7 +1446,6 @@ extern "C" {
     fn wr_compositor_create_surface(
         compositor: *mut c_void,
         id: NativeSurfaceId,
-        virtual_offset: DeviceIntPoint,
         tile_size: DeviceIntSize,
         is_opaque: bool,
     );
@@ -1535,12 +1534,11 @@ impl Compositor for WrCompositor {
     fn create_surface(
         &mut self,
         id: NativeSurfaceId,
-        virtual_offset: DeviceIntPoint,
         tile_size: DeviceIntSize,
         is_opaque: bool,
     ) {
         unsafe {
-            wr_compositor_create_surface(self.0, id, virtual_offset, tile_size, is_opaque);
+            wr_compositor_create_surface(self.0, id, tile_size, is_opaque);
         }
     }
 

@@ -287,9 +287,9 @@ void RenderCompositorLayerNative::UnbindNativeLayer() {
   mCurrentlyBoundNativeLayer = nullptr;
 }
 
-void RenderCompositorLayerNative::CreateSurface(
-    wr::NativeSurfaceId aId, wr::DeviceIntPoint aVirtualOffset,
-    wr::DeviceIntSize aTileSize, bool aIsOpaque) {
+void RenderCompositorLayerNative::CreateSurface(wr::NativeSurfaceId aId,
+                                                wr::DeviceIntSize aTileSize,
+                                                bool aIsOpaque) {
   MOZ_ASSERT_UNREACHABLE("Unexpected to be called!");
 }
 
