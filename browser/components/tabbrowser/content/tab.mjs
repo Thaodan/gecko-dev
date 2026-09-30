@@ -105,10 +105,6 @@ export class MozTabbrowserTab extends MozElements.MozTab {
     this._labelIsContentTitle;
     /** @type {boolean} */
     this._labelIsInitialTitle;
-    /** @type {MozFindbar} */
-    this._findBar;
-    /** @type {Promise<MozFindbar | null>} */
-    this._pendingFindBar;
   }
 
   static get inheritedAttributes() {

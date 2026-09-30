@@ -360,6 +360,12 @@ export class Tabbrowser {
   /** @type {WeakMap<MozTabbrowserTab, nsIURI>} */
   static #originalRegisteredOpenURIs = new WeakMap();
 
+  /** @type {WeakMap<MozTabbrowserTab, MozFindbar>} */
+  static #findBars = new WeakMap();
+
+  /** @type {WeakMap<MozTabbrowserTab, Promise<MozFindbar | null>>} */
+  static #pendingFindBars = new WeakMap();
+
   /** @type {WeakMap<MozTabbrowserTab, MozTabbrowserTab>} */
   #lastRelatedTabMap = new WeakMap();
 
@@ -1140,7 +1146,7 @@ export class Tabbrowser {
   }
 
   isFindBarInitialized(aTab) {
-    return (aTab || this.selectedTab)._findBar != undefined;
+    return Tabbrowser.#findBars.has(aTab || this.selectedTab);
   }
 
   /**
@@ -1150,7 +1156,7 @@ export class Tabbrowser {
    *   Defaults to the selected tab.
    */
   getCachedFindBar(aTab = this.selectedTab) {
-    return aTab._findBar;
+    return Tabbrowser.#findBars.get(aTab);
   }
 
   /**
@@ -1174,10 +1180,12 @@ export class Tabbrowser {
     }
 
     // Avoid re-entrancy by caching the promise we're about to return.
-    if (!aTab._pendingFindBar) {
-      aTab._pendingFindBar = this.#createFindBar(aTab);
+    let pendingFindBar = Tabbrowser.#pendingFindBars.get(aTab);
+    if (!pendingFindBar) {
+      pendingFindBar = this.#createFindBar(aTab);
+      Tabbrowser.#pendingFindBars.set(aTab, pendingFindBar);
     }
-    return aTab._pendingFindBar;
+    return pendingFindBar;
   }
 
   /**
@@ -1193,7 +1201,7 @@ export class Tabbrowser {
     browser.parentNode.insertAdjacentElement("afterend", findBar);
 
     await new Promise(r => this.documentGlobal.requestAnimationFrame(r));
-    delete aTab._pendingFindBar;
+    Tabbrowser.#pendingFindBars.delete(aTab);
     if (this.documentGlobal.closed || aTab.closing) {
       return null;
     }
@@ -1201,7 +1209,7 @@ export class Tabbrowser {
     findBar.browser = browser;
     findBar._findField.value = this.#lastFindValue;
 
-    aTab._findBar = findBar;
+    Tabbrowser.#findBars.set(aTab, findBar);
 
     let event = this.document.createEvent("Events");
     event.initEvent("TabFindInitialized", true, false);
@@ -1957,7 +1965,7 @@ export class Tabbrowser {
         oldTab.updateLastSeenActive();
       }
 
-      let oldFindBar = oldTab._findBar;
+      let oldFindBar = Tabbrowser.#findBars.get(oldTab);
       if (
         oldFindBar &&
         oldFindBar.findMode == oldFindBar.FIND_NORMAL &&
@@ -3451,10 +3459,11 @@ export class Tabbrowser {
     Tabbrowser.#tabFilters.delete(aTab);
 
     // Reset the findbar and remove it if it is attached to the tab.
-    if (aTab._findBar) {
-      aTab._findBar.close(true);
-      aTab._findBar.remove();
-      delete aTab._findBar;
+    let findBar = Tabbrowser.#findBars.get(aTab);
+    if (findBar) {
+      findBar.close(true);
+      findBar.remove();
+      Tabbrowser.#findBars.delete(aTab);
     }
 
     // Remove potentially stale attributes.
@@ -7377,7 +7386,7 @@ export class Tabbrowser {
     }
 
     // Handle findbar data (if any)
-    let otherFindBar = aOtherTab._findBar;
+    let otherFindBar = Tabbrowser.#findBars.get(aOtherTab);
     if (otherFindBar && otherFindBar.findMode == otherFindBar.FIND_NORMAL) {
       let oldValue = otherFindBar._findField.value;
       let wasHidden = otherFindBar.hidden;
