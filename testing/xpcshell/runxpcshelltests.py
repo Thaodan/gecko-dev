@@ -662,17 +662,6 @@ class XPCShellTestThread(Thread):
         self.env["XPCSHELL_TEST_TEMP_DIR"] = tempDir
         if self.interactive:
             self.log.info("temp dir is %s" % tempDir)
-
-        if "MOZ_APP_DATA" not in os.environ:
-            appdata_dir = os.path.join(tempDir, "moz-appdata")
-            os.makedirs(appdata_dir, exist_ok=True)
-            self.env["MOZ_APP_DATA"] = os.path.normpath(
-                os.path.join(appdata_dir, "AppData", "Roaming")
-            )
-            self.env["MOZ_LOCAL_APP_DATA"] = os.path.normpath(
-                os.path.join(appdata_dir, "Local")
-            )
-
         return tempDir
 
     def setupProfileDir(self):
