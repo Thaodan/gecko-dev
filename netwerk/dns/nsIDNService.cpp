@@ -419,11 +419,11 @@ bool nsIDNService::IsLabelSafe(mozilla::Span<const char32_t> aLabel,
   while (current != end) {
     char32_t ch = *current++;
 
-    IdentifierType idType = GetIdentifierType(ch);
-    if (idType == IDTYPE_RESTRICTED) {
+    IdentifierStatus idStatus = GetIdentifierStatus(ch);
+    if (idStatus == IDSTATUS_RESTRICTED) {
       return false;
     }
-    MOZ_ASSERT(idType == IDTYPE_ALLOWED);
+    MOZ_ASSERT(idStatus == IDSTATUS_ALLOWED);
 
     // Check for mixed script
     Script script = UnicodeProperties::GetScriptCode(ch);
