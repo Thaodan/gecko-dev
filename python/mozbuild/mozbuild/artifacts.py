@@ -45,6 +45,8 @@ import subprocess
 import tarfile
 import tempfile
 import zipfile
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FutureTimeoutError
 from contextlib import contextmanager
 from io import BufferedReader, BytesIO
 from urllib.parse import urlparse
@@ -85,6 +87,19 @@ PROCESSED_SUFFIX = ".processed.jar"
 UNFILTERED_PROJECT_PACKAGE_PROCESSED_SUFFIX = (
     ".unfiltered_project_package.processed.jar"
 )
+
+
+def _future_result(future):
+    """Wait for the result of ``future``.
+
+    Waiting without a timeout blocks in a way that can't be interrupted with
+    Ctrl-C on Windows before Python 3.14, so wait in small increments.
+    """
+    while True:
+        try:
+            return future.result(timeout=0.1)
+        except FutureTimeoutError:
+            pass
 
 
 class GeckoJobConfiguration:
@@ -1684,7 +1699,9 @@ https://firefox-source-docs.mozilla.org/contributing/vcs/mercurial_bundles.html
             return urls
         return None
 
-    def install_from_file(self, filename, distdir):
+    def _process_file(self, filename):
+        """Post-process a downloaded artifact if necessary, and return the path
+        of the processed artifact, or None if processing is disabled."""
         self.log(
             logging.DEBUG,
             "artifact",
@@ -1692,21 +1709,8 @@ https://firefox-source-docs.mozilla.org/contributing/vcs/mercurial_bundles.html
             "Installing from {filename}",
         )
 
-        # Copy all .so files, avoiding modification where possible.
-        ensureParentDir(mozpath.join(distdir, ".dummy"))
-
         if self._no_process:
-            orig_basename = self._artifact_job._get_orig_basename(filename)
-            path = mozpath.join(distdir, orig_basename)
-            with FileAvoidWrite(path, readmode="rb") as fh:
-                shutil.copyfileobj(open(filename, mode="rb"), fh)
-            self.log(
-                logging.DEBUG,
-                "artifact",
-                {"path": path},
-                "Copied unprocessed artifact: to {path}",
-            )
-            return
+            return None
 
         # Do we need to post-process?
         processed_filename = filename + PROCESSED_SUFFIX
@@ -1746,6 +1750,24 @@ https://firefox-source-docs.mozilla.org/contributing/vcs/mercurial_bundles.html
                 raise e
 
         self._artifact_cache._persist_limit.register_file(processed_filename)
+        return processed_filename
+
+    def _install_processed_file(self, filename, processed_filename, distdir):
+        # Copy all .so files, avoiding modification where possible.
+        ensureParentDir(mozpath.join(distdir, ".dummy"))
+
+        if processed_filename is None:
+            orig_basename = self._artifact_job._get_orig_basename(filename)
+            path = mozpath.join(distdir, orig_basename)
+            with FileAvoidWrite(path, readmode="rb") as fh:
+                shutil.copyfileobj(open(filename, mode="rb"), fh)
+            self.log(
+                logging.DEBUG,
+                "artifact",
+                {"path": path},
+                "Copied unprocessed artifact: to {path}",
+            )
+            return
 
         self.log(
             logging.DEBUG,
@@ -1779,12 +1801,35 @@ https://firefox-source-docs.mozilla.org/contributing/vcs/mercurial_bundles.html
                         stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH
                     )  # u+w, a+r.
                     os.chmod(n, perms)
+
+    def _install_from_sources(self, sources, fetch, distdir):
+        """Fetch and process all ``sources`` concurrently, then install them
+        into ``distdir`` sequentially, in order, since later artifacts may
+        overwrite files from earlier ones."""
+
+        def prepare(source):
+            filename = fetch(source)
+            return filename, self._process_file(filename)
+
+        with ThreadPoolExecutor(max_workers=max(len(sources), 1)) as executor:
+            futures = [executor.submit(prepare, source) for source in sources]
+            try:
+                for future in futures:
+                    self._install_processed_file(*_future_result(future), distdir)
+            except BaseException:
+                self._artifact_cache.cancel()
+                raise
         return 0
 
-    def install_from_url(self, url, distdir):
+    def _fetch_url(self, url):
         self.log(logging.DEBUG, "artifact", {"url": url}, "Installing from {url}")
-        filename = self._artifact_cache.fetch(url)
-        return self.install_from_file(filename, distdir)
+        return self._artifact_cache.fetch(url)
+
+    def install_from_files(self, filenames, distdir):
+        return self._install_from_sources(filenames, lambda f: f, distdir)
+
+    def install_from_urls(self, urls, distdir):
+        return self._install_from_sources(urls, self._fetch_url, distdir)
 
     def _install_from_hg_pushheads(self, hg_pushheads, distdir):
         """Iterate pairs (hg_hash, {tree-set}) associating hg revision hashes
@@ -1811,10 +1856,7 @@ https://firefox-source-docs.mozilla.org/contributing/vcs/mercurial_bundles.html
                         task_cache, self._job, tree, hg_hash
                     )
                     if urls:
-                        for url in urls:
-                            if self.install_from_url(url, distdir):
-                                return 1
-                        return 0
+                        return self.install_from_urls(urls, distdir)
 
         self.log(
             logging.ERROR,
@@ -1900,28 +1942,17 @@ https://firefox-source-docs.mozilla.org/contributing/vcs/mercurial_bundles.html
             urls.append(url)
         if not urls:
             raise ValueError(f"Task {taskId} existed, but no artifacts found!")
-        for url in urls:
-            if self.install_from_url(url, distdir):
-                return 1
-        return 0
+        return self.install_from_urls(urls, distdir)
 
     def install_from(self, source, distdir):
         """Install artifacts from a ``source`` into the given ``distdir``."""
         if (source and os.path.isfile(source)) or "MOZ_ARTIFACT_FILE" in os.environ:
             source = source or os.environ["MOZ_ARTIFACT_FILE"]
-            for source in source.split(os.pathsep):
-                ret = self.install_from_file(source, distdir)
-                if ret:
-                    return ret
-            return 0
+            return self.install_from_files(source.split(os.pathsep), distdir)
 
         if (source and urlparse(source).scheme) or "MOZ_ARTIFACT_URL" in os.environ:
             source = source or os.environ["MOZ_ARTIFACT_URL"]
-            for source in source.split():
-                ret = self.install_from_url(source, distdir)
-                if ret:
-                    return ret
-            return 0
+            return self.install_from_urls(source.split(), distdir)
 
         if source or "MOZ_ARTIFACT_REVISION" in os.environ:
             source = source or os.environ["MOZ_ARTIFACT_REVISION"]
