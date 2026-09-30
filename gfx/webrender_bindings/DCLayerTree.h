@@ -158,19 +158,11 @@ class DCLayerTree {
   // Interface for wr::Compositor
   void CompositorBeginFrame();
   void CompositorEndFrame();
-  void Bind(wr::NativeTileId aId, wr::DeviceIntPoint* aOffset,
-            uint64_t* aSurfaceHandle, wr::DeviceIntRect aDirtyRect,
-            wr::DeviceIntRect aValidRect);
-  void Unbind();
-  void CreateSurface(wr::NativeSurfaceId aId, wr::DeviceIntPoint aVirtualOffset,
-                     wr::DeviceIntSize aTileSize, bool aIsOpaque);
   void CreateSwapChainSurface(wr::NativeSurfaceId aId, wr::DeviceIntSize aSize,
                               bool aIsOpaque, bool aNeedsSyncDcompCommit);
   void ResizeSwapChainSurface(wr::NativeSurfaceId aId, wr::DeviceIntSize aSize);
   void CreateExternalSurface(wr::NativeSurfaceId aId, bool aIsOpaque);
   void DestroySurface(NativeSurfaceId aId);
-  void CreateTile(wr::NativeSurfaceId aId, int32_t aX, int32_t aY);
-  void DestroyTile(wr::NativeSurfaceId aId, int32_t aX, int32_t aY);
   void AttachExternalImage(wr::NativeSurfaceId aId,
                            wr::ExternalImageId aExternalImage);
   void AddSurface(wr::NativeSurfaceId aId,

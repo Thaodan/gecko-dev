@@ -758,22 +758,6 @@ void DCLayerTree::PresentSwapChain(wr::NativeSurfaceId aId,
   }
 }
 
-void DCLayerTree::Bind(wr::NativeTileId aId, wr::DeviceIntPoint* aOffset,
-                       uint64_t* aSurfaceHandle, wr::DeviceIntRect aDirtyRect,
-                       wr::DeviceIntRect aValidRect) {
-  MOZ_ASSERT_UNREACHABLE("Unexpected to be called!");
-}
-
-void DCLayerTree::Unbind() {
-  MOZ_ASSERT_UNREACHABLE("Unexpected to be called!");
-}
-
-void DCLayerTree::CreateSurface(wr::NativeSurfaceId aId,
-                                wr::DeviceIntPoint aVirtualOffset,
-                                wr::DeviceIntSize aTileSize, bool aIsOpaque) {
-  MOZ_ASSERT_UNREACHABLE("Unexpected to be called!");
-}
-
 void DCLayerTree::CreateSwapChainSurface(wr::NativeSurfaceId aId,
                                          wr::DeviceIntSize aSize,
                                          bool aIsOpaque,
@@ -851,14 +835,6 @@ void DCLayerTree::DestroySurface(NativeSurfaceId aId) {
 
   mRootVisual->RemoveVisual(surface->GetRootVisual());
   mDCSurfaces.erase(surface_it);
-}
-
-void DCLayerTree::CreateTile(wr::NativeSurfaceId aId, int32_t aX, int32_t aY) {
-  MOZ_ASSERT_UNREACHABLE("Unexpected to be called!");
-}
-
-void DCLayerTree::DestroyTile(wr::NativeSurfaceId aId, int32_t aX, int32_t aY) {
-  MOZ_ASSERT_UNREACHABLE("Unexpected to be called!");
 }
 
 void DCLayerTree::AttachExternalImage(wr::NativeSurfaceId aId,
