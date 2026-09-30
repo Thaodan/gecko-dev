@@ -2429,13 +2429,14 @@ networking:
     - https://bugzilla.mozilla.org/show_bug.cgi?id=1960582
     - https://bugzilla.mozilla.org/show_bug.cgi?id=2010463
     - https://bugzilla.mozilla.org/show_bug.cgi?id=2048455
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=2072828
     data_reviews:
     - https://bugzilla.mozilla.org/show_bug.cgi?id=1960582
     notification_emails:
      - smayya@mozilla.com
      - vgosu@mozilla.com
      - necko@gmail.com
-    expires: 160
+    expires: 166
     labels:
       - private_to_local_http
       - private_to_local_https
