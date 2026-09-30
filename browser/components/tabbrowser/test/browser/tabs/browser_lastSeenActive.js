@@ -143,7 +143,7 @@ add_task(async function switchingTabs() {
 
 add_task(async function switchingWindows() {
   info("Restoring to the test browser state");
-  await SessionStoreTestUtils.promiseBrowserState({
+  await SessionStoreTestUtils.promiseCompletedBrowserState({
     windows: [
       {
         tabs: [tabEntry("data:,Window1-Tab0", yesterday)],

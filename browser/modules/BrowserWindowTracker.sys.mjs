@@ -513,6 +513,22 @@ export const BrowserWindowTracker = {
     return WindowHelper.addWindow(window);
   },
 
+  /**
+   * Record a tracked browser window's activation before its platform event is
+   * dispatched.
+   *
+   * @param {Window} window
+   *   The browser window that was activated.
+   */
+  recordWindowActivation(window) {
+    if (
+      Services.focus.activeWindow == window &&
+      _trackedWindows.includes(window)
+    ) {
+      WindowHelper.onActivate(window);
+    }
+  },
+
   getBrowserById(browserId) {
     for (let win of BrowserWindowTracker.orderedWindows) {
       for (let tab of win.gBrowser.visibleTabs) {

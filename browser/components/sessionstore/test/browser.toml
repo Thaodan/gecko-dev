@@ -266,6 +266,12 @@ skip-if = [
 
 ["browser_restore_pageProxyState.js"]
 
+["browser_restore_preserves_focus.js"]
+skip-if = [
+  "headless", # Requires native top-level window focus
+]
+tags = "os_integration"
+
 ["browser_restore_private_tab_os.js"]
 
 ["browser_restore_redirect.js"]
@@ -283,6 +289,8 @@ skip-if = [
 ["browser_restore_tabless_window.js"]
 
 ["browser_restore_verticalPinnedTabs.js"]
+
+["browser_restore_window_closed_before_show.js"]
 
 ["browser_restored_window_features.js"]
 skip-if = [
