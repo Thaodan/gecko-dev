@@ -672,21 +672,15 @@ void DCLayerTree::CompositorEndFrame() {
     MOZ_RELEASE_ASSERT(surface_it != mDCSurfaces.end());
     const auto surface = surface_it->second.get();
     if (!same) {
-      const auto visual = surface->GetRootVisual();
-      if (UseLayerCompositor()) {
-        // Layer compositor expects front to back.
-        mRootVisual->AddVisual(visual, true, nullptr);
-      } else {
-        // Native compositor expects back to front.
-        mRootVisual->AddVisual(visual, false, nullptr);
-      }
+      // Layer compositor expects front to back.
+      mRootVisual->AddVisual(surface->GetRootVisual(), true, nullptr);
     }
   }
 
   mPrevLayers.swap(mCurrentLayers);
   mCurrentLayers.clear();
 
-  if (!same || !UseLayerCompositor()) {
+  if (!same) {
     mPendingCommit = true;
   }
 
