@@ -109,8 +109,6 @@ export class MozTabbrowserTab extends MozElements.MozTab {
     this._findBar;
     /** @type {Promise<MozFindbar | null>} */
     this._pendingFindBar;
-    /** @type {nsIURI} */
-    this._originalRegisteredOpenURI;
   }
 
   static get inheritedAttributes() {

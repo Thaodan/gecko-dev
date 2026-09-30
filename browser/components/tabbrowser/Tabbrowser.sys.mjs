@@ -357,6 +357,9 @@ export class Tabbrowser {
   /** @type {WeakMap<MozTabbrowserTab, {uriIsAboutBlank: boolean, remoteType: string, usingPreloadedContent: boolean}>} */
   static #browserParams = new WeakMap();
 
+  /** @type {WeakMap<MozTabbrowserTab, nsIURI>} */
+  static #originalRegisteredOpenURIs = new WeakMap();
+
   /** @type {WeakMap<MozTabbrowserTab, MozTabbrowserTab>} */
   #lastRelatedTabMap = new WeakMap();
 
@@ -7315,7 +7318,10 @@ export class Tabbrowser {
 
     // Add a reference to the original registeredOpenURI to the closing
     // tab so that events operating on the tab before close can reference it.
-    aOtherTab._originalRegisteredOpenURI = otherBrowser.registeredOpenURI;
+    Tabbrowser.#originalRegisteredOpenURIs.set(
+      aOtherTab,
+      otherBrowser.registeredOpenURI
+    );
 
     // If the other tab is pending (i.e. has not been restored, yet)
     // then do not switch docShells but retrieve the other tab's state
@@ -9359,7 +9365,8 @@ export class Tabbrowser {
   on_TabGrouped(aEvent) {
     let tab = aEvent.detail;
     let uri =
-      tab.linkedBrowser?.registeredOpenURI || tab._originalRegisteredOpenURI;
+      tab.linkedBrowser?.registeredOpenURI ||
+      Tabbrowser.#originalRegisteredOpenURIs.get(tab);
     if (uri) {
       lazy.UrlbarProviderOpenTabs.unregisterOpenTab(
         uri.spec,
@@ -9379,7 +9386,8 @@ export class Tabbrowser {
   on_TabUngrouped(aEvent) {
     let tab = aEvent.detail;
     let uri =
-      tab.linkedBrowser?.registeredOpenURI || tab._originalRegisteredOpenURI;
+      tab.linkedBrowser?.registeredOpenURI ||
+      Tabbrowser.#originalRegisteredOpenURIs.get(tab);
     if (uri) {
       // By the time the tab makes it to us it is already ungrouped, but
       // the original group is preserved in the event target.
