@@ -107,10 +107,6 @@ export class MozTabbrowserTab extends MozElements.MozTab {
     this._labelIsInitialTitle;
     /** @type {boolean} */
     this._pendingPermitUnload;
-    /** @type {number} */
-    this._closeTimeAnimTimerId;
-    /** @type {number} */
-    this._closeTimeNoAnimTimerId;
     /** @type {MozFindbar} */
     this._findBar;
     /** @type {Promise<MozFindbar | null>} */

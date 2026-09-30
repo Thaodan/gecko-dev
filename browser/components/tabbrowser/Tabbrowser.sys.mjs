@@ -345,6 +345,12 @@ export class Tabbrowser {
   /** @type {WeakMap<MozTabbrowserTab, [boolean, boolean]>} */
   static #endRemoveArgs = new WeakMap();
 
+  /** @type {WeakMap<MozTabbrowserTab, number>} */
+  static #closeTimeAnimTimerIds = new WeakMap();
+
+  /** @type {WeakMap<MozTabbrowserTab, number>} */
+  static #closeTimeNoAnimTimerIds = new WeakMap();
+
   /** @type {WeakMap<MozTabbrowserTab, MozTabbrowserTab>} */
   #lastRelatedTabMap = new WeakMap();
 
@@ -6338,11 +6344,20 @@ export class Tabbrowser {
 
     // Telemetry stopwatches may already be running if removeTab gets
     // called again for an already closing tab.
-    if (!aTab._closeTimeAnimTimerId && !aTab._closeTimeNoAnimTimerId) {
+    if (
+      !Tabbrowser.#closeTimeAnimTimerIds.get(aTab) &&
+      !Tabbrowser.#closeTimeNoAnimTimerIds.get(aTab)
+    ) {
       // Speculatevely start both stopwatches now. We'll cancel one of
       // the two later depending on whether we're animating.
-      aTab._closeTimeAnimTimerId = Glean.browserTabclose.timeAnim.start();
-      aTab._closeTimeNoAnimTimerId = Glean.browserTabclose.timeNoAnim.start();
+      Tabbrowser.#closeTimeAnimTimerIds.set(
+        aTab,
+        Glean.browserTabclose.timeAnim.start()
+      );
+      Tabbrowser.#closeTimeNoAnimTimerIds.set(
+        aTab,
+        Glean.browserTabclose.timeNoAnim.start()
+      );
     }
 
     // Handle requests for synchronously removing an already
@@ -6379,10 +6394,14 @@ export class Tabbrowser {
         metricsContext,
       })
     ) {
-      Glean.browserTabclose.timeAnim.cancel(aTab._closeTimeAnimTimerId);
-      aTab._closeTimeAnimTimerId = null;
-      Glean.browserTabclose.timeNoAnim.cancel(aTab._closeTimeNoAnimTimerId);
-      aTab._closeTimeNoAnimTimerId = null;
+      Glean.browserTabclose.timeAnim.cancel(
+        Tabbrowser.#closeTimeAnimTimerIds.get(aTab)
+      );
+      Tabbrowser.#closeTimeAnimTimerIds.delete(aTab);
+      Glean.browserTabclose.timeNoAnim.cancel(
+        Tabbrowser.#closeTimeNoAnimTimerIds.get(aTab)
+      );
+      Tabbrowser.#closeTimeNoAnimTimerIds.delete(aTab);
       return;
     }
 
@@ -6416,15 +6435,19 @@ export class Tabbrowser {
       tabWidth == 0 /* fade-in transition hasn't moved yet */
     ) {
       // We're not animating, so we can cancel the animation stopwatch.
-      Glean.browserTabclose.timeAnim.cancel(aTab._closeTimeAnimTimerId);
-      aTab._closeTimeAnimTimerId = null;
+      Glean.browserTabclose.timeAnim.cancel(
+        Tabbrowser.#closeTimeAnimTimerIds.get(aTab)
+      );
+      Tabbrowser.#closeTimeAnimTimerIds.delete(aTab);
       this._endRemoveTab(aTab);
       return;
     }
 
     // We're animating, so we can cancel the non-animation stopwatch.
-    Glean.browserTabclose.timeNoAnim.cancel(aTab._closeTimeNoAnimTimerId);
-    aTab._closeTimeNoAnimTimerId = null;
+    Glean.browserTabclose.timeNoAnim.cancel(
+      Tabbrowser.#closeTimeNoAnimTimerIds.get(aTab)
+    );
+    Tabbrowser.#closeTimeNoAnimTimerIds.delete(aTab);
 
     aTab.style.maxWidth = ""; // ensure that fade-out transition happens
     aTab.removeAttribute("fadein");
@@ -6870,17 +6893,17 @@ export class Tabbrowser {
     // closeWindow might wait an arbitrary length of time if we're supposed
     // to warn about closing the window, so we'll just stop the tab close
     // stopwatches here instead.
-    if (aTab._closeTimeAnimTimerId) {
+    if (Tabbrowser.#closeTimeAnimTimerIds.get(aTab)) {
       Glean.browserTabclose.timeAnim.stopAndAccumulate(
-        aTab._closeTimeAnimTimerId
+        Tabbrowser.#closeTimeAnimTimerIds.get(aTab)
       );
-      aTab._closeTimeAnimTimerId = null;
+      Tabbrowser.#closeTimeAnimTimerIds.delete(aTab);
     }
-    if (aTab._closeTimeNoAnimTimerId) {
+    if (Tabbrowser.#closeTimeNoAnimTimerIds.get(aTab)) {
       Glean.browserTabclose.timeNoAnim.stopAndAccumulate(
-        aTab._closeTimeNoAnimTimerId
+        Tabbrowser.#closeTimeNoAnimTimerIds.get(aTab)
       );
-      aTab._closeTimeNoAnimTimerId = null;
+      Tabbrowser.#closeTimeNoAnimTimerIds.delete(aTab);
     }
 
     if (aCloseWindow) {
