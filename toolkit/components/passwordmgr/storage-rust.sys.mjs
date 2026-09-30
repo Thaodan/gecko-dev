@@ -139,6 +139,28 @@ const CANDIDATE_MATCH_FIELDS = new Set([
   "timesUsed",
 ]);
 
+// The origins and domains for listCandidatesByOrigin() to return every login
+// LoginHelper.isOriginMatching() can accept for `origin` with `options`. The
+// result may hold more, which match() then drops.
+const originPrefilter = (origin, options) => {
+  const origins = [origin];
+  if (options.schemeUpgrades && origin.startsWith("https://")) {
+    origins.push("http://" + origin.slice("https://".length));
+  }
+  const domains = [];
+  if (options.acceptDifferentSubdomains) {
+    try {
+      domains.push(Services.eTLD.getBaseDomain(Services.io.newURI(origin)));
+    } catch {
+      // isOriginMatching() accepts no other subdomain for this origin either.
+    }
+    if (options.acceptRelatedRealms && options.relatedRealms) {
+      domains.push(...options.relatedRealms);
+    }
+  }
+  return [origins, domains];
+};
+
 // Build a bare LoginInfo carrying only the given guid. Used to report the ids
 // of removed logins in "removeAllLogins" notifications, since the bulk deletion
 // APIs only return guids rather than full logins.
@@ -169,6 +191,10 @@ class RustLoginsStoreAdapter {
 
   async listCandidates() {
     return this.#store.listCandidates();
+  }
+
+  async listCandidatesByOrigin(origins, domains) {
+    return this.#store.listCandidatesByOrigin(origins, domains);
   }
 
   // getMany() returns the rows in whatever order the query gives it, so sort
@@ -1002,7 +1028,13 @@ export class LoginManagerRustStorage {
       // Matching the cleartext fields first means that a search without a hit
       // never needs the encryption key, and so never prompts for the primary
       // password. Only the logins that are actually returned get decrypted.
-      const ids = (await this.#storageAdapter.listCandidates())
+      const candidates =
+        typeof matchData.origin == "string" && matchData.origin
+          ? await this.#storageAdapter.listCandidatesByOrigin(
+              ...originPrefilter(matchData.origin, aOptions)
+            )
+          : await this.#storageAdapter.listCandidates();
+      const ids = candidates
         .filter(candidate => match(candidateToMatchable(candidate)))
         .map(candidate => candidate.id);
       candidateLogins = ids.length
