@@ -10,6 +10,11 @@
  * Flags are written to a staging area and only become visible after `commit()`
  * is called. This ensures that parallel tool calls requested in the same
  * conversation turn all see the same committed flags.
+ *
+ * `Conversation.run()` and `runWithGenerator()` commit before every LLM call,
+ * so a turn is governed by every flag raised before it started and by none a
+ * sibling tool call staged after it, wherever that turn is driven from. Code
+ * that raises a flag does not need to commit it itself.
  */
 export class SecurityProperties {
   #privateData = false;
@@ -46,15 +51,19 @@ export class SecurityProperties {
   }
 
   /**
-   * Serializes committed flag state for persistence. Staged flags are
-   * runtime coordination state and are not included.
+   * Serializes flag state for persistence, staged flags included. Staging is
+   * only about what a turn in flight may observe, not about durability: a
+   * conversation is written out mid-turn, and can end on a path that runs no
+   * further LLM call, so a flag that was raised has to survive either way.
+   * Restoring the result yields it committed, which is the fail-closed
+   * direction for a sticky flag.
    *
    * @returns {{ privateData: boolean, untrustedInput: boolean }}
    */
   toJSON() {
     return {
-      privateData: this.#privateData,
-      untrustedInput: this.#untrustedInput,
+      privateData: this.#privateData || this.#newPrivateData,
+      untrustedInput: this.#untrustedInput || this.#newUntrustedInput,
     };
   }
 
