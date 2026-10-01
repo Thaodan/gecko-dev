@@ -19,7 +19,6 @@ import android.view.Surface;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +26,6 @@ import java.util.Objects;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mozilla.geckoview.AllowOrDeny;
-import org.mozilla.geckoview.BuildConfig;
 import org.mozilla.geckoview.ContentBlocking;
 import org.mozilla.geckoview.ExperimentDelegate;
 import org.mozilla.geckoview.GeckoDisplay;
@@ -504,11 +502,6 @@ public class TestRunnerActivity extends Activity {
               Objects.equals(
                   System.getenv("MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_WITH_ZYGOTE"), "1"));
 
-      final List<String> env = getEnvFromExtras(extras);
-      if (env.contains("MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS=1")) {
-        runtimeSettingsBuilder.isolatedProcessEnabled(true);
-      }
-
       sRuntime = GeckoRuntime.create(this, runtimeSettingsBuilder.build());
 
       webExtensionController()
@@ -763,26 +756,6 @@ public class TestRunnerActivity extends Activity {
 
   public GeckoSession getGeckoSession() {
     return mSession;
-  }
-
-  /* package */ static ArrayList<String> getEnvFromExtras(final Bundle extras) {
-    if (extras == null) {
-      return new ArrayList<>();
-    }
-
-    final ArrayList<String> result = new ArrayList<>();
-    if (extras != null) {
-      String env = extras.getString("env0");
-      for (int c = 1; env != null; c++) {
-        if (BuildConfig.DEBUG_BUILD) {
-          Log.d(LOGTAG, "env var: " + env);
-        }
-        result.add(env);
-        env = extras.getString("env" + c);
-      }
-    }
-
-    return result;
   }
 
   class TestRunnerExperimentDelegate implements ExperimentDelegate {
