@@ -1215,7 +1215,7 @@ HttpBaseChannel::CloneUploadStream(int64_t* aContentLength,
   }
 
   // Teeing an async pipe would buffer an upload of unbounded size in memory,
-  // so report no clone; a service worker therefore sees a null request body.
+  // so report no clone.
   if (LoadUploadStreamIsStreaming()) {
     *aContentLength = -1;
     return NS_OK;

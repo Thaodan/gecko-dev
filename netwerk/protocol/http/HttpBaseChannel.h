@@ -536,6 +536,7 @@ class HttpBaseChannel : public nsHashPropertyBag,
   void SetUploadStreamIsStreaming(bool aIsStreaming) {
     StoreUploadStreamIsStreaming(aIsStreaming);
   }
+  bool UploadStreamIsStreaming() const { return LoadUploadStreamIsStreaming(); }
 
   virtual nsresult SetReferrerHeader(const nsACString& aReferrer,
                                      bool aRespectBeforeConnect = true) {
