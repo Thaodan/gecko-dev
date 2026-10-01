@@ -37,9 +37,6 @@ origin:
   # optional
   license-file: LICENSE
 
-  # Quoted: a scope makes this a YAML reserved indicator
-  npm-name: "@quartzy/prosemirror-suggestions"
-
 # Configuration for the automated vendoring system.
 # optional
 vendoring:
