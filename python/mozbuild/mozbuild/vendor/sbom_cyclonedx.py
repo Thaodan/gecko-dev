@@ -250,8 +250,14 @@ def build_bom(
         bom.components.add(component)
 
     dependencies = dependencies or {}
+    # An edge from something the document leaves out, a tooling crate in the
+    # product document for instance, must not unhook its target from the root.
     depended_on = {
-        ref for targets in dependencies.values() for ref in targets if ref in components
+        ref
+        for source, targets in dependencies.items()
+        if source in components
+        for ref in targets
+        if ref in components
     }
     for ref, targets in sorted(dependencies.items()):
         if ref not in components:

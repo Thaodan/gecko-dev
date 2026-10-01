@@ -8,6 +8,7 @@ import os
 import tempfile
 import textwrap
 import unittest
+from unittest import mock
 
 import yaml
 from mozunit import main
@@ -361,11 +362,14 @@ class TestBuildToolingDocument(PythonFixture):
         def get_commit_time(self):
             return 0
 
-    def test_document(self):
+    @mock.patch("mozbuild.vendor.sbom_cargo.collect_dependency_kinds", return_value={})
+    def test_document(self, collect_dependency_kinds):
         from mozbuild.action.generate_sbom import build_tooling_document
 
         document = json.loads(
-            build_tooling_document(self.topsrcdir, self.Repo(), version="155.0a1")
+            build_tooling_document(
+                self.topsrcdir, self.topsrcdir, self.Repo(), version="155.0a1"
+            )
         )
         self.assertIn(
             "pkg:pypi/fluent-syntax@0.19.0",

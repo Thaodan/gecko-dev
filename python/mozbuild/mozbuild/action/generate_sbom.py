@@ -18,6 +18,31 @@ class SbomError(Exception):
     """A condition that must not silently shrink the document."""
 
 
+def _crate_records(topsrcdir, topobjdir, substs, log):
+    """The vendored crates, split by whether they ship in the product.
+
+    Cargo.lock describes third_party/rust exactly: versions, checksums and the
+    crate-to-crate graph, none of which moz.yaml has. `cargo metadata` adds
+    what Cargo.lock cannot express: whether a crate is reached as a normal, a
+    build or a dev dependency, and so whether it ships at all.
+
+    Returns (shipped, tooling, edges, kinds). Without `cargo metadata` nothing
+    can be told apart, so every crate counts as shipped and ``kinds`` is empty.
+    """
+    from mozbuild.vendor.sbom_cargo import (
+        collect_dependency_kinds,
+        crate_records,
+        is_tooling,
+    )
+
+    kinds = collect_dependency_kinds(topsrcdir, topobjdir, substs.get("CARGO"), log=log)
+    crates, edges = crate_records(topsrcdir, kinds=kinds)
+    shipped, tooling = [], []
+    for crate in crates:
+        (tooling if is_tooling(crate) else shipped).append(crate)
+    return shipped, tooling, edges, kinds
+
+
 def _source_revision_and_time(repo):
     from mozbuild.vendor.sbom_cyclonedx import utc_timestamp
 
@@ -90,7 +115,13 @@ def _product_identity(topsrcdir, substs, product_name, version):
 
 
 def build_tooling_document(
-    topsrcdir, repo, substs=None, version=None, product_name=None, log=None
+    topsrcdir,
+    topobjdir,
+    repo,
+    substs=None,
+    version=None,
+    product_name=None,
+    log=None,
 ):
     """Return the SBOM of what builds and tests the product, as a JSON string.
 
@@ -101,6 +132,7 @@ def build_tooling_document(
     from mozbuild.vendor.sbom_npm import npm_records
     from mozbuild.vendor.sbom_python import python_records
 
+    substs = substs or {}
     log = log or (lambda message: None)
 
     # The same lockfiles the product document reads, less the runtime closure
@@ -114,9 +146,17 @@ def build_tooling_document(
     dependencies.update(python_edges)
     log(f"{len(packages)} vendored Python packages.")
 
-    product_name, version = _product_identity(
-        topsrcdir, substs or {}, product_name, version
-    )
+    # The crates only the tests and the tools build, which the product
+    # document leaves out.
+    _, crates, crate_edges, kinds = _crate_records(topsrcdir, topobjdir, substs, log)
+    records.extend(crates)
+    dependencies.update(crate_edges)
+    if kinds:
+        log(f"{len(crates)} test and tooling crates.")
+    else:
+        log("cargo metadata unavailable; tooling crates cannot be told apart.")
+
+    product_name, version = _product_identity(topsrcdir, substs, product_name, version)
     return _serialize(
         records,
         version,
@@ -175,7 +215,6 @@ def build_document(
         merge_license_notices,
         unattached_notices,
     )
-    from mozbuild.vendor.sbom_cargo import collect_dependency_kinds, crate_records
     from mozbuild.vendor.sbom_gradle import (
         RUNTIME_DEPENDENCIES,
         GradleSbomError,
@@ -198,21 +237,20 @@ def build_document(
         if not record["bom_ref"].startswith(PYTHON_VENDOR_DIR + "/")
     ]
 
-    # Cargo.lock describes third_party/rust exactly: versions, checksums and
-    # the crate-to-crate graph, none of which moz.yaml has. `cargo metadata`
-    # adds what Cargo.lock cannot express: whether a crate is reached as a
-    # normal, a build or a dev dependency, and so whether it ships at all.
-    kinds = collect_dependency_kinds(topsrcdir, topobjdir, substs.get("CARGO"), log=log)
-    crates, dependencies = crate_records(topsrcdir, kinds=kinds)
+    # A crate only tests or tools use ships in nothing; the build tooling
+    # document has it.
+    crates, tooling, dependencies, kinds = _crate_records(
+        topsrcdir, topobjdir, substs, log
+    )
     records.extend(crates)
 
     if kinds:
         shipped = sum(1 for c in crates if {"normal", "build"} & set(c["kinds"]))
-        dev_only = sum(1 for c in crates if c["kinds"] == ["dev"])
         log(
             f"{len(crates)} crates: {shipped} built into the product, "
-            f"{dev_only} test-only, "
-            f"{len(crates) - shipped - dev_only} not reached by cargo metadata.",
+            f"{len(crates) - shipped} not reached by cargo metadata; "
+            f"{len(tooling)} test and tooling crate(s) left to the build tooling "
+            "document.",
         )
     else:
         log(
@@ -329,6 +367,7 @@ def generate(
         if build_tooling:
             document = build_tooling_document(
                 topsrcdir,
+                topobjdir,
                 repo,
                 substs=substs,
                 version=version,
