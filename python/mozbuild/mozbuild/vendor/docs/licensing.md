@@ -256,20 +256,23 @@ attributed path is represented.
 ### Identifiers, Evidence and the Graph
 
 Each component's `bom-ref` is the topsrcdir-relative path it was derived from —
-the manifest's directory, or `third_party/rust/<crate>` — and
-`license:<notice-id>` for a component that came from a notice alone. A bundled
-npm package has no directory, so it is `npm:<name>@<version>`: the version is
-part of the identity because a package can ship at several versions at once.
-A Maven module is `maven:<group>:<name>@<version>` for the same reason.
+the manifest's directory, `third_party/rust/<crate>` or
+`third_party/python/<package>` — and `license:<notice-id>` for a component
+that came from a notice alone. A bundled npm package has no directory, so it
+is `npm:<name>@<version>`: the version is part of the identity because a
+package can ship at several versions at once. A Maven module is
+`maven:<group>:<name>@<version>` for the same reason, and a Python package the
+lockfile names but the tree does not vendor `pypi:<name>@<version>`.
 
-Package URLs are `pkg:cargo` for crates, `pkg:npm` for anything a lockfile or
-an `npm-name` declaration identifies, `pkg:maven` for GeckoView's Gradle
-dependencies, and `pkg:github` or `pkg:gitlab` where a manifest's upstream
-repository is recognised, since `pkg:generic` matches nothing in OSV.dev or the
-GitHub Advisory Database; everything else keeps the upstream repository in a
-`vcs_url` qualifier. A notice-derived component gets no package URL at all: it
-is a set of files in our own tree, not a package any ecosystem can resolve, and
-a `pkg:generic/<basename>` would match nothing while looking like it might.
+Package URLs are `pkg:cargo` for crates, `pkg:pypi` for Python packages,
+`pkg:npm` for anything a lockfile or an `npm-name` declaration identifies,
+`pkg:maven` for GeckoView's Gradle dependencies, and `pkg:github` or
+`pkg:gitlab` where a manifest's upstream repository is recognised, since
+`pkg:generic` matches nothing in OSV.dev or the GitHub Advisory Database;
+everything else keeps the upstream repository in a `vcs_url` qualifier. A
+notice-derived component gets no package URL at all: it is a set of files in
+our own tree, not a package any ecosystem can resolve, and a
+`pkg:generic/<basename>` would match nothing while looking like it might.
 
 A vendored library that is also published on npm says so in its `moz.yaml`:
 
@@ -314,6 +317,13 @@ Metadata CycloneDX has no field for is recorded as `moz:`-prefixed properties:
 | `moz:maven.pom-unreadable`, `moz:maven.artifact-unreadable` | The POM the metadata comes from, or the artifact the hash is of, could not be read |
 | `moz:maven.classified-artifacts` | Only artifacts with a classifier, which the purl does not name, so no hash |
 | `moz:maven.no-artifact` | A platform or a relocation, which ships nothing |
+| `moz:pypi.lockfile`, `moz:pypi.artifact` | For vendored Python packages: the lockfile and the archive the hash is of |
+| `moz:pypi.ambiguous-artifacts` | Several pure wheels, so no telling which one was unpacked and no hash |
+| `moz:pypi.license-file`, `moz:pypi.metadata-unreadable`, `moz:pypi.vendored-version` | A Python package that declares no license, whose metadata could not be read, or whose vendored copy is another version than the lockfile's |
+| `moz:pypi.not-vendored` | A lockfile package with no copy under `third_party/python` |
+| `moz:pypi.not-in-lockfile` | A package vendored under `third_party/python` by hand, which `uv.lock` does not name |
+| `moz:pypi.vendoring-excluded` | A package `mach vendor python` skips, stubbed or patched in the tree, so no hash |
+| `moz:pypi.unresolved-dependencies` | Dependencies that are not registry packages, a git or path source for instance |
 | `moz:license.conjunction` | `unspecified` where a manifest declares several licenses; `moz.yaml` has no `AND`/`OR` operator, so the SBOM records the ambiguity rather than inventing a legal fact |
 | `moz:source.revision` | On the root component |
 
@@ -356,11 +366,21 @@ it apart is machine-readable:
 - The serial number is derived from the source revision as well, but differs
   from the product document's, so the two stay distinct for the same checkout.
 
-Today it holds the npm packages of the lockfiles the product document reads
-that are not in the runtime closure: `dev` entries of a `package-lock.json`,
-and for `pnpm-lock.yaml` the closure of `devDependencies` less anything a
-runtime dependency already reaches. A package that both ship and build use is
-described by the product document only.
+It holds:
+
+- **The npm packages of the lockfiles the product document reads that are not
+  in the runtime closure**: `dev` entries of a `package-lock.json`, and for
+  `pnpm-lock.yaml` the closure of `devDependencies` less anything a runtime
+  dependency already reaches. A package that both ship and build use is
+  described by the product document only.
+- **The vendored Python packages**, which mach, the build system and the test
+  harnesses run on. `third_party/python/uv.lock` gives the version, the
+  `pkg:pypi` package URL, the SHA-256 of the archive `mach vendor python`
+  unpacked and the edges; the vendored copy's metadata gives the license, the
+  summary and the home page. The packages `mach vendor python` leaves alone,
+  vendored by hand, are described from their `moz.yaml` or their own
+  metadata instead, so `vsdownload` is here rather than in the product
+  document.
 
 The build does not generate it and automation does not publish it.
 
