@@ -165,7 +165,10 @@ def _primary_artifact(files, name, version):
 
 
 def gradle_records(path):
-    """Build (records, edges) from a runtime closure."""
+    """Build (records, edges, version) from a runtime closure.
+
+    ``version`` is the product's, where the task was given one.
+    """
     try:
         with open(path, encoding="utf-8") as document:
             data = json.load(document)
@@ -244,4 +247,4 @@ def gradle_records(path):
         if children:
             edges[ref] = children
 
-    return records, edges
+    return records, edges, data.get("version")
