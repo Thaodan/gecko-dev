@@ -132,7 +132,7 @@ export class FrecencyBoostProvider {
    * Build frecency-boosted spocs from a list of sponsor domains by checking Places history.
    * Checks if domains exist in history, and returns all matches sorted by frecency.
    *
-   * @param {Integer} numItems - Number of frecency items to check against.
+   * @param {number} numItems - Number of frecency items to check against.
    * @returns {Array} Array of sponsored tile objects sorted by frecency, or empty array
    */
   async buildFrecencyBoostedSpocs(numItems) {

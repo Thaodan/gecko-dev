@@ -1431,7 +1431,7 @@ export class TopSitesFeed {
    * shouldFilterSearchTile - is default filtering enabled and does a given hostname match the user's default search engine?
    *
    * @param {string} hostname a top site hostname, such as "amazon" or "foo"
-   * @returns {bool}
+   * @returns {boolean}
    */
   shouldFilterSearchTile(hostname) {
     if (
@@ -2091,8 +2091,8 @@ export class TopSitesFeed {
   /**
    * Refresh the top sites data for content.
    *
-   * @param {bool} options.broadcast Should the update be broadcasted.
-   * @param {bool} options.isStartup Being called while TopSitesFeed is initting.
+   * @param {boolean} options.broadcast Should the update be broadcasted.
+   * @param {boolean} options.isStartup Being called while TopSitesFeed is initting.
    */
   async refresh(options = {}) {
     if (this._uninitialized) {

@@ -394,7 +394,7 @@ export async function fetchBookmarkedFlags(
  * @param {object[]} topsites Array of topsites objects
  * @param {string} table Table to query
  * @param {string} placeTable Table to map guid->place_id
- * @returns {result: object} Dictionary of histograms of day-of-week site opens
+ * @returns {object} Dictionary of histograms of day-of-week site opens
  */
 export async function fetchDailyVisitsSpecific(topsites, table, placeTable) {
   if (!topsites.length) {

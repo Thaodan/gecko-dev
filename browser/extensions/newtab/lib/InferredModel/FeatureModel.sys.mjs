@@ -98,7 +98,7 @@ export class DayTimeWeighting {
   /**
    * Instantiate class based on a series of day periods in the past.
    *
-   * @param {int[]} pastDays Series of number of days, indicating days ago intervals in reverse chronological order.
+   * @param {number[]} pastDays Series of number of days, indicating days ago intervals in reverse chronological order.
    * Intervals are added: If the first value is 1 and the second is 5, then the first interval is 0-1 and second interval is between 1 and 6.
    * @param {number[]} relativeWeight Relative weight of each period. Must be same length as pastDays
    */
@@ -133,7 +133,7 @@ export class DayTimeWeighting {
   /**
    * Get relative weight of current index.
    *
-   * @param {int} weightIndex Index
+   * @param {number} weightIndex Index
    * @returns {number} Weight at index, or 0 if index out of range.
    */
   getRelativeWeight(weightIndex) {
