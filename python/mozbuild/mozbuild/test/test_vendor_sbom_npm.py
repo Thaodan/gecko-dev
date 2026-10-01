@@ -61,6 +61,12 @@ PNPM_LOCK = textwrap.dedent(
           webpack:
             specifier: 5.109.0
             version: 5.109.0
+          react:
+            specifier: 19.2.0
+            version: 19.2.0
+          scheduler:
+            specifier: 0.19.1
+            version: 0.19.1
     packages:
       react@19.2.0:
         resolution: {{integrity: sha512-{REACT_SHA512}}}
@@ -84,7 +90,10 @@ PNPM_LOCK = textwrap.dedent(
       csstype@3.2.3: {{}}
       loose-envify@1.4.0: {{}}
       fsevents@2.3.3: {{}}
-      webpack@5.109.0: {{}}
+      webpack@5.109.0:
+        dependencies:
+          react: 19.2.0
+      scheduler@0.19.1: {{}}
     """
 )
 
@@ -229,6 +238,23 @@ class TestNpmRecords(unittest.TestCase):
             record = self.by_ref[ref]
             self.assertEqual(record["licenses"], [])
             self.assertIn("moz:npm.package-json-unreadable", record["properties"])
+
+    def test_dev_closure_leaves_out_what_ships(self):
+        # react@19.2.0 ships from the same lockfile, scheduler@0.19.1 from
+        # another one.
+        records, edges = npm_records(
+            self.topsrcdir, manifests=("first", "second", "third"), dev=True
+        )
+        self.assertEqual(
+            [record["bom_ref"] for record in records], ["npm:webpack@5.109.0"]
+        )
+        # The product document describes react, so the edge to it is its own.
+        self.assertEqual(edges, {})
+        webpack = records[0]
+        self.assertEqual(webpack["kinds"], ["dev"])
+        self.assertEqual(
+            webpack["properties"]["moz:npm.manifests"], "first,second,third"
+        )
 
     def test_unreadable_integrity_is_reported(self):
         react_dom = self.by_ref["npm:react-dom@19.2.0"]

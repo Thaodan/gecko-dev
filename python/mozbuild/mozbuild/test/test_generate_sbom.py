@@ -11,7 +11,12 @@ import yaml
 from mozpack.files import FileFinder
 from mozunit import main
 
-from mozbuild.action.generate_sbom import SbomError, build_document
+from mozbuild.action.generate_sbom import (
+    SbomError,
+    build_document,
+    build_tooling_document,
+    generate,
+)
 from mozbuild.vendor.sbom_gradle import RUNTIME_DEPENDENCIES
 
 PACKAGE_LOCK = {
@@ -122,6 +127,38 @@ class TestBuildDocument(unittest.TestCase):
         self.write_runtime_dependencies()
         document = self.build(substs={"MOZ_BUILD_APP": "browser"}, strict=True)
         self.assertNotIn("pkg:maven/androidx.core/core@1.19.0", self.purls(document))
+
+    def test_build_tooling_document(self):
+        document = json.loads(
+            build_tooling_document(
+                self.topsrcdir, Repo(self.topsrcdir), version="155.0a1"
+            )
+        )
+        self.assertEqual(
+            [(c["bom-ref"], c["scope"]) for c in document["components"]],
+            [("npm:webpack@5.109.0", "excluded")],
+        )
+
+    def test_rejected_arguments(self):
+        output = os.path.join(self.topsrcdir, "sbom.json")
+        for arguments in (
+            {
+                "gradle_runtime_dependencies": "runtime-dependencies.json",
+                "build_tooling": True,
+            },
+            {"build_tooling": True, "strict": True},
+        ):
+            self.assertEqual(
+                generate(
+                    self.topsrcdir,
+                    self.topsrcdir,
+                    Repo(self.topsrcdir),
+                    output=output,
+                    **arguments,
+                ),
+                1,
+            )
+        self.assertFalse(os.path.exists(output))
 
 
 if __name__ == "__main__":
