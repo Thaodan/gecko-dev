@@ -14,7 +14,7 @@ impl MsgHdr for libc::msghdr {
         unsafe { libc::CMSG_FIRSTHDR(self) }
     }
 
-    unsafe fn cmsg_nxt_hdr(&self, cmsg: *const Self::ControlMessage) -> *mut Self::ControlMessage {
+    fn cmsg_nxt_hdr(&self, cmsg: &Self::ControlMessage) -> *mut Self::ControlMessage {
         unsafe { libc::CMSG_NXTHDR(self, cmsg) }
     }
 
@@ -42,8 +42,8 @@ impl CMsgHdr for libc::cmsghdr {
         unsafe { libc::CMSG_SPACE(length as _) as usize }
     }
 
-    unsafe fn cmsg_data(this: *const Self) -> *mut c_uchar {
-        unsafe { libc::CMSG_DATA(this) }
+    fn cmsg_data(&self) -> *mut c_uchar {
+        unsafe { libc::CMSG_DATA(self) }
     }
 
     fn set(&mut self, level: c_int, ty: c_int, len: usize) {
