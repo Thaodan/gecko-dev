@@ -121,7 +121,7 @@ export function sampleBeta(a, b) {
  * @param {number[]} observationsPriors.prior_positive - Array of priors for clicks
  * @param {number[]} observationsPriors.prior_negative - Array of priors for impressions
  * @param {boolean} observationsPriors.do_sort - Boolean flag for sorting scores and key_array
- * @returns {[accuracy: final_keys, kappa: final_thetas]} An object containing arrays of keys and scores
+ * @returns {Promise<Array>} An array containing the arrays of keys and scores
  */
 export async function thompsonSampleSort({
   key_array,

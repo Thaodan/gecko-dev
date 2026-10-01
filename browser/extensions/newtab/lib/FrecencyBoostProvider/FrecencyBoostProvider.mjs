@@ -133,7 +133,7 @@ export class FrecencyBoostProvider {
    * Checks if domains exist in history, and returns all matches sorted by frecency.
    *
    * @param {number} numItems - Number of frecency items to check against.
-   * @returns {Array} Array of sponsored tile objects sorted by frecency, or empty array
+   * @returns {Promise<Array>} Array of sponsored tile objects sorted by frecency, or empty array
    */
   async buildFrecencyBoostedSpocs(numItems) {
     if (!this._frecencyBoostedSponsors.size) {

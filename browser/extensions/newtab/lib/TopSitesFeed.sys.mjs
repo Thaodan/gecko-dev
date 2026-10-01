@@ -1449,7 +1449,7 @@ export class TopSitesFeed {
    * needed.
    *
    * @param {Array} plainPinnedSites (from the pinnedSitesCache)
-   * @returns {boolean} Did we insert any search shortcuts?
+   * @returns {Promise<boolean>} Did we insert any search shortcuts?
    */
   async _maybeInsertSearchShortcuts(plainPinnedSites) {
     // Only insert shortcuts if the experiment is running
@@ -1540,7 +1540,7 @@ export class TopSitesFeed {
   /**
    * Fetch topsites spocs that are frecency boosted.
    *
-   * @returns {Array} An array of sponsored tile objects.
+   * @returns {Promise<Array>} An array of sponsored tile objects.
    */
   async fetchFrecencyBoostedSpocs() {
     let candidates = [];

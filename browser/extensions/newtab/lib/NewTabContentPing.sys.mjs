@@ -401,7 +401,7 @@ export class NewTabContentPing {
    *
    * This function is a no-op when not running in test automation.
    *
-   * @returns {number}
+   * @returns {Promise<number>}
    *   The originally selected random delay for submitting the newtab-content
    *   ping.
    * @throws {Error}
