@@ -71,38 +71,9 @@ for the process, an input in the parent process that uses the message path takes
 the same route as one in a content process.
 
 ```JavaScript
-import * as UrlbarContentUtils from "chrome://browser/content/urlbar/UrlbarContentUtils.mjs";
+import { UrlbarContentUtils } from "chrome://browser/content/urlbar/UrlbarContentUtils.mjs";
 ```
 
-```{js:autofunction} UrlbarContentUtils.getPlatform
-```
-
-```{js:autofunction} UrlbarContentUtils.isWindowPrivate
-```
-
-```{js:autofunction} UrlbarContentUtils.getDisplaySpec
-```
-
-```{js:autofunction} UrlbarContentUtils.unEscapeURIForUI
-```
-
-```{js:autofunction} UrlbarContentUtils.getSupportUrl
-```
-
-```{js:autofunction} UrlbarContentUtils.getFixupPrimitives
-```
-
-```{js:autofunction} UrlbarContentUtils.isTextDirectionRTL
-```
-
-```{js:autofunction} UrlbarContentUtils.whereToOpenLink
-```
-
-```{js:autofunction} UrlbarContentUtils.willLoadInBackground
-```
-
-```{js:autofunction} UrlbarContentUtils.getContainers
-```
-
-```{js:autofunction} UrlbarContentUtils.usesMessagePath
+```{js:autoclass} UrlbarContentUtils
+:members:
 ```
