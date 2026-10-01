@@ -721,7 +721,7 @@ export class _DSCard extends React.PureComponent {
                       section: this.props.section,
                       section_position: this.props.sectionPosition,
                       is_section_followed: this.props.sectionFollowed,
-                      sectionLayoutName: this.props.sectionLayoutName,
+                      layout_name: this.props.sectionLayoutName,
                     }
                   : {}),
                 ...(!format && this.props.section
