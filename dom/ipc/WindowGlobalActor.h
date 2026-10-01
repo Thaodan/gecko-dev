@@ -8,7 +8,6 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/JSActor.h"
 #include "mozilla/dom/JSActorManager.h"
-#include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WindowGlobalTypes.h"
 #include "nsILoadInfo.h"
 #include "nsIOpenWindowInfo.h"
@@ -33,11 +32,6 @@ class WindowGlobalActor : public JSActorManager {
   // Called to determine initial state for a window global actor created for a
   // specific existing nsGlobalWindowInner.
   static WindowGlobalInit WindowInitializer(nsGlobalWindowInner* aWindow);
-
-  // Compute the initial synced field values which follow from the browsing
-  // context alone. See BrowsingContext::ComputeInitialFields.
-  static WindowContext::FieldValues ComputeInitialFields(
-      dom::BrowsingContext* aBrowsingContext);
 
   // The partitioned principal should be identical to the document principal,
   // with the exception of the partitionKey origin attribute.

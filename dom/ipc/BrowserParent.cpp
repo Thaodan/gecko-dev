@@ -1361,19 +1361,11 @@ IPCResult BrowserParent::RecvNewWindowGlobal(
                                                      __func__);
   }
 
-  // Construct our new WindowGlobalParent from the fields derived here, bind it,
-  // and reconcile the fields the content process sent.
-  WindowGlobalInit derivedInit(aInit);
-  derivedInit.context().mFields =
-      WindowGlobalActor::ComputeInitialFields(browsingContext);
+  // Construct our new WindowGlobalParent, bind, and initialize it.
   RefPtr<WindowGlobalParent> wgp =
-      WindowGlobalParent::CreateDisconnected(derivedInit, Manager());
-  if (!wgp) {
-    return IPC_FAIL(this, "Failed to create WindowGlobalParent");
-  }
-
+      WindowGlobalParent::CreateDisconnected(aInit, Manager());
   BindPWindowGlobalEndpoint(std::move(aEndpoint), wgp);
-  wgp->InitFromContentProcess(aInit.context().mFields, Manager());
+  wgp->Init();
   return IPC_OK();
 }
 
