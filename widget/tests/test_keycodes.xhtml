@@ -76,11 +76,12 @@ function isModifierKeyEvent(aEvent) {
 }
 
 function eventToString(aEvent) {
-  var name = aEvent.layout.name + " keyCode=" +
-    aEvent.keyCode + " (0x" + aEvent.keyCode.toString(16).toUpperCase() +
-      ") chars='" + aEvent.chars + "'";
+  let name =
+    `${aEvent.layout.name} keyCode=${aEvent.keyCode} (0x${
+      aEvent.keyCode.toString(16).toUpperCase()
+    }) chars='${aEvent.chars}'`;
   if (typeof aEvent.unmodifiedChars === "string") {
-    name += " unmodifiedChars='" + aEvent.unmodifiedChars + "'";
+    name += ` unmodifiedChars='${aEvent.unmodifiedChars}'`;
   }
   if (aEvent.modifiers.capsLockKey) {
     name += " [CapsLock]";
@@ -197,49 +198,92 @@ async function runKeyEventTests() {
       }
       switch (aEvent.key) {
         case "Shift":
-          is(aEvent.ctrlKey, (flags & kCtrlFlag) != 0,
-             currentTestName + ", Ctrl of Shift " + aEvent.type + " event mismatch");
-          is(aEvent.metaKey, (flags & kMetaFlag) != 0,
-             currentTestName + ", Command of Shift " + aEvent.type + " event mismatch");
-          is(aEvent.altKey, (flags & kAltFlag) != 0,
-             currentTestName + ", Alt of Shift " + aEvent.type + " event mismatch");
-          is(aEvent.shiftKey, aEvent.type == "keydown",
-             currentTestName + ", Shift of Shift " + aEvent.type + " event mismatch");
+          is(
+            aEvent.ctrlKey,
+            (flags & kCtrlFlag) != 0,
+            `${currentTestName}, Ctrl of Shift ${aEvent.type} event mismatch`
+          );
+          is(
+            aEvent.metaKey,
+            (flags & kMetaFlag) != 0,
+            `${currentTestName}, Command of Shift ${aEvent.type} event mismatch`
+          );
+          is(
+            aEvent.altKey,
+            (flags & kAltFlag) != 0,
+            `${currentTestName}, Alt of Shift ${aEvent.type} event mismatch`
+          );
+          is(
+            aEvent.shiftKey,
+            aEvent.type == "keydown",
+            `${currentTestName}, Shift of Shift ${aEvent.type} event mismatch`
+          );
           // AltGr on Windows is always pressed after and released before Shift key operation.
-          is(aEvent.getModifierState("AltGraph"), (IS_MAC && aEvent.altKey),
-             currentTestName + ", AltGraph of Shift " + aEvent.type + " event mismatch");
+          is(
+            aEvent.getModifierState("AltGraph"),
+            (IS_MAC && aEvent.altKey),
+            `${currentTestName}, AltGraph of Shift ${aEvent.type} event mismatch`
+          );
           return (testingEvent.modifiers.shiftKey || testingEvent.modifiers.shiftRightKey) &&
                  removeFlag(kShiftFlag) && expectedDOMKeyCode != aEvent.keyCode;
         case "Control":
-          is(aEvent.ctrlKey, aEvent.type == "keydown",
-             currentTestName + ", Ctrl of Ctrl " + aEvent.type + " event mismatch");
-          is(aEvent.metaKey, (flags & kMetaFlag) != 0,
-             currentTestName + ", Command of Ctrl " + aEvent.type + " event mismatch");
+          is(
+            aEvent.ctrlKey,
+            aEvent.type == "keydown",
+            `${currentTestName}, Ctrl of Ctrl ${aEvent.type} event mismatch`
+          );
+          is(
+            aEvent.metaKey,
+            (flags & kMetaFlag) != 0,
+            `${currentTestName}, Command of Ctrl ${aEvent.type} event mismatch`
+          );
           // When AltGr key is released on Windows, ControlLeft keyup event
           // is followed by AltRight keyup event.  However, altKey should be
           // false in such case.
-          is(aEvent.altKey, (flags & kAltFlag) != 0 && !(IS_WIN && !!testingEvent.modifiers.altGrKey),
-             currentTestName + ", Alt of Ctrl " + aEvent.type + " event mismatch");
-          is(aEvent.shiftKey, (flags & kShiftFlag) != 0,
-             currentTestName + ", Shift of Ctrl " + aEvent.type + " event mismatch");
-          is(aEvent.getModifierState("AltGraph"),
-             (IS_WIN && !!testingEvent.modifiers.altGrKey && aEvent.type == "keyup") || (IS_MAC && aEvent.altKey),
-             currentTestName + ", AltGraph of Ctrl " + aEvent.type + " event mismatch");
+          is(
+            aEvent.altKey,
+            (flags & kAltFlag) != 0 && !(IS_WIN && !!testingEvent.modifiers.altGrKey),
+            `${currentTestName}, Alt of Ctrl ${aEvent.type} event mismatch`
+          );
+          is(
+            aEvent.shiftKey,
+            (flags & kShiftFlag) != 0,
+            `${currentTestName}, Shift of Ctrl ${aEvent.type} event mismatch`
+          );
+          is(
+            aEvent.getModifierState("AltGraph"),
+            (IS_WIN && !!testingEvent.modifiers.altGrKey && aEvent.type == "keyup") || (IS_MAC && aEvent.altKey),
+            `${currentTestName}, AltGraph of Ctrl ${aEvent.type} event mismatch`
+          );
           return (testingEvent.modifiers.ctrlKey || testingEvent.modifiers.ctrlRightKey ||
                   (IS_WIN && !!testingEvent.modifiers.altGrKey)) &&
                  removeFlag(kCtrlFlag) && expectedDOMKeyCode != aEvent.keyCode;
         case "Alt":
-          is(aEvent.ctrlKey, (flags & kCtrlFlag) != 0 && !(IS_WIN && !!testingEvent.modifiers.altGrKey),
-             currentTestName + ", Ctrl of Alt " + aEvent.type + " event mismatch");
-          is(aEvent.metaKey, (flags & kMetaFlag) != 0,
-             currentTestName + ", Command of Alt " + aEvent.type + " event mismatch");
-          is(aEvent.altKey, aEvent.type == "keydown" && !(IS_WIN && !!testingEvent.modifiers.altGrKey),
-             currentTestName + ", Alt of Alt " + aEvent.type + " event mismatch");
-          is(aEvent.shiftKey, (flags & kShiftFlag) != 0,
-             currentTestName + ", Shift of Alt " + aEvent.type + " event mismatch");
-          is(aEvent.getModifierState("AltGraph"),
-             aEvent.type == "keydown" && ((IS_WIN && !!testingEvent.modifiers.altGrKey) || (IS_MAC && aEvent.altKey)),
-             currentTestName + ", AltGraph of Alt " + aEvent.type + " event mismatch");
+          is(
+            aEvent.ctrlKey,
+            (flags & kCtrlFlag) != 0 && !(IS_WIN && !!testingEvent.modifiers.altGrKey),
+            `${currentTestName}, Ctrl of Alt ${aEvent.type} event mismatch`
+          );
+          is(
+            aEvent.metaKey,
+            (flags & kMetaFlag) != 0,
+            `${currentTestName}, Command of Alt ${aEvent.type} event mismatch`
+          );
+          is(
+            aEvent.altKey,
+            aEvent.type == "keydown" && !(IS_WIN && !!testingEvent.modifiers.altGrKey),
+            `${currentTestName}, Alt of Alt ${aEvent.type} event mismatch`
+          );
+          is(
+            aEvent.shiftKey,
+            (flags & kShiftFlag) != 0,
+            `${currentTestName}, Shift of Alt ${aEvent.type} event mismatch`
+          );
+          is(
+            aEvent.getModifierState("AltGraph"),
+            aEvent.type == "keydown" && ((IS_WIN && !!testingEvent.modifiers.altGrKey) || (IS_MAC && aEvent.altKey)),
+            `${currentTestName}, AltGraph of Alt ${aEvent.type} event mismatch`
+          );
           return (testingEvent.modifiers.altKey || testingEvent.modifiers.altRightKey ||
                   (IS_WIN && !!testingEvent.modifiers.altGrKey)) &&
                  removeFlag(kAltFlag) && expectedDOMKeyCode != aEvent.keyCode;
@@ -249,58 +293,117 @@ async function runKeyEventTests() {
           // Note that AltGraph is represented with pressing both Control key
           // and Alt key.  Therefore, when AltGraph keyboard event is fired,
           // both ctrlKey and altKey are always false on Windows.
-          is(aEvent.ctrlKey, (flags & kCtrlFlag) != 0 && !IS_WIN,
-             currentTestName + ", Ctrl of AltGraph " + aEvent.type + " event mismatch");
-          is(aEvent.metaKey, (flags & kMetaFlag) != 0,
-             currentTestName + ", Command of AltGraph " + aEvent.type + " event mismatch");
-          is(aEvent.altKey, (flags & kAltFlag) != 0 && !IS_WIN,
-             currentTestName + ", Alt of AltGraph " + aEvent.type + " event mismatch");
-          is(aEvent.shiftKey, (flags & kShiftFlag) != 0,
-             currentTestName + ", Shift of Ctrl " + aEvent.type + " event mismatch");
-          is(aEvent.getModifierState("AltGraph"), aEvent.type === "keydown",
-             currentTestName + ", AltGraph of AltGraph " + aEvent.type + " event mismatch");
+          is(
+            aEvent.ctrlKey,
+            (flags & kCtrlFlag) != 0 && !IS_WIN,
+            `${currentTestName}, Ctrl of AltGraph ${aEvent.type} event mismatch`
+          );
+          is(
+            aEvent.metaKey,
+            (flags & kMetaFlag) != 0,
+            `${currentTestName}, Command of AltGraph ${aEvent.type} event mismatch`
+          );
+          is(
+            aEvent.altKey,
+            (flags & kAltFlag) != 0 && !IS_WIN,
+            `${currentTestName}, Alt of AltGraph ${aEvent.type} event mismatch`
+          );
+          is(
+            aEvent.shiftKey,
+            (flags & kShiftFlag) != 0,
+            `${currentTestName}, Shift of AltGraph ${aEvent.type} event mismatch`
+          );
+          is(
+            aEvent.getModifierState("AltGraph"),
+            aEvent.type === "keydown",
+            `${currentTestName}, AltGraph of AltGraph ${aEvent.type} event mismatch`
+          );
           return IS_WIN && testingEvent.modifiers.altGrKey &&
                  removeFlag(kAltGraphFlag) && expectedDOMKeyCode != aEvent.keyCode;
         case "Meta":
-          is(aEvent.ctrlKey, (flags & kCtrlFlag) != 0,
-             currentTestName + ", Ctrl of Command " + aEvent.type + " event mismatch");
-          is(aEvent.metaKey, aEvent.type == "keydown",
-             currentTestName + ", Command of Command " + aEvent.type + " event mismatch");
-          is(aEvent.altKey, (flags & kAltFlag) != 0,
-             currentTestName + ", Alt of Command " + aEvent.type + " event mismatch");
-          is(aEvent.shiftKey, (flags & kShiftFlag) != 0,
-             currentTestName + ", Shift of Command " + aEvent.type + " event mismatch");
-          is(aEvent.getModifierState("AltGraph"),
-             (IS_WIN && (flags & kAltGraphFlag) != 0) || (IS_MAC && aEvent.altKey),
-             currentTestName + ", AltGraph of Meta " + aEvent.type + " event mismatch");
+          is(
+            aEvent.ctrlKey,
+            (flags & kCtrlFlag) != 0,
+            `${currentTestName}, Ctrl of Command ${aEvent.type} event mismatch`
+          );
+          is(
+            aEvent.metaKey,
+            aEvent.type == "keydown",
+            `${currentTestName}, Command of Command ${aEvent.type} event mismatch`
+          );
+          is(
+            aEvent.altKey,
+            (flags & kAltFlag) != 0,
+            `${currentTestName}, Alt of Command ${aEvent.type} event mismatch`
+          );
+          is(
+            aEvent.shiftKey,
+            (flags & kShiftFlag) != 0,
+            `${currentTestName}, Shift of Command ${aEvent.type} event mismatch`
+          );
+          is(
+            aEvent.getModifierState("AltGraph"),
+            (IS_WIN && (flags & kAltGraphFlag) != 0) || (IS_MAC && aEvent.altKey),
+            `${currentTestName}, AltGraph of Meta ${aEvent.type} event mismatch`
+          );
           return (testingEvent.modifiers.metaKey || testingEvent.modifiers.metaRightKey) &&
                  removeFlag(kMetaFlag) && expectedDOMKeyCode != aEvent.keyCode;
         case "NumLock":
-          is(aEvent.ctrlKey, (flags & kCtrlFlag) != 0,
-             currentTestName + ", Ctrl of NumLock " + aEvent.type + " event mismatch");
-          is(aEvent.metaKey, (flags & kMetaFlag) != 0,
-             currentTestName + ", Command of NumLock " + aEvent.type + " event mismatch");
-          is(aEvent.altKey, (flags & kAltFlag) != 0,
-             currentTestName + ", Alt of NumLock " + aEvent.type + " event mismatch");
-          is(aEvent.shiftKey, (flags & kShiftFlag) != 0,
-             currentTestName + ", Shift of NumLock " + aEvent.type + " event mismatch");
-          is(aEvent.getModifierState("AltGraph"), false,
-             currentTestName + ", AltGraph of NumLock " + aEvent.type + " event mismatch");
+          is(
+            aEvent.ctrlKey,
+            (flags & kCtrlFlag) != 0,
+            `${currentTestName}, Ctrl of NumLock ${aEvent.type} event mismatch`
+          );
+          is(
+            aEvent.metaKey,
+            (flags & kMetaFlag) != 0,
+            `${currentTestName}, Command of NumLock ${aEvent.type} event mismatch`
+          );
+          is(
+            aEvent.altKey,
+            (flags & kAltFlag) != 0,
+            `${currentTestName}, Alt of NumLock ${aEvent.type} event mismatch`
+          );
+          is(
+            aEvent.shiftKey,
+            (flags & kShiftFlag) != 0,
+            `${currentTestName}, Shift of NumLock ${aEvent.type} event mismatch`
+          );
+          is(
+            aEvent.getModifierState("AltGraph"),
+            false,
+            `${currentTestName}, AltGraph of NumLock ${aEvent.type} event mismatch`
+          );
           // AltGr on Windows is always pressed after and released before NumLock key operation.
           return (testingEvent.modifiers.numLockKey || testingEvent.modifiers.numericKeyPadKey) &&
                  removeFlag(kNumLockFlag) && expectedDOMKeyCode != aEvent.keyCode;
         case "CapsLock":
-          is(aEvent.ctrlKey, (flags & kCtrlFlag) != 0,
-             currentTestName + ", Ctrl of CapsLock " + aEvent.type + " event mismatch");
-          is(aEvent.metaKey, (flags & kMetaFlag) != 0,
-             currentTestName + ", Command of CapsLock " + aEvent.type + " event mismatch");
-          is(aEvent.altKey, (flags & kAltFlag) != 0,
-             currentTestName + ", Alt of CapsLock " + aEvent.type + " event mismatch");
-          is(aEvent.shiftKey, (flags & kShiftFlag) != 0,
-             currentTestName + ", Shift of CapsLock " + aEvent.type + " event mismatch");
+          is(
+            aEvent.ctrlKey,
+            (flags & kCtrlFlag) != 0,
+            `${currentTestName}, Ctrl of CapsLock ${aEvent.type} event mismatch`
+          );
+          is(
+            aEvent.metaKey,
+            (flags & kMetaFlag) != 0,
+            `${currentTestName}, Command of CapsLock ${aEvent.type} event mismatch`
+          );
+          is(
+            aEvent.altKey,
+            (flags & kAltFlag) != 0,
+            `${currentTestName}, Alt of CapsLock ${aEvent.type} event mismatch`
+          );
+          is(
+            aEvent.shiftKey,
+            (flags & kShiftFlag) != 0,
+            `${currentTestName}, Shift of CapsLock ${aEvent.type} event mismatch`
+          );
           // AltGr on Windows is always pressed after and released before CapsLock key operation.
-          is(aEvent.getModifierState("AltGraph"), false,
-             currentTestName + ", AltGraph of CapsLock " + aEvent.type + " event mismatch");
+          is(
+            aEvent.getModifierState("AltGraph"),
+            false,
+            `${currentTestName}, AltGraph of CapsLock ${aEvent.type} event mismatch`
+          );
           return testingEvent.modifiers.capsLockKey &&
                  removeFlag(kCapsLockFlag) && expectedDOMKeyCode != aEvent.keyCode;
       }
@@ -335,9 +438,10 @@ async function runKeyEventTests() {
   //                               If all keyboard events have same key value,
   //                               specify it as string.  Otherwise, specify
   //                               each key value in array.
+  /* eslint-disable-next-line complexity */
   async function testKey(aEvent, aExpectedKeyValues, aExpectedCodeValue,
                    aExpectedGeckoKeyCode, aExpectGeckoChar,
-                   aShouldDelivedEvent, aExpectLocation) {
+                   aShouldDeliveredEvent, aExpectLocation) {
     ok(aExpectedGeckoKeyCode != undefined, "keycode is undefined");
     eventList = [];
 
@@ -381,18 +485,23 @@ async function runKeyEventTests() {
     await promiseSynthesizeNativeKey(aEvent, "button");
 
     const expectEventTypeList = [];
-    if (aShouldDelivedEvent & SHOULD_DELIVER_KEYDOWN)
+    if (aShouldDeliveredEvent & SHOULD_DELIVER_KEYDOWN) {
       expectEventTypeList.push("keydown");
-    if (aShouldDelivedEvent & SHOULD_DELIVER_KEYPRESS) {
+    }
+    if (aShouldDeliveredEvent & SHOULD_DELIVER_KEYPRESS) {
       expectEventTypeList.push("keypress");
       for (let i = 1; i < aExpectGeckoChar.length; i++) {
         expectEventTypeList.push("keypress");
       }
     }
-    if (aShouldDelivedEvent & SHOULD_DELIVER_KEYUP)
+    if (aShouldDeliveredEvent & SHOULD_DELIVER_KEYUP) {
       expectEventTypeList.push("keyup");
-    is(eventList.length, expectEventTypeList.length,
-        currentTestName + ", wrong number of key events");
+    }
+    is(
+      eventList.length,
+      expectEventTypeList.length,
+      `${currentTestName}, wrong number of key events`
+    );
 
     const longerLength = Math.max(eventList.length, expectEventTypeList.length);
     let keypressCount = 0;
@@ -400,11 +509,17 @@ async function runKeyEventTests() {
       const firedEventType = i < eventList.length ? eventList[i].type : "";
       const expectEventType = i < expectEventTypeList.length ? expectEventTypeList[i] : "";
       if (firedEventType != "") {
-        is(firedEventType, expectEventType,
-            currentTestName + ", " + expectEventType + " should be fired");
+        is(
+          firedEventType,
+          expectEventType,
+          `${currentTestName}, ${expectEventType} should be fired`
+        );
       } else {
-        is(firedEventType, expectEventType,
-            currentTestName + ", a needed event is not fired");
+        is(
+          firedEventType,
+          expectEventType,
+          `${currentTestName}, the event should not be fired`
+        );
       }
 
       if (firedEventType != "") {
@@ -429,64 +544,78 @@ async function runKeyEventTests() {
             //     complicated.  So, we ignore the modifier state of
             //     modifier keydown/keyup events for now.
             break;
-          default:
-            is(e.shiftKey, !!(aEvent.modifiers.shiftKey || aEvent.modifiers.shiftRightKey),
-                currentTestName + ", Shift of " + e.type + " of " + e.code + " mismatch");
-            is(e.metaKey, !!(aEvent.modifiers.metaKey || aEvent.modifiers.metaRightKey),
-                currentTestName + ", Meta of " + e.type + " of " + e.code + " mismatch");
-            var isControlPressed = !!(aEvent.modifiers.ctrlKey || aEvent.modifiers.ctrlRightKey);
-            var isAltPressed = !!(aEvent.modifiers.altKey || aEvent.modifiers.altRightKey);
-            var isAltGraphExpected =
+          default: {
+            is(
+              e.shiftKey,
+              !!(aEvent.modifiers.shiftKey || aEvent.modifiers.shiftRightKey),
+              `${currentTestName}, Shift of ${e.type} of ${e.code} mismatch`
+            );
+            is(
+              e.metaKey,
+              !!(aEvent.modifiers.metaKey || aEvent.modifiers.metaRightKey),
+              `${currentTestName}, Meta of ${e.type} of ${e.code} mismatch`
+            );
+            const isControlPressed = !!(aEvent.modifiers.ctrlKey || aEvent.modifiers.ctrlRightKey);
+            const isAltPressed = !!(aEvent.modifiers.altKey || aEvent.modifiers.altRightKey);
+            const isAltGraphExpected =
               !!aEvent.modifiers.altGrKey ||
               (IS_WIN && aEvent.layout.hasAltGrOnWin &&
                 isControlPressed && isAltPressed &&
                 (aEvent.isInputtingCharacters || expectedKeyValue == "Dead")) ||
               (IS_MAC && isAltPressed);
-            var isControlExpected = !(IS_WIN && isAltGraphExpected) && isControlPressed;
-            var isAltExpected = !(IS_WIN && isAltGraphExpected) && isAltPressed;
+            let isControlExpected = !(IS_WIN && isAltGraphExpected) && isControlPressed;
+            let isAltExpected = !(IS_WIN && isAltGraphExpected) && isAltPressed;
             if (e.type == "keypress" && aEvent.isInputtingCharacters) {
               isControlExpected = false;
               isAltExpected = false;
             }
-            is(e.ctrlKey, isControlExpected,
-                currentTestName + ", Ctrl of " + e.type + " of " + e.code + " mismatch");
-            is(e.altKey, isAltExpected,
-                currentTestName + ", Alt of " + e.type + " of " + e.code + " mismatch");
-            is(e.getModifierState("AltGraph"), isAltGraphExpected,
-                currentTestName + ", AltGraph of " + e.type + " of " + e.code + " mismatch");
+            is(
+              e.ctrlKey,
+              isControlExpected,
+              `${currentTestName}, Ctrl of ${e.type} of ${e.code} mismatch`
+            );
+            is(
+              e.altKey,
+              isAltExpected,
+              `${currentTestName}, Alt of ${e.type} of ${e.code} mismatch`
+            );
+            is(
+              e.getModifierState("AltGraph"),
+              isAltGraphExpected,
+              `${currentTestName}, AltGraph of ${e.type} of ${e.code} mismatch`
+            );
             break;
+          }
         }
 
-        is(e.key, expectedKeyValue, currentTestName + ", wrong key value");
-        is(e.code, aExpectedCodeValue, currentTestName + ", wrong code value");
+        is(e.key, expectedKeyValue, `${currentTestName}, wrong key value`);
+        is(e.code, aExpectedCodeValue, `${currentTestName}, wrong code value`);
 
         if (aExpectGeckoChar.length && e.type == "keypress") {
-          is(e.charCode, aExpectGeckoChar.charCodeAt(keypressCount++),
-              currentTestName + ", charcode");
+          is(
+            e.charCode,
+            aExpectGeckoChar.charCodeAt(keypressCount++),
+            `${currentTestName}, wrong charCode`
+          );
           if (aExpectedGeckoKeyCode >= 0) {
             if (aExpectGeckoChar) {
-              is(e.keyCode, 0,
-                  currentTestName + ", wrong keycode");
+              is(e.keyCode, 0, `${currentTestName}, wrong keyCode`);
             } else {
-              is(e.keyCode, aExpectedGeckoKeyCode,
-                  currentTestName + ", wrong keycode");
+              is(e.keyCode, aExpectedGeckoKeyCode, `${currentTestName}, wrong keycode`);
             }
           }
         } else {
-          is(e.charCode, 0,
-              currentTestName + ", no charcode");
+          is(e.charCode, 0, `${currentTestName}, no charCode`);
           if (aExpectedGeckoKeyCode >= 0) {
-            is(e.keyCode, aExpectedGeckoKeyCode,
-                currentTestName + ", wrong keycode");
+            is(e.keyCode, aExpectedGeckoKeyCode, `${currentTestName}, wrong keycode`);
           }
         }
-        is(e.location, aExpectLocation,
-            currentTestName + ", wrong location");
+        is(e.location, aExpectLocation, `${currentTestName}, wrong location`);
       }
     }
   }
 
-  // These tests have to be per-plaform.
+  // These tests have to be per-platform.
   document.addEventListener("keydown",  onKeyEvent);
   document.addEventListener("keypress", onKeyEvent);
   document.addEventListener("keyup",    onKeyEvent);
@@ -4784,8 +4913,11 @@ async function runAccessKeyTests() {
 
     const currentTestName = eventToString(aEvent);
 
-    is(activationCount, aShouldActivate ? 1 : 0,
-        currentTestName + ", activating '" + aAccessKey + "'");
+    is(
+      activationCount,
+      aShouldActivate ? 1 : 0,
+      `${currentTestName}, activating '${aAccessKey}'`
+    );
   }
 
   button.addEventListener("click", onClick);
@@ -4946,7 +5078,7 @@ async function runXULKeyTests() {
   // If aKeyElement is empty string, this function tests if the event kicks
   // no key elements.
   async function testKeyElement(aEvent, aKeyElementId) {
-    let testName = "testKeyElement (with non-reserved command element): " + eventToString(aEvent) + " ";
+    let testName = `testKeyElement (with non-reserved command element): ${eventToString(aEvent)}`;
     const keyElement = aKeyElementId == "" ? null : document.getElementById(aKeyElementId);
     if (keyElement) {
       keyElement.setAttribute("command", "expectedCommand");
@@ -4963,24 +5095,24 @@ async function runXULKeyTests() {
       is(
         commandElements.expectedCommand.activeCount,
         1,
-        testName + "the command element (id='expectedCommand') should be preformed"
+        `${testName}: the command element (id='expectedCommand') should be preformed`
       );
     } else {
       is(
         commandElements.expectedCommand.activeCount,
         0,
-        testName + "the command element (id='expectedCommand') shouldn't be preformed"
+        `${testName}: the command element (id='expectedCommand') shouldn't be preformed`
       );
     }
     is(
       commandElements.unexpectedCommand.activeCount,
       0,
-      testName + "the command element (id='unexpectedCommand') shouldn't be preformed"
+      `${testName}: the command element (id='unexpectedCommand') shouldn't be preformed`
     );
     is(
       commandElements.expectedReservedCommand.activeCount,
       0,
-      testName + "the command element (id='expectedReservedCommand') shouldn't be preformed"
+      `${testName}: the command element (id='expectedReservedCommand') shouldn't be preformed`
     );
 
     function checkFiredEvents() {
@@ -4989,50 +5121,54 @@ async function runXULKeyTests() {
         (
           (aEvent.modifiers.ctrlKey || aEvent.modifiers.altKey || aEvent.modifiers.metaKey) && (!IS_WIN || !aEvent.modifiers.altGrKey)
         );
-      is(keyEvents.length, expectKeyPressEvent ? 8 : 4, testName + "wrong number events fired");
+      is(
+        keyEvents.length,
+        expectKeyPressEvent ? 8 : 4,
+        `${testName}: wrong number events fired`
+      );
       is(
         JSON.stringify(keyEvents[0]),
         JSON.stringify({ type: "keydown", group: "default", phase: "capture", currentTarget: eventTargetToString(buttonParent) }),
-        testName + "keydown event should be fired on chrome in the default event group #0"
+        `${testName}: keydown event should be fired on chrome in the default event group #0`
       );
       is(
         JSON.stringify(keyEvents[1]),
         JSON.stringify({ type: "keydown", group: "default", phase: "bubble", currentTarget: eventTargetToString(buttonParent) }),
-        testName + "keydown event should be fired on chrome in the default event group #1"
+        `${testName}: keydown event should be fired on chrome in the default event group #1`
       );
 
       is(
         JSON.stringify(keyEvents[2]),
         JSON.stringify({ type: "keydown", group: "system", phase: "capture", currentTarget: eventTargetToString(buttonParent) }),
-        testName + "keydown event should be fired on chrome in the system event group #2"
+        `${testName}: keydown event should be fired on chrome in the system event group #2`
       );
       is(
         JSON.stringify(keyEvents[3]),
         JSON.stringify({ type: "keydown", group: "system", phase: "bubble", currentTarget: eventTargetToString(buttonParent) }),
-        testName + "keydown event should be fired on chrome in the system event group #3"
+        `${testName}: keydown event should be fired on chrome in the system event group #3`
       );
 
       if (expectKeyPressEvent) {
         is(
           JSON.stringify(keyEvents[4]),
           JSON.stringify({ type: "keypress", group: "default", phase: "capture", currentTarget: eventTargetToString(buttonParent) }),
-          testName + "keypress event should be fired on chrome in the default event group #4"
+          `${testName}: keypress event should be fired on chrome in the default event group #4`
         );
         is(
           JSON.stringify(keyEvents[5]),
           JSON.stringify({ type: "keypress", group: "default", phase: "bubble", currentTarget: eventTargetToString(buttonParent) }),
-          testName + "keypress event should be fired on chrome in the default event group #5"
+          `${testName}: keypress event should be fired on chrome in the default event group #5`
         );
 
         is(
           JSON.stringify(keyEvents[6]),
           JSON.stringify({ type: "keypress", group: "system", phase: "capture", currentTarget: eventTargetToString(buttonParent) }),
-          testName + "keypress event should be fired on chrome in the system event group #6"
+          `${testName}: keypress event should be fired on chrome in the system event group #6`
         );
         is(
           JSON.stringify(keyEvents[7]),
           JSON.stringify({ type: "keypress", group: "system", phase: "bubble", currentTarget: eventTargetToString(buttonParent) }),
-          testName + "keypress event should be fired on chrome in the system event group #7"
+          `${testName}: keypress event should be fired on chrome in the system event group #7`
         );
       }
     }
@@ -5040,7 +5176,7 @@ async function runXULKeyTests() {
     checkFiredEvents();
 
     if (keyElement) {
-      testName = "testKeyElement (with reserved command element): " + eventToString(aEvent) + " ";
+      testName = `testKeyElement (with reserved command element): ${eventToString(aEvent)}`;
       keyElement.setAttribute("command", "expectedReservedCommand");
 
       for (const id in commandElements) {
@@ -5052,25 +5188,21 @@ async function runXULKeyTests() {
       is(
         commandElements.expectedCommand.activeCount,
         0,
-        testName + "the command element (id='expectedCommand') shouldn't be preformed"
+        `${testName}: the command element (id='expectedCommand') shouldn't be preformed`
       );
       is(
         commandElements.unexpectedCommand.activeCount,
         0,
-        testName + "the command element (id='unexpectedCommand') shouldn't be preformed"
+        `${testName}: the command element (id='unexpectedCommand') shouldn't be preformed`
       );
       is(
         commandElements.expectedReservedCommand.activeCount,
         1,
-        testName + "the command element (id='expectedReservedCommand') should be preformed"
+        `${testName}: the command element (id='expectedReservedCommand') should be preformed`
       );
 
       checkFiredEvents();
 
-      if (keyElement) {
-        keyElement.setAttribute("command", "unexpectedCommand");
-      }
-    } else {
       if (keyElement) {
         keyElement.setAttribute("command", "unexpectedCommand");
       }
@@ -5273,112 +5405,112 @@ async function runReservedKeyTests() {
   async function testReservedKey(aEvent) {
     keyEvents = [];
     await promiseSynthesizeNativeKey(aEvent, "content_button");
-    const testName = "testReservedKey: " + eventToString(aEvent) + " ";
-    is(keyEvents.length, 20, testName + "wrong number events fired");
+    const testName = `testReservedKey: ${eventToString(aEvent)}`;
+    is(keyEvents.length, 20, `${testName}: wrong number events fired`);
     is(
       JSON.stringify(keyEvents[0]),
       JSON.stringify({ type: "keydown", group: "system", phase: "capture", currentTarget: eventTargetToString(contents[0]) }),
-      testName + "keydown event should be fired on content only in the system event group #0"
+      `${testName}: keydown event should be fired on content only in the system event group #0`
     );
     is(
       JSON.stringify(keyEvents[1]),
       JSON.stringify({ type: "keydown", group: "system", phase: "capture", currentTarget: eventTargetToString(contents[1]) }),
-      testName + "keydown event should be fired on content only in the system event group #1"
+      `${testName}: keydown event should be fired on content only in the system event group #1`
     );
     is(
       JSON.stringify(keyEvents[2]),
       JSON.stringify({ type: "keydown", group: "system", phase: "capture", currentTarget: eventTargetToString(contents[2]) }),
-      testName + "keydown event should be fired on content only in the system event group #2"
+      `${testName}: keydown event should be fired on content only in the system event group #2`
     );
     is(
       JSON.stringify(keyEvents[3]),
       JSON.stringify({ type: "keydown", group: "system", phase: "capture", currentTarget: eventTargetToString(contents[3]) }),
-      testName + "keydown event should be fired on content only in the system event group #3"
+      `${testName}: keydown event should be fired on content only in the system event group #3`
     );
 
     is(
       JSON.stringify(keyEvents[4]),
       JSON.stringify({ type: "keydown", group: "system", phase: "target", currentTarget: eventTargetToString(contents[4]) }),
-      testName + "keydown event should be fired on content only in the system event group #4"
+      `${testName}: keydown event should be fired on content only in the system event group #4`
     );
     is(
       JSON.stringify(keyEvents[5]),
       JSON.stringify({ type: "keydown", group: "system", phase: "target", currentTarget: eventTargetToString(contents[4]) }),
-      testName + "keydown event should be fired on content only in the system event group #5"
+      `${testName}: keydown event should be fired on content only in the system event group #5`
     );
 
     is(
       JSON.stringify(keyEvents[6]),
       JSON.stringify({ type: "keydown", group: "system", phase: "bubble", currentTarget: eventTargetToString(contents[3]) }),
-      testName + "keydown event should be fired on content only in the system event group #6"
+      `${testName}: keydown event should be fired on content only in the system event group #6`
     );
     is(
       JSON.stringify(keyEvents[7]),
       JSON.stringify({ type: "keydown", group: "system", phase: "bubble", currentTarget: eventTargetToString(contents[2]) }),
-      testName + "keydown event should be fired on content only in the system event group #7"
+      `${testName}: keydown event should be fired on content only in the system event group #7`
     );
     is(
       JSON.stringify(keyEvents[8]),
       JSON.stringify({ type: "keydown", group: "system", phase: "bubble", currentTarget: eventTargetToString(contents[1]) }),
-      testName + "keydown event should be fired on content only in the system event group #8"
+      `${testName}: keydown event should be fired on content only in the system event group #8`
     );
     is(
       JSON.stringify(keyEvents[9]),
       JSON.stringify({ type: "keydown", group: "system", phase: "bubble", currentTarget: eventTargetToString(contents[0]) }),
-      testName + "keydown event should be fired on content only in the system event group #9"
+      `${testName}: keydown event should be fired on content only in the system event group #9`
     );
 
     is(
       JSON.stringify(keyEvents[10]),
       JSON.stringify({ type: "keypress", group: "system", phase: "capture", currentTarget: eventTargetToString(contents[0]) }),
-      testName + "keypress event should be fired on content only in the system event group #10"
+      `${testName}: keypress event should be fired on content only in the system event group #10`
     );
     is(
       JSON.stringify(keyEvents[11]),
       JSON.stringify({ type: "keypress", group: "system", phase: "capture", currentTarget: eventTargetToString(contents[1]) }),
-      testName + "keypress event should be fired on content only in the system event group #11"
+      `${testName}: keypress event should be fired on content only in the system event group #11`
     );
     is(
       JSON.stringify(keyEvents[12]),
       JSON.stringify({ type: "keypress", group: "system", phase: "capture", currentTarget: eventTargetToString(contents[2]) }),
-      testName + "keypress event should be fired on content only in the system event group #12"
+      `${testName}: keypress event should be fired on content only in the system event group #12`
     );
     is(
       JSON.stringify(keyEvents[13]),
       JSON.stringify({ type: "keypress", group: "system", phase: "capture", currentTarget: eventTargetToString(contents[3]) }),
-      testName + "keypress event should be fired on content only in the system event group #13"
+      `${testName}: keypress event should be fired on content only in the system event group #13`
     );
 
     is(
       JSON.stringify(keyEvents[14]),
       JSON.stringify({ type: "keypress", group: "system", phase: "target", currentTarget: eventTargetToString(contents[4]) }),
-      testName + "keypress event should be fired on content only in the system event group #14"
+      `${testName}: keypress event should be fired on content only in the system event group #14`
     );
     is(
       JSON.stringify(keyEvents[15]),
       JSON.stringify({ type: "keypress", group: "system", phase: "target", currentTarget: eventTargetToString(contents[4]) }),
-      testName + "keypress event should be fired on content only in the system event group #15"
+      `${testName}: keypress event should be fired on content only in the system event group #15`
     );
 
     is(
       JSON.stringify(keyEvents[16]),
       JSON.stringify({ type: "keypress", group: "system", phase: "bubble", currentTarget: eventTargetToString(contents[3]) }),
-      testName + "keypress event should be fired on content only in the system event group #16"
+      `${testName}: keypress event should be fired on content only in the system event group #16`
     );
     is(
       JSON.stringify(keyEvents[17]),
       JSON.stringify({ type: "keypress", group: "system", phase: "bubble", currentTarget: eventTargetToString(contents[2]) }),
-      testName + "keypress event should be fired on content only in the system event group #17"
+      `${testName}: keypress event should be fired on content only in the system event group #17`
     );
     is(
       JSON.stringify(keyEvents[18]),
       JSON.stringify({ type: "keypress", group: "system", phase: "bubble", currentTarget: eventTargetToString(contents[1]) }),
-      testName + "keypress event should be fired on content only in the system event group #18"
+      `${testName}: keypress event should be fired on content only in the system event group #18`
     );
     is(
       JSON.stringify(keyEvents[19]),
       JSON.stringify({ type: "keypress", group: "system", phase: "bubble", currentTarget: eventTargetToString(contents[0]) }),
-      testName + "keypress event should be fired on content only in the system event group #19"
+      `${testName}: keypress event should be fired on content only in the system event group #19`
     );
   }
 
@@ -5415,24 +5547,28 @@ async function runTextInputTests() {
           is(
             aKeyPressEvent.charCode,
             0,
-            currentTestName + ", the charCode value should be 0 when it shouldn't cause inputting text"
+            `${currentTestName}, the charCode value should be 0 when it shouldn't cause inputting text`
           );
         }
         return;
       }
       if (keypress > aExpectText.length) {
-        ok(false, currentTestName + " causes too many keypress events");
+        ok(false, `${currentTestName} causes too many keypress events`);
         return;
       }
       is(
         aKeyPressEvent.key,
         aExpectText[keypress - 1],
-        currentTestName + ", " + keypress + "th keypress event's key value should be '" + aExpectText[keypress - 1] + "'"
+        `${currentTestName}, ${keypress}th keypress event's key value should be '${
+          aExpectText[keypress - 1]
+        }'`
       );
       is(
         aKeyPressEvent.charCode,
         aExpectText.charCodeAt(keypress - 1),
-        currentTestName + ", " + keypress + "th keypress event's charCode value should be 0x" + parseInt(aExpectText.charCodeAt(keypress - 1), 16)
+        `${currentTestName}, ${keypress}th keypress event's charCode value should be 0x${
+          aExpectText.charCodeAt(keypress - 1).toString(16)
+        }`
       );
     }
     textbox.addEventListener("keypress", onKeypress, true);
@@ -5442,18 +5578,30 @@ async function runTextInputTests() {
     textbox.removeEventListener("keypress", onKeypress, true);
     if (aExpectText == "") {
       if (aEvent.modifiers.ctrlKey || aEvent.modifiers.altKey) {
-        is(keypress, 1,
-            currentTestName + " should cause one keypress event because it should be available for shortcut key");
+        is(
+          keypress,
+          1,
+          `${currentTestName} should cause one keypress event because it should be available for shortcut key`
+        );
       } else {
-        is(keypress, 0,
-            currentTestName + " should cause no keypress event because simple key press only with Shift/AltGraph " +
-              "or without any modifiers shouldn't match with a shortcut key");
+        is(
+          keypress,
+          0,
+          `${currentTestName} should cause no keypress event because simple key press only with ` +
+            `Shift/AltGraph or without any modifiers shouldn't match with a shortcut key`
+        );
       }
     } else {
-      is(keypress, aExpectText.length,
-          currentTestName + " should cause " + aExpectText.length + " keypress events");
-      is(textbox.value, aExpectText,
-          currentTestName + " does not input correct text.");
+      is(
+        keypress,
+        aExpectText.length,
+        `${currentTestName} should cause ${aExpectText.length} keypress events`
+      );
+      is(
+        textbox.value,
+        aExpectText,
+        `${currentTestName} does not input correct text`
+      );
     }
   }
 
@@ -5566,110 +5714,258 @@ async function runAltRightKeyOnWindows() {
       },
       "button"
     );
-    const kDescription =
-      `runAltRightKeyOnWindows(${aKeyboardLayout.layout.name}): `;
+    const kDescription = `runAltRightKeyOnWindows(${aKeyboardLayout.layout.name})`;
     if (aKeyboardLayout.layout.hasAltGrOnWin) {
-      is(events.length, 4,
-          kDescription + "AltRight should fire 2 pairs of keydown and keyup events");
-      is(events[0].type, "keydown",
-          kDescription + "First event should be keydown of ControlLeft");
-      is(events[0].key, "Control",
-          kDescription + "First event should be keydown of ControlLeft whose key should be Control");
-      is(events[0].code, "ControlLeft",
-          kDescription + "First event should be keydown of ControlLeft");
-      is(events[0].location, KeyboardEvent.DOM_KEY_LOCATION_LEFT,
-          kDescription + "First event should be keydown of ControlLeft whose location should be DOM_KEY_LOCATION_LEFT");
-      is(events[0].keyCode, KeyboardEvent.DOM_VK_CONTROL,
-          kDescription + "First event should be keydown of ControlLeft whose keyCode should be DOM_VK_CONTROL");
-      is(events[0].ctrlKey, true,
-          kDescription + "First event should be keydown of ControlLeft whose ctrlKey should be true");
-      is(events[0].altKey, false,
-          kDescription + "First event should be keydown of ControlLeft whose altKey should be false");
-      is(events[0].getModifierState("AltGraph"), false,
-          kDescription + "First event should be keydown of ControlLeft whose getModifierState(\"AltGraph\") should be false");
-      is(events[1].type, "keydown",
-          kDescription + "Second event should be keydown of AltRight");
-      is(events[1].key, "AltGraph",
-          kDescription + "Second event should be keydown of AltRight whose key should be AltGraph");
-      is(events[1].code, "AltRight",
-          kDescription + "Second event should be keydown of AltRight");
-      is(events[1].location, KeyboardEvent.DOM_KEY_LOCATION_RIGHT,
-          kDescription + "Second event should be keydown of AltRight whose location should be DOM_KEY_LOCATION_RIGHT");
-      is(events[1].keyCode, KeyboardEvent.DOM_VK_ALT,
-          kDescription + "Second event should be keydown of AltRight whose keyCode should be DOM_VK_ALT");
-      is(events[1].ctrlKey, false,
-          kDescription + "Second event should be keydown of AltRight whose ctrlKey should be false");
-      is(events[1].altKey, false,
-          kDescription + "Second event should be keydown of AltRight whose altKey should be false");
-      is(events[1].getModifierState("AltGraph"), true,
-          kDescription + "Second event should be keydown of AltRight whose getModifierState(\"AltGraph\") should be true");
-      is(events[2].type, "keyup",
-          kDescription + "Third event should be keyup of ControlLeft");
-      is(events[2].key, "Control",
-          kDescription + "Third event should be keyup of ControlLeft whose key should be Control");
-      is(events[2].code, "ControlLeft",
-          kDescription + "Third event should be keyup of ControlLeft");
-      is(events[2].location, KeyboardEvent.DOM_KEY_LOCATION_LEFT,
-          kDescription + "Third event should be keyup of ControlLeft whose location should be DOM_KEY_LOCATION_LEFT");
-      is(events[2].keyCode, KeyboardEvent.DOM_VK_CONTROL,
-          kDescription + "Third event should be keyup of ControlLeft whose keyCode should be DOM_VK_CONTROL");
-      is(events[2].ctrlKey, false,
-          kDescription + "Third event should be keyup of ControlLeft whose ctrlKey should be false");
-      is(events[2].altKey, false,
-          kDescription + "Third event should be keyup of ControlLeft whose altKey should be false");
-      is(events[2].getModifierState("AltGraph"), true,
-          kDescription + "Third event should be keyup of ControlLeft whose getModifierState(\"AltGraph\") should be true");
-      is(events[3].type, "keyup",
-          kDescription + "Forth event should be keyup of AltRight");
-      is(events[3].key, "AltGraph",
-          kDescription + "Forth event should be keyup of AltRight whose key should be AltGraph");
-      is(events[3].code, "AltRight",
-          kDescription + "Forth event should be keyup of AltRight");
-      is(events[3].location, KeyboardEvent.DOM_KEY_LOCATION_RIGHT,
-          kDescription + "Forth event should be keyup of AltRight whose location should be DOM_KEY_LOCATION_RIGHT");
-      is(events[3].keyCode, KeyboardEvent.DOM_VK_ALT,
-          kDescription + "Forth event should be keyup of AltRight whose keyCode should be DOM_VK_ALT");
-      is(events[3].ctrlKey, false,
-          kDescription + "Third event should be keyup of AltRight whose ctrlKey should be false");
-      is(events[3].altKey, false,
-          kDescription + "Third event should be keyup of AltRight whose altKey should be false");
-      is(events[3].getModifierState("AltGraph"), false,
-          kDescription + "Third event should be keyup of AltRight whose getModifierState(\"AltGraph\") should be false");
+      is(
+        events.length,
+        4,
+        `${kDescription}: AltRight should fire 2 pairs of keydown and keyup events`);
+      is(
+        events[0].type,
+        "keydown",
+        `${kDescription}: First event should be keydown of ControlLeft`
+      );
+      is(
+        events[0].key,
+        "Control",
+        `${kDescription}: First event should be keydown of ControlLeft whose key should be Control`
+      );
+      is(
+        events[0].code,
+        "ControlLeft",
+        `${kDescription}: First event should be keydown of ControlLeft`
+      );
+      is(
+        events[0].location,
+        KeyboardEvent.DOM_KEY_LOCATION_LEFT,
+        `${kDescription}: First event should be keydown of ControlLeft whose location should be DOM_KEY_LOCATION_LEFT`
+      );
+      is(
+        events[0].keyCode,
+        KeyboardEvent.DOM_VK_CONTROL,
+        `${kDescription}: First event should be keydown of ControlLeft whose keyCode should be DOM_VK_CONTROL`
+      );
+      is(
+        events[0].ctrlKey,
+        true,
+        `${kDescription}: First event should be keydown of ControlLeft whose ctrlKey should be true`
+      );
+      is(
+        events[0].altKey,
+        false,
+        `${kDescription}: First event should be keydown of ControlLeft whose altKey should be false`
+      );
+      is(
+        events[0].getModifierState("AltGraph"),
+        false,
+        `${kDescription}: First event should be keydown of ControlLeft whose getModifierState("AltGraph") should be false`
+      );
+      is(
+        events[1].type,
+        "keydown",
+        `${kDescription}: Second event should be keydown of AltRight`
+      );
+      is(
+        events[1].key,
+        "AltGraph",
+        `${kDescription}: Second event should be keydown of AltRight whose key should be AltGraph`
+      );
+      is(
+        events[1].code,
+        "AltRight",
+        `${kDescription}: Second event should be keydown of AltRight`
+      );
+      is(
+        events[1].location,
+        KeyboardEvent.DOM_KEY_LOCATION_RIGHT,
+        `${kDescription}: Second event should be keydown of AltRight whose location should be DOM_KEY_LOCATION_RIGHT`
+      );
+      is(
+        events[1].keyCode,
+        KeyboardEvent.DOM_VK_ALT,
+        `${kDescription}: Second event should be keydown of AltRight whose keyCode should be DOM_VK_ALT`
+      );
+      is(
+        events[1].ctrlKey,
+        false,
+        `${kDescription}: Second event should be keydown of AltRight whose ctrlKey should be false`
+      );
+      is(
+        events[1].altKey,
+        false,
+        `${kDescription}: Second event should be keydown of AltRight whose altKey should be false`
+      );
+      is(
+        events[1].getModifierState("AltGraph"),
+        true,
+        `${kDescription}: Second event should be keydown of AltRight whose getModifierState("AltGraph") should be true`
+      );
+      is(
+        events[2].type,
+        "keyup",
+        `${kDescription}: Third event should be keyup of ControlLeft`
+      );
+      is(
+        events[2].key,
+        "Control",
+        `${kDescription}: Third event should be keyup of ControlLeft whose key should be Control`
+      );
+      is(
+        events[2].code,
+        "ControlLeft",
+        `${kDescription}: Third event should be keyup of ControlLeft`
+      );
+      is(
+        events[2].location,
+        KeyboardEvent.DOM_KEY_LOCATION_LEFT,
+        `${kDescription}: Third event should be keyup of ControlLeft whose location should be DOM_KEY_LOCATION_LEFT`
+      );
+      is(
+        events[2].keyCode,
+        KeyboardEvent.DOM_VK_CONTROL,
+        `${kDescription}: Third event should be keyup of ControlLeft whose keyCode should be DOM_VK_CONTROL`
+      );
+      is(
+        events[2].ctrlKey,
+        false,
+        `${kDescription}: Third event should be keyup of ControlLeft whose ctrlKey should be false`
+      );
+      is(
+        events[2].altKey,
+        false,
+        `${kDescription}: Third event should be keyup of ControlLeft whose altKey should be false`
+      );
+      is(
+        events[2].getModifierState("AltGraph"),
+        true,
+        `${kDescription}: Third event should be keyup of ControlLeft whose getModifierState("AltGraph") should be true`
+      );
+      is(
+        events[3].type,
+        "keyup",
+        `${kDescription}: Forth event should be keyup of AltRight`
+      );
+      is(
+        events[3].key,
+        "AltGraph",
+        `${kDescription}: Forth event should be keyup of AltRight whose key should be AltGraph`
+      );
+      is(
+        events[3].code,
+        "AltRight",
+        `${kDescription}: Forth event should be keyup of AltRight`
+      );
+      is(
+        events[3].location,
+        KeyboardEvent.DOM_KEY_LOCATION_RIGHT,
+        `${kDescription}: Forth event should be keyup of AltRight whose location should be DOM_KEY_LOCATION_RIGHT`
+      );
+      is(
+        events[3].keyCode,
+        KeyboardEvent.DOM_VK_ALT,
+        `${kDescription}: Forth event should be keyup of AltRight whose keyCode should be DOM_VK_ALT`
+      );
+      is(
+        events[3].ctrlKey,
+        false,
+        `${kDescription}: Third event should be keyup of AltRight whose ctrlKey should be false`
+      );
+      is(
+        events[3].altKey,
+        false,
+        `${kDescription}: Third event should be keyup of AltRight whose altKey should be false`
+      );
+      is(
+        events[3].getModifierState("AltGraph"),
+        false,
+        `${kDescription}: Third event should be keyup of AltRight whose getModifierState("AltGraph") should be false`
+      );
     } else {
-      is(events.length, 2,
-          kDescription + "AltRight should fire a pair of keydown and keyup events");
-      is(events[0].type, "keydown",
-          kDescription + "First event should be keydown of AltRight");
-      is(events[0].key, "Alt",
-          kDescription + "First event should be keydown of AltRight whose key should be Alt");
-      is(events[0].code, "AltRight",
-          kDescription + "First event should be keydown of AltRight");
-      is(events[0].location, KeyboardEvent.DOM_KEY_LOCATION_RIGHT,
-          kDescription + "First event should be keydown of AltRight whose location should be DOM_KEY_LOCATION_RIGHT");
-      is(events[0].keyCode, KeyboardEvent.DOM_VK_ALT,
-          kDescription + "First event should be keydown of AltRight whose keyCode should be DOM_VK_ALT");
-      is(events[0].ctrlKey, false,
-          kDescription + "First event should be keydown of AltRight whose ctrlKey should be false");
-      is(events[0].altKey, true,
-          kDescription + "First event should be keydown of AltRight whose altKey should be true");
-      is(events[0].getModifierState("AltGraph"), false,
-          kDescription + "First event should be keydown of AltRight whose getModifierState(\"AltGraph\") should be false");
-      is(events[1].type, "keyup",
-          kDescription + "Second event should be keyup of AltRight");
-      is(events[1].key, "Alt",
-          kDescription + "Second event should be keyup of AltRight whose key should be Alt");
-      is(events[1].code, "AltRight",
-          kDescription + "Second event should be keyup of AltRight");
-      is(events[1].location, KeyboardEvent.DOM_KEY_LOCATION_RIGHT,
-          kDescription + "Second event should be keyup of AltRight whose location should be DOM_KEY_LOCATION_RIGHT");
-      is(events[1].keyCode, KeyboardEvent.DOM_VK_ALT,
-          kDescription + "Second event should be keyup of AltRight whose keyCode should be DOM_VK_ALT");
-      is(events[1].ctrlKey, false,
-          kDescription + "Second event should be keyup of AltRight whose ctrlKey should be false");
-      is(events[1].altKey, false,
-          kDescription + "Second event should be keyup of AltRight whose altKey should be false");
-      is(events[1].getModifierState("AltGraph"), false,
-          kDescription + "Second event should be keyup of AltRight whose getModifierState(\"AltGraph\") should be false");
+      is(
+        events.length,
+        2,
+        `${kDescription}: AltRight should fire a pair of keydown and keyup events`
+      );
+      is(
+        events[0].type,
+        "keydown",
+        `${kDescription}: First event should be keydown of AltRight`
+      );
+      is(
+        events[0].key,
+        "Alt",
+        `${kDescription}: First event should be keydown of AltRight whose key should be Alt`
+      );
+      is(
+        events[0].code,
+        "AltRight",
+        `${kDescription}: First event should be keydown of AltRight`
+      );
+      is(
+        events[0].location,
+        KeyboardEvent.DOM_KEY_LOCATION_RIGHT,
+        `${kDescription}: First event should be keydown of AltRight whose location should be DOM_KEY_LOCATION_RIGHT`
+      );
+      is(
+        events[0].keyCode,
+        KeyboardEvent.DOM_VK_ALT,
+        `${kDescription}: First event should be keydown of AltRight whose keyCode should be DOM_VK_ALT`
+      );
+      is(
+        events[0].ctrlKey,
+        false,
+        `${kDescription}: First event should be keydown of AltRight whose ctrlKey should be false`
+      );
+      is(
+        events[0].altKey,
+        true,
+        `${kDescription}: First event should be keydown of AltRight whose altKey should be true`
+      );
+      is(
+        events[0].getModifierState("AltGraph"),
+        false,
+        `${kDescription}: First event should be keydown of AltRight whose getModifierState("AltGraph") should be false`
+      );
+      is(
+        events[1].type,
+        "keyup",
+        `${kDescription}: Second event should be keyup of AltRight`
+      );
+      is(
+        events[1].key,
+        "Alt",
+        `${kDescription}: Second event should be keyup of AltRight whose key should be Alt`
+      );
+      is(
+        events[1].code,
+        "AltRight",
+        `${kDescription}: Second event should be keyup of AltRight`
+      );
+      is(
+        events[1].location,
+        KeyboardEvent.DOM_KEY_LOCATION_RIGHT,
+        `${kDescription}: Second event should be keyup of AltRight whose location should be DOM_KEY_LOCATION_RIGHT`
+      );
+      is(
+        events[1].keyCode,
+        KeyboardEvent.DOM_VK_ALT,
+        `${kDescription}: Second event should be keyup of AltRight whose keyCode should be DOM_VK_ALT`
+      );
+      is(
+        events[1].ctrlKey,
+        false,
+        `${kDescription}: Second event should be keyup of AltRight whose ctrlKey should be false`
+      );
+      is(
+        events[1].altKey,
+        false,
+        `${kDescription}: Second event should be keyup of AltRight whose altKey should be false`
+      );
+      is(
+        events[1].getModifierState("AltGraph"),
+        false,
+        `${kDescription}: Second event should be keyup of AltRight whose getModifierState("AltGraph") should be false`
+      );
     }
   }
 
