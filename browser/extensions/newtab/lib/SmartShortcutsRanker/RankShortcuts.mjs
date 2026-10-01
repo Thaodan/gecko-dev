@@ -236,7 +236,7 @@ export async function getIsOpen(guids, isStartup) {
  * For each input places GUID, report the total visits
  *
  * @param {object[]} topsites Array of objects with a `guid` field (moz_places.guid)
- * @param {string} [placesTable='moz_places'] Table name for places
+ * @param {string} placeTable Table name for places
  * @returns {Promise<object>} Map of guid -> visit total
  */
 export async function fetchVisitCountsByGuid(topsites, placeTable) {
@@ -773,7 +773,7 @@ export class RankShortcutsProvider {
    * Check the shortcut interaction table for new events since
    * the last time we updated the model weights
    *
-   * @param {object} cahce_data shortcut cache
+   * @param {object} cache_data shortcut cache
    * @param {string} table Shortcuts interaction table
    * @param {string} placeTable moz_places table
    * @returns {Promise<object>} Map of guid -> clicks and impression counts

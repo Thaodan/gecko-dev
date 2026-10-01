@@ -95,7 +95,7 @@ export function sumNorm(vec) {
  * over a feature, this is stored in the shortcut cache
  *
  * @param {number[]} vals scores to normalize
- * @param {object} normobj Dictionary of storing info for running mean var
+ * @param {object} input_normobj Dictionary of storing info for running mean var
  * @returns {[number, object]} normalized features and the updated object
  */
 export function normUpdate(vals, input_normobj) {

@@ -323,7 +323,7 @@ export class PlacesFeed {
    * to send back to the ads service when requesting new topsite ads
    * from the unified ads service
    *
-   * @param {Array} block_key
+   * @param {Array} keysArray
    *   An array of the (string) keys
    */
   addToUnifiedAdsBlockedAdsList(keysArray) {

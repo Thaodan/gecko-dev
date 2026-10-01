@@ -248,12 +248,13 @@ export class TileImportance {
 export class FeatureModel {
   /**
    *
-   * @param {string} modelId
-   * @param {object} dayTimeWeighting Data for day time weighting class
-   * @param {object} interestVectorModel Data for interest model
-   * @param {object} tileImportance Data for tile importance
-   * @param {boolean} rescale Whether to rescale to max value
-   * @param {boolean} logScale Whether to apply natural log (ln(x+ 1)) before rescaling
+   * @param {object} options
+   * @param {string} options.modelId
+   * @param {object} options.dayTimeWeighting Data for day time weighting class
+   * @param {object} options.interestVectorModel Data for interest model
+   * @param {object} options.tileImportance Data for tile importance
+   * @param {boolean} options.rescale Whether to rescale to max value
+   * @param {boolean} options.logScale Whether to apply natural log (ln(x+ 1)) before rescaling
    */
   constructor({
     modelId,
@@ -504,7 +505,7 @@ export class FeatureModel {
    *
    * @param {{[key: string]: number}} clicks - Per-feature click counts.
    * @param {{[key: string]: number}} impressions - Per-feature impression counts.
-   * @param {number} averageCTR - The average CTR for the user.
+   * @param {number} averageCTRInput - The average CTR for the user.
    * @returns {{[key: string]: number}} Normalized smoothed CTR values.
    */
   applyBayesianSmoothing(clicks, impressions, averageCTRInput = null) {

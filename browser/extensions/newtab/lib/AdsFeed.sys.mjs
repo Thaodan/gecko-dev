@@ -175,7 +175,7 @@ export class AdsFeed {
    * Normalize new Unified Ads API response into
    * previous Contile ads response
    *
-   * @param {Array} - Array of UAPI placement objects ("newtab_tile_1", etc.)
+   * @param {Array} data - Array of UAPI placement objects ("newtab_tile_1", etc.)
    * @returns {object} - Object containing array of formatted UAPI objects to match legacy Contile system
    */
   _normalizeTileData(data) {

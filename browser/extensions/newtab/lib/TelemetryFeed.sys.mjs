@@ -746,7 +746,7 @@ export class TelemetryFeed {
    * addSession - Start tracking a new session
    *
    * @param  {string} id the portID of the open session
-   * @param  {string} the URL being loaded for this session (optional)
+   * @param  {string} url The URL being loaded for this session (optional)
    * @return {object}    Session object
    */
   addSession(id, url) {

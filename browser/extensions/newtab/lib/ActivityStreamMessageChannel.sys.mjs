@@ -67,7 +67,6 @@ export class ActivityStreamMessageChannel {
    * middleware - Redux middleware that looks for AlsoToOneContent and BroadcastToContent type
    *              actions, and sends them out.
    *
-   * @param  {object} store A redux store
    * @return {function} Redux middleware
    */
   middleware() {
@@ -203,7 +202,7 @@ export class ActivityStreamMessageChannel {
    * isPreloadedBrowser - Returns true if the passed browser has been preloaded
    *                      for faster rendering of new tabs.
    *
-   * @param {<browser>} A <browser> to check.
+   * @param {object} browser A <browser> element to check.
    * @return {boolean} True if the browser is preloaded.
    *                      if there aren't any preloaded browsers
    */
