@@ -385,3 +385,14 @@ if CONFIG["MOZ_GENERATE_SBOM"]:
         extra_deps=sbom_deps,
         force=True,
     )
+    # What builds and tests the tree, described apart from what it ships.
+    GeneratedFile(
+        "sbom-build-tooling.json",
+        script="/python/mozbuild/mozbuild/action/generate_sbom.py",
+        entry_point="generate_build_tooling_file",
+        extra_deps=[
+            "!/.cargo/config.toml",
+            "/Cargo.lock",
+        ],
+        force=True,
+    )

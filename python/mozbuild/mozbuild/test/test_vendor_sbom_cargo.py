@@ -4,10 +4,12 @@
 
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import textwrap
 import unittest
+from unittest import mock
 
 from mozunit import main
 
@@ -228,6 +230,30 @@ class TestCrateRecords(unittest.TestCase):
             collect_dependency_kinds(self.topsrcdir, topobjdir, sys.executable),
             {("serde", "1.0.200"): ["normal"]},
         )
+
+    def test_rustc_is_passed_to_cargo(self):
+        # Resolving the graph makes cargo run `rustc -vV`, which it looks for
+        # on PATH; the Linux build tasks do not have it there, so the RUSTC
+        # subst has to reach the subprocess or `cargo metadata` exits 101.
+        cargo_home = os.path.join(self.topsrcdir, ".cargo")
+        os.makedirs(cargo_home, exist_ok=True)
+        empty = {
+            "workspace_root": self.topsrcdir,
+            "workspace_members": [],
+            "packages": [],
+            "resolve": {"nodes": []},
+        }
+        completed = subprocess.CompletedProcess(
+            [], 0, stdout=json.dumps(empty), stderr=""
+        )
+        with mock.patch("subprocess.run", return_value=completed) as run:
+            collect_dependency_kinds(
+                self.topsrcdir,
+                self.topsrcdir,
+                "/path/to/cargo",
+                rustc="/path/to/rustc",
+            )
+        self.assertEqual(run.call_args.kwargs["env"]["RUSTC"], "/path/to/rustc")
 
     def test_missing_cargo_lock_is_not_an_error(self):
         os.remove(os.path.join(self.topsrcdir, "Cargo.lock"))
