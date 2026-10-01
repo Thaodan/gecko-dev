@@ -1535,7 +1535,7 @@ class _SessionStore {
         } else if (!detail.skipSessionStore) {
           // `skipSessionStore` is set by tab close callers to indicate that we
           // shouldn't record the closed tab.
-          this.#onTabClose(win, tab);
+          this.#onTabClose(win, tab, detail.inMultiselection);
         }
         this.#onTabRemove(win, tab);
         this.#notifyOfClosedObjectsChange();
@@ -2988,8 +2988,10 @@ class _SessionStore {
    *        Window reference
    * @param {MozTabbrowserTab} aTab
    *        Tab reference
+   * @param {boolean} [inMultiselection]
+   *        Whether the tab closed as one of a set of tabs closed together.
    */
-  #onTabClose(aWindow, aTab) {
+  #onTabClose(aWindow, aTab, inMultiselection) {
     // don't update our internal state if we don't have to
     if (this.#max_tabs_undo == 0) {
       return;
@@ -2999,7 +3001,7 @@ class _SessionStore {
     let tabState = lazy.TabState.collect(aTab, TAB_CUSTOM_VALUES.get(aTab));
 
     // Store closed-tab data for undo.
-    this.#maybeSaveClosedTab(aWindow, aTab, tabState);
+    this.#maybeSaveClosedTab(aWindow, aTab, tabState, { inMultiselection });
   }
 
   /**
@@ -3122,14 +3124,16 @@ class _SessionStore {
    *        The array of closed tabs to save to. This could be a
    *        window's _closedTabs array or the tab list of a
    *        closed tab group.
-   * @param {boolean} [options.closedInTabGroup=false]
+   * @param {boolean} [options.closedInTabGroup]
    *        If this tab was closed due to the closing of a tab group.
+   * @param {boolean} [options.inMultiselection]
+   *        If this tab was closed as one of a set of tabs closed together.
    */
   #maybeSaveClosedTab(
     aWindow,
     aTab,
     tabState,
-    { closedTabsArray, closedInTabGroup = false } = {}
+    { closedTabsArray, closedInTabGroup, inMultiselection } = {}
   ) {
     // Don't save private tabs
     let isPrivateWindow = PrivateBrowsingUtils.isWindowPrivate(aWindow);
@@ -3149,7 +3153,7 @@ class _SessionStore {
       image: aWindow.gBrowser.getIcon(aTab),
       pos: aTab.index,
       closedAt: Date.now(),
-      closedInGroup: aTab._closedInMultiselection,
+      closedInGroup: inMultiselection,
       closedInTabGroupId: closedInTabGroup ? tabState.groupId : null,
       sourceWindowId: aWindow.__SSi,
     };
