@@ -168,6 +168,7 @@ const LOCALE_SECTIONS_CONFIG =
   "browser.newtabpage.activity-stream.discoverystream.sections.locale-content-config";
 
 const ACTIVITY_STREAM_PREF_BRANCH = "browser.newtabpage.activity-stream.";
+const PREF_MARKET_GATE_ENABLED = `${ACTIVITY_STREAM_PREF_BRANCH}widgets.marketGate.enabled`;
 
 const PREF_SHOULD_AS_INITIALIZE_FEEDS =
   "browser.newtabpage.activity-stream.testing.shouldInitializeFeeds";
@@ -526,6 +527,10 @@ function skipsNightlyDefault(prefKey) {
   );
 }
 
+function marketGateEnabled() {
+  return Services.prefs.getBoolPref(PREF_MARKET_GATE_ENABLED, false);
+}
+
 /**
  * Gates a pref's default on the `.region-config`, `.region-block`,
  * `.locale-config` and `.locale-block` prefs sitting alongside it, e.g.
@@ -537,6 +542,10 @@ function skipsNightlyDefault(prefKey) {
 function marketGate(prefKey) {
   const base = ACTIVITY_STREAM_PREF_BRANCH + prefKey.replace(/\.enabled$/, "");
   return ({ geo, locale }) => {
+    // Gating off restores the defaults from before it existed.
+    if (!marketGateEnabled()) {
+      return !prefKey.startsWith("widgets.system.");
+    }
     // Nightly gets every widget in every market so the team sees the whole
     // feature, which is why no widget pref carries an #ifdef in firefox.js.
     if (
@@ -1536,6 +1545,14 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "widgets.marketGate.enabled",
+    {
+      title:
+        "Applies widget region and locale gating. When false, widgets keep the defaults from before gating",
+      value: false,
+    },
+  ],
+  [
     "widgets.marketGate.enforceOnNightly",
     {
       title:
@@ -1790,14 +1807,14 @@ export const PREFS_CONFIG = new Map([
     {
       title: "Enables the privacy widget",
       // Off everywhere. To release organically: add locale-config to firefox.js, switch to marketGate.
-      value: false,
+      getValue: () => !marketGateEnabled(),
     },
   ],
   [
     "widgets.crossword.enabled",
     {
       title: "Enables the crossword widget",
-      value: false,
+      getValue: () => !marketGateEnabled(),
     },
   ],
   [
@@ -1813,7 +1830,7 @@ export const PREFS_CONFIG = new Map([
     {
       title: "Enables the stocks widget",
       // Off everywhere. To release organically: add locale-config to firefox.js, switch to marketGate.
-      value: false,
+      getValue: () => !marketGateEnabled(),
     },
   ],
   [
@@ -1829,7 +1846,7 @@ export const PREFS_CONFIG = new Map([
     {
       title: "Enables the recent searches widget",
       // Off everywhere. To release organically: add locale-config to firefox.js, switch to marketGate.
-      value: false,
+      getValue: () => !marketGateEnabled(),
     },
   ],
   [
@@ -2708,6 +2725,7 @@ export class ActivityStream {
     this._defaultPrefs.init();
     Services.obs.addObserver(this, "intl:app-locales-changed");
     Services.prefs.addObserver(PREF_IMAGE_PROXY_ENABLED, this);
+    Services.prefs.addObserver(PREF_MARKET_GATE_ENABLED, this);
     lazy.NewTabActorRegistry.init();
 
     // Hook up the store and let all feeds and pages initialize
@@ -2885,6 +2903,7 @@ export class ActivityStream {
 
     Services.obs.removeObserver(this, "intl:app-locales-changed");
     Services.prefs.removeObserver(PREF_IMAGE_PROXY_ENABLED, this);
+    Services.prefs.removeObserver(PREF_MARKET_GATE_ENABLED, this);
 
     this.store.uninit();
     this.unregisterNetworkProxy();
@@ -2951,6 +2970,9 @@ export class ActivityStream {
         this._updateDynamicPrefs();
         break;
       case "nsPref:changed":
+        if (data === PREF_MARKET_GATE_ENABLED) {
+          this._updateDynamicPrefs();
+        }
         if (data === PREF_IMAGE_PROXY_ENABLED) {
           const enabled = Services.prefs.getBoolPref(
             PREF_IMAGE_PROXY_ENABLED,
