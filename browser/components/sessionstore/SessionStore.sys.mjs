@@ -4570,10 +4570,19 @@ class _SessionStore {
     }
 
     let savedGroup = this.#savedGroups[savedGroupIndex];
-    for (let i = 0; i < savedGroup.tabs.length; i++) {
-      this.#removeClosedTabData({}, savedGroup.tabs, i);
+    while (savedGroup.tabs.length) {
+      this.#removeClosedTabData({}, savedGroup.tabs, 0);
     }
     this.#savedGroups.splice(savedGroupIndex, 1);
+    for (let winData of [
+      ...Object.values(this.#windows),
+      ...this.#closedWindows,
+    ]) {
+      if (winData.lastClosedTabGroupId == savedTabGroupId) {
+        winData.lastClosedTabGroupId = null;
+        winData._lastClosedTabGroupCount = -1;
+      }
+    }
     this.#notifyOfSavedTabGroupsChange();
 
     // Notify of changes to closed objects.
