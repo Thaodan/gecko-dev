@@ -6,6 +6,7 @@ plugins {
 }
 
 import groovy.json.JsonOutput
+import org.mozilla.conventions.WriteRuntimeDependencies
 
 // The SDK binding generation tasks depend on the JAR creation task of the
 // :annotations project.
@@ -528,6 +529,12 @@ tasks.register("generateSDKBindings", JavaExec) {
 
     dependsOn project(':annotations').jar
     dependsOn rootProject.verifyGleanVersion
+}
+
+// The published variant is the one the AAR brings into an application.
+tasks.register("writeRuntimeDependencies", WriteRuntimeDependencies) {
+    classpath(configurations.named("debugRuntimeClasspath"))
+    outputFile = layout.buildDirectory.file("sbom/runtime-dependencies.json")
 }
 
 apiLint {
