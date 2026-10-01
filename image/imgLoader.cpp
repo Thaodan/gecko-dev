@@ -2784,7 +2784,7 @@ nsresult imgLoader::LoadImageWithChannel(nsIChannel* channel,
 #endif
 
   // Filter out any load flags not from nsIRequest
-  requestFlags &= nsIRequest::LOAD_INHERIT_MASK;
+  requestFlags &= nsIRequest::LOAD_REQUESTMASK;
 
   nsresult rv = NS_OK;
   if (request) {
