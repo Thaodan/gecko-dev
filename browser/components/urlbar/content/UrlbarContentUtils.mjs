@@ -98,7 +98,7 @@ export function isWindowPrivate(win) {
  *
  * @param {string} url
  *   The URL to parse.
- * @returns {?string}
+ * @returns {string|null}
  *   The display spec, or null if the URL can't be parsed.
  */
 export function getDisplaySpec(url) {
@@ -149,7 +149,7 @@ export function getSupportUrl(topic) {
  *   The string to fix up.
  * @param {boolean} isPrivate
  *   Whether the fixup runs for a private context.
- * @returns {?URIFixupPrimitives}
+ * @returns {URIFixupPrimitives|null}
  *   The primitives, or null if fixup threw.
  */
 export function getFixupPrimitives(searchString, isPrivate) {
