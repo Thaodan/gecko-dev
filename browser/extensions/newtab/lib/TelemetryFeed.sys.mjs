@@ -1043,7 +1043,7 @@ export class TelemetryFeed {
       type,
       position,
       source,
-      advertiser: advertiser_name,
+      advertiser_name,
       tile_id,
       visible_topsites,
       frecency_boosted = false,
@@ -1161,8 +1161,8 @@ export class TelemetryFeed {
           position: action.data.position,
           is_pinned: !!action.data.isPinned,
           visible_topsites,
-          smart_scores: JSON.stringify(action.data.smartScores),
-          smart_weights: JSON.stringify(action.data.smartWeights),
+          smart_scores: JSON.stringify(action.data.smart_scores),
+          smart_weights: JSON.stringify(action.data.smart_weights),
           ...(action.data.is_ad_eligible_position &&
           isAdEligiblePositionSupported()
             ? { is_ad_eligible_position: true }
@@ -1177,8 +1177,8 @@ export class TelemetryFeed {
           position: action.data.position,
           is_pinned: !!action.data.isPinned,
           visible_topsites,
-          smart_scores: JSON.stringify(action.data.smartScores),
-          smart_weights: JSON.stringify(action.data.smartWeights),
+          smart_scores: JSON.stringify(action.data.smart_scores),
+          smart_weights: JSON.stringify(action.data.smart_weights),
         });
         break;
 
@@ -1233,8 +1233,8 @@ export class TelemetryFeed {
         Glean.topsites.edit.record({
           newtab_visit_id: session.session_id,
           position: action.data.action_position,
-          has_title_changed: action.data.hasTitleChanged,
-          has_url_changed: action.data.hasURLChanged,
+          has_title_changed: action.data.has_title_changed,
+          has_url_changed: action.data.has_url_changed,
         });
         break;
       }

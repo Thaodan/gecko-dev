@@ -84,7 +84,7 @@ export class ImpressionStats extends React.PureComponent {
                 type: "impression",
                 tile_id: card.id,
                 source: "newtab",
-                advertiser: card.advertiser,
+                advertiser_name: card.advertiser_name,
                 // Keep the 0-based position, can be adjusted by the telemetry
                 // sender if necessary.
                 position: card.pos,
