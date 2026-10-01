@@ -2396,7 +2396,7 @@ export const PREFS_CONFIG = new Map([
     "pageLayouts.variant",
     {
       title:
-        "Name of the active newtab page layout variant, for layout experimentation. One of nova-full-width, side-by-side-content-lead, side-by-side-widgets-lead, side-by-side-content-lead-five, side-by-side-widgets-lead-five, spaces-buttons-top, spaces-buttons-bottom, spaces-thematic-v1, auto-minimize-widgets, widgets-ad-large. The -five variants reach five card columns counting the widgets column, the others four. The spaces variants split the band into separately-navigable panels; the buttons- ones differ only in where the segmented control sits, while spaces-thematic-v1 names its panels for interests and puts the side-by-side pair inside each one, configured by pageLayouts.spacesConfig. The auto-minimize-widgets variant collapses the widgets section to its title row shortly after load. The widgets-ad-large variant puts a large sponsored card at the end of the first widget row. At one card column it sits second instead. Overridden by trainhopConfig.pageLayouts.variant.",
+        "Name of the active newtab page layout variant, for layout experimentation. One of nova-full-width, side-by-side-content-lead, side-by-side-widgets-lead, side-by-side-content-lead-five, side-by-side-widgets-lead-five, spaces-buttons-top, spaces-buttons-bottom, spaces-thematic-v1, spaces-floating-arrows, auto-minimize-widgets, widgets-ad-large. The -five variants reach five card columns counting the widgets column, the others four. The spaces variants split the band into separately-navigable panels; the buttons- ones differ only in where the segmented control sits, spaces-floating-arrows replaces the segmented control with an arrow at each edge that has a space beyond it, while spaces-thematic-v1 names its panels for interests and puts the side-by-side pair inside each one, configured by pageLayouts.spacesConfig. The auto-minimize-widgets variant collapses the widgets section to its title row shortly after load. The widgets-ad-large variant puts a large sponsored card at the end of the first widget row. At one card column it sits second instead. Overridden by trainhopConfig.pageLayouts.variant.",
       value: "nova-full-width",
     },
   ],
@@ -2406,6 +2406,14 @@ export const PREFS_CONFIG = new Map([
       title:
         "JSON config for the spaces-thematic-v1 layout variant: an `order` array of space ids, a `default` id that the page opens on and that also takes any section or widget no other space claims, and a `spaces` object mapping each id to a `label`, an `icon` chrome:// URL, and `sections` and `widgets` arrays. Defaults to the config this build ships; clearing the user value returns to it. A config that cannot render turns the layout off rather than partly applying; nothing is merged with the default. Overridden by trainhopConfig.spaces.",
       value: JSON.stringify(DEFAULT_SPACES_CONFIG),
+    },
+  ],
+  [
+    "pageLayouts.spacesOrder",
+    {
+      title:
+        "Comma-separated order of the spaces in the spaces-buttons-top, spaces-buttons-bottom and spaces-floating-arrows layout variants, from stories, widgets and activity. A space left out is not shown; empty means stories,widgets,activity.",
+      value: "",
     },
   ],
   // @experiment(remove) { bug 2066527 }

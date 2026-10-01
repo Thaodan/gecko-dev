@@ -704,6 +704,7 @@ describe("<DiscoveryStreamAdminUI> Layouts", () => {
     "side-by-side-widgets-lead-five",
     "spaces-buttons-bottom",
     "spaces-buttons-top",
+    "spaces-floating-arrows",
     "spaces-thematic-v1",
     // @experiment(remove) { bug 2069496 }
     "widgets-ad-large",
