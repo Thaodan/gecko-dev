@@ -44,6 +44,11 @@ def build_document(
     )
     from mozbuild.vendor.sbom_cargo import collect_dependency_kinds, crate_records
     from mozbuild.vendor.sbom_cyclonedx import build_bom, to_json, utc_timestamp
+    from mozbuild.vendor.sbom_gradle import (
+        RUNTIME_DEPENDENCIES,
+        GradleSbomError,
+        gradle_records,
+    )
     from mozbuild.vendor.sbom_npm import npm_records, upgrade_manifest_purls
 
     substs = substs or {}
@@ -89,6 +94,24 @@ def build_document(
         "(dev-only dependencies excluded); "
         f"{upgraded} vendored manifest(s) given a pkg:npm purl.",
     )
+
+    # GeckoView's Maven dependencies, as Gradle resolved them earlier in the
+    # same build. Only an Android build has them, and there an SBOM without
+    # them would silently describe less than the AAR brings in.
+    maven = []
+    if substs.get("MOZ_BUILD_APP") == "mobile/android":
+        try:
+            maven, maven_edges = gradle_records(
+                os.path.join(topobjdir, RUNTIME_DEPENDENCIES)
+            )
+        except GradleSbomError as error:
+            if strict:
+                raise SbomError(str(error))
+            log(f"{error}; build the tree for the Maven dependencies.")
+        else:
+            records.extend(maven)
+            dependencies.update(maven_edges)
+            log(f"{len(maven)} Maven packages in GeckoView's runtime closure.")
 
     # The build backend writes this from the tree-wide moz.build LICENSES
     # declarations. It is absent in an unconfigured tree, in which case the
@@ -172,7 +195,8 @@ def build_document(
         )
     log(
         f"{len(records)} components ({len(crates)} crates, "
-        f"{len(packages)} npm packages, {len(notices)} license notices).",
+        f"{len(packages)} npm packages, {len(maven)} Maven packages, "
+        f"{len(notices)} license notices).",
     )
     return document
 

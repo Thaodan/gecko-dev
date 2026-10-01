@@ -11,7 +11,8 @@ import yaml
 from mozpack.files import FileFinder
 from mozunit import main
 
-from mozbuild.action.generate_sbom import build_document
+from mozbuild.action.generate_sbom import SbomError, build_document
+from mozbuild.vendor.sbom_gradle import RUNTIME_DEPENDENCIES
 
 PACKAGE_LOCK = {
     "lockfileVersion": 3,
@@ -76,15 +77,18 @@ class TestBuildDocument(unittest.TestCase):
         with open(path, "w") as f:
             f.write(content)
 
-    def test_npm_records_and_purl_upgrade(self):
-        document = json.loads(
-            build_document(
-                self.topsrcdir,
-                self.topsrcdir,
-                Repo(self.topsrcdir),
-                version="155.0a1",
-            )
+    def build(self, **kwargs):
+        document = build_document(
+            self.topsrcdir,
+            self.topsrcdir,
+            Repo(self.topsrcdir),
+            version="155.0a1",
+            **kwargs,
         )
+        return json.loads(document)
+
+    def test_npm_records_and_purl_upgrade(self):
+        document = self.build()
         purls = {c["bom-ref"]: c.get("purl") for c in document["components"]}
         self.assertEqual(purls["npm:react@16.13.1"], "pkg:npm/react@16.13.1")
         self.assertEqual(purls["npm:scheduler@0.19.1"], "pkg:npm/scheduler@0.19.1")
@@ -93,6 +97,31 @@ class TestBuildDocument(unittest.TestCase):
 
         edges = {d["ref"]: d.get("dependsOn", []) for d in document["dependencies"]}
         self.assertEqual(edges["npm:react@16.13.1"], ["npm:scheduler@0.19.1"])
+
+    def write_runtime_dependencies(self):
+        component = {"group": "androidx.core", "name": "core", "version": "1.19.0"}
+        self.write(RUNTIME_DEPENDENCIES, json.dumps({"components": [component]}))
+
+    def purls(self, document):
+        return {c.get("purl") for c in document["components"]}
+
+    def test_android_maven_dependencies(self):
+        self.write_runtime_dependencies()
+        document = self.build(substs={"MOZ_BUILD_APP": "mobile/android"})
+        self.assertIn("pkg:maven/androidx.core/core@1.19.0", self.purls(document))
+
+    def test_android_without_maven_dependencies(self):
+        substs = {"MOZ_BUILD_APP": "mobile/android"}
+        with self.assertRaises(SbomError):
+            self.build(substs=substs, strict=True)
+        # Without strict, the document is still written, without them.
+        purls = self.purls(self.build(substs=substs))
+        self.assertFalse([p for p in purls if p and p.startswith("pkg:maven/")])
+
+    def test_other_builds_skip_maven_dependencies(self):
+        self.write_runtime_dependencies()
+        document = self.build(substs={"MOZ_BUILD_APP": "browser"}, strict=True)
+        self.assertNotIn("pkg:maven/androidx.core/core@1.19.0", self.purls(document))
 
 
 if __name__ == "__main__":

@@ -71,7 +71,7 @@ def export(command_context, inputs, args):
     bindings_args = "-Pgenerate_sdk_bindings_args={}".format(";".join(bindings_inputs))
 
     # Here rather than next to the SBOM, because this is the Gradle invocation
-    # the build already runs.
+    # the build already runs; sbom.json in the top-level moz.build depends on it.
     sbom_tasks = []
     if command_context.substs.get("MOZ_GENERATE_SBOM"):
         sbom_tasks = ["geckoview:writeRuntimeDependencies"]
