@@ -1383,6 +1383,12 @@ already_AddRefed<Promise> nsImageLoadingContent::RecognizeCurrentImageText(
 
 CSSIntSize nsImageLoadingContent::NaturalSize(
     DoDensityCorrection aDensityCorrection) {
+  // This function implements the image.naturalWidth and image.naturalHeight
+  // APIs, specced here:
+  // https://html.spec.whatwg.org/multipage/embedded-content.html#dom-img-naturalwidth-dev
+
+  // Trivial case from the spec: "return [...] 0 if the image is not available"
+  // (our early-return statements here return a zero-filled CSSIntSize).
   if (!mCurrentRequest) {
     return {};
   }
@@ -1399,14 +1405,27 @@ CSSIntSize nsImageLoadingContent::NaturalSize(
     return {};
   }
 
-  // Fallback case, for web-compatibility!
-  // See https://github.com/whatwg/html/issues/11287 and bug 1935269.
-  // If we lack an intrinsic size in either axis, then use the fallback size,
-  // unless we can transfer the size through the aspect ratio.
-  // (And if we *only* have an intrinsic aspect ratio, use the fallback width
-  // and transfer that through the aspect ratio to produce a height.)
+  // If we get here, we have enough information about the image to return its
+  // "density-corrected natural width and height", which is specced here:
+  // https://html.spec.whatwg.org/multipage/images.html#density-corrected-intrinsic-width-and-height
+  //
+  // At a high level, here's what happens:
+  // * If the image has an intrinsic size in both axes, we density-correct it
+  //   and return it.
+  // * Otherwise: use the (non-density-corrected) fallback size to fill in
+  //   whichever component is missing -- though if we can transfer the size
+  //   through the aspect ratio, we do that instead (and density-correct it).
+
+  // * If we *only* have an intrinsic aspect ratio, then we use the fallback
+  //   width, and we transfer it through the aspect ratio to produce a suitable
+  //   fallback height. (And neither component gets density-corrected since
+  //   they're both fallbacks.)
   CSSIntSize size;  // defaults to 0,0
-  size.width = intrinsicSize.mWidth.valueOr(kFallbackIntrinsicWidthInPixels);
+
+  // Use intrinsicSize.mWidth, if it exists; otherwise, use fallback width.
+  bool isUsingFallbackWidth = !intrinsicSize.mWidth;
+  size.width = isUsingFallbackWidth ? kFallbackIntrinsicWidthInPixels
+                                    : CSSIntCoord(*intrinsicSize.mWidth);
 
   // Use intrinsicSize.mHeight, if it exists; otherwise, use fallback height.
   bool isUsingFallbackHeight = !intrinsicSize.mHeight;
@@ -1416,13 +1435,21 @@ CSSIntSize nsImageLoadingContent::NaturalSize(
   AspectRatio ratio = image->GetIntrinsicRatio();
   if (ratio) {
     if (isUsingFallbackHeight) {
-      // Compute the height from the width & ratio.  (Note that the width we
-      // use here might be kFallbackIntrinsicWidthInPixels, and that's fine.)
+      // If we're using the fallback height and we have an aspect ratio, we
+      // instead compute our height from the width & ratio.  (Note that the
+      // width we use here might be the fallback width, and that's fine. If
+      // so, we just keep treating the resulting height as a fallback, i.e.
+      // we won't density-correct it.)
       size.height = ratio.Inverted().ApplyTo(size.width);
-      isUsingFallbackHeight = false;
-    } else if (!intrinsicSize.mWidth) {
-      // Compute the width from the height & ratio.
+      isUsingFallbackHeight = isUsingFallbackWidth;
+    } else if (isUsingFallbackWidth) {
+      // We're tentatively using the fallback width, but we have an
+      // aspect-ratio and a (non-fallback) height.  So we don't use the
+      // fallback width after all; instead, we compute a width from the height
+      // & ratio.  (And we don't treat the result as fallback, because it's
+      // computed from a non-fallback height.)
       size.width = ratio.ApplyTo(size.height);
+      isUsingFallbackWidth = false;
     }
   }
 
@@ -1440,7 +1467,9 @@ CSSIntSize nsImageLoadingContent::NaturalSize(
     }
   }
 
-  resolution.ApplyXTo(size.width);
+  if (!isUsingFallbackWidth) {
+    resolution.ApplyXTo(size.width);
+  }
   if (!isUsingFallbackHeight) {
     resolution.ApplyYTo(size.height);
   }
