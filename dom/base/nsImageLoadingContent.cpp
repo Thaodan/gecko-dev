@@ -1477,35 +1477,34 @@ CSSIntSize nsImageLoadingContent::NaturalSize(
 }
 
 CSSIntSize nsImageLoadingContent::GetWidthHeightForImage() {
+  // Determine the value for .width and .height getters. The spec text for this
+  // lives here:
+  // https://html.spec.whatwg.org/multipage/embedded-content.html#img-dimensions
+  // It mostly defers to a "determine the dimensions" algorithm which lives
+  // here:
+  // https://html.spec.whatwg.org/multipage/embedded-content-other.html#determine-dimensions
+  //
+  // Quotes below are from that "determine the dimensions" spec text.
+
+  // "If element is being rendered, then return the width and height of
+  // element's content box, in CSS pixels."
   Element* element = AsContent()->AsElement();
   if (nsIFrame* frame = element->GetPrimaryFrame(FlushType::Layout)) {
     return CSSIntSize::FromAppUnitsRounded(frame->GetContentRect().Size());
   }
 
-  CSSIntSize size;
-  // Our image is not rendered (we don't have any frame); so we should
-  // return the natural size, per:
-  // https://html.spec.whatwg.org/multipage/embedded-content.html#dom-img-width
-  //
-  // Note that the spec says to use the "density-corrected natural width and
-  // height of the image", but we don't do that -- we specifically request
-  // the NaturalSize *without* density-correction here.  This handles a case
-  // where browsers deviate from the spec in an interoperable way, which
-  // hopefully we'll address in the spec soon. See:
-  // https://github.com/whatwg/html/issues/12573
-  size = NaturalSize(DoDensityCorrection::No);
+  // "...set width to naturalDimensions's width and height to
+  // naturalDimensions's height" [in the tentative return value]
+  CSSIntSize size = NaturalSize(DoDensityCorrection::Yes);
 
-  // If we have width or height attrs, we'll let those stomp on whatever
-  // NaturalSize we may have gotten above. This handles a case where browsers
-  // deviate from the spec in an interoperable way, which hopefully we'll
-  // address in the spec soon. See case (1) in this comment for more:
-  // https://github.com/whatwg/html/issues/11287#issuecomment-2923467541
+  // "If element has a width attribute: [attempt to parse and use that value]"
   const nsAttrValue* value;
   if ((value = element->GetParsedAttr(nsGkAtoms::width)) &&
       value->Type() == nsAttrValue::eInteger) {
     size.width = value->GetIntegerValue();
   }
 
+  // "If element has a height attribute: [attempt to parse and use that value]"
   if ((value = element->GetParsedAttr(nsGkAtoms::height)) &&
       value->Type() == nsAttrValue::eInteger) {
     size.height = value->GetIntegerValue();
