@@ -45,6 +45,7 @@ import mozilla.components.support.utils.ext.top
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.R
+import org.mozilla.fenix.addons.ExtensionsMenuItemProvider
 import org.mozilla.fenix.bookmarks.BookmarkMenuItemProvider
 import org.mozilla.fenix.browser.BackMenuItemProvider
 import org.mozilla.fenix.browser.DesktopSiteMenuItemProvider
@@ -245,7 +246,13 @@ class MenuFragment : BottomSheetDialogFragment() {
                     browserStore = requireComponents.core.store,
                     scope = viewLifecycleOwner.lifecycle.coroutineScope,
                 )
-
+            FenixMenuItem.Extensions ->
+                ExtensionsMenuItemProvider(
+                    context = requireContext().applicationContext,
+                    browserStore = requireComponents.core.store,
+                    addonManager = requireComponents.addonManager,
+                    applicationScope = requireComponents.applicationScope,
+                )
             is FenixMenuItem.More ->
                 MoreMenuItemsProvider(
                     browserStore = requireComponents.core.store,

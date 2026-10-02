@@ -23,6 +23,7 @@ import io.mockk.verify
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,6 +35,7 @@ import mozilla.components.browser.state.state.ContentState
 import mozilla.components.browser.state.state.EngineState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.createTab
+import mozilla.components.browser.state.state.extension.WebExtensionPromptRequest
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.menu.data.ExpandableMenuItem
@@ -45,6 +47,8 @@ import mozilla.components.compose.menu.store.MenuStore
 import mozilla.components.compose.menu.ui.MenuItemIconRes
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.ipprotection.ServiceState
+import mozilla.components.concept.engine.webextension.InstallationMethod.MANAGER
+import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.app.links.AppLinkRedirect
 import mozilla.components.feature.app.links.AppLinksUseCases
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
@@ -99,6 +103,7 @@ import org.mozilla.fenix.ext.optionsEq
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.home.topsites.AddShortcutEntryPoint
 import org.mozilla.fenix.home.topsites.AddShortcutSource
+import org.mozilla.fenix.settings.SupportUtils.AMO_HOMEPAGE_FOR_ANDROID
 import org.mozilla.fenix.summarization.eligibility.SummarizationEligibilityChecker
 import org.mozilla.fenix.summarization.onboarding.SummarizationFeatureDiscoveryConfiguration
 import org.mozilla.fenix.summarization.onboarding.SummarizeDiscoveryEvent
@@ -375,6 +380,98 @@ class MenuMiddlewareTest {
             requestDesktopSiteUseCase(enable = false, tabId = TAB_ID)
         }
     }
+
+    @Test
+    fun `WHEN handling a request to show the extensions manager THEN navigate to it`() {
+        val store = createStore()
+
+        store.dispatch(Navigate.ManageExtensions)
+
+        verify { navController.navigate(NavGraphDirections.actionGlobalAddonsManagementFragment(), null) }
+    }
+
+    @Test
+    fun `WHEN handling a request to show the details of a not installed extension THEN navigate to its details`() {
+        val store = createStore()
+        val addon = Addon(id = "addon")
+
+        store.dispatch(Navigate.AddonDetails(addon))
+
+        verify { navController.navigate(NavGraphDirections.actionGlobalAddonDetailsFragment(addon), null) }
+    }
+
+    @Test
+    fun `WHEN handling a request to show the details of an installed extension THEN navigate to its details`() {
+        val store = createStore()
+        val addon = Addon(id = "addon")
+
+        store.dispatch(Navigate.InstalledAddonDetails(addon))
+
+        verify {
+            navController.navigate(NavGraphDirections.actionGlobalToInstalledAddonDetailsFragment(addon), null)
+        }
+    }
+
+    @Test
+    fun `WHEN handling a request to discover more extensions THEN dismiss the menu and open the add-ons website`() {
+        val store = createStore()
+
+        store.dispatch(Navigate.DiscoverMoreExtensions)
+
+        verify {
+            navController.popBackStack(R.id.menuFragment, true)
+            navController.navigate(R.id.browserFragment)
+            fenixBrowserUseCase.loadUrlOrSearch(
+                searchTermOrURL = AMO_HOMEPAGE_FOR_ANDROID,
+                newTab = true,
+                private = false,
+            )
+        }
+    }
+
+    @Test
+    fun `WHEN handling installing an addon THEN start installing it and dismiss the menu`() =
+        runTest(testDispatcher) {
+            val addon =
+                Addon(
+                    id = "addon",
+                    downloadUrl = "https://mozilla.org/addon.xpi",
+                    iconUrl = "https://mozilla.org/addon.png",
+                )
+            val store = createStore()
+
+            store.dispatch(MenuAction.InstallAddon(addon = addon, addonName = "test"))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify { navController.popBackStack(R.id.menuFragment, true) }
+            // Installing it this way is what shows the progress dialog keeping the user from asking for it again.
+            assertEquals(
+                WebExtensionPromptRequest.InstallationRequested(
+                    url = addon.downloadUrl,
+                    name = "test",
+                    iconUrl = addon.iconUrl,
+                    installationMethod = MANAGER,
+                ),
+                browserStore.state.webExtensionPromptRequest,
+            )
+        }
+
+    @Test
+    fun `GIVEN an addon is already installed WHEN handling installing it THEN abort trying to install it again`() =
+        runTest(testDispatcher) {
+            val addon =
+                Addon(
+                    id = "addon",
+                    installedState = Addon.InstalledState(id = "addon", version = "1.0", optionsPageUrl = null),
+                )
+            val store = createStore()
+
+            store.dispatch(MenuAction.InstallAddon(addon = addon, addonName = "test"))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(exactly = 0) { navController.popBackStack(R.id.menuFragment, true) }
+            assertNull(browserStore.state.webExtensionPromptRequest)
+        }
 
     @Test
     fun `WHEN handling moving the current tab to normal tabs THEN dismiss the menu and migrate the tab`() {

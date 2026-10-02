@@ -11,8 +11,10 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import mozilla.components.browser.state.action.WebExtensionAction
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.SessionState
+import mozilla.components.browser.state.state.extension.WebExtensionPromptRequest
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.menu.data.ExpandableMenuItem
 import mozilla.components.compose.menu.store.MenuAction
@@ -22,6 +24,8 @@ import mozilla.components.compose.menu.store.MenuState
 import mozilla.components.compose.menu.store.MenuStore
 import mozilla.components.concept.engine.EngineSession.LoadUrlFlags
 import mozilla.components.concept.engine.prompt.ShareData
+import mozilla.components.concept.engine.webextension.InstallationMethod
+import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
 import mozilla.components.feature.top.sites.PinnedSiteStorage
@@ -49,6 +53,7 @@ import org.mozilla.fenix.components.menu.store.MenuAction.AddShortcut
 import org.mozilla.fenix.components.menu.store.MenuAction.CustomizeReaderView
 import org.mozilla.fenix.components.menu.store.MenuAction.FindInPage
 import org.mozilla.fenix.components.menu.store.MenuAction.IPProtectionToggle
+import org.mozilla.fenix.components.menu.store.MenuAction.InstallAddon
 import org.mozilla.fenix.components.menu.store.MenuAction.MoveToNonPrivateTab
 import org.mozilla.fenix.components.menu.store.MenuAction.Navigate
 import org.mozilla.fenix.components.menu.store.MenuAction.OnMoreMenuClicked
@@ -66,6 +71,7 @@ import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.openToBrowser
 import org.mozilla.fenix.home.topsites.AddShortcutEntryPoint
 import org.mozilla.fenix.home.topsites.AddShortcutSource
+import org.mozilla.fenix.settings.SupportUtils.AMO_HOMEPAGE_FOR_ANDROID
 import org.mozilla.fenix.summarization.eligibility.SummarizationEligibilityChecker
 import org.mozilla.fenix.summarization.isSummarizePageMenuItem
 import org.mozilla.fenix.summarization.onboarding.FenixSummarizationFeatureConfiguration
@@ -99,7 +105,7 @@ import org.mozilla.fenix.webcompat.WebCompatReporterMoreInfoSender
  * @param applicationScope [CoroutineScope] tied to the lifetime of the application, used for the work that cannot be
  *   interrupted and so must not be tied to the menu.
  */
-@Suppress("LongParameterList")
+@Suppress("LongParameterList", "TooManyFunctions", "LongMethod")
 class MenuMiddleware(
     private val appStore: AppStore,
     private val browserStore: BrowserStore,
@@ -116,7 +122,6 @@ class MenuMiddleware(
     private val scope: CoroutineScope,
     private val applicationScope: CoroutineScope,
 ) : Middleware<MenuState, MenuAction> {
-
     @Suppress("LongMethod", "CyclomaticComplexMethod")
     override fun invoke(
         store: Store<MenuState, MenuAction>,
@@ -152,6 +157,26 @@ class MenuMiddleware(
             is RequestDesktopSite -> requestSiteMode(enableDesktopMode = true)
 
             is RequestMobileSite -> requestSiteMode(enableDesktopMode = false)
+
+            is InstallAddon -> installAddon(action.addon, action.addonName)
+
+            is Navigate.AddonDetails ->
+                navigate(NavGraphDirections.actionGlobalAddonDetailsFragment(addon = action.addon))
+
+            is Navigate.InstalledAddonDetails ->
+                navigate(NavGraphDirections.actionGlobalToInstalledAddonDetailsFragment(addon = action.addon))
+
+            is Navigate.ManageExtensions -> navigate(NavGraphDirections.actionGlobalAddonsManagementFragment())
+
+            is Navigate.DiscoverMoreExtensions -> {
+                dismissMenu()
+                navController.openToBrowser()
+                useCases.fenixBrowserUseCases.loadUrlOrSearch(
+                    searchTermOrURL = AMO_HOMEPAGE_FOR_ANDROID,
+                    newTab = true,
+                    private = appStore.state.mode.isPrivate,
+                )
+            }
 
             is Navigate.Translate -> {
                 navController.nav(
@@ -245,6 +270,23 @@ class MenuMiddleware(
             IPProtectionMenuStatus.DataLimitReached,
             IPProtectionMenuStatus.ConnectionError -> ipProtectionStore.dispatch(IPProtectionAction.Toggle)
         }
+    }
+
+    private fun installAddon(addon: Addon, addonName: String?) {
+        if (addon.isInstalled()) return
+
+        dismissMenu()
+
+        browserStore.dispatch(
+            WebExtensionAction.UpdatePromptRequestWebExtensionAction(
+                WebExtensionPromptRequest.InstallationRequested(
+                    url = addon.downloadUrl,
+                    name = addonName,
+                    iconUrl = addon.iconUrl,
+                    installationMethod = InstallationMethod.MANAGER,
+                )
+            )
+        )
     }
 
     private fun requestSiteMode(enableDesktopMode: Boolean) {
