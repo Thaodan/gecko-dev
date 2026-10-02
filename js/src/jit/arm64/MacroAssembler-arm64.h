@@ -1489,6 +1489,11 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   void rightShiftInt64x2(FloatRegister lhs, Register rhs, FloatRegister dest,
                          bool isUnsigned);
 
+  // Compress lanes that are all zeros or all ones into a 64-bit mask holding
+  // four copies of each lane's bit, lane 0 lowest.
+  inline void nibbleMaskInt8x16(FloatRegister src, Register dest,
+                                FloatRegister temp);
+
   void boxDouble(FloatRegister src, const ValueOperand& dest, FloatRegister) {
     Fmov(ARMRegister(dest.valueReg(), 64), ARMFPRegister(src, 64));
   }

@@ -20,8 +20,8 @@
  */
 
 /**
- * pdfjsVersion = 6.4.232
- * pdfjsBuild = 91041fb94
+ * pdfjsVersion = 6.4.256
+ * pdfjsBuild = c33c32aed
  */
 
 ;// ./src/shared/util.js
@@ -2061,7 +2061,7 @@ class FloatingToolbar {
 }
 
 ;// ./src/shared/internal_evt.js
-const INTERNAL_EVT = "819c6009-3aad-42ac-ac55-0a1aaa18f408";
+const INTERNAL_EVT = "c6ad7aca-3c90-419e-8074-a865eee3ba8a";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -8111,9 +8111,6 @@ class FontFaceObject {
   get ascent() {
     return this.#fontData.ascent;
   }
-  get defaultWidth() {
-    return this.#fontData.defaultWidth;
-  }
   get descent() {
     return this.#fontData.descent;
   }
@@ -8147,9 +8144,6 @@ class FontFaceObject {
   get systemFontInfo() {
     return this.#fontData.systemFontInfo;
   }
-  get defaultVMetrics() {
-    return this.#fontData.defaultVMetrics;
-  }
 }
 
 ;// ./src/shared/obj_bin_transform_utils.js
@@ -8162,13 +8156,12 @@ class SYSTEM_FONT_INFO {
 }
 class FONT_INFO {
   static bools = ["black", "bold", "disableFontFace", "fontExtraProperties", "isInvalidPDFjsFont", "isType3Font", "italic", "missingFile", "remeasure", "vertical"];
-  static numbers = ["ascent", "defaultWidth", "descent"];
+  static numbers = ["ascent", "descent"];
   static strings = ["fallbackName", "loadedName", "mimetype", "name"];
   static OFFSET_NUMBERS = Math.ceil(this.bools.length * 2 / 8);
   static OFFSET_BBOX = this.OFFSET_NUMBERS + this.numbers.length * 8;
   static OFFSET_FONT_MATRIX = this.OFFSET_BBOX + 1 + 2 * 4;
-  static OFFSET_DEFAULT_VMETRICS = this.OFFSET_FONT_MATRIX + 1 + 8 * 6;
-  static OFFSET_STRINGS = this.OFFSET_DEFAULT_VMETRICS + 1 + 2 * 3;
+  static OFFSET_STRINGS = this.OFFSET_FONT_MATRIX + 1 + 8 * 6;
 }
 class PATTERN_INFO {
   static KIND = 0;
@@ -8230,12 +8223,9 @@ class SystemFontInfo {
     this.#buffer = buffer;
     this.#view = new DataView(buffer);
   }
-  get guessFallback() {
-    return this.#view.getUint8(0) !== 0;
-  }
   #readString(index) {
     assert(index < SYSTEM_FONT_INFO.strings.length, "Invalid string index");
-    return readString(this.#buffer, this.#view, index, 5);
+    return readString(this.#buffer, this.#view, index, 4);
   }
   get css() {
     return this.#readString(0);
@@ -8250,7 +8240,7 @@ class SystemFontInfo {
     return this.#readString(3);
   }
   get style() {
-    let offset = 1;
+    let offset = 0;
     offset += 4 + this.#view.getUint32(offset);
     const style = readString(this.#buffer, this.#view, 0, offset),
       weight = readString(this.#buffer, this.#view, 1, offset);
@@ -8317,11 +8307,8 @@ class FontInfo {
   get ascent() {
     return this.#readNumber(0);
   }
-  get defaultWidth() {
-    return this.#readNumber(1);
-  }
   get descent() {
-    return this.#readNumber(2);
+    return this.#readNumber(1);
   }
   #readArray(offset, arrLen, lookupName, increment) {
     const len = this.#view.getUint8(offset);
@@ -8342,9 +8329,6 @@ class FontInfo {
   }
   get fontMatrix() {
     return this.#readArray(FONT_INFO.OFFSET_FONT_MATRIX, 6, "getFloat64", 8);
-  }
-  get defaultVMetrics() {
-    return this.#readArray(FONT_INFO.OFFSET_DEFAULT_VMETRICS, 3, "getInt16", 2);
   }
   #readString(index) {
     assert(index < FONT_INFO.strings.length, "Invalid string index");
@@ -9052,7 +9036,7 @@ function convertRGBToRGBA({
       dest[destPos + 2] = s2 >>> 16 | s3 << 16 | alphaMask;
       dest[destPos + 3] = s3 >>> 8 | alphaMask;
     }
-    for (let j = i * 4, jj = srcPos + len; j < jj; j += 3) {
+    for (let j = srcPos + i * 4, jj = srcPos + len; j < jj; j += 3) {
       dest[destPos++] = src[j] | src[j + 1] << 8 | src[j + 2] << 16 | alphaMask;
     }
   } else {
@@ -9065,7 +9049,7 @@ function convertRGBToRGBA({
       dest[destPos + 2] = s2 << 16 | s3 >>> 16 | alphaMask;
       dest[destPos + 3] = s3 << 8 | alphaMask;
     }
-    for (let j = i * 4, jj = srcPos + len; j < jj; j += 3) {
+    for (let j = srcPos + i * 4, jj = srcPos + len; j < jj; j += 3) {
       dest[destPos++] = src[j] << 24 | src[j + 1] << 16 | src[j + 2] << 8 | alphaMask;
     }
   }
@@ -11562,7 +11546,6 @@ class CanvasGraphics {
     const glyphsLength = glyphs.length;
     const vertical = font.vertical;
     const spacingDir = vertical ? 1 : -1;
-    const defaultVMetrics = font.defaultVMetrics;
     const widthAdvanceScale = fontSize * current.fontMatrix[0];
     const simpleFillText = current.textRenderingMode === TextRenderingMode.FILL && !font.disableFontFace && !current.patternFill;
     ctx.save();
@@ -11641,10 +11624,10 @@ class CanvasGraphics {
       let scaledX, scaledY;
       let width = glyph.width;
       if (vertical) {
-        const vmetric = glyph.vmetric || defaultVMetrics;
-        const vx = -(glyph.vmetric ? vmetric[1] : width * 0.5) * widthAdvanceScale;
+        const vmetric = glyph.vmetric;
+        const vx = -vmetric[1] * widthAdvanceScale;
         const vy = vmetric[2] * widthAdvanceScale;
-        width = vmetric ? -vmetric[0] : width;
+        width = -vmetric[0];
         scaledX = vx / fontSizeScale;
         scaledY = (x + vy) / fontSizeScale;
       } else {
@@ -14506,7 +14489,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "6.4.232",
+    apiVersion: "6.4.256",
     data,
     password,
     disableAutoFetch,
@@ -16145,8 +16128,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "6.4.232";
-const build = "91041fb94";
+const version = "6.4.256";
+const build = "c33c32aed";
 
 ;// ./src/display/editor/color_picker.js
 
@@ -17509,6 +17492,22 @@ class LinkAnnotationElement extends AnnotationElement {
             id
           } of fields) {
             fieldIds.add(id);
+          }
+        }
+        const kidIdsById = new Map();
+        for (const fields of this._fieldObjects.values()) {
+          for (const {
+            id,
+            kidIds
+          } of fields) {
+            if (kidIds) {
+              kidIdsById.set(id, kidIds);
+            }
+          }
+        }
+        for (const id of fieldIds) {
+          for (const kidId of kidIdsById.get(id) || []) {
+            fieldIds.add(kidId);
           }
         }
         for (const fields of this._fieldObjects.values()) {

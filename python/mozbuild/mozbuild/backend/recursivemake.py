@@ -371,6 +371,7 @@ class RecursiveMakeBackend(MakeBackend):
         self._rust_targets = set()
         self._gkrust_target = None
         self._pre_compile = set()
+        self._objdir_local_includes = defaultdict(set)
 
         # For a given file produced by the build, gives the top-level target
         # that will produce it.
@@ -637,6 +638,10 @@ class RecursiveMakeBackend(MakeBackend):
 
         elif isinstance(obj, LocalInclude):
             self._process_local_include(obj.path, backend_file)
+            if isinstance(obj.path, ObjDirPath):
+                self._objdir_local_includes[backend_file.relobjdir].add(
+                    mozpath.relpath(obj.path.full_path, self.environment.topobjdir)
+                )
 
         elif isinstance(obj, PerSourceFlag):
             self._process_per_source_flag(obj, backend_file)
@@ -794,6 +799,16 @@ class RecursiveMakeBackend(MakeBackend):
             relobjdir = mozpath.dirname(t)
             rule = root_deps_mk.create_rule([t])
             rule.add_dependencies(["%s/pre-compile" % relobjdir])
+
+        for relobjdir, includes in sorted(self._objdir_local_includes.items()):
+            target = mozpath.join(relobjdir, "target-objects")
+            deps = sorted(
+                f"{d}/pre-compile"
+                for d in includes
+                if d != relobjdir and d in self._pre_compile
+            )
+            if deps and target in self._compile_graph:
+                root_deps_mk.create_rule([target]).add_dependencies(deps)
 
         all_compile_deps = (
             reduce(lambda x, y: x | y, self._compile_graph.values())

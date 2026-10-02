@@ -4300,6 +4300,13 @@
   value: false
   mirror: always
 
+# window.pushManager
+# https://w3c.github.io/push-api/#extensions-to-the-serviceworkerregistration-interface
+- name: dom.push.window_pushmanager.enabled
+  type: bool
+  value: false
+  mirror: always
+
 # Preference that is primarily used for testing of problematic file paths.
 # It can also be used for switching between different storage directories, but
 # such feature is not officially supported.
@@ -9197,14 +9204,6 @@
 - name: image.mem.max_legal_imgframe_size_kb
   type: RelaxedAtomicInt32
   value: -1
-  mirror: always
-
-# If true, then the HTMLImageElement naturalWidth and naturalHeight APIs will
-# fall back to the default concrete object size (300x150) for images that lack
-# a natural width and/or height.
-- name: image.natural-size-fallback.enabled
-  type: RelaxedAtomicBool
-  value: true
   mirror: always
 
 # Whether we record SVG images as blobs or not.

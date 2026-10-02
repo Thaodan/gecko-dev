@@ -61,6 +61,14 @@ it gets its own copy of the module, so any state it holds is per-realm.
 import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
 ```
 
+To check whether a value implements a DOM interface, use
+`UrlbarShared.isInstance(value, iface)`. The interface's own `isInstance()` is
+chrome-only, so it throws in a content realm, and `instanceof` fails for a value
+from another global, such as an event from another window.
+`UrlbarShared.isInstance()` calls the interface's `isInstance()` where it
+exists, and in a content realm falls back to `instanceof`, which compares
+against that realm's own interface object.
+
 ## {searchfox}`UrlbarContentUtils.mjs <browser/components/urlbar/content/UrlbarContentUtils.mjs>`
 
 Accessors for things a content module can't reach for itself, such as the
