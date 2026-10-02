@@ -243,14 +243,11 @@ interface GleanImpl {
     clickMilestoneMessage: GleanEventNoExtras;
     clickProtectionspopupCfr: GleanEventWithExtras<{ message?: string, value?: string }>;
     clickSettings: GleanEventNoExtras;
-    clickSmartblockembedsToggle: GleanEventWithExtras<{ isBlock?: string|boolean, openingReason?: string }>;
     clickSocial: GleanEventNoExtras;
     clickSubviewSettings: GleanEventWithExtras<{ value?: string }>;
     clickTrackers: GleanEventNoExtras;
-    closeProtectionsPopup: GleanEventWithExtras<{ openingReason?: string, smartblockToggleClicked?: string|boolean }>;
     openProtectionsPopup: GleanEventWithExtras<{ openingReason?: string, smartblockEmbedTogglesShown?: string|boolean }>;
     openProtectionspopupCfr: GleanEventWithExtras<{ message?: string, value?: string }>;
-    smartblockembedsShown: GleanCounter;
   }
 
   smartWindow: {
