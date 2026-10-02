@@ -205,13 +205,6 @@ const char* const kFragConvert_ColorMatrix = R"(
     return (uColorMatrix * vec4(src, 1)).rgb;
   }
 )";
-const char* const kFragConvert_ColorMatrixBGR = R"(
-  uniform mediump MAT4X3 uColorMatrix;
-
-  vec3 metaConvert(vec3 src) {
-    return (uColorMatrix * vec4(src, 1)).bgr;
-  }
-)";
 const char* const kFragConvert_ColorLut3d = R"(
   uniform PRECISION sampler3D uColorLut;
 
@@ -924,8 +917,7 @@ bool GLBlitHelper::BlitSdToFramebuffer(const layers::SurfaceDescriptor& asd,
                                        const gfx::IntRect& destRect,
                                        const OriginPos destOrigin,
                                        const gfx::IntSize& fbSize,
-                                       Maybe<gfxAlphaType> convertAlpha,
-                                       gfx::SurfaceFormat aDestFormat) {
+                                       Maybe<gfxAlphaType> convertAlpha) {
   const auto sdType = asd.type();
   switch (sdType) {
     case layers::SurfaceDescriptor::TSurfaceDescriptorBuffer: {
@@ -1025,8 +1017,7 @@ bool GLBlitHelper::BlitSdToFramebuffer(const layers::SurfaceDescriptor& asd,
       if (!surface) {
         return false;
       }
-      return Blit(surface, destRect, destOrigin, fbSize, convertAlpha,
-                  aDestFormat);
+      return Blit(surface, destRect, destOrigin, fbSize, convertAlpha);
     }
 #endif
     default:
@@ -1652,8 +1643,7 @@ void GLBlitHelper::BlitTextureToTexture(GLuint srcTex, GLuint destTex,
 #ifdef MOZ_WIDGET_GTK
 bool GLBlitHelper::Blit(DMABufSurface* surface, const gfx::IntRect& destRect,
                         OriginPos destOrigin, const gfx::IntSize& fbSize,
-                        Maybe<gfxAlphaType> convertAlpha,
-                        gfx::SurfaceFormat aDestFormat) const {
+                        Maybe<gfxAlphaType> convertAlpha) const {
   const auto& srcOrigin = OriginPos::BottomLeft;
 
   DrawBlitProg::BaseArgs baseArgs;
@@ -1716,21 +1706,9 @@ bool GLBlitHelper::Blit(DMABufSurface* surface, const gfx::IntRect& destRect,
 
   const char* fragSample = nullptr;
   auto fragConvert = kFragConvert_None;
-  // Determine the reorder from source and destination formats. The blit
-  // output is RGBA-ordered for every source shape (the YUV color matrix and
-  // EGL named-channel imports expose RGB in .rgb), while the destination
-  // may store the opposite, BGRA order (e.g. canvas2d); swap R/B exactly
-  // when the two orders differ.
-  const bool srcIsBGRA = false;
-  const bool dstIsBGRA = aDestFormat == gfx::SurfaceFormat::B8G8R8A8 ||
-                         aDestFormat == gfx::SurfaceFormat::B8G8R8X8;
-  const bool swapRB = srcIsBGRA != dstIsBGRA;
   switch (pixelFormat) {
     case DMABufSurface::SURFACE_RGBA:
       fragSample = kFragSample_OnePlane;
-      if (swapRB) {
-        fragConvert = kFragConvert_BGR;
-      }
       break;
     case DMABufSurface::SURFACE_YUV:
       if (surface->GetTextureCount() == 2) {
@@ -1743,8 +1721,7 @@ bool GLBlitHelper::Blit(DMABufSurface* surface, const gfx::IntRect& destRect,
         return false;
       }
       pYuvArgs = &yuvArgs;
-      fragConvert =
-          swapRB ? kFragConvert_ColorMatrixBGR : kFragConvert_ColorMatrix;
+      fragConvert = kFragConvert_ColorMatrix;
       break;
     default:
       return false;

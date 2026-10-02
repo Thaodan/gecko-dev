@@ -1007,7 +1007,7 @@ bool TexUnpackSurface::BlitSd(
     }
     if (!gl->BlitHelper()->BlitSdToFramebuffer(
             sd, {xOffset, yOffset, size.x, size.y}, dstOrigin, fbSize,
-            convertAlpha, mDesc.destFormat)) {
+            convertAlpha)) {
       gfxCriticalNote << "BlitSdToFramebuffer failed for type "
                       << int(sd.type());
       if (allowFallback) {

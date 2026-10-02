@@ -1164,7 +1164,6 @@ struct TexUnpackBlobDesc final {
 
   webgl::PixelUnpackStateWebgl unpacking;
   bool applyUnpackTransforms = true;
-  gfx::SurfaceFormat destFormat = gfx::SurfaceFormat::UNKNOWN;
 
   // -
 
