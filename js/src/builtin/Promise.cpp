@@ -1101,27 +1101,19 @@ const JSClass PromiseReactionRecord::class_ = {
     JSCLASS_HAS_RESERVED_SLOTS(Slots::SlotCount),
 };
 
+// A Thenable Job is data bound to a specific task type when
+// enqueued in the microtask queue.
 class ThenableJob : public MicroTaskEntry {
  protected:
   enum Slots {
     // These slots come directoy after the MicroTaskEntry slots.
     Thenable = MicroTaskEntry::Slots::SlotCount,
     Then,
-    Callback,
     SlotCount
   };
 
  public:
   static const JSClass class_;
-
-  enum TargetFunction : int32_t {
-    PromiseResolveThenableJob,
-    PromiseResolveBuiltinThenableJob,
-    // Job used by SafePromiseResolve (JS::SafeResolve): runs
-    // PerformPromiseResolution on `promise` with the resolution value stored
-    // in the Thenable slot. The Then slot is unused for this target.
-    DeferredResolveJob,
-  };
 
   Value thenable() const { return getFixedSlot(Slots::Thenable); }
 
@@ -1131,14 +1123,6 @@ class ThenableJob : public MicroTaskEntry {
 
   void initThen(JSObject* obj) {
     initFixedSlot(Slots::Then, ObjectOrNullValue(obj));
-  }
-
-  TargetFunction targetFunction() const {
-    return static_cast<TargetFunction>(getFixedSlot(Slots::Callback).toInt32());
-  }
-  void initTargetFunction(TargetFunction target) {
-    initFixedSlot(Slots::Callback,
-                  JS::Int32Value(static_cast<int32_t>(target)));
   }
 };
 
@@ -1152,9 +1136,11 @@ const JSClass ThenableJob::class_ = {
     JSCLASS_HAS_RESERVED_SLOTS(ThenableJob::SlotCount),
 };
 
-ThenableJob* NewThenableJob(JSContext* cx, ThenableJob::TargetFunction target,
-                            HandleObject promise, HandleValue thenable,
-                            HandleObject then,
+// The routine a ThenableJob runs is chosen by the
+// js::MicroTaskQueueElement::Kind it is enqueued under, not by anything stored
+// on the job.
+ThenableJob* NewThenableJob(JSContext* cx, HandleObject promise,
+                            HandleValue thenable, HandleObject then,
                             HandleObject incumbentGlobalRepresentative,
                             HandleObject optionalHostDefinedData) {
   cx->check(optionalHostDefinedData);
@@ -1174,7 +1160,6 @@ ThenableJob* NewThenableJob(JSContext* cx, ThenableJob::TargetFunction target,
   job->initPromise(promise);
   job->initThen(then);
   job->initThenable(thenable);
-  job->initTargetFunction(target);
   job->initIncumbentGlobalRepresentative(
       ObjectOrNullValue(incumbentGlobalRepresentative));
   job->initOptionalHostDefinedData(ObjectOrNullValue(optionalHostDefinedData));
@@ -2962,9 +2947,9 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx,
     return false;
   }
 
-  ThenableJob* thenableJob = NewThenableJob(
-      cx, ThenableJob::PromiseResolveThenableJob, promise, thenable, then,
-      hostDefinedGlobalRepresentative, optionalHostDefinedData);
+  ThenableJob* thenableJob =
+      NewThenableJob(cx, promise, thenable, then,
+                     hostDefinedGlobalRepresentative, optionalHostDefinedData);
   if (!thenableJob) {
     return false;
   }
@@ -3006,8 +2991,7 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx,
 
   RootedField<Value, 2> thenableValue(roots, ObjectValue(*thenable));
   ThenableJob* thenableJob =
-      NewThenableJob(cx, ThenableJob::PromiseResolveBuiltinThenableJob,
-                     promiseToResolve, thenableValue, nullptr,
+      NewThenableJob(cx, promiseToResolve, thenableValue, nullptr,
                      incumbentGlobalRepresentative, optionalHostDefinedData);
   if (!thenableJob) {
     return false;
@@ -3132,9 +3116,9 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx,
   }
 
   RootedObject promiseObj(cx, promise);
-  ThenableJob* job = NewThenableJob(
-      cx, ThenableJob::DeferredResolveJob, promiseObj, resolution, nullptr,
-      incumbentGlobalRepresentative, optionalHostDefinedData);
+  ThenableJob* job =
+      NewThenableJob(cx, promiseObj, resolution, nullptr,
+                     incumbentGlobalRepresentative, optionalHostDefinedData);
   if (!job) {
     return false;
   }
@@ -8497,17 +8481,12 @@ bool JS::JSMicroTaskRef::run(JSContext* cx) && {
   switch (MicroTaskQueueElement::Kind(task_.kind())) {
     case MicroTaskQueueElement::Kind::PromiseReaction:
       MOZ_ASSERT(unwrappedTask->is<PromiseReactionRecord>());
-      // Note: We don't store a callback for promise reaction records because
-      // they always call back into PromiseReactionJob.
-      //
       // Note: We pass the (maybe)wrapped task here since PromiseReactionJob
       // will decide what realm to be in based on the wrapper if it exists.
       return PromiseReactionJob(cx, task);
 
     case MicroTaskQueueElement::Kind::ResolveThenable: {
       ThenableJob* job = &unwrappedTask->as<ThenableJob>();
-      MOZ_ASSERT(job->targetFunction() ==
-                 ThenableJob::PromiseResolveThenableJob);
       // MG:XXX: Note: Because we don't care about the result of these values
       // after the call, do these really have to be rooted (I don't think so?)
       RootedField<JSObject*, 2> promise(roots, job->promise());
@@ -8519,8 +8498,6 @@ bool JS::JSMicroTaskRef::run(JSContext* cx) && {
 
     case MicroTaskQueueElement::Kind::ResolveBuiltinThenable: {
       ThenableJob* job = &unwrappedTask->as<ThenableJob>();
-      MOZ_ASSERT(job->targetFunction() ==
-                 ThenableJob::PromiseResolveBuiltinThenableJob);
       RootedField<JSObject*, 2> promise(roots, job->promise());
       RootedField<JSObject*, 5> thenable(roots, &job->thenable().toObject());
       return PromiseResolveBuiltinThenableJob(cx, promise, thenable);
@@ -8528,7 +8505,6 @@ bool JS::JSMicroTaskRef::run(JSContext* cx) && {
 
     case MicroTaskQueueElement::Kind::DeferredResolve: {
       ThenableJob* job = &unwrappedTask->as<ThenableJob>();
-      MOZ_ASSERT(job->targetFunction() == ThenableJob::DeferredResolveJob);
       RootedField<PromiseObject*, 3> promise(
           roots, &job->promise()->as<PromiseObject>());
       RootedField<Value, 4> resolution(roots, job->thenable());
