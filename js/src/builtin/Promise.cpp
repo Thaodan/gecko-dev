@@ -1141,6 +1141,11 @@ class ThenableJob : public MicroTaskEntry {
   }
 };
 
+template <>
+inline bool JSObject::is<MicroTaskEntry>() const {
+  return is<ThenableJob>() || is<PromiseReactionRecord>();
+}
+
 const JSClass ThenableJob::class_ = {
     "ThenableJob",
     JSCLASS_HAS_RESERVED_SLOTS(ThenableJob::SlotCount),
@@ -1645,13 +1650,29 @@ static bool ResolvePromiseFunction(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-static bool EnqueueJob(JSContext* cx, JS::JSMicroTask* job) {
+// Get the profiler flow id for a (maybe wrapped) microtask object. Returns
+// false if the object is a dead wrapper, in which case the microtask won't run.
+static bool GetFlowIdFromJob(JSObject* job, uint64_t* uid) {
+  // The flow id must come from the target object rather than the wrapper, as
+  // callers may hand us a wrapper.
+  JSObject* unwrapped = UncheckedUnwrap(job);
+  if (JS_IsDeadWrapper(unwrapped)) {
+    return false;
+  }
+
+  MOZ_ASSERT(unwrapped->is<MicroTaskEntry>(), "Only use on JSMicroTasks");
+
+  *uid = js::gc::GetUniqueIdInfallible(unwrapped);
+  return true;
+}
+
+static bool EnqueueJob(JSContext* cx, JSObject* job) {
   MOZ_ASSERT(cx->realm());
   GeckoProfilerRuntime& profiler = cx->runtime()->geckoProfiler();
   if (MOZ_UNLIKELY(profiler.enabled())) {
     // Emit a flow start marker here.
     uint64_t uid = 0;
-    if (JS::GetFlowIdFromJSMicroTask(job, &uid)) {
+    if (GetFlowIdFromJob(job, &uid)) {
       profiler.markFlow("JS::EnqueueJob", uid,
                         JS::ProfilingCategoryPair::OTHER);
     }
@@ -1659,18 +1680,19 @@ static bool EnqueueJob(JSContext* cx, JS::JSMicroTask* job) {
 
   // Only check if we need to use the debug queue when we're not on main thread.
   if (MOZ_LIKELY(cx->runtime()->isMainRuntime())) {
-    return cx->microTaskQueues->enqueueRegularMicroTask(cx, ObjectValue(*job));
+    return cx->microTaskQueues->enqueueRegularMicroTask(
+        cx, MicroTaskQueueElement::Kind::JS, ObjectValue(*job));
   }
 
   // We need to root this job because useDebugQueue can GC.
-  Rooted<JS::JSMicroTask*> rootedJob(cx, job);
+  RootedObject rootedJob(cx, job);
   if (MOZ_UNLIKELY(cx->jobQueue->useDebugQueue(cx->global()))) {
-    return cx->microTaskQueues->enqueueDebugMicroTask(cx,
-                                                      ObjectValue(*rootedJob));
+    return cx->microTaskQueues->enqueueDebugMicroTask(
+        cx, MicroTaskQueueElement::Kind::JS, ObjectValue(*rootedJob));
   }
 
-  return cx->microTaskQueues->enqueueRegularMicroTask(cx,
-                                                      ObjectValue(*rootedJob));
+  return cx->microTaskQueues->enqueueRegularMicroTask(
+      cx, MicroTaskQueueElement::Kind::JS, ObjectValue(*rootedJob));
 }
 
 // This traces the paths in EnqueuePromiseReactionJobCrossRealm where you'd
@@ -8429,15 +8451,28 @@ void PromiseObject::dumpOwnStringContent(js::GenericPrinter& out) const {}
   return true;
 }
 
+JS_PUBLIC_API bool JS::RunJSMicroTask(JSContext* cx, Handle<MicroTask> task) {
+  return task.asJS().run(cx);
+}
+
 JS_PUBLIC_API bool JS::RunJSMicroTask(JSContext* cx,
-                                      Handle<JS::JSMicroTask*> entry) {
+                                      Handle<mozilla::Maybe<MicroTask>> task) {
+  if (task.get()) {
+    return task.get()->asJS().run(cx);
+  }
+  return false;
+}
+
+bool JS::JSMicroTaskRef::run(JSContext* cx) && {
 #ifdef DEBUG
-  JSObject* global = JS::GetExecutionGlobalFromJSMicroTask(entry);
+  JSObject* global = task_.asJS().executionGlobal();
   MOZ_ASSERT_IF(global, global == cx->global());
 #endif
 
-  RootedObject task(cx, entry);
-  RootedObject unwrappedTask(cx, UncheckedUnwrap(entry));
+  RootedTuple<JSObject*, JSObject*, JSObject*, PromiseObject*, Value, JSObject*>
+      roots(cx);
+  RootedField<JSObject*, 0> task(roots, maybeWrappedObject());
+  RootedField<JSObject*, 1> unwrappedTask(roots, UncheckedUnwrap(task));
   if (JS_IsDeadWrapper(unwrappedTask)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_DEAD_OBJECT);
     return false;
@@ -8458,24 +8493,24 @@ JS_PUBLIC_API bool JS::RunJSMicroTask(JSContext* cx,
 
     // MG:XXX: Note: Because we don't care about the result of these values
     // after the call, do these really have to be rooted (I don't think so?)
-    RootedTuple<JSObject*, Value, JSObject*, JSObject*> roots(cx);
-    RootedField<JSObject*, 0> promise(roots, job->promise());
-    RootedField<Value, 1> thenable(roots, job->thenable());
+    RootedField<JSObject*, 2> promise(roots, job->promise());
+    RootedField<Value, 4> thenable(roots, job->thenable());
 
     switch (target) {
       case ThenableJob::PromiseResolveThenableJob: {
         // MG:XXX: Unify naming: is it `then` or `handler` make up your mind.
-        RootedField<JSObject*, 3> then(roots, job->then());
+        RootedField<JSObject*, 5> then(roots, job->then());
         return PerformPromiseResolveThenable(cx, promise, thenable, then);
       }
       case ThenableJob::PromiseResolveBuiltinThenableJob: {
-        RootedField<JSObject*, 2> thenableObj(roots,
+        RootedField<JSObject*, 5> thenableObj(roots,
                                               &job->thenable().toObject());
         return PromiseResolveBuiltinThenableJob(cx, promise, thenableObj);
       }
       case ThenableJob::DeferredResolveJob: {
         MOZ_ASSERT(promise->is<PromiseObject>());
-        Rooted<PromiseObject*> promiseRooted(cx, &promise->as<PromiseObject>());
+        RootedField<PromiseObject*, 3> promiseRooted(
+            roots, &promise->as<PromiseObject>());
         if (promiseRooted->state() != JS::PromiseState::Pending) {
           return true;
         }
@@ -8490,14 +8525,9 @@ JS_PUBLIC_API bool JS::RunJSMicroTask(JSContext* cx,
   return false;
 }
 
-template <>
-inline bool JSObject::is<MicroTaskEntry>() const {
-  return is<ThenableJob>() || is<PromiseReactionRecord>();
-}
-
-JS_PUBLIC_API bool JS::MaybeGetAllocationSiteFromJSMicroTask(
-    JS::JSMicroTask* entry, MutableHandleObject out) {
-  JSObject* task = UncheckedUnwrap(entry);
+JS_PUBLIC_API bool JS::JSMicroTaskRef::maybeGetAllocationSite(
+    MutableHandleObject out) && {
+  JSObject* task = UncheckedUnwrap(maybeWrappedObject());
   if (JS_IsDeadWrapper(task)) {
     return false;
   };
@@ -8520,15 +8550,12 @@ JS_PUBLIC_API bool JS::MaybeGetAllocationSiteFromJSMicroTask(
   return true;
 }
 
-JS_PUBLIC_API bool JS::MaybeGetHostDefinedDataFromJSMicroTask(
-    JS::JSMicroTask* entry, MutableHandleObject incumbentGlobal,
-    MutableHandleObject optionalHostDefinedData) {
+JS_PUBLIC_API bool JS::JSMicroTaskRef::maybeGetHostDefinedData(
+    MutableHandleObject incumbentGlobal,
+    MutableHandleObject optionalHostDefinedData) && {
   incumbentGlobal.set(nullptr);
   optionalHostDefinedData.set(nullptr);
-  JSObject* task = CheckedUnwrapStatic(entry);
-  if (!task) {
-    return false;
-  }
+  JSObject* task = UncheckedUnwrap(maybeWrappedObject());
   if (JS_IsDeadWrapper(task)) {
     return false;
   }
@@ -8561,9 +8588,8 @@ JS_PUBLIC_API bool JS::MaybeGetHostDefinedDataFromJSMicroTask(
   return true;
 }
 
-JS_PUBLIC_API JSObject* JS::GetExecutionGlobalFromJSMicroTask(
-    JS::JSMicroTask* entry) {
-  JSObject* unwrapped = UncheckedUnwrap(entry);
+JS_PUBLIC_API JSObject* JS::JSMicroTaskRef::executionGlobal() && {
+  JSObject* unwrapped = UncheckedUnwrap(maybeWrappedObject());
   if (JS_IsDeadWrapper(unwrapped)) {
     return nullptr;
   }
@@ -8591,9 +8617,8 @@ JS_PUBLIC_API JSObject* JS::GetExecutionGlobalFromJSMicroTask(
   MOZ_CRASH("Somehow we lost the execution global");
 }
 
-JS_PUBLIC_API JSObject* JS::MaybeGetPromiseFromJSMicroTask(
-    JS::JSMicroTask* entry) {
-  JSObject* unwrapped = UncheckedUnwrap(entry);
+JS_PUBLIC_API JSObject* JS::JSMicroTaskRef::maybeGetPromise() && {
+  JSObject* unwrapped = UncheckedUnwrap(maybeWrappedObject());
   if (JS_IsDeadWrapper(unwrapped)) {
     return nullptr;
   }
@@ -8604,51 +8629,8 @@ JS_PUBLIC_API JSObject* JS::MaybeGetPromiseFromJSMicroTask(
   return nullptr;
 }
 
-JS_PUBLIC_API bool JS::GetFlowIdFromJSMicroTask(JS::JSMicroTask* entry,
-                                                uint64_t* uid) {
-  // We want to make sure we get the flow id from the target object
-  // not the wrapper.
-  JSObject* unwrapped = UncheckedUnwrap(entry);
-  if (JS_IsDeadWrapper(unwrapped)) {
-    return false;
-  }
-
-  MOZ_ASSERT(unwrapped->is<MicroTaskEntry>(), "Only use on JSMicroTasks");
-
-  *uid = js::gc::GetUniqueIdInfallible(unwrapped);
-  return true;
-}
-
-JS_PUBLIC_API JS::JSMicroTask* JS::ToUnwrappedJSMicroTask(
-    const JS::GenericMicroTask& genericMicroTask) {
-  if (!genericMicroTask.isObject()) {
-    return nullptr;
-  }
-
-  JSObject* unwrapped = UncheckedUnwrap(&genericMicroTask.toObject());
-
-  // On the off chance someone hands us a dead wrapper.
-  if (JS_IsDeadWrapper(unwrapped)) {
-    return nullptr;
-  }
-  if (!unwrapped->is<MicroTaskEntry>()) {
-    return nullptr;
-  }
-
-  return unwrapped;
-}
-
-JS_PUBLIC_API JS::JSMicroTask* JS::ToMaybeWrappedJSMicroTask(
-    const JS::GenericMicroTask& genericMicroTask) {
-  if (!genericMicroTask.isObject()) {
-    return nullptr;
-  }
-
-  return &genericMicroTask.toObject();
-}
-
-JS_PUBLIC_API bool JS::IsJSMicroTask(const JS::GenericMicroTask& hv) {
-  return JS::ToUnwrappedJSMicroTask(hv) != nullptr;
+JS_PUBLIC_API bool JS::JSMicroTaskRef::getFlowId(uint64_t* uid) && {
+  return GetFlowIdFromJob(maybeWrappedObject(), uid);
 }
 
 JS::AutoDebuggerJobQueueInterruption::AutoDebuggerJobQueueInterruption()

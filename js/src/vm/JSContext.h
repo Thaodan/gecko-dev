@@ -146,16 +146,33 @@ enum class ShouldCaptureStack { Maybe, Always };
 
 // A wrapper type to allow customization of tracing of
 // MicroTaskElements.
-struct MicroTaskQueueElement {
-  MOZ_IMPLICIT
-  MicroTaskQueueElement(const JS::Value& val) : value(val) {}
+class MicroTaskQueueElement {
+ public:
+  // Distinguishes microtasks enqueued by the JS engine from those enqueued by
+  // the embedder. This only identifies the task's origin; how a task is traced
+  // depends on whether its value is a GC thing, and is decided in one place for
+  // both the queue and rooted tasks (see JS::MicroTask::trace).
+  //
+  // JS::MicroTask::Kind is private so that embedders cannot construct a
+  // JS-kind task; MicroTask befriends this class to give the engine access.
+  using Kind = JS::MicroTask::Kind;
 
-  operator JS::Value() const { return value; }
+  // Arguments are forwarded to a JS::MicroTask constructor, so the task is
+  // built in place in the slot the queue allocated for this entry rather than
+  // copied from a temporary.
+  template <typename... Args>
+  explicit MicroTaskQueueElement(Kind kind, Args&&... args)
+      : microTask_(kind, std::forward<Args>(args)...) {}
+
+  explicit MicroTaskQueueElement(const JS::MicroTask& microTask)
+      : microTask_(microTask) {}
+
+  const JS::MicroTask& toMicroTask() const { return microTask_; }
 
   void trace(JSTracer* trc);
 
  private:
-  JS::Value value;
+  JS::MicroTask microTask_;
 };
 
 // Use TempAllocPolicy to report OOM
@@ -178,13 +195,17 @@ struct MicroTaskQueueSet {
   MicroTaskQueueSet(const MicroTaskQueueSet&) = delete;
   MicroTaskQueueSet& operator=(const MicroTaskQueueSet&) = delete;
 
-  bool enqueueRegularMicroTask(JSContext* cx, const JS::GenericMicroTask&);
-  bool enqueueDebugMicroTask(JSContext* cx, const JS::GenericMicroTask&);
-  bool prependRegularMicroTask(JSContext* cx, const JS::GenericMicroTask&);
+  bool enqueueRegularMicroTask(JSContext* cx, MicroTaskQueueElement::Kind,
+                               const JS::Value&);
+  bool enqueueRegularMicroTask(JSContext* cx, const JS::MicroTask&);
+  bool enqueueDebugMicroTask(JSContext* cx, MicroTaskQueueElement::Kind,
+                             const JS::Value&);
+  bool enqueueDebugMicroTask(JSContext* cx, const JS::MicroTask&);
+  bool prependRegularMicroTask(JSContext* cx, const JS::MicroTask&);
 
-  JS::GenericMicroTask popFront();
-  JS::GenericMicroTask popDebugFront();
-  JS::GenericMicroTask peekFront();
+  mozilla::Maybe<JS::MicroTask> popFront();
+  mozilla::Maybe<JS::MicroTask> popDebugFront();
+  mozilla::Maybe<JS::MicroTask> peekFront();
 
   bool empty() { return microTaskQueue.empty() && debugMicroTaskQueue.empty(); }
 
