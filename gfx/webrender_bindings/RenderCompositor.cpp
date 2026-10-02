@@ -243,7 +243,7 @@ UniquePtr<RenderCompositor> RenderCompositor::Create(
 #if defined(MOZ_WAYLAND)
   if (gfx::gfxVars::UseWebRenderCompositor() &&
       aWidget->GetCompositorOptions().AllowNativeCompositor()) {
-    if (StaticPrefs::gfx_webrender_layer_compositor_AtStartup()) {
+    if (StaticPrefs::gfx_webrender_layer_compositor()) {
       return RenderCompositorLayerNativeOGL::Create(aWidget, aError);
     } else {
       return RenderCompositorNativeOGL::Create(aWidget, aError);
@@ -265,7 +265,7 @@ UniquePtr<RenderCompositor> RenderCompositor::Create(
 #elif defined(XP_DARWIN)
   if (gfx::gfxVars::UseWebRenderCompositor() &&
       aWidget->GetCompositorOptions().AllowNativeCompositor()) {
-    if (StaticPrefs::gfx_webrender_layer_compositor_AtStartup()) {
+    if (StaticPrefs::gfx_webrender_layer_compositor()) {
       UniquePtr<RenderCompositor> compositor =
           RenderCompositorLayerNativeOGL::Create(aWidget, aError);
       if (compositor) {
