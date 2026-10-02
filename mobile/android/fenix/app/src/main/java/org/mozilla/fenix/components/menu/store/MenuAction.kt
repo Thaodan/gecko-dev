@@ -168,6 +168,17 @@ sealed class MenuAction : MenuEvent {
      */
     data object OnExtensionsMenuClicked : MenuAction()
 
+    /**
+     * [MenuAction] dispatched when the user clicks what an extension offers for the current page.
+     *
+     * @property extensionId The id of the extension owning the clicked action.
+     * @property isPageAction Whether the clicked action is a page action, as opposed to a browser action.
+     */
+    data class WebExtensionActionClicked(
+        val extensionId: String,
+        val isPageAction: Boolean,
+    ) : MenuAction()
+
     /** [MenuAction] dispatched when the user asks to save the current webpage content as a PDF. */
     data object SaveAsPdfRequested : MenuAction()
 

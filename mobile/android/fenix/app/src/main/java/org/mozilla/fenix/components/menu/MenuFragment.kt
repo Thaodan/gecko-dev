@@ -251,6 +251,7 @@ class MenuFragment : BottomSheetDialogFragment() {
                     context = requireContext().applicationContext,
                     browserStore = requireComponents.core.store,
                     addonManager = requireComponents.addonManager,
+                    viewLifecycleScope = viewLifecycleOwner.lifecycle.coroutineScope,
                     applicationScope = requireComponents.applicationScope,
                 )
             is FenixMenuItem.More ->

@@ -15,16 +15,20 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.state.WebExtensionState
+import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.menu.data.ExpandableMenuItem
 import mozilla.components.compose.menu.data.MenuItem
 import mozilla.components.compose.menu.data.MenuItemActionButton
+import mozilla.components.compose.menu.data.MenuItemBadge
 import mozilla.components.compose.menu.data.MenuItemSummary
 import mozilla.components.compose.menu.data.StandardMenuItem
 import mozilla.components.compose.menu.ui.MenuItemIconDrawable
 import mozilla.components.compose.menu.ui.MenuItemIconRes
 import mozilla.components.compose.menu.ui.MenuItemState
+import mozilla.components.concept.engine.webextension.Action
 import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.addons.AddonManager
 import mozilla.components.feature.addons.AddonManagerException
@@ -40,17 +44,29 @@ class ExtensionsMenuItemProviderTest {
     private val addonManager: AddonManager = mockk { coEvery { getAddons() } returns emptyList() }
 
     @Test
-    fun `GIVEN extensions are installed WHEN building the menu item THEN include them and an option for managing extensions`() =
+    fun `GIVEN extensions offer something for the current page WHEN building the menu item THEN list what they offer`() =
         runTest {
             coEvery { addonManager.getAddons() } returns listOf(addon(INSTALLED_ID, installed = true, enabled = true))
 
-            val item = resolvedItem() as ExpandableMenuItem
+            val item = resolvedItem(browserStoreWith(extension(INSTALLED_ID))) as ExpandableMenuItem
 
             assertEquals(Text.Resource(R.string.browser_menu_extensions), item.title)
+            assertEquals(MenuItemSummary(text = Text.String(ACTION_TITLE)), item.summary)
             assertEquals(Text.String("1"), item.actionButtonText)
             assertEquals(2, item.subMenuItems.size)
-            assertEquals(Text.String(INSTALLED_ID), item.subMenuItems.first().title)
             assertEquals(MenuAction.Navigate.ManageExtensions, item.subMenuItems.last().onClickEvent)
+
+            val extensionItem = item.subMenuItems.first()
+            assertEquals(Text.String(ACTION_TITLE), extensionItem.title)
+            assertEquals(MenuItemBadge(text = Text.String(BADGE_TEXT)), extensionItem.badge)
+            assertEquals(
+                MenuAction.WebExtensionActionClicked(extensionId = INSTALLED_ID, isPageAction = false),
+                extensionItem.onClickEvent,
+            )
+            assertEquals(
+                MenuAction.Navigate.InstalledAddonDetails(addon(INSTALLED_ID, installed = true, enabled = true)),
+                extensionItem.actionButton?.onClickEvent,
+            )
         }
 
     @Test
@@ -68,11 +84,9 @@ class ExtensionsMenuItemProviderTest {
         }
 
     @Test
-    fun `GIVEN every installed extension is disabled WHEN building the menu item THEN still allow managing them`() =
+    fun `GIVEN the installed extensions offer nothing for the current page WHEN building the menu item THEN still allow managing them`() =
         runTest {
             coEvery { addonManager.getAddons() } returns listOf(addon(INSTALLED_ID, installed = true, enabled = false))
-
-            val item = resolvedItem()
 
             assertEquals(
                 StandardMenuItem(
@@ -91,26 +105,27 @@ class ExtensionsMenuItemProviderTest {
                             showDivider = true,
                         ),
                 ),
-                item,
+                resolvedItem(),
             )
         }
 
     @Test
     fun `GIVEN the extensions process is disabled WHEN building the menu item THEN warn about it`() = runTest {
-        coEvery { addonManager.getAddons() } returns listOf(addon(INSTALLED_ID, installed = true))
+        val browserStore = browserStoreWith(extension(INSTALLED_ID), isExtensionsProcessDisabled = true)
 
-        val item = resolvedItem(browserStore = BrowserStore(BrowserState(extensionsProcessDisabled = true)))
+        val item = resolvedItem(browserStore) as StandardMenuItem
 
-        assertEquals(Text.Resource(R.string.browser_menu_extensions), item?.title)
+        assertEquals(Text.Resource(R.string.browser_menu_extensions), item.title)
         assertEquals(
             MenuItemSummary(
                 text = Text.Resource(R.string.browser_menu_extensions_disabled_description),
                 state = MenuItemState.DISABLED,
             ),
-            item?.summary,
+            item.summary,
         )
+        assertEquals(MenuAction.Navigate.ManageExtensions, item.onClickEvent)
         // The icon warning about this is multicolored, which only a drawable is shown as it is, without a tint.
-        assertTrue(item?.icon is MenuItemIconDrawable)
+        assertTrue(item.icon is MenuItemIconDrawable)
         // Only that icon warns about it, the item itself is not colored as a warning.
         assertEquals(MenuItemState.DEFAULT, item.state)
     }
@@ -125,9 +140,9 @@ class ExtensionsMenuItemProviderTest {
         assertEquals(MenuAction.Navigate.DiscoverMoreExtensions, item.subMenuItems.single().onClickEvent)
     }
 
-    /** The menu item once the extensions were read. */
+    /** The menu item once everything known about the extensions was read and applied to it. */
     @OptIn(ExperimentalCoroutinesApi::class)
-    private fun TestScope.resolvedItem(browserStore: BrowserStore = BrowserStore(BrowserState())): MenuItem? {
+    private fun TestScope.resolvedItem(browserStore: BrowserStore = browserStoreWith()): MenuItem? {
         val provider = provider(browserStore)
 
         runCurrent()
@@ -135,12 +150,45 @@ class ExtensionsMenuItemProviderTest {
         return provider.itemFlow.value
     }
 
-    private fun TestScope.provider(browserStore: BrowserStore = BrowserStore(BrowserState())) =
+    private fun TestScope.provider(browserStore: BrowserStore = browserStoreWith()) =
         ExtensionsMenuItemProvider(
             context = testContext,
             browserStore = browserStore,
             addonManager = addonManager,
+            // Both are scopes that runTest runs and then cancels at the end of each test.
+            viewLifecycleScope = backgroundScope,
             applicationScope = backgroundScope,
+        )
+
+    private fun browserStoreWith(
+        vararg extensions: WebExtensionState,
+        isExtensionsProcessDisabled: Boolean = false,
+    ) =
+        BrowserStore(
+            BrowserState(
+                tabs = listOf(createTab(url = "https://mozilla.org", id = TAB_ID)),
+                selectedTabId = TAB_ID,
+                extensions = extensions.associateBy { it.id },
+                extensionsProcessDisabled = isExtensionsProcessDisabled,
+            )
+        )
+
+    private fun extension(id: String) =
+        WebExtensionState(
+            id = id,
+            url = "url",
+            name = id,
+            enabled = true,
+            browserAction =
+                Action(
+                    title = ACTION_TITLE,
+                    enabled = true,
+                    loadIcon = null,
+                    badgeText = BADGE_TEXT,
+                    badgeTextColor = null,
+                    badgeBackgroundColor = null,
+                    onClick = {},
+                ),
         )
 
     private fun addon(
@@ -160,5 +208,8 @@ class ExtensionsMenuItemProviderTest {
     private companion object {
         const val INSTALLED_ID = "installed"
         const val RECOMMENDED_ID = "recommended"
+        const val TAB_ID = "tab1"
+        const val ACTION_TITLE = "uBlock Origin (0)"
+        const val BADGE_TEXT = "3"
     }
 }

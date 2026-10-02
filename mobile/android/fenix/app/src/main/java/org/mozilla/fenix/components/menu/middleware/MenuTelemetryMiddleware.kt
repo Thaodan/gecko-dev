@@ -202,6 +202,12 @@ class MenuTelemetryMiddleware<S : State, A : Action>(private val accessPoint: Me
                 Events.browserMenuAction.record(Events.BrowserMenuActionExtra(item = "installed_addon_details"))
             }
 
+            is MenuAction.WebExtensionActionClicked -> {
+                Events.browserMenuAction.record(
+                    Events.BrowserMenuActionExtra(item = "web_extension_browser_action_clicked")
+                )
+            }
+
             is MenuAction.Navigate.WebCompatReporter -> {
                 Events.browserMenuAction.record(Events.BrowserMenuActionExtra(item = "report_broken_site"))
             }

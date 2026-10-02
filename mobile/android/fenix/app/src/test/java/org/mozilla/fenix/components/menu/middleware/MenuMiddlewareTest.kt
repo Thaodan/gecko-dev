@@ -24,6 +24,7 @@ import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,6 +35,7 @@ import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.ContentState
 import mozilla.components.browser.state.state.EngineState
 import mozilla.components.browser.state.state.TabSessionState
+import mozilla.components.browser.state.state.WebExtensionState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.state.extension.WebExtensionPromptRequest
 import mozilla.components.browser.state.store.BrowserStore
@@ -47,6 +49,7 @@ import mozilla.components.compose.menu.store.MenuStore
 import mozilla.components.compose.menu.ui.MenuItemIconRes
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.ipprotection.ServiceState
+import mozilla.components.concept.engine.webextension.Action
 import mozilla.components.concept.engine.webextension.InstallationMethod.MANAGER
 import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.app.links.AppLinkRedirect
@@ -472,6 +475,29 @@ class MenuMiddlewareTest {
             verify(exactly = 0) { navController.popBackStack(R.id.menuFragment, true) }
             assertNull(browserStore.state.webExtensionPromptRequest)
         }
+
+    @Test
+    fun `WHEN handling a click on what an extension offers THEN dismiss the menu and let the extension handle it`() {
+        var wasClicked = false
+        val store =
+            createStore(
+                browserStore = browserStoreWithExtension(browserAction = webExtensionAction { wasClicked = true })
+            )
+
+        store.dispatch(MenuAction.WebExtensionActionClicked(extensionId = EXTENSION_ID, isPageAction = false))
+
+        verify { navController.popBackStack(R.id.menuFragment, true) }
+        assertTrue(wasClicked)
+    }
+
+    @Test
+    fun `GIVEN an extension no longer offers anything WHEN handling a click on what it offered THEN keep the menu open`() {
+        val store = createStore()
+
+        store.dispatch(MenuAction.WebExtensionActionClicked(extensionId = EXTENSION_ID, isPageAction = false))
+
+        verify(exactly = 0) { navController.popBackStack(R.id.menuFragment, true) }
+    }
 
     @Test
     fun `WHEN handling moving the current tab to normal tabs THEN dismiss the menu and migrate the tab`() {
@@ -1106,6 +1132,36 @@ class MenuMiddlewareTest {
             )
         )
 
+    private fun browserStoreWithExtension(browserAction: Action) =
+        BrowserStore(
+            BrowserState(
+                tabs = listOf(createTab(url = TEST_URL, title = TEST_TITLE, id = TAB_ID)),
+                selectedTabId = TAB_ID,
+                extensions =
+                    mapOf(
+                        EXTENSION_ID to
+                            WebExtensionState(
+                                id = EXTENSION_ID,
+                                url = "url",
+                                name = "extension",
+                                enabled = true,
+                                browserAction = browserAction,
+                            )
+                    ),
+            )
+        )
+
+    private fun webExtensionAction(onClick: () -> Unit) =
+        Action(
+            title = "extension action",
+            enabled = true,
+            loadIcon = null,
+            badgeText = null,
+            badgeTextColor = null,
+            badgeBackgroundColor = null,
+            onClick = onClick,
+        )
+
     private fun ipProtectionStore(proxyStatus: ProxyStatus): IPProtectionStore = mockk {
         every { state } returns IPProtectionState(proxyStatus = proxyStatus)
         every { dispatch(any()) } just Runs
@@ -1159,6 +1215,7 @@ class MenuMiddlewareTest {
         const val TEST_TITLE = "Mozilla"
         const val TAB_ID = "tab1"
         const val TOP_SITES_MAX_LIMIT = 16
+        const val EXTENSION_ID = "extensionId"
 
         val otherShortcut = TopSite.Pinned(id = 2, title = "Example", url = "https://example.org", createdAt = 0)
 

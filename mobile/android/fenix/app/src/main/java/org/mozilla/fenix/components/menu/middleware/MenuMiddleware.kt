@@ -37,6 +37,7 @@ import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Vpn
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
+import org.mozilla.fenix.addons.findWebExtensionMenuAction
 import org.mozilla.fenix.collections.SaveCollectionStep
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.UseCases
@@ -64,6 +65,7 @@ import org.mozilla.fenix.components.menu.store.MenuAction.RemoveShortcut
 import org.mozilla.fenix.components.menu.store.MenuAction.RequestDesktopSite
 import org.mozilla.fenix.components.menu.store.MenuAction.RequestMobileSite
 import org.mozilla.fenix.components.menu.store.MenuAction.SaveAsPdfRequested
+import org.mozilla.fenix.components.menu.store.MenuAction.WebExtensionActionClicked
 import org.mozilla.fenix.components.menu.toMenuState
 import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.components.share.ShareSource
@@ -168,6 +170,8 @@ class MenuMiddleware(
 
             is Navigate.ManageExtensions -> navigate(NavGraphDirections.actionGlobalAddonsManagementFragment())
 
+            is WebExtensionActionClicked -> handleWebExtensionActionClicked(action)
+
             is Navigate.DiscoverMoreExtensions -> {
                 dismissMenu()
                 navController.openToBrowser()
@@ -270,6 +274,21 @@ class MenuMiddleware(
             IPProtectionMenuStatus.DataLimitReached,
             IPProtectionMenuStatus.ConnectionError -> ipProtectionStore.dispatch(IPProtectionAction.Toggle)
         }
+    }
+
+    /**
+     * What an extension does when the user clicks what it offers is up to it, so the menu gets out of the way first.
+     * The action is resolved as late as possible - what the extension shows may have changed since the menu was built.
+     */
+    private fun handleWebExtensionActionClicked(action: WebExtensionActionClicked) {
+        val extensionAction =
+            browserStore.state.findWebExtensionMenuAction(
+                extensionId = action.extensionId,
+                isPageAction = action.isPageAction,
+            ) ?: return
+
+        dismissMenu()
+        extensionAction.onClick()
     }
 
     private fun installAddon(addon: Addon, addonName: String?) {

@@ -54,7 +54,8 @@ private fun reducer(state: MenuState, action: MenuAction): MenuState {
         is MenuAction.IPProtectionToggle,
         is MenuAction.SaveAsPdfRequested,
         is MenuAction.PrintRequested,
-        is MenuAction.OnExtensionsMenuClicked -> state
+        is MenuAction.OnExtensionsMenuClicked,
+        is MenuAction.WebExtensionActionClicked -> state
 
         is MenuAction.OnMoreMenuClicked -> state.copy(isMoreMenuExpanded = !state.isMoreMenuExpanded)
         is MenuAction.RequestDesktopSite -> state.copy(isDesktopMode = true)
