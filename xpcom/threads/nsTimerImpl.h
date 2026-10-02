@@ -119,9 +119,6 @@ class nsTimerImpl {
            mType == nsITimer::TYPE_REPEATING_SLACK_LOW_PRIORITY;
   }
 
-  // How much later than its deadline this timer accepts to fire.
-  mozilla::TimeDuration AcceptableFiringDelay() const MOZ_REQUIRES(mMutex);
-
   // Caution: Only call this when you hold TimerThread's monitor!
   bool IsInTimerThread() const { return mIsInTimerThread; }
 
