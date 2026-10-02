@@ -153,8 +153,15 @@ class MicroTaskQueueElement {
   enum class Kind : uint8_t {
     Embedder = JS::MicroTask::Kind::Embedder,
 
-    // No special case handling in the engine.
-    DefaultJSTask = JS::MicroTask::Kind::FirstJSKind,
+    // A PromiseReactionRecord, run by PromiseReactionJob.
+    PromiseReaction = JS::MicroTask::Kind::FirstJSKind,
+
+    // A ThenableJob; the kind selects which resolution routine it runs.
+    ResolveThenable,
+    ResolveBuiltinThenable,
+    // Used by JS::SafeResolve: runs PerformPromiseResolution on the job's
+    // promise with the resolution value stored in the Thenable slot.
+    DeferredResolve,
 
     // New task kinds go here.
 

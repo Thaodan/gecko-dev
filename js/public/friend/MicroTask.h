@@ -141,6 +141,11 @@ class MicroTask {
   friend class JSMicroTaskRef;
   friend class js::MicroTaskQueueElement;
 
+  // This kind accessor returns the raw uint8_t kind; this is because the
+  // engine provides its own semantics (and names) to the kinds from
+  // FirstJSKind to EndJSKind
+  uint8_t kind() const { return kind_; }
+
   // Distinguishes microtasks enqueued by the JS engine from those enqueued by
   // the embedder.
   //
