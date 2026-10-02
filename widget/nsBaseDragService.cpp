@@ -35,6 +35,7 @@
 #include "nsCOMPtr.h"
 #include "nsFrameLoader.h"
 #include "nsFrameLoaderOwner.h"
+#include "nsGlobalWindowInner.h"
 #include "nsIContent.h"
 #include "nsIContentInlines.h"
 #include "nsIFrame.h"
@@ -756,6 +757,8 @@ nsresult nsBaseDragSession::EndDragSessionImpl(bool aDoneDrag,
   if (aDoneDrag && !GetSuppressLevel()) {
     FireDragEventAtSource(eDragEnd, aKeyModifiers);
   }
+
+  nsGlobalWindowInner::MouseButtonReleased();
 
   if (mDragPopup) {
     nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
