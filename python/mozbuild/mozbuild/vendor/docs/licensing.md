@@ -187,7 +187,7 @@ The output is CycloneDX JSON. Useful arguments:
 
 ### What Becomes a Component
 
-Components come from three sources, because none alone covers the tree:
+Components come from four sources, because none alone covers the tree:
 
 - **`moz.yaml` manifests** give a name, an upstream version and revision, a
   description, upstream URLs and a Bugzilla component, but only exist for
@@ -206,6 +206,18 @@ Components come from three sources, because none alone covers the tree:
   document; expressing them as CycloneDX `scope` is the obvious next step.
   They need the objdir's generated cargo config, so an unconfigured tree
   collects nothing and says so.
+- **The npm lockfiles of the bundled front-end code** describe what webpack
+  folds into the newtab, aboutwelcome and asrouter bundles: React, Redux,
+  Fluent and their closures. These packages leave no directory of their own,
+  so nothing else in the tree describes them. Each becomes a component with a
+  `pkg:npm` package URL, the SHA-512 the registry publishes for the tarball,
+  the license the package declares and the package-to-package edges.
+
+  Only the runtime closure is reported, not the webpack and babel toolchain
+  that makes up most of a lockfile. The lockfiles are an allowlist in
+  `sbom_npm.py`, with `third_party/node` standing for newtab, whose bundles
+  are built from its `node_modules`.
+
 - **`LICENSES` declarations** cover everything else: one component per notice
   whose paths no manifest or crate already covers, carrying the notice id and
   the SPDX expression where one is known.
@@ -225,15 +237,29 @@ attributed path is represented.
 
 Each component's `bom-ref` is the topsrcdir-relative path it was derived from —
 the manifest's directory, or `third_party/rust/<crate>` — and
-`license:<notice-id>` for a component that came from a notice alone.
+`license:<notice-id>` for a component that came from a notice alone. A bundled
+npm package has no directory, so it is `npm:<name>@<version>`: the version is
+part of the identity because a package can ship at several versions at once.
 
-Package URLs are `pkg:cargo` for crates, and `pkg:github` or `pkg:gitlab` where
-a manifest's upstream repository is recognised, since `pkg:generic` matches
+Package URLs are `pkg:cargo` for crates, `pkg:npm` for anything a lockfile or
+an `npm-name` declaration identifies, and `pkg:github` or `pkg:gitlab` where a
+manifest's upstream repository is recognised, since `pkg:generic` matches
 nothing in OSV.dev or the GitHub Advisory Database; everything else keeps the
 upstream repository in a `vcs_url` qualifier. A notice-derived component gets
 no package URL at all: it is a set of files in our own tree, not a package any
 ecosystem can resolve, and a `pkg:generic/<basename>` would match nothing while
 looking like it might.
+
+A vendored library that is also published on npm says so in its `moz.yaml`:
+
+```yaml
+origin:
+  npm-name: "@quartzy/prosemirror-suggestions"
+```
+
+The name is declared because nothing else in the tree gives it reliably. A
+vendored `package.json` decides the version; a name there that disagrees
+leaves the purl alone and records `moz:npm.name-mismatch`.
 
 A notice-derived component records the files it covers as CycloneDX
 `evidence.occurrences`, one entry per path, rather than as one sibling
@@ -241,7 +267,8 @@ component per file: thirty files under one notice are one piece of third-party
 code, and splitting them would bury the real libraries.
 
 `dependencies` is a real graph wherever something knows one. The crates depend
-on each other as `Cargo.lock` says, and everything no other component depends
+on each other as `Cargo.lock` says, the npm packages as their lockfiles do,
+and everything no other component depends
 on hangs off the root, so a viewer that draws the graph — CycloneDX Sunshine,
 for instance — shows the crate tree rather than one flat ring of siblings.
 
@@ -257,6 +284,12 @@ Metadata CycloneDX has no field for is recorded as `moz:`-prefixed properties:
 | `moz:vendoring.source-hosting`, `moz:vendoring.vendor-directory` | `vendoring` fields |
 | `moz:license.notice-ids` | The `about:license` notices covering this component |
 | `moz:cargo.source`, `moz:cargo.license-file` | For components derived from `Cargo.lock` |
+| `moz:npm.manifests` | The lockfiles that pull in an npm component |
+| `moz:npm.name`, `moz:npm.version` | The registry name a vendored library declares, and the version resolving it, where `mach vendor` tracks a git revision instead |
+| `moz:npm.name-mismatch` | The declared `npm-name` disagrees with the vendored `package.json`; the purl was left alone |
+| `moz:npm.unresolved-dependencies` | Dependencies the lockfile names but does not resolve |
+| `moz:npm.package-json-unreadable` | The checked-in `package.json` the license or version comes from could not be read |
+| `moz:npm.integrity-unreadable` | The lockfile's integrity string, where it could not be converted to a hash |
 | `moz:license.conjunction` | `unspecified` where a manifest declares several licenses; `moz.yaml` has no `AND`/`OR` operator, so the SBOM records the ambiguity rather than inventing a legal fact |
 | `moz:source.revision` | On the root component |
 
