@@ -18,6 +18,7 @@
 #include "js/Prefs.h"                 // JS::Prefs
 #include "js/PropertySpec.h"
 #include "js/Stack.h"
+#include "js/Wrapper.h"
 #include "vm/ArrayObject.h"
 #include "vm/AsyncFunction.h"
 #include "vm/AsyncIteration.h"
@@ -1666,7 +1667,8 @@ static bool GetFlowIdFromJob(JSObject* job, uint64_t* uid) {
   return true;
 }
 
-static bool EnqueueJob(JSContext* cx, JSObject* job) {
+static bool EnqueueJob(JSContext* cx, MicroTaskQueueElement::Kind kind,
+                       JSObject* job) {
   MOZ_ASSERT(cx->realm());
   GeckoProfilerRuntime& profiler = cx->runtime()->geckoProfiler();
   if (MOZ_UNLIKELY(profiler.enabled())) {
@@ -1680,19 +1682,19 @@ static bool EnqueueJob(JSContext* cx, JSObject* job) {
 
   // Only check if we need to use the debug queue when we're not on main thread.
   if (MOZ_LIKELY(cx->runtime()->isMainRuntime())) {
-    return cx->microTaskQueues->enqueueRegularMicroTask(
-        cx, MicroTaskQueueElement::Kind::JS, ObjectValue(*job));
+    return cx->microTaskQueues->enqueueRegularMicroTask(cx, kind,
+                                                        ObjectValue(*job));
   }
 
   // We need to root this job because useDebugQueue can GC.
   RootedObject rootedJob(cx, job);
   if (MOZ_UNLIKELY(cx->jobQueue->useDebugQueue(cx->global()))) {
-    return cx->microTaskQueues->enqueueDebugMicroTask(
-        cx, MicroTaskQueueElement::Kind::JS, ObjectValue(*rootedJob));
+    return cx->microTaskQueues->enqueueDebugMicroTask(cx, kind,
+                                                      ObjectValue(*rootedJob));
   }
 
-  return cx->microTaskQueues->enqueueRegularMicroTask(
-      cx, MicroTaskQueueElement::Kind::JS, ObjectValue(*rootedJob));
+  return cx->microTaskQueues->enqueueRegularMicroTask(cx, kind,
+                                                      ObjectValue(*rootedJob));
 }
 
 // This traces the paths in EnqueuePromiseReactionJobCrossRealm where you'd
@@ -1958,7 +1960,8 @@ static bool CanUseSameRealmEnqueue(JSContext* cx, HandleObject reactionObj,
   }
 
   // HostEnqueuePromiseJob(job.[[Job]], job.[[Realm]]).
-  return EnqueueJob(cx, &reactionVal.toObject());
+  return EnqueueJob(cx, MicroTaskQueueElement::Kind::DefaultJSTask,
+                    &reactionVal.toObject());
 }
 
 // A specialization of EnqueuePromiseReactionJobCrossRealm for very common
@@ -2021,7 +2024,8 @@ static bool CanUseSameRealmEnqueue(JSContext* cx, HandleObject reactionObj,
   reaction->setEnqueueGlobalRepresentative(globalRepresentative);
 
   // HostEnqueuePromiseJob(job.[[Job]], job.[[Realm]]).
-  return EnqueueJob(cx, reaction);
+  return EnqueueJob(cx, MicroTaskQueueElement::Kind::DefaultJSTask,
+                    reaction.get());
 }
 
 [[nodiscard]] static bool TriggerPromiseReactions(JSContext* cx,
@@ -2965,7 +2969,8 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx,
     return false;
   }
 
-  return EnqueueJob(cx, thenableJob);
+  return EnqueueJob(cx, MicroTaskQueueElement::Kind::DefaultJSTask,
+                    thenableJob);
 }
 
 /**
@@ -3008,7 +3013,8 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx,
     return false;
   }
 
-  return EnqueueJob(cx, thenableJob);
+  return EnqueueJob(cx, MicroTaskQueueElement::Kind::DefaultJSTask,
+                    thenableJob);
 }
 
 /**
@@ -3133,7 +3139,7 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx,
     return false;
   }
 
-  return EnqueueJob(cx, job);
+  return EnqueueJob(cx, MicroTaskQueueElement::Kind::DefaultJSTask, job);
 }
 
 /**

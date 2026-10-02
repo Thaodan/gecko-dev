@@ -1022,13 +1022,6 @@ mozilla::Maybe<JS::MicroTask> js::MicroTaskQueueSet::peekFront() {
 }
 
 bool js::MicroTaskQueueSet::enqueueRegularMicroTask(
-    JSContext* cx, MicroTaskQueueElement::Kind kind, const JS::Value& entry) {
-  JS_LOG(mtq, Verbose, "JS: Enqueue Regular MT");
-  JS::JobQueueMayNotBeEmpty(cx);
-  return microTaskQueue.emplaceBack(kind, entry);
-}
-
-bool js::MicroTaskQueueSet::enqueueRegularMicroTask(
     JSContext* cx, const JS::MicroTask& entry) {
   JS_LOG(mtq, Verbose, "JS: Enqueue Regular MT");
   JS::JobQueueMayNotBeEmpty(cx);
@@ -1040,12 +1033,6 @@ bool js::MicroTaskQueueSet::prependRegularMicroTask(
   JS_LOG(mtq, Verbose, "JS: Prepend Regular MT");
   JS::JobQueueMayNotBeEmpty(cx);
   return microTaskQueue.emplaceFront(entry);
-}
-
-bool js::MicroTaskQueueSet::enqueueDebugMicroTask(
-    JSContext* cx, MicroTaskQueueElement::Kind kind, const JS::Value& entry) {
-  JS_LOG(mtq, Verbose, "JS: Enqueue Debug MT");
-  return debugMicroTaskQueue.emplaceBack(kind, entry);
 }
 
 bool js::MicroTaskQueueSet::enqueueDebugMicroTask(JSContext* cx,

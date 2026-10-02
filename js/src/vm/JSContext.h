@@ -148,21 +148,32 @@ enum class ShouldCaptureStack { Maybe, Always };
 // MicroTaskElements.
 class MicroTaskQueueElement {
  public:
-  // Distinguishes microtasks enqueued by the JS engine from those enqueued by
-  // the embedder. This only identifies the task's origin; how a task is traced
-  // depends on whether its value is a GC thing, and is decided in one place for
-  // both the queue and rooted tasks (see JS::MicroTask::trace).
-  //
-  // JS::MicroTask::Kind is private so that embedders cannot construct a
-  // JS-kind task; MicroTask befriends this class to give the engine access.
-  using Kind = JS::MicroTask::Kind;
+  // This is distinct from the JS::MicroTask::Kind, as we add more
+  // internal allowable kinds between FirstJSKind and EndJSKind
+  enum class Kind : uint8_t {
+    Embedder = JS::MicroTask::Kind::Embedder,
+
+    // No special case handling in the engine.
+    DefaultJSTask = JS::MicroTask::Kind::FirstJSKind,
+
+    // New task kinds go here.
+
+    // LastQueueElementKind gets auto incremented as we add new kinds
+    // and powers the below static assert that ensures we
+    // don't blow our kind allocation.
+    LastQueueElementKind
+  };
+
+  static_assert(static_cast<uint8_t>(Kind::LastQueueElementKind) <
+                JS::MicroTask::Kind::EndJSKind);
 
   // Arguments are forwarded to a JS::MicroTask constructor, so the task is
   // built in place in the slot the queue allocated for this entry rather than
   // copied from a temporary.
   template <typename... Args>
   explicit MicroTaskQueueElement(Kind kind, Args&&... args)
-      : microTask_(kind, std::forward<Args>(args)...) {}
+      : microTask_(static_cast<JS::MicroTask::Kind>(kind),
+                   std::forward<Args>(args)...) {}
 
   explicit MicroTaskQueueElement(const JS::MicroTask& microTask)
       : microTask_(microTask) {}
@@ -195,12 +206,23 @@ struct MicroTaskQueueSet {
   MicroTaskQueueSet(const MicroTaskQueueSet&) = delete;
   MicroTaskQueueSet& operator=(const MicroTaskQueueSet&) = delete;
 
-  bool enqueueRegularMicroTask(JSContext* cx, MicroTaskQueueElement::Kind,
-                               const JS::Value&);
+  template <typename... Args>
+  bool enqueueRegularMicroTask(JSContext* cx, MicroTaskQueueElement::Kind kind,
+                               Args&&... args) {
+    JS_LOG(mtq, Verbose, "JS: Enqueue Regular MT");
+    JS::JobQueueMayNotBeEmpty(cx);
+    return microTaskQueue.emplaceBack(kind, std::forward<Args>(args)...);
+  }
   bool enqueueRegularMicroTask(JSContext* cx, const JS::MicroTask&);
-  bool enqueueDebugMicroTask(JSContext* cx, MicroTaskQueueElement::Kind,
-                             const JS::Value&);
+
+  template <typename... Args>
+  bool enqueueDebugMicroTask(JSContext* cx, MicroTaskQueueElement::Kind kind,
+                             Args&&... args) {
+    JS_LOG(mtq, Verbose, "JS: Enqueue Debug MT");
+    return debugMicroTaskQueue.emplaceBack(kind, std::forward<Args>(args)...);
+  }
   bool enqueueDebugMicroTask(JSContext* cx, const JS::MicroTask&);
+
   bool prependRegularMicroTask(JSContext* cx, const JS::MicroTask&);
 
   mozilla::Maybe<JS::MicroTask> popFront();
