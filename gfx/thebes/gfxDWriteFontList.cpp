@@ -244,9 +244,8 @@ void gfxDWriteFontFamily::FindStyleVariationsLocked(
     mFaceNamesInitialized = true;
   }
 
-  if (!mAvailableFonts.Length()) {
-    NS_WARNING("Family with no font faces in it.");
-  }
+  NS_WARNING_ASSERTION(mAvailableFonts.Length(),
+                       "Family with no font faces in it.");
 
   if (mIsBadUnderlineFamily) {
     SetBadUnderlineFonts();
@@ -1071,15 +1070,15 @@ already_AddRefed<gfxFontEntry> gfxDWriteFontList::MakePlatformFont(
   HRESULT hr = gfxDWriteFontFileLoader::CreateCustomFontFile(
       aFontData, getter_AddRefs(fontFile), getter_AddRefs(fontFileStream));
 
-  NS_ASSERTION(SUCCEEDED(hr), "Failed to create font file reference");
   if (FAILED(hr)) {
+    NS_ERROR("Failed to create font file reference");
     return nullptr;
   }
 
   nsAutoCString uniqueName;
   nsresult rv = gfxFontUtils::MakeUniqueUserFontName(uniqueName);
-  NS_ASSERTION(NS_SUCCEEDED(rv), "Failed to make unique user font name");
   if (NS_FAILED(rv)) {
+    NS_ERROR("Failed to make unique user font name");
     return nullptr;
   }
 
@@ -1092,17 +1091,17 @@ already_AddRefed<gfxFontEntry> gfxDWriteFontList::MakePlatformFont(
                                                 aWidthForEntry, aStyleForEntry);
 
   hr = fontFile->Analyze(&isSupported, &fileType, &entry->mFaceType, &numFaces);
-  NS_ASSERTION(SUCCEEDED(hr), "IDWriteFontFile::Analyze failed");
   if (FAILED(hr)) {
+    NS_ERROR("IDWriteFontFile::Analyze failed");
     return nullptr;
   }
-  NS_ASSERTION(isSupported, "Unsupported font file");
   if (!isSupported) {
+    NS_ERROR("Unsupported font file");
     return nullptr;
   }
-  NS_ASSERTION(numFaces == 1, "Font file does not contain exactly 1 face");
   if (numFaces != 1) {
     // We don't know how to deal with 0 faces either.
+    NS_ERROR("Font file does not contain exactly 1 face");
     return nullptr;
   }
 
@@ -1664,13 +1663,14 @@ void gfxDWriteFontList::InitSharedFontListForPlatform() {
   mNonExistingFonts.Clear();
 
   mSystemFonts = Factory::GetDWriteSystemFonts(true);
-  NS_ASSERTION(mSystemFonts != nullptr, "GetSystemFontCollection failed!");
   if (!mSystemFonts) {
+    NS_ERROR("GetSystemFontCollection failed!");
     glean::fontlist::dwritefont_init_problem.AccumulateSingleSample(
         uint32_t(errSystemFontCollection));
     delete mSharedFontList.exchange(nullptr);
     return;
   }
+
 #ifdef MOZ_BUNDLED_FONTS
   // We activate bundled fonts if the pref is > 0 (on) or < 0 (auto), only an
   // explicit value of 0 (off) will disable them.
@@ -1739,9 +1739,8 @@ nsresult gfxDWriteFontList::InitFontListForPlatform() {
   mNonExistingFonts.Clear();
 
   mSystemFonts = Factory::GetDWriteSystemFonts(true);
-  NS_ASSERTION(mSystemFonts != nullptr, "GetSystemFontCollection failed!");
-
   if (!mSystemFonts) {
+    NS_ERROR("GetSystemFontCollection failed!");
     glean::fontlist::dwritefont_init_problem.AccumulateSingleSample(
         uint32_t(errSystemFontCollection));
     return NS_ERROR_FAILURE;
@@ -1764,16 +1763,15 @@ nsresult gfxDWriteFontList::InitFontListForPlatform() {
         std::move(timerId));
   }
 #endif
-  const uint32_t kBundledCount = mFontFamilies.Count();
 
   QueryPerformanceCounter(&t2);  // system font collection
 
-  GetFontsFromCollection(mSystemFonts);
+  const uint32_t kBundledCount = mFontFamilies.Count();
 
-  // if no fonts found, something is out of whack, bail and use GDI backend
-  NS_ASSERTION(mFontFamilies.Count() > kBundledCount,
-               "no fonts found in the system fontlist -- holy crap batman!");
+  GetFontsFromCollection(mSystemFonts);
   if (mFontFamilies.Count() == kBundledCount) {
+    // If no fonts are found, something is out of whack, so bail.
+    NS_ERROR("no fonts found in the system fontlist -- holy crap batman!");
     glean::fontlist::dwritefont_init_problem.AccumulateSingleSample(
         uint32_t(errNoFonts));
     return NS_ERROR_FAILURE;
