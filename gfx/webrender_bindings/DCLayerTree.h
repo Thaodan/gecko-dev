@@ -149,7 +149,6 @@ class DCLayerTree {
   void MaybeCommit();
   void WaitForCommitCompletion();
 
-  bool UseCompositor() const;
   bool UseLayerCompositor() const;
   void DisableNativeCompositor();
   bool EnableAsyncScreenshot();
@@ -228,11 +227,7 @@ class DCLayerTree {
   void ReleaseNativeCompositorResources();
   layers::OverlayInfo GetOverlayInfo();
 
-  enum class WebRenderOsCompositorKind {
-    LayerCompositor,
-  };
-
-  Maybe<WebRenderOsCompositorKind> mCompositorKind;
+  bool mUseLayerCompositor = false;
   bool mEnableAsyncScreenshot = false;
   bool mEnableAsyncScreenshotInNextFrame = false;
   int mAsyncScreenshotLastFrameUsed = 0;
