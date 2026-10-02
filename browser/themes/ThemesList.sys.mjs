@@ -82,10 +82,7 @@ const FIREFOX_THEMES_LIST = [
         type: "gradient",
         value: "linear-gradient(90deg, #F9F5E6 0%, #FDE8B5 60%, #FBCC77 100%)",
       },
-      dark: {
-        type: "gradient",
-        value: "linear-gradient(90deg, #5F3100 0%, #3E1D00 60%, #270F00 100%)",
-      },
+      dark: { type: "color", value: "#270F00" },
     },
     themePreviewColors: {
       light: { text: "#270F00", icons: "#5F3100", activeTabStroke: "#F3A81E" },
