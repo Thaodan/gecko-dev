@@ -2114,8 +2114,7 @@ static const FontSubstitution sDirectWriteSubs[] = {
     {"Script", "Mistral"}};
 
 void gfxDWriteFontList::GetDirectWriteSubstitutes() {
-  for (uint32_t i = 0; i < std::size(sDirectWriteSubs); ++i) {
-    const FontSubstitution& sub(sDirectWriteSubs[i]);
+  for (const auto& sub : sDirectWriteSubs) {
     nsAutoCString substituteName(sub.aliasName);
     BuildKeyNameFromFontName(substituteName);
     if (SharedFontList()) {
@@ -2633,15 +2632,16 @@ class BundledFontFileEnumerator : public IDWriteFontFileEnumerator {
  public:
   BundledFontFileEnumerator(IDWriteFactory* aFactory, nsIFile* aFontDir);
 
+  BundledFontFileEnumerator() = delete;
+  BundledFontFileEnumerator(const BundledFontFileEnumerator&) = delete;
+  BundledFontFileEnumerator& operator=(const BundledFontFileEnumerator&) =
+      delete;
+
   IFACEMETHODIMP MoveNext(BOOL* hasCurrentFile);
 
   IFACEMETHODIMP GetCurrentFontFile(IDWriteFontFile** fontFile);
 
  private:
-  BundledFontFileEnumerator() = delete;
-  BundledFontFileEnumerator(const BundledFontFileEnumerator&) = delete;
-  BundledFontFileEnumerator& operator=(const BundledFontFileEnumerator&) =
-      delete;
   virtual ~BundledFontFileEnumerator() = default;
 
   RefPtr<IDWriteFactory> mFactory;
@@ -2693,14 +2693,15 @@ class BundledFontLoader : public IDWriteFontCollectionLoader {
  public:
   BundledFontLoader() = default;
 
+  BundledFontLoader(const BundledFontLoader&) = delete;
+  BundledFontLoader& operator=(const BundledFontLoader&) = delete;
+
   IFACEMETHODIMP CreateEnumeratorFromKey(
       IDWriteFactory* aFactory, const void* aCollectionKey,
       UINT32 aCollectionKeySize,
       IDWriteFontFileEnumerator** aFontFileEnumerator);
 
  private:
-  BundledFontLoader(const BundledFontLoader&) = delete;
-  BundledFontLoader& operator=(const BundledFontLoader&) = delete;
   virtual ~BundledFontLoader() = default;
 };
 
