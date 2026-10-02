@@ -32,6 +32,11 @@ import mozilla.components.feature.top.sites.PinnedSiteStorage
 import mozilla.components.feature.top.sites.TopSite
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
+import mozilla.components.service.fxa.manager.AccountState.Authenticated
+import mozilla.components.service.fxa.manager.AccountState.Authenticating
+import mozilla.components.service.fxa.manager.AccountState.AuthenticationProblem
+import mozilla.components.service.fxa.manager.AccountState.NotAuthenticated
+import mozilla.components.service.fxa.manager.AccountState.Unknown
 import mozilla.components.ui.widgets.withCenterAlignedButtons
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Vpn
@@ -66,6 +71,7 @@ import org.mozilla.fenix.components.menu.store.MenuAction.RequestDesktopSite
 import org.mozilla.fenix.components.menu.store.MenuAction.RequestMobileSite
 import org.mozilla.fenix.components.menu.store.MenuAction.SaveAsPdfRequested
 import org.mozilla.fenix.components.menu.store.MenuAction.WebExtensionActionClicked
+import org.mozilla.fenix.components.menu.toFenixFxAEntryPoint
 import org.mozilla.fenix.components.menu.toMenuState
 import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.components.share.ShareSource
@@ -233,6 +239,8 @@ class MenuMiddleware(
                 dismissMenu()
                 useCases.sessionUseCases.printContent(browserStore.state.selectedTabId)
             }
+
+            is Navigate.MozillaAccount -> navigateToMozillaAccount(action)
 
             is Navigate.Back -> handleBackNavigation(action)
 
@@ -458,6 +466,25 @@ class MenuMiddleware(
         navigate(
             NavGraphDirections.actionGlobalIpProtectionFragment(entrypoint = FenixFxAEntryPoint.IPProtectionMainMenu)
         )
+    }
+
+    private fun navigateToMozillaAccount(action: Navigate.MozillaAccount) {
+        val directions =
+            when (action.accountState) {
+                Authenticated -> MenuFragmentDirections.actionGlobalAccountSettingsFragment()
+                AuthenticationProblem ->
+                    MenuFragmentDirections.actionGlobalAccountProblemFragment(
+                        entrypoint = action.accesspoint.toFenixFxAEntryPoint()
+                    )
+                is Authenticating,
+                NotAuthenticated,
+                Unknown ->
+                    MenuFragmentDirections.actionGlobalTurnOnSync(
+                        entrypoint = action.accesspoint.toFenixFxAEntryPoint()
+                    )
+            }
+
+        navigate(directions)
     }
 
     private fun handleMoreBeingClicked(store: Store<MenuState, MenuAction>) {

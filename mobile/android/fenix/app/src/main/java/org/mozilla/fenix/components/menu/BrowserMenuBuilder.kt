@@ -24,6 +24,7 @@ import org.mozilla.fenix.components.menu.FenixMenuItem.Forward
 import org.mozilla.fenix.components.menu.FenixMenuItem.IPProtection
 import org.mozilla.fenix.components.menu.FenixMenuItem.More
 import org.mozilla.fenix.components.menu.FenixMenuItem.MoveToNormalTabs
+import org.mozilla.fenix.components.menu.FenixMenuItem.MozillaAccount
 import org.mozilla.fenix.components.menu.FenixMenuItem.OpenInApp
 import org.mozilla.fenix.components.menu.FenixMenuItem.Print
 import org.mozilla.fenix.components.menu.FenixMenuItem.Refresh
@@ -117,6 +118,7 @@ class BrowserMenuBuilder(
         @VisibleForTesting internal val BROWSER_MENU_GROUP_1_ID = "browser_group_1"
         @VisibleForTesting internal val BROWSER_MENU_GROUP_2_ID = "browser_group_2"
         @VisibleForTesting internal val BROWSER_MENU_GROUP_3_ID = "browser_group_3"
+        @VisibleForTesting internal val BROWSER_MENU_GROUP_4_ID = "browser_group_4"
 
         @VisibleForTesting
         internal fun buildDefaultConfiguration(
@@ -166,6 +168,11 @@ class BrowserMenuBuilder(
                                     )
                                 ),
                             ),
+                    ),
+                    MenuSectionConfiguration(
+                        id = BROWSER_MENU_GROUP_4_ID,
+                        presentationMode = Row,
+                        items = listOf(MozillaAccount),
                     ),
                 )
             return if (isToolbarAtBottom || isExpandedToolbarEnabled) rest + navSection else listOf(navSection) + rest

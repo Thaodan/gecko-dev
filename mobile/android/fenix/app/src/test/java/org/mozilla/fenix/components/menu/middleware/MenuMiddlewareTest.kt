@@ -65,6 +65,9 @@ import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.feature.top.sites.PinnedSiteStorage
 import mozilla.components.feature.top.sites.TopSite
 import mozilla.components.feature.top.sites.TopSitesUseCases
+import mozilla.components.service.fxa.manager.AccountState.Authenticated
+import mozilla.components.service.fxa.manager.AccountState.AuthenticationProblem
+import mozilla.components.service.fxa.manager.AccountState.NotAuthenticated
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Rule
 import org.junit.Test
@@ -84,6 +87,7 @@ import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.bookmarks.BookmarksUseCase
 import org.mozilla.fenix.components.menu.BrowserMenuBuilder
 import org.mozilla.fenix.components.menu.FenixMenuItem.CustomizeReaderView
+import org.mozilla.fenix.components.menu.MenuAccessPoint
 import org.mozilla.fenix.components.menu.MenuFragmentDirections
 import org.mozilla.fenix.components.menu.MenuItemProvider
 import org.mozilla.fenix.components.menu.MenuPresentationMode.Row
@@ -957,6 +961,47 @@ class MenuMiddlewareTest {
         verify {
             navController.popBackStack(R.id.menuFragment, true)
             printContentUseCase(tabId = TAB_ID)
+        }
+    }
+
+    @Test
+    fun `GIVEN someone is signed in WHEN handling a click on their account THEN open the account settings`() {
+        val store = createStore()
+
+        store.dispatch(Navigate.MozillaAccount(accountState = Authenticated, accesspoint = MenuAccessPoint.Browser))
+
+        verify { navController.navigate(MenuFragmentDirections.actionGlobalAccountSettingsFragment(), null) }
+    }
+
+    @Test
+    fun `GIVEN the account needs signing in again WHEN handling a click on it THEN offer signing in`() {
+        val store = createStore()
+
+        store.dispatch(
+            Navigate.MozillaAccount(accountState = AuthenticationProblem, accesspoint = MenuAccessPoint.Browser)
+        )
+
+        verify {
+            navController.navigate(
+                MenuFragmentDirections.actionGlobalAccountProblemFragment(
+                    entrypoint = FenixFxAEntryPoint.BrowserToolbar
+                ),
+                null,
+            )
+        }
+    }
+
+    @Test
+    fun `GIVEN nobody is signed in WHEN handling a click on the account item THEN offer signing in`() {
+        val store = createStore()
+
+        store.dispatch(Navigate.MozillaAccount(accountState = NotAuthenticated, accesspoint = MenuAccessPoint.Browser))
+
+        verify {
+            navController.navigate(
+                MenuFragmentDirections.actionGlobalTurnOnSync(entrypoint = FenixFxAEntryPoint.BrowserToolbar),
+                null,
+            )
         }
     }
 

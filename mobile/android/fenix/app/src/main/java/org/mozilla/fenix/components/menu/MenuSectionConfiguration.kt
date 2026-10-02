@@ -68,6 +68,9 @@ sealed interface FenixMenuItem {
     /** A menu item allowing to print the current webpage. */
     data object Print : FenixMenuItem
 
+    /** A menu item allowing to sign in or manage the current Mozilla account. */
+    data object MozillaAccount : FenixMenuItem
+
     /** A menu item allowing to navigate back. */
     data object Back : FenixMenuItem
 

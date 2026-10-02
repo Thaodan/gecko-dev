@@ -58,6 +58,7 @@ import org.mozilla.fenix.browser.menu.MoveToNormalTabsMenuItemProvider
 import org.mozilla.fenix.browser.readermode.ReaderViewMenuItemProvider
 import org.mozilla.fenix.collections.SaveToCollectionMenuItemProvider
 import org.mozilla.fenix.components.FindInPageMenuItemProvider
+import org.mozilla.fenix.components.accounts.MozillaAccountMenuItemProvider
 import org.mozilla.fenix.components.menu.compose.MenuDialogBottomSheet
 import org.mozilla.fenix.components.menu.compose.MenuHandleState
 import org.mozilla.fenix.components.menu.middleware.MenuMiddleware
@@ -333,6 +334,14 @@ class MenuFragment : BottomSheetDialogFragment() {
             FenixMenuItem.SaveAsPdf -> SaveAsPdfMenuItemProvider()
             FenixMenuItem.Print ->
                 PrintMenuItemProvider(isAndroidAutomotiveAvailable = requireContext().isAndroidAutomotiveAvailable())
+            FenixMenuItem.MozillaAccount ->
+                MozillaAccountMenuItemProvider(
+                    syncStore = requireComponents.backgroundServices.syncStore,
+                    httpClient = requireComponents.core.client,
+                    context = requireContext(),
+                    accessPoint = MenuAccessPoint.Browser,
+                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                )
         }
     }
 
