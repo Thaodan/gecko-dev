@@ -227,6 +227,12 @@ Components come from four sources, because none alone covers the tree:
   dependencies nor which are test-only. Each module becomes a `pkg:maven`
   component with its artifact's SHA-256, its POM's licenses and its edges.
 
+  Fenix is built by Gradle alone, in its own tasks, so its nightly, beta and
+  release APK builds publish a separate `public/build/sbom.json`:
+  `mach sbom --gradle-runtime-dependencies` describes the variant's runtime
+  closure, in which GeckoView is a single component whose own SBOM describes
+  its contents.
+
 - **`LICENSES` declarations** cover everything else: one component per notice
   whose paths no manifest or crate already covers, carrying the notice id and
   the SPDX expression where one is known.

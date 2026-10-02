@@ -21,6 +21,7 @@ import org.gradle.api.provider.SetProperty
 import org.gradle.api.specs.Spec
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
@@ -35,6 +36,11 @@ abstract class WriteRuntimeDependencies : DefaultTask() {
 
     @get:Internal
     abstract val artifacts: SetProperty<ResolvedArtifactResult>
+
+    /** The product's version, which the SBOM records, where it has one. */
+    @get:Input
+    @get:Optional
+    abstract val versionName: Property<String>
 
     @get:OutputFile
     abstract val outputFile: RegularFileProperty
@@ -95,9 +101,11 @@ abstract class WriteRuntimeDependencies : DefaultTask() {
             )
         }
 
-        outputFile.get().asFile.writeText(
-            JsonOutput.prettyPrint(JsonOutput.toJson(mapOf("components" to components.values.toList()))),
+        val document = mapOf(
+            "version" to versionName.orNull,
+            "components" to components.values.toList(),
         )
+        outputFile.get().asFile.writeText(JsonOutput.prettyPrint(JsonOutput.toJson(document)))
     }
 
     private fun key(id: ModuleComponentIdentifier) = "${id.group}:${id.module}:${id.version}"

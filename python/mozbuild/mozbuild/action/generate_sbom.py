@@ -18,6 +18,80 @@ class SbomError(Exception):
     """A condition that must not silently shrink the document."""
 
 
+def _source_revision_and_time(repo):
+    from mozbuild.vendor.sbom_cyclonedx import utc_timestamp
+
+    # head_rev, not head_ref: the latter is a branch name under git, which
+    # would make the BOM serial number move with the branch.
+    source_revision = repo.head_rev
+
+    # Default to the head commit time rather than the wall clock, so that two
+    # runs over the same checkout produce byte-identical output.
+    # SOURCE_DATE_EPOCH wins where release engineering sets it.
+    source_date_epoch = os.environ.get("SOURCE_DATE_EPOCH")
+    if source_date_epoch:
+        try:
+            commit_time = int(source_date_epoch)
+        except ValueError:
+            raise SbomError(
+                "SOURCE_DATE_EPOCH must be an integer number of seconds since "
+                f"the epoch, not {source_date_epoch!r}."
+            )
+    else:
+        # A source tarball has no VCS, so no commit time to fall back on.
+        commit_time = repo.get_commit_time() or 0
+    return source_revision, utc_timestamp(commit_time)
+
+
+def _serialize(records, version, repo, log, **bom_arguments):
+    """Sort the records and return the CycloneDX document as a JSON string."""
+    from mozbuild.vendor.sbom_cyclonedx import build_bom, to_json
+
+    source_revision, timestamp = _source_revision_and_time(repo)
+    unrecognized = []
+    records.sort(key=lambda record: record["bom_ref"])
+    document = to_json(
+        build_bom(
+            records,
+            version,
+            source_revision,
+            timestamp,
+            unrecognized=unrecognized,
+            **bom_arguments,
+        )
+    )
+    if unrecognized:
+        log(
+            f"{len(unrecognized)} license value(s) are neither an SPDX id nor "
+            "an expression and are recorded as free text: "
+            f"{', '.join(sorted(set(unrecognized)))}."
+        )
+    return document
+
+
+def build_gradle_document(
+    runtime_dependencies, repo, product_name, version=None, log=None
+):
+    """Return the SBOM of a Gradle application's runtime closure as a JSON string."""
+    from mozbuild.vendor.sbom_gradle import GradleSbomError, gradle_records
+
+    log = log or (lambda message: None)
+    try:
+        records, edges, gradle_version = gradle_records(runtime_dependencies)
+    except GradleSbomError as error:
+        raise SbomError(str(error))
+
+    version = version or gradle_version
+    if not version:
+        raise SbomError(f"{runtime_dependencies} names no version; pass one.")
+
+    document = _serialize(
+        records, version, repo, log, product_name=product_name, dependencies=edges
+    )
+    log(f"{len(records)} Maven packages in {product_name} {version}.")
+    return document
+
+
 def build_document(
     topsrcdir,
     topobjdir,
@@ -43,7 +117,6 @@ def build_document(
         unattached_notices,
     )
     from mozbuild.vendor.sbom_cargo import collect_dependency_kinds, crate_records
-    from mozbuild.vendor.sbom_cyclonedx import build_bom, to_json, utc_timestamp
     from mozbuild.vendor.sbom_gradle import (
         RUNTIME_DEPENDENCIES,
         GradleSbomError,
@@ -101,7 +174,7 @@ def build_document(
     maven = []
     if substs.get("MOZ_BUILD_APP") == "mobile/android":
         try:
-            maven, maven_edges = gradle_records(
+            maven, maven_edges, _ = gradle_records(
                 os.path.join(topobjdir, RUNTIME_DEPENDENCIES)
             )
         except GradleSbomError as error:
@@ -151,48 +224,15 @@ def build_document(
         ) as version_file:
             version = version_file.read().strip()
 
-    # head_rev, not head_ref: the latter is a branch name under git, which
-    # would make the BOM serial number move with the branch.
-    source_revision = repo.head_rev
-
-    # Default to the head commit time rather than the wall clock, so that two
-    # runs over the same checkout produce byte-identical output.
-    # SOURCE_DATE_EPOCH wins where release engineering sets it.
-    source_date_epoch = os.environ.get("SOURCE_DATE_EPOCH")
-    if source_date_epoch:
-        try:
-            commit_time = int(source_date_epoch)
-        except ValueError:
-            raise SbomError(
-                "SOURCE_DATE_EPOCH must be an integer number of seconds since "
-                f"the epoch, not {source_date_epoch!r}."
-            )
-    else:
-        # A source tarball has no VCS, so no commit time to fall back on.
-        commit_time = repo.get_commit_time() or 0
-    timestamp = utc_timestamp(commit_time)
-
-    unrecognized = []
-    records.sort(key=lambda record: record["bom_ref"])
-
-    bom = build_bom(
+    document = _serialize(
         records,
         version,
-        source_revision,
-        timestamp,
-        product_notices,
+        repo,
+        log,
+        product_notices=product_notices,
         product_name=product_name,
         dependencies=dependencies,
-        unrecognized=unrecognized,
     )
-    document = to_json(bom)
-
-    if unrecognized:
-        log(
-            f"{len(unrecognized)} license value(s) are neither an SPDX id nor "
-            "an expression and are recorded as free text: "
-            f"{', '.join(sorted(set(unrecognized)))}."
-        )
     log(
         f"{len(records)} components ({len(crates)} crates, "
         f"{len(packages)} npm packages, {len(maven)} Maven packages, "
@@ -210,23 +250,44 @@ def generate(
     version=None,
     product_name=None,
     strict=False,
+    gradle_runtime_dependencies=None,
 ):
-    """Write the SBOM to ``output``, or to stdout. Returns a process exit code."""
+    """Write the SBOM to ``output``, or to stdout. Returns a process exit code.
+
+    With ``gradle_runtime_dependencies``, the document describes that Gradle
+    application rather than the tree.
+    """
 
     def log(message):
         print(message, file=sys.stderr)
 
     try:
-        document = build_document(
-            topsrcdir,
-            topobjdir,
-            repo,
-            substs=substs,
-            version=version,
-            product_name=product_name,
-            strict=strict,
-            log=log,
-        )
+        if gradle_runtime_dependencies:
+            if strict:
+                raise SbomError(
+                    "--strict applies to the tree's manifests, which a Gradle "
+                    "application's SBOM does not read."
+                )
+            if not product_name:
+                raise SbomError("A Gradle application's SBOM needs a product name.")
+            document = build_gradle_document(
+                gradle_runtime_dependencies,
+                repo,
+                product_name,
+                version=version,
+                log=log,
+            )
+        else:
+            document = build_document(
+                topsrcdir,
+                topobjdir,
+                repo,
+                substs=substs,
+                version=version,
+                product_name=product_name,
+                strict=strict,
+                log=log,
+            )
     except SbomError as error:
         log(str(error))
         return 1
