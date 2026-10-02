@@ -1346,38 +1346,6 @@ static bool intrinsic_CopyDataPropertiesUnfiltered(JSContext* cx, unsigned argc,
   return true;
 }
 
-static bool intrinsic_CopyDataPropertiesOrGetOwnKeys(JSContext* cx,
-                                                     unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  MOZ_ASSERT(args.length() == 3);
-  MOZ_ASSERT(args[0].isObject());
-  MOZ_ASSERT(args[1].isObject());
-  MOZ_ASSERT(args[2].isObjectOrNull());
-
-  RootedObject target(cx, &args[0].toObject());
-  RootedObject from(cx, &args[1].toObject());
-  RootedObject excludedItems(cx, args[2].toObjectOrNull());
-
-  if (from->is<NativeObject>() && target->is<PlainObject>() &&
-      (!excludedItems || excludedItems->is<PlainObject>())) {
-    bool optimized;
-    if (!CopyDataPropertiesNative(
-            cx, target.as<PlainObject>(), from.as<NativeObject>(),
-            (excludedItems ? excludedItems.as<PlainObject>() : nullptr),
-            &optimized)) {
-      return false;
-    }
-
-    if (optimized) {
-      args.rval().setNull();
-      return true;
-    }
-  }
-
-  return GetOwnPropertyKeys(
-      cx, from, JSITER_OWNONLY | JSITER_HIDDEN | JSITER_SYMBOLS, args.rval());
-}
-
 static bool intrinsic_NewWrapForValidIterator(JSContext* cx, unsigned argc,
                                               Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -1575,8 +1543,6 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_FN("ConstructFunction", intrinsic_ConstructFunction, 2, 0),
     JS_FN("ConstructorForTypedArray", intrinsic_ConstructorForTypedArray, 1, 0),
     JS_FN("CopyDataProperties", intrinsic_CopyDataProperties, 3, 0),
-    JS_FN("CopyDataPropertiesOrGetOwnKeys",
-          intrinsic_CopyDataPropertiesOrGetOwnKeys, 3, 0),
     JS_FN("CopyDataPropertiesUnfiltered",
           intrinsic_CopyDataPropertiesUnfiltered, 2, 0),
     JS_FN("CreateAsyncFromSyncIterator", intrinsic_CreateAsyncFromSyncIterator,
@@ -1812,7 +1778,6 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_INLINABLE_FN("std_Object_create", obj_create, 2, 0, ObjectCreate),
     JS_INLINABLE_FN("std_Object_isPrototypeOf", obj_isPrototypeOf, 1, 0,
                     ObjectIsPrototypeOf),
-    JS_FN("std_Object_propertyIsEnumerable", obj_propertyIsEnumerable, 1, 0),
     JS_FN("std_Object_setProto", obj_setProto, 1, 0),
     JS_INLINABLE_FN("std_Object_toString", obj_toString, 0, 0, ObjectToString),
     JS_INLINABLE_FN("std_Reflect_getPrototypeOf", Reflect_getPrototypeOf, 1, 0,
