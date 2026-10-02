@@ -31,6 +31,7 @@ nontechnical-overview
 overview
 lifetime
 process-boundary
+message-path
 utilities
 telemetry
 firefox-suggest-telemetry
