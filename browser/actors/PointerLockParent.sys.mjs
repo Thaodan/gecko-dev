@@ -8,8 +8,7 @@ export class PointerLockParent extends JSWindowActorParent {
     switch (message.name) {
       case "PointerLock:Entered": {
         browser.documentGlobal.PointerLock.entered(
-          this.manager.browsingContext.top.currentWindowGlobal.documentPrincipal
-            .originNoSuffix
+          this.manager.documentPrincipal.originNoSuffix
         );
         break;
       }
