@@ -1408,18 +1408,14 @@ CSSIntSize nsImageLoadingContent::NaturalSize(
   CSSIntSize size;  // defaults to 0,0
   size.width = intrinsicSize.mWidth.valueOr(kFallbackIntrinsicWidthInPixels);
 
-  bool isUsingFallbackHeight;
-  if (intrinsicSize.mHeight) {
-    size.height = *intrinsicSize.mHeight;
-    isUsingFallbackHeight = false;
-  } else {
-    size.height = kFallbackIntrinsicHeightInPixels;
-    isUsingFallbackHeight = true;
-  }
+  // Use intrinsicSize.mHeight, if it exists; otherwise, use fallback height.
+  bool isUsingFallbackHeight = !intrinsicSize.mHeight;
+  size.height = isUsingFallbackHeight ? kFallbackIntrinsicHeightInPixels
+                                      : CSSIntCoord(*intrinsicSize.mHeight);
 
   AspectRatio ratio = image->GetIntrinsicRatio();
   if (ratio) {
-    if (!intrinsicSize.mHeight) {
+    if (isUsingFallbackHeight) {
       // Compute the height from the width & ratio.  (Note that the width we
       // use here might be kFallbackIntrinsicWidthInPixels, and that's fine.)
       size.height = ratio.Inverted().ApplyTo(size.width);
