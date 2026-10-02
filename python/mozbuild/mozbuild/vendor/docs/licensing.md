@@ -204,12 +204,13 @@ Components come from four sources, because none alone covers the tree:
   they are Firefox's own crates, not third-party code.
 
   `cargo metadata` supplies what `Cargo.lock` cannot: whether each crate is
-  reached as a normal, a build or a dev dependency. Fifteen crates today are
-  test-only, `mockall` and `expect-test` among them, and ship in nothing. The
-  kinds are collected and reported on stderr but not yet written to the
-  document; expressing them as CycloneDX `scope` is the obvious next step.
-  They need the objdir's generated cargo config, so an unconfigured tree
-  collects nothing and says so.
+  reached as a normal, a build or a dev dependency. What only a dev
+  dependency or a `TOOLING_MEMBERS` member (`sbom_cargo.py`: geckodriver, the
+  http3server, the uniffi bindgens...) reaches, `mockall` or `hyper` for
+  instance, ships in nothing and goes to the
+  {ref}`build tooling document <build_tooling_sbom>`. A member missing from
+  that list counts as shipped. An unconfigured tree has no kinds, so it keeps
+  every crate in the product document.
 - **The npm lockfiles of the bundled front-end code** describe what webpack
   folds into the newtab, aboutwelcome and asrouter bundles: React, Redux,
   Fluent and their closures. These packages leave no directory of their own,
@@ -373,6 +374,10 @@ It holds:
   `pnpm-lock.yaml` the closure of `devDependencies` less anything a runtime
   dependency already reaches. A package that both ship and build use is
   described by the product document only.
+- **The test and tooling crates**, reached from the workspace only as dev
+  dependencies or from a `TOOLING_MEMBERS` member, which the product document
+  leaves out. Telling them apart needs `cargo metadata`, so an unconfigured
+  tree has none here.
 - **The vendored Python packages**, which mach, the build system and the test
   harnesses run on. `third_party/python/uv.lock` gives the version, the
   `pkg:pypi` package URL, the SHA-256 of the archive `mach vendor python`

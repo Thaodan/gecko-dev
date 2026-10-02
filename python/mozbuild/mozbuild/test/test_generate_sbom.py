@@ -6,6 +6,7 @@ import json
 import os
 import tempfile
 import unittest
+from unittest import mock
 
 import yaml
 from mozpack.files import FileFinder
@@ -17,6 +18,7 @@ from mozbuild.action.generate_sbom import (
     build_tooling_document,
     generate,
 )
+from mozbuild.vendor.sbom_cyclonedx import ROOT_BOM_REF
 from mozbuild.vendor.sbom_gradle import RUNTIME_DEPENDENCIES
 
 PACKAGE_LOCK = {
@@ -48,6 +50,29 @@ MOZ_YAML = {
 }
 
 
+CARGO_LOCK = """
+version = 4
+
+[[package]]
+name = "gkrust"
+version = "0.1.0"
+dependencies = ["serde", "hyper"]
+
+[[package]]
+name = "serde"
+version = "1.0.200"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "hyper"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = ["serde"]
+"""
+
+KINDS = {("serde", "1.0.200"): ["normal", "tooling"], ("hyper", "1.0.0"): ["tooling"]}
+
+
 class Repo:
     head_rev = "0" * 40
 
@@ -75,6 +100,13 @@ class TestBuildDocument(unittest.TestCase):
             "third_party/js/PKI.js/package.json",
             json.dumps({"name": "pkijs", "version": "3.2.4"}),
         )
+        self.write("Cargo.lock", CARGO_LOCK)
+        patcher = mock.patch(
+            "mozbuild.vendor.sbom_cargo.collect_dependency_kinds",
+            return_value=KINDS,
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     def write(self, path, content):
         path = os.path.join(self.topsrcdir, path)
@@ -139,13 +171,35 @@ class TestBuildDocument(unittest.TestCase):
     def test_build_tooling_document(self):
         document = json.loads(
             build_tooling_document(
-                self.topsrcdir, Repo(self.topsrcdir), version="155.0a1"
+                self.topsrcdir,
+                self.topsrcdir,
+                Repo(self.topsrcdir),
+                version="155.0a1",
             )
         )
         self.assertEqual(
-            [(c["bom-ref"], c["scope"]) for c in document["components"]],
-            [("npm:webpack@5.109.0", "excluded")],
+            sorted((c["purl"], c["scope"]) for c in document["components"]),
+            [
+                ("pkg:cargo/hyper@1.0.0", "excluded"),
+                ("pkg:npm/webpack@5.109.0", "excluded"),
+            ],
         )
+
+    def test_tooling_crates_leave_the_product_document(self):
+        document = json.loads(
+            build_document(
+                self.topsrcdir,
+                self.topsrcdir,
+                Repo(self.topsrcdir),
+                version="155.0a1",
+            )
+        )
+        purls = {c.get("purl") for c in document["components"]}
+        self.assertIn("pkg:cargo/serde@1.0.200", purls)
+        self.assertNotIn("pkg:cargo/hyper@1.0.0", purls)
+        # Its edge to serde left with hyper.
+        edges = {d["ref"]: d.get("dependsOn", []) for d in document["dependencies"]}
+        self.assertIn("cargo:serde@1.0.200", edges[ROOT_BOM_REF])
 
     def test_rejected_arguments(self):
         output = os.path.join(self.topsrcdir, "sbom.json")
