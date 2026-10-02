@@ -16749,6 +16749,13 @@
   value: true
   mirror: always
 
+# Retry requests without HTTP/3 when the server closes an established HTTP/3
+# connection with an error before any part of the response was received.
+- name: network.http.http3.fallback_to_h2_on_protocol_error
+  type: RelaxedAtomicBool
+  value: true
+  mirror: always
+
 # Maximum number of UDP segments in a single UDP GSO send. Noop if
 # network.http.http3.use_nspr_for_io is true.
 - name: network.http.http3.max_gso_segments
