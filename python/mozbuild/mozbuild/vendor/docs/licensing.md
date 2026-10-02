@@ -218,6 +218,15 @@ Components come from four sources, because none alone covers the tree:
   `sbom_npm.py`, with `third_party/node` standing for newtab, whose bundles
   are built from its `node_modules`.
 
+- **GeckoView's Maven dependencies**, on Android builds: the AndroidX, Play
+  services and other libraries Gradle fetches and every application embedding
+  GeckoView packages. The `writeRuntimeDependencies` task
+  (`WriteRuntimeDependencies` in the conventions plugin) writes the resolved
+  runtime closure of the published variant during the build's Gradle export,
+  unlike `gradle/libs.versions.toml`, which has neither the transitive
+  dependencies nor which are test-only. Each module becomes a `pkg:maven`
+  component with its artifact's SHA-256, its POM's licenses and its edges.
+
 - **`LICENSES` declarations** cover everything else: one component per notice
   whose paths no manifest or crate already covers, carrying the notice id and
   the SPDX expression where one is known.
@@ -240,15 +249,16 @@ the manifest's directory, or `third_party/rust/<crate>` — and
 `license:<notice-id>` for a component that came from a notice alone. A bundled
 npm package has no directory, so it is `npm:<name>@<version>`: the version is
 part of the identity because a package can ship at several versions at once.
+A Maven module is `maven:<group>:<name>@<version>` for the same reason.
 
 Package URLs are `pkg:cargo` for crates, `pkg:npm` for anything a lockfile or
-an `npm-name` declaration identifies, and `pkg:github` or `pkg:gitlab` where a
-manifest's upstream repository is recognised, since `pkg:generic` matches
-nothing in OSV.dev or the GitHub Advisory Database; everything else keeps the
-upstream repository in a `vcs_url` qualifier. A notice-derived component gets
-no package URL at all: it is a set of files in our own tree, not a package any
-ecosystem can resolve, and a `pkg:generic/<basename>` would match nothing while
-looking like it might.
+an `npm-name` declaration identifies, `pkg:maven` for GeckoView's Gradle
+dependencies, and `pkg:github` or `pkg:gitlab` where a manifest's upstream
+repository is recognised, since `pkg:generic` matches nothing in OSV.dev or the
+GitHub Advisory Database; everything else keeps the upstream repository in a
+`vcs_url` qualifier. A notice-derived component gets no package URL at all: it
+is a set of files in our own tree, not a package any ecosystem can resolve, and
+a `pkg:generic/<basename>` would match nothing while looking like it might.
 
 A vendored library that is also published on npm says so in its `moz.yaml`:
 
@@ -290,6 +300,9 @@ Metadata CycloneDX has no field for is recorded as `moz:`-prefixed properties:
 | `moz:npm.unresolved-dependencies` | Dependencies the lockfile names but does not resolve |
 | `moz:npm.package-json-unreadable` | The checked-in `package.json` the license or version comes from could not be read |
 | `moz:npm.integrity-unreadable` | The lockfile's integrity string, where it could not be converted to a hash |
+| `moz:maven.pom-unreadable`, `moz:maven.artifact-unreadable` | The POM the metadata comes from, or the artifact the hash is of, could not be read |
+| `moz:maven.classified-artifacts` | Only artifacts with a classifier, which the purl does not name, so no hash |
+| `moz:maven.no-artifact` | A platform or a relocation, which ships nothing |
 | `moz:license.conjunction` | `unspecified` where a manifest declares several licenses; `moz.yaml` has no `AND`/`OR` operator, so the SBOM records the ambiguity rather than inventing a legal fact |
 | `moz:source.revision` | On the root component |
 
