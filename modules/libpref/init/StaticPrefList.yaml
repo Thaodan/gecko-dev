@@ -19744,6 +19744,12 @@
   mirror: always
   rust: true
 
+- name: telemetry.fog.enable_store_submitted_pings
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+  rust: true
+
 #---------------------------------------------------------------------------
 # Prefs starting with "test."
 #---------------------------------------------------------------------------
