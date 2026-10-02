@@ -111,6 +111,7 @@ import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.home.topsites.AddShortcutEntryPoint
 import org.mozilla.fenix.home.topsites.AddShortcutSource
 import org.mozilla.fenix.settings.SupportUtils.AMO_HOMEPAGE_FOR_ANDROID
+import org.mozilla.fenix.settings.deletebrowsingdata.DeleteBrowsingDataController
 import org.mozilla.fenix.summarization.eligibility.SummarizationEligibilityChecker
 import org.mozilla.fenix.summarization.onboarding.SummarizationFeatureDiscoveryConfiguration
 import org.mozilla.fenix.summarization.onboarding.SummarizeDiscoveryEvent
@@ -205,6 +206,8 @@ class MenuMiddlewareTest {
     private val webCompatReporterMoreInfoSender: WebCompatReporterMoreInfoSender = mockk(relaxed = true)
     private val pinnedSiteStorage: PinnedSiteStorage = mockk(relaxed = true)
     private val materialAlertDialogBuilder: MaterialAlertDialogBuilder = mockk(relaxed = true)
+    private val deleteBrowsingDataController: DeleteBrowsingDataController = mockk()
+    private var quitCount = 0
     private val testDispatcher = StandardTestDispatcher()
 
     @Test
@@ -1216,6 +1219,24 @@ class MenuMiddlewareTest {
         verify { navController.navigate(NavGraphDirections.actionGlobalSettingsFragment(), null) }
     }
 
+    @Test
+    fun `WHEN handling a request to quit THEN dismiss the menu and delete the data before quitting`() =
+        runTest(testDispatcher) {
+            val onDeletionComplete = slot<() -> Unit>()
+            coEvery { deleteBrowsingDataController.clearBrowsingDataOnQuit(capture(onDeletionComplete)) } just Runs
+            val store = createStore()
+
+            store.dispatch(MenuAction.DeleteBrowsingDataAndQuit)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify { navController.popBackStack(R.id.menuFragment, true) }
+            coVerify { deleteBrowsingDataController.clearBrowsingDataOnQuit(any()) }
+            // The application is quit only once there is nothing left to delete.
+            assertEquals(0, quitCount)
+            onDeletionComplete.captured()
+            assertEquals(1, quitCount)
+        }
+
     private fun ipProtectionStore(proxyStatus: ProxyStatus): IPProtectionStore = mockk {
         every { state } returns IPProtectionState(proxyStatus = proxyStatus)
         every { dispatch(any()) } just Runs
@@ -1254,6 +1275,8 @@ class MenuMiddlewareTest {
                         webCompatReporterMoreInfoSender = webCompatReporterMoreInfoSender,
                         pinnedSiteStorage = pinnedSiteStorage,
                         materialAlertDialogBuilder = materialAlertDialogBuilder,
+                        deleteBrowsingDataController = { deleteBrowsingDataController },
+                        quitApplicationDelegate = { quitCount++ },
                         scope = CoroutineScope(testDispatcher),
                         applicationScope = CoroutineScope(testDispatcher),
                     )

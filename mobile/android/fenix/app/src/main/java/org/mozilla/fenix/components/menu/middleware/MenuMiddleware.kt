@@ -57,6 +57,7 @@ import org.mozilla.fenix.components.menu.store.IPProtectionMenuStatus
 import org.mozilla.fenix.components.menu.store.MenuAction.AddBookmark
 import org.mozilla.fenix.components.menu.store.MenuAction.AddShortcut
 import org.mozilla.fenix.components.menu.store.MenuAction.CustomizeReaderView
+import org.mozilla.fenix.components.menu.store.MenuAction.DeleteBrowsingDataAndQuit
 import org.mozilla.fenix.components.menu.store.MenuAction.FindInPage
 import org.mozilla.fenix.components.menu.store.MenuAction.IPProtectionToggle
 import org.mozilla.fenix.components.menu.store.MenuAction.InstallAddon
@@ -80,6 +81,7 @@ import org.mozilla.fenix.ext.openToBrowser
 import org.mozilla.fenix.home.topsites.AddShortcutEntryPoint
 import org.mozilla.fenix.home.topsites.AddShortcutSource
 import org.mozilla.fenix.settings.SupportUtils.AMO_HOMEPAGE_FOR_ANDROID
+import org.mozilla.fenix.settings.deletebrowsingdata.DeleteBrowsingDataController
 import org.mozilla.fenix.summarization.eligibility.SummarizationEligibilityChecker
 import org.mozilla.fenix.summarization.isSummarizePageMenuItem
 import org.mozilla.fenix.summarization.onboarding.FenixSummarizationFeatureConfiguration
@@ -108,6 +110,9 @@ import org.mozilla.fenix.webcompat.WebCompatReporterMoreInfoSender
  * @param pinnedSiteStorage [PinnedSiteStorage] for checking the shortcuts the user already has.
  * @param materialAlertDialogBuilder [MaterialAlertDialogBuilder] for telling the user when they cannot have another
  *   shortcut.
+ * @param deleteBrowsingDataController Provides the [DeleteBrowsingDataController] for deleting the data the user wants
+ *   gone when they quit the application. Asked for it only if they ever do, since building it is not free.
+ * @param quitApplicationDelegate Quits the application, once there is nothing left to delete.
  * @param scope [CoroutineScope] tied to the lifetime of the menu, used for all work that is only useful while the menu
  *   is shown.
  * @param applicationScope [CoroutineScope] tied to the lifetime of the application, used for the work that cannot be
@@ -127,6 +132,8 @@ class MenuMiddleware(
     private val webCompatReporterMoreInfoSender: WebCompatReporterMoreInfoSender,
     private val pinnedSiteStorage: PinnedSiteStorage,
     private val materialAlertDialogBuilder: MaterialAlertDialogBuilder,
+    private val deleteBrowsingDataController: () -> DeleteBrowsingDataController,
+    private val quitApplicationDelegate: () -> Unit,
     private val scope: CoroutineScope,
     private val applicationScope: CoroutineScope,
 ) : Middleware<MenuState, MenuAction> {
@@ -243,6 +250,8 @@ class MenuMiddleware(
             is Navigate.MozillaAccount -> navigateToMozillaAccount(action)
 
             is Navigate.Settings -> navigate(NavGraphDirections.actionGlobalSettingsFragment())
+
+            is DeleteBrowsingDataAndQuit -> deleteBrowsingDataAndQuit()
 
             is Navigate.Back -> handleBackNavigation(action)
 
@@ -552,6 +561,16 @@ class MenuMiddleware(
                 navOptions = NavOptions.Builder().setPopUpTo(R.id.browserFragment, false).build(),
             )
         }
+    }
+
+    /** The process of clearing app data happens after the menu is closed and then the application is closed. */
+    private fun deleteBrowsingDataAndQuit() {
+        val controller = deleteBrowsingDataController()
+        val quitApplicationDelegate = this@MenuMiddleware.quitApplicationDelegate
+
+        dismissMenu()
+
+        applicationScope.launch { controller.clearBrowsingDataOnQuit(onDeletionComplete = quitApplicationDelegate) }
     }
 
     private fun handleBackNavigation(action: Navigate.Back) {

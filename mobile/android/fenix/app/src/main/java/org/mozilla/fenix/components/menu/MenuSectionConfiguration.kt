@@ -74,6 +74,9 @@ sealed interface FenixMenuItem {
     /** A menu item allowing to open the application settings. */
     data object Settings : FenixMenuItem
 
+    /** A menu item allowing to delete the browsing data of this session and quit the application. */
+    data object Quit : FenixMenuItem
+
     /** A menu item allowing to navigate back. */
     data object Back : FenixMenuItem
 
