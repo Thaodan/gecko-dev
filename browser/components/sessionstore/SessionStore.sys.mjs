@@ -1254,7 +1254,9 @@ class _SessionStore {
       }
 
       unregister() {
-        let bc = BrowsingContext.getCurrentTopByBrowserId(this._browserId);
+        let bc = /** @type {CanonicalBrowsingContext} */ (
+          BrowsingContext.getCurrentTopByBrowserId(this._browserId)
+        );
         bc?.sessionHistory?.removeSHistoryListener(this);
         SessionStore.#browserSHistoryListener.delete(permanentKey);
       }
@@ -1309,7 +1311,9 @@ class _SessionStore {
           return;
         }
 
-        let bc = BrowsingContext.getCurrentTopByBrowserId(this._browserId);
+        let bc = /** @type {CanonicalBrowsingContext} */ (
+          BrowsingContext.getCurrentTopByBrowserId(this._browserId)
+        );
         if (bc?.embedderElement?.frameLoader) {
           this._fromIndex = index;
 
@@ -1338,6 +1342,10 @@ class _SessionStore {
       OnHistoryReplaceEntry() {
         this.collectFrom(-1);
       }
+      OnHistoryTruncate() {}
+      OnDocumentViewerEvicted() {}
+      OnHistoryCommit() {}
+      OnEntryUpdated() {}
     }
 
     let sessionHistory = browsingContext.sessionHistory;
@@ -1437,7 +1445,7 @@ class _SessionStore {
    *
    * @param {MozBrowser|null} browser
    *        The browser the update is for, if it is still around.
-   * @param {BrowsingContext} browsingContext
+   * @param {CanonicalBrowsingContext} browsingContext
    *        The browsing context the update was collected from.
    * @param {object} permanentKey
    *        The permanent key of the browser, used when browser is null.
@@ -1732,7 +1740,7 @@ class _SessionStore {
    * the session file to load, and the initial window's delayed startup to
    * finish before initializing a window, i.e. restoring data into it.
    *
-   * @param {Window} aWindow
+   * @param {ChromeWindow} aWindow
    *        Window reference
    * @param {object} [aInitialState]
    *        The initial state to be loaded after startup
@@ -1896,7 +1904,10 @@ class _SessionStore {
           // directly, so notify here as well. Consumers such as
           // SidebarController wait for this to know that the state we handed
           // them is all they are going to get.
-          Services.obs.notifyObservers(aWindow, NOTIFY_SINGLE_WINDOW_RESTORED);
+          Services.obs.notifyObservers(
+            /** @type {nsISupports} */ (aWindow),
+            NOTIFY_SINGLE_WINDOW_RESTORED
+          );
         }
       }
       // we actually restored the session just now.
@@ -1941,7 +1952,7 @@ class _SessionStore {
   /**
    * Called right before a new browser window is shown.
    *
-   * @param {Window} aWindow
+   * @param {ChromeWindow} aWindow
    *        Window reference
    */
   #onBeforeBrowserWindowShown(aWindow) {
@@ -2347,8 +2358,12 @@ class _SessionStore {
           this.#closedWindows.length == 1
         ) {
           // Fake a popupshowing event so shortcuts work:
-          let window = Services.appShell.hiddenDOMWindow;
-          let historyMenu = window.document.getElementById("history-menu");
+          let window = /** @type {Window} */ (
+            Services.appShell.hiddenDOMWindow
+          );
+          let historyMenu = /** @type {XULMenuElement} */ (
+            window.document.getElementById("history-menu")
+          );
           let evt = new window.CustomEvent("popupshowing", { bubbles: true });
           historyMenu.menupopup.dispatchEvent(evt);
         }
@@ -3212,7 +3227,7 @@ class _SessionStore {
     this.#crashedBrowsers.delete(browser.permanentKey);
     aTab.removeAttribute("crashed");
 
-    let { userTypedValue = null, userTypedClear = 0 } = browser;
+    let { userTypedValue = null } = browser;
     let hasStartedLoad = browser.didStartLoadSinceLastUserTyping();
 
     let cacheState = lazy.TabStateCache.get(browser.permanentKey);
@@ -3251,7 +3266,8 @@ class _SessionStore {
       url: browser.currentURI.spec,
       title: aTab.label,
       userTypedValue,
-      userTypedClear,
+      // TODO(bug 2076655): Remove userTypedClear from the lazy state.
+      userTypedClear: 0,
     });
   }
 
@@ -3380,12 +3396,13 @@ class _SessionStore {
    * the tab's final message is still pending we will simply discard it when
    * it arrives so that the tab doesn't reappear in the list.
    *
-   * @param {WindowStateData} winData
+   * @param {Pick<WindowStateData, "_lastClosedTabGroupCount">} winData
    *        The data of the window.
-   * @param {ClosedTabStateData[]} closedTabs
+   * @param {SavedGroupTabStateData[]} closedTabs
    *        The list of closed tabs for a window.
    * @param {number} index
    *        The index of the tab to remove.
+   * @returns {SavedGroupTabStateData}
    */
   #removeClosedTabData(winData, closedTabs, index) {
     // Remove the given index from the list.
@@ -3708,7 +3725,7 @@ class _SessionStore {
   /**
    * Restores the given state into a window.
    *
-   * @param {Window} aWindow
+   * @param {ChromeWindow} aWindow
    *        The window to restore into.
    * @param {object|string} aState
    *        The window state, as an object or a JSON string.
@@ -3777,7 +3794,7 @@ class _SessionStore {
     // by |#restoreTabs|.
     let tabState = aState;
     if (typeof tabState == "string") {
-      tabState = JSON.parse(aState);
+      tabState = JSON.parse(tabState);
     }
     if (!tabState) {
       throw Components.Exception(
@@ -3836,7 +3853,7 @@ class _SessionStore {
    *          tab's custom values.
    */
   getInternalObjectState(obj) {
-    if (obj.__SSi) {
+    if ("__SSi" in obj && obj.__SSi) {
       return this.#windows[obj.__SSi];
     }
     return "loadURI" in obj
@@ -5947,7 +5964,7 @@ class _SessionStore {
    *
    * @param {object} root
    *        Windows data
-   * @returns {Promise<Window[]>}
+   * @returns {Promise<ChromeWindow[]>}
    *          Resolved when all windows have been opened
    */
   #openWindows(root) {
@@ -6128,8 +6145,7 @@ class _SessionStore {
     // selectTab represents.
     let selectTab = 0;
     if (overwriteTabs) {
-      selectTab = parseInt(winData.selected || 1, 10);
-      selectTab = Math.max(selectTab, 1);
+      selectTab = Math.max(winData.selected || 1, 1);
       selectTab = Math.min(selectTab, winData.tabs.length);
     }
 
@@ -6305,7 +6321,7 @@ class _SessionStore {
         userContextId: tab.userContextId,
       });
       let browsingContext = tab.linkedBrowser.browsingContext;
-      let callbacks = {
+      let callbacks = /** @type {nsIInterfaceRequestor} */ ({
         QueryInterface: ChromeUtils.generateQI(["nsIInterfaceRequestor"]),
         getInterface(iid) {
           if (iid.equals(Ci.nsILoadContext)) {
@@ -6314,7 +6330,7 @@ class _SessionStore {
           }
           throw Components.Exception("", Cr.NS_ERROR_NO_INTERFACE);
         },
-      };
+      });
       try {
         let uri = Services.io.newURI(url);
         Services.io.speculativeConnect(uri, principal, callbacks, false);
@@ -6356,7 +6372,7 @@ class _SessionStore {
   /**
    * This function will restore window features and then restore window data.
    *
-   * @param {Window[]} windows
+   * @param {ChromeWindow[]} windows
    *        ordered array of windows to restore
    */
   #restoreWindowsFeaturesAndTabs(windows) {
@@ -6401,7 +6417,7 @@ class _SessionStore {
    * This function will restore window in reversed z-index, so that users will
    * be presented with most recently used window first.
    *
-   * @param {Window[]} windows
+   * @param {ChromeWindow[]} windows
    *        unordered array of windows to restore
    */
   #restoreWindowsInReversedZOrder(windows) {
@@ -6418,7 +6434,7 @@ class _SessionStore {
   /**
    * Restore multiple windows using the provided state.
    *
-   * @param {Window} aWindow
+   * @param {ChromeWindow} aWindow
    *        Window reference to the first window to use for restoration.
    *        Additionally required windows will be opened.
    * @param {object|string} aState
@@ -6908,7 +6924,7 @@ class _SessionStore {
   /**
    * Restore visibility and dimension features to a window
    *
-   * @param {Window} aWindow
+   * @param {ChromeWindow} aWindow
    *        Window reference
    * @param {WindowStateData} aWinData
    *        Object containing session data for the window
@@ -7298,14 +7314,16 @@ class _SessionStore {
    * @param {boolean} [isPrivate]
    *        Optional boolean to get only non-private or private windows
    *        When omitted, we'll return whatever the top-most window is regardless of privateness
-   * @returns {Window|undefined}
+   * @returns {ChromeWindow|undefined}
    */
   #getTopWindow(isPrivate) {
     const options = { allowPopups: true };
     if (typeof isPrivate !== "undefined") {
       options.private = isPrivate;
     }
-    return lazy.BrowserWindowTracker.getTopWindow(options);
+    return /** @type {ChromeWindow} */ (
+      lazy.BrowserWindowTracker.getTopWindow(options)
+    );
   }
 
   /**
@@ -7351,6 +7369,7 @@ class _SessionStore {
    *
    * @param {object} aState
    *        Object containing session data
+   * @returns {ChromeWindow}
    */
   #openWindowWithState(aState) {
     let args = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
@@ -7439,12 +7458,14 @@ class _SessionStore {
         ","
       )}, extraOptions: ${JSON.stringify(this.#serializePropertyBag(extraOptions))}.`
     );
-    var window = Services.ww.openWindow(
-      null,
-      AppConstants.BROWSER_CHROME_URL,
-      "_blank",
-      features.join(","),
-      args
+    let window = /** @type {ChromeWindow} */ (
+      Services.ww.openWindow(
+        null,
+        AppConstants.BROWSER_CHROME_URL,
+        "_blank",
+        features.join(","),
+        args
+      )
     );
 
     this.#updateWindowRestoreState(window, aState);
