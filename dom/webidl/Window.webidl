@@ -966,5 +966,3 @@ partial interface Window {
   [SameObject, SecureContext, Pref="dom.documentpip.enabled"]
   readonly attribute DocumentPictureInPicture documentPictureInPicture;
 };
-
-Window includes PushManagerAttribute;

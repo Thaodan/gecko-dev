@@ -27,6 +27,9 @@ interface PushManagerImpl {
 
 [Exposed=(Window,Worker), Func="PushManager::IsEnabled"]
 interface PushManager {
+  [Throws, ChromeOnly]
+  constructor(DOMString scope);
+
   // TODO: Use FrozenArray once available. (Bug 1236777)
   // [SameObject] static readonly attribute FrozenArray<DOMString> supportedContentEncodings;
   // XXX: We can't use sequence here either:
@@ -41,14 +44,4 @@ interface PushManager {
   Promise<PushSubscription?>   getSubscription();
   [Throws]
   Promise<PermissionState> permissionState(optional PushSubscriptionOptionsInit options = {});
-};
-
-// https://w3c.github.io/push-api/#extensions-to-the-serviceworkerregistration-interface
-// XXX: When the dom.push.window_pushmanager pref is removed, we can make
-//      ServiceWorkerRegistration include this as well (includes statements
-//      unfortunately can't be gated by prefs).
-[SecureContext]
-interface mixin PushManagerAttribute {
-  [SameObject, Throws, Pref="dom.push.window_pushmanager.enabled"]
-  readonly attribute PushManager pushManager;
 };
