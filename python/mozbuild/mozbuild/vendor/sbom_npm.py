@@ -6,14 +6,16 @@
 
 webpack folds React, Redux and Fluent into the newtab, aboutwelcome and
 asrouter bundles, so those packages leave no vendored directory and no
-moz.yaml. Only the runtime closure is reported: most of a lockfile is build
-toolchain, and the document describes what ships.
+moz.yaml. The product document reports the runtime closure only: most of a
+lockfile is build toolchain, and that document describes what ships. The rest,
+webpack and babel among it, goes to the build tooling document.
 
 Like sbom.py this module does not import cyclonedx.
 """
 
 import base64
 import binascii
+import functools
 import json
 import os
 import re
@@ -118,21 +120,18 @@ def _dependency_path(install_path, dependency, by_path):
         prefix = prefix.rpartition("/node_modules/")[0]
 
 
-def parse_package_lock(path):
-    """Runtime packages of a package-lock.json v2/v3, as {(name, version): entry}."""
-    with open(path, encoding="utf-8") as lockfile:
-        document = json.load(lockfile)
+def package_lock_packages(document, dev=False):
+    """Packages of a loaded package-lock.json v2/v3, as {(name, version): entry}.
 
+    The runtime packages, or with ``dev`` the ones only the build needs.
+    """
     by_path = {
         install_path: entry
         for install_path, entry in (document.get("packages") or {}).items()
         # "" is the importer; a `link` is a workspace member, not a package.
-        # `devOptional` is also an optional dependency of a runtime package,
-        # so unlike `dev` it can ship.
         if install_path
         and entry.get("version")
         and not entry.get("link")
-        and not entry.get("dev")
         and not is_type_only(
             entry.get("name") or install_path.rpartition("node_modules/")[2]
         )
@@ -145,6 +144,10 @@ def parse_package_lock(path):
 
     packages = {}
     for install_path, entry in by_path.items():
+        # `devOptional` is also an optional dependency of a runtime package,
+        # so unlike `dev` it can ship.
+        if bool(entry.get("dev")) != dev:
+            continue
         record = _entry(entry.get("integrity"), entry.get("license"), install_path)
         for section, optional in (
             ("dependencies", False),
@@ -164,34 +167,42 @@ def parse_package_lock(path):
     return packages
 
 
-def parse_pnpm_lock(path, node_modules):
-    """Runtime packages of a pnpm-lock.yaml v9, as {(name, version): entry}.
+def pnpm_packages(document, node_modules, copies, dev=False):
+    """Packages of a loaded pnpm-lock.yaml v9, as {(name, version): entry}.
 
-    pnpm records neither `dev` nor licenses, so the closure is walked from the
-    importers' `dependencies` and `optionalDependencies` and the license read
-    from the checked-in copy. An optional package with no checked-in copy was
-    not installed, so it is not bundled either.
+    pnpm records neither `dev` nor licenses, so the runtime closure is walked
+    from the importers' `dependencies` and `optionalDependencies` and the
+    license read from the checked-in copy. An optional package with no
+    checked-in copy was not installed, so it is not bundled either. With
+    ``dev``, the closure of `devDependencies` is walked instead; npm_records
+    drops what a runtime closure also reaches.
     """
-    with open(path, encoding="utf-8") as lockfile:
-        document = yaml.safe_load(lockfile) or {}
+    importers = (document.get("importers") or {}).values()
 
+    def roots(*sections):
+        return [
+            (child, section == "optionalDependencies")
+            for importer in importers
+            for section in sections
+            for child in _pnpm_children(importer.get(section))
+        ]
+
+    sections = ("devDependencies",) if dev else ("dependencies", "optionalDependencies")
+    return _walk_pnpm(document, node_modules, copies, roots(*sections))
+
+
+def _pnpm_children(section):
+    for name, spec in (section or {}).items():
+        version = spec.get("version") if isinstance(spec, dict) else spec
+        if version:
+            yield f"{name}@{version}"
+
+
+def _walk_pnpm(document, node_modules, copies, queue):
+    """Walk a pnpm-lock.yaml from (snapshot key, optional) roots."""
     metadata = document.get("packages") or {}
     snapshots = document.get("snapshots") or {}
 
-    def children(section):
-        for name, spec in (section or {}).items():
-            version = spec.get("version") if isinstance(spec, dict) else spec
-            if version:
-                yield f"{name}@{version}"
-
-    queue = []
-    for importer in (document.get("importers") or {}).values():
-        queue += [(child, False) for child in children(importer.get("dependencies"))]
-        queue += [
-            (child, True) for child in children(importer.get("optionalDependencies"))
-        ]
-
-    copies = _index_copies(node_modules)
     packages = {}
     seen = set()
     while queue:
@@ -224,7 +235,7 @@ def parse_pnpm_lock(path, node_modules):
             ("dependencies", False),
             ("optionalDependencies", True),
         ):
-            for child in children((snapshot or {}).get(section)):
+            for child in _pnpm_children((snapshot or {}).get(section)):
                 queue.append((child, is_optional))
                 record["dependencies"].add(split_key(child))
         _merge(packages, (name, version), record)
@@ -304,32 +315,58 @@ def _licenses(entry):
     return [license] if isinstance(license, str) and license else []
 
 
-def npm_records(topsrcdir, manifests=SHIPPED_MANIFESTS):
+def lockfile_closure(directory):
+    """Bind the lockfile of one manifest directory, read once.
+
+    Returns a callable taking ``dev`` and answering with that closure, or None
+    where the directory holds no lockfile. Bound rather than re-read because
+    the dev document needs the runtime closure of the same lockfile too, to
+    leave out what the product document already describes, and pnpm's lockfile
+    and the walk of the checked-in copies are not cheap.
+    """
+    pnpm_lock = mozpath.join(directory, "pnpm-lock.yaml")
+    npm_lock = mozpath.join(directory, "package-lock.json")
+    if os.path.exists(pnpm_lock):
+        with open(pnpm_lock, encoding="utf-8") as lockfile:
+            document = yaml.safe_load(lockfile) or {}
+        node_modules = mozpath.join(directory, "node_modules")
+        return functools.partial(
+            pnpm_packages, document, node_modules, _index_copies(node_modules)
+        )
+    if os.path.exists(npm_lock):
+        with open(npm_lock, encoding="utf-8") as lockfile:
+            document = json.load(lockfile)
+        return functools.partial(package_lock_packages, document)
+    return None
+
+
+def npm_records(topsrcdir, manifests=SHIPPED_MANIFESTS, dev=False):
     """Build (records, edges) for the npm packages the product bundles.
 
     One record per (name, version), merged across lockfiles: several packages
-    ship at two versions at once, react among them.
+    ship at two versions at once, react among them. With ``dev``, the packages
+    that only build the bundles instead.
     """
     records = {}
     sources = {}
+    shipped = set()
     for manifest in manifests:
-        directory = mozpath.join(topsrcdir, manifest)
-        pnpm_lock = mozpath.join(directory, "pnpm-lock.yaml")
-        npm_lock = mozpath.join(directory, "package-lock.json")
-        if os.path.exists(pnpm_lock):
-            packages = parse_pnpm_lock(
-                pnpm_lock, mozpath.join(directory, "node_modules")
-            )
-        elif os.path.exists(npm_lock):
-            packages = parse_package_lock(npm_lock)
-        else:
+        closure = lockfile_closure(mozpath.join(topsrcdir, manifest))
+        if closure is None:
             continue
+        packages = closure(dev=dev)
+        if dev:
+            shipped.update(closure(dev=False))
         for key, entry in packages.items():
             entry["installed"] = {
                 mozpath.join(manifest, installed) for installed in entry["installed"]
             }
             _merge(records, key, entry)
             sources.setdefault(key, set()).add(manifest)
+
+    # A package any lockfile ships is the product document's.
+    for key in shipped:
+        records.pop(key, None)
 
     result = []
     edges = {}
@@ -358,7 +395,7 @@ def npm_records(topsrcdir, manifests=SHIPPED_MANIFESTS):
             "vcs": None,
             "bugzilla": None,
             "hashes": hashes,
-            "kinds": ["normal"],
+            "kinds": ["dev"] if dev else ["normal"],
             "occurrences": sorted(
                 installed
                 for installed in entry["installed"]
@@ -367,6 +404,8 @@ def npm_records(topsrcdir, manifests=SHIPPED_MANIFESTS):
             "properties": properties,
         })
 
+        # With ``dev``, an edge to a shipped package is left to the product
+        # document, which describes that package.
         children = sorted({bom_ref(*c) for c in entry["dependencies"] if c in records})
         if children:
             edges[ref] = children

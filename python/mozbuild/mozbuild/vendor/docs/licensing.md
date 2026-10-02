@@ -185,6 +185,10 @@ The output is CycloneDX JSON. Useful arguments:
   `MOZ_APP_BASENAME` -- `Firefox` for desktop, `Fennec` for GeckoView -- or to
   `Firefox` in an unconfigured tree.
 
+`--build-tooling`
+: Describe the third-party code that builds and tests the tree instead of what
+  the product ships. See {ref}`build_tooling_sbom`.
+
 ### What Becomes a Component
 
 Components come from four sources, because none alone covers the tree:
@@ -213,10 +217,11 @@ Components come from four sources, because none alone covers the tree:
   `pkg:npm` package URL, the SHA-512 the registry publishes for the tarball,
   the license the package declares and the package-to-package edges.
 
-  Only the runtime closure is reported, not the webpack and babel toolchain
-  that makes up most of a lockfile. The lockfiles are an allowlist in
-  `sbom_npm.py`, with `third_party/node` standing for newtab, whose bundles
-  are built from its `node_modules`.
+  Only the runtime closure is reported; the webpack and babel toolchain that
+  makes up most of a lockfile goes to the
+  {ref}`build tooling document <build_tooling_sbom>`. The lockfiles are an
+  allowlist in `sbom_npm.py`, with `third_party/node` standing for newtab,
+  whose bundles are built from its `node_modules`.
 
 - **GeckoView's Maven dependencies**, on Android builds: the AndroidX, Play
   services and other libraries Gradle fetches and every application embedding
@@ -325,6 +330,39 @@ timestamp where release engineering sets it.
 SBOM is built from `moz.yaml` alone and the command says so on stderr. That
 covers vendored libraries only, considerably less than `about:license`
 describes. Run `./mach build-backend` for the complete picture.
+
+(build_tooling_sbom)=
+## The Build Tooling SBOM
+
+```sh
+./mach sbom --build-tooling -o /tmp/sbom-build-tooling.json
+```
+
+The product document describes what ships. The tree also runs a good deal of
+third-party code that ships in nothing -- the webpack that builds newtab's
+bundles, the test harnesses -- and that is as much a supply-chain input, so it
+gets a document of its own rather than being folded into the product's, where
+it would read as shipped.
+
+It is a separate CycloneDX document of the same shape: the same root component,
+product name and version, and the same identifiers and package URLs. What sets
+it apart is machine-readable:
+
+- `metadata.lifecycles` names the `pre-build`, `build` and `post-build` phases
+  rather than leaving the phase implied; the test harnesses run once the
+  product is built.
+- Every component has `scope: excluded`, CycloneDX's word for "not part of the
+  runtime".
+- The serial number is derived from the source revision as well, but differs
+  from the product document's, so the two stay distinct for the same checkout.
+
+Today it holds the npm packages of the lockfiles the product document reads
+that are not in the runtime closure: `dev` entries of a `package-lock.json`,
+and for `pnpm-lock.yaml` the closure of `devDependencies` less anything a
+runtime dependency already reaches. A package that both ship and build use is
+described by the product document only.
+
+The build does not generate it and automation does not publish it.
 
 ## In Automation
 

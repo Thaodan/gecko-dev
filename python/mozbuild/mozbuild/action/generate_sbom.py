@@ -69,6 +69,58 @@ def _serialize(records, version, repo, log, **bom_arguments):
     return document
 
 
+def _product_identity(topsrcdir, substs, product_name, version):
+    """Default the root component's name and version from the configuration."""
+    # MOZ_APP_BASENAME, not MOZ_APP_DISPLAYNAME: the display name is the
+    # branding, which is "Firefox" for both desktop and Android official builds
+    # and moves with the channel otherwise. The basename is "Firefox" or
+    # "Fennec", which is the distinction the SBOM needs.
+    if product_name is None:
+        product_name = substs.get("MOZ_APP_BASENAME") or "Firefox"
+
+    if version is None:
+        version = substs.get("MOZ_APP_VERSION_DISPLAY") or substs.get("MOZ_APP_VERSION")
+    if version is None:
+        with open(
+            os.path.join(topsrcdir, "browser", "config", "version_display.txt"),
+            encoding="utf-8",
+        ) as version_file:
+            version = version_file.read().strip()
+    return product_name, version
+
+
+def build_tooling_document(
+    topsrcdir, repo, substs=None, version=None, product_name=None, log=None
+):
+    """Return the SBOM of what builds and tests the product, as a JSON string.
+
+    The product document describes what ships; this one describes the
+    third-party code the tree runs to get there, which ships in nothing but is
+    as much a supply-chain input. The build does not generate it.
+    """
+    from mozbuild.vendor.sbom_npm import npm_records
+
+    log = log or (lambda message: None)
+
+    # The same lockfiles the product document reads, less the runtime closure
+    # it reports: webpack, babel and the rest of what builds the bundles.
+    records, dependencies = npm_records(topsrcdir, dev=True)
+    log(f"{len(records)} npm packages that only build the bundles.")
+
+    product_name, version = _product_identity(
+        topsrcdir, substs or {}, product_name, version
+    )
+    return _serialize(
+        records,
+        version,
+        repo,
+        log,
+        product_name=product_name,
+        dependencies=dependencies,
+        build_tooling=True,
+    )
+
+
 def build_gradle_document(
     runtime_dependencies, repo, product_name, version=None, log=None
 ):
@@ -208,21 +260,7 @@ def build_document(
             "licenses.json not found; run ./mach build-backend for license data.",
         )
 
-    # MOZ_APP_BASENAME, not MOZ_APP_DISPLAYNAME: the display name is the
-    # branding, which is "Firefox" for both desktop and Android official builds
-    # and moves with the channel otherwise. The basename is "Firefox" or
-    # "Fennec", which is the distinction the SBOM needs.
-    if product_name is None:
-        product_name = substs.get("MOZ_APP_BASENAME") or "Firefox"
-
-    if version is None:
-        version = substs.get("MOZ_APP_VERSION_DISPLAY") or substs.get("MOZ_APP_VERSION")
-    if version is None:
-        with open(
-            os.path.join(topsrcdir, "browser", "config", "version_display.txt"),
-            encoding="utf-8",
-        ) as version_file:
-            version = version_file.read().strip()
+    product_name, version = _product_identity(topsrcdir, substs, product_name, version)
 
     document = _serialize(
         records,
@@ -251,23 +289,38 @@ def generate(
     product_name=None,
     strict=False,
     gradle_runtime_dependencies=None,
+    build_tooling=False,
 ):
     """Write the SBOM to ``output``, or to stdout. Returns a process exit code.
 
     With ``gradle_runtime_dependencies``, the document describes that Gradle
-    application rather than the tree.
+    application rather than the tree; with ``build_tooling``, what builds and
+    tests the tree rather than what it ships.
     """
 
     def log(message):
         print(message, file=sys.stderr)
 
     try:
-        if gradle_runtime_dependencies:
-            if strict:
-                raise SbomError(
-                    "--strict applies to the tree's manifests, which a Gradle "
-                    "application's SBOM does not read."
-                )
+        if gradle_runtime_dependencies and build_tooling:
+            raise SbomError(
+                "--gradle-runtime-dependencies and --build-tooling each "
+                "describe a different document."
+            )
+        if strict and (gradle_runtime_dependencies or build_tooling):
+            raise SbomError(
+                "--strict applies to the manifests the product document reads."
+            )
+        if build_tooling:
+            document = build_tooling_document(
+                topsrcdir,
+                repo,
+                substs=substs,
+                version=version,
+                product_name=product_name,
+                log=log,
+            )
+        elif gradle_runtime_dependencies:
             if not product_name:
                 raise SbomError("A Gradle application's SBOM needs a product name.")
             document = build_gradle_document(
