@@ -127,6 +127,13 @@
  *   a `ClosedDataSourceOptions` object identifying it.
  */
 
+/**
+ * @typedef {Omit<ClosedTabStateData, "closedId" | "sourceWindowId"> & Partial<Pick<ClosedTabStateData, "closedId" | "sourceWindowId">>} UnsavedClosedTabStateData
+ *   A closed tab before `#saveClosedTabData` assigns its `closedId`. Tabs
+ *   saved into state that is about to be restored have no `sourceWindowId`
+ *   until `#resetClosedTabIds` assigns it.
+ */
+
 // Current version of the format used by Session Restore.
 const FORMAT_VERSION = 1;
 
@@ -2383,13 +2390,14 @@ class _SessionStore {
     /** @type {Map<string, SavedTabGroupStateData>} */
     let newlySavedTabGroups = new Map();
     // Convert any open tab groups into saved tab groups in place
-    closedWinData.groups = closedWinData.groups.map(tabGroupState =>
+    let savedGroups = closedWinData.groups.map(tabGroupState =>
       lazy.TabGroupState.savedInClosedWindow(
         tabGroupState,
         closedWinData.closedId
       )
     );
-    for (let tabGroupState of closedWinData.groups) {
+    closedWinData.groups = savedGroups;
+    for (let tabGroupState of savedGroups) {
       if (!tabGroupState.saveOnWindowClose) {
         continue;
       }
@@ -2427,6 +2435,8 @@ class _SessionStore {
    *        State of the tab as it was open, of which only the session history
    *        entries and the active index are read. Session migration passes a
    *        reduced state that carries no more than those.
+   * @returns {SavedGroupTabStateData|null}
+   *   The saved group tab, or null if the tab has no history entry to show.
    */
   formatTabStateForSavedGroup(tabState) {
     // Ensure the index is in bounds.
@@ -2434,15 +2444,14 @@ class _SessionStore {
     activeIndex = Math.min(activeIndex, tabState.entries.length - 1);
     activeIndex = Math.max(activeIndex, 0);
     if (!(activeIndex in tabState.entries)) {
-      return {};
+      return null;
     }
     let title =
       tabState.entries[activeIndex].title || tabState.entries[activeIndex].url;
     return {
-      state: tabState,
+      state: /** @type {TabStateData} */ (tabState),
       title,
       image: tabState.image,
-      pos: tabState.pos,
       closedAt: Date.now(),
       closedId: this.#nextClosedId++,
     };
@@ -3310,7 +3319,7 @@ class _SessionStore {
    * @param {WindowStateData} winData
    * @param {ClosedTabStateData[]} closedTabs
    *   The list of closed tabs for a window or tab group.
-   * @param {ClosedTabStateData} tabData
+   * @param {UnsavedClosedTabStateData} tabData
    *   The closed tab that should be inserted into `closedTabs`
    * @param {boolean} [saveAction=true]
    *   Whether or not to add an action to the closed actions stack on save.
@@ -3334,7 +3343,7 @@ class _SessionStore {
     tabData.closedId = this.#nextClosedId++;
 
     // Insert tabData at the right position.
-    closedTabs.splice(index, 0, tabData);
+    closedTabs.splice(index, 0, /** @type {ClosedTabStateData} */ (tabData));
     this.#closedObjectsChanged = true;
 
     if (tabData.closedInGroup) {
@@ -4343,21 +4352,17 @@ class _SessionStore {
   }
 
   /**
-   * Returns either a unified list of closed tabs from both
-   * `_closedTabs` and `closedGroups` or else, when supplying an index,
-   * returns the specific closed tab from that unified list.
+   * Returns a unified list of closed tabs from both `_closedTabs` and
+   * `closedGroups`.
    *
    * This bridges the gap between callers that want a unified list of all closed tabs
    * from all contexts vs. callers that want a specific list of closed tabs from a
    * specific context (e.g. only closed tabs from a specific closed tab group).
    *
    * @param {WindowStateData} winData
-   * @param {number} [aIndex]
-   *   If not supplied, returns all closed tabs and tabs from closed tab groups.
-   *   If supplied, returns the single closed tab with the given index.
-   * @returns {ClosedTabStateData|ClosedTabStateData[]}
+   * @returns {ClosedTabStateData[]}
    */
-  #getStateForClosedTabsAndClosedGroupTabs(winData, aIndex) {
+  #getStateForClosedTabsAndClosedGroupTabs(winData) {
     const closedGroups = winData.closedGroups ?? [];
     const closedTabs = winData._closedTabs ?? [];
 
@@ -4390,13 +4395,6 @@ class _SessionStore {
       }
 
       current++;
-      if (current > aIndex) {
-        break;
-      }
-    }
-
-    if (aIndex !== undefined) {
-      return result[aIndex];
     }
 
     return result;
@@ -4462,10 +4460,8 @@ class _SessionStore {
     // default to the most-recently closed tab
     aIndex = aIndex || 0;
 
-    const closedTabState = this.#getStateForClosedTabsAndClosedGroupTabs(
-      sourceWinData,
-      aIndex
-    );
+    const closedTabState =
+      this.#getStateForClosedTabsAndClosedGroupTabs(sourceWinData)[aIndex];
     if (!closedTabState) {
       throw Components.Exception(
         "Invalid index: not in the closed tabs",
@@ -4723,7 +4719,6 @@ class _SessionStore {
    */
   forgetClosedTabById(aClosedId, aSourceOptions = {}) {
     let sourceWindowsData;
-    let searchPrivateWindows = aSourceOptions.includePrivate ?? true;
     if (
       aSourceOptions instanceof Ci.nsIDOMWindow ||
       "sourceWindowId" in aSourceOptions ||
@@ -4733,6 +4728,9 @@ class _SessionStore {
     } else {
       // Get the windows we'll look for the closed tab in, filtering out private
       // windows if necessary
+      let searchPrivateWindows =
+        /** @type {{includePrivate?: boolean}} */ (aSourceOptions)
+          .includePrivate ?? true;
       let browserWindows = Array.from(this.#browserWindows);
       sourceWindowsData = [];
       for (let win of browserWindows) {
@@ -7869,8 +7867,10 @@ class _SessionStore {
             groupToSave.removeAfterRestore = true;
             groupsToSave.set(groupStateToSave.id, groupToSave);
           }
-          let tabToAdd = window.tabs[tIndex];
-          groupToSave.tabs.push(this.formatTabStateForSavedGroup(tabToAdd));
+          let tabData = this.formatTabStateForSavedGroup(window.tabs[tIndex]);
+          if (tabData) {
+            groupToSave.tabs.push(tabData);
+          }
         } else if (!window.tabs[tIndex].hidden && PERSIST_SESSIONS) {
           // Add any previously open tabs that aren't pinned or hidden to the recently closed tabs list
           // which we want to persist between sessions; if the session is manually restored, they will
