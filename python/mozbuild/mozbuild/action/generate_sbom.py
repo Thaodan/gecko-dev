@@ -99,6 +99,7 @@ def build_tooling_document(
     as much a supply-chain input. The build does not generate it.
     """
     from mozbuild.vendor.sbom_npm import npm_records
+    from mozbuild.vendor.sbom_python import python_records
 
     log = log or (lambda message: None)
 
@@ -106,6 +107,12 @@ def build_tooling_document(
     # it reports: webpack, babel and the rest of what builds the bundles.
     records, dependencies = npm_records(topsrcdir, dev=True)
     log(f"{len(records)} npm packages that only build the bundles.")
+
+    # What mach, the build system and the test harnesses run on.
+    packages, python_edges = python_records(topsrcdir)
+    records.extend(packages)
+    dependencies.update(python_edges)
+    log(f"{len(packages)} vendored Python packages.")
 
     product_name, version = _product_identity(
         topsrcdir, substs or {}, product_name, version
@@ -175,6 +182,7 @@ def build_document(
         gradle_records,
     )
     from mozbuild.vendor.sbom_npm import npm_records, upgrade_manifest_purls
+    from mozbuild.vendor.sbom_python import VENDOR_DIR as PYTHON_VENDOR_DIR
 
     substs = substs or {}
     log = log or (lambda message: None)
@@ -182,6 +190,13 @@ def build_document(
     records, errors = collect_records(repo, topsrcdir, log=log)
     if errors and strict:
         raise SbomError(f"{len(errors)} manifest(s) failed to load.")
+    # The vendored Python packages, vsdownload's moz.yaml included, build the
+    # product rather than ship in it; the build tooling document has them.
+    records = [
+        record
+        for record in records
+        if not record["bom_ref"].startswith(PYTHON_VENDOR_DIR + "/")
+    ]
 
     # Cargo.lock describes third_party/rust exactly: versions, checksums and
     # the crate-to-crate graph, none of which moz.yaml has. `cargo metadata`

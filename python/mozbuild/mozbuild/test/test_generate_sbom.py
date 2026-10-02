@@ -128,6 +128,14 @@ class TestBuildDocument(unittest.TestCase):
         document = self.build(substs={"MOZ_BUILD_APP": "browser"}, strict=True)
         self.assertNotIn("pkg:maven/androidx.core/core@1.19.0", self.purls(document))
 
+    def test_vendored_python_leaves_the_product_document(self):
+        manifest = dict(MOZ_YAML, origin=dict(MOZ_YAML["origin"], name="msvc-wine"))
+        del manifest["origin"]["npm-name"]
+        self.write("third_party/python/vsdownload/moz.yaml", yaml.safe_dump(manifest))
+        refs = {c["bom-ref"] for c in self.build()["components"]}
+        self.assertIn("third_party/js/PKI.js", refs)
+        self.assertNotIn("third_party/python/vsdownload", refs)
+
     def test_build_tooling_document(self):
         document = json.loads(
             build_tooling_document(
