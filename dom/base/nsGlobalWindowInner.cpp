@@ -152,7 +152,6 @@
 #include "mozilla/dom/PopupBlocker.h"
 #include "mozilla/dom/PrimitiveConversions.h"
 #include "mozilla/dom/Promise.h"
-#include "mozilla/dom/PushManager.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/ScriptSettings.h"
@@ -7615,14 +7614,6 @@ DocumentPictureInPicture* nsGlobalWindowInner::DocumentPictureInPicture() {
   }
 
   return mDocumentPiP;
-}
-
-mozilla::dom::PushManager* nsGlobalWindowInner::GetPushManager(
-    JSContext* aCx, ErrorResult& aRv) {
-  if (!mPushManager) {
-    mPushManager = PushManager::Create(aCx, this, aRv);
-  }
-  return mPushManager;
 }
 
 bool nsGlobalWindowInner::IsSecureContext() const {
