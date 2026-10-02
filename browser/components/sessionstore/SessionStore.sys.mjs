@@ -199,6 +199,12 @@ const OBSERVING = [
 // Restored in restoreDimensions()
 const WINDOW_ATTRIBUTES = ["width", "height", "screenX", "screenY", "sizemode"];
 
+/**
+ * Chrome flags to the window feature to pass when the flag is set, and
+ * optionally the one to pass when it is unset.
+ *
+ * @type {[number, string, string?][]}
+ */
 const CHROME_FLAGS_MAP = [
   [Ci.nsIWebBrowserChrome.CHROME_TITLEBAR, "titlebar"],
   [Ci.nsIWebBrowserChrome.CHROME_TOOLBAR, "toolbar"],
@@ -6976,8 +6982,8 @@ class _SessionStore {
         +(aWinData.height || 0),
         "screenX" in aWinData ? +aWinData.screenX : NaN,
         "screenY" in aWinData ? +aWinData.screenY : NaN,
-        aWinData.sizemode || "",
-        aWinData.sizemodeBeforeMinimized || ""
+        aWinData.sizemode,
+        aWinData.sizemodeBeforeMinimized
       );
       promiseParts.resolve(aWindow);
     }, 0);
@@ -7014,9 +7020,9 @@ class _SessionStore {
    *        Window left in desktop pixels
    * @param {number} aTop
    *        Window top in desktop pixels
-   * @param {string} aSizeMode
+   * @param {WindowStateData["sizemode"]} aSizeMode
    *        Window size mode (eg: maximized)
-   * @param {string} aSizeModeBeforeMinimized
+   * @param {WindowStateData["sizemodeBeforeMinimized"]} aSizeModeBeforeMinimized
    *        Window size mode before window got minimized (eg: maximized)
    */
   #restoreDimensions(
@@ -7040,23 +7046,18 @@ class _SessionStore {
       aHeight
     );
     if (screen) {
-      let screenLeft = {},
-        screenTop = {},
-        screenWidth = {},
-        screenHeight = {};
-      screen.GetAvailRectDisplayPix(
-        screenLeft,
-        screenTop,
-        screenWidth,
-        screenHeight
-      );
+      let left = {},
+        top = {},
+        width = {},
+        height = {};
+      screen.GetAvailRectDisplayPix(left, top, width, height);
 
       // We store aLeft / aTop (screenX/Y) in desktop pixels, see
       // #getWindowDimension.
-      screenLeft = screenLeft.value;
-      screenTop = screenTop.value;
-      screenWidth = screenWidth.value;
-      screenHeight = screenHeight.value;
+      let screenLeft = left.value;
+      let screenTop = top.value;
+      let screenWidth = width.value;
+      let screenHeight = height.value;
 
       let screenBottom = screenTop + screenHeight;
       let screenRight = screenLeft + screenWidth;
