@@ -1314,6 +1314,38 @@ static bool intrinsic_PromiseResolve(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+static bool intrinsic_CopyDataProperties(JSContext* cx, unsigned argc,
+                                         Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  MOZ_ASSERT(args.length() == 3);
+  MOZ_ASSERT(args[0].isObject());
+  MOZ_ASSERT(args[2].isObject());
+
+  RootedObject target(cx, &args[0].toObject());
+  RootedObject excludedItems(cx, &args[2].toObject());
+  if (!CopyDataProperties(cx, target, args[1], excludedItems)) {
+    return false;
+  }
+
+  args.rval().setUndefined();
+  return true;
+}
+
+static bool intrinsic_CopyDataPropertiesUnfiltered(JSContext* cx, unsigned argc,
+                                                   Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  MOZ_ASSERT(args.length() == 2);
+  MOZ_ASSERT(args[0].isObject());
+
+  RootedObject target(cx, &args[0].toObject());
+  if (!CopyDataProperties(cx, target, args[1], nullptr)) {
+    return false;
+  }
+
+  args.rval().setUndefined();
+  return true;
+}
+
 static bool intrinsic_CopyDataPropertiesOrGetOwnKeys(JSContext* cx,
                                                      unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -1542,8 +1574,11 @@ static const JSFunctionSpec intrinsic_functions[] = {
                     IntrinsicCanOptimizeArraySpecies),
     JS_FN("ConstructFunction", intrinsic_ConstructFunction, 2, 0),
     JS_FN("ConstructorForTypedArray", intrinsic_ConstructorForTypedArray, 1, 0),
+    JS_FN("CopyDataProperties", intrinsic_CopyDataProperties, 3, 0),
     JS_FN("CopyDataPropertiesOrGetOwnKeys",
           intrinsic_CopyDataPropertiesOrGetOwnKeys, 3, 0),
+    JS_FN("CopyDataPropertiesUnfiltered",
+          intrinsic_CopyDataPropertiesUnfiltered, 2, 0),
     JS_FN("CreateAsyncFromSyncIterator", intrinsic_CreateAsyncFromSyncIterator,
           2, 0),
     JS_FN("CreateMapIterationResultPair",
