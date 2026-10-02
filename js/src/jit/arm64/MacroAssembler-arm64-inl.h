@@ -3772,6 +3772,12 @@ void MacroAssembler::bitmaskInt8x16(FloatRegister src, Register dest,
   Mov(ARMRegister(dest, 32), Simd8H(temp), 0);
 }
 
+void MacroAssemblerCompat::nibbleMaskInt8x16(FloatRegister src, Register dest,
+                                             FloatRegister temp) {
+  Shrn(Simd8B(temp), Simd8H(src), 4);
+  Fmov(ARMRegister(dest, 64), ARMFPRegister(temp, 64));
+}
+
 void MacroAssembler::bitmaskInt16x8(FloatRegister src, Register dest,
                                     FloatRegister temp) {
   ScratchSimd128Scope scratch(*this);
