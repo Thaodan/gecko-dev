@@ -1,12 +1,12 @@
 # Search Lifecycle
 
-When a character is typed into the address bar, or the address bar is focused,
-we initiate a search. What follows is a simplified version of the
-lifetime of a search, describing the pipeline that returns results for a typed
-string. Some parts of the query lifetime are intentionally omitted from this
-document for clarity.
+When a character is typed into an address or search bar, or when it's focused,
+we initiate a search. What follows is a simplified version of the lifetime of a
+search, describing the pipeline that returns results for a typed string. Some
+parts of the query lifetime are intentionally omitted from this document for
+clarity.
 
-The search described in this document is internal to the address bar. It is not
+The search described in this document is internal to urlbar code. It is not
 the search sent to the default search engine when you press Enter. Parts of this
 process often occur multiple times per keystroke, as described below.
 

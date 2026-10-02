@@ -7,9 +7,9 @@ usually still works on the direct path, so run its tests
 [over the message path](testing.md#testing-over-the-message-path) too.
 
 Some failures only show in a content process, because in the parent process
-every realm is privileged. The New Tab search bar's tests in
+every realm is privileged. The tests in
 {searchfox}`tests/browser-newtab <browser/components/urlbar/tests/browser-newtab/>`
-run the address bar in a content process.
+run the New Tab search bar, which lives in a content process.
 
 ## A payload is plain data
 

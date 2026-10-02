@@ -33,7 +33,7 @@ The address bar (varyingly also referred to as the Awesome Bar, or Quantum Bar) 
 entering web addresses including a popup with suggestions from various sources including history,
 bookmarks and search engines.
 
-{ref}`Read more <Address Bar>`
+{doc}`Read more <urlbar/index>`
 
 ## Search
 

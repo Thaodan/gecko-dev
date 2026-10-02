@@ -1,6 +1,6 @@
 (urlbar-testing)=
 
-# Address Bar Testing
+# Testing
 
 This documentation discusses how to write a test for the address bar, or for a
 search bar built on the address bar's architecture, such as the search bar in
