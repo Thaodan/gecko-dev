@@ -211,11 +211,17 @@ def dependency_kinds(metadata, tooling_members=TOOLING_MEMBERS, report=None):
     }
 
 
-def collect_dependency_kinds(topsrcdir, topobjdir=None, cargo=None, log=None):
+def collect_dependency_kinds(
+    topsrcdir, topobjdir=None, cargo=None, log=None, rustc=None
+):
     """Run `cargo metadata` and reduce it to dependency kinds.
 
     ``cargo`` is the configuration's CARGO subst; automation has no bare
     `cargo` on PATH, so falling back to one only helps an unconfigured tree.
+    ``rustc`` is the RUSTC subst, passed through as the `RUSTC` environment
+    variable: resolving the dependency graph makes cargo run `rustc -vV` for
+    the host target and cfgs, and it looks for it on PATH, where the Linux
+    build tasks do not have it. Cargo reads `RUSTC` ahead of PATH.
 
     Returns {} when the answer is not available rather than failing: the
     vendored-source replacement lives in the objdir's generated cargo config,
@@ -239,6 +245,8 @@ def collect_dependency_kinds(topsrcdir, topobjdir=None, cargo=None, log=None):
             )
             return {}
         environment["CARGO_HOME"] = cargo_home
+    if rustc:
+        environment["RUSTC"] = rustc
 
     try:
         output = subprocess.run(

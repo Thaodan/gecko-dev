@@ -4,9 +4,9 @@
 
 """Generate a CycloneDX software bill of materials for the configured tree.
 
-``generate_file`` is the GENERATED_FILES entry point the build uses, so the
-document is produced from the objdir that built the product, by the same build
-graph that produces everything else. `mach sbom` calls ``generate()``, which is
+``generate_file`` and ``generate_build_tooling_file`` are the GENERATED_FILES
+entry points the build uses, so the documents are produced from the objdir that
+built the product, by the same build graph that produces everything else. `mach sbom` calls ``generate()``, which is
 also how an unconfigured tree gets the moz.yaml-only subset.
 """
 
@@ -35,7 +35,13 @@ def _crate_records(topsrcdir, topobjdir, substs, log):
         is_tooling,
     )
 
-    kinds = collect_dependency_kinds(topsrcdir, topobjdir, substs.get("CARGO"), log=log)
+    kinds = collect_dependency_kinds(
+        topsrcdir,
+        topobjdir,
+        substs.get("CARGO"),
+        log=log,
+        rustc=substs.get("RUSTC"),
+    )
     crates, edges = crate_records(topsrcdir, kinds=kinds)
     shipped, tooling = [], []
     for crate in crates:
@@ -121,13 +127,15 @@ def build_tooling_document(
     substs=None,
     version=None,
     product_name=None,
+    strict=False,
     log=None,
 ):
     """Return the SBOM of what builds and tests the product, as a JSON string.
 
     The product document describes what ships; this one describes the
     third-party code the tree runs to get there, which ships in nothing but is
-    as much a supply-chain input. The build does not generate it.
+    as much a supply-chain input. Raises ``SbomError`` where ``strict`` asks
+    for a hard failure.
     """
     from mozbuild.vendor.sbom_npm import npm_records
     from mozbuild.vendor.sbom_python import python_records
@@ -153,6 +161,10 @@ def build_tooling_document(
     dependencies.update(crate_edges)
     if kinds:
         log(f"{len(crates)} test and tooling crates.")
+    elif strict:
+        raise SbomError(
+            "cargo metadata unavailable; tooling crates cannot be told apart."
+        )
     else:
         log("cargo metadata unavailable; tooling crates cannot be told apart.")
 
@@ -423,6 +435,30 @@ def generate_file(output):
 
     output.write(
         build_document(
+            buildconfig.topsrcdir,
+            buildconfig.topobjdir,
+            get_repository_object(buildconfig.topsrcdir),
+            substs=buildconfig.substs,
+            strict=True,
+            log=log,
+        )
+    )
+
+
+def generate_build_tooling_file(output):
+    """GENERATED_FILES entry point of the build tooling document.
+
+    Strict: without `cargo metadata` the test and tooling crates cannot be told
+    apart from the shipped ones, and the document would silently leave them out.
+    """
+    import buildconfig
+    from mozversioncontrol import get_repository_object
+
+    def log(message):
+        print(message, file=sys.stderr)
+
+    output.write(
+        build_tooling_document(
             buildconfig.topsrcdir,
             buildconfig.topobjdir,
             get_repository_object(buildconfig.topsrcdir),

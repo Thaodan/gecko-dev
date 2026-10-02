@@ -387,23 +387,29 @@ It holds:
   metadata instead, so `vsdownload` is here rather than in the product
   document.
 
-The build does not generate it and automation does not publish it.
+Shippable builds generate it next to the product document; see
+{ref}`sbom_in_automation`.
 
+(sbom_in_automation)=
 ## In Automation
 
-Shippable builds generate the SBOM as part of the build and upload it
-alongside the other build artifacts:
+Shippable builds generate the SBOM and the
+{ref}`build tooling SBOM <build_tooling_sbom>` as part of the build and upload
+them alongside the other build artifacts:
 
 ```
 public/build/sbom.json
+public/build/sbom-build-tooling.json
 ```
 
 `MOZ_GENERATE_SBOM: "1"` in a build task's `worker.env` turns on the configure
 option of the same name, which adds a `GENERATED_FILES` entry for
-`<objdir>/sbom.json` to the top-level `moz.build`. The build graph schedules it
-like any other generated file, and `automation/upload` picks the result up. The
-generator is strict there, so an unparseable `moz.yaml` fails the build rather
-than silently shrinking the SBOM. The variable is set per task in
+`<objdir>/sbom.json` and one for `<objdir>/sbom-build-tooling.json` to the
+top-level `moz.build`. The build graph schedules them like any other generated
+file, and `automation/upload` picks the results up. The generator is strict
+there, so an unparseable `moz.yaml`, or a build tooling document without
+`cargo metadata` to tell the tooling crates apart, fails the build rather than
+silently shrinking the SBOM. The variable is set per task in
 `taskcluster/kinds/build/`, so whether a given build produces an SBOM is
 visible in the task definition.
 
