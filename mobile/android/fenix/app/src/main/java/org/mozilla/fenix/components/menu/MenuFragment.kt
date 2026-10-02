@@ -70,6 +70,7 @@ import org.mozilla.fenix.home.topsites.ShortcutMenuItemProvider
 import org.mozilla.fenix.ipprotection.VpnMenuItemProvider
 import org.mozilla.fenix.pdf.SaveAsPdfMenuItemProvider
 import org.mozilla.fenix.print.PrintMenuItemProvider
+import org.mozilla.fenix.settings.SettingsMenuItemProvider
 import org.mozilla.fenix.shortcut.AddToHomeScreenMenuItemProvider
 import org.mozilla.fenix.summarization.SummarizePageMenuItemProvider
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -342,6 +343,8 @@ class MenuFragment : BottomSheetDialogFragment() {
                     accessPoint = MenuAccessPoint.Browser,
                     scope = viewLifecycleOwner.lifecycle.coroutineScope,
                 )
+
+            FenixMenuItem.Settings -> SettingsMenuItemProvider()
         }
     }
 

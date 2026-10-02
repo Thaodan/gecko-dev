@@ -31,6 +31,7 @@ import org.mozilla.fenix.components.menu.FenixMenuItem.Refresh
 import org.mozilla.fenix.components.menu.FenixMenuItem.ReportBrokenSite
 import org.mozilla.fenix.components.menu.FenixMenuItem.SaveAsPdf
 import org.mozilla.fenix.components.menu.FenixMenuItem.SaveToCollection
+import org.mozilla.fenix.components.menu.FenixMenuItem.Settings
 import org.mozilla.fenix.components.menu.FenixMenuItem.Share
 import org.mozilla.fenix.components.menu.FenixMenuItem.Shortcut
 import org.mozilla.fenix.components.menu.FenixMenuItem.SummarizePage
@@ -172,7 +173,7 @@ class BrowserMenuBuilder(
                     MenuSectionConfiguration(
                         id = BROWSER_MENU_GROUP_4_ID,
                         presentationMode = Row,
-                        items = listOf(MozillaAccount),
+                        items = listOf(MozillaAccount, Settings),
                     ),
                 )
             return if (isToolbarAtBottom || isExpandedToolbarEnabled) rest + navSection else listOf(navSection) + rest

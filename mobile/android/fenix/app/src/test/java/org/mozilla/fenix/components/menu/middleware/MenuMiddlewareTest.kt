@@ -1207,6 +1207,15 @@ class MenuMiddlewareTest {
             onClick = onClick,
         )
 
+    @Test
+    fun `WHEN handling a request to show the settings THEN open them`() {
+        val store = createStore()
+
+        store.dispatch(Navigate.Settings)
+
+        verify { navController.navigate(NavGraphDirections.actionGlobalSettingsFragment(), null) }
+    }
+
     private fun ipProtectionStore(proxyStatus: ProxyStatus): IPProtectionStore = mockk {
         every { state } returns IPProtectionState(proxyStatus = proxyStatus)
         every { dispatch(any()) } just Runs

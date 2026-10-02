@@ -242,6 +242,8 @@ class MenuMiddleware(
 
             is Navigate.MozillaAccount -> navigateToMozillaAccount(action)
 
+            is Navigate.Settings -> navigate(NavGraphDirections.actionGlobalSettingsFragment())
+
             is Navigate.Back -> handleBackNavigation(action)
 
             is Navigate.Forward -> handleForwardNavigation(action)
