@@ -418,18 +418,19 @@ bool nsBaseFilePicker::IsPotentiallyReadableDirectory(nsIFile& aDirectory) {
 #ifdef XP_MACOSX
   // On macOS, the file picker can read directories that our own process can't.
   return true;
-#endif
-#ifdef MOZ_WIDGET_GTK
+#else
+#  ifdef MOZ_WIDGET_GTK
   if (mozilla::widget::IsRunningUnderFlatpakOrSnap()) {
     // On Flatpak / snap, the file picker can read directories that our own
     // process can't.
     return true;
   }
-#endif
+#  endif
   bool isDirectory = false;
   bool isReadable = false;
   return NS_SUCCEEDED(aDirectory.IsDirectory(&isDirectory)) && isDirectory &&
          NS_SUCCEEDED(aDirectory.IsReadable(&isReadable)) && isReadable;
+#endif
 }
 
 bool nsBaseFilePicker::IsContentInitiated() const {
