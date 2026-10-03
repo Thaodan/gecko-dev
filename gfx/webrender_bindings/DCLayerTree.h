@@ -34,6 +34,7 @@ struct ID3D11VideoProcessor;
 struct ID3D11VideoProcessorEnumerator;
 struct ID3D11VideoProcessorOutputView;
 struct IDCompositionColorMatrixEffect;
+struct IDCompositionDynamicTexture;
 struct IDCompositionFilterEffect;
 struct IDCompositionTableTransferEffect;
 struct IDCompositionTexture;
@@ -438,9 +439,12 @@ class DCLayerDCompositionTexture : public DCLayerSurface {
     RefPtr<ID3D11Texture2D> mTexture;
     RefPtr<IDCompositionTexture> mDCompositionTexture;
     EGLSurface mEGLSurface;
+    bool mHasBeenPresented = false;
   };
 
   bool AllocateTextures();
+  UniquePtr<TextureHolder> AllocateTexture();
+  void DestroyTexture(UniquePtr<TextureHolder> aHolder);
   void DestroyTextures();
   UniquePtr<TextureHolder> GetNextTexture();
   void UpdateCurrentTexture();
@@ -450,6 +454,10 @@ class DCLayerDCompositionTexture : public DCLayerSurface {
 
   UniquePtr<TextureHolder> mCurrentTextureHolder;
   UniquePtr<TextureHolder> mPresentingTextureHolder;
+
+  // Kept across buffer rotations and resizes. The previous texture stays
+  // displayed until the next successful present replaces it.
+  RefPtr<IDCompositionDynamicTexture> mDCompositionDynamicTexture;
 };
 
 class DCSwapChain : public DCLayerSurface {

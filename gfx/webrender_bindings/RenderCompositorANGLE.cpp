@@ -928,13 +928,7 @@ void RenderCompositorANGLE::InitializeUsePartialPresent() {
 
 bool RenderCompositorANGLE::UsePartialPresent() { return mUsePartialPresent; }
 
-bool RenderCompositorANGLE::RequestFullRender() {
-  // XXX Remove when partial update is supported.
-  if (UseLayerCompositor() && mDCLayerTree->UseDCLayerDCompositionTexture()) {
-    return true;
-  }
-  return mFullRender;
-}
+bool RenderCompositorANGLE::RequestFullRender() { return mFullRender; }
 
 uint32_t RenderCompositorANGLE::GetMaxPartialPresentRects() {
   if (!mUsePartialPresent) {
