@@ -557,16 +557,12 @@ static MWasmBinarySimd128* MatchTestBitsSequence(MWasmBinarySimd128* ins) {
 // GVN merges equal constants, so a zero is often shared. Specializing each use
 // of a shared zero is still a win on ARM64, which has compare-against-zero
 // forms that need no register.
-static bool CanSpecializeConstantOperand(MDefinition* constant,
-                                         wasm::SimdOp op) {
+static bool CanSpecializeConstantOperand(MDefinition* constant) {
   if (constant->hasOneUse()) {
     return true;
   }
-#  if defined(JS_CODEGEN_ARM64)
+#  ifdef JS_CODEGEN_ARM64
   return constant->toWasmFloatConstant()->toSimd128().isZeroBits();
-#  elif defined(JS_CODEGEN_LOONG64)
-  return AssemblerLOONG64::CanEncodeSimdCompareImmediateFor(
-      op, constant->toWasmFloatConstant()->toSimd128());
 #  else
   return false;
 #  endif
@@ -619,13 +615,12 @@ MDefinition* MWasmBinarySimd128::foldsTo(TempAllocator& alloc) {
   if (lhs()->isWasmFloatConstant() != rhs()->isWasmFloatConstant() &&
       specializeForConstantRhs()) {
     if (isCommutative() && lhs()->isWasmFloatConstant() &&
-        CanSpecializeConstantOperand(lhs(), simdOp())) {
+        CanSpecializeConstantOperand(lhs())) {
       return MWasmBinarySimd128WithConstant::New(
           alloc, rhs(), lhs()->toWasmFloatConstant()->toSimd128(), simdOp());
     }
 
-    if (rhs()->isWasmFloatConstant() &&
-        CanSpecializeConstantOperand(rhs(), simdOp())) {
+    if (rhs()->isWasmFloatConstant() && CanSpecializeConstantOperand(rhs())) {
       return MWasmBinarySimd128WithConstant::New(
           alloc, lhs(), rhs()->toWasmFloatConstant()->toSimd128(), simdOp());
     }
