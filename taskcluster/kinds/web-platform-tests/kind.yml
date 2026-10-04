@@ -851,6 +851,7 @@ tasks:
         chunks: dynamic
         default-chunks:
             by-test-platform:
+                .*-ccov.*: 2
                 .*-tsan.*: 4
                 default: 1
         mozharness:
