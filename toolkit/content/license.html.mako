@@ -59,6 +59,16 @@ ${app_license_block}\
 % endfor
     </ul>
 
+<br>
+
+    <ul>
+      <li><a href="#other-notices">Other Required Notices</a>
+      <li><a href="#optional-notices">Optional Notices</a>
+% if config.get("OS_ARCH") == "WINNT":
+      <li><a href="#proprietary-notices">Proprietary Operating System Components</a>
+% endif
+    </ul>
+
 % if app_license_list_block:
 The following licenses are specific to code used by the
 ${app_license_product_name}
