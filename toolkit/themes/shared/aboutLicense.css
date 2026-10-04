@@ -53,9 +53,10 @@
     vertical-align: top;
     overflow-wrap: anywhere;
 
-    > h1 {
+    > h2 {
       position: sticky;
       top: var(--licenses-header-height);
+      font-size: var(--font-size-large);
     }
 
     .license-meta {
@@ -74,6 +75,11 @@
     }
 
     &.license-text {
+      h3,
+      h4 {
+        font-size: var(--font-size-large);
+      }
+
       pre {
         white-space: pre-wrap;
       }

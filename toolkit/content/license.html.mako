@@ -93,7 +93,7 @@ ${app_license_list_block}\
 % for license in licenses:
         <tr>
           <td>
-            <h1><a id="${license['id']}"></a>${license['title']}</h1>
+            <h2><a id="${license['id']}"></a>${license['title']}</h2>
           </td>
           <td>
             <div class="license-meta">
@@ -131,7 +131,7 @@ ${license['text']}\
 
     <hr>
 
-    <h1><a id="other-notices"></a>Other Required Notices</h1>
+    <h2><a id="other-notices"></a>Other Required Notices</h2>
 
     <ul>
       <li>This software is based in part on the work of the Independent
@@ -147,7 +147,7 @@ ${license['text']}\
 
     <hr>
 
-    <h1><a id="optional-notices"></a>Optional Notices</h1>
+    <h2><a id="optional-notices"></a>Optional Notices</h2>
 
     <p>Some permissive software licenses request but do not require an
     acknowledgement of the use of their software. We are very grateful
@@ -173,7 +173,7 @@ ${license['text']}\
 
     <hr>
 
-    <h1><a id="proprietary-notices"></a>Proprietary Operating System Components</h1>
+    <h2><a id="proprietary-notices"></a>Proprietary Operating System Components</h2>
 
     <p>Under some circumstances, under our
     <a href="https://www.mozilla.org/foundation/licensing/binary-components/">binary components policy</a>,
@@ -183,7 +183,7 @@ ${license['text']}\
     that specific operating system. The following license statements
     apply to such inclusions.</p>
 
-    <h2><a id="directx"></a>Microsoft Windows: Terms for 'Microsoft Distributable Code'</h2>
+    <h3><a id="directx"></a>Microsoft Windows: Terms for 'Microsoft Distributable Code'</h3>
 
     <p>These terms apply to the following files;
     they are referred to below as "Distributable Code":
