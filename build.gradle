@@ -63,7 +63,7 @@ abstract class VerifyGleanVersionTask extends DefaultTask {
     final RegularFileProperty source = project.objects.fileProperty().convention(project.layout.projectDirectory.file("Cargo.lock"))
 
     @Input
-    String expectedVersion = project.ext.gleanVersion
+    String expectedVersion
 
     @OutputFile
     final RegularFileProperty outputFile = project.objects.fileProperty()
@@ -100,6 +100,7 @@ abstract class VerifyGleanVersionTask extends DefaultTask {
 }
 
 tasks.register("verifyGleanVersion", VerifyGleanVersionTask) {
+    expectedVersion = libs.versions.glean.get()
     outputFile.convention(layout.buildDirectory.file("glean/verifyGleanVersion.marker"))
 }
 
@@ -109,8 +110,6 @@ allprojects {
         mozconfig = gradle.mozconfig
         topsrcdir = gradle.mozconfig.topsrcdir
         topobjdir = gradle.mozconfig.topobjdir
-
-        gleanVersion = libs.versions.glean.get() // Verification done in verifyGleanVersion task
 
         artifactSuffix = getArtifactSuffix()
         versionName = getVersionName()
@@ -279,32 +278,6 @@ afterEvaluate {
                 options.compilerArgs += [
                         "-Werror"
                 ]
-            }
-        }
-
-        project.configurations.configureEach {
-            // Dependencies can't depend on a different major version of Glean than A-C itself.
-            resolutionStrategy.eachDependency { details ->
-                if (details.requested.group == 'org.mozilla.telemetry'
-                        && details.requested.name.contains('glean') ) {
-                    def requested = details.requested.version.tokenize(".")
-                        def defined = project.ext.gleanVersion.tokenize(".")
-                        // Check the major version
-                        if (requested[0] != defined[0]) {
-                            throw new AssertionError("Cannot resolve to a single Glean version. Requested: ${details.requested.version}, A-C uses: ${libs.mozilla.glean}")
-                        } else {
-                            // Enforce that all (transitive) dependencies are using the defined Glean version
-                            details.useVersion project.ext.gleanVersion
-                        }
-                }
-            }
-
-            resolutionStrategy.capabilitiesResolution.withCapability("org.mozilla.telemetry:glean-native") {
-                def toBeSelected = candidates.find { it.id instanceof ModuleComponentIdentifier && it.id.module.contains('geckoview') }
-                if (toBeSelected != null) {
-                    select(toBeSelected)
-                }
-                because 'use GeckoView Glean instead of standalone Glean'
             }
         }
     }
