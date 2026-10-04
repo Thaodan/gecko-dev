@@ -20,8 +20,8 @@
  */
 
 /**
- * pdfjsVersion = 6.4.256
- * pdfjsBuild = c33c32aed
+ * pdfjsVersion = 6.4.305
+ * pdfjsBuild = 2581d8f70
  */
 
 ;// ./web/ui_utils.js
@@ -895,7 +895,7 @@ const {
 } = globalThis.pdfjsLib;
 
 ;// ./web/internal_evt.js
-const INTERNAL_EVT = "c6ad7aca-3c90-419e-8074-a865eee3ba8a";
+const INTERNAL_EVT = "201d4100-6e9f-455a-8ef4-2a8ca6c25ac8";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -13338,7 +13338,7 @@ class PDFViewer {
   #savedPageViews = null;
   #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "6.4.256";
+    const viewerVersion = "6.4.305";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
@@ -15498,7 +15498,7 @@ class SignatureManager {
       passive: true
     });
     this.#initTabButtons(typeButton, drawButton, imageButton, panels);
-    imagePicker.accept = SupportedImageMimeTypes.join(",");
+    imagePicker.accept = SupportedImageMimeTypes.keys().join(",");
     eventBus.on("storedsignatureschanged", this.#signaturesChanged.bind(this), internalOpt);
     overlayManager.register(dialog);
   }
@@ -15786,7 +15786,7 @@ class SignatureManager {
     }, passiveOptions);
     this.#imagePicker.addEventListener("change", async () => {
       const file = this.#imagePicker.files?.[0];
-      if (!file || !SupportedImageMimeTypes.includes(file.type)) {
+      if (!file || !SupportedImageMimeTypes.has(file.type)) {
         this.#showError("Upload");
         this.#dialog.classList.toggle("waiting", false);
         return;
@@ -15803,7 +15803,7 @@ class SignatureManager {
       for (const {
         type
       } of dataTransfer.items) {
-        if (!SupportedImageMimeTypes.includes(type)) {
+        if (!SupportedImageMimeTypes.has(type)) {
           continue;
         }
         dataTransfer.dropEffect = dataTransfer.effectAllowed === "copy" ? "copy" : "move";
@@ -15822,7 +15822,7 @@ class SignatureManager {
         return;
       }
       for (const file of files) {
-        if (SupportedImageMimeTypes.includes(file.type)) {
+        if (SupportedImageMimeTypes.has(file.type)) {
           this.#extractSignature(file);
           break;
         }
