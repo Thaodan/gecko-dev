@@ -98,6 +98,7 @@ ${app_license_list_block}\
             <h1><a id="${license['id']}"></a>${license['title']}</h1>
           </td>
           <td>
+            <div class="license-meta">
 % if license['notice']:
             ${license['notice']}
 % endif
@@ -114,6 +115,7 @@ ${app_license_list_block}\
 % if not license['notice'] and not license['paths']:
             <p>N/A</p>
 % endif
+            </div>
           </td>
           <td class="license-text">
 % if license['html']:

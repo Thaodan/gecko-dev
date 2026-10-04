@@ -15,9 +15,16 @@
 }
 
 .licenses {
+  --licenses-header-height: 2.5em;
   table-layout: fixed;
+  /* The sticky cells below need the page, not the table, as their scroller. */
+  overflow: clip;
 
   th {
+    position: sticky;
+    top: 0;
+    height: var(--licenses-header-height);
+
     &:nth-child(1) {
       width: 18%;
     }
@@ -31,6 +38,18 @@
     text-align: start;
     vertical-align: top;
     overflow-wrap: anywhere;
+
+    > h1 {
+      position: sticky;
+      top: var(--licenses-header-height);
+    }
+
+    .license-meta {
+      position: sticky;
+      top: var(--licenses-header-height);
+      max-height: calc(100vh - var(--licenses-header-height));
+      overflow-y: auto;
+    }
 
     &.license-text {
       pre {
