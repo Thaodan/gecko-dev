@@ -146,6 +146,21 @@ VP8 patent grant, which upstream keeps in `libvpx/PATENTS`; `netwerk/sctp`
 needs one because its notice reproduces the FreeBSD and Cisco copyright headers
 its sources carry, which upstream's `LICENSE.md` does not.
 
+## Acknowledgements
+
+Some licenses ask for a one-line credit in the product's documentation, such
+as the IJG and FreeType licenses, and some authors merely request one, such as
+zlib's. `acknowledgement` adds that credit, as HTML, to the license's
+declaration. It is listed under "Acknowledgements" in `about:license`, and only
+in builds that ship the code:
+
+```python
+LICENSES["zlib"].acknowledgement = (
+    'The <a href="https://www.zlib.net/">zlib</a> compression library '
+    "(Jean-loup Gailly, Mark Adler and team)"
+)
+```
+
 ## Rendering `about:license` Without a Build
 
 `GENERATED_FILES` renders the page during a build, but the whole page can also

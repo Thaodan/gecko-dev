@@ -60,8 +60,7 @@ ${app_license_block}\
     </ul>
 
     <ul>
-      <li><a href="#other-notices">Other Required Notices</a>
-      <li><a href="#optional-notices">Optional Notices</a>
+      <li><a href="#acknowledgements">Acknowledgements</a>
       <li><a href="#trademarks">Trademarks</a>
 % if config.get("OS_ARCH") == "WINNT":
       <li><a href="#proprietary-notices">Proprietary Operating System Components</a>
@@ -132,7 +131,11 @@ ${license['text']}\
 
     <hr>
 
-    <h2><a id="other-notices"></a>Other Required Notices</h2>
+    <h2><a id="acknowledgements"></a>Acknowledgements</h2>
+
+    <p>Some licenses require, and others request, an acknowledgement of
+    their use in this product. We are very grateful to the following
+    people and projects for their contributions:</p>
 
     <ul>
       <li>This software is based in part on the work of the Independent
@@ -141,19 +144,6 @@ ${license['text']}\
           &copy; 1996-2026
           <a href="https://www.freetype.org/">The FreeType Project</a>.
           All rights reserved.</li>
-    </ul>
-
-
-    <hr>
-
-    <h2><a id="optional-notices"></a>Optional Notices</h2>
-
-    <p>Some permissive software licenses request but do not require an
-    acknowledgement of the use of their software. We are very grateful
-    to the following people and projects for their contributions to
-    this product:</p>
-
-    <ul>
       <li>The <a href="https://www.zlib.net/">zlib</a> compression library
           (Jean-loup Gailly, Mark Adler and team)</li>
       <li>The <a href="http://www.libpng.org/pub/png/">libpng</a> graphics library
@@ -162,6 +152,9 @@ ${license['text']}\
           (D. Richard Hipp and team)</li>
       <li>The <a href="http://nsis.sourceforge.net/">Nullsoft Scriptable Install System</a>
           (Amir Szekely and team)</li>
+% for acknowledgement in acknowledgements:
+      <li>${acknowledgement}</li>
+% endfor
     </ul>
 
     <hr>

@@ -2003,6 +2003,8 @@ class TestRecursiveMakeBackend(BackendTester):
         self.assertEqual(mylib["notice"], "Copyright 2026 Somebody.")
         self.assertTrue(mylib["html"])
         self.assertEqual(mylib["paths"], [])
+        self.assertEqual(mylib["acknowledgement"], "Portions are copyright Somebody.")
+        self.assertIsNone(mit["acknowledgement"])
 
 
 if __name__ == "__main__":
