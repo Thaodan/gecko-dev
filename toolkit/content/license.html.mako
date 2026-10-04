@@ -53,13 +53,11 @@ ${app_license_block}\
        and version you choose.)
     </p>
 
-    <ul>
+    <ul class="license-index">
 % for license in licenses:
       <li><a href="#${license['id']}">${license['title']}</a></li>
 % endfor
     </ul>
-
-<br>
 
     <ul>
       <li><a href="#other-notices">Other Required Notices</a>

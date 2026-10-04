@@ -5,13 +5,27 @@
 /* License Illustration */
 
 .license-header {
-  background-image: url("chrome://global/skin/illustrations/about-license.svg");
-  background-repeat: no-repeat;
-  background-position: right center;
-  min-height: 300px;
   display: flex;
   align-items: center;
-  padding-inline-end: 320px;
+
+  @media (width > 45em) {
+    background-image: url("chrome://global/skin/illustrations/about-license.svg");
+    background-repeat: no-repeat;
+    background-position: right center;
+    background-size: 180px;
+    min-height: 180px;
+    padding-inline-end: 220px;
+  }
+}
+
+.license-index {
+  columns: 14em;
+  column-gap: var(--space-xxlarge);
+
+  > li {
+    break-inside: avoid;
+    margin-bottom: var(--space-xsmall);
+  }
 }
 
 .licenses {
