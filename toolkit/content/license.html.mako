@@ -136,8 +136,8 @@ ${license['text']}\
     <ul>
       <li>This software is based in part on the work of the Independent
           JPEG Group.</li>
-      <li>Portions of the OS/2 and Android versions
-          of this software are copyright &copy;1996-2012
+      <li>Portions of the Android version of this software are copyright
+          &copy; 1996-2026
           <a href="https://www.freetype.org/">The FreeType Project</a>.
           All rights reserved.</li>
       <li>Google Play and the Google Play logo are trademarks of Google LLC.</li>
@@ -163,8 +163,6 @@ ${license['text']}\
           (D. Richard Hipp and team)</li>
       <li>The <a href="http://nsis.sourceforge.net/">Nullsoft Scriptable Install System</a>
           (Amir Szekely and team)</li>
-      <li>The <a href="https://mattmccutchen.net/bigint/">C++ Big Integer Library</a>
-          (Matt McCutchen)</li>
     </ul>
 
 
