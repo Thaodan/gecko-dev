@@ -267,7 +267,7 @@ DCLayerTree::DCLayerTree(gl::GLContext* aGL, EGLConfig aEGLConfig,
 
   if (gfx::gfxVars::UseWebRenderCompositor()) {
     MOZ_ASSERT(StaticPrefs::gfx_webrender_layer_compositor());
-    mCompositorKind = Some(WebRenderOsCompositorKind::LayerCompositor);
+    mUseLayerCompositor = true;
   }
 }
 
@@ -568,17 +568,12 @@ void DCLayerTree::WaitForCommitCompletion() {
   mCompositionDevice->WaitForCommitCompletion();
 }
 
-bool DCLayerTree::UseCompositor() const { return mCompositorKind.isSome(); }
-
-bool DCLayerTree::UseLayerCompositor() const {
-  return mCompositorKind.isSome() &&
-         mCompositorKind.ref() == WebRenderOsCompositorKind::LayerCompositor;
-}
+bool DCLayerTree::UseLayerCompositor() const { return mUseLayerCompositor; }
 
 void DCLayerTree::DisableNativeCompositor() {
   MOZ_ASSERT(mCurrentLayers.empty());
 
-  mCompositorKind = Nothing();
+  mUseLayerCompositor = false;
   ReleaseNativeCompositorResources();
   mPrevLayers.clear();
   mRootVisual->RemoveAllVisuals();
