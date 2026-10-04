@@ -1,7 +1,5 @@
 import org.gradle.api.services.BuildServiceParameters
-import org.tomlj.Toml
-import org.tomlj.TomlParseResult
-import org.tomlj.TomlTable
+import org.mozilla.conventions.VerifyGleanVersionTask
 
 buildscript {
     repositories {
@@ -17,7 +15,6 @@ buildscript {
 
     dependencies {
         classpath libs.android.gradle.plugin
-        classpath libs.tomlj
 
         // Used in mobile/android/fenix/app/build.gradle
         classpath libs.androidx.benchmark.gradle
@@ -58,49 +55,9 @@ def tryInt = { string ->
     return string
 }
 
-abstract class VerifyGleanVersionTask extends DefaultTask {
-    @InputFile
-    final RegularFileProperty source = project.objects.fileProperty().convention(project.layout.projectDirectory.file("Cargo.lock"))
-
-    @Input
-    String expectedVersion
-
-    @OutputFile
-    final RegularFileProperty outputFile = project.objects.fileProperty()
-
-    @TaskAction
-    void verifyGleanVersion() {
-        def foundVersion = getRustVersionFor(source.get().asFile, "glean")
-        if (expectedVersion != foundVersion) {
-          throw new GradleException("Mismatched Glean version, expected: '${expectedVersion}'," +
-              " found '${foundVersion}'")
-        } else {
-            logger.lifecycle("verifyGleanVersion> expected version matches found version '${foundVersion}'")
-        }
-
-        outputFile.get().asFile.text = "glean-${foundVersion}"
-    }
-
-    // Parses the Cargo.lock and returns the version for the given package name.
-    static String getRustVersionFor(file, packageName) {
-        String version = null;
-        TomlParseResult result = Toml.parse(file.getText());
-        for (object in result.getArray("package").toList()) {
-            def table = (TomlTable) object
-            if (table.getString("name") == packageName) {
-                if (version != null) {
-                    throw new GradleException("Multiple versions for '${packageName}' found." +
-                                                     " Ensure '${packageName}' is only included once.")
-                }
-                version = table.getString("version")
-            }
-        }
-        return version
-    }
-}
-
 tasks.register("verifyGleanVersion", VerifyGleanVersionTask) {
-    expectedVersion = libs.versions.glean.get()
+    source.convention(layout.projectDirectory.file("Cargo.lock"))
+    expectedVersion.set(libs.versions.glean.get())
     outputFile.convention(layout.buildDirectory.file("glean/verifyGleanVersion.marker"))
 }
 
