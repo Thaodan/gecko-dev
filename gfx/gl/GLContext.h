@@ -32,6 +32,7 @@
 #include "GLTypes.h"
 #include "MozFramebuffer.h"
 #include "base/platform_thread.h"  // for PlatformThreadId
+#include "mozilla/EndianUtils.h"
 #include "mozilla/GenericRefCounted.h"
 #include "mozilla/IntegerRange.h"
 #include "mozilla/RefPtr.h"
@@ -1630,6 +1631,13 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     BEFORE_GL_CALL;
     mSymbols.fReadPixels(x, y, width, height, format, type, pixels);
     OnSyncCall();
+    if constexpr (std::endian::native == std::endian::big) {
+      uint8_t* itr = (uint8_t*)pixels;
+      for (GLsizei i = 0; i < width * height; i++) {
+        NativeEndian::swapToLittleEndianInPlace((uint32_t*)itr, 1);
+        itr += 4;
+      }
+    }
     AFTER_GL_CALL;
     mHeavyGLCallsSinceLastFlush = true;
   }
