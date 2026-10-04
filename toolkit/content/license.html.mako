@@ -83,11 +83,13 @@ ${app_license_list_block}\
 
     <hr>
 
-    <table>
+    <table class="licenses">
       <thead>
-        <th>Name</th>
-        <th>Paths</th>
-        <th>License</th>
+        <tr>
+          <th>Name</th>
+          <th>Paths</th>
+          <th>License</th>
+        </tr>
       </thead>
       <tbody>
 % for license in licenses:
@@ -113,13 +115,13 @@ ${app_license_list_block}\
             <p>N/A</p>
 % endif
           </td>
-          <td>
+          <td class="license-text">
 % if license['html']:
 ${license['text']}\
 % else:
             <pre>
 ${license['text']}\
-            </pre>
+</pre>
 % endif
           </td>
         </tr>
