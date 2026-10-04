@@ -345,18 +345,6 @@ subprojects { project ->
             }
         }
     }
-
-    project.configurations.configureEach {
-        resolutionStrategy.capabilitiesResolution.withCapability("org.mozilla.telemetry:glean-native") {
-            def toBeSelected = candidates.find {
-                it.id instanceof ProjectComponentIdentifier && it.id.projectName.contains('geckoview')
-            }
-            if (toBeSelected != null) {
-                select(toBeSelected)
-            }
-            because 'use GeckoView Glean instead of standalone Glean'
-        }
-    }
 }
 
 // These are convenience helpers to run lints over all the subprojects
