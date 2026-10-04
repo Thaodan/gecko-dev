@@ -62,6 +62,7 @@ ${app_license_block}\
     <ul>
       <li><a href="#other-notices">Other Required Notices</a>
       <li><a href="#optional-notices">Optional Notices</a>
+      <li><a href="#trademarks">Trademarks</a>
 % if config.get("OS_ARCH") == "WINNT":
       <li><a href="#proprietary-notices">Proprietary Operating System Components</a>
 % endif
@@ -140,8 +141,6 @@ ${license['text']}\
           &copy; 1996-2026
           <a href="https://www.freetype.org/">The FreeType Project</a>.
           All rights reserved.</li>
-      <li>Google Play and the Google Play logo are trademarks of Google LLC.</li>
-      <li>App Store® and the App Store® logo are trademarks of Apple, Inc.</li>
     </ul>
 
 
@@ -163,6 +162,15 @@ ${license['text']}\
           (D. Richard Hipp and team)</li>
       <li>The <a href="http://nsis.sourceforge.net/">Nullsoft Scriptable Install System</a>
           (Amir Szekely and team)</li>
+    </ul>
+
+    <hr>
+
+    <h2><a id="trademarks"></a>Trademarks</h2>
+
+    <ul>
+      <li>Google Play and the Google Play logo are trademarks of Google LLC.</li>
+      <li>App Store® and the App Store® logo are trademarks of Apple, Inc.</li>
     </ul>
 
 
