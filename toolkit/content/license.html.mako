@@ -100,11 +100,11 @@ ${app_license_list_block}\
 % if license['notice']:
             ${license['notice']}
 % endif
-% if license['paths']:
+% if license['paths'] and not license['notice_names_paths']:
 % if not license['notice_leads_paths']:
             <p>This license applies to the following paths:</p>
 % endif
-            <ul>
+            <ul class="license-paths">
 % for path in license['paths']:
               <li><code>${path}</code></li>
 % endfor

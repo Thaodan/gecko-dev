@@ -65,6 +65,14 @@
       overflow-y: auto;
     }
 
+    .license-paths {
+      margin-inline-start: var(--space-large);
+
+      > li {
+        margin-bottom: 0;
+      }
+    }
+
     &.license-text {
       pre {
         white-space: pre-wrap;
