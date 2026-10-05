@@ -2577,8 +2577,6 @@ nsresult HttpChannelChild::ContinueAsyncOpen() {
   openArgs.handleFetchEventStart() = mHandleFetchEventStart;
   openArgs.handleFetchEventEnd() = mHandleFetchEventEnd;
 
-  openArgs.forceMainDocumentChannel() = LoadForceMainDocumentChannel();
-
   openArgs.navigationStartTimeStamp() = navigationStartTimeStamp;
   openArgs.earlyHintPreloaderId() = mEarlyHintPreloaderId;
 
