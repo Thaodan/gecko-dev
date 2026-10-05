@@ -3,10 +3,19 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mozilla.focus.activity
 
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
+import androidx.test.uiautomator.By
+import androidx.test.uiautomator.SearchCondition
+import androidx.test.uiautomator.Searchable
+import androidx.test.uiautomator.Until
 import org.junit.After
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.focus.R
 import org.mozilla.focus.activity.robots.browserScreen
 import org.mozilla.focus.activity.robots.homeScreen
 import org.mozilla.focus.activity.robots.searchScreen
@@ -48,6 +57,37 @@ class ThreeDotMainMenuTest {
             .openMainMenu {
                 verifyHelpPageLinkExists()
                 verifySettingsButtonExists()
+            }
+    }
+
+    @SmokeTest
+    @Test
+    fun dismissAndReopenHomeMenuWithKeyboardTest() {
+        homeScreen {}.openSearchBar {}
+        waitForKeyboardVisibility(true)
+
+        homeScreen {}
+            .openMainMenu {
+                verifyHelpPageLinkExists()
+                verifySettingsButtonExists()
+                waitForKeyboardVisibility(false)
+                TestHelper.mDevice.pressBack()
+            }
+
+        assertTrue(
+            TestHelper.mDevice.wait(
+                Until.gone(By.text(TestHelper.getStringResource(R.string.menu_help))),
+                TestHelper.waitingTime,
+            )
+        )
+        homeScreen {
+            verifyEmptySearchBar()
+        }
+            .openMainMenu {
+                verifyHelpPageLinkExists()
+            }
+            .openSettings {
+                verifySettingsMenuItems()
             }
     }
 
@@ -161,5 +201,24 @@ class ThreeDotMainMenuTest {
             .openMainMenu {
                 verifyRequestDesktopSiteIsEnabled(false)
             }
+    }
+
+    private fun waitForKeyboardVisibility(visible: Boolean) {
+        assertTrue(
+            "Expected keyboard visibility: $visible",
+            TestHelper.mDevice.wait(
+                object : SearchCondition<Boolean>() {
+                    override fun apply(args: Searchable?): Boolean? {
+                        var matches = false
+                        getInstrumentation().runOnMainSync {
+                            val insets = ViewCompat.getRootWindowInsets(mActivityTestRule.activity.window.decorView)
+                            matches = insets?.isVisible(WindowInsetsCompat.Type.ime()) == visible
+                        }
+                        return matches
+                    }
+                },
+                TestHelper.waitingTime,
+            ),
+        )
     }
 }

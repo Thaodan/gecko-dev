@@ -17,8 +17,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -37,6 +39,7 @@ import mozilla.components.browser.menu.R as menuR
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.menu.Menu
 import mozilla.components.compose.menu.store.MenuStore
+import mozilla.components.support.ktx.android.view.hideKeyboard
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.focus.R
 
@@ -55,15 +58,19 @@ private const val MENU_MAX_HEIGHT_RATIO = 0.8f
 @Composable
 fun MenuButton(buildMenuStore: (scope: CoroutineScope, onDismiss: () -> Unit) -> MenuStore) {
     var isMenuShown by remember { mutableStateOf(false) }
+    val view = LocalView.current
 
     // Read outside of the popup, which reports the size of its own window rather than of the application's.
     val maxMenuHeight =
         with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() } * MENU_MAX_HEIGHT_RATIO
     val horizontalMargin = with(LocalDensity.current) { MENU_HORIZONTAL_MARGIN.roundToPx() }
 
-    Box {
+    Box(contentAlignment = Alignment.Center) {
         IconButton(
-            onClick = { isMenuShown = true },
+            onClick = {
+                view.hideKeyboard()
+                isMenuShown = true
+            },
             contentDescription = stringResource(menuR.string.mozac_browser_menu_button),
             colors = IconButtonDefaults.iconButtonColors(contentColor = colorResource(R.color.primaryText)),
         ) {

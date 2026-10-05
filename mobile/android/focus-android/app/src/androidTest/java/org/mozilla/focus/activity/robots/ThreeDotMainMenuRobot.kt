@@ -3,11 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mozilla.focus.activity.robots
 
-import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.action.ViewActions.click
-import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
-import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.BySelector
 import androidx.test.uiautomator.UiObject2
@@ -61,7 +56,7 @@ class ThreeDotMainMenuRobot {
         menuItem("Report broken site…")
     }
 
-    fun verifyHelpPageLinkExists() = helpPageMenuLink.check(matches(isDisplayed()))
+    fun verifyHelpPageLinkExists() = menuItem(getStringResource(R.string.menu_help))
 
     fun clickOpenInOption() {
         menuItem(getStringResource(R.string.menu_open_with_a_browser2)).click()
@@ -109,7 +104,7 @@ class ThreeDotMainMenuRobot {
         }
 
         fun clickHelpPageLink(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
-            helpPageMenuLink.check(matches(isDisplayed())).perform(click())
+            menuItem(getStringResource(R.string.menu_help)).click()
 
             BrowserRobot().interact()
             return BrowserRobot.Transition()
@@ -179,8 +174,6 @@ private fun menuItem(label: String): UiObject2 {
     return mDevice.wait(Until.findObject(By.text(text)), waitingTime)
         ?: throw AssertionError("Menu item not found: $label")
 }
-
-private val helpPageMenuLink = onView(withText("Help"))
 
 /** Whether any of the nodes next to this one, as shown in the same menu item, matches [selector]. */
 private fun UiObject2.hasSibling(selector: BySelector): Boolean {
