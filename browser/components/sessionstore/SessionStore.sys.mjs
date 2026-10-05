@@ -76,6 +76,9 @@
  *   Values set through `SessionStore.setCustomWindowValue`.
  * @property {boolean} [busy]
  *   Whether the window is still restoring tabs.
+ * @property {boolean} [_restoring]
+ *   Whether the window's state is still waiting to be restored into it,
+ *   which leaves the window out of session saves.
  * @property {WindowID} [__lastSessionWindowID]
  *   ID the window had in the session being restored, used to map that
  *   session's windows onto the windows they are restored into.
@@ -140,6 +143,17 @@
  *   `windowFeaturesMismatchIgnored` telemetry event.
  * @property {string} [trigger]
  *   The reason recorded when the restore opens a Smart Window.
+ */
+
+/**
+ * @typedef {object} RestoreHistoryOptions
+ *   What a tab's history restore needs, kept until its content restore.
+ * @property {TabStateData} tabData
+ *   The tab state to restore.
+ * @property {number} epoch
+ *   The browser's restore epoch, which discards updates from earlier ones.
+ * @property {object} [loadArguments]
+ *   Arguments for loading a URI after the history restore.
  */
 
 /**
@@ -404,6 +418,7 @@ class _SessionStore {
   #tabStateRestorePromises = new WeakMap();
 
   // The history data needed to be restored in the parent.
+  /** @type {WeakMap<object, RestoreHistoryOptions>} */
   #tabStateToRestore = new WeakMap();
 
   // For each <browser> element, records the current epoch.
@@ -8588,7 +8603,7 @@ class _SessionStore {
    *
    * @param {MozBrowser} browser
    *        The browser to restore the history for.
-   * @param {TabStateData} data
+   * @param {RestoreHistoryOptions} data
    *        The tab data to restore.
    */
   #restoreHistory(browser, data) {
@@ -8854,7 +8869,7 @@ class _SessionStore {
    *
    * @param {MozBrowser} browser
    *        The browser to transmit the permissions for.
-   * @param {object} options
+   * @param {RestoreHistoryOptions} options
    *        The options data to send to content.
    */
   #sendRestoreHistory(browser, options) {
