@@ -16,7 +16,7 @@ from taskgraph.util.python_path import find_object
 from taskgraph.util.yaml import load_yaml
 
 from gecko_taskgraph import GECKO
-from gecko_taskgraph.optimize import experimental, perf_batching, project
+from gecko_taskgraph.optimize import experimental, perf_batching, project, tryselect
 from gecko_taskgraph.optimize.backstop import SkipUnlessBackstop, SkipUnlessPushInterval
 from gecko_taskgraph.optimize.bugbug import (
     FALLBACK,
@@ -547,6 +547,27 @@ def test_expanded(params):
         t.label for t in default_tasks if not opt.should_remove_task(t, params, None)
     }
     assert scheduled == all_labels
+
+
+def test_tryselect_expanded(responses, params):
+    params.update({"project": "try", "backstop": False, "pushlog_id": 11})
+    responses.add(
+        responses.GET,
+        BUGBUG_BASE_URL + "/push/{project}/{head_rev}/schedules".format(**params),
+        json={
+            "tasks": {"task-0-label": 0.9, "task-1-label": 0.9},
+            "reduced_tasks": {"task-0-label": 0.9},
+            "known_tasks": ["task-0-label", "task-1-label", "task-2-label"],
+        },
+        status=200,
+    )
+
+    tasks = list(generate_tasks({}, {}, {}))
+    opt = tryselect.bugbug_reduced_manifests_config_selection_medium[
+        "skip-unless-expanded"
+    ]
+    scheduled = {t.label for t in tasks if not opt.should_remove_task(t, params, None)}
+    assert scheduled == {"task-0-label"}
 
 
 def test_project_autoland_test(monkeypatch, responses, params):
