@@ -17466,11 +17466,7 @@
 # Only effective on Linux/Android (TCP_USER_TIMEOUT, kernel 2.6.37+).
 - name: network.tcp.user_timeout
   type: RelaxedAtomicInt32
-#ifdef NIGHTLY_BUILD
   value: 30
-#else
-  value: 0
-#endif
   mirror: always
 
 # Maximum unsent data (bytes) in the kernel send buffer before a TCP socket
