@@ -8759,13 +8759,6 @@
   value: true
 #endif
 
-#ifdef XP_MACOSX
-- name: gfx.webrender.enable-client-storage
-  type: bool
-  value: false
-  mirror: once
-#endif
-
  # Width of WebRender tile size
 - name: gfx.webrender.picture-tile-width
   type: RelaxedAtomicInt32
