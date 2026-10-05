@@ -12,6 +12,7 @@ support-files = [
 ]
 prefs = [
   "browser.bookmarks.testing.skipDefaultBookmarksImport=true",
+  "layout.css.attr.enabled=true",
 ]
 
 ["browser_pickedSearchSuggestion.js"]
