@@ -128,6 +128,21 @@
  */
 
 /**
+ * @typedef {object} RestoreOptions
+ *   Options for restoring session state into windows.
+ * @property {boolean} [overwriteTabs]
+ *   Whether to overwrite existing tabs with the restored ones.
+ * @property {boolean} [firstWindow]
+ *   Whether this is the first non-private window restored in this session,
+ *   which might open an external link as well.
+ * @property {string} [restoreSource]
+ *   What started the restore, recorded as the `entry_point` of the
+ *   `windowFeaturesMismatchIgnored` telemetry event.
+ * @property {string} [trigger]
+ *   The reason recorded when the restore opens a Smart Window.
+ */
+
+/**
  * @typedef {Omit<ClosedTabStateData, "closedId" | "sourceWindowId"> & Partial<Pick<ClosedTabStateData, "closedId" | "sourceWindowId">>} UnsavedClosedTabStateData
  *   A closed tab before `#saveClosedTabData` assigns its `closedId`. Tabs
  *   saved into state that is about to be restored have no `sourceWindowId`
@@ -6102,14 +6117,8 @@ class _SessionStore {
    *        Window reference to the window to use for restoration
    * @param {WindowStateData} winData
    *        JS object
-   * @param {object} [aOptions]
+   * @param {RestoreOptions} [aOptions]
    *        Options for the restoration
-   * @param {boolean} [aOptions.overwriteTabs]
-   *        to overwrite existing tabs w/ new ones
-   * @param {boolean} [aOptions.firstWindow]
-   *        if this is the first non-private window we're
-   *        restoring in this session, that might open an
-   *        external link as well
    */
   #restoreWindow(aWindow, winData, aOptions = {}) {
     let overwriteTabs = aOptions && aOptions.overwriteTabs;
@@ -6445,14 +6454,8 @@ class _SessionStore {
    *        Additionally required windows will be opened.
    * @param {object|string} aState
    *        JS object or JSON string
-   * @param {object} [aOptions]
+   * @param {RestoreOptions} [aOptions]
    *        Options for the restoration
-   * @param {boolean} [aOptions.overwriteTabs]
-   *        to overwrite existing tabs w/ new ones
-   * @param {boolean} [aOptions.firstWindow]
-   *        if this is the first non-private window we're
-   *        restoring in this session, that might open an
-   *        external link as well
    */
   #restoreWindows(aWindow, aState, aOptions = {}) {
     // initialize window if necessary
@@ -6934,7 +6937,7 @@ class _SessionStore {
    *        Window reference
    * @param {WindowStateData} aWinData
    *        Object containing session data for the window
-   * @param {object} [aOptions]
+   * @param {RestoreOptions} [aOptions]
    *        Options for the restoration
    */
   #restoreWindowFeatures(aWindow, aWinData, aOptions = {}) {
