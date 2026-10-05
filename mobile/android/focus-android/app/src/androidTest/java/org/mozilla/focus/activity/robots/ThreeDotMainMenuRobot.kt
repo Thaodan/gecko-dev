@@ -156,7 +156,6 @@ class ThreeDotMainMenuRobot {
 }
 
 internal fun menuItem(label: String): UiObject2 {
-    // Compose merges the title and badge into one text node; legacy toolbar icons use a description.
     val text = Pattern.compile("(?s)${Pattern.quote(label)}(?:\\s.*)?")
     mDevice.waitForIdle()
     mDevice.findObject(By.text(text))?.let {

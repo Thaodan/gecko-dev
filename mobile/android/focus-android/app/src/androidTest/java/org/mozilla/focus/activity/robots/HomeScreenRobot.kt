@@ -6,7 +6,6 @@ package org.mozilla.focus.activity.robots
 
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiSelector
-import mozilla.components.browser.menu.R as menuR
 import org.junit.Assert.assertTrue
 import org.mozilla.focus.R
 import org.mozilla.focus.helpers.TestHelper.appName
@@ -125,7 +124,7 @@ private val editURLBar =
     mDevice.findObject(UiSelector().resourceId("$packageName:id/mozac_browser_toolbar_edit_url_view"))
 
 private val mainMenu
-    get() = mDevice.findObject(UiSelector().description(getStringResource(menuR.string.mozac_browser_menu_button)))
+    get() = mDevice.findObject(UiSelector().description(getStringResource(R.string.content_description_menu)))
 
 /** ******* First Run Locators */
 private val firstSlideTitle =

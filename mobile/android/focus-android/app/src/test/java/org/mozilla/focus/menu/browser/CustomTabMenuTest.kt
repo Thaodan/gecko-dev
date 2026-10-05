@@ -4,6 +4,13 @@
 
 package org.mozilla.focus.menu.browser
 
+import android.graphics.Bitmap
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
+import mozilla.components.browser.state.action.ContentAction
+import mozilla.components.browser.state.action.WebExtensionAction
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.CustomTabConfig
 import mozilla.components.browser.state.state.CustomTabMenuItem
@@ -13,21 +20,28 @@ import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.menu.data.MenuItem
+import mozilla.components.compose.menu.data.MenuItemsGroup
+import mozilla.components.compose.menu.ui.MenuItemIconBitmap
 import mozilla.components.compose.menu.ui.MenuItemState
 import mozilla.components.concept.engine.webextension.Action
 import mozilla.components.feature.webcompat.reporter.WebCompatReporterFeature.WEBCOMPAT_REPORTER_EXTENSION_ID
 import mozilla.components.support.test.mock
+import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
 import org.mozilla.focus.R
 import org.mozilla.focus.menu.CustomTabMenuItemTapped
 import org.mozilla.focus.menu.MenuItemTapped
 import org.mozilla.focus.menu.ToolbarMenu.CustomTabItem
+import org.robolectric.RobolectricTestRunner
 
 private const val APP_NAME = "Focus"
 
+@OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(RobolectricTestRunner::class)
 class CustomTabMenuTest {
     private val customTab = createCustomTab("https://mozilla.org", id = "customTab")
     private val selectedTab = createTab("https://example.org", id = "tab", private = true)
@@ -116,6 +130,63 @@ class CustomTabMenuTest {
         assertEquals(
             Text.String("Report broken site…"),
             menu(state).currentMenuGroups().flatMap { it.items }.item(CustomTabItem.ReportSiteIssue).title,
+        )
+    }
+
+    @Test
+    fun `GIVEN the reporter starts up while the custom tab menu is shown THEN load its own icon once`() = runTest {
+        val icon: Bitmap = mock()
+        var iconLoads = 0
+        val action =
+            Action("Report broken site…", true, null, null, null, null) {}
+                .copy(
+                    loadIcon = {
+                        iconLoads++
+                        icon
+                    }
+                )
+        val extension =
+            WebExtensionState(
+                id = WEBCOMPAT_REPORTER_EXTENSION_ID,
+                allowedInPrivateBrowsing = true,
+                pageAction = action,
+            )
+        val store =
+            BrowserStore(
+                browserState.copy(
+                    customTabs = listOf(customTab.copy(extensionState = mapOf(extension.id to extension)))
+                )
+            )
+        val menu =
+            CustomTabMenu(
+                browserStore = store,
+                customTabId = customTab.id,
+                appName = APP_NAME,
+                isOnboardingTab = false,
+                resources = testContext.resources,
+            )
+        var groups = emptyList<MenuItemsGroup>()
+        backgroundScope.launch { menu.menuGroups.collect { groups = it } }
+        runCurrent()
+        assertFalse(groups.flatMap { it.items }.hasItem(CustomTabItem.ReportSiteIssue))
+        assertEquals(0, iconLoads)
+
+        store.dispatch(
+            WebExtensionAction.InstallWebExtensionAction(
+                extension.copy(pageAction = action.copy(enabled = false, loadIcon = null))
+            )
+        )
+        runCurrent()
+
+        assertEquals(MenuItemIconBitmap(icon), groups.flatMap { it.items }.item(CustomTabItem.ReportSiteIssue).icon)
+        assertEquals(1, iconLoads)
+
+        store.dispatch(ContentAction.UpdateLoadingStateAction(customTab.id, true))
+        runCurrent()
+        assertEquals(1, iconLoads)
+        assertEquals(
+            MenuItemIconBitmap(icon),
+            menu.currentMenuGroups().flatMap { it.items }.item(CustomTabItem.ReportSiteIssue).icon,
         )
     }
 

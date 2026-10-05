@@ -13,7 +13,6 @@ import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
 import androidx.test.uiautomator.UiObject
 import androidx.test.uiautomator.UiSelector
 import junit.framework.TestCase.assertTrue
-import mozilla.components.browser.menu.R as menuR
 import mozilla.components.feature.customtabs.R as customtabsR
 import org.junit.Assert
 import org.mozilla.focus.R
@@ -114,7 +113,7 @@ fun customTab(interact: CustomTabRobot.() -> Unit): CustomTabRobot.Transition {
 private fun actionButton(description: String) = onView(withContentDescription(description))
 
 private val menuButton
-    get() = mDevice.findObject(UiSelector().description(getStringResource(menuR.string.mozac_browser_menu_button)))
+    get() = mDevice.findObject(UiSelector().description(getStringResource(R.string.content_description_menu)))
 
 private val shareButton = onView(withContentDescription("Share link"))
 

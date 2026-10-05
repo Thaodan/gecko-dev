@@ -36,7 +36,6 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import kotlinx.coroutines.CoroutineScope
-import mozilla.components.browser.menu.R as menuR
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.menu.Menu
 import mozilla.components.compose.menu.store.MenuStore
@@ -75,7 +74,7 @@ fun MenuButton(
                 view.hideKeyboard()
                 isMenuShown = true
             },
-            contentDescription = stringResource(menuR.string.mozac_browser_menu_button),
+            contentDescription = stringResource(R.string.content_description_menu),
             colors = IconButtonDefaults.iconButtonColors(contentColor = iconTint),
         ) {
             Icon(

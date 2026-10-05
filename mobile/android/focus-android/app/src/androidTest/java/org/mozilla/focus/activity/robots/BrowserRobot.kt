@@ -23,13 +23,13 @@ import androidx.test.uiautomator.UiObjectNotFoundException
 import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
 import java.time.LocalDate
-import mozilla.components.browser.menu.R as menuR
 import mozilla.components.feature.contextmenu.R as contextmenuR
 import mozilla.components.feature.findinpage.R as findinpageR
 import mozilla.components.ui.tabcounter.R as tabcounterR
 import org.hamcrest.Matchers.not
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.mozilla.focus.R
 import org.mozilla.focus.helpers.Constants.RETRY_COUNT
 import org.mozilla.focus.helpers.TestHelper.getStringResource
 import org.mozilla.focus.helpers.TestHelper.mDevice
@@ -566,7 +566,7 @@ private val eraseBrowsingButton = onView(withContentDescription("Erase browsing 
 private val tabsCounter = onView(withId(tabcounterR.id.counter_root))
 
 private val mainMenu
-    get() = mDevice.findObject(UiSelector().description(getStringResource(menuR.string.mozac_browser_menu_button)))
+    get() = mDevice.findObject(UiSelector().description(getStringResource(R.string.content_description_menu)))
 
 private val shareAppsList = mDevice.findObject(UiSelector().resourceId("android:id/resolver_list"))
 

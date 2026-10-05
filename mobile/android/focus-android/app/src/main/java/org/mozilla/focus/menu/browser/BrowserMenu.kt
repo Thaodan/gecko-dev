@@ -8,16 +8,12 @@ import android.content.res.Resources
 import android.graphics.Bitmap
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.BrowserState
-import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.menu.data.MenuItem
@@ -27,11 +23,7 @@ import mozilla.components.compose.menu.data.StandardMenuItem
 import mozilla.components.compose.menu.ui.MenuItemIconBitmap
 import mozilla.components.compose.menu.ui.MenuItemIconRes
 import mozilla.components.compose.menu.ui.MenuItemState
-import mozilla.components.concept.engine.webextension.Action
-import mozilla.components.feature.webcompat.reporter.WebCompatReporterFeature.WEBCOMPAT_REPORTER_EXTENSION_ID
 import mozilla.components.lib.state.ext.flow
-import mozilla.components.support.base.log.logger.Logger
-import mozilla.components.support.ktx.android.util.dpToPx
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.focus.R
 import org.mozilla.focus.menu.MenuItemTapped
@@ -45,22 +37,20 @@ private const val SHORTCUTS_GROUP_ID = "shortcuts"
 private const val WEBPAGE_GROUP_ID = "webpage"
 private const val MOVE_OUTSIDE_GROUP_ID = "move_outside"
 private const val SETTINGS_GROUP_ID = "settings"
-private const val REPORT_SITE_ISSUE_ICON_SIZE_DP = 24
 
 /** The menu shown in the BrowserFragment containing page actions like "Refresh", "Share" etc. */
 class BrowserMenu(
     private val browserStore: BrowserStore,
     private val appStore: AppStore,
-    private val resources: Resources,
+    resources: Resources,
 ) : MenuItems {
-    private val logger = Logger("BrowserMenu")
-    private var reportSiteIssueIcon: Bitmap? = null
+    private val reporterIcon = WebCompatReporterIcon(browserStore, resources) { webCompatReporterAction() }
 
     override val menuGroups: Flow<List<MenuItemsGroup>> =
-        combine(browserStore.flow(), reportSiteIssueIcons()) { state, icon -> menuGroupsFor(state, icon) }
+        combine(browserStore.flow(), reporterIcon.flow()) { state, icon -> menuGroupsFor(state, icon) }
             .distinctUntilChanged()
 
-    override fun currentMenuGroups(): List<MenuItemsGroup> = menuGroupsFor(browserStore.state, reportSiteIssueIcon)
+    override fun currentMenuGroups(): List<MenuItemsGroup> = menuGroupsFor(browserStore.state, reporterIcon.current)
 
     private fun menuGroupsFor(
         browserState: BrowserState,
@@ -84,59 +74,6 @@ class BrowserMenu(
                 reportSiteIssueIcon = reportSiteIssueIcon,
             )
             .toMenuGroups()
-    }
-
-    /**
-     * The icon of the WebCompat Reporter extension, starting with whatever is already available so that showing the
-     * menu is not held back by loading it, and emitting again once it has been loaded.
-     *
-     * The extension may still be starting up while the menu is shown, in which case it has no icon to load yet, so we
-     * must wait until the icon is available to then update it.
-     */
-    private fun reportSiteIssueIcons(): Flow<Bitmap?> = flow {
-        emit(reportSiteIssueIcon)
-
-        if (reportSiteIssueIcon == null) {
-            val loadIcon = browserStore.flow().map { it.webCompatReporterAction()?.loadIcon }.firstOrNull()
-
-            loadIcon?.let {
-                loadReportSiteIssueIcon(it)?.let { emit(it) }
-            }
-        }
-    }
-
-    /**
-     * The extension renders its icon in the requested size, so it is loaded once and then kept for as long as shown.
-     */
-    @Suppress("TooGenericExceptionCaught")
-    private suspend fun loadReportSiteIssueIcon(loadIcon: suspend (Int) -> Bitmap?): Bitmap? {
-        val size = REPORT_SITE_ISSUE_ICON_SIZE_DP.dpToPx(resources.displayMetrics)
-
-        return try {
-            loadIcon(size)?.also { reportSiteIssueIcon = it }
-        } catch (cancellation: CancellationException) {
-            throw cancellation
-        } catch (exception: Exception) {
-            logger.error("Failed to load the icon of the WebCompat Reporter extension", exception)
-            null
-        }
-    }
-}
-
-/**
- * The action of the WebCompat Reporter extension, or `null` if reporting the current page is not possible. It both
- * names the menu item to show and reports the page when invoked.
- *
- * The extension exposes a page action, which - unlike a browser action - is only shown when explicitly enabled, which
- * the extension does for the http and https pages it can report.
- */
-internal fun BrowserState.webCompatReporterAction(tab: SessionState? = selectedTab): Action? {
-    val extension = extensions[WEBCOMPAT_REPORTER_EXTENSION_ID]?.takeIf { it.enabled } ?: return null
-
-    if (!extension.allowedInPrivateBrowsing && tab?.content?.private == true) return null
-
-    return extension.pageAction?.copyWithOverride(tab?.extensionState?.get(extension.id)?.pageAction)?.takeIf {
-        it.enabled == true
     }
 }
 

@@ -8,11 +8,9 @@ import android.content.res.Resources
 import android.graphics.Bitmap
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flow
 import mozilla.components.browser.state.selector.findCustomTab
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.CustomTabMenuItem
@@ -26,8 +24,6 @@ import mozilla.components.compose.menu.ui.MenuItemIconBitmap
 import mozilla.components.compose.menu.ui.MenuItemIconRes
 import mozilla.components.compose.menu.ui.MenuItemState
 import mozilla.components.lib.state.ext.flow
-import mozilla.components.support.base.log.logger.Logger
-import mozilla.components.support.ktx.android.util.dpToPx
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.focus.R
 import org.mozilla.focus.menu.CustomTabMenuItemTapped
@@ -39,7 +35,6 @@ private const val NAVIGATION_GROUP_ID = "navigation"
 private const val WEBPAGE_GROUP_ID = "webpage"
 private const val MOVE_OUTSIDE_GROUP_ID = "move_outside"
 private const val CUSTOM_ITEMS_GROUP_ID = "custom_items"
-private const val REPORT_SITE_ISSUE_ICON_SIZE_DP = 24
 
 /**
  * The menu shown while browsing in a custom tab.
@@ -56,16 +51,16 @@ class CustomTabMenu(
     private val customTabId: String,
     private val appName: String,
     private val isOnboardingTab: Boolean,
-    private val resources: Resources,
+    resources: Resources,
 ) : MenuItems {
-    private val logger = Logger("CustomTabMenu")
-    private var reportSiteIssueIcon: Bitmap? = null
+    private val reporterIcon =
+        WebCompatReporterIcon(browserStore, resources) { webCompatReporterAction(findCustomTab(customTabId)) }
 
     override val menuGroups: Flow<List<MenuItemsGroup>> =
-        combine(browserStore.flow(), reportSiteIssueIcons()) { state, icon -> menuGroupsFor(state, icon) }
+        combine(browserStore.flow(), reporterIcon.flow()) { state, icon -> menuGroupsFor(state, icon) }
             .distinctUntilChanged()
 
-    override fun currentMenuGroups(): List<MenuItemsGroup> = menuGroupsFor(browserStore.state, reportSiteIssueIcon)
+    override fun currentMenuGroups(): List<MenuItemsGroup> = menuGroupsFor(browserStore.state, reporterIcon.current)
 
     private fun menuGroupsFor(
         browserState: BrowserState,
@@ -87,37 +82,6 @@ class CustomTabMenu(
                 customItems = customTab?.config?.menuItems.orEmpty(),
             )
             .toMenuGroups()
-    }
-
-    /**
-     * The icon of the WebCompat Reporter extension, starting with whatever is already available so that showing the
-     * menu is not held back by loading it, and emitting again once it has been loaded.
-     */
-    private fun reportSiteIssueIcons(): Flow<Bitmap?> = flow {
-        emit(reportSiteIssueIcon)
-
-        if (reportSiteIssueIcon == null) {
-            loadReportSiteIssueIcon()?.let { emit(it) }
-        }
-    }
-
-    /**
-     * The extension renders its icon in the requested size, so it is loaded once and then kept for as long as shown.
-     */
-    @Suppress("TooGenericExceptionCaught")
-    private suspend fun loadReportSiteIssueIcon(): Bitmap? {
-        val customTab = browserStore.state.findCustomTab(customTabId)
-        val loadIcon = browserStore.state.webCompatReporterAction(customTab)?.loadIcon ?: return null
-        val size = REPORT_SITE_ISSUE_ICON_SIZE_DP.dpToPx(resources.displayMetrics)
-
-        return try {
-            loadIcon(size)?.also { reportSiteIssueIcon = it }
-        } catch (cancellation: CancellationException) {
-            throw cancellation
-        } catch (exception: Exception) {
-            logger.error("Failed to load the icon of the WebCompat Reporter extension", exception)
-            null
-        }
     }
 }
 
