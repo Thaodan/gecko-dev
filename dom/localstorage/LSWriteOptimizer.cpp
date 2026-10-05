@@ -17,7 +17,8 @@ LSWriteOptimizerBase::LSWriteOptimizerBase()
 
 LSWriteOptimizerBase::LSWriteOptimizerBase(
     LSWriteOptimizerBase&& aWriteOptimizer)
-    : mTruncateInfo(std::move(aWriteOptimizer.mTruncateInfo)) {
+    : mTruncateInfo(std::move(aWriteOptimizer.mTruncateInfo)),
+      mLastSerialNumber(aWriteOptimizer.mLastSerialNumber) {
   AssertIsOnOwningThread();
   MOZ_ASSERT(&aWriteOptimizer != this);
 
@@ -92,9 +93,7 @@ void LSWriteOptimizerBase::GetSortedWriteInfos(
   }
 
   // Serial numbers are unique, so this is a total order and the result is
-  // identical regardless of the sort's stability. Note that the move
-  // constructor doesn't transfer mLastSerialNumber, so this only holds
-  // because a moved-to optimizer never accumulates new writes.
+  // identical regardless of the sort's stability.
   aWriteInfos.Sort(WriteInfoComparator());
 
 #ifdef DEBUG
