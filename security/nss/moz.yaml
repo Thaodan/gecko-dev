@@ -41,5 +41,5 @@ updatebot:
   tasks:
     - type: vendoring
       enabled: true
-      frequency: 1 week
+      frequency: 1 day
       blocking: 2074831
