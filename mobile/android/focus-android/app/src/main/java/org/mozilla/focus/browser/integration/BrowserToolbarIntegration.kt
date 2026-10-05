@@ -33,6 +33,8 @@ import mozilla.components.browser.toolbar.display.DisplayToolbar.Indicators
 import mozilla.components.compose.cfr.CFRPopup
 import mozilla.components.compose.cfr.CFRPopupBackground
 import mozilla.components.compose.cfr.CFRPopupProperties
+import mozilla.components.compose.menu.store.MenuState
+import mozilla.components.compose.menu.store.MenuStore
 import mozilla.components.feature.customtabs.CustomTabsToolbarFeature
 import mozilla.components.feature.customtabs.getConfiguredColorSchemeParams
 import mozilla.components.feature.session.SessionUseCases
@@ -55,10 +57,16 @@ import org.mozilla.focus.ext.isCustomTab
 import org.mozilla.focus.ext.isTablet
 import org.mozilla.focus.ext.settings
 import org.mozilla.focus.fragment.BrowserFragment
+import org.mozilla.focus.menu.MenuMiddleware
+import org.mozilla.focus.menu.MenuToolbarAction
+import org.mozilla.focus.menu.browser.BrowserMenu
 import org.mozilla.focus.menu.browser.CustomTabMenu
 import org.mozilla.focus.nimbus.FocusNimbus
 import org.mozilla.focus.state.AppAction
 import org.mozilla.focus.ui.theme.focusTypography
+
+private const val TAB_COUNTER_ACTION_WEIGHT = 1
+private const val MENU_ACTION_WEIGHT = 2
 
 /** Integration for the browser toolbar, managing its behavior and display. */
 @Suppress("LongParameterList", "LargeClass")
@@ -142,7 +150,30 @@ class BrowserToolbarIntegration(
             },
             store = store,
             showMaskInPrivateMode = false,
+            weight = { TAB_COUNTER_ACTION_WEIGHT },
         )
+    private val menuAction =
+        MenuToolbarAction(weight = { MENU_ACTION_WEIGHT }) { scope, onDismiss ->
+            val menu =
+                BrowserMenu(
+                    browserStore = store,
+                    appStore = toolbar.context.components.appStore,
+                    resources = toolbar.context.resources,
+                )
+
+            MenuStore(
+                initialState = MenuState(menuGroups = menu.currentMenuGroups()),
+                middleware =
+                    listOf(
+                        MenuMiddleware(
+                            menu = menu,
+                            controller = controller,
+                            onDismiss = onDismiss,
+                            scope = scope,
+                        )
+                    ),
+            )
+        }
 
     @VisibleForTesting internal var toolbarController = ToolbarBehaviorController(toolbar, store, customTabId)
 
@@ -253,6 +284,8 @@ class BrowserToolbarIntegration(
     }
 
     private fun setBrowserActionButtons() {
+        toolbar.addBrowserAction(menuAction)
+
         tabsCounterScope =
             store.flowScoped(dispatcher = coroutineDispatcher) { flow ->
                 flow
@@ -441,6 +474,7 @@ class BrowserToolbarIntegration(
         navigationButtonsIntegration?.stop()
         stopObserverSecurityIndicatorChanges()
         toolbar.removeBrowserAction(tabsAction)
+        toolbar.removeBrowserAction(menuAction)
         tabsCounterScope?.cancel()
         stopObserverEraseTabsCfrChanges()
         stopObserverTrackingProtectionCfrChanges()

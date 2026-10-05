@@ -50,6 +50,9 @@ interface ToolbarMenu {
         /** Finds text within the current page. */
         object FindInPage : Item()
 
+        /** Reports the current page as broken, through the WebCompat Reporter extension. */
+        object ReportSiteIssue : Item()
+
         /** Adds the current page to the home screen. */
         object AddToHomeScreen : Item()
 

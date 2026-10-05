@@ -7,13 +7,18 @@ package org.mozilla.focus.menu
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
+import mozilla.components.browser.state.action.WebExtensionAction
 import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.state.WebExtensionState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.concept.engine.webextension.Action
 import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.top.sites.TopSitesUseCases
+import mozilla.components.feature.webcompat.reporter.WebCompatReporterFeature.WEBCOMPAT_REPORTER_EXTENSION_ID
 import mozilla.components.support.test.any
 import mozilla.components.support.test.mock
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mock
@@ -28,6 +33,7 @@ import org.mozilla.focus.state.AppStore
 
 class BrowserMenuControllerTest {
     private lateinit var browserMenuController: BrowserMenuController
+    private lateinit var store: BrowserStore
 
     @Mock private lateinit var sessionUseCases: SessionUseCases
 
@@ -54,7 +60,7 @@ class BrowserMenuControllerTest {
 
     @Before
     fun setup() {
-        val store =
+        store =
             BrowserStore(
                 initialState =
                     BrowserState(
@@ -159,6 +165,46 @@ class BrowserMenuControllerTest {
         val menuItem = ToolbarMenu.Item.OpenInApp
         browserMenuController.handleMenuInteraction(menuItem)
         Mockito.verify(openInCallback, times(1)).invoke()
+    }
+
+    @Test
+    fun `WHEN report site issue is tapped THEN invoke the latest tab action`() {
+        var globalClicks = 0
+        var tabClicks = 0
+        val action = Action("Report broken site…", true, null, null, null, null) { globalClicks++ }
+        store.dispatch(
+            WebExtensionAction.InstallWebExtensionAction(
+                WebExtensionState(id = WEBCOMPAT_REPORTER_EXTENSION_ID, pageAction = action)
+            )
+        )
+        store.dispatch(
+            WebExtensionAction.UpdateTabPageAction(
+                sessionId = currentTabId,
+                extensionId = WEBCOMPAT_REPORTER_EXTENSION_ID,
+                pageAction = action.copy(onClick = { tabClicks++ }),
+            )
+        )
+
+        browserMenuController.handleMenuInteraction(ToolbarMenu.Item.ReportSiteIssue)
+
+        assertEquals(0, globalClicks)
+        assertEquals(1, tabClicks)
+    }
+
+    @Test
+    fun `GIVEN reporter was disabled WHEN report site issue is tapped THEN do not invoke it`() {
+        var clicks = 0
+        val action = Action("Report broken site…", true, null, null, null, null) { clicks++ }
+        store.dispatch(
+            WebExtensionAction.InstallWebExtensionAction(
+                WebExtensionState(id = WEBCOMPAT_REPORTER_EXTENSION_ID, pageAction = action)
+            )
+        )
+        store.dispatch(WebExtensionAction.UpdateWebExtensionEnabledAction(WEBCOMPAT_REPORTER_EXTENSION_ID, false))
+
+        browserMenuController.handleMenuInteraction(ToolbarMenu.Item.ReportSiteIssue)
+
+        assertEquals(0, clicks)
     }
 
     @Test

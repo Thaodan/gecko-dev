@@ -13,11 +13,13 @@ import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.top.sites.TopSitesUseCases
+import org.mozilla.focus.GleanMetrics.Browser
 import org.mozilla.focus.GleanMetrics.BrowserMenu
 import org.mozilla.focus.GleanMetrics.CustomTabsToolbar
 import org.mozilla.focus.GleanMetrics.Shortcuts
 import org.mozilla.focus.ext.titleOrDomain
 import org.mozilla.focus.menu.ToolbarMenu // Assuming ToolbarMenu.FocusMenuItem is defined here
+import org.mozilla.focus.menu.browser.webCompatReporterAction
 import org.mozilla.focus.state.AppAction
 import org.mozilla.focus.state.AppStore
 import org.mozilla.focus.state.Screen
@@ -99,6 +101,7 @@ class BrowserMenuController(
             is ToolbarMenu.Item.Share -> callbacks.shareCallback()
             is ToolbarMenu.Item.FindInPage,
             ToolbarMenu.CustomTabItem.FindInPage -> callbacks.showFindInPageCallback()
+            is ToolbarMenu.Item.ReportSiteIssue -> store.state.webCompatReporterAction()?.onClick()
             is ToolbarMenu.Item.AddToShortcuts -> {
                 addToShortcuts()
                 callbacks.showShortcutAddedSnackBar()
@@ -205,6 +208,8 @@ class BrowserMenuController(
 
             ToolbarMenu.Item.FindInPage ->
                 BrowserMenu.browserMenuAction.record(BrowserMenu.BrowserMenuActionExtra(TelemetryActions.FIND_IN_PAGE))
+
+            ToolbarMenu.Item.ReportSiteIssue -> Browser.reportSiteIssueCounter.add()
 
             ToolbarMenu.Item.AddToShortcuts -> Shortcuts.shortcutAddedCounter.add()
 

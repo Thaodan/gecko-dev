@@ -7,6 +7,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.focus.activity.robots.browserScreen
 import org.mozilla.focus.activity.robots.homeScreen
 import org.mozilla.focus.activity.robots.searchScreen
 import org.mozilla.focus.helpers.FeatureSettingsHelper
@@ -67,6 +68,31 @@ class ThreeDotMainMenuTest {
                 verifyRequestDesktopSiteExists()
                 verifySettingsButtonExists()
                 verifyReportSiteIssueButtonExists()
+            }
+    }
+
+    @SmokeTest
+    @Test
+    fun dismissAndReopenBrowserMenuTest() {
+        val page = webServerRule.server.getGenericTabAsset(1)
+
+        searchScreen {}
+            .loadPage(page.url) {
+                verifyPageContent(page.content)
+            }
+            .openMainMenu {
+                verifyFindInPageExists()
+                TestHelper.mDevice.pressBack()
+            }
+
+        browserScreen {
+            verifyPageURL(page.url)
+        }
+            .openMainMenu {
+                verifySettingsButtonExists()
+            }
+            .openSettings {
+                verifySettingsMenuItems()
             }
     }
 

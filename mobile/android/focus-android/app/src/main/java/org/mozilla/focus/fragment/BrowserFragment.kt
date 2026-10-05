@@ -95,7 +95,6 @@ import org.mozilla.focus.ext.requireComponents
 import org.mozilla.focus.ext.settings
 import org.mozilla.focus.ext.showAsFixed
 import org.mozilla.focus.ext.titleOrDomain
-import org.mozilla.focus.menu.browser.DefaultBrowserMenu
 import org.mozilla.focus.open.OpenWithFragment
 import org.mozilla.focus.session.ui.TabsPopup
 import org.mozilla.focus.settings.permissions.permissionoptions.SitePermissionOptionsStorage
@@ -601,16 +600,6 @@ class BrowserFragment : BaseFragment(), UserInteractionHandler, AccessibilityMan
             )
 
         val customTabSessionState = tab.ifCustomTab()
-        if (customTabSessionState?.config == null) {
-            val browserMenu =
-                DefaultBrowserMenu(
-                    context = requireContext(),
-                    appStore = requireComponents.appStore,
-                    store = requireComponents.store,
-                    onItemTapped = { controller.handleMenuInteraction(it) },
-                )
-            binding.browserToolbar.display.menuBuilder = browserMenu.menuBuilder
-        }
 
         val renderStyle =
             if (tab.isCustomTab()) {
