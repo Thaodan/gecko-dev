@@ -643,6 +643,12 @@ static MethodStatus CanEnterBaselineInterpreter(JSContext* cx,
     return Method_Error;
   }
 
+  if (!JitOptions.disableJitHints &&
+      cx->runtime()->jitRuntime()->hasJitHintsMap()) {
+    JitHintsMap* jitHints = cx->runtime()->jitRuntime()->getJitHintsMap();
+    jitHints->setEagerBaselineInterpreterHint(script);
+  }
+
   if (JitOptions.emitInterpreterEntryTrampoline) {
     if (!MaybeCreateBaselineInterpreterEntryScript(cx, script)) {
       ReportOutOfMemory(cx);
