@@ -77,12 +77,6 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs",
   { global: "contextual" }
 );
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "layoutCssAttrEnabled",
-  "layout.css.attr.enabled",
-  false
-);
 
 /**
  * An actor that represents a CSS style object on the protocol.
@@ -1585,14 +1579,7 @@ class StyleRuleActor extends Actor {
           }
           continue;
         }
-        if (
-          lastStack.tokenType === "Function" &&
-          lastStack.functionName === "attr" &&
-          // only include attribute name/values if they would actually be matched.
-          // With the pref set to false, the rule still parses, but the condition will
-          // be unmatched, and showing the attributes could lead to confusion
-          lazy.layoutCssAttrEnabled
-        ) {
+        if (lastStack.tokenType === "Function" && lastStack.functionName === "attr") {
           // the attribute name is the first ident after the function token
           if (!lastStack.attrNameFound) {
             // we want to return the attribute if it's not defined, so we can display
