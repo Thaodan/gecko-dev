@@ -46,6 +46,7 @@ class CustomTabRobot {
         menuItem(getStringResource(R.string.menu_open_with_a_browser2))
         menuItem(getStringResource(R.string.menu_open_with_default_browser2))
         menuItem(getStringResource(R.string.preference_performance_request_desktop_site2))
+        menuItem(getStringResource(R.string.menu_custom_tab_branding))
         // Removed until https://github.com/mozilla-mobile/android-components/issues/10791 is fixed
         // menuItem("Report broken site…")
     }

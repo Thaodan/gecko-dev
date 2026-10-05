@@ -190,6 +190,14 @@ class CustomTabMenuTest {
         )
     }
 
+    @Test
+    fun `WHEN building the menu THEN attribute it to this application below its items`() {
+        val attribution = menu().attribution
+
+        assertEquals(Text.Resource(R.string.menu_custom_tab_branding, listOf(APP_NAME)), attribution.title)
+        assertFalse(attribution.showAtTop)
+    }
+
     private fun menu(
         state: BrowserState = browserState,
         isOnboardingTab: Boolean = false,

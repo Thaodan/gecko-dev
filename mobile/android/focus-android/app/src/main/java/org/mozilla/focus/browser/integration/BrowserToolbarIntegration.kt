@@ -203,7 +203,7 @@ class BrowserToolbarIntegration(
             )
 
         return MenuStore(
-            initialState = MenuState(menuGroups = menu.currentMenuGroups()),
+            initialState = MenuState(menuGroups = menu.currentMenuGroups(), attribution = menu.attribution),
             middleware =
                 listOf(
                     buildMenuMiddleware(menu, scope, onDismiss),

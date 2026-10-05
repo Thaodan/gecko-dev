@@ -16,6 +16,7 @@ import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.CustomTabMenuItem
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.text.Text
+import mozilla.components.compose.menu.data.MenuAttribution
 import mozilla.components.compose.menu.data.MenuItem
 import mozilla.components.compose.menu.data.MenuItemBadge
 import mozilla.components.compose.menu.data.MenuItemsGroup
@@ -55,6 +56,14 @@ class CustomTabMenu(
 ) : MenuItems {
     private val reporterIcon =
         WebCompatReporterIcon(browserStore, resources) { webCompatReporterAction(findCustomTab(customTabId)) }
+
+    /** Attributes the menu to this application, which opened the custom tab of another one. */
+    val attribution =
+        MenuAttribution(
+            title = Text.Resource(R.string.menu_custom_tab_branding, listOf(appName)),
+            showAtTop = false,
+            icon = MenuItemIconRes(R.drawable.onboarding_logo),
+        )
 
     override val menuGroups: Flow<List<MenuItemsGroup>> =
         combine(browserStore.flow(), reporterIcon.flow()) { state, icon -> menuGroupsFor(state, icon) }
