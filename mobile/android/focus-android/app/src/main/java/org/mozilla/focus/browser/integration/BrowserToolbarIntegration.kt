@@ -57,7 +57,9 @@ import org.mozilla.focus.ext.isCustomTab
 import org.mozilla.focus.ext.isTablet
 import org.mozilla.focus.ext.settings
 import org.mozilla.focus.fragment.BrowserFragment
+import org.mozilla.focus.menu.BrowserMenuCallbacks
 import org.mozilla.focus.menu.CustomTabMenuItemsMiddleware
+import org.mozilla.focus.menu.MenuItems
 import org.mozilla.focus.menu.MenuMiddleware
 import org.mozilla.focus.menu.MenuToolbarAction
 import org.mozilla.focus.menu.browser.BrowserMenu
@@ -78,8 +80,9 @@ class BrowserToolbarIntegration(
     private val store: BrowserStore,
     private val toolbar: BrowserToolbar,
     private val fragment: BrowserFragment,
-    private val controller: BrowserMenuController,
-    sessionUseCases: SessionUseCases,
+    private val currentTabId: String,
+    private val menuCallbacks: BrowserMenuCallbacks,
+    private val sessionUseCases: SessionUseCases,
     customTabsUseCases: CustomTabsUseCases,
     private val onUrlLongClicked: () -> Boolean,
     private val eraseActionListener: () -> Unit,
@@ -180,15 +183,7 @@ class BrowserToolbarIntegration(
 
         return MenuStore(
             initialState = MenuState(menuGroups = menu.currentMenuGroups()),
-            middleware =
-                listOf(
-                    MenuMiddleware(
-                        menu = menu,
-                        controller = controller,
-                        onDismiss = onDismiss,
-                        scope = scope,
-                    )
-                ),
+            middleware = listOf(buildMenuMiddleware(menu, scope, onDismiss)),
         )
     }
 
@@ -211,12 +206,7 @@ class BrowserToolbarIntegration(
             initialState = MenuState(menuGroups = menu.currentMenuGroups()),
             middleware =
                 listOf(
-                    MenuMiddleware(
-                        menu = menu,
-                        controller = controller,
-                        onDismiss = onDismiss,
-                        scope = scope,
-                    ),
+                    buildMenuMiddleware(menu, scope, onDismiss),
                     CustomTabMenuItemsMiddleware(
                         context = context,
                         browserStore = store,
@@ -224,6 +214,26 @@ class BrowserToolbarIntegration(
                         onDismiss = onDismiss,
                     ),
                 ),
+        )
+    }
+
+    private fun buildMenuMiddleware(
+        menu: MenuItems,
+        scope: CoroutineScope,
+        onDismiss: () -> Unit,
+    ): MenuMiddleware {
+        val components = toolbar.context.components
+        return MenuMiddleware(
+            menu = menu,
+            sessionUseCases = sessionUseCases,
+            appStore = components.appStore,
+            browserStore = store,
+            topSitesUseCases = components.topSitesUseCases,
+            currentTabId = currentTabId,
+            callbacks = menuCallbacks,
+            onDismiss = onDismiss,
+            scope = scope,
+            applicationScope = components.applicationScope,
         )
     }
 
