@@ -101,7 +101,8 @@ class BrowserMenuController(
             is ToolbarMenu.Item.Share -> callbacks.shareCallback()
             is ToolbarMenu.Item.FindInPage,
             ToolbarMenu.CustomTabItem.FindInPage -> callbacks.showFindInPageCallback()
-            is ToolbarMenu.Item.ReportSiteIssue -> store.state.webCompatReporterAction()?.onClick()
+            is ToolbarMenu.Item.ReportSiteIssue,
+            ToolbarMenu.CustomTabItem.ReportSiteIssue -> store.state.webCompatReporterAction(currentTab)?.onClick()
             is ToolbarMenu.Item.AddToShortcuts -> {
                 addToShortcuts()
                 callbacks.showShortcutAddedSnackBar()
@@ -285,6 +286,8 @@ class BrowserMenuController(
                 CustomTabsToolbar.browserMenuAction.record(
                     CustomTabsToolbar.BrowserMenuActionExtra(TelemetryActions.FIND_IN_PAGE)
                 )
+
+            ToolbarMenu.CustomTabItem.ReportSiteIssue -> Browser.reportSiteIssueCounter.add()
 
             is ToolbarMenu.CustomTabItem.RequestDesktop -> {
                 val action = if (item.isChecked) TelemetryActions.DESKTOP_VIEW_ON else TelemetryActions.DESKTOP_VIEW_OFF

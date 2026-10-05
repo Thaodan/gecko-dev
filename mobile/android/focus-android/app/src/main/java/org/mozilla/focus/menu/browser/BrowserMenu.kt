@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.menu.data.MenuItem
@@ -34,6 +35,7 @@ import mozilla.components.support.ktx.android.util.dpToPx
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.focus.R
 import org.mozilla.focus.menu.MenuItemTapped
+import org.mozilla.focus.menu.MenuItems
 import org.mozilla.focus.menu.ToolbarMenu
 import org.mozilla.focus.state.AppStore
 import org.mozilla.focus.topsites.DefaultTopSitesStorage.Companion.TOP_SITES_MAX_LIMIT
@@ -50,17 +52,15 @@ class BrowserMenu(
     private val browserStore: BrowserStore,
     private val appStore: AppStore,
     private val resources: Resources,
-) {
+) : MenuItems {
     private val logger = Logger("BrowserMenu")
     private var reportSiteIssueIcon: Bitmap? = null
 
-    /** The groups of items to show in the menu, re-emitted whenever the state of the current page changes. */
-    val menuGroups: Flow<List<MenuItemsGroup>> =
+    override val menuGroups: Flow<List<MenuItemsGroup>> =
         combine(browserStore.flow(), reportSiteIssueIcons()) { state, icon -> menuGroupsFor(state, icon) }
             .distinctUntilChanged()
 
-    /** The groups of items to show in the menu, for the current state of the browser. */
-    fun currentMenuGroups(): List<MenuItemsGroup> = menuGroupsFor(browserStore.state, reportSiteIssueIcon)
+    override fun currentMenuGroups(): List<MenuItemsGroup> = menuGroupsFor(browserStore.state, reportSiteIssueIcon)
 
     private fun menuGroupsFor(
         browserState: BrowserState,
@@ -130,9 +130,8 @@ class BrowserMenu(
  * The extension exposes a page action, which - unlike a browser action - is only shown when explicitly enabled, which
  * the extension does for the http and https pages it can report.
  */
-internal fun BrowserState.webCompatReporterAction(): Action? {
+internal fun BrowserState.webCompatReporterAction(tab: SessionState? = selectedTab): Action? {
     val extension = extensions[WEBCOMPAT_REPORTER_EXTENSION_ID]?.takeIf { it.enabled } ?: return null
-    val tab = selectedTab
 
     if (!extension.allowedInPrivateBrowsing && tab?.content?.private == true) return null
 

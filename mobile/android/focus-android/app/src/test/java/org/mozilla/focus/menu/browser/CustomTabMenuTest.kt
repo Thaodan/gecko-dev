@@ -4,115 +4,134 @@
 
 package org.mozilla.focus.menu.browser
 
-import android.content.Context
-import android.content.res.Resources
-import android.util.TypedValue
-import kotlin.test.assertIs
-import mozilla.components.browser.menu.item.BrowserMenuCategory
-import mozilla.components.browser.menu.item.BrowserMenuDivider
-import mozilla.components.browser.menu.item.BrowserMenuImageSwitch
-import mozilla.components.browser.menu.item.BrowserMenuImageText
-import mozilla.components.browser.menu.item.BrowserMenuItemToolbar
-import mozilla.components.browser.menu.item.SimpleBrowserMenuItem
-import mozilla.components.browser.menu.item.WebExtensionPlaceholderMenuItem
+import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.state.CustomTabConfig
+import mozilla.components.browser.state.state.CustomTabMenuItem
+import mozilla.components.browser.state.state.WebExtensionState
+import mozilla.components.browser.state.state.createCustomTab
+import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
-import mozilla.components.support.test.any
+import mozilla.components.compose.base.text.Text
+import mozilla.components.compose.menu.data.MenuItem
+import mozilla.components.compose.menu.ui.MenuItemState
+import mozilla.components.concept.engine.webextension.Action
+import mozilla.components.feature.webcompat.reporter.WebCompatReporterFeature.WEBCOMPAT_REPORTER_EXTENSION_ID
+import mozilla.components.support.test.mock
 import org.junit.Assert.assertEquals
-import org.junit.Before
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.mockito.ArgumentMatchers.anyString
-import org.mockito.Mockito.anyInt
-import org.mockito.Mockito.eq
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.`when`
+import org.mozilla.focus.R
+import org.mozilla.focus.menu.CustomTabMenuItemTapped
+import org.mozilla.focus.menu.MenuItemTapped
+import org.mozilla.focus.menu.ToolbarMenu.CustomTabItem
+
+private const val APP_NAME = "Focus"
 
 class CustomTabMenuTest {
+    private val customTab = createCustomTab("https://mozilla.org", id = "customTab")
+    private val selectedTab = createTab("https://example.org", id = "tab", private = true)
+    private val browserState =
+        BrowserState(
+            tabs = listOf(selectedTab),
+            customTabs = listOf(customTab),
+            selectedTabId = selectedTab.id,
+        )
 
-    private lateinit var context: Context
-    private lateinit var mockTheme: Resources.Theme
+    @Test
+    fun `WHEN not an onboarding tab THEN allow opening the page somewhere else`() {
+        val items = menu(isOnboardingTab = false).currentMenuGroups().flatMap { it.items }
 
-    @Before
-    fun setup() {
-        context = mock()
-        mockTheme = mock()
-
-        `when`(context.getString(anyInt())).thenReturn("string")
-        `when`(context.getString(anyInt(), anyString())).thenReturn("Powered by Focus")
-
-        `when`(context.theme).thenReturn(mockTheme)
-
-        `when`(mockTheme.resolveAttribute(anyInt(), any(), eq(true))).thenAnswer { invocation ->
-            val typedValueArg = invocation.arguments[1] as TypedValue
-            typedValueArg.resourceId = 1
-            true
-        }
+        assertTrue(items.hasItem(CustomTabItem.OpenInBrowser))
+        assertTrue(items.hasItem(CustomTabItem.OpenInApp))
+        assertEquals(
+            Text.Resource(R.string.menu_open_with_default_browser2, listOf(APP_NAME)),
+            items.item(CustomTabItem.OpenInBrowser).title,
+        )
     }
 
     @Test
-    fun `WHEN is onboarding tab is false THEN menu items contains all menu items`() {
-        val customTabMenu =
-            CustomTabMenu(
-                context = context,
-                store = BrowserStore(),
-                currentTabId = "",
-                isOnboardingTab = false,
-            ) {}
+    fun `WHEN an onboarding tab THEN keep the page inside the custom tab`() {
+        val items = menu(isOnboardingTab = true).currentMenuGroups().flatMap { it.items }
 
-        val expectedSize = 10
-        val menuItems = customTabMenu.menuBuilder.items
-        assertEquals(expectedSize, customTabMenu.menuBuilder.items.size)
-
-        // Browser menu
-        assertIs<BrowserMenuItemToolbar>(menuItems[0])
-        // Browser menu divider
-        assertIs<BrowserMenuDivider>(menuItems[1])
-        // Find in page
-        assertIs<BrowserMenuImageText>(menuItems[2])
-        // Desktop mode
-        assertIs<BrowserMenuImageSwitch>(menuItems[3])
-        // Report site issue
-        assertIs<WebExtensionPlaceholderMenuItem>(menuItems[4])
-        // Browser menu divider
-        assertIs<BrowserMenuDivider>(menuItems[5])
-        // Add to homescreen
-        assertIs<BrowserMenuImageText>(menuItems[6])
-        // Open in Focus
-        assertIs<SimpleBrowserMenuItem>(menuItems[7])
-        // Open in...
-        assertIs<SimpleBrowserMenuItem>(menuItems[8])
-        // Powered by
-        assertIs<BrowserMenuCategory>(menuItems[9])
+        assertFalse(items.hasItem(CustomTabItem.OpenInBrowser))
+        assertFalse(items.hasItem(CustomTabItem.OpenInApp))
+        assertTrue(items.hasItem(CustomTabItem.FindInPage))
+        assertTrue(items.hasItem(CustomTabItem.AddToHomeScreen))
     }
 
     @Test
-    fun `WHEN is onboarding tab is true THEN menu items contains only sandboxed menu items`() {
-        val customTabMenu =
-            CustomTabMenu(
-                context = context,
-                store = BrowserStore(),
-                currentTabId = "",
-                isOnboardingTab = true,
-            ) {}
+    fun `GIVEN a different selected tab WHEN building the menu THEN describe the custom tab`() {
+        val state =
+            browserState.copy(
+                customTabs =
+                    listOf(customTab.copy(content = customTab.content.copy(canGoBack = true, desktopMode = true))),
+                tabs =
+                    listOf(
+                        selectedTab.copy(
+                            content = selectedTab.content.copy(canGoBack = false, desktopMode = false, loading = true)
+                        )
+                    ),
+            )
+        val items = menu(state).currentMenuGroups().flatMap { it.items }
 
-        val expectedSize = 8
-        val menuItems = customTabMenu.menuBuilder.items
-        assertEquals(expectedSize, customTabMenu.menuBuilder.items.size)
-
-        // Browser menu
-        assertIs<BrowserMenuItemToolbar>(menuItems[0])
-        // Browser menu divider
-        assertIs<BrowserMenuDivider>(menuItems[1])
-        // Find in page
-        assertIs<BrowserMenuImageText>(menuItems[2])
-        // Desktop mode
-        assertIs<BrowserMenuImageSwitch>(menuItems[3])
-        // Report site issue
-        assertIs<WebExtensionPlaceholderMenuItem>(menuItems[4])
-        // Browser menu divider
-        assertIs<BrowserMenuDivider>(menuItems[5])
-        // Add to homescreen
-        assertIs<BrowserMenuImageText>(menuItems[6])
-        // Powered by
-        assertIs<BrowserMenuCategory>(menuItems[7])
+        assertEquals(MenuItemState.DEFAULT, items.item(CustomTabItem.Back).state)
+        assertEquals(MenuItemState.ACTIVE, items.item(CustomTabItem.RequestDesktop(isChecked = false)).state)
+        assertTrue(items.hasItem(CustomTabItem.Reload))
+        assertFalse(items.hasItem(CustomTabItem.Stop))
     }
+
+    @Test
+    fun `GIVEN items provided by the caller WHEN building the menu THEN show them after the other ones`() {
+        val callerItem = CustomTabMenuItem(name = "Open in caller", pendingIntent = mock())
+        val state =
+            browserState.copy(
+                customTabs = listOf(customTab.copy(config = CustomTabConfig(menuItems = listOf(callerItem))))
+            )
+        val groups = menu(state).currentMenuGroups()
+        val callerItems = groups.last().items
+
+        assertTrue(groups.dropLast(1).flatMap { it.items }.none { it.onClickEvent is CustomTabMenuItemTapped })
+        assertEquals(Text.String("Open in caller"), callerItems.single().title)
+        assertEquals(CustomTabMenuItemTapped(callerItem), callerItems.single().onClickEvent)
+    }
+
+    @Test
+    fun `GIVEN an enabled reporter WHEN building the menu THEN report the custom tab`() {
+        val action = Action("Report broken site…", true, null, null, null, null) {}
+        val extension =
+            WebExtensionState(
+                id = WEBCOMPAT_REPORTER_EXTENSION_ID,
+                allowedInPrivateBrowsing = true,
+                pageAction = action.copy(enabled = false),
+            )
+        val state =
+            browserState.copy(
+                extensions = mapOf(extension.id to extension),
+                customTabs =
+                    listOf(customTab.copy(extensionState = mapOf(extension.id to extension.copy(pageAction = action)))),
+            )
+
+        assertEquals(action, state.webCompatReporterAction(state.customTabs.single()))
+        assertEquals(
+            Text.String("Report broken site…"),
+            menu(state).currentMenuGroups().flatMap { it.items }.item(CustomTabItem.ReportSiteIssue).title,
+        )
+    }
+
+    private fun menu(
+        state: BrowserState = browserState,
+        isOnboardingTab: Boolean = false,
+    ) =
+        CustomTabMenu(
+            browserStore = BrowserStore(state),
+            customTabId = customTab.id,
+            appName = APP_NAME,
+            isOnboardingTab = isOnboardingTab,
+            resources = mock(),
+        )
+
+    private fun List<MenuItem>.item(item: CustomTabItem) = single { it.onClickEvent == MenuItemTapped(item) }
+
+    private fun List<MenuItem>.hasItem(item: CustomTabItem) = any { it.onClickEvent == MenuItemTapped(item) }
 }

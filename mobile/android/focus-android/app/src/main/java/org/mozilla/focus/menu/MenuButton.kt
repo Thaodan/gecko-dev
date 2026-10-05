@@ -19,6 +19,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -56,7 +57,10 @@ private const val MENU_MAX_HEIGHT_RATIO = 0.8f
  * discarded when the menu is closed again.
  */
 @Composable
-fun MenuButton(buildMenuStore: (scope: CoroutineScope, onDismiss: () -> Unit) -> MenuStore) {
+fun MenuButton(
+    iconTint: Color = colorResource(R.color.primaryText),
+    buildMenuStore: (scope: CoroutineScope, onDismiss: () -> Unit) -> MenuStore,
+) {
     var isMenuShown by remember { mutableStateOf(false) }
     val view = LocalView.current
 
@@ -72,7 +76,7 @@ fun MenuButton(buildMenuStore: (scope: CoroutineScope, onDismiss: () -> Unit) ->
                 isMenuShown = true
             },
             contentDescription = stringResource(menuR.string.mozac_browser_menu_button),
-            colors = IconButtonDefaults.iconButtonColors(contentColor = colorResource(R.color.primaryText)),
+            colors = IconButtonDefaults.iconButtonColors(contentColor = iconTint),
         ) {
             Icon(
                 painter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),

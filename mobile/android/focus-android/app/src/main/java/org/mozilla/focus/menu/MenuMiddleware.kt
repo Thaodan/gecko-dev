@@ -13,14 +13,13 @@ import mozilla.components.compose.menu.store.MenuStore
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 import org.mozilla.focus.browser.integration.BrowserMenuController
-import org.mozilla.focus.menu.browser.BrowserMenu
 
 /**
  * [MenuEvent] dispatched when the user taps a browser menu item.
  *
- * @property item The [ToolbarMenu.Item] the user tapped.
+ * @property item The [ToolbarMenu.FocusMenuItem] the user tapped.
  */
-data class MenuItemTapped(val item: ToolbarMenu.Item) : MenuEvent
+data class MenuItemTapped(val item: ToolbarMenu.FocusMenuItem) : MenuEvent
 
 /**
  * [MenuStore] middleware keeping the menu up to date and delegating all user interactions to [BrowserMenuController],
@@ -29,7 +28,7 @@ data class MenuItemTapped(val item: ToolbarMenu.Item) : MenuEvent
  * [scope] is expected to be cancelled once the menu is closed, which stops observing [menu].
  */
 class MenuMiddleware(
-    private val menu: BrowserMenu,
+    private val menu: MenuItems,
     private val controller: BrowserMenuController,
     private val onDismiss: () -> Unit,
     private val scope: CoroutineScope,
