@@ -17474,11 +17474,7 @@
 # connections. 0 = disabled (kernel default). Effective on Linux 4.6+ and macOS.
 - name: network.tcp.notsent_lowat
   type: RelaxedAtomicInt32
-#ifdef NIGHTLY_BUILD
   value: 32768
-#else
-  value: 0
-#endif
   mirror: always
 
 # Whether to redirect a failing request to an essential domain
