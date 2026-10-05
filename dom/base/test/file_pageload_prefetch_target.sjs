@@ -4,7 +4,7 @@ function handleRequest(request, response) {
   response.setStatusLine(request.httpVersion, 200, "OK");
   response.setHeader("Content-Type", "text/html", false);
 
-  // A no-store target is only reused by a navigation activated from its prefetch.
+  // A no-store target can be prefetched but never serves the navigation.
   const noStore = request.queryString.includes("nostore");
   response.setHeader(
     "Cache-Control",
