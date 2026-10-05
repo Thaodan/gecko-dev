@@ -1579,7 +1579,10 @@ class StyleRuleActor extends Actor {
           }
           continue;
         }
-        if (lastStack.tokenType === "Function" && lastStack.functionName === "attr") {
+        if (
+          lastStack.tokenType === "Function" &&
+          lastStack.functionName === "attr"
+        ) {
           // the attribute name is the first ident after the function token
           if (!lastStack.attrNameFound) {
             // we want to return the attribute if it's not defined, so we can display
